@@ -1,0 +1,6 @@
+{
+	"name": "MiracastApp",
+	"description": "MiracastApplication as a downlodable plugin",
+	"type": "plugin",
+	"callsign": "MiracastApp"
+}

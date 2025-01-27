@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget version="2.0" xmlns="http://www.bskyb.com/ns/widgets">
+   <name short="MiracastApp" version="2.0.0">MiracastApp</name>
+   <icon src="icon.png" type="image/png"/>
+   <content src="run-miracastapp.sh" type="application/system">
+       <platformFilters>
+           <platformId name="SKTL11AEI"/>
+           <platformId name="SKTL11MEIDE"/>
+	   <platformId name="SKTL11MEIIT"/>
+	   <platformId name="ELTE11MWR"/>
+	   <platformId name="PITU11MWR"/>
+      <platformId name="XUSPTC11MWR"/>
+      </platformFilters>
+   </content>
+   <capabilities>
+      <capability name="airplay2"/>
+      <capability name="fkps">0691000006910002.bin.md5,0691000006910002.sha.md5.sha256,0691000006910002.bin.md5.sha256,0691000006910002.sha.md5,0691000006910002.bin,0691000006910002.sha.sha256,0691000006910002.bin.sha256,0691000006910002.sha</capability>
+      <capability name="thunder"/>
+      <capability name="storage"/>
+      <capability name="private-storage">120</capability>
+      <capability name="hole-punch">10205</capability>
+      <capability name="local-services-5"/>
+      <capability name="wan-lan"/>
+      <capability name="sys-memory-limit">700m</capability>
+      <capability name="gpu-memory-limit">350m</capability>
+   </capabilities>
+</widget>
