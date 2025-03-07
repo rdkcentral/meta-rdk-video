@@ -1,0 +1,354 @@
+From 88b3a9ea5abe94b9da0f38013612340b3078e98a Mon Sep 17 00:00:00 2001
+From: kkanag314 <krishnapriya_kanagaraj@comcast.com>
+Date: Wed, 6 Dec 2023 09:22:30 +0000
+Subject: [PATCH] comcast - XRE-13505 - Dynamic insertion of decryptor element
+
+---
+ .../gstreamer/eme/CDMProxyThunder.cpp         |   3 +-
+ .../graphics/gstreamer/eme/CDMProxyThunder.h  |   1 +
+ .../eme/WebKitThunderDecryptorGStreamer.cpp   |   8 +
+ .../graphics/gstreamer/mse/AppendPipeline.cpp |   5 +
+ .../mse/WebKitMediaSourceGStreamer.cpp        | 237 +++++++++++++++++-
+ 5 files changed, 251 insertions(+), 3 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/CDMProxyThunder.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/CDMProxyThunder.cpp
+index 5bd03c1b9779..65d79bbd0383 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/CDMProxyThunder.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/CDMProxyThunder.cpp
+@@ -90,8 +90,7 @@ bool CDMProxyThunder::decrypt(CDMProxyThunder::DecryptionContext& input)
+ 
+     GST_TRACE("decrypting");
+     // Decrypt cipher.
+-    OpenCDMError errorCode = opencdm_gstreamer_session_decrypt(session->get(), input.dataBuffer, input.subsamplesBuffer, input.numSubsamples,
+-        input.ivBuffer, input.keyIDBuffer, 0);
++    OpenCDMError errorCode = opencdm_gstreamer_session_decrypt_buffer(session->get(), input.dataBuffer, input.caps.get());
+     if (errorCode) {
+         GST_ERROR("decryption failed, error code %X", errorCode);
+         return false;
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/CDMProxyThunder.h b/Source/WebCore/platform/graphics/gstreamer/eme/CDMProxyThunder.h
+index ad544364a483..7c1ff0129ed1 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/CDMProxyThunder.h
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/CDMProxyThunder.h
+@@ -52,6 +52,7 @@ public:
+         GstBuffer* ivBuffer;
+         GstBuffer* dataBuffer;
+         GstBuffer* subsamplesBuffer;
++        GRefPtr<GstCaps> caps;
+         size_t numSubsamples;
+         WeakPtr<CDMProxyDecryptionClient> cdmProxyDecryptionClient;
+     };
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp
+index 8549c836d698..771dc5cf876e 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp
+@@ -155,6 +155,13 @@ static bool decrypt(WebKitMediaCommonEncryptionDecrypt* decryptor, GstBuffer* iv
+         return false;
+     }
+ 
++    GRefPtr<GstPad> sinkpad = adoptGRef(gst_element_get_static_pad(reinterpret_cast<GstElement*>(self), "sink"));
++    GRefPtr<GstCaps> caps = adoptGRef(gst_pad_get_current_caps(sinkpad.get()));
++
++    GstStructure *capstruct = gst_caps_get_structure(caps.get(), 0);
++    const gchar* capsinfo = gst_structure_get_string(capstruct, "original-media-type");
++    GST_DEBUG_OBJECT(self, "CAPS %p - Stream Type = %s", caps.get(), capsinfo);
++
+     CDMProxyThunder::DecryptionContext context = { };
+     context.keyIDBuffer = keyIDBuffer;
+     context.ivBuffer = ivBuffer;
+@@ -162,6 +169,7 @@ static bool decrypt(WebKitMediaCommonEncryptionDecrypt* decryptor, GstBuffer* iv
+     context.numSubsamples = subsampleCount;
+     context.subsamplesBuffer = subsampleCount ? subsamplesBuffer : nullptr;
+     context.cdmProxyDecryptionClient = webKitMediaCommonEncryptionDecryptGetCDMProxyDecryptionClient(decryptor);
++    context.caps = caps;
+     bool result = priv->cdmProxy->decrypt(context);
+ 
+     if (result && !priv->didReportDecryptionStart) {
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp
+index bdc51267286f..56c7f0eca6f5 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp
+@@ -774,6 +774,11 @@ GRefPtr<GstElement> createOptionalParserForFormat(GstBin* bin, const AtomString&
+             GST_WARNING_OBJECT(bin, "Unsupported audio mpeg caps: %" GST_PTR_FORMAT, caps);
+         }
+     }
++#if ENABLE(THUNDER)
++    // Disable opitonal parser in AppendPipeline to support changeing caps to encrpyted ones
++    // that are not supported by parser (x-cenc)
++    elementClass = "identity";
++#endif
+ 
+     GST_DEBUG_OBJECT(bin, "Creating %s parser for stream with caps %" GST_PTR_FORMAT, elementClass, caps);
+     GRefPtr<GstElement> result(makeGStreamerElement(elementClass, parserName.ascii().data()));
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+index ba6430a8f935..67e156bdf170 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+@@ -106,6 +106,10 @@ static MediaPlayerPrivateGStreamerMSE* webKitMediaSrcPlayer(WebKitMediaSrc*);
+ 
+ struct WebKitMediaSrcPadPrivate {
+     WeakPtr<Stream> stream;
++
++#if ENABLE(ENCRYPTED_MEDIA)
++    gulong decryptorProbeId;
++#endif
+ };
+ 
+ struct WebKitMediaSrcPad {
+@@ -297,6 +301,227 @@ static void webKitMediaSrcConstructed(GObject* object)
+     GST_OBJECT_FLAG_SET(object, GST_ELEMENT_FLAG_SOURCE);
+ }
+ 
++#if ENABLE(ENCRYPTED_MEDIA)
++GstElement* createDecryptor(const char* requestedProtectionSystemUuid)
++{
++    GstElement* decryptor = nullptr;
++    GList* decryptors = gst_element_factory_list_get_elements(GST_ELEMENT_FACTORY_TYPE_DECRYPTOR, GST_RANK_MARGINAL);
++
++    // Prefer WebKit decryptors
++    decryptors = g_list_sort(decryptors, [](gconstpointer p1, gconstpointer p2) -> gint {
++        GstPluginFeature *f1, *f2;
++        const gchar* name;
++        f1 = (GstPluginFeature *) p1;
++        f2 = (GstPluginFeature *) p2;
++        if ((name = gst_plugin_feature_get_name(f1)) && g_str_has_prefix(name, "webkit"))
++            return -1;
++        if ((name = gst_plugin_feature_get_name(f2)) && g_str_has_prefix(name, "webkit"))
++            return 1;
++        return gst_plugin_feature_rank_compare_func(p1, p2);
++    });
++
++    for (GList* walk = decryptors; !decryptor && walk; walk = g_list_next(walk)) {
++        GstElementFactory* factory = reinterpret_cast<GstElementFactory*>(walk->data);
++
++        for (const GList* current = gst_element_factory_get_static_pad_templates(factory); current && !decryptor; current = g_list_next(current)) {
++            GstStaticPadTemplate* staticPadTemplate = static_cast<GstStaticPadTemplate*>(current->data);
++            GRefPtr<GstCaps> caps = adoptGRef(gst_static_pad_template_get_caps(staticPadTemplate));
++            unsigned length = gst_caps_get_size(caps.get());
++
++            GST_TRACE("factory %s caps has size %u", GST_OBJECT_NAME(factory), length);
++            for (unsigned i = 0; !decryptor && i < length; ++i) {
++                GstStructure* structure = gst_caps_get_structure(caps.get(), i);
++                GST_TRACE("checking structure %s", gst_structure_get_name(structure));
++                if (gst_structure_has_field_typed(structure, GST_PROTECTION_SYSTEM_ID_CAPS_FIELD, G_TYPE_STRING)) {
++                    const char* protectionSystemUuid = gst_structure_get_string(structure, GST_PROTECTION_SYSTEM_ID_CAPS_FIELD);
++                    GST_TRACE("structure %s has protection system %s", gst_structure_get_name(structure), protectionSystemUuid);
++                    if (!g_ascii_strcasecmp(requestedProtectionSystemUuid, protectionSystemUuid)) {
++                        GST_DEBUG("found decryptor %s for %s", GST_OBJECT_NAME(factory), requestedProtectionSystemUuid);
++                        decryptor = gst_element_factory_create(factory, nullptr);
++                        break;
++                    }
++                }
++            }
++        }
++    }
++    gst_plugin_feature_list_free(decryptors);
++    GST_TRACE("returning decryptor %p", decryptor);
++    return decryptor;
++}
++
++typedef struct _DecryptorProbeData DecryptorProbeData;
++struct _DecryptorProbeData
++{
++    _DecryptorProbeData(WebKitMediaSrc* parent)
++        : parent(parent) {
++    }
++    ~_DecryptorProbeData() {
++        GST_WARNING("Destroying Decryptor probe, decryptor=%p(attached: %s), payloader=%p(attached: %s)",
++                    decryptor.get(), decryptorAttached ? "yes" : "no",
++                    payloader.get(), payloaderAttached ? "yes" : "no");
++    }
++    WebKitMediaSrc* parent;
++    GRefPtr<GstElement> decryptor;
++    GRefPtr<GstElement> payloader;
++    bool decryptorAttached { false };
++    bool didTryCreatePayloader { false };
++    bool payloaderAttached { false };
++    bool didFail { false };
++    WTF_MAKE_NONCOPYABLE(_DecryptorProbeData);
++};
++
++GstPadProbeReturn onWebKitMediaSourcePadEvent(GstPad* pad, GstPadProbeInfo* info, gpointer data)
++{
++    if (!(GST_PAD_PROBE_INFO_TYPE (info) & GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM))
++        return GST_PAD_PROBE_OK;
++
++    GstEvent *event = GST_PAD_PROBE_INFO_EVENT (info);
++    if (GST_EVENT_TYPE (event) != GST_EVENT_CAPS)
++        return GST_PAD_PROBE_OK;
++
++    DecryptorProbeData* probData = reinterpret_cast<DecryptorProbeData*>(data);
++    if (probData->didFail)
++        return GST_PAD_PROBE_OK;
++
++    GstCaps* caps = nullptr;
++    gst_event_parse_caps(event, &caps);
++
++    if (!caps)
++        return GST_PAD_PROBE_OK;
++
++    // urisourcebin > webkitmediasrc > pad
++    GRefPtr<GstBin> parent_bin = adoptGRef(GST_BIN(gst_element_get_parent(probData->parent)));
++
++    GstElement* decryptor = probData->decryptor.get();
++    bool decryptorAttached = decryptor && probData->decryptorAttached;
++    GstElement* payloader = probData->payloader.get();
++    bool payloaderAttached = payloader && probData->payloaderAttached;
++
++    if (probData->didTryCreatePayloader == false)
++    {
++        probData->didTryCreatePayloader = true;
++        if (WebCore::doCapsHaveType(caps, GST_VIDEO_CAPS_TYPE_PREFIX)) {
++            // svppay element is always inserted even for non encrypted caps
++            // to force secure memory video parser so we don't need to replace
++            // parser when encrypted samples arrive
++
++            // svppay payloader is available on Amlogic platform only
++            GRefPtr<GstElementFactory> payloader_factory = adoptGRef(gst_element_factory_find("svppay"));
++            if (payloader_factory) {
++                probData->payloader = gst_element_factory_create(payloader_factory.get(), nullptr);
++                payloader = probData->payloader.get();
++            }
++            if (payloader) {
++                gst_bin_add(GST_BIN(parent_bin.get()), payloader);
++                GST_INFO("svppay %s added to %s for pad %s",
++                         GST_ELEMENT_NAME(payloader), GST_ELEMENT_NAME(parent_bin.get()), GST_PAD_NAME(pad));
++            } else {
++                GST_INFO("svppay not found -> continuing without payloader");
++            }
++        }
++    }
++
++    if(!decryptorAttached && WebCore::areEncryptedCaps(caps))
++    {
++        if(!decryptor)
++        {
++            GstStructure* structure = gst_caps_get_structure(caps, 0);
++            probData->decryptor = createDecryptor(gst_structure_get_string(structure, "protection-system"));
++            decryptor = probData->decryptor.get();
++            if (!decryptor)
++            {
++                GST_ERROR("Failed to create decryptor");
++                probData->didFail = true;
++                return GST_PAD_PROBE_OK;
++            }
++
++            gst_bin_add(parent_bin.get(), decryptor);
++        }
++
++        GST_DEBUG("padname: %s Got CAPS=%" GST_PTR_FORMAT ", Add decryptor %" GST_PTR_FORMAT, GST_PAD_NAME(pad), caps, decryptor);
++
++        gst_element_sync_state_with_parent(decryptor);
++
++        GRefPtr<GstPad> decryptorSinkPad = adoptGRef(gst_element_get_static_pad(decryptor, "sink"));
++        GRefPtr<GstPad> decryptorSrcPad = adoptGRef(gst_element_get_static_pad(decryptor, "src"));
++        GstPad *srcPad = pad;
++        GstPadLinkReturn rc;
++
++        GRefPtr<GstPad> peerPad = adoptGRef(gst_pad_get_peer(srcPad));
++
++        if(payloader && !payloaderAttached){
++            GRefPtr<GstPad> payloaderSinkPad = adoptGRef(gst_element_get_static_pad(payloader, "sink"));
++            GRefPtr<GstPad> payloaderSrcPad = adoptGRef(gst_element_get_static_pad(payloader, "src"));
++
++            // Insert decryptor and payloader between mediasrc and the decodebin
++            gst_element_sync_state_with_parent(payloader);
++
++            if (!gst_pad_unlink(srcPad, peerPad.get()))
++                GST_ERROR("Failed to unlink '%s' src pad", GST_PAD_NAME(pad));
++            else if (GST_PAD_LINK_OK != (rc = gst_pad_link_full(srcPad, decryptorSinkPad.get(), GST_PAD_LINK_CHECK_NOTHING)))
++                GST_ERROR("Failed to link pad to decryptorSinkPad, rc = %d", rc);
++            else if (GST_PAD_LINK_OK != (rc = gst_pad_link(decryptorSrcPad.get(), payloaderSinkPad.get())))
++                GST_ERROR("Failed to link decryptorSrcPad to payloader sinkpad, rc = %d", rc);
++            else if (GST_PAD_LINK_OK != (rc = gst_pad_link(payloaderSrcPad.get(), peerPad.get())))
++                GST_ERROR("Failed to link payloaderSrcPad to app sink, rc = %d", rc);
++
++            probData->payloaderAttached = true;
++        } else {
++            // Insert decryptor between mediasrc and the decodebin or the payloader
++            if (!gst_pad_unlink(srcPad, peerPad.get()))
++                GST_ERROR("Failed to unlink '%s' src pad", GST_PAD_NAME(pad));
++            else if (GST_PAD_LINK_OK != (rc = gst_pad_link_full(srcPad, decryptorSinkPad.get(), GST_PAD_LINK_CHECK_NOTHING)))
++                GST_ERROR("Failed to link pad to decryptorSinkPad, rc = %d", rc);
++            else if (GST_PAD_LINK_OK != (rc = gst_pad_link(decryptorSrcPad.get(), peerPad.get())))
++                GST_ERROR("Failed to link decryptorSrcPad to app sink, rc = %d", rc);
++        }
++
++        probData->decryptorAttached = true;
++    } else if (decryptorAttached && !WebCore::areEncryptedCaps(caps)) {
++        GST_DEBUG("padname: %s Got CAPS=%" GST_PTR_FORMAT ", Remove decryptor %" GST_PTR_FORMAT, GST_PAD_NAME(pad), caps, decryptor);
++
++        GRefPtr<GstPad> decryptorSinkPad = adoptGRef(gst_element_get_static_pad(decryptor, "sink"));
++        GRefPtr<GstPad> decryptorSrcPad = adoptGRef(gst_element_get_static_pad(decryptor, "src"));
++        GRefPtr<GstPad> peerPad = adoptGRef(gst_pad_get_peer(decryptorSrcPad.get()));
++        GstPad *srcPad = pad;
++        GstPadLinkReturn rc;
++
++        if (!gst_pad_unlink(decryptorSrcPad.get(), peerPad.get()))
++            GST_ERROR("Failed to unlink decryptorSrcPad");
++        else if (!gst_pad_unlink(srcPad, decryptorSinkPad.get()))
++            GST_ERROR("Failed to unlink decryptorSinkPad");
++        else if (GST_PAD_LINK_OK != (rc = gst_pad_link(srcPad, peerPad.get())))
++            GST_ERROR("Failed to link '%s' to peer pad, rc = %d", GST_PAD_NAME(pad), rc);
++
++        probData->decryptorAttached = false;
++    } else if (payloader && !payloaderAttached && !WebCore::areEncryptedCaps(caps)) {
++        GST_DEBUG("padname: %s Got CAPS=%" GST_PTR_FORMAT ", Attach payloader %" GST_PTR_FORMAT, GST_PAD_NAME(pad), caps, payloader);
++
++        gst_element_sync_state_with_parent(payloader);
++
++        GRefPtr<GstPad> payloaderSinkPad = adoptGRef(gst_element_get_static_pad(payloader, "sink"));
++        GRefPtr<GstPad> payloaderSrcPad = adoptGRef(gst_element_get_static_pad(payloader, "src"));
++        GstPad *srcPad = pad;
++        GRefPtr<GstPad> peerPad = adoptGRef(gst_pad_get_peer(srcPad));
++        GstPadLinkReturn rc;
++
++        if (!gst_pad_unlink(srcPad, peerPad.get()))
++            GST_ERROR("Failed to unlink '%s' src pad", GST_PAD_NAME(pad));
++        else if (GST_PAD_LINK_OK != (rc = gst_pad_link(srcPad, payloaderSinkPad.get())))
++            GST_ERROR("Failed to link pad to payloaderSinkPad, rc = %d", rc);
++        else if (GST_PAD_LINK_OK != (rc = gst_pad_link(payloaderSrcPad.get(), peerPad.get())))
++            GST_ERROR("Failed to link payloaderSrcPad to app sink, rc = %d", rc);
++
++        probData->payloaderAttached = true;
++    } else {
++        GST_DEBUG("padname: %s Got CAPS %" GST_PTR_FORMAT ", decryptorAttached = %s, payloaderAttached = %s, caps are encrypted= %s",
++                GST_PAD_NAME(pad), caps, decryptorAttached ? "yes" : "no", payloaderAttached ? "yes" : "no",
++                    WebCore::areEncryptedCaps(caps) ? "yes" : "no");
++    }
++    return GST_PAD_PROBE_OK;
++}
++#endif
++
+ void webKitMediaSrcEmitStreams(WebKitMediaSrc* source, const Vector<RefPtr<MediaSourceTrackGStreamer>>& tracks)
+ {
+     ASSERT(isMainThread());
+@@ -338,6 +563,12 @@ void webKitMediaSrcEmitStreams(WebKitMediaSrc* source, const Vector<RefPtr<Media
+             if (state > GST_STATE_READY)
+                 gst_pad_set_active(GST_PAD(stream->pad.get()), true);
+         }
++#if ENABLE(ENCRYPTED_MEDIA)
++        WEBKIT_MEDIA_SRC_PAD(stream->pad.get())->priv->decryptorProbeId =
++            gst_pad_add_probe(stream->pad.get(), GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM,
++                    onWebKitMediaSourcePadEvent, new DecryptorProbeData(source),
++                    [](gpointer data) { delete static_cast<DecryptorProbeData*>(data); });
++#endif
+         GST_DEBUG_OBJECT(source, "Adding pad '%s' for stream with name '%s'", GST_OBJECT_NAME(stream->pad.get()), stream->track->trackId().string().utf8().data());
+         gst_element_add_pad(GST_ELEMENT(source), GST_PAD(stream->pad.get()));
+     }
+@@ -365,8 +596,12 @@ static void webKitMediaSrcTearDownStream(WebKitMediaSrc* source, const AtomStrin
+     // Stop the thread now.
+     gst_pad_set_active(stream->pad.get(), false);
+ 
+-    if (source->priv->isStarted())
++    if (source->priv->isStarted()) {
+         gst_element_remove_pad(GST_ELEMENT(source), stream->pad.get());
++#if ENABLE(ENCRYPTED_MEDIA)
++        gst_pad_remove_probe(stream->pad.get(), WEBKIT_MEDIA_SRC_PAD(stream->pad.get())->priv->decryptorProbeId);
++#endif
++    }
+     source->priv->streams.remove(name);
+ }
+ 
+-- 
+2.25.1
+

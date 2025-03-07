@@ -1,0 +1,30 @@
+From 1f3c6b4e326c33e699a509710574a35327643e8a Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Fri, 28 Aug 2020 16:12:21 +0000
+Subject: [PATCH] comcast - AMLOGIC-628 - always initialze volume
+
+Reason for change: Audio is muted after an ad
+Test Procedure: Verify on CBS and other web apps
+Risks: Low
+
+Signed-off-by: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+---
+ .../platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index a0f0e75c1c60..e117834b82ac 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -4206,7 +4206,7 @@ void MediaPlayerPrivateGStreamer::setStreamVolumeElement(GstStreamVolume* volume
+ 
+     // We don't set the initial volume because we trust the sink to keep it for us. See
+     // https://bugs.webkit.org/show_bug.cgi?id=118974 for more information.
+-    if (!m_player->platformVolumeConfigurationRequired()) {
++    if (!m_player->platformVolumeConfigurationRequired() || true) {
+         GST_DEBUG_OBJECT(pipeline(), "Setting stream volume to %f", m_player->volume());
+         gst_stream_volume_set_volume(m_volumeElement.get(), GST_STREAM_VOLUME_FORMAT_LINEAR, static_cast<double>(m_player->volume()));
+     } else
+-- 
+2.25.1
+

@@ -1,0 +1,31 @@
+From: Karunakaran A <Karunakaran_Amirthalingam@cable.comcast.com>
+Date: Thu, 19 Sep 2024 17:52:38 +0000
+Subject: [PATCH] PR-1756-Remove-Recursive-Function-From-SmartLinkType.patch
+Reason for Change:The SmartLinkType class has overridden for Subscribe and Unsubscribe function but they are not calling the base class function & instead its calling itself recursively.So the SmartLinkType instance cannot be used for subscribing a event. If you use it, it will get into recursive and leads to out-of-memory crash as it reaches the maximum recursion.The SmartLinkType class does not have to override these two functions. So removing it.
+Upstream-Status: Yes
+Signed-off-by:  Karunakaran A <Karunakaran_Amirthalingam@cable.comcast.com>
+---
+ Source/websocket/JSONRPCLink.h | 10 ----------
+ 1 file changed, 10 deletions(-)
+
+diff --git a/Source/websocket/JSONRPCLink.h b/Source/websocket/JSONRPCLink.h
+index 9652d7ec..aad19ab1 100644
+--- a/Source/websocket/JSONRPCLink.h
++++ b/Source/websocket/JSONRPCLink.h
+@@ -1235,16 +1235,6 @@ namespace WPEFramework {
+ 				}
+ 
+ 			public:
+-				template <typename INBOUND, typename METHOD>
+-				uint32_t Subscribe(const uint32_t waitTime, const string& eventName, const METHOD& method)
+-				{
+-					return Subscribe<INBOUND, METHOD>(waitTime, eventName, method);
+-				}
+-				template <typename INBOUND, typename METHOD, typename REALOBJECT>
+-				uint32_t Subscribe(const uint32_t waitTime, const string& eventName, const METHOD& method, REALOBJECT* objectPtr)
+-				{
+-					return Subscribe<INBOUND, METHOD, REALOBJECT>(waitTime, eventName, method, objectPtr);
+-				}
+ 				bool IsActivated()
+ 				{
+ 					return (_state == ACTIVATED);

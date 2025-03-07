@@ -1,0 +1,49 @@
+From 6724126bb3352720359775fb9542c0b594b88d2f Mon Sep 17 00:00:00 2001
+From: Thamim Razith <tabbas651@cable.comcast.com>
+Date: Tue, 26 Jul 2022 10:53:28 +0000
+Subject: [PATCH] Remove Regex replace which removes Productwide compiler options,
+Reason for Change:like -g1 -g2 etc. This is affecting the machine name containing -g.
+
+Upstream-Status: Pending
+Signed-off-by: Thamim Razith  <tabbas651@cable.comcast.com>
+
+---
+ CMakeLists.txt         | 5 -----
+ cmake/project.cmake.in | 8 --------
+ 2 files changed, 13 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 42f2a687..ed0ceac5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -83,11 +83,6 @@ else()
+     message(FATAL_ERROR "Invalid CMAKE_BUILD_TYPE: '${CMAKE_BUILD_TYPE}'")
+ endif()
+ 
+-# Remove optimization flags added by the build system
+-string(REGEX REPLACE "(-g[0123])" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+-string(REGEX REPLACE "(-g[0123])" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+-string(REGEX REPLACE "\\-\\g$" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+-string(REGEX REPLACE "\\-\\g$" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+ # FIX_ME: Disable fortify source.
+ #         https://jira.rdkcentral.com/jira/browse/METROL-483
+ #         Enabled in upstream buildroot, generates a lot of warnings, caused by missing optimalisation flags.
+diff --git a/cmake/project.cmake.in b/cmake/project.cmake.in
+index 3fff8ace..0706f10a 100644
+--- a/cmake/project.cmake.in
++++ b/cmake/project.cmake.in
+@@ -86,14 +86,6 @@ set(CMAKE_BUILD_TYPE @CMAKE_BUILD_TYPE@ CACHE INTERNAL "" FORCE)
+ string(REGEX REPLACE "-D_FORTIFY_SOURCE=[0-3]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+ string(REGEX REPLACE "-D_FORTIFY_SOURCE=[0-3]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+ 
+-string(REGEX REPLACE "(-g[0123])" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+-string(REGEX REPLACE "\\-\\g$" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} CACHE INTERNAL "" FORCE)
+-string(REGEX REPLACE "(-O([0123gs]|fast))" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+-string(REGEX REPLACE "(-g[0123])" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+-string(REGEX REPLACE "\\-\\g$" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+-set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} CACHE INTERNAL "" FORCE)
+-
+ if(NOT DEFINED ENABLE_STRICT_COMPILER_SETTINGS)
+     set(ENABLE_STRICT_COMPILER_SETTINGS @ENABLE_STRICT_COMPILER_SETTINGS@)
+ endif()

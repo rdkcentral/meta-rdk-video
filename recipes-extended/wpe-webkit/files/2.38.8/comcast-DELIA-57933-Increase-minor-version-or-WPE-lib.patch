@@ -1,0 +1,28 @@
+From b52670401b15a3ebbddc1ff9476ce558318cd2df Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Fri, 8 Sep 2023 13:06:44 +0000
+Subject: [PATCH] comcast - DELIA-57933: Increase minor version or WPE lib
+
+---
+ Source/cmake/OptionsWPE.cmake | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+index e4e91b6f71ff..c69647ffb885 100644
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -189,9 +189,9 @@ endif ()
+ endif ()
+ 
+ if (WPE_API_VERSION VERSION_EQUAL "1.0")
+-    CALCULATE_LIBRARY_VERSIONS_FROM_LIBTOOL_TRIPLE(WEBKIT 21 9 18)
++    CALCULATE_LIBRARY_VERSIONS_FROM_LIBTOOL_TRIPLE(WEBKIT 21 17 18)
+ else ()
+-    CALCULATE_LIBRARY_VERSIONS_FROM_LIBTOOL_TRIPLE(WEBKIT 2 9 2)
++    CALCULATE_LIBRARY_VERSIONS_FROM_LIBTOOL_TRIPLE(WEBKIT 2 17 2)
+ endif ()
+ 
+ set(CMAKE_C_VISIBILITY_PRESET hidden)
+-- 
+2.25.1
+

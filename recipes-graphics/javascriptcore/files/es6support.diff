@@ -1,0 +1,1194 @@
+From: Madana Gopal Thirumalai <madanagopal_thirumalai@comcast.com>
+Date: 13 May 2024 17:24:43 +0000
+Subject: [PATCH] RDK-49122: recipe files for rdknativescript
+---
+diff --git a/Source/JavaScriptCore/jsc.cpp b/Source/JavaScriptCore/jsc.cpp
+index 6c7a0ec16dae..827d8368b18c 100644
+--- a/Source/JavaScriptCore/jsc.cpp
++++ b/Source/JavaScriptCore/jsc.cpp
+@@ -177,6 +177,13 @@ struct MemoryFootprint {
+ 
+ using namespace JSC;
+ 
++namespace JSC
++{
++    JSInternalPromise* moduleLoaderImportModule(JSGlobalObject*, JSModuleLoader*, JSString*, JSValue, const SourceOrigin&) { return nullptr; }
++    Identifier moduleLoaderResolve(JSGlobalObject*, JSModuleLoader*, JSValue, JSValue, JSValue) { return { }; }
++    JSInternalPromise* moduleLoaderFetch(JSGlobalObject*, JSModuleLoader*, JSValue, JSValue, JSValue) { return nullptr; }
++    JSObject* moduleLoaderCreateImportMetaProperties(JSGlobalObject*, JSModuleLoader*, JSValue, JSModuleRecord*, JSValue) { return nullptr; }
++}
+ namespace {
+ 
+ #define EXIT_EXCEPTION 3
+diff --git a/Source/JavaScriptCore/jsc_lib.cpp b/Source/JavaScriptCore/jsc_lib.cpp
+new file mode 100644
+index 000000000000..44507e91af9f
+--- /dev/null
++++ b/Source/JavaScriptCore/jsc_lib.cpp
+@@ -0,0 +1,1058 @@
++/*
++ *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
++ *  Copyright (C) 2004-2019 Apple Inc. All rights reserved.
++ *  Copyright (C) 2006 Bjoern Graf (bjoern.graf@gmail.com)
++ *
++ *  This library is free software; you can redistribute it and/or
++ *  modify it under the terms of the GNU Library General Public
++ *  License as published by the Free Software Foundation; either
++ *  version 2 of the License, or (at your option) any later version.
++ *
++ *  This library is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ *  Library General Public License for more details.
++ *
++ *  You should have received a copy of the GNU Library General Public License
++ *  along with this library; see the file COPYING.LIB.  If not, write to
++ *  the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
++ *  Boston, MA 02110-1301, USA.
++ *
++ */
++
++#include "config.h"
++
++#include "APICast.h"
++#include "ArrayBuffer.h"
++#include "ArrayPrototype.h"
++#include "BuiltinNames.h"
++#include "ButterflyInlines.h"
++#include "BytecodeCacheError.h"
++#include "CallFrameInlines.h"
++#include "CatchScope.h"
++#include "CodeBlock.h"
++#include "CodeCache.h"
++#include "CompilerTimingScope.h"
++#include "Completion.h"
++#include "ConfigFile.h"
++#include "DeferredWorkTimer.h"
++#include "Disassembler.h"
++#include "Exception.h"
++#include "ExceptionHelpers.h"
++#include "HeapProfiler.h"
++#include "HeapSnapshotBuilder.h"
++#include "InitializeThreading.h"
++#include "Interpreter.h"
++#include "JIT.h"
++#include "JSArray.h"
++#include "JSArrayBuffer.h"
++#include "JSBigInt.h"
++#include "JSContextRef.h"
++#include "JSCInlines.h"
++#include "JSFinalizationRegistry.h"
++#include "JSFunction.h"
++#include "JSInternalPromise.h"
++#include "JSLock.h"
++#include "JSModuleLoader.h"
++#include "JSNativeStdFunction.h"
++#include "JSONObject.h"
++#include "JSObjectInlines.h"
++#include "JSSourceCode.h"
++#include "JSString.h"
++#include "JSTypedArrays.h"
++#include "JSWebAssemblyInstance.h"
++#include "JSWebAssemblyMemory.h"
++#include "LLIntThunks.h"
++#include "ObjectConstructor.h"
++#include "ParserError.h"
++#include "ProfilerDatabase.h"
++#include "ProtoCallFrame.h"
++#include "ReleaseHeapAccessScope.h"
++#include "SamplingProfiler.h"
++#include "StackVisitor.h"
++#include "StructureInlines.h"
++#include "StructureRareDataInlines.h"
++#include "SuperSampler.h"
++#include "TestRunnerUtils.h"
++#include "TypedArrayInlines.h"
++#include "VMInspector.h"
++#include "WasmCapabilities.h"
++#include "WasmContext.h"
++#include "WasmFaultSignalHandler.h"
++#include "WasmMemory.h"
++#include <locale.h>
++#include <math.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/stat.h>
++#include <sys/types.h>
++#include <thread>
++#include <type_traits>
++#include <wtf/Box.h>
++#include <wtf/CPUTime.h>
++#include <wtf/CommaPrinter.h>
++#include <wtf/FileSystem.h>
++#include <wtf/MainThread.h>
++#include <wtf/MemoryPressureHandler.h>
++#include <wtf/MonotonicTime.h>
++#include <wtf/NeverDestroyed.h>
++#include <wtf/Scope.h>
++#include <wtf/StringPrintStream.h>
++#include <wtf/URL.h>
++#include <wtf/WallTime.h>
++#include <wtf/text/StringBuilder.h>
++#include <wtf/text/StringConcatenateNumbers.h>
++#include <JSStringRef.h>
++#include <iostream>
++#include <curl/curl.h>
++
++#include <unistd.h>
++
++#if HAVE(READLINE)
++// readline/history.h has a Function typedef which conflicts with the WTF::Function template from WTF/Forward.h
++// We #define it to something else to avoid this conflict.
++#define Function ReadlineFunction
++#include <readline/history.h>
++#include <readline/readline.h>
++#undef Function
++#endif
++
++#if HAVE(SYS_TIME_H)
++#include <sys/time.h>
++#endif
++
++#if HAVE(SIGNAL_H)
++#include <signal.h>
++#endif
++
++using namespace JSC;
++
++namespace JSC
++{
++    JSInternalPromise* moduleLoaderImportModule(JSGlobalObject*, JSModuleLoader*, JSString*, JSValue, const SourceOrigin&);
++    Identifier moduleLoaderResolve(JSGlobalObject*, JSModuleLoader*, JSValue, JSValue, JSValue);
++    JSInternalPromise* moduleLoaderFetch(JSGlobalObject*, JSModuleLoader*, JSValue, JSValue, JSValue);
++    JSObject* moduleLoaderCreateImportMetaProperties(JSGlobalObject*, JSModuleLoader*, JSValue, JSModuleRecord*, JSValue);
++}
++
++        struct MemoryStruct
++        {
++            MemoryStruct()
++                : headerSize(0)
++                , headerBuffer(NULL)
++                , contentsSize(0)
++                , contentsBuffer(NULL)
++                , readSize(0)
++            {
++                headerBuffer = (char*)malloc(1);
++                contentsBuffer = (char*)malloc(1);
++            }
++
++            ~MemoryStruct()
++            {
++              if (headerBuffer != NULL)
++              {
++                free(headerBuffer);
++                headerBuffer = NULL;
++              }
++              if (contentsBuffer != NULL)
++              {
++                free(contentsBuffer);
++                contentsBuffer = NULL;
++              }
++            }
++
++            size_t headerSize;
++            char* headerBuffer;
++            size_t contentsSize;
++            char* contentsBuffer;
++            size_t readSize;
++        };
++
++static size_t HeaderCallback(void *contents, size_t size, size_t nmemb, void *userp)
++{
++  size_t downloadSize = size * nmemb;
++  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
++
++  mem->headerBuffer = (char*)realloc(mem->headerBuffer, mem->headerSize + downloadSize + 1);
++  if(mem->headerBuffer == NULL) {
++    /* out of memory! */
++    std::cout << "out of memory when downloading image\n";
++    return 0;
++  }
++
++  memcpy(&(mem->headerBuffer[mem->headerSize]), contents, downloadSize);
++  mem->headerSize += downloadSize;
++  mem->headerBuffer[mem->headerSize] = 0;
++
++  return downloadSize;
++}
++
++static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
++{
++  size_t downloadSize = size * nmemb;
++  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
++
++  mem->contentsBuffer = (char*)realloc(mem->contentsBuffer, mem->contentsSize + downloadSize + 1);
++  if(mem->contentsBuffer == NULL) {
++    /* out of memory! */
++    std::cout << "out of memory when downloading image\n";
++    return 0;
++  }
++
++  memcpy(&(mem->contentsBuffer[mem->contentsSize]), contents, downloadSize);
++  mem->contentsSize += downloadSize;
++  mem->contentsBuffer[mem->contentsSize] = 0;
++
++  return downloadSize;
++}
++
++bool downloadFile(std::string& url, MemoryStruct& chunk)
++{
++    bool ret = false;
++    CURL *curl;
++    CURLcode res;
++    curl = curl_easy_init();
++    if (curl)
++    {
++        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
++        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
++        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, HeaderCallback);
++        curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void *)&chunk);
++        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
++        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
++        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30);
++        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
++        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2);
++        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, true);
++        curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
++        curl_easy_setopt(curl, CURLOPT_PROXY, "");
++
++
++        //curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
++        res = curl_easy_perform(curl);
++        long httpCode = 0;
++        curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &httpCode);
++        curl_easy_cleanup(curl);
++        if ((res == 0) && (httpCode == 200))
++        {
++            std::cout << "download operation success" << std::endl;
++            ret = true;
++        }
++        else
++        {
++            std::cout << "download operation failed" << std::endl;
++        }
++    }
++    else
++    {
++        std::cout << "unable to perform download " << std::endl;
++    }
++    return ret;
++}
++
++template<typename Vector>
++static inline String stringFromUTF(const Vector& utf8)
++{
++    return String::fromUTF8WithLatin1Fallback(utf8.data(), utf8.size());
++}
++
++static inline String stringFromUTFChar(const char* data, int length)
++{
++    return String::fromUTF8WithLatin1Fallback(data, length);
++}
++
++static void checkException(JSGlobalObject*, bool hasException, JSValue, bool& success);
++
++static UChar pathSeparator()
++{
++#if OS(WINDOWS)
++    return '\\';
++#else
++    return '/';
++#endif
++}
++
++struct DirectoryName {
++    // In unix, it is "/". In Windows, it becomes a drive letter like "C:\"
++    String rootName;
++
++    // If the directory name is "/home/WebKit", this becomes "home/WebKit". If the directory name is "/", this becomes "".
++    String queryName;
++};
++
++struct ModuleName {
++    ModuleName(const String& moduleName);
++
++    bool startsWithRoot() const
++    {
++        return !queries.isEmpty() && queries[0].isEmpty();
++    }
++
++    Vector<String> queries;
++};
++
++ModuleName::ModuleName(const String& moduleName)
++{
++    // A module name given from code is represented as the UNIX style path. Like, `./A/B.js`.
++    queries = moduleName.splitAllowingEmptyEntries('/');
++}
++
++static Optional<DirectoryName> extractDirectoryName(const String& absolutePathToFile)
++{
++    size_t firstSeparatorPosition = absolutePathToFile.find(pathSeparator());
++    if (firstSeparatorPosition == notFound)
++        return WTF::nullopt;
++    DirectoryName directoryName;
++    directoryName.rootName = absolutePathToFile.substring(0, firstSeparatorPosition + 1); // Include the separator.
++    size_t lastSeparatorPosition = absolutePathToFile.reverseFind(pathSeparator());
++    ASSERT_WITH_MESSAGE(lastSeparatorPosition != notFound, "If the separator is not found, this function already returns when performing the forward search.");
++    if (firstSeparatorPosition == lastSeparatorPosition)
++        directoryName.queryName = StringImpl::empty();
++    else {
++        size_t queryStartPosition = firstSeparatorPosition + 1;
++        size_t queryLength = lastSeparatorPosition - queryStartPosition; // Not include the last separator.
++        directoryName.queryName = absolutePathToFile.substring(queryStartPosition, queryLength);
++    }
++    return directoryName;
++}
++
++static Optional<DirectoryName> currentWorkingDirectory()
++{
++#if OS(WINDOWS)
++    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa364934.aspx
++    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247.aspx#maxpath
++    // The _MAX_PATH in Windows is 260. If the path of the current working directory is longer than that, _getcwd truncates the result.
++    // And other I/O functions taking a path name also truncate it. To avoid this situation,
++    //
++    // (1). When opening the file in Windows for modules, we always use the abosolute path and add "\\?\" prefix to the path name.
++    // (2). When retrieving the current working directory, use GetCurrentDirectory instead of _getcwd.
++    //
++    // In the path utility functions inside the JSC shell, we does not handle the UNC and UNCW including the network host name.
++    DWORD bufferLength = ::GetCurrentDirectoryW(0, nullptr);
++    if (!bufferLength)
++        return WTF::nullopt;
++    // In Windows, wchar_t is the UTF-16LE.
++    // https://msdn.microsoft.com/en-us/library/dd374081.aspx
++    // https://msdn.microsoft.com/en-us/library/windows/desktop/ff381407.aspx
++    Vector<wchar_t> buffer(bufferLength);
++    DWORD lengthNotIncludingNull = ::GetCurrentDirectoryW(bufferLength, buffer.data());
++    String directoryString(buffer.data(), lengthNotIncludingNull);
++    // We don't support network path like \\host\share\<path name>.
++    if (directoryString.startsWith("\\\\"))
++        return WTF::nullopt;
++#else
++    Vector<char> buffer(PATH_MAX);
++    if (!getcwd(buffer.data(), PATH_MAX))
++        return WTF::nullopt;
++    String directoryString = String::fromUTF8(buffer.data());
++#endif
++    if (directoryString.isEmpty())
++        return WTF::nullopt;
++
++    if (directoryString[directoryString.length() - 1] == pathSeparator())
++        return extractDirectoryName(directoryString);
++    // Append the seperator to represents the file name. extractDirectoryName only accepts the absolute file name.
++    return extractDirectoryName(makeString(directoryString, pathSeparator()));
++}
++
++static String resolveHttpPath(std::string& directory, const ModuleName& moduleName)
++{
++    std::string path(directory);
++    for (const auto& query : moduleName.queries) {
++        if (query == String(".."_s)) {
++            //if (!directoryPieces.isEmpty())
++            //    directoryPieces.removeLast();
++        } else if (!query.isEmpty() && query != String("."_s))
++            path.append("/");
++            path.append((char*)query.characters8());
++    }
++    StringBuilder builder;
++    builder.append(path.c_str());
++/*
++    for (const auto& query : moduleName.queries) {
++        if (query == String(".."_s)) {
++        //    if (!directoryPieces.isEmpty())
++        //        directoryPieces.removeLast();
++        } else if (!query.isEmpty() && query != String("."_s))
++        {
++            printf("[%s] \n", query.characters8());
++            path.append("/");
++            path.append((char*)query.characters8());
++        //    directoryPieces.append(query);
++        }
++    }
++
++
++    builder.append(directoryName.rootName);
++    for (size_t i = 0; i < directoryPieces.size(); ++i) {
++        builder.append(directoryPieces[i]);
++        if (i + 1 != directoryPieces.size())
++            builder.append(pathSeparator());
++    }
++*/
++    return builder.toString();
++}
++
++static String resolvePath(const DirectoryName& directoryName, const ModuleName& moduleName)
++{
++    Vector<String> directoryPieces = directoryName.queryName.split(pathSeparator());
++
++    // Only first '/' is recognized as the path from the root.
++    if (moduleName.startsWithRoot())
++        directoryPieces.clear();
++
++    for (const auto& query : moduleName.queries) {
++        if (query == String(".."_s)) {
++            if (!directoryPieces.isEmpty())
++                directoryPieces.removeLast();
++        } else if (!query.isEmpty() && query != String("."_s))
++            directoryPieces.append(query);
++    }
++
++    StringBuilder builder;
++    builder.append(directoryName.rootName);
++    for (size_t i = 0; i < directoryPieces.size(); ++i) {
++        builder.append(directoryPieces[i]);
++        if (i + 1 != directoryPieces.size())
++            builder.append(pathSeparator());
++    }
++    return builder.toString();
++}
++
++static String absolutePath(const String& fileName)
++{
++    auto directoryName = currentWorkingDirectory();
++    if (!directoryName)
++        return fileName;
++    return resolvePath(directoryName.value(), ModuleName(fileName.impl()));
++}
++
++JSInternalPromise* JSC::moduleLoaderImportModule(JSGlobalObject* globalObject, JSModuleLoader*, JSString* moduleNameValue, JSValue parameters, const SourceOrigin& sourceOrigin)
++{
++    VM& vm = globalObject->vm();
++    auto throwScope = DECLARE_THROW_SCOPE(vm);
++
++    auto* promise = JSInternalPromise::create(vm, globalObject->internalPromiseStructure());
++
++    auto catchScope = DECLARE_CATCH_SCOPE(vm);
++    auto reject = [&] (JSValue rejectionReason) {
++        catchScope.clearException();
++        promise->reject(globalObject, rejectionReason);
++        catchScope.clearException();
++        return promise;
++    };
++
++    if (sourceOrigin.isNull())
++        return reject(createError(globalObject, "Could not resolve the module specifier."_s));
++
++    auto referrer = sourceOrigin.string();
++    auto moduleName = moduleNameValue->value(globalObject);
++    RETURN_IF_EXCEPTION(throwScope, nullptr);
++    if (UNLIKELY(catchScope.exception()))
++        return reject(catchScope.exception());
++
++    auto directoryName = extractDirectoryName(referrer.impl());
++    if (!directoryName)
++        return reject(createError(globalObject, makeString("Could not resolve the referrer name '", String(referrer.impl()), "'.")));
++
++    auto result = JSC::importModule(globalObject, Identifier::fromString(vm, resolvePath(directoryName.value(), ModuleName(moduleName))), parameters, jsUndefined());
++    if (UNLIKELY(catchScope.exception()))
++        return reject(catchScope.exception());
++    return result;
++}
++
++static char* JSValueToCString(JSContextRef context, JSValueRef value, JSValueRef* exception)
++{
++        JSStringRef jsstr = JSValueToStringCopy(context, value, exception);
++        size_t len = JSStringGetMaximumUTF8CStringSize(jsstr);
++        char* src = new char[len];
++        JSStringGetUTF8CString(jsstr, src, len);
++        JSStringRelease(jsstr);
++        return src;
++}
++
++static Identifier resolveFromEntryModule(JSGlobalObject* globalObject, Identifier key, bool& success)
++{
++    VM& vm = globalObject->vm();
++    JSStringRef fileNameProperty = JSStringCreateWithUTF8CString("entryPointModuleName");
++    JSObjectRef globalObj = JSContextGetGlobalObject(toRef(globalObject));
++    JSValueRef valueRef = JSObjectGetProperty(toGlobalRef(globalObject), globalObj, fileNameProperty, nullptr);
++    char* entryPointModuleName = JSValueToCString(toGlobalRef(globalObject), valueRef, NULL);
++    if (NULL != entryPointModuleName)
++    {
++        std::string baseModule(entryPointModuleName);
++        int index = baseModule.find_last_of("/");
++        baseModule = baseModule.substr(0, index+1);
++        std::string resolvedModulePath = baseModule;
++        if (NULL != entryPointModuleName)
++        {
++            delete entryPointModuleName;	    
++        }
++        bool isHttpModule = false;
++        success = true;
++        if (baseModule.find("http", 0, 4) != std::string::npos)
++	{
++            isHttpModule = true;
++            return Identifier::fromString(vm, resolveHttpPath(resolvedModulePath, ModuleName(key.impl())));
++	}	
++        else
++	{
++            String entryPointModule = stringFromUTFChar(baseModule.c_str(), baseModule.size());
++            auto directoryName = extractDirectoryName(entryPointModule);
++            return Identifier::fromString(vm, resolvePath(directoryName.value(), ModuleName(key.impl())));
++	}	
++    }
++    success = false;
++    return Identifier();
++}
++
++Identifier JSC::moduleLoaderResolve(JSGlobalObject* globalObject, JSModuleLoader*, JSValue keyValue, JSValue referrerValue, JSValue)
++{
++    VM& vm = globalObject->vm();
++    auto scope = DECLARE_THROW_SCOPE(vm);
++
++    scope.releaseAssertNoException();
++    const Identifier key = keyValue.toPropertyKey(globalObject);
++    RETURN_IF_EXCEPTION(scope, { });
++    if (key.isSymbol())
++        return key;
++
++    if (referrerValue.isUndefined()) {
++        bool success = false;
++        Identifier identifier = resolveFromEntryModule(globalObject, key, success);
++	if (!success)
++	{
++            auto directoryName = currentWorkingDirectory();
++            if (!directoryName) {
++                throwException(globalObject, scope, createError(globalObject, "Could not resolve the current working directory."_s));
++                return { };
++            }
++            return Identifier::fromString(vm, resolvePath(directoryName.value(), ModuleName(key.impl())));
++        }
++	else
++	{
++            return identifier;
++	}
++    }
++
++    const Identifier referrer = referrerValue.toPropertyKey(globalObject);
++    RETURN_IF_EXCEPTION(scope, { });
++
++    if (referrer.isSymbol())
++    {
++        bool success = false;
++        Identifier identifier = resolveFromEntryModule(globalObject, key, success);
++	if (!success)
++	{
++            auto directoryName = currentWorkingDirectory();
++            if (!directoryName) {
++                throwException(globalObject, scope, createError(globalObject, "Could not resolve the current working directory."_s));
++                return { };
++            }
++            return Identifier::fromString(vm, resolvePath(directoryName.value(), ModuleName(key.impl())));
++        }
++	else
++	{
++            return identifier;
++	}
++    }
++
++    // If the referrer exists, we assume that the referrer is the correct absolute path.
++    auto directoryName = extractDirectoryName(referrer.impl());
++    if (!directoryName) {
++        throwException(globalObject, scope, createError(globalObject, makeString("Could not resolve the referrer name '", String(referrer.impl()), "'.")));
++        return { };
++    }
++    return Identifier::fromString(vm, resolvePath(directoryName.value(), ModuleName(key.impl())));
++}
++
++template<typename Vector>
++static void convertShebangToJSComment(Vector& buffer)
++{
++    if (buffer.size() >= 2) {
++        if (buffer[0] == '#' && buffer[1] == '!')
++            buffer[0] = buffer[1] = '/';
++    }
++}
++
++static RefPtr<Uint8Array> fillBufferWithContentsOfFile(FILE* file)
++{
++    if (fseek(file, 0, SEEK_END) == -1)
++        return nullptr;
++    long bufferCapacity = ftell(file);
++    if (bufferCapacity == -1)
++        return nullptr;
++    if (fseek(file, 0, SEEK_SET) == -1)
++        return nullptr;
++    auto result = Uint8Array::tryCreate(bufferCapacity);
++    if (!result)
++        return nullptr;
++    size_t readSize = fread(result->data(), 1, bufferCapacity, file);
++    if (readSize != static_cast<size_t>(bufferCapacity))
++        return nullptr;
++    return result;
++}
++
++static RefPtr<Uint8Array> fillBufferWithContentsOfFile(const String& fileName)
++{
++    FILE* f = fopen(fileName.utf8().data(), "rb");
++    if (!f) {
++        fprintf(stderr, "1 Could not open file: %s\n", fileName.utf8().data());
++        return nullptr;
++    }
++
++    RefPtr<Uint8Array> result = fillBufferWithContentsOfFile(f);
++    fclose(f);
++
++    return result;
++}
++
++template<typename Vector>
++static bool fillBufferWithContentsOfFile(FILE* file, Vector& buffer)
++{
++    // We might have injected "use strict"; at the top.
++    size_t initialSize = buffer.size();
++    if (fseek(file, 0, SEEK_END) == -1)
++        return false;
++    long bufferCapacity = ftell(file);
++    if (bufferCapacity == -1)
++        return false;
++    if (fseek(file, 0, SEEK_SET) == -1)
++        return false;
++    buffer.resize(bufferCapacity + initialSize);
++    size_t readSize = fread(buffer.data() + initialSize, 1, buffer.size(), file);
++    return readSize == buffer.size() - initialSize;
++}
++
++static bool fillBufferWithContentsOfFile(const String& fileName, Vector<char>& buffer)
++{
++    FILE* f = fopen(fileName.utf8().data(), "rb");
++    if (!f) {
++        fprintf(stderr, "2 Could not open file: %s\n", fileName.utf8().data());
++        return false;
++    }
++
++    bool result = fillBufferWithContentsOfFile(f, buffer);
++    fclose(f);
++
++    return result;
++}
++
++static bool fetchScriptFromLocalFileSystem(const String& fileName, Vector<char>& buffer)
++{
++    if (!fillBufferWithContentsOfFile(fileName, buffer))
++        return false;
++    convertShebangToJSComment(buffer);
++    return true;
++}
++
++class ShellSourceProvider : public StringSourceProvider {
++public:
++    static Ref<ShellSourceProvider> create(const String& source, const SourceOrigin& sourceOrigin, URL&& url, const TextPosition& startPosition, SourceProviderSourceType sourceType)
++    {
++        return adoptRef(*new ShellSourceProvider(source, sourceOrigin, WTFMove(url), startPosition, sourceType));
++    }
++
++    ~ShellSourceProvider()
++    {
++        commitCachedBytecode();
++    }
++
++    RefPtr<CachedBytecode> cachedBytecode() const override
++    {
++        if (!m_cachedBytecode)
++            loadBytecode();
++        return m_cachedBytecode.copyRef();
++    }
++
++    void updateCache(const UnlinkedFunctionExecutable* executable, const SourceCode&, CodeSpecializationKind kind, const UnlinkedFunctionCodeBlock* codeBlock) const override
++    {
++        if (!cacheEnabled() || !m_cachedBytecode)
++            return;
++        BytecodeCacheError error;
++        RefPtr<CachedBytecode> cachedBytecode = encodeFunctionCodeBlock(executable->vm(), codeBlock, error);
++        if (cachedBytecode && !error.isValid())
++            m_cachedBytecode->addFunctionUpdate(executable, kind, *cachedBytecode);
++    }
++
++    void cacheBytecode(const BytecodeCacheGenerator& generator) const override
++    {
++        if (!cacheEnabled())
++            return;
++        if (!m_cachedBytecode)
++            m_cachedBytecode = CachedBytecode::create();
++        auto update = generator();
++        if (update)
++            m_cachedBytecode->addGlobalUpdate(*update);
++    }
++
++    void commitCachedBytecode() const override
++    {
++        if (!cacheEnabled() || !m_cachedBytecode || !m_cachedBytecode->hasUpdates())
++            return;
++
++        auto clearBytecode = makeScopeExit([&] {
++            m_cachedBytecode = nullptr;
++        });
++
++        String filename = cachePath();
++        auto fd = FileSystem::openAndLockFile(filename, FileSystem::FileOpenMode::Write, {FileSystem::FileLockMode::Exclusive, FileSystem::FileLockMode::Nonblocking});
++        if (!FileSystem::isHandleValid(fd))
++            return;
++
++        auto closeFD = makeScopeExit([&] {
++            FileSystem::unlockAndCloseFile(fd);
++        });
++
++        long long fileSize;
++        if (!FileSystem::getFileSize(fd, fileSize))
++            return;
++
++        size_t cacheFileSize;
++        if (!WTF::convertSafely(fileSize, cacheFileSize) || cacheFileSize != m_cachedBytecode->size()) {
++            // The bytecode cache has already been updated
++            return;
++        }
++
++        if (!FileSystem::truncateFile(fd, m_cachedBytecode->sizeForUpdate()))
++            return;
++
++        m_cachedBytecode->commitUpdates([&] (off_t offset, const void* data, size_t size) {
++            long long result = FileSystem::seekFile(fd, offset, FileSystem::FileSeekOrigin::Beginning);
++            ASSERT_UNUSED(result, result != -1);
++            size_t bytesWritten = static_cast<size_t>(FileSystem::writeToFile(fd, static_cast<const char*>(data), size));
++            ASSERT_UNUSED(bytesWritten, bytesWritten == size);
++        });
++    }
++
++private:
++    String cachePath() const
++    {
++        if (!cacheEnabled())
++            return static_cast<const char*>(nullptr);
++        const char* cachePath = Options::diskCachePath();
++        String filename = FileSystem::encodeForFileName(FileSystem::lastComponentOfPathIgnoringTrailingSlash(sourceOrigin().string()));
++        return FileSystem::pathByAppendingComponent(cachePath, makeString(source().toString().hash(), '-', filename, ".bytecode-cache"));
++    }
++
++    void loadBytecode() const
++    {
++        if (!cacheEnabled())
++            return;
++
++        String filename = cachePath();
++        if (filename.isNull())
++            return;
++
++        auto fd = FileSystem::openAndLockFile(filename, FileSystem::FileOpenMode::Read, {FileSystem::FileLockMode::Shared, FileSystem::FileLockMode::Nonblocking});
++        if (!FileSystem::isHandleValid(fd))
++            return;
++
++        auto closeFD = makeScopeExit([&] {
++            FileSystem::unlockAndCloseFile(fd);
++        });
++
++        bool success;
++        FileSystem::MappedFileData mappedFileData(fd, FileSystem::MappedFileMode::Private, success);
++
++        if (!success)
++            return;
++
++        m_cachedBytecode = CachedBytecode::create(WTFMove(mappedFileData));
++    }
++
++    ShellSourceProvider(const String& source, const SourceOrigin& sourceOrigin, URL&& url, const TextPosition& startPosition, SourceProviderSourceType sourceType)
++        : StringSourceProvider(source, sourceOrigin, WTFMove(url), startPosition, sourceType)
++    {
++    }
++
++    static bool cacheEnabled()
++    {
++        static bool enabled = !!Options::diskCachePath();
++        return enabled;
++    }
++
++    mutable RefPtr<CachedBytecode> m_cachedBytecode;
++};
++
++static inline SourceCode jscSource(const String& source, const SourceOrigin& sourceOrigin, URL&& url = URL(), const TextPosition& startPosition = TextPosition(), SourceProviderSourceType sourceType = SourceProviderSourceType::Program)
++{
++    return SourceCode(ShellSourceProvider::create(source, sourceOrigin, WTFMove(url), startPosition, sourceType), startPosition.m_line.oneBasedInt(), startPosition.m_column.oneBasedInt());
++}
++
++template<typename Vector>
++static inline SourceCode jscSource(const Vector& utf8, const SourceOrigin& sourceOrigin, const String& filename)
++{
++    // FIXME: This should use an absolute file URL https://bugs.webkit.org/show_bug.cgi?id=193077
++    String str = stringFromUTF(utf8);
++    return jscSource(str, sourceOrigin, URL({ }, filename));
++}
++
++template<typename Vector>
++static bool fetchModuleFromLocalFileSystem(const String& fileName, Vector& buffer)
++{
++    // We assume that fileName is always an absolute path.
++#if OS(WINDOWS)
++    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247.aspx#maxpath
++    // Use long UNC to pass the long path name to the Windows APIs.
++    auto pathName = makeString("\\\\?\\", fileName).wideCharacters();
++    struct _stat status { };
++    if (_wstat(pathName.data(), &status))
++        return false;
++    if ((status.st_mode & S_IFMT) != S_IFREG)
++        return false;
++
++    FILE* f = _wfopen(pathName.data(), L"rb");
++#else
++    auto pathName = fileName.utf8();
++    struct stat status { };
++    if (stat(pathName.data(), &status))
++        return false;
++    if ((status.st_mode & S_IFMT) != S_IFREG)
++        return false;
++
++    FILE* f = fopen(pathName.data(), "r");
++#endif
++    if (!f) {
++        fprintf(stderr, "3 Could not open file: %s\n", fileName.utf8().data());
++        return false;
++    }
++
++    bool result = fillBufferWithContentsOfFile(f, buffer);
++    if (result)
++        convertShebangToJSComment(buffer);
++    fclose(f);
++
++    return result;
++}
++
++JSInternalPromise* JSC::moduleLoaderFetch(JSGlobalObject* globalObject, JSModuleLoader*, JSValue key, JSValue, JSValue)
++{
++    VM& vm = globalObject->vm();
++    JSInternalPromise* promise = JSInternalPromise::create(vm, globalObject->internalPromiseStructure());
++
++    auto catchScope = DECLARE_CATCH_SCOPE(vm);
++    auto reject = [&] (JSValue rejectionReason) {
++        catchScope.clearException();
++        promise->reject(globalObject, rejectionReason);
++        catchScope.clearException();
++        return promise;
++    };
++
++    String moduleKey = key.toWTFString(globalObject);
++    auto pathName = moduleKey.utf8();
++    if (UNLIKELY(catchScope.exception()))
++        return reject(catchScope.exception());
++
++    MemoryStruct chunk;
++    Vector<uint8_t> buffer;
++    bool isRemoteFile = false;
++
++    // Here, now we consider moduleKey as the fileName.
++    if (strncmp(pathName.data(), "http", 4) == 0)
++    {
++	std::string url = pathName.data();
++	isRemoteFile = true;    
++        bool ret = downloadFile(url, chunk);
++        if (!ret)
++        {
++            return reject(createError(globalObject, makeString("4 Could not open file '", moduleKey, "'.")));
++        }
++    }
++    else
++    {
++        if (!fetchModuleFromLocalFileSystem(moduleKey, buffer))
++            return reject(createError(globalObject, makeString("4 Could not open file '", moduleKey, "'.")));
++    }
++
++    URL moduleURL = URL({ }, moduleKey);
++#if ENABLE(WEBASSEMBLY)
++    // FileSystem does not have mime-type header. The JSC shell recognizes WebAssembly's magic header.
++    if (buffer.size() >= 4) {
++        if (buffer[0] == '\0' && buffer[1] == 'a' && buffer[2] == 's' && buffer[3] == 'm') {
++            auto source = SourceCode(WebAssemblySourceProvider::create(WTFMove(buffer), SourceOrigin { moduleKey }, WTFMove(moduleURL)));
++            catchScope.releaseAssertNoException();
++            auto sourceCode = JSSourceCode::create(vm, WTFMove(source));
++            catchScope.releaseAssertNoException();
++            promise->resolve(globalObject, sourceCode);
++            catchScope.clearException();
++            return promise;
++        }
++    }
++#endif
++
++    auto sourceCode = JSSourceCode::create(vm, jscSource(isRemoteFile?stringFromUTFChar(chunk.contentsBuffer, chunk.contentsSize):stringFromUTF(buffer), SourceOrigin { moduleKey }, WTFMove(moduleURL), TextPosition(), SourceProviderSourceType::Module));
++    catchScope.releaseAssertNoException();
++    promise->resolve(globalObject, sourceCode);
++    catchScope.clearException();
++    return promise;
++}
++
++JSObject* JSC::moduleLoaderCreateImportMetaProperties(JSGlobalObject* globalObject, JSModuleLoader*, JSValue key, JSModuleRecord*, JSValue)
++{
++    VM& vm = globalObject->vm();
++    auto scope = DECLARE_THROW_SCOPE(vm);
++
++    JSObject* metaProperties = constructEmptyObject(vm, globalObject->nullPrototypeObjectStructure());
++    RETURN_IF_EXCEPTION(scope, nullptr);
++
++    metaProperties->putDirect(vm, Identifier::fromString(vm, "filename"), key);
++    RETURN_IF_EXCEPTION(scope, nullptr);
++
++    return metaProperties;
++}
++
++static CString cStringFromViewWithString(JSGlobalObject* globalObject, ThrowScope& scope, StringViewWithUnderlyingString& viewWithString)
++{
++    Expected<CString, UTF8ConversionError> expectedString = viewWithString.view.tryGetUtf8();
++    if (expectedString)
++        return expectedString.value();
++    switch (expectedString.error()) {
++    case UTF8ConversionError::OutOfMemory:
++        throwOutOfMemoryError(globalObject, scope);
++        break;
++    case UTF8ConversionError::IllegalSource:
++        scope.throwException(globalObject, createError(globalObject, "Illegal source encountered during UTF8 conversion"));
++        break;
++    case UTF8ConversionError::SourceExhausted:
++        scope.throwException(globalObject, createError(globalObject, "Source exhausted during UTF8 conversion"));
++        break;
++    default:
++        RELEASE_ASSERT_NOT_REACHED();
++    }
++    return { };
++}
++
++#if COMPILER(MSVC) && !defined(_DEBUG)
++#define TRY       __try {
++#define EXCEPT(x) } __except (EXCEPTION_EXECUTE_HANDLER) { x; }
++#else
++#define TRY
++#define EXCEPT(x)
++#endif
++
++static void dumpException(JSGlobalObject* globalObject, JSValue exception)
++{
++    VM& vm = globalObject->vm();
++    auto scope = DECLARE_CATCH_SCOPE(vm);
++
++#define CHECK_EXCEPTION() do { \
++        if (scope.exception()) { \
++            scope.clearException(); \
++            return; \
++        } \
++    } while (false)
++
++    auto exceptionString = exception.toWTFString(globalObject);
++    CHECK_EXCEPTION();
++    Expected<CString, UTF8ConversionError> expectedCString = exceptionString.tryGetUtf8();
++    if (expectedCString)
++        printf("Exception: %s\n", expectedCString.value().data());
++    else
++        printf("Exception: <out of memory while extracting exception string>\n");
++
++    Identifier nameID = Identifier::fromString(vm, "name");
++    CHECK_EXCEPTION();
++    Identifier fileNameID = Identifier::fromString(vm, "sourceURL");
++    CHECK_EXCEPTION();
++    Identifier lineNumberID = Identifier::fromString(vm, "line");
++    CHECK_EXCEPTION();
++    Identifier stackID = Identifier::fromString(vm, "stack");
++    CHECK_EXCEPTION();
++
++    JSValue nameValue = exception.get(globalObject, nameID);
++    CHECK_EXCEPTION();
++    JSValue fileNameValue = exception.get(globalObject, fileNameID);
++    CHECK_EXCEPTION();
++    JSValue lineNumberValue = exception.get(globalObject, lineNumberID);
++    CHECK_EXCEPTION();
++    JSValue stackValue = exception.get(globalObject, stackID);
++    CHECK_EXCEPTION();
++    
++    auto nameString = nameValue.toWTFString(globalObject);
++    CHECK_EXCEPTION();
++
++    if (nameString == "SyntaxError" && (!fileNameValue.isUndefinedOrNull() || !lineNumberValue.isUndefinedOrNull())) {
++        auto fileNameString = fileNameValue.toWTFString(globalObject);
++        CHECK_EXCEPTION();
++        auto lineNumberString = lineNumberValue.toWTFString(globalObject);
++        CHECK_EXCEPTION();
++        printf("at %s:%s\n", fileNameString.utf8().data(), lineNumberString.utf8().data());
++    }
++    
++    if (!stackValue.isUndefinedOrNull()) {
++        auto stackString = stackValue.toWTFString(globalObject);
++        CHECK_EXCEPTION();
++        if (stackString.length())
++            printf("%s\n", stackString.utf8().data());
++    }
++
++#undef CHECK_EXCEPTION
++}
++
++static void checkException(JSGlobalObject* globalObject, bool hasException, JSValue value, bool& success)
++{
++/*
++    VM& vm = globalObject->vm();
++    if (!options.m_uncaughtExceptionName || !isLastFile) {
++        success = success && !hasException;
++        if (options.m_dump && !hasException)
++*/
++    //printf("End: %s\n", value.toWTFString(globalObject).utf8().data());
++        if (hasException)
++            dumpException(globalObject, value);
++/*
++    } else
++        success = success && checkUncaughtException(vm, globalObject, (hasException) ? value : JSValue(), options);
++*/
++}
++
++void functionLoadModule(JSGlobalContextRef ref, JSObjectRef globalObjectRef, char *buffer, int len, char* name)
++{
++    bool isRemoteModule = false;
++    if (strncmp(name, "http", 4) == 0)
++    {
++        isRemoteModule = true;
++    }	    
++    String fileName(name);
++    Vector<char> scriptBuffer;
++    scriptBuffer.append(buffer, len);
++    bool success = false;
++/*
++    JSStringRef str = JSStringCreateWithUTF8CString("require");
++    //JSValueRef funcname = JSValueMakeString(ref, str);
++    JSValueRef func = JSEvaluateScript(ref, str, 0, 0, 0, 0);
++    JSStringRelease(str);
++    JSObjectRef funcObj = JSValueToObject(ref, func, 0);
++*/
++    JSInternalPromise* promise = loadAndEvaluateModule(toJS(ref), makeSource(stringFromUTF(scriptBuffer), SourceOrigin { isRemoteModule?fileName:absolutePath(fileName) }, URL({ }, fileName), TextPosition(), SourceProviderSourceType::Module), jsUndefined());
++    //JSInternalPromise* promise = loadAndEvaluateModule(toJS(ref), makeSource(stringFromUTF(scriptBuffer), SourceOrigin { absolutePath(fileName) }, URL({ }, fileName), TextPosition(), SourceProviderSourceType::Module), funcObj->value());
++    //JSInternalPromise* promise = loadAndEvaluateModule(toJS(ref), makeSource(stringFromUTF(scriptBuffer), SourceOrigin { isRemoteModule? fileName:absolutePath(fileName) }, URL({ }, fileName), TextPosition(), SourceProviderSourceType::Module), jsNumber(1000));
++    //JSInternalPromise* promise = loadAndEvaluateModule(toJS(ref), makeSource(stringFromUTF(scriptBuffer), SourceOrigin { isRemoteModule? fileName:absolutePath(fileName) }, URL({ }, fileName), TextPosition(), SourceProviderSourceType::Module), jsNumber(1000));
++    //JSInternalPromise* promise = loadAndEvaluateModule(toJS(ref), fileName, jsUndefined(), jsNumber(1000));
++
++    JSGlobalObject* globalObject = toJS(ref);
++    VM& vm = globalObject->vm();
++    //JSFunction* fulfillHandler = JSNativeStdFunction::create(vm, globalObject, 1, String(), [&success](JSGlobalObject* globalObject, CallFrame* callFrame) {
++    JSC::JSLockHolder locker(vm);
++    JSFunction* fulfillHandler = JSNativeStdFunction::create(vm, globalObject, 1, String(), [&success](JSGlobalObject* globalObject, CallFrame* callFrame) {
++        checkException(jsCast<JSGlobalObject*>(globalObject), false, callFrame->argument(0), success);
++        return JSValue::encode(jsUndefined());
++    });
++    //RETURN_IF_EXCEPTION(scope, encodedJSValue());
++    JSFunction* rejectHandler = JSNativeStdFunction::create(vm, globalObject, 1, String(), [&success](JSGlobalObject* globalObject, CallFrame* callFrame) {
++        checkException(jsCast<JSGlobalObject*>(globalObject), true, callFrame->argument(0), success);
++        return JSValue::encode(jsUndefined());
++    });
++    //promise->then(exec, nullptr, errorHandler);
++    promise->then(toJS(ref), fulfillHandler, rejectHandler);
++/*
++    RETURN_IF_EXCEPTION(scope, encodedJSValue());
++    vm.drainMicrotasks();
++    if (error)
++        return JSValue::encode(throwException(exec, scope, error));
++    return JSValue::encode(jsUndefined());
++*/
++}
+diff --git a/Source/cmake/WebKitCompilerFlags.cmake b/Source/cmake/WebKitCompilerFlags.cmake
+index 49446644e473..8579c4f54bde 100644
+--- a/Source/cmake/WebKitCompilerFlags.cmake
++++ b/Source/cmake/WebKitCompilerFlags.cmake
+@@ -232,9 +232,9 @@ if (NOT MSVC)
+     string(REGEX MATCHALL "-fsanitize=[^ ]*" ENABLED_COMPILER_SANITIZERS ${CMAKE_CXX_FLAGS})
+ endif ()
+ 
+-if (UNIX AND NOT APPLE AND NOT ENABLED_COMPILER_SANITIZERS)
+-    set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined ${CMAKE_SHARED_LINKER_FLAGS}")
+-endif ()
++#if (UNIX AND NOT APPLE AND NOT ENABLED_COMPILER_SANITIZERS)
++#    set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined ${CMAKE_SHARED_LINKER_FLAGS}")
++#endif ()
+ 
+ 
+ # CODE_GENERATOR_PREPROCESSOR_WITH_LINEMARKERS only matters with GCC >= 4.7.0.  Since this
+diff --git a/Source/JavaScriptCore/API/JSAPIGlobalObject.cpp b/Source/JavaScriptCore/API/JSAPIGlobalObject.cpp
+index 9b4f338fd903..ef74f4307c73 100644
+--- a/Source/JavaScriptCore/API/JSAPIGlobalObject.cpp
++++ b/Source/JavaScriptCore/API/JSAPIGlobalObject.cpp
+@@ -30,6 +30,11 @@
+ 
+ namespace JSC {
+ 
++extern JSInternalPromise* moduleLoaderImportModule(JSGlobalObject*, JSModuleLoader*, JSString* moduleNameValue, JSValue parameters, const SourceOrigin&);
++extern Identifier moduleLoaderResolve(JSGlobalObject*, JSModuleLoader*, JSValue keyValue, JSValue referrerValue, JSValue);
++extern JSInternalPromise* moduleLoaderFetch(JSGlobalObject*, JSModuleLoader*, JSValue, JSValue, JSValue);
++extern JSObject* moduleLoaderCreateImportMetaProperties(JSGlobalObject*, JSModuleLoader*, JSValue, JSModuleRecord*, JSValue);
++
+ const ClassInfo JSAPIGlobalObject::s_info = { "GlobalObject", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(JSAPIGlobalObject) };
+ 
+ const GlobalObjectMethodTable JSAPIGlobalObject::s_globalObjectMethodTable = {
+@@ -38,10 +43,10 @@ const GlobalObjectMethodTable JSAPIGlobalObject::s_globalObjectMethodTable = {
+     &javaScriptRuntimeFlags,
+     nullptr, // queueTaskToEventLoop
+     &shouldInterruptScriptBeforeTimeout,
+-    nullptr, // moduleLoaderImportModule
+-    nullptr, // moduleLoaderResolve
+-    nullptr, // moduleLoaderFetch
+-    nullptr, // moduleLoaderCreateImportMetaProperties
++    &JSC::moduleLoaderImportModule,
++    &JSC::moduleLoaderResolve,
++    &JSC::moduleLoaderFetch,
++    &JSC::moduleLoaderCreateImportMetaProperties,
+     nullptr, // moduleLoaderEvaluate
+     nullptr, // promiseRejectionTracker
+     &reportUncaughtExceptionAtEventLoop,
+diff --git a/Source/JavaScriptCore/shell/CMakeLists.txt b/Source/JavaScriptCore/shell/CMakeLists.txt
+index 56fb3f2c6aa8..a0dac2966c9f 100644
+--- a/Source/JavaScriptCore/shell/CMakeLists.txt
++++ b/Source/JavaScriptCore/shell/CMakeLists.txt
+@@ -26,6 +26,13 @@ if (WIN32)
+ endif ()
+ 
+ WEBKIT_EXECUTABLE_DECLARE(jsc)
++add_library(jsc_lib SHARED
++        ../jsc_lib.cpp
++)
++
++add_dependencies(jsc_lib WebKit::JavaScriptCore)
++target_include_directories(jsc_lib PRIVATE ${jsc_PRIVATE_INCLUDE_DIRECTORIES} ${CMAKE_CURRENT_SOURCE_DIR}/../../../../extlibs/include)
++target_link_libraries(jsc_lib -L${CMAKE_CURRENT_SOURCE_DIR}/../../../../extlibs/lib curl)
+ 
+ if (DEVELOPER_MODE)
+     set(testapi_SOURCES
+@@ -44,17 +51,17 @@ if (DEVELOPER_MODE)
+     )
+     set(testapi_DEFINITIONS ${jsc_PRIVATE_DEFINITIONS})
+     set(testapi_PRIVATE_INCLUDE_DIRECTORIES ${jsc_PRIVATE_INCLUDE_DIRECTORIES})
+-    set(testapi_LIBRARIES WebKit::JavaScriptCore)
++    set(testapi_LIBRARIES WebKit::JavaScriptCore -Wl,--no-as-needed jsc_lib -Wl,--as-needed)
+ 
+     set(testmasm_SOURCES ../assembler/testmasm.cpp)
+     set(testmasm_DEFINITIONS ${jsc_PRIVATE_DEFINITIONS})
+     set(testmasm_PRIVATE_INCLUDE_DIRECTORIES ${jsc_PRIVATE_INCLUDE_DIRECTORIES})
+-    set(testmasm_LIBRARIES WebKit::JavaScriptCore)
++    set(testmasm_LIBRARIES WebKit::JavaScriptCore -Wl,--no-as-needed jsc_lib -Wl,--as-needed)
+ 
+     set(testRegExp_SOURCES ../testRegExp.cpp)
+     set(testRegExp_DEFINITIONS ${jsc_PRIVATE_DEFINITIONS})
+     set(testRegExp_PRIVATE_INCLUDE_DIRECTORIES ${jsc_PRIVATE_INCLUDE_DIRECTORIES})
+-    set(testRegExp_LIBRARIES WebKit::JavaScriptCore)
++    set(testRegExp_LIBRARIES WebKit::JavaScriptCore -Wl,--no-as-needed jsc_lib -Wl,--as-needed)
+ 
+     set(testb3_SOURCES
+         ../b3/testb3_1.cpp
+@@ -68,17 +75,17 @@ if (DEVELOPER_MODE)
+     )
+     set(testb3_DEFINITIONS ${jsc_PRIVATE_DEFINITIONS})
+     set(testb3_PRIVATE_INCLUDE_DIRECTORIES ${jsc_PRIVATE_INCLUDE_DIRECTORIES})
+-    set(testb3_LIBRARIES WebKit::JavaScriptCore)
++    set(testb3_LIBRARIES WebKit::JavaScriptCore -Wl,--no-as-needed jsc_lib -Wl,--as-needed)
+ 
+     set(testair_SOURCES ../b3/air/testair.cpp)
+     set(testair_DEFINITIONS ${jsc_PRIVATE_DEFINITIONS})
+     set(testair_PRIVATE_INCLUDE_DIRECTORIES ${jsc_PRIVATE_INCLUDE_DIRECTORIES})
+-    set(testair_LIBRARIES WebKit::JavaScriptCore)
++    set(testair_LIBRARIES WebKit::JavaScriptCore -Wl,--no-as-needed jsc_lib -Wl,--as-needed)
+ 
+     set(testdfg_SOURCES ../dfg/testdfg.cpp)
+     set(testdfg_DEFINITIONS ${jsc_PRIVATE_DEFINITIONS})
+     set(testdfg_PRIVATE_INCLUDE_DIRECTORIES ${jsc_PRIVATE_INCLUDE_DIRECTORIES})
+-    set(testdfg_LIBRARIES WebKit::JavaScriptCore)
++    set(testdfg_LIBRARIES WebKit::JavaScriptCore -Wl,--no-as-needed jsc_lib -Wl,--as-needed)
+ 
+     WEBKIT_EXECUTABLE_DECLARE(testapi)
+     WEBKIT_EXECUTABLE_DECLARE(testRegExp)

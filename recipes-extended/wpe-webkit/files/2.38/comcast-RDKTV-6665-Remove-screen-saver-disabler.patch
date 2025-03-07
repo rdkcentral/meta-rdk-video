@@ -1,0 +1,25 @@
+From 01ceedb67c630c17f7c1c4ce62f58fa9a024184a Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Fri, 4 Jun 2021 19:17:46 +0000
+Subject: [PATCH] comcast - RDKTV-6665 - Remove screen saver disabler
+
+---
+ Source/WebCore/html/HTMLMediaElement.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/html/HTMLMediaElement.cpp b/Source/WebCore/html/HTMLMediaElement.cpp
+index fae4dfabc43c..92a4c681e57e 100644
+--- a/Source/WebCore/html/HTMLMediaElement.cpp
++++ b/Source/WebCore/html/HTMLMediaElement.cpp
+@@ -7257,7 +7257,7 @@ static inline bool isRemoteMediaStreamVideoTrack(const Ref<MediaStreamTrack>& it
+ 
+ HTMLMediaElement::SleepType HTMLMediaElement::shouldDisableSleep() const
+ {
+-#if !PLATFORM(COCOA) && !PLATFORM(GTK) && !PLATFORM(WPE)
++#if !PLATFORM(COCOA) && !PLATFORM(GTK)
+     return SleepType::None;
+ #endif
+     if (m_sentEndEvent || !m_player || m_player->paused() || loop())
+-- 
+2.25.1
+

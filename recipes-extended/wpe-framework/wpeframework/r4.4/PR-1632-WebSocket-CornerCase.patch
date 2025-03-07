@@ -1,0 +1,22 @@
+Date:  Jul 30 16:22:48 2024
+From: Thamim Razith
+Subject: voice search bug fix
+
+Upstream-Status: Pending
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+---
+diff --git a/Source/websocket/WebSocketLink.h b/Source/websocket/WebSocketLink.h
+index 581e822c..9efc8c58 100644
+--- a/Source/websocket/WebSocketLink.h
++++ b/Source/websocket/WebSocketLink.h
+@@ -634,7 +634,9 @@ POP_WARNING()
+                                 result += static_cast<uint16_t>(headerSize + payloadSizeInControlFrame); // actualDataSize
+ 
+                             } else {
+-                                _parent.ReceiveData(&(dataFrame[result + headerSize]), actualDataSize);
++                                if (actualDataSize != 0) {
++                                    _parent.ReceiveData(&(dataFrame[result + headerSize]), actualDataSize);
++                                }
+ 
+                                 result += (headerSize + actualDataSize);
+                             }

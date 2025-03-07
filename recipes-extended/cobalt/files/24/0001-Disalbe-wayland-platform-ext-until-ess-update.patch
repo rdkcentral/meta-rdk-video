@@ -1,0 +1,28 @@
+From 6e4736cf34a58df406b20e58f1a59d79db220601 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Fri, 27 Sep 2024 17:29:09 +0000
+Subject: [PATCH] Disalbe wayland platform ext until ess update
+
+---
+ src/third_party/starboard/rdk/shared/system/system_egl.cc | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/third_party/starboard/rdk/shared/system/system_egl.cc b/src/third_party/starboard/rdk/shared/system/system_egl.cc
+index 8f2ca67..8b8e12a 100644
+--- a/src/third_party/starboard/rdk/shared/system/system_egl.cc
++++ b/src/third_party/starboard/rdk/shared/system/system_egl.cc
+@@ -39,7 +39,11 @@
+ #include <mutex>
+ #include <essos-app.h>
+ 
++// disable until essos updated
++#undef EGL_PLATFORM_WAYLAND_EXT
++#ifdef EGL_PLATFORM_WAYLAND_EXT
+ EssAppPlatformDisplayType EssContextGetAppPlatformDisplayType( EssCtx *ctx ) __attribute__((weak));
++#endif
+ 
+ #if !defined(EGL_VERSION_1_0) || !defined(EGL_VERSION_1_1) || \
+     !defined(EGL_VERSION_1_2) || !defined(EGL_VERSION_1_3) || \
+-- 
+2.25.1
+

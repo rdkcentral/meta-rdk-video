@@ -1,0 +1,392 @@
+From 893b7bd7ed6172b8db6456bcb1cef6e726ef1178 Mon Sep 17 00:00:00 2001
+From: kkanag314 <krishnapriya_kanagaraj@comcast.com>
+Date: Thu, 21 Mar 2024 13:30:36 +0000
+Subject: [PATCH] Add functionality to construct Session private data
+
+---
+ Source/ocdm/CMakeLists.txt             |   1 +
+ Source/ocdm/adapter/open_cdm_adapter.h |  25 +++++
+ Source/ocdm/ocdm.vcxproj               |   3 +-
+ Source/ocdm/open_cdm.cpp               |  41 ++++++++
+ Source/ocdm/open_cdm_ext.cpp           |  41 --------
+ Source/ocdm/open_cdm_impl.cpp          | 129 +++++++++++++++++++++++++
+ Source/ocdm/open_cdm_impl.h            |  36 +++----
+ 7 files changed, 214 insertions(+), 62 deletions(-)
+ create mode 100644 Source/ocdm/open_cdm_impl.cpp
+
+diff --git a/Source/ocdm/CMakeLists.txt b/Source/ocdm/CMakeLists.txt
+index 736616d..d7a3cc7 100644
+--- a/Source/ocdm/CMakeLists.txt
++++ b/Source/ocdm/CMakeLists.txt
+@@ -44,6 +44,7 @@ add_library(${TARGET} SHARED
+         CapsParser.cpp
+         open_cdm.cpp
+         open_cdm_ext.cpp
++        open_cdm_impl.cpp
+         )
+ 
+ set(PUBLIC_HEADERS
+diff --git a/Source/ocdm/adapter/open_cdm_adapter.h b/Source/ocdm/adapter/open_cdm_adapter.h
+index e48858d..13adc55 100644
+--- a/Source/ocdm/adapter/open_cdm_adapter.h
++++ b/Source/ocdm/adapter/open_cdm_adapter.h
+@@ -32,6 +32,31 @@ typedef struct _GstCaps GstCaps;
+ extern "C" {
+ #endif
+ 
++/**
++ * \brief Creates private data required for decryption.
++ *
++ * This method allows for creation of private data that is associated with the session. The private data itself is
++ * opaque to OpenCDMSession and it lives until the lifetime of the \ref OpenCDMSession.
++ *
++ * \param session \ref OpenCDMSession instance.
++ * \param pvtData Output parameter that will contain the Opaque private data created
++ *
++ * \return Zero on success, non-zero on error.
++ */
++EXTERNAL uint32_t opencdm_construct_session_private(struct OpenCDMSession* session, void* &pvtData);
++
++/**
++ * \brief Destroys private data associated with the Session.
++ *
++ * This method destroys the private data that is associated with the session.
++ *
++ * \param session \ref OpenCDMSession instance.
++ * \param pvtData Input parameter pointer to private data.
++ *
++ * \return Zero on success, non-zero on error.
++ */
++EXTERNAL uint32_t opencdm_destruct_session_private(struct OpenCDMSession* session, void* &pvtData);
++
+ /**
+  * \brief Performs decryption based on adapter implementation.
+  *
+diff --git a/Source/ocdm/ocdm.vcxproj b/Source/ocdm/ocdm.vcxproj
+index fff1a26..b7693e5 100644
+--- a/Source/ocdm/ocdm.vcxproj
++++ b/Source/ocdm/ocdm.vcxproj
+@@ -31,6 +31,7 @@
+   <ItemGroup>
+     <ClCompile Include="open_cdm.cpp" />
+     <ClCompile Include="open_cdm_ext.cpp" />
++    <ClCompile Include="open_cdm_impl.cpp" />
+   </ItemGroup>
+   <PropertyGroup Label="Globals">
+     <VCProjectVersion>15.0</VCProjectVersion>
+@@ -223,4 +224,4 @@
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+   <ImportGroup Label="ExtensionTargets">
+   </ImportGroup>
+-</Project>
+\ No newline at end of file
++</Project>
+diff --git a/Source/ocdm/open_cdm.cpp b/Source/ocdm/open_cdm.cpp
+index d88b1f3..fa779f6 100644
+--- a/Source/ocdm/open_cdm.cpp
++++ b/Source/ocdm/open_cdm.cpp
+@@ -277,6 +277,47 @@ OpenCDMError opencdm_system_set_server_certificate(struct OpenCDMSystem* system,
+     return (result);
+ }
+ 
++/**
++ * \brief Create DRM session (for actual decrypting of data).
++ *
++ * Creates an instance of \ref OpenCDMSession using initialization data.
++ * \param keySystem DRM system to create the session for.
++ * \param licenseType DRM specifc signed integer selecting License Type (e.g.
++ * "Limited Duration" for PlayReady).
++ * \param initDataType Type of data passed in \ref initData.
++ * \param initData Initialization data.
++ * \param initDataLength Length (in bytes) of initialization data.
++ * \param CDMData CDM data.
++ * \param CDMDataLength Length (in bytes) of \ref CDMData.
++ * \param session Output parameter that will contain pointer to instance of \ref
++ * OpenCDMSession.
++ * \return Zero on success, non-zero on error.
++ */
++OpenCDMError
++opencdm_construct_session(struct OpenCDMSystem* system,
++    const LicenseType licenseType, const char initDataType[],
++    const uint8_t initData[], const uint16_t initDataLength,
++    const uint8_t CDMData[], const uint16_t CDMDataLength,
++    OpenCDMSessionCallbacks* callbacks, void* userData,
++    struct OpenCDMSession** session)
++{
++    ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++
++    TRACE_L1("Creating a Session for %s", system->keySystem().c_str());
++
++    result = OpenCDMSession::CreateSession(system,
++                                            licenseType,
++                                            initDataType,
++                                            initData, initDataLength,
++                                            CDMData, CDMDataLength,
++                                            callbacks, userData,
++                                            session
++    );
++
++    TRACE_L1("Created a Session, result %p, %d", *session, result);
++    return result;
++}
+ /**
+  * Destructs an \ref OpenCDMSession instance.
+  * \param system \ref OpenCDMSession instance to desctruct.
+diff --git a/Source/ocdm/open_cdm_ext.cpp b/Source/ocdm/open_cdm_ext.cpp
+index 703ced1..adc2477 100644
+--- a/Source/ocdm/open_cdm_ext.cpp
++++ b/Source/ocdm/open_cdm_ext.cpp
+@@ -332,47 +332,6 @@ OpenCDMError opencdm_get_secure_store_hash_ext(struct OpenCDMSystem* system,
+     return result;
+ }
+ 
+-/**
+- * \brief Create DRM session (for actual decrypting of data).
+- *
+- * Creates an instance of \ref OpenCDMSession using initialization data.
+- * \param keySystem DRM system to create the session for.
+- * \param licenseType DRM specifc signed integer selecting License Type (e.g.
+- * "Limited Duration" for PlayReady).
+- * \param initDataType Type of data passed in \ref initData.
+- * \param initData Initialization data.
+- * \param initDataLength Length (in bytes) of initialization data.
+- * \param CDMData CDM data.
+- * \param CDMDataLength Length (in bytes) of \ref CDMData.
+- * \param session Output parameter that will contain pointer to instance of \ref
+- * OpenCDMSession.
+- * \return Zero on success, non-zero on error.
+- */
+-OpenCDMError
+-opencdm_construct_session(struct OpenCDMSystem* system,
+-    const LicenseType licenseType, const char initDataType[],
+-    const uint8_t initData[], const uint16_t initDataLength,
+-    const uint8_t CDMData[], const uint16_t CDMDataLength,
+-    OpenCDMSessionCallbacks* callbacks, void* userData,
+-    struct OpenCDMSession** session)
+-{
+-    ASSERT(system != nullptr);
+-    OpenCDMError result(ERROR_INVALID_ACCESSOR);
+-
+-    TRACE_L1("Creating a Session for %s", system->keySystem().c_str());
+-
+-    if (system != nullptr) {
+-        *session = new OpenCDMSession(system, std::string(initDataType),
+-                            initData, initDataLength, CDMData,
+-                            CDMDataLength, licenseType, callbacks, userData);
+-        result = (*session != nullptr ? OpenCDMError::ERROR_NONE
+-                                      : OpenCDMError::ERROR_INVALID_SESSION);
+-    }
+-
+-    TRACE_L1("Created a Session, result %p, %d", *session, result);
+-    return result;
+-}
+-
+ OpenCDMError opencdm_system_ext_get_properties(struct PlayLevels* system, const char* propertiesJSONText) 
+ {
+     using namespace Core ;
+diff --git a/Source/ocdm/open_cdm_impl.cpp b/Source/ocdm/open_cdm_impl.cpp
+new file mode 100644
+index 0000000..3a228de
+--- /dev/null
++++ b/Source/ocdm/open_cdm_impl.cpp
+@@ -0,0 +1,129 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2020 Metrological
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "Module.h"
++#include "open_cdm_impl.h"
++
++class SessionPrivate {
++    private:
++        typedef uint32_t (*ConstructSessionPrivate)(struct OpenCDMSession*, void*&);
++        typedef uint32_t (*DestructSessionPrivate)(struct OpenCDMSession*, void*&);
++
++    public:
++        SessionPrivate(const SessionPrivate&) = delete;
++        SessionPrivate& operator= (const SessionPrivate&) = delete;
++
++        SessionPrivate()
++            : _constructSessionPvt(nullptr)
++            , _destructSessionPvt(nullptr) {
++                Load();
++        }
++        ~SessionPrivate() = default;
++
++        OpenCDMError Construct(struct OpenCDMSession* session, void* &pvtData)
++        {
++            OpenCDMError result = OpenCDMError::ERROR_METHOD_NOT_IMPLEMENTED;
++            if(_constructSessionPvt != nullptr) {
++                result = ( _constructSessionPvt(session, pvtData) == 0 ? OpenCDMError::ERROR_NONE : OpenCDMError::ERROR_UNKNOWN);
++            }
++            else {
++                pvtData = nullptr;
++            }
++            return result;
++        }
++
++        OpenCDMError Destruct(struct OpenCDMSession* session, void* &pvtData)
++        {
++            OpenCDMError result = OpenCDMError::ERROR_METHOD_NOT_IMPLEMENTED;
++            if(_destructSessionPvt != nullptr) {
++                result = ( _destructSessionPvt(session, pvtData) == 0 ? OpenCDMError::ERROR_NONE : OpenCDMError::ERROR_UNKNOWN);
++            }
++            return result;
++        }
++
++    private:
++        void Load() {
++            Core::Library library(&Core::System::MODULE_NAME);
++            if (library.IsLoaded() == true) {
++                _constructSessionPvt = reinterpret_cast<ConstructSessionPrivate>(library.LoadFunction(_T("opencdm_construct_session_private")));
++                _destructSessionPvt = reinterpret_cast<DestructSessionPrivate>(library.LoadFunction(_T("opencdm_destruct_session_private")));
++            }
++
++        }
++
++    private:
++        ConstructSessionPrivate _constructSessionPvt;
++        DestructSessionPrivate _destructSessionPvt;
++};
++
++static SessionPrivate SessionPvt;
++
++/* static */ OpenCDMError OpenCDMSession::CreateSession(struct OpenCDMSystem* system,
++                            const LicenseType licenseType, const char initDataType[],
++                            const uint8_t initData[], const uint16_t initDataLength,
++                            const uint8_t CDMData[], const uint16_t CDMDataLength,
++                            OpenCDMSessionCallbacks* callbacks, void* userData,
++                            struct OpenCDMSession** session)
++{
++    OpenCDMError result(ERROR_INVALID_ACCESSOR);
++
++    if (system != nullptr) {
++        *session = new OpenCDMSession(system, std::string(initDataType),
++                            initData, initDataLength, CDMData,
++                            CDMDataLength, licenseType, callbacks, userData);
++
++        result = (*session != nullptr ? OpenCDMError::ERROR_NONE
++                                      : OpenCDMError::ERROR_INVALID_SESSION);
++
++        if(result == OpenCDMError::ERROR_NONE) {
++            OpenCDMError pvt_result(OpenCDMError::ERROR_METHOD_NOT_IMPLEMENTED);
++            pvt_result = SessionPvt.Construct(*session, (*session)->_pvtData);
++            if(pvt_result != OpenCDMError::ERROR_NONE && pvt_result != OpenCDMError::ERROR_METHOD_NOT_IMPLEMENTED)
++            {
++                //Method is available but resulted in internal error. Not good for decryption.
++                result = OpenCDMError::ERROR_INVALID_SESSION;
++                (*session)->Release();
++                *session = nullptr;
++            }
++        }
++    }
++    return result;
++}
++
++OpenCDMSession::~OpenCDMSession()
++{
++    OpenCDMAccessor* system = OpenCDMAccessor::Instance();
++
++    SessionPvt.Destruct(this, _pvtData);
++
++    system->RemoveSession(_sessionId);
++
++    if (IsValid()) {
++        _session->Revoke(&_sink);
++    }
++
++    if (_session != nullptr) {
++        Session(nullptr);
++    }
++    if (_decryptSession != nullptr) {
++        DecryptSession(nullptr);
++    }
++
++    TRACE_L1("Destructed the Session Client side: %p", this);
++}
+diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
+index 1a060c6..404d396 100644
+--- a/Source/ocdm/open_cdm_impl.h
++++ b/Source/ocdm/open_cdm_impl.h
+@@ -502,6 +502,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+         , _errorCode(~0)
+         , _sysError(Exchange::OCDM_RESULT::OCDM_SUCCESS)
+         , _system(system)
++        , _pvtData(nullptr)
+     {
+         OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
+         std::string bufferId;
+@@ -520,29 +521,18 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+         }
+     }
+ 
+-POP_WARNING()
+-
+-    virtual ~OpenCDMSession()
+-    {
+-        OpenCDMAccessor* system = OpenCDMAccessor::Instance();
+-
+-        system->RemoveSession(_sessionId);
++    virtual ~OpenCDMSession();
+ 
+-        if (IsValid()) {
+-           _session->Revoke(&_sink);
+-        }
+-
+-        if (_session != nullptr) {
+-            Session(nullptr);
+-        }
+-        if (_decryptSession != nullptr) {
+-            DecryptSession(nullptr);
+-        }
+-
+-        TRACE_L1("Destructed the Session Client side: %p", this);
+-    }
++POP_WARNING()
+ 
+ public:
++    static OpenCDMError CreateSession(struct OpenCDMSystem* system,
++                            const LicenseType licenseType, const char initDataType[],
++                            const uint8_t initData[], const uint16_t initDataLength,
++                            const uint8_t CDMData[], const uint16_t CDMDataLength,
++                            OpenCDMSessionCallbacks* callbacks, void* userData,
++                            struct OpenCDMSession** session);
++
+     void AddRef() { Core::InterlockedIncrement(_refCount); }
+     bool Release()
+     {
+@@ -651,6 +641,11 @@ public:
+         return (result);
+     }
+ 
++    void* SessionPrivateData() const
++    {
++        return _pvtData;
++    }
++
+     uint32_t SessionIdExt() const
+     {
+         ASSERT(_sessionExt && "This method only works on Exchange::ISessionExt implementations.");
+@@ -825,5 +820,6 @@ private:
+     uint32_t _errorCode;
+     Exchange::OCDM_RESULT _sysError;
+     OpenCDMSystem* _system;
++    void* _pvtData;
+ };
+ 

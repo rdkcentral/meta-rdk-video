@@ -1,0 +1,25 @@
+From 22c163bbd91a32272b5b75bf99a01bd497a8571c Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Mon, 21 Nov 2022 21:04:28 +0000
+Subject: [PATCH 2/2] Fix crashpad build
+
+---
+ third_party/crashpad/handler/main.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/third_party/crashpad/handler/main.cc b/third_party/crashpad/handler/main.cc
+index 3ae73ecddf..d3e5e9f54c 100644
+--- a/third_party/crashpad/handler/main.cc
++++ b/third_party/crashpad/handler/main.cc
+@@ -22,7 +22,7 @@
+ #endif
+ 
+ #if defined(OS_POSIX)
+-
++#undef main
+ int main(int argc, char* argv[]) {
+   return crashpad::HandlerMain(argc, argv, nullptr);
+ }
+-- 
+2.25.1
+

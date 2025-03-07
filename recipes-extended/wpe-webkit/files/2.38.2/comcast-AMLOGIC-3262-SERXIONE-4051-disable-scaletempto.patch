@@ -1,0 +1,39 @@
+From 6fc2cf1331027b35f145e12bc0ddf9f139a76251 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Thu, 8 Sep 2022 18:23:40 +0000
+Subject: [PATCH] comcast AMLOGIC-3262 SERXIONE-4051 disable scaletempto
+
+Let platform handle playback rate
+---
+ .../graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp        | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index 5d929d270c18..c316e2b83894 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -594,7 +594,7 @@ void MediaPlayerPrivateGStreamer::updatePlaybackRate()
+     GST_INFO_OBJECT(pipeline(), "Set playback rate to %f", m_playbackRate);
+ 
+     // Mute the sound if the playback rate is negative or too extreme and audio pitch is not adjusted.
+-    bool mute = m_playbackRate <= 0 || (!m_shouldPreservePitch && (m_playbackRate < 0.8 || m_playbackRate > 2));
++    bool mute = m_playbackRate <= 0 || (!m_shouldPreservePitch && (m_playbackRate < 0.25 || m_playbackRate > 2));
+ 
+     GST_INFO_OBJECT(pipeline(), mute ? "Need to mute audio" : "Do not need to mute audio");
+ 
+@@ -3060,10 +3060,12 @@ void MediaPlayerPrivateGStreamer::createGSTPlayBin(const URL& url)
+ 
+     g_object_set(m_pipeline.get(), "audio-sink", m_audioSink.get(), "video-sink", createVideoSink(), nullptr);
+ 
++#if 0
+     if (m_shouldPreservePitch && !isMediaStream) {
+         if (auto* scale = makeGStreamerElement("scaletempo", nullptr))
+             g_object_set(m_pipeline.get(), "audio-filter", scale, nullptr);
+     }
++#endif
+ 
+     if (!m_player->isVideoPlayer())
+         return;
+-- 
+2.25.1
+

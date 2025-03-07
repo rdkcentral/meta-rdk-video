@@ -1,0 +1,248 @@
+From b2eec34b42269a0e2d6cecd93fa02f23e0556177 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Thu, 7 Apr 2022 15:36:11 +0000
+Subject: [PATCH] comcast - XRE-13799,XRE-13989 - Track encrypted
+ playback
+
+---
+ Source/WebCore/platform/GStreamer.cmake       |  1 +
+ .../gstreamer/MediaPlayerPrivateGStreamer.cpp | 15 +++++
+ .../gstreamer/MediaPlayerPrivateGStreamer.h   |  5 ++
+ ...diaPlayerGStreamerEncryptedPlayTracker.cpp | 66 +++++++++++++++++++
+ ...MediaPlayerGStreamerEncryptedPlayTracker.h | 41 ++++++++++++
+ .../eme/WebKitThunderDecryptorGStreamer.cpp   |  9 +++
+ 6 files changed, 137 insertions(+)
+ create mode 100644 Source/WebCore/platform/graphics/gstreamer/eme/MediaPlayerGStreamerEncryptedPlayTracker.cpp
+ create mode 100644 Source/WebCore/platform/graphics/gstreamer/eme/MediaPlayerGStreamerEncryptedPlayTracker.h
+
+diff --git a/Source/WebCore/platform/GStreamer.cmake b/Source/WebCore/platform/GStreamer.cmake
+index dfae8bdd7c80..54e54126195e 100644
+--- a/Source/WebCore/platform/GStreamer.cmake
++++ b/Source/WebCore/platform/GStreamer.cmake
+@@ -55,6 +55,7 @@ if (ENABLE_VIDEO OR ENABLE_WEB_AUDIO)
+ 
+         platform/graphics/gstreamer/eme/GStreamerEMEUtilities.cpp
+         platform/graphics/gstreamer/eme/WebKitCommonEncryptionDecryptorGStreamer.cpp
++        platform/graphics/gstreamer/eme/MediaPlayerGStreamerEncryptedPlayTracker.cpp
+ 
+         platform/graphics/gstreamer/mse/AppendPipeline.cpp
+         platform/graphics/gstreamer/mse/GStreamerMediaDescription.cpp
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index 0e8d20a1493b..2ef3ba56fa6e 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -227,6 +227,10 @@ MediaPlayerPrivateGStreamer::MediaPlayerPrivateGStreamer(MediaPlayer* player)
+ #endif
+ 
+     fprintf(stderr, "HTML5 video: Player constructed [%p]\n", this);
++
++#if ENABLE(ENCRYPTED_MEDIA)
++    m_tracker = makeUnique<MediaPlayerGStreamerEncryptedPlayTracker>();
++#endif
+ }
+ 
+ MediaPlayerPrivateGStreamer::~MediaPlayerPrivateGStreamer()
+@@ -987,6 +991,10 @@ void MediaPlayerPrivateGStreamer::setPlaybinURL(const URL& url)
+     m_url = URL { cleanURLString };
+     GST_INFO_OBJECT(pipeline(), "Load %s", m_url.string().utf8().data());
+     g_object_set(m_pipeline.get(), "uri", m_url.string().utf8().data(), nullptr);
++
++#if ENABLE(ENCRYPTED_MEDIA)
++    m_tracker->setURL(m_url.string());
++#endif
+ }
+ 
+ static void setSyncOnClock(GstElement *element, bool sync)
+@@ -1911,6 +1919,9 @@ void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
+         updateStates();
+         checkPlayingConsistency();
+ 
++#if ENABLE(ENCRYPTED_MEDIA)
++        m_tracker->notifyStateChange(currentState, newState);
++#endif
+         break;
+     }
+     case GST_MESSAGE_BUFFERING:
+@@ -2035,6 +2046,10 @@ void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
+         } else if (gst_structure_has_name(structure, "webkit-web-src-has-eos")) {
+             GST_DEBUG_OBJECT(pipeline(), "WebKitWebSrc has EOS");
+             m_hasWebKitWebSrcSentEOS = true;
++        } else if (gst_structure_has_name(structure, "drm-decryption-started")) {
++#if ENABLE(ENCRYPTED_MEDIA)
++            m_tracker->notifyDecryptionStarted(gst_structure_get_string(structure, "key-system"));
++#endif
+         } else
+             GST_DEBUG_OBJECT(pipeline(), "Unhandled element message: %" GST_PTR_FORMAT, structure);
+         break;
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
+index 4b33d7683f1b..8bc0447bf71b 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
+@@ -72,6 +72,7 @@ typedef struct _GstMpegtsSection GstMpegtsSection;
+ 
+ #if ENABLE(ENCRYPTED_MEDIA)
+ #include "CDMProxy.h"
++#include "MediaPlayerGStreamerEncryptedPlayTracker.h"
+ #endif
+ 
+ typedef struct _GstStreamVolume GstStreamVolume;
+@@ -591,6 +592,10 @@ private:
+     bool m_visible { false };
+     bool m_suspended { false };
+ 
++#if ENABLE(ENCRYPTED_MEDIA)
++    std::unique_ptr<MediaPlayerGStreamerEncryptedPlayTracker> m_tracker;
++#endif
++
+     // playbin3 only:
+     bool m_waitingForStreamsSelectedEvent { true };
+     AtomString m_currentAudioStreamId; // Currently playing.
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/MediaPlayerGStreamerEncryptedPlayTracker.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/MediaPlayerGStreamerEncryptedPlayTracker.cpp
+new file mode 100644
+index 000000000000..2ce9f7c39108
+--- /dev/null
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/MediaPlayerGStreamerEncryptedPlayTracker.cpp
+@@ -0,0 +1,66 @@
++#include "config.h"
++#include "MediaPlayerGStreamerEncryptedPlayTracker.h"
++
++#include <wtf/Atomics.h>
++
++#include <stdio.h>
++#include <sys/syscall.h>
++#include <unistd.h>
++#include <sys/types.h>
++#include <sys/syscall.h>
++
++#if ENABLE(ENCRYPTED_MEDIA) && USE(GSTREAMER)
++
++namespace WebCore {
++
++MediaPlayerGStreamerEncryptedPlayTracker::~MediaPlayerGStreamerEncryptedPlayTracker() {
++    // Mimic Playback end i.e EOS
++    notifyStateChange(GST_STATE_READY, GST_STATE_NULL);
++}
++
++void MediaPlayerGStreamerEncryptedPlayTracker::setURL(String url) {
++    m_url = url;
++}
++
++void MediaPlayerGStreamerEncryptedPlayTracker::notifyStateChange(GstState current, GstState pending) {
++    if (current != GST_STATE_PLAYING && pending == GST_STATE_PLAYING) {
++        m_playStart = WTF::MonotonicTime::now();
++        logPlayStart(PLAYBACK_STARTED);
++    } else if (current != GST_STATE_PAUSED && pending == GST_STATE_PAUSED) {
++        if (m_playStart > WTF::MonotonicTime::fromRawSeconds(0))
++            m_playTime += WTF::MonotonicTime::now() - std::max(m_playStart, m_decryptionStart);
++
++        m_playStart = WTF::MonotonicTime::fromRawSeconds(-1);
++    } else if (current == GST_STATE_READY && pending == GST_STATE_NULL) {
++        if (m_playStart > WTF::MonotonicTime::fromRawSeconds(0))
++            m_playTime += WTF::MonotonicTime::now() - std::max(m_playStart, m_decryptionStart);
++
++        if(m_playTime > 0_s && m_decryptionStart > WTF::MonotonicTime::fromRawSeconds(0))
++            fprintf(stderr, "Encrypted Content play time for url=%s is %.3f sec\n", m_url.utf8().data(), m_playTime.seconds());
++
++        m_decryptionStart = WTF::MonotonicTime::fromRawSeconds(-1);
++        m_playStart = WTF::MonotonicTime::fromRawSeconds(-1);
++        m_playTime = WTF::Seconds(-1);
++    }
++}
++
++void MediaPlayerGStreamerEncryptedPlayTracker::notifyDecryptionStarted(const gchar* keySystem) {
++    if(m_decryptionStart < WTF::MonotonicTime::fromRawSeconds(0)) {
++        m_decryptionStart = WTF::MonotonicTime::now();
++        m_keySystem = String::fromUTF8(keySystem);
++        logPlayStart(DECRYPTION_STARTED);
++    }
++}
++
++void MediaPlayerGStreamerEncryptedPlayTracker::logPlayStart(PlayState state) {
++    if(m_playTime < 0_s &&
++       ((state == PLAYBACK_STARTED && m_decryptionStart > WTF::MonotonicTime::fromRawSeconds(0)) ||
++        (state == DECRYPTION_STARTED && m_playStart > WTF::MonotonicTime::fromRawSeconds(0)))) {
++        m_playTime = 0_s;
++        fprintf(stderr, "Started playing Encrypted Content, url=%s, keySystem=%s\n", m_url.utf8().data(), m_keySystem.utf8().data());
++    }
++}
++
++} //namespace WebCore
++
++#endif // ENABLE(ENCRYPTED_MEDIA) && USE(GSTREAMER)
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/MediaPlayerGStreamerEncryptedPlayTracker.h b/Source/WebCore/platform/graphics/gstreamer/eme/MediaPlayerGStreamerEncryptedPlayTracker.h
+new file mode 100644
+index 000000000000..4ebc9ec65624
+--- /dev/null
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/MediaPlayerGStreamerEncryptedPlayTracker.h
+@@ -0,0 +1,41 @@
++#pragma once
++
++#if ENABLE(ENCRYPTED_MEDIA) && USE(GSTREAMER)
++
++#include "GStreamerCommon.h"
++#include <wtf/ThreadSafeRefCounted.h>
++#include <wtf/text/WTFString.h>
++#include <wtf/Seconds.h>
++#include <wtf/MonotonicTime.h>
++#include <gst/gst.h>
++
++namespace WebCore {
++
++class MediaPlayerGStreamerEncryptedPlayTracker {
++    WTF_MAKE_FAST_ALLOCATED;
++public:
++    MediaPlayerGStreamerEncryptedPlayTracker() = default;
++    ~MediaPlayerGStreamerEncryptedPlayTracker();
++
++    void setURL(String url);
++    void notifyStateChange(GstState current, GstState pending);
++    void notifyDecryptionStarted(const gchar* keySystem);
++
++private:
++    enum PlayState {
++        PLAYBACK_STARTED,
++        DECRYPTION_STARTED
++    };
++    void logPlayStart(PlayState state);
++    void logPlayEnd();
++
++    String m_url;
++    String m_keySystem;
++    WTF::MonotonicTime m_playStart { MonotonicTime::fromRawSeconds(-1) };
++    WTF::MonotonicTime m_decryptionStart { MonotonicTime::fromRawSeconds(-1) };
++    WTF::Seconds m_playTime { -1 };
++};
++
++} //namespace WebCore
++
++#endif // ENABLE(ENCRYPTED_MEDIA) && USE(GSTREAMER)
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp
+index 1ed76e553ce6..fda871a66aac 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp
+@@ -36,6 +36,7 @@ using namespace WebCore;
+ 
+ struct WebKitMediaThunderDecryptPrivate {
+     RefPtr<CDMProxyThunder> cdmProxy;
++    bool didReportDecryptionStart;
+ };
+ 
+ static const char* protectionSystemId(WebKitMediaCommonEncryptionDecrypt*);
+@@ -162,6 +163,14 @@ static bool decrypt(WebKitMediaCommonEncryptionDecrypt* decryptor, GstBuffer* iv
+     context.cdmProxyDecryptionClient = webKitMediaCommonEncryptionDecryptGetCDMProxyDecryptionClient(decryptor);
+     bool result = priv->cdmProxy->decrypt(context);
+ 
++    if (result && !priv->didReportDecryptionStart) {
++        priv->didReportDecryptionStart = true;
++        GUniquePtr<gchar> keySystem(g_strdup(priv->cdmProxy->keySystem().utf8().data()));
++        GstStructure *s = gst_structure_new("drm-decryption-started",
++                                            "key-system", G_TYPE_STRING, keySystem.get(), NULL);
++        gst_element_post_message(GST_ELEMENT(self), gst_message_new_element(GST_OBJECT(self), s));
++    }
++
+     return result;
+ }
+ 
+-- 
+2.25.1
+

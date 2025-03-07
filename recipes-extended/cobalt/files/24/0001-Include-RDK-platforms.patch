@@ -1,0 +1,26 @@
+From 0213fb9429fc53eee165bc2d54a6a9e54ac505a7 Mon Sep 17 00:00:00 2001
+From: Ievgen Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Wed, 23 Nov 2022 12:54:37 -0500
+Subject: [PATCH] Include RDK platforms
+
+---
+ starboard/build/platforms.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/starboard/build/platforms.py b/starboard/build/platforms.py
+index 2c0e93c698..702f1f89ca 100644
+--- a/starboard/build/platforms.py
++++ b/starboard/build/platforms.py
+@@ -24,6 +24,9 @@ except ImportError:
+   INTERNAL_PLATFORMS = {}
+ 
+ PLATFORMS = {
++    'rdk-arm': 'third_party/starboard/rdk/arm',
++    'rdk-rpi': 'third_party/starboard/rdk/rpi',
++    'rdk-arm64': 'third_party/starboard/rdk/arm64',
+     'stub': 'starboard/stub',
+     'linux-x64x11': 'starboard/linux/x64x11',
+     'linux-x64x11-egl': 'starboard/linux/x64x11/egl',
+-- 
+2.25.1
+

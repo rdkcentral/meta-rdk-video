@@ -1,0 +1,51 @@
+From 5b5b120bd34418d192d545b6de39936bf86ae383 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Wed, 2 Nov 2022 20:30:36 +0000
+Subject: [PATCH] comcast - LLAMA-8558 - vttcue middle align keyword
+ compatibility
+
+https://bugs.webkit.org/show_bug.cgi?id=158478 changed the align
+keyword from "middle" to "center". This breaks app that still set
+"middle" align.
+---
+ Source/WebCore/html/track/VTTCue.cpp | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/Source/WebCore/html/track/VTTCue.cpp b/Source/WebCore/html/track/VTTCue.cpp
+index 05dacaa81811..daa3d3d2b207 100644
+--- a/Source/WebCore/html/track/VTTCue.cpp
++++ b/Source/WebCore/html/track/VTTCue.cpp
+@@ -91,6 +91,12 @@ static const String& centerKeyword()
+     return center;
+ }
+ 
++static const String& middleKeyword()
++{
++    static NeverDestroyed<const String> middle(MAKE_STATIC_STRING_IMPL("middle"));
++    return middle;
++}
++
+ static const String& endKeyword()
+ {
+     static NeverDestroyed<const String> end(MAKE_STATIC_STRING_IMPL("end"));
+@@ -554,7 +560,7 @@ ExceptionOr<void> VTTCue::setAlign(const String& value)
+     CueAlignment alignment;
+     if (value == startKeyword())
+         alignment = Start;
+-    else if (value == centerKeyword())
++    else if (value == centerKeyword() || value == middleKeyword())
+         alignment = Center;
+     else if (value == endKeyword())
+         alignment = End;
+@@ -1250,7 +1256,7 @@ void VTTCue::setCueSettings(const String& inputString)
+                 m_cueAlignment = Start;
+ 
+             // 2. If value is a case-sensitive match for the string "center", then let cue's text track cue alignment be center alignment.
+-            else if (input.scanRun(valueRun, centerKeyword()))
++            else if (input.scanRun(valueRun, centerKeyword()) || input.scanRun(valueRun, middleKeyword()))
+                 m_cueAlignment = Center;
+ 
+             // 3. If value is a case-sensitive match for the string "end", then let cue's text track cue alignment be end alignment.
+-- 
+2.25.1
+

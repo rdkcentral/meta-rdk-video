@@ -1,0 +1,226 @@
+From 34c42740270e0d6cb519a28724a3e6e8b89101ad Mon Sep 17 00:00:00 2001
+From: Gurdal Oruklu <gurdal_oruklu@comcast.com>
+Date: Sat, 19 Jun 2021 17:45:04 +0000
+Subject: [PATCH] added opencdm_gstreamer_transform_caps method
+Source: COMCAST
+Upstream-Status: N/A
+Signed-off-by: Gurdal Oruklu <gurdal_oruklu@comcast.com>
+---
+ Source/ocdm/adapter/open_cdm_adapter.h        |  8 +++
+ Source/ocdm/adapter/rdk/open_cdm_adapter.cpp  | 65 +++++++++++++++----
+ .../broadcom-svp-secbuf/open_cdm_adapter.cpp  |  5 ++
+ .../adapter/gstreamer/open_cdm_adapter.cpp    |  5 ++
+4 files changed, 72 insertions(+), 11 deletions(-)
+
+diff --git a/Source/ocdm/adapter/open_cdm_adapter.h b/Source/ocdm/adapter/open_cdm_adapter.h
+index bd8a36b..799e332 100644
+--- a/Source/ocdm/adapter/open_cdm_adapter.h
++++ b/Source/ocdm/adapter/open_cdm_adapter.h
+@@ -69,6 +69,14 @@ extern "C" {
+ /** This provides implementation to support the older API. */
+    EXTERNAL OpenCDMError opencdm_gstreamer_session_decrypt(struct OpenCDMSession* session, GstBuffer* buffer, GstBuffer* subSample, const uint32_t subSampleCount,
+                                                    GstBuffer* IV, GstBuffer* keyID, uint32_t initWithLast15);
++/**
++ * \brief adds SVP related features to the caps structure (only if needed by the platform)
++ *
++ * \param caps GstCaps to be updated
++ * 
++ * \return Zero on success, non-zero on error.
++ */
++   EXTERNAL OpenCDMError opencdm_gstreamer_transform_caps(GstCaps** caps);
+ 
+ #ifdef __cplusplus
+ }
+diff --git a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
+index d0ac778..40459b8 100644
+--- a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
++++ b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
+@@ -49,6 +49,16 @@ struct My_Sec_OpaqueBufferHandle_struct
+     void *rtkmem_handle;
+ };
+ 
++EXTERNAL OpenCDMError opencdm_gstreamer_transform_caps(GstCaps** caps)
++{
++    OpenCDMError result (ERROR_NONE);
++
++    if(!gst_svp_ext_transform_caps(caps, TRUE))
++        result = ERROR_UNKNOWN;
++
++    return (result);
++}
++
+ OpenCDMError opencdm_gstreamer_session_decrypt(struct OpenCDMSession* session, GstBuffer* buffer, GstBuffer* subSample, const uint32_t subSampleCount,
+                                                 GstBuffer* IV, GstBuffer* keyID, uint32_t initWithLast15)
+ {
+@@ -67,6 +77,47 @@ OpenCDMError opencdm_gstreamer_session_decrypt_ex(struct OpenCDMSession* session
+             return (ERROR_INVALID_DECRYPT_BUFFER);
+         }
+ 
++        // remove codec_data which can sometimes be too big (HBOMax -> 4000bytes)
++        // OCDM dataexchange has limit of 2048 bytes for IPC transfers
++        GstCaps *ret = gst_caps_copy (caps);
++        GstStructure *s = gst_caps_get_structure (ret, 0);
++        gst_structure_remove_field (s, "codec_data");
++        // Generate a GstCaps string for stream info in CDM module
++        uint8_t*    caps_str = NULL;
++        uint16_t    caps_len = 0;
++        if(ret != NULL) {
++            caps_str = (uint8_t*)gst_caps_to_string(ret);
++            if(caps_str != nullptr) {
++                caps_len = strlen((const char*)caps_str);
++            }
++        }
++        gst_caps_unref (ret);
++
++        media_type mediaType = Data;
++        if(caps_str != NULL) {
++            if(strcasestr((const char*)caps_str, "audio") != NULL) {
++                // Found audio in caps string
++                mediaType = Audio;
++            }
++            else if(strcasestr((const char*)caps_str, "video") != NULL) {
++                // Found video in caps string
++                mediaType = Video;
++            }
++        }
++
++        if(subSampleBuffer == NULL && IV == NULL && keyID == NULL) {
++            // no encrypted data, skip decryption...
++            // But still need to transform buffer for SVP support
++            gst_buffer_svp_transform_from_cleardata(session->GetSVPContext(), buffer, mediaType);
++
++            if(caps_str != nullptr) {
++                g_free(caps_str);
++            }
++            gst_buffer_unmap(buffer, &dataMap);
++            return(ERROR_NONE);
++        }
++
++
+         GstMapInfo ivMap;
+         if (gst_buffer_map(IV, &ivMap, (GstMapFlags) GST_MAP_READ) == false) {
+             gst_buffer_unmap(buffer, &dataMap);
+@@ -82,16 +133,6 @@ OpenCDMError opencdm_gstreamer_session_decrypt_ex(struct OpenCDMSession* session
+             return (ERROR_INVALID_DECRYPT_BUFFER);
+         }
+ 
+-        // Generate a GstCaps string for stream info in CDM module
+-        uint8_t*    caps_str = NULL;
+-        uint16_t    caps_len = 0;
+-        if(caps != NULL) {
+-            caps_str = (uint8_t*)gst_caps_to_string(caps);
+-            if(caps_str != nullptr) {
+-                caps_len = strlen((const char*)caps_str);
+-            }
+-        }
+-
+         uint8_t *mappedData = reinterpret_cast<uint8_t* >(dataMap.data);
+         uint32_t mappedDataSize = static_cast<uint32_t >(dataMap.size);
+         uint8_t *mappedIV = reinterpret_cast<uint8_t* >(ivMap.data);
+@@ -150,13 +191,14 @@ OpenCDMError opencdm_gstreamer_session_decrypt_ex(struct OpenCDMSession* session
+                                                  mappedKeyID, mappedKeyIDSize, initWithLast15, caps_str, caps_len);
+ 
+                 if(result == ERROR_NONE) {
++                    //gst_svp_ext_context_set_caps(session->GetSVPContext(), caps);
+                     gst_buffer_append_svp_transform(session->GetSVPContext(), buffer, subSampleBuffer, subSampleCount, encryptedData);
+                 }
+                 g_free(encryptedData);
+             } else {
+                 // no encrypted data, skip decryption...
+                 // But still need to transform buffer for SVP support
+-                gst_buffer_append_svp_transform(session->GetSVPContext(), buffer, subSampleBuffer, subSampleCount, 0);
++                gst_buffer_svp_transform_from_cleardata(session->GetSVPContext(), buffer, mediaType);
+                 result = ERROR_NONE;
+             }
+             gst_byte_reader_free(reader);
+@@ -175,6 +217,7 @@ OpenCDMError opencdm_gstreamer_session_decrypt_ex(struct OpenCDMSession* session
+                                              mappedKeyID, mappedKeyIDSize, initWithLast15, caps_str, caps_len);
+ 
+             if(result == ERROR_NONE){
++                //gst_svp_ext_context_set_caps(session->GetSVPContext(), caps);
+                 gst_buffer_append_svp_transform(session->GetSVPContext(), buffer, NULL, mappedDataSize, encryptedData);
+             }
+             g_free(fEncryptedData);
+-- 
+2.29.0
+
+diff --git a/Source/ocdm/adapter/broadcom-svp-secbuf/open_cdm_adapter.cpp b/Source/ocdm/adapter/broadcom-svp-secbuf/open_cdm_adapter.cpp
+index d3d8b7f..abb194c 100644
+--- a/Source/ocdm/adapter/broadcom-svp-secbuf/open_cdm_adapter.cpp
++++ b/Source/ocdm/adapter/broadcom-svp-secbuf/open_cdm_adapter.cpp
+@@ -33,6 +33,11 @@ struct Rpc_Secbuf_Info {
+     void    *token;
+ };
+ 
++OpenCDMError opencdm_gstreamer_transform_caps(GstCaps** caps)
++{
++    return (ERROR_NONE);
++}
++
+ OpenCDMError opencdm_gstreamer_session_decrypt(struct OpenCDMSession* session, GstBuffer* buffer, GstBuffer* subSample, const uint32_t subSampleCount,
+                                                 GstBuffer* IV, GstBuffer* keyID, uint32_t initWithLast15)
+ {
+@@ -68,15 +73,21 @@ OpenCDMError opencdm_gstreamer_session_decrypt_ex(struct OpenCDMSession* session
+             return (ERROR_INVALID_DECRYPT_BUFFER);
+         }
+ 
++        // remove codec_data which can sometimes be too big (HBOMax -> 4000bytes)
++        // OCDM dataexchange has limit of 2048 bytes for IPC transfers
++        GstCaps *ret = gst_caps_copy (caps);
++        GstStructure *s = gst_caps_get_structure (ret, 0);
++        gst_structure_remove_field (s, "codec_data");
+        // Generate a GstCaps string for stream info in CDM module
+         uint8_t*    caps_str = NULL;
+         uint16_t    caps_len = 0;
+-        if(caps != NULL) {
+-            caps_str = (uint8_t*)gst_caps_to_string(caps);
++        if(ret != NULL) {
++            caps_str = (uint8_t*)gst_caps_to_string(ret);
+             if(caps_str != nullptr) {
+                 caps_len = strlen((const char*)caps_str);
+             }
+         }
++        gst_caps_unref (ret);
+ 
+         uint8_t *mappedData = reinterpret_cast<uint8_t* >(dataMap.data);
+         uint32_t mappedDataSize = static_cast<uint32_t >(dataMap.size);
+diff --git a/Source/ocdm/adapter/gstreamer/open_cdm_adapter.cpp b/Source/ocdm/adapter/gstreamer/open_cdm_adapter.cpp
+index 7dfe765..e3cb405 100644
+--- a/Source/ocdm/adapter/gstreamer/open_cdm_adapter.cpp
++++ b/Source/ocdm/adapter/gstreamer/open_cdm_adapter.cpp
+@@ -23,6 +23,11 @@
+ #include <gst/gst.h>
+ #include <gst/base/gstbytereader.h>
+ 
++OpenCDMError opencdm_gstreamer_transform_caps(GstCaps** caps)
++{
++    return (ERROR_NONE);
++}
++
+ OpenCDMError opencdm_gstreamer_session_decrypt(struct OpenCDMSession* session, GstBuffer* buffer, GstBuffer* subSample, const uint32_t subSampleCount,
+                                                 GstBuffer* IV, GstBuffer* keyID, uint32_t initWithLast15)
+ {
+@@ -64,15 +69,21 @@ OpenCDMError opencdm_gstreamer_session_decrypt_ex(struct OpenCDMSession* session
+            mappedKeyIDSize =  static_cast<uint32_t >(keyIDMap.size);
+         }
+ 
++       // remove codec_data which can sometimes be too big (HBOMax -> 4000bytes)
++       // OCDM dataexchange has limit of 2048 bytes for IPC transfers
++       GstCaps *ret = gst_caps_copy (caps);
++       GstStructure *s = gst_caps_get_structure (ret, 0);
++       gst_structure_remove_field (s, "codec_data");
+        // Generate a GstCaps string for stream info in CDM module
+         uint8_t*    caps_str = NULL;
+         uint16_t    caps_len = 0;
+-        if(caps != NULL) {
+-            caps_str = (uint8_t*)gst_caps_to_string(caps);
++        if(ret != NULL) {
++            caps_str = (uint8_t*)gst_caps_to_string(ret);
+             if(caps_str != nullptr) {
+                 caps_len = strlen((const char*)caps_str);
+             }
+         }
++        gst_caps_unref (ret);
+ 
+         uint8_t *mappedData = reinterpret_cast<uint8_t* >(dataMap.data);
+         uint32_t mappedDataSize = static_cast<uint32_t >(dataMap.size);

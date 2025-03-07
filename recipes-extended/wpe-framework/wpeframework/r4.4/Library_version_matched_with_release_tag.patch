@@ -1,0 +1,41 @@
+From c5fe88734b218a1dafe6e3cf15b6f23cc413faaf Mon Sep 17 00:00:00 2001
+From: Thamim Razith <ThamimRazith_AbbasAli@comcast.com>
+Date: Thu, 4 May 2023 16:00:01 +0000
+Subject: [PATCH] RDK-41887,RDK-41699:Recipe Cleanup for thunder R4&R2 recipes
+
+Upstream-Status: Pending
+Signed-off-by: <ThamimRazith_AbbasAli@comcast.com>
+---
+ CMakeLists.txt         | 6 +++---
+ cmake/project.cmake.in | 1 +
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3959f484..42f2a687 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -19,9 +19,9 @@ cmake_minimum_required(VERSION 3.3)
+ 
+ project(WPEFramework)
+ 
+-set(VERSION_MAJOR 1)
+-set(VERSION_MINOR 0)
+-set(VERSION_PATCH 0)
++set(VERSION_MAJOR 4)
++set(VERSION_MINOR 4)
++set(VERSION_PATCH 1)
+ 
+ set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+ 
+diff --git a/cmake/project.cmake.in b/cmake/project.cmake.in
+index f9c3a7cd..c418a3d0 100644
+--- a/cmake/project.cmake.in
++++ b/cmake/project.cmake.in
+@@ -59,6 +59,7 @@ set(NAMESPACE "@NAMESPACE@" CACHE INTERNAL "" FORCE)
+ set("${NAMESPACE}_FOUND" TRUE CACHE INTERNAL "" FORCE)
+ 
+ add_definitions("-DTHUNDER_PLATFORM_@PLATFORM@=1")
++add_definitions("-DUSE_THUNDER_R@VERSION_MAJOR@")
+ 
+ string(TOLOWER ${NAMESPACE} _STORAGE_DIRECTORY)
+ set(STORAGE_DIRECTORY ${_STORAGE_DIRECTORY} CACHE INTERNAL "" FORCE)

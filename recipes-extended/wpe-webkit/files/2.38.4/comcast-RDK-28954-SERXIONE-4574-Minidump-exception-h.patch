@@ -1,0 +1,47 @@
+From b0974f080975662c363a3893f84957e68affe235 Mon Sep 17 00:00:00 2001
+From: "Vivek.A" <Vivek_Arumugam@comcast.com>
+Date: Thu, 28 Apr 2022 11:07:03 +0000
+Subject: [PATCH] comcast - RDK-28954 - SERXIONE-4574 - Minidump exception
+ handler
+
+1) SERXIONE-4574: For Dobby containers prefer BREAKPAD_FD env to install exception handler
+2) RDK-28954: Add secure dump location for non container case
+Signed-off-by: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+
+%% original patch: comcast-RDK-28954-Add-secure-dump-location.patch
+---
+ .../Shared/unix/BreakpadExceptionHandler.cpp     | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/Source/WebKit/Shared/unix/BreakpadExceptionHandler.cpp b/Source/WebKit/Shared/unix/BreakpadExceptionHandler.cpp
+index bac75400dfff..b241b3159164 100644
+--- a/Source/WebKit/Shared/unix/BreakpadExceptionHandler.cpp
++++ b/Source/WebKit/Shared/unix/BreakpadExceptionHandler.cpp
+@@ -40,8 +40,24 @@ void installBreakpadExceptionHandler()
+ {
+     static std::once_flag onceFlag;
+     static MainThreadLazyNeverDestroyed<google_breakpad::ExceptionHandler> exceptionHandler;
++
++    // Check for BREAKPAD_FD env and install the handler if it is set.
++    const char* breakpadFd = getenv("BREAKPAD_FD");
++    if (breakpadFd) {
++        std::call_once(onceFlag, [breakpadFd]() {
++            exceptionHandler.construct(google_breakpad::MinidumpDescriptor(atoi(breakpadFd)), nullptr,
++                [](const google_breakpad::MinidumpDescriptor&, void*, bool succeeded) -> bool {
++                    return succeeded;
++                }, nullptr, true, -1);
++        });
++        return;
++    }
++
+     static String breakpadMinidumpDir = String::fromUTF8(getenv("BREAKPAD_MINIDUMP_DIR"));
+ 
++    if (breakpadMinidumpDir.isEmpty() && FileSystem::fileExists("/tmp/.SecureDumpEnable"_s))
++        breakpadMinidumpDir = "/opt/secure/minidumps"_s;
++
+ #ifdef BREAKPAD_MINIDUMP_DIR
+     if (breakpadMinidumpDir.isEmpty())
+         breakpadMinidumpDir = StringImpl::createFromCString(BREAKPAD_MINIDUMP_DIR);
+-- 
+2.25.1
+

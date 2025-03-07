@@ -1,0 +1,18 @@
+Date: Fri 20 Dec 10:17:00 IST 2022
+Subject: RDK-39714 : Add memory header for fixing kirkstone specific build error
+Source: Comcast
+Upstream-Status: NA
+Signed-off-by: Rakhil P E <Rakhil_PuthiyaveettilEdachena@comcast.com>
+
+Index: git/rdkcompositor.h
+===================================================================
+--- git.orig/rdkcompositor.h
++++ git/rdkcompositor.h
+@@ -25,6 +25,7 @@
+ #include <mutex>
+ #include <functional>
+ #include <unordered_map>
++#include <memory>
+ #include "westeros-compositor.h"
+ #include "inputevent.h"
+ #include "application.h"

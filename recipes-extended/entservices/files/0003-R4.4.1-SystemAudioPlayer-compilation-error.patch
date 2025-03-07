@@ -1,0 +1,29 @@
+Date: 2024-05-17 12:07:08
+From: Thamim Razith
+Subject: Compilation error fix
+Source: COMCAST
+Upstream-Status: Pending
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+
+diff --git a/SystemAudioPlayer/test/CMakeLists.txt b/SystemAudioPlayer/test/CMakeLists.txt
+index ddff4dbd..d40dafae 100644
+--- a/SystemAudioPlayer/test/CMakeLists.txt
++++ b/SystemAudioPlayer/test/CMakeLists.txt
+@@ -17,6 +17,7 @@
+
+ set(PLUGIN_NAME SystemAudioPlayerAPITest)
+ if (USE_THUNDER_R4)
++    find_package(${NAMESPACE}Core REQUIRED)
+     find_package(${NAMESPACE}COM REQUIRED)
+ else ()
+     find_package(${NAMESPACE}Protocols REQUIRED)
+@@ -36,7 +37,8 @@ set(LIBRARIES WPEFrameworkSecurityUtil)
+ target_include_directories(${PLUGIN_NAME} PRIVATE ../../helpers ../impl)
+
+ if (USE_THUNDER_R4)
+-target_link_libraries(${PLUGIN_NAME} PUBLIC ${LIBRARIES} PRIVATE ${NAMESPACE}COM::${NAMESPACE}COM ${NAMESPACE}WebSocket::${NAMESPACE}WebSocket)
++target_link_libraries(${PLUGIN_NAME} PUBLIC ${LIBRARIES} PRIVATE ${NAMESPACE}Core::${NAMESPACE}Core  ${NAMESPACE}COM::${NAMESPACE}COM ${NAMESPACE}WebSocket::${NAMESPACE}WebSocket)
++
+ else ()
+ target_link_libraries(${PLUGIN_NAME} PUBLIC ${LIBRARIES}
+     PRIVATE

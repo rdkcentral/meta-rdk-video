@@ -1,0 +1,678 @@
+From 6c1d426826a14f874d8008fa7a65015495421d8f Mon Sep 17 00:00:00 2001
+From: rgangi643 <ramakrishna_gangisetty@comcast.com>
+Date: Mon, 30 Jan 2023 21:59:37 +0000
+Subject: [PATCH] RDK-39924 Launch Airplay App from Airplay icon sel
+
+Reason for change: Launch Airplay App when Airplay Icon in UI selected
+Test Procedure: Verify Airplay Launch use cases
+Risks: None
+
+Signed-off-by: rgangi643 <ramakrishna_gangisetty@comcast.com>
+---
+ AirplayService/AirplayService.conf.in    |   4 +
+ AirplayService/AirplayService.config     |   7 +
+ AirplayService/AirplayService.cpp        | 228 +++++++++++++++++++++++
+ AirplayService/AirplayService.h          |  69 +++++++
+ AirplayService/AirplayService.json       | 104 +++++++++++
+ AirplayService/AirplayServicePlugin.json |  13 ++
+ AirplayService/CHANGELOG.md              |  14 ++
+ AirplayService/CMakeLists.txt            |  55 ++++++
+ AirplayService/Module.cpp                |  22 +++
+ AirplayService/Module.h                  |  29 +++
+ AirplayService/README.md                 |  15 ++
+ CMakeLists.txt                           |   4 +
+ 11 files changed, 560 insertions(+)
+ create mode 100644 AirplayService/AirplayService.config
+ create mode 100644 AirplayService/AirplayService.cpp
+ create mode 100644 AirplayService/AirplayService.h
+ create mode 100644 AirplayService/AirplayService.json
+ create mode 100644 AirplayService/AirplayServicePlugin.json
+ create mode 100644 AirplayService/CHANGELOG.md
+ create mode 100644 AirplayService/CMakeLists.txt
+ create mode 100644 AirplayService/Module.cpp
+ create mode 100644 AirplayService/Module.h
+ create mode 100644 AirplayService/README.md
+
+diff --git a/AirplayService/AirplayService.conf.in b/AirplayService/AirplayService.conf.in
+new file mode 100644
+index 00000000..a4891270
+--- /dev/null
++++ b/AirplayService/AirplayService.conf.in
+@@ -0,0 +1,4 @@
++precondition = ["Platform"]
++callsign = "org.rdk.AirplayService"
++autostart = "false"
++startuporder = "@PLUGIN_AIRPLAYSERVICE_STARTUPORDER@"
+diff --git a/AirplayService/AirplayService.config b/AirplayService/AirplayService.config
+new file mode 100644
+index 00000000..034cb7b7
+--- /dev/null
++++ b/AirplayService/AirplayService.config
+@@ -0,0 +1,7 @@
++set (autostart false)
++set (preconditions Platform)
++set (callsign "org.rdk.AirplayService")
++
++if(PLUGIN_AIRPLAYSERVICE_STARTUPORDER)
++set (startuporder ${PLUGIN_AIRPLAYSERVICE_STARTUPORDER})
++endif()
+diff --git a/AirplayService/AirplayService.cpp b/AirplayService/AirplayService.cpp
+new file mode 100644
+index 00000000..559cb316
+--- /dev/null
++++ b/AirplayService/AirplayService.cpp
+@@ -0,0 +1,228 @@
++/**
++* If not stated otherwise in this file or this component's LICENSE
++* file the following copyright and licenses apply:
++*
++* Copyright 2019 RDK Management
++*
++* Licensed under the Apache License, Version 2.0 (the "License");
++* you may not use this file except in compliance with the License.
++* You may obtain a copy of the License at
++*
++* http://www.apache.org/licenses/LICENSE-2.0
++*
++* Unless required by applicable law or agreed to in writing, software
++* distributed under the License is distributed on an "AS IS" BASIS,
++* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++* See the License for the specific language governing permissions and
++* limitations under the License.
++**/
++
++#include "AirplayService.h"
++#include "UtilsJsonRpc.h"
++
++#include <glib.h>
++#include <glib/gstdio.h>
++#include <cstdio>
++
++#define SETTINGS_FILE_NAME              "/opt/user_preferences.conf"
++#define SETTINGS_FILE_KEY               "ui_language"
++#define SETTINGS_FILE_GROUP              "General"
++
++#define API_VERSION_NUMBER_MAJOR 1
++#define API_VERSION_NUMBER_MINOR 0
++#define API_VERSION_NUMBER_PATCH 0
++
++using namespace std;
++
++#define registerMethod(...) for (uint8_t i = 1; GetHandler(i); i++) GetHandler(i)->Register<JsonObject, JsonObject>(__VA_ARGS__)
++
++namespace WPEFramework {
++
++    namespace {
++
++        static Plugin::Metadata<Plugin::AirplayService> metadata(
++            // Version (Major, Minor, Patch)
++            API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR, API_VERSION_NUMBER_PATCH,
++            // Preconditions
++            {},
++            // Terminations
++            {},
++            // Controls
++            {}
++        );
++    }
++    namespace Plugin {
++
++        SERVICE_REGISTRATION(AirplayService, API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR, API_VERSION_NUMBER_PATCH);
++
++        AirplayService* AirplayService::_instance = nullptr;
++
++        AirplayService::AirplayService()
++                : PluginHost::JSONRPC()
++                , allowAppRunInBackground(false)
++        {
++            LOGINFO("AirplayService ctor");
++            LOGINFO("ctor");
++            AirplayService::_instance = this;
++            
++            registerMethod("launchAppByAirplayButton", &AirplayService::launchAppByAirplayButton, this);
++            registerMethod("getAirplayAllowToRunInBackground", &AirplayService::getAirplayAllowToRunInBackground, this);
++            registerMethod("setAirplayAllowToRunInBackground", &AirplayService::setAirplayAllowToRunInBackground, this);
++            registerMethod("updateAirplayAppStateReq", &AirplayService::updateAirplayAppStateReq, this);
++        }
++
++        AirplayService::~AirplayService()
++        {
++             LOGINFO("AirplayService: ~AirplayService");
++        }
++
++        const string AirplayService::Initialize(PluginHost::IShell* shell)
++         {
++              LOGINFO("AirplayService::Initialize");
++               AirplayService::_instance = this;
++
++               return (string());
++         }
++
++        void AirplayService::Deinitialize(PluginHost::IShell* /* service */)
++        {
++            LOGINFO("AirplayService Deinitialize");
++            LOGINFO("Deinitialize");
++            AirplayService::_instance = nullptr;
++        }
++        //Begin methods
++
++        /***
++         * @brief : Worker to send async notfiication
++         *     
++         */
++        void AirplayService::launchAppByAirplayButton_helper()
++        {
++            LOGINFO("%s:Send Notification to Airplay Daemon \n",__func__);
++            AirplayService::_instance->onAirplayButtonSelect();
++        }
++        /***
++         * @brief : Airplay Icon selected from UI, send request to Airplay Daemon to launch Airplay App
++         *
++         * @param1[in]  : {"params":{}} 
++         * @param2[out] : {"result":{"Opt-Out":<bool>,"success":true}}
++         * @return      : Core::<StatusCode>
++         */
++        uint32_t AirplayService::launchAppByAirplayButton(const JsonObject& parameters, JsonObject& response) 
++        {
++            LOGINFOMETHOD();
++            try
++            {
++                LOGINFO("AirplayService::%s start app Airplay icon selected on UI \n",__func__);
++                if (m_launchAppByAirplayButton_HandlerThread.get().joinable()) {
++                    m_launchAppByAirplayButton_HandlerThread.get().join();
++                }
++                m_launchAppByAirplayButton_HandlerThread = Utils::ThreadRAII(std::thread(launchAppByAirplayButton_helper));
++                returnResponse(true);
++            }
++            catch(const std::system_error& e)
++            {
++                LOGERR("exception in launchAppByAirplayButton %s\n",e.what());
++                returnResponse(false);
++            }
++        }
++        /***
++         * @brief : Set true/false value to allowAppRunInBackground flag
++         *
++         * @param1[in]  : {"parameters":{true/false}} 
++         * @param2[out] : {"result":{"Opt-Out":<bool>,"success":true}}
++         * @return      : Core::<StatusCode>
++         */
++        uint32_t AirplayService::setAirplayAllowToRunInBackground(const JsonObject& parameters, JsonObject& response)
++        {
++            if(parameters.HasLabel("allowAppRunInBackground")){
++                allowAppRunInBackground = parameters["allowAppRunInBackground"].Boolean();
++                LOGINFO("AirplayService::%s: allowAppRunInBackground flag value: %d\n",__func__,allowAppRunInBackground);
++                returnResponse(true);
++            }
++            else{
++                LOGERR("AirplayService::%s: Missing allowAppRunInBackground label in JsonObject\n",__func__);
++                returnResponse(false);
++            }
++        }
++        /***
++         * @brief : Get value of allowAppRunInBackground flag
++         *
++         * @param1[in]  : {"params":{}} 
++         * @param2[out] : {"result":{"Opt-Out":<bool>,"success":true}
++         *                {"allowAppRunInBackground":true/false}}
++         * @return      : Core::<StatusCode>
++         */
++        uint32_t AirplayService::getAirplayAllowToRunInBackground(const JsonObject& parameters, JsonObject& response)
++        {
++            LOGINFO("AirplayService::%s: allowAppRunInBackground flag value: %d\n",__func__,allowAppRunInBackground);
++            response["allowAppRunInBackground"] = allowAppRunInBackground;
++            returnResponse(true);
++        }
++
++        /***
++         * @brief : Worker to send async notfiication
++         *     
++         */  
++        void AirplayService::updateAirplayAppStateReq_helper()
++        {
++            LOGINFO("%s:Send Notification to update Airplay Application state \n",__func__);
++            AirplayService::_instance->onAirplayAppStateUpdateRequest(AirplayService::_instance->stateChange_Params);
++        }
++        /***
++         * @brief : Updates the Airplay application state (suspend/resume/stop)
++         *
++         * @param1[in]  : {"params":{params to suspend/resume}} 
++         * @param2[out] : {"result":{"Opt-Out":<bool>,"success":true}}
++         * @return      : Core::<StatusCode>
++         */
++        uint32_t AirplayService::updateAirplayAppStateReq(const JsonObject& parameters, JsonObject& response)
++        {
++            LOGINFOMETHOD();
++            try
++            {
++                if(parameters.HasLabel("airplay_app_state_request") && parameters.HasLabel("state_parameters"))
++                {
++                    string appState_req = parameters["airplay_app_state_request"].String();
++                    string paramStr;
++                    parameters.ToString(paramStr);
++                    if(!paramStr.empty())
++                        AirplayService::_instance->stateChange_Params.FromString(paramStr);
++                    LOGINFO("AirplayService::%s: airplay_app_state_request: %s\n",__func__,appState_req.c_str()); 
++                    if (m_updateState_eventHandlerThread.get().joinable()) {
++                        m_updateState_eventHandlerThread.get().join();
++                    }
++                     m_updateState_eventHandlerThread = Utils::ThreadRAII(std::thread(updateAirplayAppStateReq_helper));
++                    returnResponse(true);
++                }            
++                else 
++                {
++                    LOGERR("AirplayService::%s: Missing airplay_app_state_request label and/or state_parameters in JsonObject\n",__func__);
++                    returnResponse(false);
++                }
++            }
++            catch(const std::system_error& e)
++            {
++                LOGERR("exception in updateAirplayAppStateReq %s\n",e.what());
++                returnResponse(false);
++            }
++        }
++        //End methods
++
++        //Begin events
++        void AirplayService::onAirplayButtonSelect()
++        {
++            JsonObject params;
++            LOGINFO("AirplayService::onAirplayButtonSelect Raise event for Daemon to launch App\n");
++            sendNotify(EVT_ONAIRPLAYBUTTONSELECT, params);
++        }
++
++        void AirplayService::onAirplayAppStateUpdateRequest(const JsonObject& params)
++        {
++            LOGINFO("AirplayService::%s raise event for RA to update Airplay App state\n",__func__);
++            sendNotify(EVT_ONAIRPLAYAPPSTATEUPDATEREQUEST, params);
++        }
++        //End events
++
++    } // namespace Plugin
++} // namespace WPEFramework
+diff --git a/AirplayService/AirplayService.h b/AirplayService/AirplayService.h
+new file mode 100644
+index 00000000..a3d024d1
+--- /dev/null
++++ b/AirplayService/AirplayService.h
+@@ -0,0 +1,69 @@
++/**
++* If not stated otherwise in this file or this component's LICENSE
++* file the following copyright and licenses apply:
++*
++* Copyright 2019 RDK Management
++*
++* Licensed under the Apache License, Version 2.0 (the "License");
++* you may not use this file except in compliance with the License.
++* You may obtain a copy of the License at
++*
++* http://www.apache.org/licenses/LICENSE-2.0
++*
++* Unless required by applicable law or agreed to in writing, software
++* distributed under the License is distributed on an "AS IS" BASIS,
++* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++* See the License for the specific language governing permissions and
++* limitations under the License.
++**/
++
++#pragma once
++
++#include "Module.h"
++#include "UtilsThreadRAII.h"
++
++/*AirPlay Service Triggered Events*/
++#define EVT_ONAIRPLAYBUTTONSELECT "onAirplayButtonSelect" 
++#define EVT_ONAIRPLAYAPPSTATEUPDATEREQUEST "onAirplayAppStateUpdateRequest"
++namespace WPEFramework {
++    namespace Plugin {
++
++        class AirplayService : public PluginHost::IPlugin, public PluginHost::JSONRPC {
++        private:
++
++            AirplayService(const AirplayService&) = delete; 
++            AirplayService& operator=(const AirplayService&) = delete;
++            bool allowAppRunInBackground;
++            Utils::ThreadRAII m_launchAppByAirplayButton_HandlerThread;
++            Utils::ThreadRAII m_updateState_eventHandlerThread;
++            JsonObject appParameters;
++            JsonObject stateChange_Params;
++            static void startAirplayAppReq_helper();
++            static void launchAppByAirplayButton_helper();
++            static void updateAirplayAppStateReq_helper();
++
++        public:
++            AirplayService();
++            virtual ~AirplayService();
++            static AirplayService* _instance;
++            virtual const string Initialize(PluginHost::IShell* shell) override;
++            virtual void Deinitialize(PluginHost::IShell* service) override;
++            virtual string Information() const override { return {}; }
++            //Begin methods
++	        uint32_t launchAppByAirplayButton(const JsonObject& parameters, JsonObject& response);
++            uint32_t setAirplayAllowToRunInBackground(const JsonObject& parameters, JsonObject& response);
++            uint32_t getAirplayAllowToRunInBackground(const JsonObject& parameters, JsonObject& response);
++            uint32_t updateAirplayAppStateReq(const JsonObject& parameters, JsonObject& response);
++            //End methods
++
++            //Begin events
++	        void onAirplayButtonSelect();
++            void onAirplayAppStateUpdateRequest(const JsonObject& params);
++            //End events
++            BEGIN_INTERFACE_MAP(AirplayService)
++            INTERFACE_ENTRY(PluginHost::IPlugin)
++            INTERFACE_ENTRY(PluginHost::IDispatcher)
++            END_INTERFACE_MAP
++        };
++    } // namespace Plugin
++} // namespace WPEFramework
+diff --git a/AirplayService/AirplayService.json b/AirplayService/AirplayService.json
+new file mode 100644
+index 00000000..cae068d9
+--- /dev/null
++++ b/AirplayService/AirplayService.json
+@@ -0,0 +1,104 @@
++{
++    "locator": "libWPEFrameworkAirplayService.so",
++    "classname": "AirplayService",
++    "precondition": [
++        "Platform"
++    ],
++    "callsign": "org.rdk.AirplayService",
++    "autostart": false,
++    "common": {
++        "$ref": "../common/common.json"
++    },
++    "definitions": {
++        "allowAppRunInBackground": {
++            "summary": "App Allowed or not to run in background",
++            "type": "boolean",
++            "example": false
++        }
++    },
++   "methods": { 
++    "launchAppByAirplayButton": {
++        "summary": "Start Airplay using AirplayUI button.",
++        "events": {
++            "onAirplayButtonSelect": "Triggers when AirplayApp launch by RA"
++        },
++        "result": {
++            "type": "object",
++            "properties": {
++                "success":{
++                    "$ref": "#/common/result"
++                }
++            },
++            "required": [
++                "success"
++            ]
++        }
++    },
++    "updateAirplayAppStateReq": {
++        "summary": "Updates Airplay App state to suspend/resume/stop",
++        "events": {
++            "onAirplayAppStateUpdateRequest": "Triggers upon Airplay App state change request"
++        },
++        "result": {
++            "type": "object",
++            "properties": {
++                "success":{
++                    "$ref": "#/common/result"
++                }
++            },
++            "required": [
++                "success"
++            ]
++        }
++    },
++    "getAirplayAllowToRunInBackground":{
++        "summary": "Returns Airplay allowed to run in background or not.",
++        "result": {
++            "type": "object",
++            "properties": {
++                "allowAppRunInBackground": {
++                    "$ref": "#/definitions/allowAppRunInBackground"
++                },
++                "success":{
++                    "$ref": "#/common/result"
++                }
++            },
++            "required": [
++                "allowAppRunInBackground",
++                "success"
++            ]
++        }
++    },
++    "setAirplayAllowToRunInBackground":{
++        "summary": "Sets flag to allow Airplay to run in background or not.",
++        "params": {
++            "type": "object",
++            "properties": {
++                "allowAppRunInBackground": {
++                    "$ref": "#/definitions/allowAppRunInBackground"
++                }
++            },
++            "required": [
++                "allowAppRunInBackground"
++            ]
++        },
++        "result": {
++            "$ref": "#/common/result"
++        }
++    }
++},
++"events": {
++    "onAirplayButtonSelect": {
++        "summary": "Event raised when Airplay Icon on UI is selected by RA",
++        "params": {
++            "type": "object"
++        }
++    },
++    "onAirplayAppStateUpdateRequest": {
++        "summary": "Event raised upon Airplay App state change request",
++        "params": {
++            "type": "object"
++        }
++    }
++}
++}
+diff --git a/AirplayService/AirplayServicePlugin.json b/AirplayService/AirplayServicePlugin.json
+new file mode 100644
+index 00000000..e3c46723
+--- /dev/null
++++ b/AirplayService/AirplayServicePlugin.json
+@@ -0,0 +1,13 @@
++{
++    "$schema": "https://raw.githubusercontent.com/rdkcentral/rdkservices/main/Tools/json_generator/schemas/plugin.schema.json",
++    "info": {
++      "title": "AirplayService Plugin",
++      "callsign": "org.rdk.AirplayService",
++      "locator": "libWPEFrameworkAirplayService.so",
++      "status": "production",
++      "description": "The `AirplayService` plugin is used to communicate  with Airplay Daemon servicee."
++    },
++    "interface": {
++      "$ref": "AirplayService.json#"
++    }
++}
+diff --git a/AirplayService/CHANGELOG.md b/AirplayService/CHANGELOG.md
+new file mode 100644
+index 00000000..2e5f7d4a
+--- /dev/null
++++ b/AirplayService/CHANGELOG.md
+@@ -0,0 +1,14 @@
++# Changelog
++
++All notable changes to this project will be documented in this file.
++
++The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
++and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
++
++## [1.0.0] - 2022-05-11
++### Added
++- Add CHANGELOG
++
++### Change
++- Reset API version to 1.0.0
++- Change README to inform how to update changelog and API version
+diff --git a/AirplayService/CMakeLists.txt b/AirplayService/CMakeLists.txt
+new file mode 100644
+index 00000000..8cbeb0e5
+--- /dev/null
++++ b/AirplayService/CMakeLists.txt
+@@ -0,0 +1,55 @@
++# If not stated otherwise in this file or this component's license file the
++# following copyright and licenses apply:
++#
++# Copyright 2020 RDK Management
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++# http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++set(PLUGIN_NAME AirplayService)
++set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
++
++find_package(${NAMESPACE}Plugins REQUIRED)
++find_package(DS)
++find_package(IARMBus)
++find_package(GLIB REQUIRED)
++
++find_library(GLIB_LIBRARY NAMES glib-2.0 )
++
++add_library(${MODULE_NAME} SHARED
++        AirplayService.cpp
++        Module.cpp)
++
++set_target_properties(${MODULE_NAME} PROPERTIES
++        CXX_STANDARD 11
++        CXX_STANDARD_REQUIRED YES)
++
++target_include_directories(${MODULE_NAME}
++        PRIVATE
++        ../helpers
++        ${IARMBUS_INCLUDE_DIRS}
++        ${DS_INCLUDE_DIRS}
++        ${GLIB_INCLUDE_DIRS})
++
++target_link_libraries(${MODULE_NAME}
++        PRIVATE
++        ${NAMESPACE}Plugins::${NAMESPACE}Plugins
++        ${IARMBUS_LIBRARIES}
++        ${DS_LIBRARIES}
++        ${GLIB_LIBRARIES})
++
++add_definitions(-DDS_FOUND)
++
++install(TARGETS ${MODULE_NAME}
++        DESTINATION lib/${STORAGE_DIRECTORY}/plugins)
++
++write_config(${PLUGIN_NAME})
+diff --git a/AirplayService/Module.cpp b/AirplayService/Module.cpp
+new file mode 100644
+index 00000000..ce759b61
+--- /dev/null
++++ b/AirplayService/Module.cpp
+@@ -0,0 +1,22 @@
++/**
++* If not stated otherwise in this file or this component's LICENSE
++* file the following copyright and licenses apply:
++*
++* Copyright 2019 RDK Management
++*
++* Licensed under the Apache License, Version 2.0 (the "License");
++* you may not use this file except in compliance with the License.
++* You may obtain a copy of the License at
++*
++* http://www.apache.org/licenses/LICENSE-2.0
++*
++* Unless required by applicable law or agreed to in writing, software
++* distributed under the License is distributed on an "AS IS" BASIS,
++* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++* See the License for the specific language governing permissions and
++* limitations under the License.
++**/
++
++#include "Module.h"
++
++MODULE_NAME_DECLARATION(BUILD_REFERENCE)
+diff --git a/AirplayService/Module.h b/AirplayService/Module.h
+new file mode 100644
+index 00000000..060ed8a5
+--- /dev/null
++++ b/AirplayService/Module.h
+@@ -0,0 +1,29 @@
++/**
++* If not stated otherwise in this file or this component's LICENSE
++* file the following copyright and licenses apply:
++*
++* Copyright 2019 RDK Management
++*
++* Licensed under the Apache License, Version 2.0 (the "License");
++* you may not use this file except in compliance with the License.
++* You may obtain a copy of the License at
++*
++* http://www.apache.org/licenses/LICENSE-2.0
++*
++* Unless required by applicable law or agreed to in writing, software
++* distributed under the License is distributed on an "AS IS" BASIS,
++* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++* See the License for the specific language governing permissions and
++* limitations under the License.
++**/
++
++#pragma once
++#ifndef MODULE_NAME
++#define MODULE_NAME Plugin_AirplayService
++#endif
++
++#include <plugins/plugins.h>
++#include <tracing/tracing.h>
++
++#undef EXTERNAL
++#define EXTERNAL
+diff --git a/AirplayService/README.md b/AirplayService/README.md
+new file mode 100644
+index 00000000..1a4515b8
+--- /dev/null
++++ b/AirplayService/README.md
+@@ -0,0 +1,15 @@
++-----------------
++Build:
++
++bitbake thunder-plugins
++
++-----------------
++Test:
++
++curl -d '{"jsonrpc":"2.0","id":"3","method": "org.rdk.UserPreferences.1.setUILanguage", "params": {"language": "UP_LANG1"}}' http://127.0.0.1:9998/jsonrpc
++
++curl -d '{"jsonrpc":"2.0","id":"3","method": "org.rdk.UserPreferences.1.getUILanguage", "params": {"language": "UP_LANG1"}}' http://127.0.0.1:9998/jsonrpc
++
++curl -d '{"jsonrpc":"2.0","id":"3","method": "org.rdk.UserPreferences.1.setUILanguage", "params": {"language": "UP_LANG2"}}' http://127.0.0.1:9998/jsonrpc
++
++curl -d '{"jsonrpc":"2.0","id":"3","method": "org.rdk.UserPreferences.1.getUILanguage", "params": {"language": "UP_LANG2"}}' http://127.0.0.1:9998/jsonrpc
+diff -uprN a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt	2024-01-17 18:07:38.885874665 +0200
++++ b/CMakeLists.txt	2024-01-17 18:22:24.722564331 +0200
+@@ -271,6 +271,10 @@ if(PLUGIN_UNIFIEDCASMANAGEMENT)
+     add_subdirectory(UnifiedCASManagement)
+ endif()
+ 
++if(PLUGIN_AIRPLAYSERVICE)
++    add_subdirectory(AirplayService)
++endif()
++
+ if(PLUGIN_LEDCONTROL)
+     add_subdirectory(LEDControl)
+ endif()
+-- 
+2.17.1
+

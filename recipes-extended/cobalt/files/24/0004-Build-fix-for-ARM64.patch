@@ -1,0 +1,57 @@
+From d35fd19b4c7280e53efe21d71563a9989e3631ed Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Wed, 29 Mar 2023 21:23:44 +0000
+Subject: [PATCH] Build fix for ARM64
+
+---
+ starboard/shared/linux/cpu_features_get.cc | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/starboard/shared/linux/cpu_features_get.cc b/starboard/shared/linux/cpu_features_get.cc
+index d7466ccc9b..7168898946 100644
+--- a/starboard/shared/linux/cpu_features_get.cc
++++ b/starboard/shared/linux/cpu_features_get.cc
+@@ -367,6 +367,7 @@ bool HasItemInList(const char* list, const char* flag) {
+   return false;
+ }
+ 
++#if SB_IS(32_BIT)
+ // Construct hwcap bitmask by the feature flags in /proc/cpuinfo
+ uint32_t ConstructHwcapFromCPUInfo(ProcCpuInfo* cpu_info,
+                                    int16_t architecture_generation,
+@@ -411,6 +412,7 @@ uint32_t ConstructHwcapFromCPUInfo(ProcCpuInfo* cpu_info,
+   }
+   return hwcap_value;
+ }
++#endif
+ 
+ bool SbCPUFeaturesGet_ARM(SbCPUFeatures* features) {
+   memset(features, 0, sizeof(*features));
+-- 
+2.25.1
+
+From dbcbd8b6010773e4628b5b37404f56e491644398 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Wed, 3 Apr 2024 18:44:04 +0000
+Subject: [PATCH] Fix arm64 build configuration
+
+---
+ third_party/boringssl/BUILD.gn | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/third_party/boringssl/BUILD.gn b/third_party/boringssl/BUILD.gn
+index 51f71e4f811..9578af81fc9 100644
+--- a/third_party/boringssl/BUILD.gn
++++ b/third_party/boringssl/BUILD.gn
+@@ -158,6 +158,8 @@ static_library("crypto") {
+         sources += boringssl_linux_x86_64_files
+       } else if (asm_target_arch == "arm") {
+         sources += boringssl_linux_arm_files
++      } else if (asm_target_arch == "arm64") {
++        sources += boringssl_linux_aarch64_files
+       } else {
+         assert(false, "Unsupported Linux or Android arch for native build")
+       }
+-- 
+2.25.1
+

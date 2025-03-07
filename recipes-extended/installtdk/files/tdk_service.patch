@@ -1,0 +1,27 @@
+Date: Sep 22, 2016 11:57 AM 
+
+From: afb4b69232b5272dc56ebd310658b4a3e97e738e Sep 27, 2016 3:15 PM
+
+Subject: [PATCH] RDKTT-842: Implementing TDK IPK
+
+	Changes relatedto implementation of TDK setup.
+     
+Source: COMCAST
+
+
+Upstream-Status: Pending
+
+Signed-off-by: Vimal <Vimal_KuttanPillai@comcast.com>
+---
+--- a/tdk.service       2016-06-08 04:16:10.116472329 +0000
++++ b/tdk.service       2016-06-08 04:16:29.140473985 +0000
+@@ -13,7 +13,8 @@
+ Requires=swupdate.service
+
+ [Service]
+-ExecStartPre=/bin/sh -c 'rm -rf /opt/TDK/lib* && cp -r /var/TDK /opt/'
++#ExecStartPre=/bin/sh -c 'rm -rf /opt/TDK/lib* && cp -r /var/TDK /opt/'
++ExecStartPre=/bin/sh -c 'rm -rf /opt/TDK/libs/'
+ ExecStart=/bin/sh -c '/opt/TDK/StartTDK.sh'
+
+ [Install]

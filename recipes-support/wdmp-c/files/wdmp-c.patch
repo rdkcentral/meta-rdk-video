@@ -1,0 +1,115 @@
+Date: Aug 17, 2018 8:23 PM
+From: dfcc2eea3f21ced7b7c193388c66cdaa48d468cd Aug 18, 2018 1:12 AM
+Subject: [PATCH] RDK-22467 support for new error codes and fix memory leak
+	Support error codes for internal error and Default Value and Fix memory leak in wdmp_free_res_struct
+	Validate using Curl interface with invalid and default error scenarios
+Source: COMCAST
+Upstream-Status: Pending
+Signed-off-by: Venkata Bojja <Venkata_Bojja2@cable.comcast.com>
+---
+
+diff --git a/src/wdmp-c.c b/src/wdmp-c.c
+index e369968..127b682 100644
+--- a/src/wdmp-c.c
++++ b/src/wdmp-c.c
+@@ -341,16 +341,14 @@ void wdmp_free_res_struct( res_struct *resObj )
+                 {
+                         if(resObj->u.getRes)
+                         {
+-                                if(resObj->u.getRes->paramNames)
+-                                {
+-                                        free(resObj->u.getRes->paramNames);
+-                                }
+                                 
+-                                if(resObj->u.getRes->params)
++
++				if(resObj->u.getRes->paramCnt)
+                                 {
+                                         for (i = 0; i < resObj->u.getRes->paramCnt; i++)
+                                         {
+-                                                if(resObj->u.getRes->params[i])
++                                                free(resObj->u.getRes->paramNames[i]);
++						if(resObj->u.getRes->retParamCnt)
+                                                 {
+                                                         for (j = 0; j < resObj->u.getRes->retParamCnt[i]; j++)
+                                                         { 
+@@ -360,19 +358,15 @@ void wdmp_free_res_struct( res_struct *resObj )
+                                                         free(resObj->u.getRes->params[i]);
+                                                 }
+                                         }
++					free(resObj->u.getRes->paramNames);
+                                         free(resObj->u.getRes->params);
+-                                }
+                                 
+-                                if(resObj->u.getRes->retParamCnt)
+-                                {
+                                         free(resObj->u.getRes->retParamCnt);
+                                 }
+-                                
+                                 free(resObj->u.getRes);
+                         }
+                 }
+                 break;
+-                
+                 case GET_ATTRIBUTES:
+                 case SET:
+                 case SET_ATTRIBUTES:
+diff --git a/src/wdmp-c.h b/src/wdmp-c.h
+index a00937c..dbdfe65 100644
+--- a/src/wdmp-c.h
++++ b/src/wdmp-c.h
+@@ -83,6 +83,8 @@ typedef enum
+     WDMP_ERR_ATOMIC_GET_SET_FAILED,
+     WDMP_ERR_METHOD_NOT_SUPPORTED,
+     WDMP_ERR_SESSION_IN_PROGRESS,
++    WDMP_ERR_INTERNAL_ERROR,
++    WDMP_ERR_DEFAULT_VALUE,
+     WDMP_ERR_MAX_REQUEST
+ } WDMP_STATUS;
+ 
+diff --git a/a/src/wdmp_internal.c b/b/src/wdmp_internal.c
+index ac92849..bb16cf6 100644
+--- a/src/wdmp_internal.c
++++ b/src/wdmp_internal.c
+@@ -407,7 +407,7 @@ void wdmp_form_get_response(res_struct *resObj, cJSON *response)
+                 
+         getStatusCode(&statusCode, paramCount, resObj->retStatus);
+         WdmpPrint("statusCode : %d\n",statusCode);
+-        if(statusCode == WDMP_STATUS_SUCCESS)
++        if(paramCount > 0)
+         {
+                 cJSON_AddItemToObject(response, "parameters", parameters =cJSON_CreateArray());
+                 WdmpPrint("resObj->u.getRes->paramCnt : %zu\n",resObj->u.getRes->paramCnt);
+@@ -461,7 +461,7 @@ void wdmp_form_get_response(res_struct *resObj, cJSON *response)
+                         }
+                 }
+         }
+-        else
++        if(statusCode != WDMP_STATUS_SUCCESS)
+         {
+                 for (i = 0; i < paramCount; i++)
+                 {
+@@ -804,6 +804,14 @@ void wdmp_form_table_response(res_struct *resObj, cJSON *response)
+ 	{
+ 		strcpy(result,"Previous request is in progress");
+ 	}
++	else if (status == WDMP_ERR_INTERNAL_ERROR)
++	{
++		strcpy(result, "Internal Error");
++	}
++	else if (status == WDMP_ERR_DEFAULT_VALUE)
++	{
++		strcpy(result,"Default Value");
++	}
+ 	else if (status == WDMP_ERR_MAX_REQUEST)
+ 	{
+ 		strcpy(result,"Max SET request limit reached");
+@@ -820,7 +828,7 @@ void wdmp_form_table_response(res_struct *resObj, cJSON *response)
+ 	for (i = 0; i < paramCount; i++) 
+ 	{
+ 		WdmpPrint("ret[%d] = %d\n",i,ret[i]);
+-		if (ret[i] == WDMP_SUCCESS) 
++		if (ret[i] == WDMP_SUCCESS || ret[i] == WDMP_ERR_DEFAULT_VALUE)
+ 		{
+ 			*statusCode = WDMP_STATUS_SUCCESS;
+ 		}

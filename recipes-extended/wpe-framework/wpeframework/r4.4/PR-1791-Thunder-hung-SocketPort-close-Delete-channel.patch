@@ -1,0 +1,26 @@
+From: Metro Team
+Date: Mon, 18 Nov 2024 02:41:28 +0000
+Subject: [PATCH] PR-1791-Thunder-hung-SocketPort-close-Delete_channel.patch
+Reason for Change: Added the latest JSON Parsing Fix as patch 
+
+Upstream-Status: Yes
+Signed-off-by: Thamim Razith  <tabbas651@cable.comcast.com>
+---
+ Source/websocket/WebSocketLink.h | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/Source/websocket/WebSocketLink.h b/Source/websocket/WebSocketLink.h
+index 72ce9bb1..b30031ec 100644
+--- a/Source/websocket/WebSocketLink.h
++++ b/Source/websocket/WebSocketLink.h
+@@ -402,7 +402,9 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+             {
+             }
+ POP_WARNING()
+-            ~HandlerType() override = default;
++            ~HandlerType() override {
++                ACTUALLINK::Close(Core::infinite);
++            }
+ 
+         public:
+             bool IsOpen() const

@@ -1,0 +1,11 @@
+[Unit]
+Description=ctrlm HAL service stub
+Requires=ctrlm-main.service
+
+[Service]
+# Don't run as a deamon (because we've got nothing to do directly)
+Type=oneshot
+# Just print something, because ExecStart is required
+ExecStart=/bin/echo "Here ctrlm HAL should be started"
+# Keep running after Exit start finished, because we want the instances that depend on this to keep running
+RemainAfterExit=yes

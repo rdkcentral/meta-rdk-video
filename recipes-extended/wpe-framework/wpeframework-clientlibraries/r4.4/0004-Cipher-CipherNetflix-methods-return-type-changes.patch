@@ -1,0 +1,50 @@
+Date:  Apr 30 14:49:57 2024
+From: Thamim Razith
+Subject: CipherNetflix methods return type changes
+Source: COMCAST
+Upstream-Status: Pending
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+
+diff --git a/Source/cryptography/implementation/SecApi/Cipher.h b/Source/cryptography/implementation/SecApi/Cipher.h
+index 637a431..a921ff6 100644
+--- a/Source/cryptography/implementation/SecApi/Cipher.h
++++ b/Source/cryptography/implementation/SecApi/Cipher.h
+@@ -54,7 +54,7 @@ namespace Implementation {
+
+     public:
+
+-        uint32_t Operation(bool encrypt, const uint8_t ivLength, const uint8_t iv[], const uint32_t inputLength,
++        int32_t Operation(bool encrypt, const uint8_t ivLength, const uint8_t iv[], const uint32_t inputLength,
+             const uint8_t input[], const uint32_t maxOutputLength, uint8_t output[]) const;
+
+         const Sec_CipherAlgorithm AESCipher(const aes_mode mode);
+diff --git a/Source/cryptography/implementation/SecApi/CipherNetflix.cpp b/Source/cryptography/implementation/SecApi/CipherNetflix.cpp
+index 875d014..fef9a83 100644
+--- a/Source/cryptography/implementation/SecApi/CipherNetflix.cpp
++++ b/Source/cryptography/implementation/SecApi/CipherNetflix.cpp
+@@ -62,7 +62,7 @@ namespace Implementation {
+      * @return Length of the bytesWritten as encrypted blob
+      *
+      *********************************************************************/
+-    uint32_t CipherNetflix::Encrypt(const uint8_t ivLength, const uint8_t iv[], const uint32_t inputLength,
++    int32_t CipherNetflix::Encrypt(const uint8_t ivLength, const uint8_t iv[], const uint32_t inputLength,
+         const uint8_t input[], const uint32_t maxOutputLength, uint8_t output[]) const
+     {
+         return (Operation(true, ivLength, iv, inputLength, input, maxOutputLength, output));
+@@ -83,7 +83,7 @@ namespace Implementation {
+      * @return Length of the bytesWritten as decrypted blob/data
+      *
+      *********************************************************************/
+-    uint32_t CipherNetflix::Decrypt(const uint8_t ivLength, const uint8_t iv[], const uint32_t inputLength,
++    int32_t CipherNetflix::Decrypt(const uint8_t ivLength, const uint8_t iv[], const uint32_t inputLength,
+         const uint8_t input[], const uint32_t maxOutputLength, uint8_t output[]) const
+     {
+         return (Operation(false, ivLength, iv, inputLength, input, maxOutputLength, output));
+@@ -105,7 +105,7 @@ namespace Implementation {
+      * @return Length of the bytesWritten as encrypted/decrypted blob/data
+      *
+      *********************************************************************/
+-    uint32_t CipherNetflix::Operation(bool encrypt, const uint8_t ivLength, const uint8_t iv[], const uint32_t inputLength,
++    int32_t CipherNetflix::Operation(bool encrypt, const uint8_t ivLength, const uint8_t iv[], const uint32_t inputLength,
+         const uint8_t input[], const uint32_t maxOutputLength, uint8_t output[]) const
+     {

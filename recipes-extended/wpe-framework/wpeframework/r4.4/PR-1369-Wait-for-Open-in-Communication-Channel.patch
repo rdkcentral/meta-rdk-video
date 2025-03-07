@@ -1,0 +1,24 @@
+From d1e986545e08bb722c7ed617cc491ba60df5a7a5 Mon Sep 17 00:00:00 2001
+From: Thamim Razith <ThamimRazith_AbbasAli@comcast.com>
+Date: Mon, 31 Jul 2023 15:48:37 +0000
+Subject: [PATCH] DELIA-62797,DELIA-62798: Modified the thunder communication
+
+Upstream-Status: Pending
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+---
+ Source/websocket/JSONRPCLink.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/websocket/JSONRPCLink.h b/Source/websocket/JSONRPCLink.h
+index a4f984c2..40846c57 100644
+--- a/Source/websocket/JSONRPCLink.h
++++ b/Source/websocket/JSONRPCLink.h
+@@ -251,7 +251,7 @@ namespace WPEFramework {
+ 				}
+ 				uint32_t Initialize()
+ 				{
+-					return (Open(1000));
++					return (Open(2000));
+ 				}
+ 				void Deinitialize()
+ 				{

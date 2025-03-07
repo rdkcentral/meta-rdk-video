@@ -1,0 +1,27 @@
+From c390dda207cf530c67b2daba255901b4fa698b7e Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Thu, 22 Feb 2024 14:10:41 +0000
+Subject: [PATCH] comcast - SERXIONE-4428 - scan decoder elements on Broadcom
+ as well
+
+Include some SW decoders and decoding sinks
+---
+ Source/WebCore/platform/gstreamer/GStreamerQuirkBroadcom.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirkBroadcom.h b/Source/WebCore/platform/gstreamer/GStreamerQuirkBroadcom.h
+index 32c332947179..5335795b988e 100644
+--- a/Source/WebCore/platform/gstreamer/GStreamerQuirkBroadcom.h
++++ b/Source/WebCore/platform/gstreamer/GStreamerQuirkBroadcom.h
+@@ -33,7 +33,7 @@ public:
+ 
+     bool configureElement(GstElement*, const OptionSet<ElementRuntimeCharacteristics>&) final;
+     std::optional<bool> isHardwareAccelerated(GstElementFactory*) final;
+-    std::optional<GstElementFactoryListType> audioVideoDecoderFactoryListType() const final { return GST_ELEMENT_FACTORY_TYPE_PARSER; }
++    std::optional<GstElementFactoryListType> audioVideoDecoderFactoryListType() const final { return GST_ELEMENT_FACTORY_TYPE_PARSER | GST_ELEMENT_FACTORY_TYPE_DECODER; }
+     Vector<String> disallowedWebAudioDecoders() const final { return m_disallowedWebAudioDecoders; }
+ 
+ private:
+-- 
+2.25.1
+

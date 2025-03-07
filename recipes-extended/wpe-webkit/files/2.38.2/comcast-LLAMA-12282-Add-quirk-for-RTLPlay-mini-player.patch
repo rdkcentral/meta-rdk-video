@@ -1,0 +1,76 @@
+From a2b4c21f34ed3daa9eccff2415502f410970056c Mon Sep 17 00:00:00 2001
+From: "Vivek.A" <Vivek_Arumugam@comcast.com>
+Date: Thu, 14 Dec 2023 13:47:11 +0000
+Subject: [PATCH 1/3] Add quirk to disable updating
+ m_defaultPlaybackStartPosition
+
+---
+ Source/WebCore/html/HTMLMediaElement.cpp |  3 ++-
+ Source/WebCore/page/Quirks.cpp           | 17 +++++++++++++++++
+ Source/WebCore/page/Quirks.h             |  3 +++
+ 3 files changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/html/HTMLMediaElement.cpp b/Source/WebCore/html/HTMLMediaElement.cpp
+index a607f4fa52a3..3e19bfeb10c6 100644
+--- a/Source/WebCore/html/HTMLMediaElement.cpp
++++ b/Source/WebCore/html/HTMLMediaElement.cpp
+@@ -3514,7 +3514,8 @@ ExceptionOr<void> HTMLMediaElement::setCurrentTimeForBindings(double time)
+         return Exception { InvalidStateError };
+ 
+     if (m_readyState == HAVE_NOTHING || !m_player) {
+-        m_defaultPlaybackStartPosition = MediaTime::createWithDouble(time);
++        if (!document().quirks().shouldNotChangePlaybackPositionOnPlayerStartup())
++            m_defaultPlaybackStartPosition = MediaTime::createWithDouble(time);
+         return { };
+     }
+ 
+diff --git a/Source/WebCore/page/Quirks.cpp b/Source/WebCore/page/Quirks.cpp
+index 237b518c5f33..bfc7fa388552 100644
+--- a/Source/WebCore/page/Quirks.cpp
++++ b/Source/WebCore/page/Quirks.cpp
+@@ -1509,4 +1509,21 @@ bool Quirks::shouldBypassAudioFlushOnSampleReplacement() const
+ }
+ #endif
+ 
++bool Quirks::shouldNotChangePlaybackPositionOnPlayerStartup() const
++{
++    // RTLPlay app confuses itself by setting playback position to duration before starting playback.
++
++    if (!needsQuirks())
++        return false;
++
++    // Return true until Seek to Duration is properly fixed
++    return true;
++
++    if (!m_shouldNotChangePlaybackPositionOnPlayerStartupQuirk) {
++        auto domain = RegistrableDomain(m_document->url()).string();
++        m_shouldNotChangePlaybackPositionOnPlayerStartupQuirk = domain == "rtl.it"_s;
++    }
++
++    return *m_shouldNotChangePlaybackPositionOnPlayerStartupQuirk;
++}
+ }
+diff --git a/Source/WebCore/page/Quirks.h b/Source/WebCore/page/Quirks.h
+index 1a2d850299f7..e85e925ff744 100644
+--- a/Source/WebCore/page/Quirks.h
++++ b/Source/WebCore/page/Quirks.h
+@@ -161,6 +161,8 @@ public:
+     bool needsVideoShouldMaintainAspectRatioQuirk() const;
+ 
+     bool shouldDisableLazyImageLoadingQuirk() const;
++
++    bool shouldNotChangePlaybackPositionOnPlayerStartup() const;
+     
+ #if ENABLE(MEDIA_SOURCE)
+     bool shouldBypassAudioFlushOnSampleReplacement() const;
+@@ -221,6 +223,7 @@ private:
+     mutable std::optional<bool> m_needsVideoShouldMaintainAspectRatioQuirk;
+     mutable std::optional<bool> m_shouldExposeShowModalDialog;
+     mutable std::optional<bool> m_shouldDisableLazyImageLoadingQuirk;
++    mutable std::optional<bool> m_shouldNotChangePlaybackPositionOnPlayerStartupQuirk;
+ #if ENABLE(MEDIA_SOURCE)
+     mutable std::optional<bool> m_shouldBypassAudioFlushOnSampleReplacementQuirk;
+ #endif
+-- 
+2.17.1
+

@@ -1,0 +1,24 @@
+From c227071dfd82d873902cd96e501c5a64c17bbf82 Mon Sep 17 00:00:00 2001
+From: Thamim Razith <ThamimRazith_AbbasAli@comcast.com>
+Date: Mon, 26 Aug 2024 14:29:22 +0000
+Subject: [PATCH] RDK-52751 : Intergrate Thunder R4.4.3 Tools
+
+Upstream-Status: Downstreamed from R4.4.3 tag release
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+---
+ Source/plugins/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/plugins/CMakeLists.txt b/Source/plugins/CMakeLists.txt
+index 93b8c252..9357c647 100644
+--- a/Source/plugins/CMakeLists.txt
++++ b/Source/plugins/CMakeLists.txt
+@@ -29,7 +29,7 @@ ProxyStubGenerator(NAMESPACE "WPEFramework::PluginHost" INPUT "${CMAKE_CURRENT_S
+ ProxyStubGenerator(NAMESPACE "WPEFramework::PluginHost" INPUT "${CMAKE_CURRENT_SOURCE_DIR}/ISubSystem.h" OUTDIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+ ProxyStubGenerator(NAMESPACE "WPEFramework::PluginHost" INPUT "${CMAKE_CURRENT_SOURCE_DIR}/IDispatcher.h" OUTDIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+ 
+-JsonGenerator(CODE NAMESPACE WPEFramework::Exchange::Controller INPUT ${CMAKE_CURRENT_SOURCE_DIR}/IController.h OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/jsonrpc" INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/.." NO_INCLUDES)
++JsonGenerator(CODE NAMESPACE WPEFramework::Exchange::Controller INPUT ${CMAKE_CURRENT_SOURCE_DIR}/IController.h OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/jsonrpc" INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/.." NO_INCLUDES LEGACY_ALT)
+ 
+ add_library(${TARGET} SHARED
+         Channel.cpp

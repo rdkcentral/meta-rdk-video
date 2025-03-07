@@ -1,0 +1,42 @@
+From fe7172c9c50bb10576d0386373565bcbca5bb524 Mon Sep 17 00:00:00 2001
+From: Hao <131711973+haozheng-cobalt@users.noreply.github.com>
+Date: Thu, 15 Aug 2024 13:13:47 -0700
+Subject: [PATCH] Fix deadlock caused by timeout overflow (#3998)
+
+b/346812667
+---
+ starboard/common/condition_variable.cc | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/starboard/common/condition_variable.cc b/starboard/common/condition_variable.cc
+index d0b253b995d..9cc6604a588 100644
+--- a/starboard/common/condition_variable.cc
++++ b/starboard/common/condition_variable.cc
+@@ -66,6 +66,9 @@ bool ConditionVariable::WaitTimed(int64_t duration) const {
+   bool was_signaled = SbConditionVariableIsSignaled(
+       SbConditionVariableWaitTimed(&condition_, mutex_->mutex(), duration));
+ #else
++  if (duration < 0) {
++    duration = 0;
++  }
+ #if !SB_HAS_QUIRK(NO_CONDATTR_SETCLOCK_SUPPORT)
+   int64_t timeout_time_usec = starboard::CurrentMonotonicTime();
+ #else
+@@ -73,6 +76,14 @@ bool ConditionVariable::WaitTimed(int64_t duration) const {
+ #endif  // !SB_HAS_QUIRK(NO_CONDATTR_SETCLOCK_SUPPORT)
+   timeout_time_usec += duration;
+ 
++  // Detect overflow if timeout is near kSbInt64Max. Since timeout can't be
++  // negative at this point, if it goes negative after adding now, we know we've
++  // gone over. Especially posix now, which has a 400 year advantage over
++  // Chromium (Windows) now.
++  if (timeout_time_usec < 0) {
++    timeout_time_usec = kSbInt64Max;
++  }
++
+   struct timespec timeout;
+   timeout.tv_sec = timeout_time_usec / 1000'000;
+   timeout.tv_nsec = (timeout_time_usec % 1000'000) * 1000;
+-- 
+2.25.1
+

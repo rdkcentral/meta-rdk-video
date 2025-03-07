@@ -1,0 +1,81 @@
+From e98219b607390215491a6c916d1135c7fc82d916 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Wed, 11 Aug 2021 14:31:38 +0300
+Subject: [PATCH]  LLAMA-2254: Increase NetworkInfo buffer size
+
+Upstream-Status: Pending
+Signed-off-by: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+---
+ Source/core/Netlink.cpp  | 28 ++++++++++++++++++++++++++++
+ Source/core/Netlink.h    |  3 +++
+ Source/core/SocketPort.h |  4 ++++
+ 3 files changed, 35 insertions(+)
+
+diff --git a/Source/core/Netlink.cpp b/Source/core/Netlink.cpp
+index 3a7c7e9d..2f8f3b98 100644
+--- a/Source/core/Netlink.cpp
++++ b/Source/core/Netlink.cpp
+@@ -233,6 +233,34 @@ namespace Core {
+         return (result);
+     }
+ 
++    // Called right after socket is created
++    /* virtual */ uint32_t SocketNetlink::Initialize()
++    {
++        if (!SocketDatagram::Initialize())
++            return false;
++
++        // For netlink sockets set decent sized kernel buffers, the default SocketPort code shrinks
++        // the kernel buffers to the same size as local buffers (for some reason), and this can
++        // cause ENOBUFS errors when reading the socket.
++        const SOCKET socket = Socket();
++        if (socket != INVALID_SOCKET)
++        {
++            int val = 80 * 1024;
++            if (::setsockopt(socket, SOL_SOCKET, SO_RCVBUF, &val, sizeof(int)) != 0)
++                TRACE_L1("Error setting SO_RCVBUF buffer size on netlink socket. Error %d", errno);
++
++           val = 80 * 1024;
++           if (::setsockopt(socket, SOL_SOCKET, SO_SNDBUF, &val, sizeof(int)) != 0)
++                TRACE_L1("Error setting SO_SNDBUF buffer size on netlink socket. Error %d", errno);
++
++            val = 1;
++            if (::setsockopt(socket, SOL_NETLINK, NETLINK_NO_ENOBUFS, &val, sizeof(int)) != 0)
++                TRACE_L1("Error setting NETLINK_NO_ENOBUFS flag on netlink socket. Error %d", errno);
++        }
++
++        return true;
++    }
++
+     // Signal a state change, Opened, Closed or Accepted
+     /* virtual */ void SocketNetlink::StateChange()
+     {
+diff --git a/Source/core/Netlink.h b/Source/core/Netlink.h
+index 8eaffbf3..c83cbdf4 100644
+--- a/Source/core/Netlink.h
++++ b/Source/core/Netlink.h
+@@ -394,6 +394,9 @@ namespace Core {
+ 
+         virtual uint16_t Deserialize(const uint8_t dataFrame[], const uint16_t receivedSize) = 0;
+ 
++    protected:
++        virtual uint32_t Initialize() override;
++
+     private:
+         // Methods to extract and insert data into the socket buffers
+         virtual uint16_t SendData(uint8_t* dataFrame, const uint16_t maxSendSize) override;
+diff --git a/Source/core/SocketPort.h b/Source/core/SocketPort.h
+index 67bc3dff..10381629 100644
+--- a/Source/core/SocketPort.h
++++ b/Source/core/SocketPort.h
+@@ -129,6 +129,10 @@ namespace WPEFramework {
+             {
+                 return (m_SocketType);
+             }
++            inline SOCKET Socket() const
++            {
++                return m_Socket;
++            }
+             inline bool IsListening() const
+             {
+                 return ((State() & (SocketPort::SHUTDOWN | SocketPort::EXCEPTION | SocketPort::OPEN | SocketPort::LINK | SocketPort::ACCEPT)) == (SocketPort::OPEN | SocketPort::ACCEPT));

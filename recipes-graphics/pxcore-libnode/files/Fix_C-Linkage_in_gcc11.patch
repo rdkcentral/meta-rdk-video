@@ -1,0 +1,25 @@
+Date: 2024-09-29 03:53:48
+From: Daasu Ramdass, Arjun
+Subject: Fixed C linkage
+Source: COMCAST
+Upstream-Status: Pending
+Signed-off-by: Daasu Ramdass, Arjun<Arjun_DaasuRamdass@comcast.com>
+
+Index: git/examples/pxScene2d/external/libnode-v10.15.3/src/node_main.cc
+===================================================================
+--- git.orig/examples/pxScene2d/external/libnode-v10.15.3/src/node_main.cc
++++ git/examples/pxScene2d/external/libnode-v10.15.3/src/node_main.cc
+@@ -80,12 +80,12 @@ int wmain(int argc, wchar_t* wargv[]) {
+ #else
+ #define Elf_auxv_t Elf32_auxv_t
+ #endif  // __LP64__
+-extern char** environ;
+ #endif  // __linux__
+ #if defined(__POSIX__) && defined(NODE_SHARED_MODE)
+ #include <string.h>
+ #include <signal.h>
+ #endif
++extern char** environ;
+ 
+ namespace node {
+   extern bool linux_at_secure;

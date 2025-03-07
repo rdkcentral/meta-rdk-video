@@ -1,0 +1,24 @@
+From 45396be526347e7b2eae01cd6ffd94ebd982cb09 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Fri, 16 Sep 2022 20:53:51 +0000
+Subject: [PATCH] comcast RDK-38169 fix build for Broadcom platform
+
+---
+ Source/cmake/OptionsWPE.cmake | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+index 991af10ec64a..434c0763050f 100644
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -432,3 +432,7 @@ if (ENABLE_MALLOC_HEAP_BREAKDOWN)
+   add_definitions(-DBENABLE_MALLOC_HEAP_BREAKDOWN=1)
+   set(MALLOC_ZONE_LIBRARIES malloc-zone)
+ endif()
++
++if (USE_WPEWEBKIT_PLATFORM_BROADCOM)
++  add_definitions(-DBROADCOM_PLATFORM=1)
++endif()
+-- 
+2.25.1
+

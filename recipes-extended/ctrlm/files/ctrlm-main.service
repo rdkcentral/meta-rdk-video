@@ -1,0 +1,17 @@
+[Unit]
+Description=Control Manager Main Service
+After=iarmbusd.service securemount.service tr69hostif.service dsmgr.service
+Requires=iarmbusd.service dsmgr.service
+Wants=tr69hostif.service
+
+[Service]
+Type=notify
+EnvironmentFile=/etc/device.properties
+ExecStartPre=/bin/systemctl set-environment CTRLM_RESTART_DELAY=5
+ExecStart=/usr/bin/controlMgr
+ExecStopPost=/bin/sh -c '/bin/sleep $CTRLM_RESTART_DELAY'
+RestartSec=100ms
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

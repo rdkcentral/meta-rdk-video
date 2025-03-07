@@ -1,0 +1,395 @@
+From 2e9ffd9a7afcb76153b1284dd9306dd5b8dd7e4d Mon Sep 17 00:00:00 2001
+From: srikanth-vv <107277821+srikanth-vv@users.noreply.github.com>
+Date: Thu, 25 Aug 2022 15:38:55 -0400
+Subject: [PATCH] DELIA-57501 - Fix Warnings in RDKServices
+
+Added #undef EXTERNAL case.
+DELIA-57501 - Fix Warnings in RDKServices
+Added copyright info.
+
+---
+ Source/CMakeLists.txt                         |  6 ++
+ Source/securityutility/CMakeLists.txt         | 16 ++++
+ Source/securityutility/app/CMakeLists.txt     | 22 +++++
+ .../app/SecurityUtilityApp.cpp                | 96 +++++++++++++++++++
+ Source/securityutility/lib/CMakeLists.txt     | 60 ++++++++++++
+ .../securityutility/lib/SecurityTokenUtil.cpp | 65 +++++++++++++
+ .../securityutility/lib/SecurityTokenUtil.h   | 51 ++++++++++
+ 7 files changed, 316 insertions(+)
+ create mode 100644 Source/securityutility/CMakeLists.txt
+ create mode 100644 Source/securityutility/app/CMakeLists.txt
+ create mode 100644 Source/securityutility/app/SecurityUtilityApp.cpp
+ create mode 100644 Source/securityutility/lib/CMakeLists.txt
+ create mode 100644 Source/securityutility/lib/SecurityTokenUtil.cpp
+ create mode 100644 Source/securityutility/lib/SecurityTokenUtil.h
+
+diff --git a/Source/CMakeLists.txt b/Source/CMakeLists.txt
+index 2380dcb..afdc4f8 100644
+--- a/Source/CMakeLists.txt
++++ b/Source/CMakeLists.txt
+@@ -35,6 +35,8 @@ option(CDMI
+         "Include OpenCDM interface." OFF)
+ option(CRYPTOGRAPHY
+         "Include the cryptography library." OFF)
++option(SECURITYUTILITY
++        "Application to generate Localhost Security Token" ON)
+ option(LOCALTRACER
+         "Header only library to locally print traces coming from Messaging without the need of running Thunder/WPEFramework." OFF)
+ 
+@@ -78,6 +80,10 @@ if(CRYPTOGRAPHY)
+     add_subdirectory(cryptography)
+ endif()
+ 
++if(SECURITYUTILITY)
++    add_subdirectory(securityutility)
++endif()
++
+ if(LOCALTRACER)
+     add_subdirectory(localtracer)
+ endif()
+diff --git a/Source/securityutility/CMakeLists.txt b/Source/securityutility/CMakeLists.txt
+new file mode 100644
+index 0000000..6297bbd
+--- /dev/null
++++ b/Source/securityutility/CMakeLists.txt
+@@ -0,0 +1,16 @@
++
++
++option(SECURITYUTILITYAPP
++        "Application to generate Localhost Security Token" ON)
++
++option(SECURITYUTILITYLIB
++        "Library to generate Localhost Security Token" ON)
++
++
++if(SECURITYUTILITYAPP)
++    add_subdirectory(app)
++endif()
++
++if(SECURITYUTILITYLIB)
++    add_subdirectory(lib)
++endif()
+diff --git a/Source/securityutility/app/CMakeLists.txt b/Source/securityutility/app/CMakeLists.txt
+new file mode 100644
+index 0000000..708744b
+--- /dev/null
++++ b/Source/securityutility/app/CMakeLists.txt
+@@ -0,0 +1,22 @@
++set(TARGET WPEFrameworkSecurityUtility)
++
++add_executable(${TARGET}
++   SecurityUtilityApp.cpp
++)
++
++target_link_libraries(${TARGET}
++        PRIVATE
++        securityagent::securityagent
++)
++
++set_target_properties(${TARGET} PROPERTIES
++        CXX_STANDARD 11
++        CXX_STANDARD_REQUIRED YES
++        )
++
++install(
++        TARGETS ${TARGET}  EXPORT ${TARGET}Targets  # for downstream dependencies
++        ARCHIVE DESTINATION lib COMPONENT libs      # static lib
++        LIBRARY DESTINATION lib COMPONENT libs      # shared lib
++        RUNTIME DESTINATION bin COMPONENT libs      # binaries
++)
+diff --git a/Source/securityutility/app/SecurityUtilityApp.cpp b/Source/securityutility/app/SecurityUtilityApp.cpp
+new file mode 100644
+index 0000000..e1781c3
+--- /dev/null
++++ b/Source/securityutility/app/SecurityUtilityApp.cpp
+@@ -0,0 +1,96 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2020 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include <iostream>
++#include "securityagent.h"
++#include <cstring>
++#include <unistd.h>
++#include <fcntl.h>
++
++/*
++Send thunder security token for localhost.
++This token can be used by native applications to securely access rdkservices.
++*/
++
++
++using namespace std;
++
++int supress_stdout() {
++  fflush(stdout);
++
++  int ret = dup(1);
++  int nullfd = open("/dev/null", O_WRONLY);
++  // check nullfd for error omitted
++  dup2(nullfd, 1);
++  close(nullfd);
++
++  return ret;
++ }
++
++void resume_stdout(int fd) {
++  fflush(stdout);
++  dup2(fd, 1);
++  close(fd);
++}
++
++#define MAX_LENGTH 2048
++
++int main(int argc, char** argv)
++{
++    unsigned char buffer[MAX_LENGTH] = {0};
++
++    //string payload = "{\"url\":\"http://localhost\"}";
++
++    string payload = argc > 1 ? argv[1] : "http://localhost";
++
++    size_t len = payload.length();
++
++    string errJson = "{\"success\":false,";
++
++    if(!memcpy(buffer,payload.c_str(),len))
++    {
++        errJson += "\"error\":\"error copying input into buffer\"}";
++        cout << errJson << endl;
++        return -1;
++    }
++
++    int fd = supress_stdout();
++
++    int ret = GetToken(MAX_LENGTH,len,buffer);
++
++    resume_stdout(fd);
++
++    if(ret < 0)
++    {
++        errJson += "\"error\":\"error in getting token. Check if WPEFramework is running.\"}";
++        cout << errJson << endl;
++        return -1;
++    }
++    else
++    {
++        // got token
++        string jsonToken = "{\"token\":\"";
++        jsonToken += (const char*) buffer;
++        jsonToken += "\",\"success\":true}";
++        cout << jsonToken << endl;
++    }
++
++    return 0;
++
++}
+diff --git a/Source/securityutility/lib/CMakeLists.txt b/Source/securityutility/lib/CMakeLists.txt
+new file mode 100644
+index 0000000..d3eb519
+--- /dev/null
++++ b/Source/securityutility/lib/CMakeLists.txt
+@@ -0,0 +1,60 @@
++project(${NAMESPACE}SecurityUtil)
++
++cmake_minimum_required(VERSION 3.3)
++
++find_package(WPEFramework)
++
++project_version(4.4.0)
++
++set(TARGET ${PROJECT_NAME})
++
++message("Setup ${TARGET} v${PROJECT_VERSION}")
++
++set(TARGET ${NAMESPACE}SecurityUtil)
++
++add_library(${TARGET} SHARED
++   SecurityTokenUtil.cpp
++)
++
++set(PUBLIC_HEADERS
++        SecurityTokenUtil.h
++)
++
++target_link_libraries(${TARGET}
++        PRIVATE
++        securityagent::securityagent
++)
++
++set_target_properties(${TARGET} PROPERTIES
++        CXX_STANDARD 11
++        CXX_STANDARD_REQUIRED YES
++        FRAMEWORK FALSE
++        PUBLIC_HEADER "${PUBLIC_HEADERS}" # specify the public headers
++        VERSION ${PROJECT_VERSION}
++        SOVERSION ${PROJECT_VERSION_MAJOR}
++        )
++
++target_include_directories( ${TARGET}
++        PUBLIC
++          $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
++          $<INSTALL_INTERFACE:include>
++        )
++
++install(
++        TARGETS ${TARGET}  EXPORT ${TARGET}Targets  # for downstream dependencies
++        ARCHIVE DESTINATION lib COMPONENT libs      # static lib
++        LIBRARY DESTINATION lib COMPONENT libs      # shared lib
++        RUNTIME DESTINATION bin COMPONENT libs      # binaries
++        PUBLIC_HEADER DESTINATION include/${NAMESPACE}/securityagent COMPONENT devel
++        INCLUDES DESTINATION include/${NAMESPACE}/securityagent # headers
++)
++
++# ===========================================================================================
++# Install METADATA:
++# ===========================================================================================
++InstallPackageConfig(
++        TARGETS ${TARGET}
++        DESCRIPTION "Library to Get Security Token")
++
++InstallCMakeConfig(
++        TARGETS ${TARGET})
+diff --git a/Source/securityutility/lib/SecurityTokenUtil.cpp b/Source/securityutility/lib/SecurityTokenUtil.cpp
+new file mode 100644
+index 0000000..05e7ec8
+--- /dev/null
++++ b/Source/securityutility/lib/SecurityTokenUtil.cpp
+@@ -0,0 +1,65 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2020 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include <iostream>
++#include "securityagent.h"
++#include <cstring>
++#include "SecurityTokenUtil.h"
++
++
++/*
++Send thunder security token for localhost.
++This token can be used by native applications to securely access rdkservices.
++*/
++
++using namespace std;
++
++extern "C" {
++
++
++/*
++ * GetSecurityToken - function to obtain a token from SecurityAgent
++ *
++ * Parameters
++ *  maxLength   - holds the maximum uint8_t length of the buffer
++ *  Id          - Buffer to hold the token.
++ *
++ * Return value
++ *  < 0 - failure, absolute value returned is the length required to store the token
++ *  > 0 - success, char length of the returned token
++ *
++ * Post-condition; return value 0 should not occur
++ *
++ */
++int GetSecurityToken(unsigned short maxLength, unsigned char buffer[])
++{
++    // get a localhost token
++    //string payload = "{\"url\":\"http://localhost\"}";
++    string payload = "http://localhost";
++
++    size_t len = payload.length();
++
++    if(!memcpy(buffer,payload.c_str(),len))
++        return -1;
++    return GetToken(maxLength,len,buffer);
++
++}
++
++
++}
+diff --git a/Source/securityutility/lib/SecurityTokenUtil.h b/Source/securityutility/lib/SecurityTokenUtil.h
+new file mode 100644
+index 0000000..2ec1086
+--- /dev/null
++++ b/Source/securityutility/lib/SecurityTokenUtil.h
+@@ -0,0 +1,51 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2020 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#pragma once
++
++#ifdef __WINDOWS__
++#undef EXTERNAL
++#ifdef SECURITYUTILITY_EXPORTS
++#define EXTERNAL EXTERNAL_EXPORT
++#else
++#define EXTERNAL EXTERNAL_IMPORT
++#endif
++#else
++#undef EXTERNAL
++#define EXTERNAL
++#endif
++
++extern "C" {
++/*
++* GetSecurityToken - function to obtain a token from SecurityAgent
++*
++* Parameters
++*  maxLength   - holds the maximum uint8_t length of the buffer
++*  buffer      - Buffer to hold the token.
++*
++* Return value
++*  < 0 - failure, absolute value returned is the length required to store the token
++*  > 0 - success, char length of the returned token
++*
++* Post-condition; return value 0 should not occur
++*
++*/
++int EXTERNAL GetSecurityToken(unsigned short maxLength, unsigned char buffer[]);
++
++}

@@ -1,0 +1,228 @@
+From ec8d9d7210f683ddfe9b604172d61b5646abd4be Mon Sep 17 00:00:00 2001
+From: Pawel Lampe <pawel.lampe@sky.uk>
+Date: Wed, 5 Apr 2023 10:40:45 +0000
+Subject: [PATCH 1/2] comcast - DELIA-60920 - Malloc Heap Breakdown
+
+%% original patch: comcast-DELIA-60920-Malloc-Heap-Breakdown.patch
+---
+ Source/WTF/wtf/CMakeLists.txt                |  4 ++++
+ Source/WTF/wtf/DebugHeap.h                   |  4 ----
+ Source/bmalloc/CMakeLists.txt                |  6 ++++++
+ Source/bmalloc/bmalloc/BPlatform.h           |  2 ++
+ Source/bmalloc/bmalloc/DebugHeap.cpp         |  2 +-
+ Source/bmalloc/bmalloc/DebugHeap.h           |  4 ++--
+ Source/bmalloc/bmalloc/IsoMallocFallback.cpp |  4 ++--
+ Source/bmalloc/bmalloc/IsoTLSInlines.h       |  2 +-
+ Source/cmake/OptionsWPE.cmake                | 11 ++++++++++-
+ 9 files changed, 28 insertions(+), 11 deletions(-)
+
+diff --git a/Source/WTF/wtf/CMakeLists.txt b/Source/WTF/wtf/CMakeLists.txt
+index 826237ba339d..01f59d94ed66 100644
+--- a/Source/WTF/wtf/CMakeLists.txt
++++ b/Source/WTF/wtf/CMakeLists.txt
+@@ -579,6 +579,10 @@ if (NOT USE_SYSTEM_MALLOC)
+     set(WTF_FRAMEWORKS bmalloc)
+ endif ()
+ 
++if (ENABLE_MALLOC_HEAP_BREAKDOWN)
++    list(APPEND WTF_LIBRARIES ${MALLOC_ZONE_LIBRARIES})
++endif ()
++
+ if (ATOMICS_REQUIRE_LIBATOMIC)
+     list(APPEND WTF_LIBRARIES atomic)
+ endif ()
+diff --git a/Source/WTF/wtf/DebugHeap.h b/Source/WTF/wtf/DebugHeap.h
+index 562a36788b09..4525c1c23c79 100644
+--- a/Source/WTF/wtf/DebugHeap.h
++++ b/Source/WTF/wtf/DebugHeap.h
+@@ -30,10 +30,8 @@
+ 
+ #if ENABLE(MALLOC_HEAP_BREAKDOWN)
+ #include <mutex>
+-#if OS(DARWIN)
+ #include <malloc/malloc.h>
+ #endif
+-#endif
+ 
+ namespace WTF {
+ 
+@@ -50,9 +48,7 @@ public:
+     WTF_EXPORT_PRIVATE void free(void*);
+ 
+ private:
+-#if OS(DARWIN)
+     malloc_zone_t* m_zone;
+-#endif
+ };
+ 
+ #define DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(Type) \
+diff --git a/Source/bmalloc/CMakeLists.txt b/Source/bmalloc/CMakeLists.txt
+index ae63639659f7..e7aa0828a616 100644
+--- a/Source/bmalloc/CMakeLists.txt
++++ b/Source/bmalloc/CMakeLists.txt
+@@ -663,6 +663,12 @@ set(bmalloc_LIBRARIES
+     ${CMAKE_DL_LIBS}
+ )
+ 
++if (ENABLE_MALLOC_HEAP_BREAKDOWN)
++    list(APPEND bmalloc_LIBRARIES
++        ${MALLOC_ZONE_LIBRARIES}
++    )
++endif ()
++
+ if (ATOMICS_REQUIRE_LIBATOMIC)
+     list(APPEND bmalloc_LIBRARIES atomic)
+ endif ()
+diff --git a/Source/bmalloc/bmalloc/BPlatform.h b/Source/bmalloc/bmalloc/BPlatform.h
+index 0eae025bc825..f953616b8cbc 100644
+--- a/Source/bmalloc/bmalloc/BPlatform.h
++++ b/Source/bmalloc/bmalloc/BPlatform.h
+@@ -317,7 +317,9 @@
+ #endif
+ 
+ /* Enable this to put each IsoHeap and other allocation categories into their own malloc heaps, so that tools like vmmap can show how big each heap is. */
++#if !defined(BENABLE_MALLOC_HEAP_BREAKDOWN)
+ #define BENABLE_MALLOC_HEAP_BREAKDOWN 0
++#endif
+ 
+ /* This is used for debugging when hacking on how bmalloc calculates its physical footprint. */
+ #define ENABLE_PHYSICAL_PAGE_MAP 0
+diff --git a/Source/bmalloc/bmalloc/DebugHeap.cpp b/Source/bmalloc/bmalloc/DebugHeap.cpp
+index f29ba0732967..8a5c2268b5f6 100644
+--- a/Source/bmalloc/bmalloc/DebugHeap.cpp
++++ b/Source/bmalloc/bmalloc/DebugHeap.cpp
+@@ -42,7 +42,7 @@ DebugHeap* debugHeapCache { nullptr };
+     
+ DEFINE_STATIC_PER_PROCESS_STORAGE(DebugHeap);
+ 
+-#if BOS(DARWIN)
++#if BENABLE_MALLOC_HEAP_BREAKDOWN
+ 
+ static bool shouldUseDefaultMallocZone()
+ {
+diff --git a/Source/bmalloc/bmalloc/DebugHeap.h b/Source/bmalloc/bmalloc/DebugHeap.h
+index 9a77391b9b1d..f41ee9e97c0c 100644
+--- a/Source/bmalloc/bmalloc/DebugHeap.h
++++ b/Source/bmalloc/bmalloc/DebugHeap.h
+@@ -32,7 +32,7 @@
+ #include <mutex>
+ #include <unordered_map>
+ 
+-#if BOS(DARWIN)
++#if BENABLE_MALLOC_HEAP_BREAKDOWN
+ #include <malloc/malloc.h>
+ #endif
+ 
+@@ -59,7 +59,7 @@ public:
+ private:
+     static DebugHeap* tryGetSlow();
+     
+-#if BOS(DARWIN)
++#if BENABLE_MALLOC_HEAP_BREAKDOWN
+     malloc_zone_t* m_zone;
+ #endif
+     
+diff --git a/Source/bmalloc/bmalloc/IsoMallocFallback.cpp b/Source/bmalloc/bmalloc/IsoMallocFallback.cpp
+index 902b6a398f58..a54c15cf947f 100644
+--- a/Source/bmalloc/bmalloc/IsoMallocFallback.cpp
++++ b/Source/bmalloc/bmalloc/IsoMallocFallback.cpp
+@@ -62,7 +62,7 @@ void determineMallocFallbackState()
+ MallocResult tryMalloc(
+     size_t size
+ #if BENABLE_MALLOC_HEAP_BREAKDOWN
+-    , malloc_zone_t* zone = nullptr
++    , malloc_zone_t* zone
+ #endif
+     )
+ {
+@@ -87,7 +87,7 @@ MallocResult tryMalloc(
+ bool tryFree(
+     void* ptr
+ #if BENABLE_MALLOC_HEAP_BREAKDOWN
+-    , malloc_zone_t* zone = nullptr
++    , malloc_zone_t* zone
+ #endif
+     )
+ {
+diff --git a/Source/bmalloc/bmalloc/IsoTLSInlines.h b/Source/bmalloc/bmalloc/IsoTLSInlines.h
+index 1622599886e3..0d903d599dc4 100644
+--- a/Source/bmalloc/bmalloc/IsoTLSInlines.h
++++ b/Source/bmalloc/bmalloc/IsoTLSInlines.h
+@@ -33,7 +33,7 @@
+ 
+ #if !BUSE(LIBPAS)
+ 
+-#if BOS(DARWIN)
++#if BENABLE_MALLOC_HEAP_BREAKDOWN
+ #include <malloc/malloc.h>
+ #endif
+ 
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+index 8c4a5f1ae1cf..ac272c9cb877 100644
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -107,6 +107,9 @@ WEBKIT_OPTION_DEFINE(USE_EXTERNAL_HOLEPUNCH "Whether to enable external holepunc
+ WEBKIT_OPTION_DEFINE(ENABLE_ACCELERATED_2D_CANVAS "Whether to enable accelerated 2D canvas" PRIVATE OFF)
+ WEBKIT_OPTION_DEFINE(ENABLE_OIPF_VK "Whether to enable OIPF keys for DAE applications" PRIVATE OFF)
+ 
++# Debug memory heap breakdown with malloc-zone allocator
++WEBKIT_OPTION_DEFINE(ENABLE_MALLOC_HEAP_BREAKDOWN "Whether to enable malloc heap breakdown" PRIVATE OFF)
++
+ # Supported platforms.
+ WEBKIT_OPTION_DEFINE(USE_WPEWEBKIT_PLATFORM_WESTEROS "Whether to enable support for the Westeros platform" PUBLIC OFF)
+ WEBKIT_OPTION_DEFINE(USE_WPEWEBKIT_PLATFORM_BCM_NEXUS "Whether to enable support for the Broadcom Nexus platform" PUBLIC OFF)
+@@ -440,4 +443,10 @@ if (USE_LIBBACKTRACE)
+     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}${CMAKE_COMPILER_SIZE_OPT_FLAGS} -funwind-tables")
+ 
+     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}${CMAKE_COMPILER_SIZE_OPT_FLAGS} -funwind-tables")
+-endif ()
+\ No newline at end of file
++endif ()
++
++if (ENABLE_MALLOC_HEAP_BREAKDOWN)
++# Enable the same on bmalloc side
++  add_definitions(-DBENABLE_MALLOC_HEAP_BREAKDOWN=1)
++  set(MALLOC_ZONE_LIBRARIES malloc-zone)
++endif()
+-- 
+2.25.1
+
+
+From f03a75825d146580e09d53a78d84fa6edbe6437f Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Fri, 12 Apr 2024 11:15:00 +0200
+Subject: [PATCH 2/2] comcast - DELIA-64954 - Print malloc zones stats when
+ memory usage limit is exceeded
+
+---
+ Source/WTF/wtf/MemoryPressureHandler.cpp | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/Source/WTF/wtf/MemoryPressureHandler.cpp b/Source/WTF/wtf/MemoryPressureHandler.cpp
+index 29959d47f452..f759e58f6495 100644
+--- a/Source/WTF/wtf/MemoryPressureHandler.cpp
++++ b/Source/WTF/wtf/MemoryPressureHandler.cpp
+@@ -36,6 +36,10 @@
+ #include <wtf/RAMSize.h>
+ #include <wtf/text/StringToIntegerConversion.h>
+ 
++#if ENABLE(MALLOC_HEAP_BREAKDOWN)
++#include <malloc-zone/malloc_zone_ext.h>
++#endif
++
+ namespace WTF {
+ 
+ WTF_EXPORT_PRIVATE bool MemoryPressureHandler::ReliefLogger::s_loggingEnabled = false;
+@@ -333,6 +337,9 @@ void MemoryPressureHandler::measurementTimerFired()
+                      footprint / MB, s_videoMemoryInFootprint ? "(including video)" : "", m_configuration.baseThreshold / MB,
+                      footprintVideo / MB, m_configuration.baseThresholdVideo / MB);
+         releaseMemory(Critical::Yes, Synchronous::Yes);
++#if ENABLE(MALLOC_HEAP_BREAKDOWN)
++        malloc_zone_ext_print_stats();
++#endif
+         break;
+     }
+ 
+-- 
+2.25.1
+

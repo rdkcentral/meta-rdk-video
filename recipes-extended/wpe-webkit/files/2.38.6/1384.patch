@@ -1,0 +1,24 @@
+From 87fb9b078dfcbff09d77192a9474f1105a4e1779 Mon Sep 17 00:00:00 2001
+From: Manoj Bhatta <manoj_bhatta@comcast.com>
+Date: Thu, 1 Aug 2024 20:44:09 +0000
+Subject: [PATCH] Gamepad input delay of 5ms cases more delay in overall
+ latency when playing Cloud game using webrtc. We do not need to wait 5ms to
+ fire the scheduler.
+
+---
+ Source/WebCore/platform/gamepad/wpe/WPEGamepadProvider.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/gamepad/wpe/WPEGamepadProvider.cpp b/Source/WebCore/platform/gamepad/wpe/WPEGamepadProvider.cpp
+index 082ce60d1a932..1cb7f186219b7 100644
+--- a/Source/WebCore/platform/gamepad/wpe/WPEGamepadProvider.cpp
++++ b/Source/WebCore/platform/gamepad/wpe/WPEGamepadProvider.cpp
+@@ -38,7 +38,7 @@
+ namespace WebCore {
+ 
+ static const Seconds connectionDelayInterval { 500_ms };
+-static const Seconds inputNotificationDelay { 5_ms };
++static const Seconds inputNotificationDelay { 0_ms };
+ 
+ WPEGamepadProvider& WPEGamepadProvider::singleton()
+ {

@@ -1,0 +1,25 @@
+From 9894e90d54a5ee47b1357be60911de951babce2e Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Fri, 29 Sep 2023 14:44:20 +0000
+Subject: [PATCH] Use Yocto host toolchain
+
+---
+ starboard/build/config/BUILDCONFIG.gn | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/starboard/build/config/BUILDCONFIG.gn b/starboard/build/config/BUILDCONFIG.gn
+index 77d7034b160..ea697954e7b 100644
+--- a/starboard/build/config/BUILDCONFIG.gn
++++ b/starboard/build/config/BUILDCONFIG.gn
+@@ -105,7 +105,7 @@ if (target_cpu == "x86" || target_cpu == "arm") {
+ } else {
+   _host_toolchain_cpu = host_cpu
+ }
+-host_toolchain = "//starboard/build/toolchain/$host_os:$_host_toolchain_cpu"
++host_toolchain = "//third_party/starboard/rdk/shared/build/$host_os:$_host_toolchain_cpu"
+ 
+ if (build_with_separate_cobalt_toolchain) {
+   cobalt_toolchain = "//$starboard_path/toolchain:cobalt"
+-- 
+2.25.1
+

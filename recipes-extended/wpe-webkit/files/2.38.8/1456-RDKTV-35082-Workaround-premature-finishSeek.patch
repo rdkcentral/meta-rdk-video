@@ -1,0 +1,49 @@
+From 1cb12ac6487297d4157e8043b30bb4cbee830d49 Mon Sep 17 00:00:00 2001
+From: Filipe Norte <filipe_norte@comcast.com>
+Date: Thu, 6 Feb 2025 13:19:20 +0000
+Subject: [PATCH] RDKTV-35082: Workaround premature finishSeek
+
+Reason for change: The wpe-webkit downstream repo
+introduced a change affecting progressive playback
+seek operations, causing a seek finish to be
+notified too early, potentially affecting correct
+operation of apps.
+
+An issue was raised and once resolved, this change
+can be removed.
+
+This is a temporary workaround till an official
+fix is available.
+
+See: https://github.com/WebPlatformForEmbedded/WPEWebKit/issues/1456
+
+Test Procedure: See ticket
+Risks: Low
+Priority: P1
+---
+ .../platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index 8638be485b19..8c3a4994e5fe 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -550,6 +550,7 @@ bool MediaPlayerPrivateGStreamer::doSeek(const MediaTime& position, float rate,
+         g_object_set(m_downloadBuffer.get(), "high-percent", 0, nullptr);
+     }
+ 
++#if 0 // Disabled as a temporary workaround till https://github.com/WebPlatformForEmbedded/WPEWebKit/issues/1456 is addressed
+     // Stream mode. Seek will automatically deplete buffer level, so we always want to pause the pipeline and wait until the
+     // buffer is replenished. But we don't want this behaviour on immediate seeks that only change the playback rate.
+     // We restrict this behaviour to protocols that use NetworkProcess.
+@@ -564,6 +565,7 @@ bool MediaPlayerPrivateGStreamer::doSeek(const MediaTime& position, float rate,
+         updateBufferingStatus(GST_BUFFERING_STREAM, 0.0, true);
+         changePipelineState(GST_STATE_PAUSED);
+     }
++#endif
+ 
+     GST_DEBUG_OBJECT(pipeline(), "[Seek] Performing actual seek to %" GST_TIME_FORMAT " (endTime: %" GST_TIME_FORMAT ") at rate %f", GST_TIME_ARGS(toGstClockTime(startTime)), GST_TIME_ARGS(toGstClockTime(endTime)), rate);
+     return gst_element_seek(m_pipeline.get(), rate, GST_FORMAT_TIME, seekFlags,
+-- 
+2.43.0
+

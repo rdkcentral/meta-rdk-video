@@ -1,0 +1,92 @@
+From 02893cecff257ac0218df4e5bcf1ce012d8d30a9 Mon Sep 17 00:00:00 2001
+From: Manoj Bhatta <manoj_bhatta@comcast.com>
+Date: Tue, 29 Mar 2022 09:47:28 +0000
+Subject: [PATCH] comcast - XRE-15382:XIONE-4595:RDKTV-17736 - HDR/DV config
+
+---
+ Source/WebCore/css/MediaQueryEvaluator.cpp    | 10 ++++++++
+ .../gstreamer/GStreamerRegistryScanner.cpp    | 25 +++++++++++++++++++
+ Source/cmake/OptionsWPE.cmake                 |  6 +++++
+ 3 files changed, 41 insertions(+)
+
+diff --git a/Source/WebCore/css/MediaQueryEvaluator.cpp b/Source/WebCore/css/MediaQueryEvaluator.cpp
+index 63ba4c82af41..4750a07e2ce2 100644
+--- a/Source/WebCore/css/MediaQueryEvaluator.cpp
++++ b/Source/WebCore/css/MediaQueryEvaluator.cpp
+@@ -445,6 +445,16 @@ static bool dynamicRangeEvaluate(CSSValue* value, const CSSToLengthConversionDat
+     if (!value)
+         return false;
+ 
++#if ENABLE(HDR)
++    switch (downcast<CSSPrimitiveValue>(*value).valueID()) {
++    case CSSValueHigh:
++    case CSSValueStandard:
++        return true;
++    default:
++        return false; // Any unknown value should not be considered a match.
++    }
++#endif
++
+     if (!frame.settings().hdrMediaCapabilitiesEnabled())
+         return false;
+ 
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index 4078b6c68773..5e836dab4f45 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -433,6 +433,10 @@ void GStreamerRegistryScanner::initializeDecoders(const GStreamerRegistryScanner
+         m_decoderCodecMap.add(AtomString("x-h265"_s), h265DecoderAvailable);
+         m_decoderCodecMap.add(AtomString("hvc1*"_s), h265DecoderAvailable);
+         m_decoderCodecMap.add(AtomString("hev1*"_s), h265DecoderAvailable);
++#if ENABLE(DV)
++        m_decoderCodecMap.add(AtomString("dvhe*"_s), h265DecoderAvailable);
++        m_decoderCodecMap.add(AtomString("dvh1*"_s), h265DecoderAvailable);
++#endif
+     }
+ 
+     if (shouldAddMP4Container) {
+@@ -763,6 +767,27 @@ MediaPlayerEnums::SupportsType GStreamerRegistryScanner::isContentTypeSupported(
+     if (codecs.isEmpty())
+         return SupportsType::MayBeSupported;
+ 
++    String eotf = contentType.parameter("eotf"_s);
++    if (!eotf.isEmpty()) {
++        // Electro-optic transfer function (EOTF) support, possible values:
++        //  bt709 (SDR)
++        //  smpte2084 HDR10
++        //  arib-std-b67 HLG
++#if ENABLE(HDR)
++        if (eotf == "bt709"_s || eotf == "smpte2084"_s || eotf == "arib-std-b67"_s) {
++            GST_DEBUG("eotf: %s", eotf.utf8().data());
++        } else {
++            GST_WARNING("unsupported eotf: %s", eotf.utf8().data());
++            return SupportsType::IsNotSupported;
++        }
++#else
++        if (eotf != "bt709"_s) {
++            GST_WARNING("unsupported eotf: %s", eotf.utf8().data());
++            return SupportsType::IsNotSupported;
++        }
++#endif
++    }
++
+     for (const auto& codec : codecs) {
+         bool requiresHardwareSupport = contentTypesRequiringHardwareSupport
+             .findIf([containerType, codec](auto& hardwareContentType) -> bool {
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+index cefb31db4c98..2a072856ce47 100644
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -440,3 +440,9 @@ endif()
+ if (USE_WPEWEBKIT_PLATFORM_BROADCOM)
+   add_definitions(-DBROADCOM_PLATFORM=1)
+ endif()
++if (ENABLE_DV)
++  add_definitions(-DENABLE_DV=1)
++endif()
++if (ENABLE_HDR)
++  add_definitions(-DENABLE_HDR=1)
++endif()
+-- 
+2.25.1
+

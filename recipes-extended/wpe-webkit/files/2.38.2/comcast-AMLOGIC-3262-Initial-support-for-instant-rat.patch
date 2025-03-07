@@ -1,0 +1,83 @@
+From 4727fd891805f658b0b7a0fa21048dce8b7c9a9c Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Wed, 18 Oct 2023 07:45:10 -0400
+Subject: [PATCH] comcast - AMLOGIC-3262 - Initial support for instant rate
+
+---
+ .../gstreamer/MediaPlayerPrivateGStreamer.cpp     | 14 ++++++++++++++
+ .../gstreamer/mse/WebKitMediaSourceGStreamer.cpp  | 15 ++++++++++++++-
+ Source/cmake/OptionsWPE.cmake                     |  1 +
+ 3 files changed, 29 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index ce5f4b878fd4..7075184c1896 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -599,6 +599,20 @@ void MediaPlayerPrivateGStreamer::updatePlaybackRate()
+     GST_INFO_OBJECT(pipeline(), mute ? "Need to mute audio" : "Do not need to mute audio");
+ 
+     if (m_lastPlaybackRate != m_playbackRate) {
++#if ENABLE(INSTANT_RATE_CHANGE)
++        bool didInstantRateChange = false;
++        if (!paused()) {
++            GstStructure* s = gst_structure_new("custom-instant-rate-change",
++                "rate", G_TYPE_DOUBLE, m_playbackRate, nullptr);
++            didInstantRateChange = gst_element_send_event(
++                pipeline(), gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM_OOB, s));
++        }
++        if (didInstantRateChange) {
++            g_object_set(m_pipeline.get(), "mute", mute, nullptr);
++            m_lastPlaybackRate = m_playbackRate;
++        }
++        else
++#endif
+         if (doSeek(playbackPosition(), m_playbackRate, static_cast<GstSeekFlags>(GST_SEEK_FLAG_FLUSH))) {
+             g_object_set(m_pipeline.get(), "mute", mute, nullptr);
+             m_lastPlaybackRate = m_playbackRate;
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+index b26e613c8407..eddc1d6d8079 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+@@ -888,6 +888,7 @@ static void webKitMediaSrcStreamFlush(Stream* stream, bool isSeekingFlush)
+                 GST_DEBUG_OBJECT(stream->source, "Resetting segment to current pipeline running time (%" GST_TIME_FORMAT " and stream time (%" GST_TIME_FORMAT " = %s)",
+                     GST_TIME_ARGS(pipelineRunningTime), GST_TIME_ARGS(pipelineStreamTime), streamTime.toString().ascii().data());
+                 streamingMembers->segment.base = pipelineRunningTime;
++                streamingMembers->segment.rate = stream->source->priv->rate;
+                 streamingMembers->segment.position = streamingMembers->segment.start = streamingMembers->segment.time = static_cast<GstClockTime>(pipelineStreamTime);
+             }
+         }
+@@ -1009,6 +1009,19 @@ static gboolean webKitMediaSrcSendEvent(GstElement* element, GstEvent* event)
+         webKitMediaSrcSeek(WEBKIT_MEDIA_SRC(element), start, rate);
+         return true;
+     }
++    case GST_EVENT_CUSTOM_DOWNSTREAM_OOB: {
++        WebKitMediaSrc* source = WEBKIT_MEDIA_SRC(element);
++        gboolean result = !source->priv->streams.isEmpty();
++        for (const RefPtr<Stream>& stream : source->priv->streams.values())
++            result &= gst_pad_push_event(stream->pad.get(), gst_event_ref(event));
++        if (gst_event_has_name(event, "custom-instant-rate-change")) {
++            gdouble rate = 1.0;
++            if (gst_structure_get_double(gst_event_get_structure(event), "rate", &rate))
++                source->priv->rate = rate;
++        }
++        gst_event_unref(event);
++        return result;
++    }
+     default:
+         return GST_ELEMENT_CLASS(webkit_media_src_parent_class)->send_event(element, event);
+     }
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+index 6b64e2da8bf3..f53fb6c8dfd6 100644
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -106,6 +106,7 @@ WEBKIT_OPTION_DEFINE(USE_GSTREAMER_HOLEPUNCH "Whether to enable GStreamer holepu
+ WEBKIT_OPTION_DEFINE(USE_EXTERNAL_HOLEPUNCH "Whether to enable external holepunch" PRIVATE OFF)
+ WEBKIT_OPTION_DEFINE(ENABLE_ACCELERATED_2D_CANVAS "Whether to enable accelerated 2D canvas" PRIVATE OFF)
+ WEBKIT_OPTION_DEFINE(ENABLE_OIPF_VK "Whether to enable OIPF keys for DAE applications" PRIVATE OFF)
++WEBKIT_OPTION_DEFINE(ENABLE_INSTANT_RATE_CHANGE "Whether to enable instant rate change" PRIVATE OFF)
+ 
+ # Debug memory heap breakdown with malloc-zone allocator
+ WEBKIT_OPTION_DEFINE(ENABLE_MALLOC_HEAP_BREAKDOWN "Whether to enable malloc heap breakdown" PRIVATE OFF)
+-- 
+2.17.1
+

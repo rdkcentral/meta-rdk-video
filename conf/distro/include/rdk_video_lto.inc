@@ -1,0 +1,8 @@
+LTO:pn-netsrvmgr = ""
+LTO:pn-tr69hostif = ""
+LTO:pn-servicemanager = ""
+LTO:pn-ledmgr = ""
+LTO:pn-ledmgr-headers = ""
+LTO:pn-wpeframework-clientlibraries = ""
+LTO:pn-hwselftest = ""
+LTO:pn-brotli = ""

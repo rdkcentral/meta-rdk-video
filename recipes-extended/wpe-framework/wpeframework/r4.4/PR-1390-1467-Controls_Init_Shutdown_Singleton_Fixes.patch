@@ -1,0 +1,84 @@
+From: 9a44b4a89f5564e5bcdbb437beddbb26fb228ba6 Mon Sep 17 00:00:00 2001
+Date: Fri, 26 Feb 2024 14:49:57 +0000
+Subject: [PATCH] -PR-1390-1467-Controls_init_shutdown_singleton_fixes.patch
+Reason for Change- -DELIA-64604: RialtoServer crash in OpenCDMAccessor::~OpenCDMAccessor on shutdown
+
+Ensuring the proper initialization of statics in each transition unit on wpeframework launch
+Calling Destroy() on each announced Control of every message type to ensure a proper destruction of singletons on shutdown
+Handle Singleton Dispose
+
+Upstream-Status: None 
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+---
+ Source/core/MessageStore.cpp | 18 ++++++++++++++++--
+ Source/core/Singleton.h      |  7 ++++++-
+ 2 files changed, 22 insertions(+), 3 deletions(-)
+
+diff --git a/Source/core/MessageStore.cpp b/Source/core/MessageStore.cpp
+index 07e2e81e..860caaed 100644
+--- a/Source/core/MessageStore.cpp
++++ b/Source/core/MessageStore.cpp
+@@ -48,7 +48,17 @@ ENUM_CONVERSION_END(Core::Messaging::Metadata::type)
+             Controls& operator=(const Controls&) = delete;
+ 
+             Controls() = default;
+-            ~Controls() = default;
++            ~Controls()
++            {
++                _adminLock.Lock();
++
++                while (_controlList.size() > 0) {
++                    TRACE_L1(_T("tracecontrol %s, size = %u was not disposed before"), typeid(*_controlList.front()).name(), _controlList.size());
++                    _controlList.front()->Destroy();
++                }
++
++                _adminLock.Unlock();
++            }
+ 
+         public:
+             void Announce(Core::Messaging::IControl* control)
+@@ -97,7 +107,11 @@ ENUM_CONVERSION_END(Core::Messaging::Metadata::type)
+ 
+         Controls& ControlsInstance()
+         {
+-            return (Core::SingletonType<Controls>::Instance());
++            // do not use the SingleTonType as ControlsInstance will be referenced
++            // the SingleTonType dispose and the Controls would be newly created instead
++            // of the current one used
++            static Controls instance;
++            return instance;
+         }
+ 
+         static Core::Messaging::IStore* _storage;
+diff --git a/Source/core/Singleton.h b/Source/core/Singleton.h
+index 78cdf971..8735936c 100644
+--- a/Source/core/Singleton.h
++++ b/Source/core/Singleton.h
+@@ -103,6 +103,7 @@ namespace Core {
+         {
+            ListInstance().Unregister(this);
+            ASSERT(g_TypedSingleton != nullptr);
++           g_TypedSingleton = nullptr;
+         }
+ 
+     public:
+@@ -160,14 +161,18 @@ namespace Core {
+ 
+             ASSERT(g_TypedSingleton != nullptr);
+         }
+-        inline static void Dispose()
++        inline static bool Dispose()
+         {
+             // Unprotected. Make sure the dispose is *ONLY* called
+             // after all usage of the singlton is completed!!!
++            bool disposed = false;
+             if (g_TypedSingleton != nullptr) {
+ 
+                 delete g_TypedSingleton;
++                // note destructor will set g_TypedSingleton to nullptr;
++                disposed = true;
+             }
++            return disposed;
+         }
+ 
+     private:

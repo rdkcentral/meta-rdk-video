@@ -1,0 +1,32 @@
+From 85ea815c7b3ded21aad363d7ae159778cad1959e Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Wed, 29 Mar 2023 21:23:44 +0000
+Subject: [PATCH] Build fix for ARM64
+
+---
+ starboard/shared/linux/cpu_features_get.cc | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/starboard/shared/linux/cpu_features_get.cc b/starboard/shared/linux/cpu_features_get.cc
+index 4dd4a4bd4d3..42f62d1a888 100644
+--- a/starboard/shared/linux/cpu_features_get.cc
++++ b/starboard/shared/linux/cpu_features_get.cc
+@@ -367,6 +367,7 @@ bool HasItemInList(const char* list, const char* flag) {
+   return false;
+ }
+ 
++#if SB_IS(32_BIT)
+ // Construct hwcap bitmask by the feature flags in /proc/cpuinfo
+ uint32_t ConstructHwcapFromCPUInfo(ProcCpuInfo* cpu_info,
+                                    int16_t architecture_generation,
+@@ -411,6 +412,7 @@ uint32_t ConstructHwcapFromCPUInfo(ProcCpuInfo* cpu_info,
+   }
+   return hwcap_value;
+ }
++#endif
+ 
+ bool SbCPUFeaturesGet_ARM(SbCPUFeatures* features) {
+   memset(features, 0, sizeof(*features));
+-- 
+2.25.1
+

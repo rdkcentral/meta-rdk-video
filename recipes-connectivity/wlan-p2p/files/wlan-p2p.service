@@ -1,0 +1,13 @@
+[Unit]
+Description=Run another wpa_supplicant on p2p ctrl interface for Miracast.
+After=wifi.service network@wlan0.service
+Wants=network@wlan0.service
+
+[Service]
+ExecStartPre=/bin/sh -c 'source /usr/bin/wlan-p2p.sh'
+ExecStart=/bin/sh -c '/usr/sbin/wpa_p2p_supplicant ${WPA_P2P_SUPP_ARGS}'
+RestartSec=10s
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

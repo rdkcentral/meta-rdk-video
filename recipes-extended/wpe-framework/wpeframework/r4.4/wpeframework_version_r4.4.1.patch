@@ -1,0 +1,22 @@
+From: Thamim Razith
+Date:  Wed, 10 Apr 2024 12:59:38 +0300
+Subject: [PATCH]  RDK-48807 : Secure Storage Thunder Plugin
+
+Upstream-Status: None
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+---
+ Source/core/Portability.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Source/core/Portability.h b/Source/core/Portability.h
+index d6d6b028..f9548dc1 100644
+--- a/Source/core/Portability.h
++++ b/Source/core/Portability.h
+@@ -952,5 +952,7 @@ namespace std {
+ #endif
+ 
+ #define THUNDER_VERSION 4
++#define THUNDER_VERSION_MAJOR 4
++#define THUNDER_VERSION_MINOR 4
+ 
+ #endif // __PORTABILITY_H

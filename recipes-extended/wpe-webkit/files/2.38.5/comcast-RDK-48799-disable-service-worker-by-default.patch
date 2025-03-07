@@ -1,0 +1,25 @@
+From b89dda72edf8d4f44f46af700721fe20ab8b98ee Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Thu, 18 Apr 2024 22:31:23 +0000
+Subject: [PATCH] comcast - RDK-48799 - disable service worker by default
+
+---
+ Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp b/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
+index ccf7bbbdccfe..86d2c5f6d385 100644
+--- a/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
++++ b/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
+@@ -1751,7 +1751,7 @@ static void webkit_settings_class_init(WebKitSettingsClass* klass)
+         "enable-service-worker",
+         _("Enable service worker"),
+         _("Whether service worker support should be enabled."),
+-        TRUE,
++        FALSE,
+         readWriteConstructParamFlags);
+ 
+     g_object_class_install_properties(gObjectClass, N_PROPERTIES, sObjProperties);
+-- 
+2.25.1
+

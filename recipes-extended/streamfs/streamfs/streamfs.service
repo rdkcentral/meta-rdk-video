@@ -1,0 +1,23 @@
+[Unit]
+Description=StreamFS
+After=network-online.target local-fs.target nuuday-reconfigure-fs.service
+Wants=network-online.target local-fs.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/tmp/streamfs-http
+ExecStartPre=-/bin/umount -f /mnt/streamfs
+ExecStartPre=-/usr/bin/fusermount -u /mnt/streamfs
+ExecStartPre=-/bin/umount -l /mnt/streamfs
+ExecStartPre=-/bin/mkdir -p /mnt/streamfs/
+ExecStart=/usr/bin/streamfs -o direct_io -f /mnt/streamfs/
+Restart=always
+ExecStopPost=-/bin/umount -f /mnt/streamfs
+ExecStopPost=-/usr/bin/fusermount -u /mnt/streamfs
+ExecStopPost=-/bin/umount -l /mnt/streamfs
+ExecStopPost=-/bin/rm -rf /mnt/streamfs
+
+StartLimitBurst=100
+
+[Install]
+WantedBy=multi-user.target

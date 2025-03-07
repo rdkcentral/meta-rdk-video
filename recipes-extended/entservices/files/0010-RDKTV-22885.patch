@@ -1,0 +1,90 @@
+From 34c42740270e0d6cb519a28724a3e6e8b89101ad Mon Sep 17 00:00:00 2001
+From: Sergey Borushevsky <Sergey_Borushevsky2@cable.comcast.com>
+Date: Sat, 19 Jun 2021 17:45:04 +0000
+Subject: added logging for LocationSync internet probe
+Source: COMCAST
+Upstream-Status: N/A
+Signed-off-by: Sergey Borushevsky <Sergey_Borushevsky2@cable.comcast.com>
+
+
+diff --git a/LocationSync/LocationService.cpp b/LocationSync/LocationService.cpp
+index 075ffe7a..8b4dfd43 100644
+--- a/LocationSync/LocationService.cpp
++++ b/LocationSync/LocationService.cpp
+@@ -352,6 +352,7 @@ namespace Plugin {
+     {
+         uint32_t result = Core::ERROR_INPROGRESS;
+ 
++        fprintf(stderr, "%s %s\n", __FUNCTION__, remote.c_str());
+         _adminLock.Lock();
+ 
+         if ((_state == IDLE) || (_state == FAILED) || (_state == LOADED)) {
+@@ -493,6 +494,7 @@ namespace Plugin {
+                 }
+ 
+                 TRACE(Trace::Information, (_T("Network connectivity established. Type: %s, on %s"), (node.Type() == Core::NodeId::TYPE_IPV6 ? _T("IPv6") : _T("IPv4")), node.HostAddress().c_str()));
++                fprintf(stderr, "%s:%d Network connectivity established. Type: %s, on %s\n", __FILE__, __LINE__, (node.Type() == Core::NodeId::TYPE_IPV6 ? _T("IPv6") : _T("IPv4")), node.HostAddress().c_str());
+                 _callback->Dispatch();
+             }
+ 
+@@ -552,6 +554,7 @@ namespace Plugin {
+                 if (remote.IsValid() == false) {
+ 
+                     TRACE(Trace::Warning, (_T("DNS resolving failed. Sleep for %d mS for attempt %d"), _tryInterval, _retries));
++                    fprintf(stderr, "%s %d DNS resolving failed. Sleep for %d mS for attempt %d\n", __FILE__, __LINE__, _tryInterval, _retries);
+ 
+                     // Name resolving does not even work. Retry this after a few seconds, if we still can..
+                     if (_retries-- == 0)
+@@ -566,15 +569,18 @@ namespace Plugin {
+                     _state = (remote.Type() == Core::NodeId::TYPE_IPV6 ? IPV6_INPROGRESS : IPV4_INPROGRESS);
+ 
+                     uint32_t status = Open(0);
++                    fprintf(stderr, "%s %d Open status=%u\n", __FILE__, __LINE__, status);
+ 
+                     if ((status == Core::ERROR_NONE) || (status == Core::ERROR_INPROGRESS)) {
+ 
+                         TRACE(Trace::Information, (_T("Sending out a network package on %s. Attempt: %d"), (remote.Type() == Core::NodeId::TYPE_IPV6 ? _T("IPv6") : _T("IPv4")), _retries));
++                        fprintf(stderr, "%s %d Sending out a network package on %s. Attempt: %d\n", __FILE__, __LINE__, (remote.Type() == Core::NodeId::TYPE_IPV6 ? _T("IPv6") : _T("IPv4")), _retries);
+ 
+                         // We need to get a response in the given time..
+                         result = _tryInterval;
+                     } else {
+                         TRACE(Trace::Warning, (_T("Failed on network %s. Reschedule for the next attempt: %d"), (remote.Type() == Core::NodeId::TYPE_IPV6 ? _T("IPv6") : _T("IPv4")), _retries));
++                        fprintf(stderr, "%s %d Failed on network %s. Reschedule for the next attempt: %d\n", __FILE__, __LINE__, (remote.Type() == Core::NodeId::TYPE_IPV6 ? _T("IPv6") : _T("IPv4")), _retries);
+ 
+                         // Seems we could not open this connection, move on to the next attempt.
+                         Close(0);
+@@ -594,11 +600,13 @@ namespace Plugin {
+             Core::NodeId::ClearIPV6Enabled();
+ 
+             TRACE(Trace::Error, (_T("LocationSync: Network connectivity could *NOT* be established. Falling back to IPv4. %d"), __LINE__));
++            fprintf(stderr, "%s %d LocationSync: Network connectivity could *NOT* be established. Falling back to IPv4.\n", __FILE__, __LINE__);
+             _callback->Dispatch();
+         }
+ 
+         // See if we need rescheduling
+         if (result != Core::infinite) {
++            fprintf(stderr, "%s %d Reschedule in %u\n", __FILE__, __LINE__, result);
+ #ifndef USE_THUNDER_R4
+             _activity.Schedule(Core::Time::Now().Add(result));
+ #else
+diff --git a/LocationSync/LocationSync.cpp b/LocationSync/LocationSync.cpp
+index 6e3ed999..c8cfa4f2 100644
+--- a/LocationSync/LocationSync.cpp
++++ b/LocationSync/LocationSync.cpp
+@@ -151,6 +151,7 @@ namespace Plugin {
+ 
+     void LocationSync::SyncedLocation()
+     {
++        fprintf(stderr, "%s\n", __FUNCTION__);
+         PluginHost::ISubSystem* subSystem = _service->SubSystems();
+ 
+         ASSERT(subSystem != nullptr);
+@@ -159,6 +160,7 @@ namespace Plugin {
+ 
+             subSystem->Set(PluginHost::ISubSystem::INTERNET, _sink.Network());
+             subSystem->Set(PluginHost::ISubSystem::LOCATION, _sink.Location());
++            fprintf(stderr, "Set INTERNET and LOCATION\n");
+             subSystem->Release();
+ 
+             if ((_sink.Location() != nullptr) && (_sink.Location()->TimeZone().empty() == false)) {

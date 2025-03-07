@@ -1,0 +1,20 @@
+Date:  Apr 30 14:49:57 2024
+From: Thamim Razith
+Subject: wpeframework crash malloc print
+
+Source: COMCAST
+Upstream-Status: Pending
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+---
+diff --git a/Source/core/SocketPort.cpp b/Source/core/SocketPort.cpp
+index 183bd905..6a49cefe 100644
+--- a/Source/core/SocketPort.cpp
++++ b/Source/core/SocketPort.cpp
+@@ -419,6 +419,7 @@ namespace WPEFramework {
+             }
+
+             ::free(m_SendBuffer);
++            m_SendBuffer = nullptr;
+         }
+
+         //////////////////////////////////////////////////////////////////////

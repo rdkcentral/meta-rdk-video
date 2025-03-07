@@ -1,0 +1,53 @@
+From: Sergey Borushevsky
+Date: May 20 22:53:26 2024
+Subject: [PATCH] wpeframework sd notify patch
+
+Upstream-Status: pending
+Signed-off-by: Sergey Borushevsky <Sergey_Borushevsky2@cable.comcast.com>
+---
+Index: git/Source/WPEFramework/PluginServer.cpp
+===================================================================
+--- git.orig/Source/WPEFramework/PluginServer.cpp
++++ git/Source/WPEFramework/PluginServer.cpp
+@@ -24,6 +24,10 @@
+ #include <syslog.h>
+ #endif
+ 
++#ifdef SYSTEMD_FOUND
++#include <systemd/sd-daemon.h>
++#endif /* SYSTEMD_FOUND */
++
+ #ifdef PROCESSCONTAINERS_ENABLED
+ #include "../processcontainers/ProcessContainer.h"
+ #endif
+@@ -980,6 +984,10 @@ POP_WARNING()
+                 }
+             }
+         }
++#ifdef SYSTEMD_FOUND
++        SYSLOG(Logging::Startup, (_T("Notify that WPEFramework Systemd Service is Ready")));
++        sd_notify(0, "READY=1");
++#endif /* SYSTEMD_FOUND */
+     }
+ 
+     void Server::Close()
+diff --git a/Source/WPEFramework/CMakeLists.txt b/Source/WPEFramework/CMakeLists.txt
+index 431e617f..5b34b720 100644
+--- a/Source/WPEFramework/CMakeLists.txt
++++ b/Source/WPEFramework/CMakeLists.txt
+@@ -84,6 +84,15 @@ else()
+             )
+ endif ()
+ 
++find_package(Systemd)
++if (SYSTEMD_FOUND)
++    target_link_libraries( ${TARGET}
++            PRIVATE
++            Systemd::Systemd
++            )
++    SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DSYSTEMD_FOUND")
++endif()
++
+ set_target_properties(${TARGET} PROPERTIES
+         CXX_STANDARD 11
+         CXX_STANDARD_REQUIRED YES

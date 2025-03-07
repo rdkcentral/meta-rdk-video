@@ -1,0 +1,202 @@
+From 834bee831ad70aed67c7bee80dccd750c8794ec0 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Mon, 1 Apr 2024 16:28:33 +0000
+Subject: [PATCH] comcast DELIA-67128 GCHeap snapshot
+
+1) Write GCHeap snapshot directly to file
+2) Override GCHeap snapshot directory with EVN variable
+
+Reason for change: WebProcess crashes during large GC heap dumps
+Test Procedure: Dump GC Heap snapshot from watcher file
+Priority: P1
+Risks: None
+
+Signed-off-by: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Signed-off-by: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+---
+ .../heap/HeapSnapshotBuilder.cpp              | 62 ++++++++++++++++++-
+ .../JavaScriptCore/heap/HeapSnapshotBuilder.h |  5 ++
+ Source/WebCore/bindings/js/GCController.cpp   | 27 +++++---
+ 3 files changed, 84 insertions(+), 10 deletions(-)
+
+diff --git a/Source/JavaScriptCore/heap/HeapSnapshotBuilder.cpp b/Source/JavaScriptCore/heap/HeapSnapshotBuilder.cpp
+index 55ae4095300b..56fa4a4b07c1 100644
+--- a/Source/JavaScriptCore/heap/HeapSnapshotBuilder.cpp
++++ b/Source/JavaScriptCore/heap/HeapSnapshotBuilder.cpp
+@@ -39,6 +39,52 @@
+ 
+ namespace JSC {
+ 
++namespace {
++
++class FileOutputStingBuilder {
++    WTF_MAKE_NONCOPYABLE(FileOutputStingBuilder);
++
++    FileSystem::PlatformFileHandle fileHandle;
++    StringBuilder builder;
++
++public:
++    FileOutputStingBuilder(FileSystem::PlatformFileHandle fileHandle)
++        : fileHandle(WTFMove(fileHandle))
++    {
++    }
++
++    ~FileOutputStingBuilder()
++    {
++        flush(true);
++    }
++
++    template<typename... StringTypes> void append(StringTypes... fragment)
++    {
++        builder.append(fragment...);
++        flush();
++    }
++
++    void appendQuotedJSONString(const String& string)
++    {
++        builder.appendQuotedJSONString(string);
++        flush();
++    }
++
++    void flush(bool force = false)
++    {
++        constexpr size_t kBufferLengthLimit = 4 * WTF::KB;
++        if ((force && !builder.isEmpty()) ||  builder.length() >= kBufferLengthLimit)
++        {
++            CString utf8String = builder.toStringPreserveCapacity().utf8();
++            FileSystem::writeToFile(fileHandle, utf8String.data(), utf8String.length());
++            builder.clear();
++            builder.reserveCapacity(kBufferLengthLimit);
++        }
++    }
++};
++
++} // namespace
++
+ NodeIdentifier HeapSnapshotBuilder::nextAvailableObjectIdentifier = 1;
+ NodeIdentifier HeapSnapshotBuilder::getNextObjectIdentifier() { return nextAvailableObjectIdentifier++; }
+ void HeapSnapshotBuilder::resetNextAvailableObjectIdentifier() { HeapSnapshotBuilder::nextAvailableObjectIdentifier = 1; }
+@@ -329,6 +375,20 @@ String HeapSnapshotBuilder::descriptionForCell(JSCell *cell) const
+ }
+ 
+ String HeapSnapshotBuilder::json(Function<bool (const HeapSnapshotNode&)> allowNodeCallback)
++{
++    StringBuilder json;
++    writeJson(WTFMove(allowNodeCallback), json);
++    return json.toString();
++}
++
++void HeapSnapshotBuilder::writeJsonToFile(FileSystem::PlatformFileHandle fileHandle)
++{
++    FileOutputStingBuilder json(fileHandle);
++    writeJson([] (const HeapSnapshotNode&) { return true; }, json);
++}
++
++template<typename OutputStingBuilder>
++void HeapSnapshotBuilder::writeJson(Function<bool (const HeapSnapshotNode&)>&& allowNodeCallback, OutputStingBuilder &json)
+ {
+     VM& vm = m_profiler.vm();
+     DeferGCForAWhile deferGC(vm);
+@@ -350,7 +410,6 @@ String HeapSnapshotBuilder::json(Function<bool (const HeapSnapshotNode&)> allowN
+     HashMap<UniquedStringImpl*, unsigned> edgeNameIndexes;
+     unsigned nextEdgeNameIndex = 0;
+ 
+-    StringBuilder json;
+ 
+     auto appendNodeJSON = [&] (const HeapSnapshotNode& node) {
+         // Let the client decide if they want to allow or disallow certain nodes.
+@@ -615,7 +674,6 @@ String HeapSnapshotBuilder::json(Function<bool (const HeapSnapshotNode&)> allowN
+     }
+ 
+     json.append('}');
+-    return json.toString();
+ }
+ 
+ } // namespace JSC
+diff --git a/Source/JavaScriptCore/heap/HeapSnapshotBuilder.h b/Source/JavaScriptCore/heap/HeapSnapshotBuilder.h
+index 33d5bbe4b53a..cd38912e9dd5 100644
+--- a/Source/JavaScriptCore/heap/HeapSnapshotBuilder.h
++++ b/Source/JavaScriptCore/heap/HeapSnapshotBuilder.h
+@@ -31,6 +31,7 @@
+ #include <wtf/HashSet.h>
+ #include <wtf/Lock.h>
+ #include <wtf/Vector.h>
++#include <wtf/FileSystem.h>
+ 
+ namespace JSC {
+ 
+@@ -130,6 +131,7 @@ public:
+ 
+     String json();
+     String json(Function<bool (const HeapSnapshotNode&)> allowNodeCallback);
++    void writeJsonToFile(FileSystem::PlatformFileHandle fileHandle);
+ 
+ private:
+     static NodeIdentifier nextAvailableObjectIdentifier;
+@@ -140,6 +142,9 @@ private:
+     bool previousSnapshotHasNodeForCell(JSCell*, NodeIdentifier&);
+     
+     String descriptionForCell(JSCell*) const;
++
++    template<typename OutputStingBuilder>
++    void writeJson(Function<bool (const HeapSnapshotNode&)>&& allowNodeCallback, OutputStingBuilder &json);
+     
+     struct RootData {
+         const char* reachabilityFromOpaqueRootReasons { nullptr };
+diff --git a/Source/WebCore/bindings/js/GCController.cpp b/Source/WebCore/bindings/js/GCController.cpp
+index 5f93491756f2..46744d9a7af8 100644
+--- a/Source/WebCore/bindings/js/GCController.cpp
++++ b/Source/WebCore/bindings/js/GCController.cpp
+@@ -140,10 +140,26 @@ void GCController::deleteAllLinkedCode(DeleteAllCodeEffort effort)
+ 
+ void GCController::dumpHeap()
+ {
++    static const char* sHeapDumpDirOverride = []() {
++        return getenv("WEBKIT_HEAP_SNAPSHOT_DIR");
++    }();
++
+     FileSystem::PlatformFileHandle fileHandle;
+-    String tempFilePath = FileSystem::openTemporaryFile("GCHeap"_s, fileHandle);
++    String tempFilePath;
++    if (sHeapDumpDirOverride) {
++        char buf[32];
++        time_t now = time(nullptr);
++        struct tm* tstruct = localtime(&now);
++        std::strftime(buf, sizeof(buf), "%Y%m%d_%H%M%S", tstruct);
++
++        tempFilePath = WTF::String::fromUTF8(sHeapDumpDirOverride) + "/GCHeap_" + WTF::String::fromUTF8(buf);
++        fileHandle = FileSystem::openFile(tempFilePath, FileSystem::FileOpenMode::ReadWrite);
++    } else {
++        tempFilePath = FileSystem::openTemporaryFile("GCHeap"_s, fileHandle);
++    }
++
+     if (!FileSystem::isHandleValid(fileHandle)) {
+-        WTFLogAlways("Dumping GC heap failed to open temporary file");
++        WTFLogAlways("Dumping GC heap failed to open temporary file: %s", tempFilePath.utf8().data());
+         return;
+     }
+ 
+@@ -152,19 +168,14 @@ void GCController::dumpHeap()
+ 
+     sanitizeStackForVM(vm);
+ 
+-    String jsonData;
+     {
+         DeferGCForAWhile deferGC(vm); // Prevent concurrent GC from interfering with the full GC that the snapshot does.
+ 
+         HeapSnapshotBuilder snapshotBuilder(vm.ensureHeapProfiler(), HeapSnapshotBuilder::SnapshotType::GCDebuggingSnapshot);
+         snapshotBuilder.buildSnapshot();
+-
+-        jsonData = snapshotBuilder.json();
++        snapshotBuilder.writeJsonToFile(fileHandle);
+     }
+ 
+-    CString utf8String = jsonData.utf8();
+-
+-    FileSystem::writeToFile(fileHandle, utf8String.data(), utf8String.length());
+     FileSystem::closeFile(fileHandle);
+     
+     WTFLogAlways("Dumped GC heap to %s", tempFilePath.utf8().data());
+-- 
+2.25.1
+
