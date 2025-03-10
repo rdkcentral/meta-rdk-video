@@ -28,9 +28,14 @@ EXTRA_OECMAKE += " -DENABLE_SYSTEM_GET_STORE_DEMO_LINK=ON "
 EXTRA_OECMAKE += " -DBUILD_ENABLE_DEVICE_MANUFACTURER_INFO=ON "
 EXTRA_OECMAKE += " -DBUILD_ENABLE_APP_CONTROL_AUDIOPORT_INIT=ON "
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'displayinfo-soc', ' -DENABLE_DISPLAYINFO_SOC=ON', '',d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native"
-RDEPENDS:${PN} += "wpeframework"
+DEPENDS += "wpeframework wpeframework-tools-native \
+            ${@bb.utils.contains('DISTRO_FEATURES', 'displayinfo-soc', " virtual/vendor-displayinfo", "", d)} \
+            "
+RDEPENDS:${PN} += " wpeframework \
+                    ${@bb.utils.contains('DISTRO_FEATURES', 'displayinfo-soc', " virtual/vendor-displayinfo", "", d)} \
+                    "
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
