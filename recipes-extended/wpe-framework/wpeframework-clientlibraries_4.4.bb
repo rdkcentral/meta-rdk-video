@@ -25,6 +25,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-check-_session-has-a-valid-pointer.patch \
            file://r4.4/0001-PowerManagerClient-library-implementation.patch \
            file://r4.4/0001-add-svp-header-to-data-before-decryption.patch \
+           file://r4.4/0001-DELIA-64727-Prealloc-secure-memory-before-decrypt.patch \
           "
 
 # Oct 17, 2023
