@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Infra plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "1.1.4"
+PV ?= "1.1.6"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -17,7 +17,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
 # Release version - 1.1.5
-SRCREV = "e2b1793cc0bba846017471e6a141613b9eef721f"
+SRCREV = "e5cd412b9935aa2490a4416d22850c59a645372c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -61,6 +61,7 @@ PACKAGECONFIG ?= " monitor \
     analytics \
     ocicontainer \
     runtimemanager \
+    messagecontrol \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' messagecontrol ', '', d)} \
@@ -94,7 +95,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE',
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG[messagecontrol]       = "-DPLUGIN_MESSAGECONTROL=OFF,-DPLUGIN_MESSAGECONTROL=OFF,rdkservices-apis,rdkservices-apis"
+PACKAGECONFIG[messagecontrol]       = "-DPLUGIN_MESSAGECONTROL=ON,-DPLUGIN_MESSAGECONTROL=OFF,rdkservices-apis,rdkservices-apis"
 PACKAGECONFIG[erm]                  = "-DBUILD_ENABLE_ERM=ON,-DBUILD_ENABLE_ERM=OFF,essos,essos"
 PACKAGECONFIG[monitor]              = "-DPLUGIN_MONITOR=ON ${MONITOR_PLUGIN_ARGS},-DPLUGIN_MONITOR=OFF,rdkservices-apis,rdkservices-apis"
 PACKAGECONFIG[ocicontainer]         = "-DPLUGIN_OCICONTAINER=ON, -DPLUGIN_OCICONTAINER=OFF, dobby rdkservices-apis systemd, dobby rdkservices-apis systemd"

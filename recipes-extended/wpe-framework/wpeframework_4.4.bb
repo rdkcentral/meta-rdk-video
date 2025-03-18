@@ -12,7 +12,7 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r42"
+PR = "r46"
 PV = "4.4.1"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
@@ -62,13 +62,14 @@ SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
             file://r4.4/PR-1586-Use-Monotonic-Clocks.patch\
             file://r4.4/PR-1630-JSON-Parsing-Escape-Sequence.patch \
             file://r4.4/PR-1533-Refernce-counted-Library-COMRPC-objects.patch  \
+            file://r4.4/PR-1376-1386-1441-1650-ProcessContainerCompilationFix.patch \
             file://r4.4/PR-1619-Update-SocketServer.h.patch \
             file://r4.4/PR-1751-Load-Library-ThunderR4.patch \
             file://r4.4/PR-1785-Reduce_scope_of_adminlock.patch \
             file://r4.4/PR-1791-Thunder-hung-SocketPort-close-Delete-channel.patch \
             file://r4.4/PR-1797-SocketPort-Closed.patch \
             file://r4.4/PR1832-Thunder-ABBA-Deadlock-Fix.patch \
-            file://r4.4/PR1642-Thunder-hibernate-configuration.patch \
+            file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
            "
 
 S = "${WORKDIR}/git"

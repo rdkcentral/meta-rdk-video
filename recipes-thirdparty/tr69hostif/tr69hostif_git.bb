@@ -8,7 +8,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69h
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 S = "${WORKDIR}/git"
 
-DEPENDS = "iarmbus iarmmgrs e2fsprogs libsoup-2.4 libsyswrapper yajl \
+DEPENDS = "iarmbus iarmmgrs e2fsprogs libsoup libsyswrapper yajl \
            devicesettings procps glib-2.0 \
            cjson libtinyxml2\
 	  "
@@ -81,12 +81,13 @@ DEPENDS += " rbus "
 LDFLAGS:append = " -lrbus "
 CXXFLAGS:append = " -I${includedir}/rbus "
 
-RDEPENDS:${PN} += "devicesettings bash"
+RDEPENDS:${PN} += "devicesettings bash libsoup"
 RDEPENDS:${PN} += "${PN}-conf"
 
 RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
 EXTRA_OECONF += "--disable-silent-rules --enable-InterfaceStack --enable-IPv6 --enable-notification --enable-yocto --enable-SpeedTest"
 EXTRA_OECONF += " --enable-parodus"
+EXTRA_OECONF:append = " --enable-libsoup3=yes"
 
 #Enable sd_notify
 EXTRA_OECONF:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', '--enable-systemd-notify', '', d)}"

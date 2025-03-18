@@ -1,0 +1,198 @@
+From: Madana Gopal Thirumalai <madanagopal_thirumalai@comcast.com>
+Date: 25 Jul 2023 17:24:43 +0000
+Subject: [PATCH] RDK-43195: Changes for middleware initial build issues
+---
+diff --git a/Source/JavaScriptCore/API/WebKitAvailability.h b/Source/JavaScriptCore/API/WebKitAvailability.h
+index 2a1ce7ce16f6..6a8d14c308b9 100644
+--- a/Source/JavaScriptCore/API/WebKitAvailability.h
++++ b/Source/JavaScriptCore/API/WebKitAvailability.h
+@@ -31,10 +31,8 @@
+ #include <AvailabilityMacros.h>
+ #include <CoreFoundation/CoreFoundation.h>
+
+-#if defined(BUILDING_GTK__)
+ #undef JSC_API_AVAILABLE
+ #define JSC_API_AVAILABLE(...)
+-#endif
+
+ #else
+ #define JSC_API_AVAILABLE(...)
+diff --git a/Source/JavaScriptCore/PlatformJSCOnly.cmake b/Source/JavaScriptCore/PlatformJSCOnly.cmake
+index 931ffcec61b7..72c148dd4c68 100644
+--- a/Source/JavaScriptCore/PlatformJSCOnly.cmake
++++ b/Source/JavaScriptCore/PlatformJSCOnly.cmake
+@@ -1,3 +1,10 @@
++find_package(GLIB 2.36 REQUIRED COMPONENTS gio gio-unix gobject gthread gmodule)
++add_definitions(-DSTATICALLY_LINKED_WITH_WTF)
++
++set(DERIVED_SOURCES_JAVASCRIPCORE_GLIB_API_DIR ${DERIVED_SOURCES_JAVASCRIPTCORE_DIR}/javascriptcorewpe/jsc)
++list(APPEND JavaScriptCore_PRIVATE_DEFINITIONS JSC_COMPILATION)
++include(GLib.cmake)
++
+ if (ENABLE_REMOTE_INSPECTOR)
+     if (USE_GLIB)
+         include(inspector/remote/GLib.cmake)
+diff --git a/Source/WTF/wtf/FileSystem.h b/Source/WTF/wtf/FileSystem.h
+index 5e91ad48fcb1..1a8545727574 100644
+--- a/Source/WTF/wtf/FileSystem.h
++++ b/Source/WTF/wtf/FileSystem.h
+@@ -65,6 +65,8 @@ namespace FileSystemImpl {
+ #if USE(GLIB) && !OS(WINDOWS)
+ typedef GFileIOStream* PlatformFileHandle;
+ const PlatformFileHandle invalidPlatformFileHandle = 0;
++//typedef int PlatformFileHandle;
++//const PlatformFileHandle invalidPlatformFileHandle = -1;
+ #elif OS(WINDOWS)
+ typedef HANDLE PlatformFileHandle;
+ // FIXME: -1 is INVALID_HANDLE_VALUE, defined in <winbase.h>. Chromium tries to
+diff --git a/Source/WTF/wtf/Platform.h b/Source/WTF/wtf/Platform.h
+index 629d8594b44f..6d4ef826b188 100644
+--- a/Source/WTF/wtf/Platform.h
++++ b/Source/WTF/wtf/Platform.h
+@@ -81,7 +81,7 @@
+    are currently dependent on macros they should not be and need to be refined or do not
+    belong as part of Platform.h at all. */
+
+-
++#define USE_GLIB 1
+ #if PLATFORM(GTK)
+ #define GLIB_VERSION_MIN_REQUIRED GLIB_VERSION_2_44
+ #if USE(GTK4)
+diff --git a/Source/WTF/wtf/PlatformJSCOnly.cmake b/Source/WTF/wtf/PlatformJSCOnly.cmake
+index 2f4fc6b6b986..c1bf85b8ed7a 100644
+--- a/Source/WTF/wtf/PlatformJSCOnly.cmake
++++ b/Source/WTF/wtf/PlatformJSCOnly.cmake
+@@ -53,6 +53,7 @@ else ()
+     if (LOWERCASE_EVENT_LOOP_TYPE STREQUAL "glib")
+         list(APPEND WTF_SOURCES
+             glib/FileSystemGlib.cpp
++            glib/Sandbox.cpp
+         )
+     else ()
+         list(APPEND WTF_SOURCES
+@@ -129,6 +130,7 @@ if (LOWERCASE_EVENT_LOOP_TYPE STREQUAL "glib")
+         glib/GRefPtr.h
+         glib/GTypedefs.h
+         glib/RunLoopSourcePriority.h
++        glib/WTFGType.h
+     )
+
+     if (ENABLE_REMOTE_INSPECTOR)
+@@ -162,3 +164,9 @@ endif ()
+ list(APPEND WTF_LIBRARIES
+     Threads::Threads
+ )
++list(APPEND WTF_SYSTEM_INCLUDE_DIRECTORIES
++    ${GLIB_INCLUDE_DIRS}
++    ${GIO_UNIX_INCLUDE_DIRS}
++)
++
++
+diff --git a/Source/WTF/wtf/glib/GRefPtr.h b/Source/WTF/wtf/glib/GRefPtr.h
+index afdc33d1e79a..a744822c2cb7 100644
+--- a/Source/WTF/wtf/glib/GRefPtr.h
++++ b/Source/WTF/wtf/glib/GRefPtr.h
+@@ -25,7 +25,7 @@
+ #if USE(GLIB)
+
+ #include <algorithm>
+-#include <glib.h>
++#include <glib-object.h>
+ #include <wtf/HashTraits.h>
+
+ extern "C" {
+@@ -34,8 +34,6 @@ extern "C" {
+     GDBusNodeInfo* g_dbus_node_info_ref(GDBusNodeInfo*);
+     void g_dbus_node_info_unref(GDBusNodeInfo*);
+ };
+-extern "C" void g_object_unref(gpointer);
+-extern "C" gpointer g_object_ref_sink(gpointer);
+
+ namespace WTF {
+
+diff --git a/Source/cmake/OptionsJSCOnly.cmake b/Source/cmake/OptionsJSCOnly.cmake
+index e892b4274b19..d660b13ccb39 100644
+--- a/Source/cmake/OptionsJSCOnly.cmake
++++ b/Source/cmake/OptionsJSCOnly.cmake
+@@ -1,5 +1,7 @@
+ find_package(Threads REQUIRED)
+
++set(JavaScriptCoreGLib_FRAMEWORK_HEADERS_DIR "${CMAKE_BINARY_DIR}/JavaScriptCoreGLib/Headers")
++set(JavaScriptCoreGLib_DERIVED_SOURCES_DIR "${CMAKE_BINARY_DIR}/JavaScriptCoreGLib/DerivedSources")
+ if (MSVC)
+     include(OptionsMSVC)
+ else ()
+@@ -9,6 +11,11 @@ else ()
+ endif ()
+
+ add_definitions(-DBUILDING_JSCONLY__)
++add_definitions(-DJSC_GLIB_API_ENABLED)
++
++SET_AND_EXPOSE_TO_BUILD(LOG_DISABLED FALSE)
++SET_AND_EXPOSE_TO_BUILD(ERROR_DISABLED FALSE)
++SET_AND_EXPOSE_TO_BUILD(FATAL_DISABLED FALSE)
+
+ set(PROJECT_VERSION_MAJOR 1)
+ set(PROJECT_VERSION_MINOR 0)
+@@ -17,7 +24,7 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_
+
+ WEBKIT_OPTION_BEGIN()
+ WEBKIT_OPTION_DEFINE(ENABLE_STATIC_JSC "Whether to build JavaScriptCore as a static library." PUBLIC OFF)
+-WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_REMOTE_INSPECTOR PRIVATE OFF)
++WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_REMOTE_INSPECTOR PRIVATE ON)
+ if (WIN32)
+     # FIXME: Enable FTL on Windows. https://bugs.webkit.org/show_bug.cgi?id=145366
+     WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_FTL_JIT PRIVATE OFF)
+@@ -34,7 +41,7 @@ set(ALL_EVENT_LOOP_TYPES
+     Generic
+ )
+
+-set(DEFAULT_EVENT_LOOP_TYPE "Generic")
++set(DEFAULT_EVENT_LOOP_TYPE "Glib")
+
+ set(EVENT_LOOP_TYPE ${DEFAULT_EVENT_LOOP_TYPE} CACHE STRING "Implementation of event loop to be used in JavaScriptCore (one of ${ALL_EVENT_LOOP_TYPES})")
+
+@@ -51,7 +58,7 @@ else ()
+ endif ()
+
+ if (WTF_CPU_ARM OR WTF_CPU_MIPS)
+-    SET_AND_EXPOSE_TO_BUILD(USE_CAPSTONE TRUE)
++       SET_AND_EXPOSE_TO_BUILD(USE_CAPSTONE FALSE)
+ endif ()
+
+ # FIXME: JSCOnly on WIN32 seems to only work with fully static build
+@@ -96,7 +103,7 @@ endif ()
+
+ string(TOLOWER ${EVENT_LOOP_TYPE} LOWERCASE_EVENT_LOOP_TYPE)
+ if (LOWERCASE_EVENT_LOOP_TYPE STREQUAL "glib")
+-    find_package(GLIB 2.36 REQUIRED COMPONENTS gio gio-unix gobject)
++    find_package(GLIB 2.36 REQUIRED COMPONENTS gio gobject gio-unix gthread gmodule)
+     SET_AND_EXPOSE_TO_BUILD(USE_GLIB 1)
+     SET_AND_EXPOSE_TO_BUILD(USE_GLIB_EVENT_LOOP 1)
+     SET_AND_EXPOSE_TO_BUILD(WTF_DEFAULT_EVENT_LOOP 0)
+@@ -109,3 +116,4 @@ find_package(ICU 61.2 REQUIRED COMPONENTS data i18n uc)
+ if (APPLE)
+     add_definitions(-DU_DISABLE_RENAMING=1)
+ endif ()
++add_definitions(-DGETTEXT_PACKAGE="JSCOnly")
+diff --git a/Source/cmake/WebKitCompilerFlags.cmake b/Source/cmake/WebKitCompilerFlags.cmake
+index 66b273b4346f..ab03a19ec5bb 100644
+--- a/Source/cmake/WebKitCompilerFlags.cmake
++++ b/Source/cmake/WebKitCompilerFlags.cmake
+@@ -252,9 +252,9 @@ if (NOT MSVC)
+     string(REGEX MATCHALL "-fsanitize=[^ ]*" ENABLED_COMPILER_SANITIZERS ${CMAKE_CXX_FLAGS})
+ endif ()
+
+-if (UNIX AND NOT APPLE AND NOT ENABLED_COMPILER_SANITIZERS)
+-    set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined ${CMAKE_SHARED_LINKER_FLAGS}")
+-endif ()
++#if (UNIX AND NOT APPLE AND NOT ENABLED_COMPILER_SANITIZERS)
++#    set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined ${CMAKE_SHARED_LINKER_FLAGS}")
++#endif ()
+
+
+ if (MSVC)
+--
+2.17.1
+
+

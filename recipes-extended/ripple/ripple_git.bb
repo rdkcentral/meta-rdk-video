@@ -11,6 +11,7 @@ SRCREV_rmain = "${OPEN_RIPPLE_SRCVER}"
 
 SRC_URI += " \
     file://0001-strip-abort-on-panic.patch \
+    file://0002-ripple_thunder_service_dependency.patch \
     "
 
 SRCREV_FORMAT ="rmain"

@@ -71,6 +71,9 @@ do_configure() {
 }
 
 do_compile[progress] = "percent"
+# To resolve jenkins build error (https://docs.yoctoproject.org/4.0.4/migration-guides/migration-4.0.html#fetching-changes)
+do_compile[network] = "1"
+
 do_compile() {
     export NINJA_STATUS='%p '
     ninja -C out/${COBALT_PLATFORM}_devel nplb

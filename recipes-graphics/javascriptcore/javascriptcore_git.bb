@@ -4,13 +4,9 @@ LIC_FILES_CHKSUM = "file://Source/WebCore/LICENSE-LGPL-2.1;md5=a778a33ef338abbaf
 
 inherit cmake pkgconfig perlnative ${@bb.utils.contains("DISTRO_FEATURES", "kirkstone", "python3native", "pythonnative", d)} gettext
 
-SRCREV = "583d02964d606c0f600ce5a3df98e017c8712931"
-SRC_URI = "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.28"
-SRC_URI += " file://jsconly_buildissues.diff"
-SRC_URI += " file://es6support.diff"
-SRC_URI += " file://0001-fix-build-error.diff"
-
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+SRCREV = "fc1703ed69006e92c6d014d1de7d1ea7b9d2f915"
+SRC_URI = "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.38"
+SRC_URI += " file://0001-wpe-2.38-changes-update.patch"
 
 S = "${WORKDIR}/git"
 
@@ -23,7 +19,7 @@ OECMAKE_GENERATOR = "Ninja"
 
 EXTRA_OECMAKE += " \
     -DCMAKE_BUILD_TYPE=Release \
-    -DENABLE_STATIC_JSC=ON \
+    -DENABLE_STATIC_JSC=OFF \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DPORT=JSCOnly \
     -DUSE_CAPSTONE=OFF \
@@ -33,6 +29,8 @@ EXTRA_OECMAKE += " \
     -DCMAKE_COLOR_MAKEFILE=OFF \
     -DENABLE_FTL_JIT=ON \
     -DUSE_THIN_ARCHIVES=OFF \
+    -DENABLE_WEBASSEMBLY=OFF \
+    -DENABLE_API_TESTS=OFF \
 "
 
 # don't build debug
@@ -55,27 +53,25 @@ TUNE_CCARGS:remove = "-fno-omit-frame-pointer -fno-optimize-sibling-calls"
 TUNE_CCARGS:append = " -fno-delete-null-pointer-checks"
 
 COMPATIBLE_MACHINE:mipsel = "(.*)"
-LDFLAGS:append = " -Wl,--no-keep-memory"
+LDFLAGS:append = " -Wl,--no-keep-memory,--strip-all"
 
 do_install() {
    install -d ${D}/${libdir}
-   cp -a ${B}/lib/libJavaScriptCore.a ${D}/${libdir}
-   cp -a ${B}/lib/libbmalloc.a ${D}/${libdir}
-   cp -a ${B}/lib/libWTF.a ${D}/${libdir}
-   cp -a ${B}/lib/libjsc_lib.so ${D}/${libdir}
+   install -d ${D}/${libdir}/javascriptcore
+   cp -a ${B}/lib/libJavaScriptCore.so* ${D}/${libdir}/javascriptcore/.
 
    install -d ${D}${includedir}
    mkdir -p ${D}${includedir}/JavaScriptCore
    mkdir -p ${D}${includedir}/wtf
 
-   cp -R ${B}/DerivedSources/ForwardingHeaders/JavaScriptCore/*.h ${D}${includedir}/JavaScriptCore/.
-   cp -R ${B}/DerivedSources/ForwardingHeaders/wtf/* ${D}${includedir}/wtf/.
+
+   cp -R ${B}/bmalloc/Headers/* ${D}${includedir}/.
+   cp -R ${B}/JavaScriptCore/Headers/* ${D}${includedir}/.
+   cp -R ${B}/JavaScriptCore/PrivateHeaders/JavaScriptCore/* ${D}${includedir}/JavaScriptCore/.
+   cp -R ${B}/WTF/Headers/* ${D}${includedir}/.
 }
 
-FILES:${PN} += "${libdir}/*.so"
-#FILES:${PN} += "${libdir}/libbmalloc.a"
-#FILES:${PN} += "${libdir}/libWTF.a"
-#FILES:${PN} += "${libdir}/libJavaScriptCore.a"
+FILES:${PN} += " ${libdir}/javascriptcore/libJavaScriptCore*"
 FILES_SOLIBSDEV = ""
 INSANE_SKIP:${PN} += "dev-so staticdev"
 INSANE_SKIP:${PN}:append:morty = " ldflags"
@@ -83,3 +79,5 @@ INSANE_SKIP:${PN} += "already-stripped"
 INSANE_SKIP:${PN}:append:morty = " ldflags"
 DEBIAN_NOAUTONAME:${PN} = "1"
 BBCLASSEXTEND = "native"
+INHIBIT_PACKAGE_STRIP = "1"
+INHIBIT_SYSROOT_STRIP = "1"

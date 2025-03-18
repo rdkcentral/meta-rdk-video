@@ -24,9 +24,8 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-reconnect-if-connection-establishment-is-failed.patch \
            file://r4.4/0001-check-_session-has-a-valid-pointer.patch \
            file://r4.4/0001-PowerManagerClient-library-implementation.patch \
+           file://r4.4/0001-add-svp-header-to-data-before-decryption.patch \
           "
-SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB',' file://r4.4/0001-add-svp-header-to-data-before-decryption.patch ', '',d)}"
-
 
 # Oct 17, 2023
 SRCREV_wpeframework-clientlibraries = "699f6c5f83aaffafdfdb75c01b281f292287f6ce"
