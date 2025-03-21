@@ -1,0 +1,17 @@
+Date: Thu Dec 5 19:20:58 2024
+From: Josekutty Kuriakose
+Subject: Abort on panic
+Source: COMCAST
+Upstream-Status: Pending
+Signed-off-by: Josekutty Kuriakose <Josekutty_Kuriakose@cable.comcast.com>
+
+Index: Ripple/Cargo.toml
+===================================================================
+--- Ripple.orig/Cargo.toml
++++ Ripple/Cargo.toml
+@@ -55,4 +55,4 @@ strip=true
+ opt-level="z"
+ codegen-units=1
+ lto=true
+-panic="abort"
++#panic="abort"

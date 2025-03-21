@@ -1,0 +1,16 @@
+name: Build Health Check - Merge Issue PRs
+on:
+  workflow_dispatch:
+    inputs:
+      issueNumber:
+        description: 'This Workflow Merges All PRs linked to Issue Number. Please make sure all the checks in individual PRs have passed before triggering this workflow. Enter the Issue Number to fetch linked PRs'
+        required: true
+        type: string
+
+jobs:
+  Merge_prs:
+    uses: rdkcentral/build_tools_workflows/.github/workflows/bhc_issue_merge_all_prs.yml@develop
+    with:
+      issueNumber: ${{ github.event.inputs.issueNumber }}
+    secrets:
+      RDKCM_RDKE: ${{ secrets.RDKCM_RDKE }}

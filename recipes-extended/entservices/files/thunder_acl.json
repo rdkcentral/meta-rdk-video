@@ -1,0 +1,132 @@
+{
+    "assign": [
+        {
+            "url": "*://localhost",
+            "role": "local"
+        },
+        {
+            "url": "*://localhost:*",
+            "role": "local"
+        },
+        {
+            "url": "*://127.0.0.1",
+            "role": "local"
+        },
+        {
+            "url": "*://127.0.0.1:*",
+            "role": "local"
+        },
+        {
+            "url": "*://[::1]",
+            "role": "local"
+        },
+        {
+            "url": "*://[::1]:*",
+            "role": "local"
+        },
+        {
+            "url": "*://[0:0:0:0:0:0:0:1]",
+            "role": "local"
+        },
+        {
+            "url": "*://[0:0:0:0:0:0:0:1]:*",
+            "role": "local"
+        },
+        {                            
+            "url": "*://platco.thor.local:*",
+            "role": "privileged"                  
+        },                                
+        {                            
+            "url": "*://platco.fui.local:*",
+            "role": "local"                  
+        },
+        {
+            "url": "file://*",
+            "role": "local"
+        },
+        {
+            "url": "*://texttospeechclient",
+            "role": "comcast"
+        },
+        {
+            "url": "*://*.youtube.com",
+            "role": "youtube"
+        },
+        {
+            "url": "*://*.netflix.com",
+            "role": "netflix"
+        },
+        {
+            "url": "*://*.amazon.com",
+            "role": "amazon"
+        },
+        {
+            "url": "*://*.gpe.xfinity.com",
+            "role": "gamex"
+        },
+        {
+            "url": "*://*",
+            "role": "default"
+        },
+        {
+            "url": "*://*:*",
+            "role": "default"
+        }
+    ],
+    "roles": {
+        "default" : {
+          "default" : "blocked",
+          "Messenger" : { "default" : "allowed", "methods" : [ "acl" ] },
+          "DisplayInfo" : { "default" : "allowed" },
+          "PlayerInfo" : { "default" : "allowed" },
+          "DeviceIdentification" : { "default" : "allowed" }
+        },
+        "local" : {
+            "default" : "allowed",
+            "Messenger" : { "default" : "allowed", "methods" : [ "acl" ] }
+        },
+        "privileged" : {
+            "default" : "allowed"
+        },
+        "comcast" : {
+            "default" : "allowed",
+            "org.rdk.TextToSpeech" : { "default" : "allowed", "methods" : [ "enabletts" ] },
+            "Messenger" : { "default" : "allowed", "methods" : [ "acl" ] }
+        },
+        "youtube" : {
+          "default" : "blocked",
+          "PlayerInfo" : { "default" : "allowed" },
+          "DisplayInfo" : { "default" : "allowed" },
+          "DeviceIdentification" : { "default" : "allowed" },
+          "org.rdk.Network" : { "default" : "blocked", "methods" : [ "getDefaultInterface", "register", "getInterfaces" ] },
+          "org.rdk.TextToSpeech" : { "default" : "allowed", "methods" : [ "enabletts" ] },   
+          "OCDM" : { "default" : "allowed" },
+          "org.rdk.AuthService" : { "default" : "blocked", "methods" : [ "getExperience" ] }
+        },
+        "netflix" : {
+          "default" : "blocked",
+          "PlayerInfo" : { "default" : "allowed" },
+          "DisplayInfo" : { "default" : "allowed" },
+          "org.rdk.HdcpProfile" : { "default" : "allowed" },
+          "org.rdk.TextToSpeech" : { "default" : "allowed", "methods" : [ "enabletts" ] }, 
+          "OCDM" : { "default" : "allowed" }
+        },
+        "gamex" : {
+            "default" : "blocked",
+            "org.rdk.Bluetooth" : { "default" : "allowed" },
+            "Controller": { "default" : "blocked", "methods" : ["activate"] }
+        },
+        "amazon" : {
+          "default" : "blocked",
+          "PlayerInfo" : { "default" : "allowed" },
+          "DisplayInfo" : { "default" : "allowed" },
+          "org.rdk.HdcpProfile" : { "default" : "allowed" },
+          "org.rdk.TextToSpeech" : { "default" : "allowed", "methods" : [ "enabletts" ] }, 
+          "org.rdk.Wifi" : { 
+			  "default" : "blocked", 
+			  "methods" : [ "getCurrentState", "getConnectedSSID", "getPairedSSID", "getPairedSSIDInfo", "isPaired", "setSignalThresholdChangeEnabled",  "isSignalThresholdChangeEnabled" ] 
+			  }, 
+          "OCDM" : { "default" : "allowed" }
+        }
+    }
+}

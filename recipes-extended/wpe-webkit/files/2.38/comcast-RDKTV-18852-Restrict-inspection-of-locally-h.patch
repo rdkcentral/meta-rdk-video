@@ -1,0 +1,191 @@
+From e2d2ee35c44904f8211b196774b301a6fcdb10f2 Mon Sep 17 00:00:00 2001
+From: "Vivek.A" <Vivek_Arumugam@comcast.com>
+Date: Mon, 22 Aug 2022 10:42:24 +0000
+Subject: [PATCH] comcast - RDKTV-18852 - Restrict inspection of locally
+ hosted pages
+
+---
+ .../inspector/remote/RemoteInspector.cpp      | 88 +++++++++++++++++++
+ .../inspector/remote/RemoteInspector.h        |  1 +
+ .../remote/glib/RemoteInspectorGlib.cpp       | 25 +++++-
+ 3 files changed, 110 insertions(+), 4 deletions(-)
+
+diff --git a/Source/JavaScriptCore/inspector/remote/RemoteInspector.cpp b/Source/JavaScriptCore/inspector/remote/RemoteInspector.cpp
+index 0c6f7e98c314..1c7f8f5b801e 100644
+--- a/Source/JavaScriptCore/inspector/remote/RemoteInspector.cpp
++++ b/Source/JavaScriptCore/inspector/remote/RemoteInspector.cpp
+@@ -34,6 +34,11 @@
+ #include "RemoteInspectorConstants.h"
+ #include <wtf/MainThread.h>
+ #include <wtf/text/WTFString.h>
++#include <wtf/text/StringBuilder.h>
++#include <arpa/inet.h>
++#include <sys/socket.h>
++#include <netdb.h>
++#include <ifaddrs.h>
+ 
+ namespace Inspector {
+ 
+@@ -257,6 +262,89 @@ void RemoteInspector::updateHasActiveDebugSession()
+     // Legacy iOS WebKit 1 had a notification. This will need to be smarter with WebKit2.
+ }
+ 
++bool RemoteInspector::shouldInhibitLocalHostInspection(TargetID targetId)
++{
++    RemoteInspectionTarget *remoteInspectionTarget = nullptr;
++    auto target = m_targetMap.get(targetId);
++    if(target && is<RemoteInspectionTarget>(target)) {
++        remoteInspectionTarget = downcast<RemoteInspectionTarget>(target);
++    } else {
++        return true;
++    }
++
++    static auto isProductionBuild = []() -> bool {
++        FILE* properties = fopen("/etc/device.properties", "r");
++        if (properties) {
++            bool prodBuild = false;
++            char* buffer = nullptr;
++            size_t size = 0;
++
++            while (getline(&buffer, &size, properties) != -1) {
++                const char* prefix = "build_type=";
++                size_t prefix_len = strlen(prefix);
++                if (g_ascii_strncasecmp(prefix, buffer, prefix_len) == 0) {
++                    char* remainder = buffer + prefix_len;
++                    prodBuild = g_ascii_strncasecmp("prod", remainder, 4) == 0;
++                    break;
++                }
++            }
++
++            free(buffer);
++            fclose(properties);
++            return prodBuild;
++        }
++        return false;
++    };
++
++    // allow inspection of localhost pages on dev builds
++    static bool productionBuildFlag = isProductionBuild();
++    if (!productionBuildFlag)
++        return false;
++
++    // find the localhost page
++    if(remoteInspectionTarget->url().find("localhost:"_s) != notFound)
++        return true;
++
++    if(remoteInspectionTarget->url().find("file://"_s) != notFound)
++        return true;
++
++    //getting device's ip addresses
++    struct ifaddrs *ifaddr;
++    if (getifaddrs(&ifaddr) == -1) {
++        perror("getifaddrs");
++        return true;
++    }
++
++    int  status, family = 0;
++    char host[NI_MAXHOST];
++    for (struct ifaddrs *addr = ifaddr; addr != NULL; addr = addr->ifa_next) {
++        if (!addr->ifa_addr)
++            continue;
++
++        family = addr->ifa_addr->sa_family;
++        if (family == AF_INET || family == AF_INET6) {
++            memset(host, 0, sizeof(host));
++            status = getnameinfo(addr->ifa_addr,
++                    (family == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6),
++                    host, NI_MAXHOST,
++                    NULL, 0, NI_NUMERICHOST);
++
++            if (status != 0) {
++                freeifaddrs(ifaddr);
++                return true;
++            }
++
++            if (remoteInspectionTarget->url().find(String::fromUTF8(host)) != notFound) {
++                freeifaddrs(ifaddr);
++                return true;
++            }
++        }
++    }
++
++    freeifaddrs(ifaddr);
++    return false;
++}
++
+ RemoteInspector::Client::~Client()
+ {
+ }
+diff --git a/Source/JavaScriptCore/inspector/remote/RemoteInspector.h b/Source/JavaScriptCore/inspector/remote/RemoteInspector.h
+index 62bf554890ef..a261f0cea0c3 100644
+--- a/Source/JavaScriptCore/inspector/remote/RemoteInspector.h
++++ b/Source/JavaScriptCore/inspector/remote/RemoteInspector.h
+@@ -208,6 +208,7 @@ private:
+ 
+     bool updateTargetMap(RemoteControllableTarget*);
+ 
++    bool shouldInhibitLocalHostInspection(TargetID targetId);
+     void pushListingsNow();
+     void pushListingsSoon();
+ 
+diff --git a/Source/JavaScriptCore/inspector/remote/glib/RemoteInspectorGlib.cpp b/Source/JavaScriptCore/inspector/remote/glib/RemoteInspectorGlib.cpp
+index 2d8811b3074f..db98bc6ff406 100644
+--- a/Source/JavaScriptCore/inspector/remote/glib/RemoteInspectorGlib.cpp
++++ b/Source/JavaScriptCore/inspector/remote/glib/RemoteInspectorGlib.cpp
+@@ -195,8 +195,14 @@ void RemoteInspector::pushListingsNow()
+     GVariantBuilder builder;
+     g_variant_builder_init(&builder, G_VARIANT_TYPE("(a(tsssb)b)"));
+     g_variant_builder_open(&builder, G_VARIANT_TYPE("a(tsssb)"));
+-    for (auto listing : m_targetListingMap.values())
++
++    for (auto target : m_targetListingMap.keys()) {
++        if(shouldInhibitLocalHostInspection(target))
++            continue;
++        TargetListing listing = m_targetListingMap.get(target);
+         g_variant_builder_add_value(&builder, listing.get());
++    }
++
+     g_variant_builder_close(&builder);
+     g_variant_builder_add(&builder, "b", m_clientCapabilities && m_clientCapabilities->remoteAutomationAllowed);
+     m_socketConnection->sendMessage("SetTargetList", g_variant_builder_end(&builder));
+@@ -256,7 +262,11 @@ void RemoteInspector::receivedDataMessage(TargetID targetIdentifier, const char*
+         if (!connectionToTarget)
+             return;
+     }
+-    connectionToTarget->sendMessageToTarget(String::fromUTF8(message));
++
++    if(shouldInhibitLocalHostInspection(targetIdentifier))
++        connectionToTarget->close();
++    else
++        connectionToTarget->sendMessageToTarget(String::fromUTF8(message));
+ }
+ 
+ void RemoteInspector::receivedCloseMessage(TargetID targetIdentifier)
+@@ -286,6 +296,9 @@ void RemoteInspector::setup(TargetID targetIdentifier)
+             return;
+     }
+ 
++    if(shouldInhibitLocalHostInspection(targetIdentifier))
++        return;
++
+     auto connectionToTarget = adoptRef(*new RemoteConnectionToTarget(*target));
+     ASSERT(is<RemoteInspectionTarget>(target) || is<RemoteAutomationTarget>(target));
+     if (!connectionToTarget->setup()) {
+@@ -301,8 +314,12 @@ void RemoteInspector::setup(TargetID targetIdentifier)
+ 
+ void RemoteInspector::sendMessageToTarget(TargetID targetIdentifier, const char* message)
+ {
+-    if (auto connectionToTarget = m_targetConnectionMap.get(targetIdentifier))
+-        connectionToTarget->sendMessageToTarget(String::fromUTF8(message));
++    if (auto connectionToTarget = m_targetConnectionMap.get(targetIdentifier)) {
++        if(shouldInhibitLocalHostInspection(targetIdentifier))
++            connectionToTarget->close();
++        else
++            connectionToTarget->sendMessageToTarget(String::fromUTF8(message));
++    }
+ }
+ 
+ void RemoteInspector::requestAutomationSession(const char* sessionID, const Client::SessionCapabilities& capabilities)
+-- 
+2.25.1
+

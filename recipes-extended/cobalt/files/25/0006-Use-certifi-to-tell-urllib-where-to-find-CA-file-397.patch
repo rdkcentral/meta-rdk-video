@@ -1,0 +1,34 @@
+From 9504bac8ebdfc9659296336a36264da867fdeab5 Mon Sep 17 00:00:00 2001
+From: Oscar Vestlie <oxv@google.com>
+Date: Fri, 23 Aug 2024 03:15:41 +0200
+Subject: [PATCH] Use certifi to tell urllib where to find CA file (#3974)
+
+---
+ tools/download_from_gcs.py | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/tools/download_from_gcs.py b/tools/download_from_gcs.py
+index edbef06544e..f075e9f53c5 100755
+--- a/tools/download_from_gcs.py
++++ b/tools/download_from_gcs.py
+@@ -15,6 +15,7 @@
+ """Downloads files from Google Cloud Storage given corresponding sha1s."""
+ 
+ import argparse
++import certifi
+ import hashlib
+ import logging
+ import os
+@@ -50,7 +51,8 @@ def ExtractSha1(filename):
+ 
+ def _DownloadFromGcsAndCheckSha1(bucket, sha1):
+   url = f'{_BASE_GCS_URL}/{bucket}/{sha1}'
+-  with urllib.request.urlopen(url, context=ssl.create_default_context()) as res:
++  ssl_context = ssl.create_default_context(cafile=certifi.where())
++  with urllib.request.urlopen(url, context=ssl_context) as res:
+     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+       shutil.copyfileobj(res, tmp_file)
+ 
+-- 
+2.25.1
+

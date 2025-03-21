@@ -1,0 +1,9 @@
+[Unit]
+Description=Boot version loader for RDK
+
+[Service]
+ExecStart=/bin/sh -c 'exec /lib/rdk/bootversion-loader.sh'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

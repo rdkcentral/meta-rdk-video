@@ -1,0 +1,27 @@
+From a15fa8d8456de3fde3989dacefe0ced21ef08394 Mon Sep 17 00:00:00 2001
+From: "Vivek.A" <Vivek_Arumugam@comcast.com>
+Date: Wed, 5 Jul 2023 09:39:14 +0000
+Subject: [PATCH] comcast : RDK-40634 : Only support decoders with h/w support
+ for WebRTC
+
+Change-Id: Ibd0ef4b4491aa61ff68cee8056a112121b74b8f9
+---
+ .../libwebrtc/gstreamer/GStreamerVideoDecoderFactory.cpp        | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoDecoderFactory.cpp b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoDecoderFactory.cpp
+index 4edb43f0d424..2cbee2657b19 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoDecoderFactory.cpp
++++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoDecoderFactory.cpp
+@@ -307,7 +307,7 @@ public:
+ 
+     static GRefPtr<GstElementFactory> GstDecoderFactory(const char *capsStr)
+     {
+-        return GStreamerRegistryScanner::singleton().isCodecSupported(GStreamerRegistryScanner::Configuration::Decoding, String::fromUTF8(capsStr), false).factory;
++        return GStreamerRegistryScanner::singleton().isCodecSupported(GStreamerRegistryScanner::Configuration::Decoding, String::fromUTF8(capsStr), true).factory;
+     }
+ 
+     bool HasGstDecoder()
+-- 
+2.25.1
+

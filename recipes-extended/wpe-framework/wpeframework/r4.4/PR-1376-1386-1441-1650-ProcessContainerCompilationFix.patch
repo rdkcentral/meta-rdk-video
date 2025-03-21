@@ -1,0 +1,261 @@
+From: Thamim Razith Abbas Ali
+Date: Tue, 16 Jul 2024 02:39:47 +0000
+Subject: [PATCH] R4.4.1_Process_container_compilation_fix_PR-1376-1386-1441-1650.patch
+Upstream-Status: Backported
+Signed-off-by: Thamim Razith Abbas Ali <tabbas651@cable.comcast.com>
+---
+diff --git a/Source/WPEFramework/Config.h b/Source/WPEFramework/Config.h
+index 01b7599a..3c754d45 100644
+--- a/Source/WPEFramework/Config.h
++++ b/Source/WPEFramework/Config.h
+@@ -303,7 +303,13 @@ namespace PluginHost {
+                     Logging = RHS.Logging;
+                     return (*this);
+                 }
+-
++                ProcessContainerConfig& operator=(ProcessContainerConfig&& move) noexcept
++                {
++                    if (this != &move) {
++                        Logging = std::move(move.Logging);
++                    }
++                    return (*this);
++                }
+                 Core::JSON::String Logging;
+             };
+ 
+diff --git a/Source/com/Communicator.cpp b/Source/com/Communicator.cpp
+index e3d00e9f..650c581b 100644
+--- a/Source/com/Communicator.cpp
++++ b/Source/com/Communicator.cpp
+@@ -22,10 +22,6 @@
+ #include <limits>
+ #include <memory>
+ 
+-#ifdef PROCESSCONTAINERS_ENABLED
+-#include "ProcessInfo.h"
+-#endif
+-
+ namespace WPEFramework {
+ namespace RPC {
+ 
+diff --git a/Source/com/Communicator.h b/Source/com/Communicator.h
+index 9866f486..3fd57323 100644
+--- a/Source/com/Communicator.h
++++ b/Source/com/Communicator.h
+@@ -32,7 +32,7 @@
+ 
+ 
+ #ifdef PROCESSCONTAINERS_ENABLED
+-#include "../processcontainers/ProcessContainer.h"
++#include <processcontainers/ProcessContainer.h>
+ #endif
+ 
+ 
+@@ -810,9 +810,8 @@ namespace RPC {
+                     case 0: if (process.Id() != 0) {
+                                 process.Kill(false);
+                             }
+-                            else if (_container->Stop(0)) {
+-                                nextinterval = 0;
+-                                break;
++                            else {
++                                _container->Stop(0);
+                             }
+                             nextinterval = Communicator::SoftKillCheckWaitTime();
+                             break;
+@@ -856,24 +856,6 @@ namespace RPC {
+ 
+ #endif
+ 
+-    protected:
+-        virtual RemoteConnection* CreateStarter(const Config& config, const Object& instance)
+-        {
+-            RemoteConnection* result = nullptr;
+-
+-            if (instance.Type() == Object::HostType::LOCAL) {
+-                result = Core::Service<LocalProcess>::Create<RemoteConnection>(config, instance, _connectionMap);
+-            } else if (instance.Type() == Object::HostType::CONTAINER) {
+-#ifdef PROCESSCONTAINERS_ENABLED
+-                result = Core::Service<ContainerProcess>::Create<RemoteConnection>(config, instance, _reporter);
+-#else
+-                SYSLOG(Logging::Error, (_T("Cannot create Container process for %s, this version was not build with Container support"), instance.ClassName().c_str()));
+-#endif
+-            }
+-
+-            return result;
+-        }
+-
+     private:
+         class EXTERNAL RemoteConnectionMap {
+         private:
+@@ -1429,6 +1411,26 @@ POP_WARNING()
+             RemoteConnectionMap& _connections;
+         };
+ 
++    protected:
++        virtual RemoteConnection* CreateStarter(const Config& config, const Object& instance)
++        {
++            RemoteConnection* result = nullptr;
++
++            if (instance.Type() == Object::HostType::LOCAL) {
++                result = Core::Service<LocalProcess>::Create<RemoteConnection>(config, instance, _connectionMap);
++            }
++            else if (instance.Type() == Object::HostType::CONTAINER) {
++#ifdef PROCESSCONTAINERS_ENABLED
++                result = Core::Service<ContainerProcess>::Create<RemoteConnection>(config, instance, _connectionMap);
++#else
++                SYSLOG(Logging::Error, (_T("Cannot create Container process for %s, this version was not build with Container support"), instance.ClassName().c_str()));
++#endif
++            }
++
++            return result;
++        }
++        void LoadProxyStubs(const string& pathName);
++
+     public:
+         Communicator() = delete;
+         Communicator(Communicator&&) = delete;
+@@ -1512,9 +1514,6 @@ POP_WARNING()
+         }
+         void Destroy(const uint32_t id);
+ 
+-    protected:
+-        void LoadProxyStubs(const string& pathName);
+-
+     private:
+         void Closed(const Core::ProxyType<Core::IPCChannel>& channel)
+         {
+diff --git a/Source/extensions/processcontainers/Module.h b/Source/extensions/processcontainers/Module.h
+index b717687e..2c7e9035 100644
+--- a/Source/extensions/processcontainers/Module.h
++++ b/Source/extensions/processcontainers/Module.h
+@@ -24,6 +24,7 @@
+ #endif
+ 
+ #include <core/core.h>
++#include <messaging/messaging.h>
+ 
+ #if defined(__WINDOWS__) && defined(CONTAINERS_EXPORTS)
+ #undef EXTERNAL
+diff --git a/Source/extensions/processcontainers/implementations/DobbyImplementation/DobbyImplementation.cpp b/Source/extensions/processcontainers/implementations/DobbyImplementation/DobbyImplementation.cpp
+index 7ccc6844..5a9d0b6f 100644
+--- a/Source/extensions/processcontainers/implementations/DobbyImplementation/DobbyImplementation.cpp
++++ b/Source/extensions/processcontainers/implementations/DobbyImplementation/DobbyImplementation.cpp
+@@ -36,7 +36,7 @@ namespace ProcessContainers {
+         return dobbyContainerAdministrator;
+     }
+ 
+-    IContainer* DobbyContainerAdministrator::Container(const string& id, IStringIterator& searchpaths, const string& logpath, const string& configuration)
++    IContainer* DobbyContainerAdministrator::Container(const string& id, IStringIterator& searchpaths, const string& logpath, const string& configuration VARIABLE_IS_NOT_USED)
+     {
+         searchpaths.Reset(0);
+         while (searchpaths.Next()) {
+@@ -97,7 +97,7 @@ namespace ProcessContainers {
+     {
+     }
+ 
+-    void DobbyContainerAdministrator::Logging(const string& logPath, const string& loggingOptions)
++    void DobbyContainerAdministrator::Logging(const string& logPath VARIABLE_IS_NOT_USED, const string& loggingOptions VARIABLE_IS_NOT_USED)
+     {
+         // Only container-scope logging
+     }
+@@ -173,7 +173,7 @@ namespace ProcessContainers {
+         return result;
+     }
+ 
+-    void DobbyContainerAdministrator::containerStopCallback(int32_t cd, const std::string& containerId,
++    void DobbyContainerAdministrator::containerStopCallback(int32_t cd VARIABLE_IS_NOT_USED, const std::string& containerId,
+         IDobbyProxyEvents::ContainerState state,
+         const void* params)
+     {
+@@ -384,12 +384,12 @@ namespace ProcessContainers {
+             TRACE(ProcessContainers::ProcessContainerization, (_T("started %s container! descriptor: %d"), _name.c_str(), _descriptor));
+             result = true;
+         }
+-        _adminLock.UnLock();
++        _adminLock.Unlock();
+ 
+         return result;
+     }
+ 
+-    bool DobbyContainer::Stop(const uint32_t timeout /*ms*/)
++    bool DobbyContainer::Stop(const uint32_t timeout /*ms*/VARIABLE_IS_NOT_USED)
+     {
+         bool result = false;
+         bool stoppedSuccessfully = false;
+diff --git a/Source/extensions/processcontainers/Messaging.h b/Source/extensions/processcontainers/Messaging.h
+new file mode 100644
+index 00000000..de403a17
+--- /dev/null
++++ b/Source/extensions/processcontainers/Messaging.h
+@@ -0,0 +1,70 @@
++ /*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2020 Metrological
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#pragma once
++
++#include "Module.h"
++
++namespace WPEFramework {
++namespace ProcessContainers {
++
++    class EXTERNAL ProcessContainerization {
++    private:
++        // -------------------------------------------------------------------
++        // This object should not be copied or assigned. Prevent the copy
++        // constructor and assignment constructor from being used. Compiler
++        // generated assignment and copy methods will be blocked by the
++        // following statments.
++        // Define them but do not implement them, compile error/link error.
++        // -------------------------------------------------------------------
++        ProcessContainerization(const ProcessContainerization& a_Copy) = delete;
++        ProcessContainerization& operator=(const ProcessContainerization& a_RHS) = delete;
++
++    public:
++        ProcessContainerization(const TCHAR formatter[], ...)
++        {
++            va_list ap;
++            va_start(ap, formatter);
++            Core::Format(_text, formatter, ap);
++            va_end(ap);
++        }
++        ProcessContainerization(const string& text)
++            : _text(Core::ToString(text))
++        {
++        }
++        ~ProcessContainerization() = default;
++
++    public:
++        inline const char* Data() const
++        {
++            return (_text.c_str());
++        }
++        inline uint16_t Length() const
++        {
++            return (static_cast<uint16_t>(_text.length()));
++        }
++
++    private:
++        string _text;
++    };
++
++
++} // ProcessContainers
++} // WPEFramework
++

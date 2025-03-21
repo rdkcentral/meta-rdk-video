@@ -1,0 +1,33 @@
+Date: July 01, 2021 20:59
+From: 286049f1fb1f18cc73db88d72d50b08246612420 Wed Jun 30 16:33:15 2021
+Subject: Disable FP Init sequence for llama
+Source: SKY
+Upstream-Status: Pending
+Signed-off-by: Akhil Babu <akhil.babu@sky.uk>
+---
+
+diff --git a/helpers/frontpanel.cpp b/helpers/frontpanel.cpp
+index ab05e14d..c2cbe218 100644
+--- a/helpers/frontpanel.cpp
++++ b/helpers/frontpanel.cpp
+@@ -159,9 +159,10 @@ namespace WPEFramework
+                     globalLedBrightness = device::FrontPanelIndicator::getInstance("Power").getBrightness();
+                     LOGINFO("Power light brightness, %d, power status %d", globalLedBrightness, powerStatus);
+ 
++                    LOGWARN("Not Initializing FPlight for LLAMA");
++		    /*
+                     for (uint i = 0; i < fpIndicators.size(); i++)
+                     {
+-                        LOGWARN("Initializing light %s", fpIndicators.at(i).getName().c_str());
+                         if (powerStatus)
+                             device::FrontPanelIndicator::getInstance(fpIndicators.at(i).getName()).setBrightness(globalLedBrightness);
+ 
+@@ -170,6 +171,7 @@ namespace WPEFramework
+ 
+                     if (powerStatus)
+                         device::FrontPanelIndicator::getInstance("Power").setState(true);
++		    */
+ 
+                 }
+                 catch (const std::exception & err)
+

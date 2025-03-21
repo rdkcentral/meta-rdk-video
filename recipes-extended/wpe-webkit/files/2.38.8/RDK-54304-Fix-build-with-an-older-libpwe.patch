@@ -1,0 +1,30 @@
+From 861f2f906de5d421b9ede368817306e01cb684a5 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Mon, 24 Feb 2025 14:54:12 +0000
+Subject: [PATCH] Fix build with an older libpwe
+
+---
+ Source/WebCore/platform/gamepad/wpe/WPEGamepad.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Source/WebCore/platform/gamepad/wpe/WPEGamepad.cpp b/Source/WebCore/platform/gamepad/wpe/WPEGamepad.cpp
+index 107f7e8e9459..0c44521c54f7 100644
+--- a/Source/WebCore/platform/gamepad/wpe/WPEGamepad.cpp
++++ b/Source/WebCore/platform/gamepad/wpe/WPEGamepad.cpp
+@@ -58,11 +58,13 @@ WPEGamepad::WPEGamepad(struct wpe_gamepad_provider* provider, uintptr_t gamepadI
+             auto& self = *static_cast<WPEGamepad*>(data);
+             self.absoluteAxisChanged(static_cast<unsigned>(axis), value);
+         },
++#if WPE_CHECK_VERSION(1,16,2)
+         // analog_button_value
+         [](void* data, enum wpe_gamepad_button button, double value) {
+             auto& self = *static_cast<WPEGamepad*>(data);
+             self.analogButtonChanged(static_cast<unsigned>(button), value);
+         },
++#endif
+         nullptr, nullptr,
+     };
+     wpe_gamepad_set_client(m_gamepad.get(), &s_client, this);
+-- 
+2.25.1
+

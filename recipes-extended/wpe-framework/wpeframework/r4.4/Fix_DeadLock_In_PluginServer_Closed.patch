@@ -1,0 +1,42 @@
+From ebe6cc4ce44ad1d19fe421e4e287660bad428123 Mon Sep 17 00:00:00 2001
+From: Adrian Muzyka <adrian.muzyka@consult.red>
+Date: Mon, 15 Apr 2024 05:48:14 +0000
+Subject: [PATCH] DELIA-65027/RDKTV-29817: Fix deadlock in PluginServer::Close
+Reason for change:If a channel is closed there is never any use of calling them (the channel is closed so can not receive anything anymore), so meaning this is a waste of memory (entry in the tables of the plugin) end resources, cause as the event, if fired in code, will still look for that channel (id) and will never find it anymore and those are waste of CPU cycles as we already knew the channel is gone, hence why here (in the to be commented out code) it cleaned it up
+
+Upstream-Status: Pending
+Signed-off-by: AAdrian Muzyka <adrian.muzyka@consult.red>
+---
+ Source/WPEFramework/PluginServer.h | 18 +-----------------
+ 1 file changed, 1 insertion(+), 17 deletions(-)
+
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index 3ed0764c..431268c8 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -1760,24 +1760,8 @@ namespace PluginHost {
+                 return (_administrator.RemoteConnection(connectionId));
+             }
+ 
+-            void Closed(const uint32_t id)
++            void Closed(const uint32_t /*id*/)
+             {
+-                IDispatcher* dispatcher = nullptr;
+-
+-                _pluginHandling.Lock();
+-                if (_handler != nullptr) {
+-                    dispatcher = _handler->QueryInterface<IDispatcher>();
+-                    if (dispatcher != nullptr) {
+-                        ILocalDispatcher* localDispatcher = dispatcher->Local();
+-
+-                        if (localDispatcher) {
+-                            localDispatcher->Dropped(id);
+-                        }
+-                        dispatcher->Release();
+-                    }
+-                }
+-                _pluginHandling.Unlock();
+-
+             }
+ 
+             // Methods to Activate and Deactivate the aggregated Plugin to this shell.

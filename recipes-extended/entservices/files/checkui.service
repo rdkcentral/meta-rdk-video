@@ -1,0 +1,11 @@
+[Unit]
+Description=wait Service
+After=basic.target
+
+[Service]
+Type=notify
+RemainAfterExit=yes
+ExecStart=/bin/sh -c "/lib/rdk/checkui.sh"
+
+[Install]
+WantedBy=ui-init.target

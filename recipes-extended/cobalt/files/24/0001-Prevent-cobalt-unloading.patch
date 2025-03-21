@@ -1,0 +1,32 @@
+From 67b60ef38a885a7be133369b4c4ae6e0c8bbfee5 Mon Sep 17 00:00:00 2001
+From: sjulfk353 <shahin_julfkar@comcast.com>
+Date: Thu, 3 Oct 2024 13:32:19 +0000
+Subject: [PATCH] Prevent cobalt unloading
+
+Reason for change: Testing Purpose
+Test Procedure: none
+Risks: low
+Priority: P2
+Signed-off-by: Shahin Julfkar <shahin_julfkar@comcast.com>
+
+Change-Id: If1120eae7a89e3159ef12c85c82fc07a6e076e7c
+
+diff --git a/starboard/elf_loader/program_table.cc b/starboard/elf_loader/program_table.cc
+index 824a68f9290..fba158c6646 100644
+--- a/starboard/elf_loader/program_table.cc
++++ b/starboard/elf_loader/program_table.cc
+@@ -420,6 +420,11 @@ Addr ProgramTable::GetBaseMemoryAddress() {
+ 
+ ProgramTable::~ProgramTable() {
+   SetEvergreenInfo(NULL);
++
++  SB_LOG(INFO) << "Skip UnLoad start=" << std::hex << load_start_
++               << " base_memory_address=0x" << base_memory_address_;
++  return;
++
+   if (load_start_) {
+     SbMemoryUnmap(load_start_, load_size_);
+   }
+-- 
+2.17.1
+

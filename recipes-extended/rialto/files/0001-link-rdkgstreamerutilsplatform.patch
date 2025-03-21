@@ -1,0 +1,23 @@
+From f4b23f7c6924b7835fc4b3c81a1b9645a3794361 Mon Sep 17 00:00:00 2001
+From: kkanag314 <krishnapriya_kanagaraj@comcast.com>
+Date: Mon, 12 Aug 2024 15:26:24 +0000
+Subject: [PATCH] link rdkgstreamerutilsplatform
+
+---
+ wrappers/CMakeLists.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/wrappers/CMakeLists.txt b/wrappers/CMakeLists.txt
+index 4537ccbf..ff9fee10 100644
+--- a/wrappers/CMakeLists.txt
++++ b/wrappers/CMakeLists.txt
+@@ -53,6 +53,7 @@ if( NOT CMAKE_BUILD_FLAG STREQUAL "UnitTests" AND NOT CMAKE_BUILD_FLAG STREQUAL
+ 
+     set(WRAPPER_LIBS
+         rdkgstreamerutils
++        rdkgstreamerutilsplatform
+         ocdm::ocdm
+         ${CMAKE_DL_LIBS})
+ 
+-- 
+2.17.1

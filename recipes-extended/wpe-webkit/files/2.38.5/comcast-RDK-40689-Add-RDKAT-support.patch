@@ -1,0 +1,299 @@
+From accec8b5135f302d75015669a970b799078641c9 Mon Sep 17 00:00:00 2001
+From: Filipe Norte <filipe.norte@sky.uk>
+Date: Tue, 18 Apr 2023 18:09:13 +0000
+Subject: [PATCH] comcast - RDK-40689: Add RDKAT support
+
+---
+ .../accessibility/AccessibilityNodeObject.cpp | 30 +++++++++++++++----
+ .../accessibility/AccessibilityNodeObject.h   |  1 +
+ .../AccessibilityObjectInterface.h            |  2 +-
+ Source/WebCore/html/HTMLMediaElement.cpp      |  7 ++++-
+ Source/WebCore/html/HTMLMediaElement.h        |  1 +
+ Source/WebKit/PlatformWPE.cmake               |  4 ---
+ Source/WebKit/WebProcess/WebPage/WebPage.cpp  | 30 +++++++++++++++++++
+ .../WebProcess/WebPage/glib/WebPageGLib.cpp   |  6 +++-
+ Source/cmake/OptionsWPE.cmake                 | 11 ++-----
+ Tools/wpe/backends/PlatformWPE.cmake          |  1 -
+ Tools/wpe/backends/atk/ViewBackendAtk.cpp     |  3 --
+ 11 files changed, 71 insertions(+), 25 deletions(-)
+
+diff --git a/Source/WebCore/accessibility/AccessibilityNodeObject.cpp b/Source/WebCore/accessibility/AccessibilityNodeObject.cpp
+index f9fb462a08a4..d195561f5c01 100644
+--- a/Source/WebCore/accessibility/AccessibilityNodeObject.cpp
++++ b/Source/WebCore/accessibility/AccessibilityNodeObject.cpp
+@@ -2421,16 +2421,34 @@ String AccessibilityNodeObject::ariaDescribedByAttribute() const
+     return descriptionForElements(elementsFromAttribute(aria_describedbyAttr));
+ }
+ 
++void AccessibilityNodeObject::ariaLabeledByElements(Vector<Element*>& elements) const
++ {
++     // FIXME: should walk the DOM elements only once.
++    auto lelements = elementsFromAttribute(aria_labelledbyAttr);
++    if (!lelements.size())
++        lelements = elementsFromAttribute(aria_labeledbyAttr);
++
++    for (unsigned i = 0; i < lelements.size(); ++i) {
++        if(elements.contains(lelements[i]))
++            continue;
++
++        elements.append(lelements[i]);
++        AXObjectCache* cache = axObjectCache();
++        if (AccessibilityObject* axObject = (cache ? cache->getOrCreate(lelements[i]) : nullptr))
++            downcast<AccessibilityNodeObject>(*axObject).ariaLabeledByElements(elements);
++
++        if(!lelements.isEmpty() && node())
++            elements.removeAll(&downcast<Element>(*node()));
++    }
++}
++
+ Vector<Element*> AccessibilityNodeObject::ariaLabeledByElements() const
+ {
+-    // FIXME: should walk the DOM elements only once.
+-    auto elements = elementsFromAttribute(aria_labelledbyAttr);
+-    if (elements.size())
+-        return elements;
+-    return elementsFromAttribute(aria_labeledbyAttr);
++    Vector<Element*> elements;
++    ariaLabeledByElements(elements);
++    return elements;
+ }
+ 
+-
+ String AccessibilityNodeObject::ariaLabeledByAttribute() const
+ {
+     return descriptionForElements(ariaLabeledByElements());
+diff --git a/Source/WebCore/accessibility/AccessibilityNodeObject.h b/Source/WebCore/accessibility/AccessibilityNodeObject.h
+index 23f5a0bd0c51..b4d28ddc9b59 100644
+--- a/Source/WebCore/accessibility/AccessibilityNodeObject.h
++++ b/Source/WebCore/accessibility/AccessibilityNodeObject.h
+@@ -205,6 +205,7 @@ private:
+     void visibleText(Vector<AccessibilityText>&) const;
+     String alternativeTextForWebArea() const;
+     void ariaLabeledByText(Vector<AccessibilityText>&) const;
++    void ariaLabeledByElements(Vector<Element*>& elements) const;
+     bool computeAccessibilityIsIgnored() const override;
+     bool usesAltTagForTextComputation() const;
+     bool roleIgnoresTitle() const;
+diff --git a/Source/WebCore/accessibility/AccessibilityObjectInterface.h b/Source/WebCore/accessibility/AccessibilityObjectInterface.h
+index 92dc1b13ea50..9cacf960897a 100644
+--- a/Source/WebCore/accessibility/AccessibilityObjectInterface.h
++++ b/Source/WebCore/accessibility/AccessibilityObjectInterface.h
+@@ -49,7 +49,7 @@
+ #endif
+ 
+ #if USE(ATK)
+-#include "WebKitAccessible.h"
++#include <wtf/glib/GRefPtr.h>
+ #endif
+ 
+ #if PLATFORM(COCOA)
+diff --git a/Source/WebCore/html/HTMLMediaElement.cpp b/Source/WebCore/html/HTMLMediaElement.cpp
+index 9c6ad8bc29c6..a607f4fa52a3 100644
+--- a/Source/WebCore/html/HTMLMediaElement.cpp
++++ b/Source/WebCore/html/HTMLMediaElement.cpp
+@@ -3956,6 +3956,7 @@ ExceptionOr<void> HTMLMediaElement::setVolume(double volume)
+         removeBehaviorRestrictionsAfterFirstUserGesture(MediaElementSession::AllRestrictions & ~MediaElementSession::RequireUserGestureToControlControlsManager);
+ 
+     m_volume = volume;
++    m_referenceVolume = m_volume;
+     m_volumeInitialized = true;
+     updateVolume();
+     scheduleEvent(eventNames().volumechangeEvent);
+@@ -5223,6 +5224,9 @@ void HTMLMediaElement::mediaPlayerVolumeChanged()
+         double vol = m_player->volume();
+         if (vol != m_volume) {
+             m_volume = vol;
++            Page* page = document().page();
++            if(!page || page->mediaVolume() == 1)
++                m_referenceVolume = vol;
+             updateVolume();
+             scheduleEvent(eventNames().volumechangeEvent);
+         }
+@@ -5653,6 +5657,7 @@ void HTMLMediaElement::updateVolume()
+     float volume = m_player->volume();
+     if (m_volume != volume) {
+         m_volume = volume;
++        m_referenceVolume = volume;
+         scheduleEvent(eventNames().volumechangeEvent);
+     }
+ #endif
+@@ -8340,7 +8345,7 @@ double HTMLMediaElement::effectiveVolume() const
+     double volumeMultiplier = page ? page->mediaVolume() : 1;
+     if (m_mediaController)
+         volumeMultiplier *= m_mediaController->volume();
+-    return m_volume * volumeMultiplier;
++    return m_referenceVolume * volumeMultiplier;
+ }
+ 
+ bool HTMLMediaElement::effectiveMuted() const
+diff --git a/Source/WebCore/html/HTMLMediaElement.h b/Source/WebCore/html/HTMLMediaElement.h
+index 402ff5c84f24..fa18bbe5f342 100644
+--- a/Source/WebCore/html/HTMLMediaElement.h
++++ b/Source/WebCore/html/HTMLMediaElement.h
+@@ -1047,6 +1047,7 @@ private:
+     SeekType m_pendingSeekType { NoSeek };
+ 
+     double m_volume { 1 };
++    double m_referenceVolume { 1 };
+     bool m_volumeInitialized { false };
+     MediaTime m_lastSeekTime;
+     
+diff --git a/Source/WebKit/PlatformWPE.cmake b/Source/WebKit/PlatformWPE.cmake
+index 19f0e56bb694..c9075a9b8f37 100644
+--- a/Source/WebKit/PlatformWPE.cmake
++++ b/Source/WebKit/PlatformWPE.cmake
+@@ -363,10 +363,6 @@ list(APPEND WebKit_LIBRARIES
+     ${LIBSOUP_LIBRARIES}
+ )
+ 
+-if (USE_ATK)
+-    list(APPEND WebKit_LIBRARIES ATK::Bridge)
+-endif ()
+-
+ if (ENABLE_BUBBLEWRAP_SANDBOX)
+     list(APPEND WebKit_LIBRARIES Libseccomp::Libseccomp)
+ endif ()
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.cpp b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+index 0c85baa20841..7a54a3a517dc 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.cpp
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+@@ -402,6 +402,10 @@
+ #import <pal/spi/cg/CoreGraphicsSPI.h>
+ #endif
+ 
++#if ENABLE(ACCESSIBILITY)
++#include <rdkat.h>
++#endif
++
+ static void adjustCoreGraphicsForCaptivePortal()
+ {
+ #if HAVE(LOCKDOWN_MODE_PDF_ADDITIONS)
+@@ -410,6 +414,16 @@ static void adjustCoreGraphicsForCaptivePortal()
+ #endif
+ }
+ 
++#if ENABLE(ACCESSIBILITY)
++#if PLATFORM(BROADCOM)
++WTF::WeakPtr<WebKit::WebPage> g_pageHandle;
++static void SetMediaVolume(void *data, float volume) {
++    if(data && g_pageHandle && data == g_pageHandle.get())
++        g_pageHandle->setMediaVolume(volume);
++}
++#endif
++#endif
++
+ namespace WebKit {
+ using namespace JSC;
+ using namespace WebCore;
+@@ -587,6 +601,10 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
+     ASSERT(m_identifier);
+     WEBPAGE_RELEASE_LOG(Loading, "constructor:");
+ 
++#if ENABLE(ACCESSIBILITY)
++    RDK_AT::Initialize();
++#endif
++
+     m_pageGroup = WebProcess::singleton().webPageGroup(parameters.pageGroupData);
+ 
+     PageConfiguration pageConfiguration(
+@@ -6682,6 +6700,18 @@ void WebPage::didCommitLoad(WebFrame* frame)
+     if (!frame->isMainFrame())
+         return;
+ 
++#if ENABLE(ACCESSIBILITY)
++    // Always enable ATK processing in WebKik to trigger ATK related events
++    WebCore::AXObjectCache::enableAccessibility();
++    // Enable RDKAT to process WebKit event into real speach (if TTS enabled)
++    WTFLogAlways("Enable RDKAT processing for WPE");
++    RDK_AT::EnableProcessing(true);
++#if PLATFORM(BROADCOM)
++    g_pageHandle = WeakPtr { *this };
++    RDK_AT::SetVolumeControlCallback(SetMediaVolume, this);
++#endif
++#endif
++
+     if (m_drawingArea)
+         m_drawingArea->sendEnterAcceleratedCompositingModeIfNeeded();
+ 
+diff --git a/Source/WebKit/WebProcess/WebPage/glib/WebPageGLib.cpp b/Source/WebKit/WebProcess/WebPage/glib/WebPageGLib.cpp
+index 1c9369dc8b8d..01405cdd4a40 100644
+--- a/Source/WebKit/WebProcess/WebPage/glib/WebPageGLib.cpp
++++ b/Source/WebKit/WebProcess/WebPage/glib/WebPageGLib.cpp
+@@ -62,7 +62,11 @@ void WebPage::platformInitialize(const WebPageCreationParameters&)
+         m_accessibilityRootObject = AccessibilityRootAtspi::create(*page);
+         m_accessibilityRootObject->registerObject([&](const String& plugID) {
+             if (!plugID.isEmpty())
+-                send(Messages::WebPageProxy::BindAccessibilityTree(plugID));
++                // We enable accessibility explicitly for WebProcess so no need
++                // to connect UI process any more, as it requires IPC impl (at-spi3 bridge)
++                // that we don't use anyway.
++                // send(Messages::WebPageProxy::BindAccessibilityTree(plugID));
++
+         });
+     }
+ #endif
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+index 9c0a12f33663..49efb9dd3a05 100644
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -214,12 +214,7 @@ if (ENABLE_ACCESSIBILITY)
+     if (NOT ATK_FOUND)
+         message(FATAL_ERROR "atk is needed for ENABLE_ACCESSIBILITY")
+     endif ()
+-    if (USE_ATK)
+-        find_package(ATKBridge)
+-        if (NOT ATKBridge_FOUND)
+-            message(FATAL_ERROR "at-spi2-atk is needed for ENABLE_ACCESSIBILITY")
+-        endif ()
+-    endif ()
++    set(ATK_LIBRARIES ${ATK_LIBRARIES} rdkat)
+ endif ()
+ 
+ if (ENABLE_GAMEPAD AND (NOT (WPE_VERSION VERSION_GREATER_EQUAL 1.13.90)))
+@@ -341,8 +336,8 @@ if (NOT EXISTS "${TOOLS_DIR}/glib/apply-build-revision-to-files.py")
+ endif ()
+ 
+ SET_AND_EXPOSE_TO_BUILD(HAVE_ACCESSIBILITY ${ENABLE_ACCESSIBILITY})
+-SET_AND_EXPOSE_TO_BUILD(USE_ATSPI ${ENABLE_ACCESSIBILITY})
+-SET_AND_EXPOSE_TO_BUILD(USE_ATK FALSE)
++SET_AND_EXPOSE_TO_BUILD(USE_ATSPI FALSE)
++SET_AND_EXPOSE_TO_BUILD(USE_ATK ${ENABLE_ACCESSIBILITY})
+ SET_AND_EXPOSE_TO_BUILD(USE_CAIRO TRUE)
+ SET_AND_EXPOSE_TO_BUILD(USE_EGL TRUE)
+ SET_AND_EXPOSE_TO_BUILD(USE_GCRYPT TRUE)
+diff --git a/Tools/wpe/backends/PlatformWPE.cmake b/Tools/wpe/backends/PlatformWPE.cmake
+index 2b3f538bcca6..5eacb6b502a6 100644
+--- a/Tools/wpe/backends/PlatformWPE.cmake
++++ b/Tools/wpe/backends/PlatformWPE.cmake
+@@ -65,7 +65,6 @@ if (ENABLE_ACCESSIBILITY)
+     )
+     if (USE_ATK)
+         list(APPEND WPEToolingBackends_DEFINITIONS USE_ATK=1)
+-        list(APPEND WPEToolingBackends_LIBRARIES ATK::Bridge)
+         list(APPEND WPEToolingBackends_SOURCES
+           atk/ViewBackendAtk.cpp
+         )
+diff --git a/Tools/wpe/backends/atk/ViewBackendAtk.cpp b/Tools/wpe/backends/atk/ViewBackendAtk.cpp
+index aa23aa40f3d9..2e01c9f3bffd 100644
+--- a/Tools/wpe/backends/atk/ViewBackendAtk.cpp
++++ b/Tools/wpe/backends/atk/ViewBackendAtk.cpp
+@@ -28,7 +28,6 @@
+ #if defined(ENABLE_ACCESSIBILITY) && ENABLE_ACCESSIBILITY
+ 
+ #include "WebKitAccessibleApplication.h"
+-#include <atk-bridge.h>
+ #include <atk/atk.h>
+ #include <glib.h>
+ 
+@@ -149,8 +148,6 @@ void ViewBackend::initializeAccessibility()
+     atkUtilClass->get_toolkit_version = []() -> const gchar* {
+         return "";
+     };
+-
+-    atk_bridge_adaptor_init(nullptr, nullptr);
+ }
+ 
+ void ViewBackend::updateAccessibilityState(uint32_t previousFlags)
+-- 
+2.25.1
+

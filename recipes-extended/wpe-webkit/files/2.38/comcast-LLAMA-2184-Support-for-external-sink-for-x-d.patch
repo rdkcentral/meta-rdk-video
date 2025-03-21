@@ -1,0 +1,25 @@
+From 3e98502862562564f155430f97ee58c9e86050f8 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Wed, 14 Jul 2021 20:37:49 +0000
+Subject: [PATCH] comcast - LLAMA-2184 - Support for external sink for
+ x-dvb
+
+---
+ .../platform/graphics/gstreamer/GStreamerRegistryScanner.cpp    | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index c3a1d9285d57..85f87c7db333 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -459,6 +459,7 @@ void GStreamerRegistryScanner::initializeDecoders(const GStreamerRegistryScanner
+         { ElementFactories::Type::VideoDecoder, "video/x-flash-video", { "video/flv"_s, "video/x-flv"_s }, { } },
+         { ElementFactories::Type::VideoDecoder, "video/x-h263", { }, { } },
+         { ElementFactories::Type::VideoDecoder, "video/x-msvideocodec", { "video/x-msvideo"_s }, { } },
++        { ElementFactories::Type::VideoDecoder, "video/x-ext-dvb", { "video/x-dvb"_s }, { } },
+         { ElementFactories::Type::Demuxer, "application/vnd.rn-realmedia", { }, { } },
+         { ElementFactories::Type::Demuxer, "application/x-3gp", { }, { } },
+         { ElementFactories::Type::Demuxer, "application/x-pn-realaudio", { }, { } },
+-- 
+2.25.1
+

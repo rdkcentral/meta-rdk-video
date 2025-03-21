@@ -1,0 +1,41 @@
+From: Santhosh Ramani
+Date: Wed Sep 17 2024 12:08:47 +0000
+Subject: [PATCH] XIONE-15839 & RDKTV-33816 -PR-1785-Reduce_scope_of_adminlock.patch
+
+Reason for Change:
+Signalling Client.Opened will trigger accessing SocketPort methods which may trigger a reentry.
+The adminlock is primarily to protect the list of observers.
+
+Upstream-Status: Upstreamed in R4_4
+Signed-off-by: Santhosh Ramani <Santhosh_Ramani2@comcast.com>
+---
+
+ Source/websocket/JSONRPCLink.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Source/websocket/JSONRPCLink.h b/Source/websocket/JSONRPCLink.h
+index aad19ab1..0317c288 100644
+--- a/Source/websocket/JSONRPCLink.h
++++ b/Source/websocket/JSONRPCLink.h
+@@ -226,10 +226,10 @@ namespace WPEFramework {
+ 					_adminLock.Lock();
+ 					ASSERT(std::find(_observers.begin(), _observers.end(), &client) == _observers.end());
+ 					_observers.push_back(&client);
++					_adminLock.Unlock();
+ 					if (_channel.IsOpen() == true) {
+ 						client.Opened();
+ 					}
+-					_adminLock.Unlock();
+ 				}
+ 				void Unregister(LinkType<INTERFACE>& client)
+ 				{
+@@ -238,8 +238,8 @@ namespace WPEFramework {
+ 					if (index != _observers.end()) {
+ 						_observers.erase(index);
+ 					}
+-					FactoryImpl::Instance().Revoke(&client);
+ 					_adminLock.Unlock();
++					FactoryImpl::Instance().Revoke(&client);
+ 				}
+ 				void Submit(const Core::ProxyType<INTERFACE>& message)
+ 				{

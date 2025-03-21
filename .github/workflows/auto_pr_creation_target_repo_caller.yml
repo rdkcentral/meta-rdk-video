@@ -1,0 +1,14 @@
+name: Auto PR Creation Caller
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - develop
+      - support/dunfell
+
+jobs:
+  call_auto_pr_workflow:
+    uses: rdkcentral/build_tools_workflows/.github/workflows/auto_pr_creation_manifest.yml@develop
+    secrets:
+      RDKCM_RDKE: ${{ secrets.RDKCM_RDKE }}

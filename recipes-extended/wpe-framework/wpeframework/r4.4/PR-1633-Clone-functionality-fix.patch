@@ -1,0 +1,31 @@
+From: Metro Team
+Date: Tue, 16 Jul 2024 02:39:47 +0000
+Subject: [PATCH] PR-1633-Clone-functionality-fix.patch - RDKCOM-4837: Youtube not launching from UI in Thunder4.4 build
+
+Upstream-Status: Backport from Thunder R4_4 branch
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+Signed-off-by: Rajesh Gangadharan <rajesh_gangadharan@comcast.com>
+---
+ Source/WPEFramework/PluginServer.h | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index 375dde11..3ed0764c 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -3154,13 +3154,12 @@ POP_WARNING()
+ 
+                 if ((original.IsValid() == true) && (_services.find(newCallsign) == _services.end())) {
+                     // Copy original configuration
+-                    Plugin::Config newConfiguration;
+-                    newConfiguration.FromString(original->Configuration());
++                    Plugin::Config newConfiguration(Core::ProxyType<PluginHost::Service>(original)->Configuration());
+                     newConfiguration.Callsign = newCallsign;
+ 
+                     Core::ProxyType<Service> clone = Core::ProxyType<Service>::Create(Configuration(), newConfiguration, *this, Service::mode::CLONED, _engine);
+ 
+-                    if (newService.IsValid() == true) {
++                    if (clone.IsValid() == true) {
+                         // Fire up the interface. Let it handle the messages.
+                         _services.emplace(
+                             std::piecewise_construct,

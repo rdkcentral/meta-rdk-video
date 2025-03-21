@@ -1,0 +1,57 @@
+From 96d1a9fd73ad31dc9aea0d0e9d2e9c1a30149037 Mon Sep 17 00:00:00 2001
+From: Gurdal Oruklu <gurdal_oruklu@comcast.com>
+Date: Thu, 26 Aug 2021 16:10:04 +0000
+Subject: [PATCH] LLAMA-3066,LLAMA-10405: OCDM thread Updates
+
+Source: COMCAST
+Upstream-Status: N/A
+
+Reason for change: Set OCDM decrypt thread name & 
+increase priority of OCDM decryption thread
+Test Procedure: see Jira ticket
+Risks: Low
+
+Signed-off-by: Gurdal Oruklu <gurdal_oruklu@comcast.com>
+---
+
+Index: git/OpenCDMi/FrameworkRPC.cpp
+===================================================================
+--- git.orig/OpenCDMi/FrameworkRPC.cpp
++++ git/OpenCDMi/FrameworkRPC.cpp
+@@ -20,6 +20,7 @@
+ #include <regex>
+ #include <string>
+ #include <vector>
++#include <sys/prctl.h>
+ 
+ #include "Module.h"
+ #include "CENCParser.h"
+@@ -271,6 +272,27 @@ namespace Plugin {
+                 private:
+                     virtual uint32_t Worker() override
+                     {
++                        pthread_t threadPid = pthread_self();
++                        int policy;
++                        sched_param param;
++                        char name [16];
++
++                        snprintf(name, 16, "OCDM_decrypt");
++                        prctl(PR_SET_NAME, name, 0, 0, 0);
++
++                        /* get current thread policy and priority values */
++                        if (pthread_getschedparam(threadPid, &policy, &param) != 0) {
++                            fprintf(stdout, "pthread_getschedparam failed\n");
++                        }
++                        fprintf(stdout, "old thread priority=%d policy: %d\n", param.sched_priority, policy);
++
++                        param.sched_priority = 30;
++                        if (pthread_setschedparam(threadPid, SCHED_RR, &param) != 0) {
++                            fprintf(stdout,"pthread_setschedparam failed\n");
++                        }else{
++                             fprintf(stdout,"set new thread priority\n");
++                        }
++                        fflush(stdout);
+ 
+                         while (IsRunning() == true) {
+ 
+

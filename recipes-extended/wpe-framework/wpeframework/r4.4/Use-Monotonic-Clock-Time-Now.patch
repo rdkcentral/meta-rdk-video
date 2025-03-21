@@ -1,0 +1,19 @@
+From: Karunakaran Amirthalingam
+Date: Wed 29 May 2024 11:29:47 +0000
+Subject: [PATCH] Use-Monotonic-Clock-Time-Now.patch-  Use CLOCK_MONOTONIC for all the mutex and semaphores instead of CLOCK_REALTIME
+Upstream-Status: YES
+Signed-off-by: <karunakaran_amirthalingam@cable.comcast.com>
+---
+diff --git a/Source/core/Time.cpp b/Source/core/Time.cpp
+index 12ec6fed..97a59c4a 100644
+--- a/Source/core/Time.cpp
++++ b/Source/core/Time.cpp
+@@ -1119,7 +1119,7 @@ POP_WARNING()
+     /* static */ Time Time::Now()
+     {
+         struct timespec currentTime{};
+-        clock_gettime(CLOCK_REALTIME, &currentTime);
++        clock_gettime(CLOCK_MONOTONIC, &currentTime);
+
+         return (Time(currentTime));
+     }

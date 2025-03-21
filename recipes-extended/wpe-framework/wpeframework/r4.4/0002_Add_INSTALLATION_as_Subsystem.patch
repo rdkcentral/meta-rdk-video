@@ -1,0 +1,100 @@
+##########################################
+From 632d26de84c2400d22f5405b0093439bd9b0a55f Mon Sep 17 00:00:00 2001
+From: Karunakaran Amirthalingam
+Date: Tue, 26 Jul 2022 10:53:28 +0000
+Subject: [PATCH] DELIA-65447 Port INSTALLATION Subsystem to Thunder R4.4.1
+ from master
+Upstream-Status: Backport from master
+Signed-off-by: Karunakaran A <karunakaran_amirthalingam@cable.comcast.com>
+##########################################
+
+---
+ Source/WPEFramework/PluginHost.cpp |  4 ++++
+ Source/WPEFramework/SystemInfo.h   | 14 ++++++++++++++
+ Source/plugins/ISubSystem.h        |  4 +++-
+ Source/plugins/SubSystem.cpp       |  3 +++
+ 4 files changed, 24 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WPEFramework/PluginHost.cpp b/Source/WPEFramework/PluginHost.cpp
+index 213da58d..8b7ac4a4 100644
+--- a/Source/WPEFramework/PluginHost.cpp
++++ b/Source/WPEFramework/PluginHost.cpp
+@@ -836,6 +836,10 @@ POP_WARNING()
+                             printf("Bluetooth:    %s\n",
+                                 (status->IsActive(PluginHost::ISubSystem::BLUETOOTH) == true) ? "Available"
+                                                                                               : "Unavailable");
++                            printf("Installation: %s\n",
++                                (status->IsActive(PluginHost::ISubSystem::INSTALLATION) == true) ? "Available"
++                                                                                                 : "Unavailable");
++
+                             printf("------------------------------------------------------------\n");
+                             if (status->IsActive(PluginHost::ISubSystem::INTERNET) == true) {
+                                 printf("Network Type: %s\n",
+diff --git a/Source/WPEFramework/SystemInfo.h b/Source/WPEFramework/SystemInfo.h
+index cd27e4b6..524190be 100644
+--- a/Source/WPEFramework/SystemInfo.h
++++ b/Source/WPEFramework/SystemInfo.h
+@@ -599,6 +599,16 @@ namespace PluginHost {
+                 SYSLOG(Logging::Shutdown, (_T("EVENT: Bluetooth")));
+                 break;
+             }
++            case INSTALLATION: {
++                /* No information to set yet */
++                SYSLOG(Logging::Startup, (_T("EVENT: Installation")));
++                break;
++            }
++            case NOT_INSTALLATION: {
++                /* No information to set yet */
++                SYSLOG(Logging::Shutdown, (_T("EVENT: Installation")));
++                break;
++            }
+             case SECURITY: {
+                 PluginHost::ISubSystem::ISecurity* info = (information != nullptr ? information->QueryInterface<PluginHost::ISubSystem::ISecurity>() : nullptr);
+ 
+@@ -704,6 +714,10 @@ namespace PluginHost {
+                     /* No information to get yet */
+                     break;
+                 }
++                case INSTALLATION: {
++                    /* No information to get yet */
++                    break;
++                }
+                 default: {
+                     ASSERT(false && "Unknown Event");
+                 }
+diff --git a/Source/plugins/ISubSystem.h b/Source/plugins/ISubSystem.h
+index c658755f..7fd83118 100644
+--- a/Source/plugins/ISubSystem.h
++++ b/Source/plugins/ISubSystem.h
+@@ -57,6 +57,7 @@ namespace PluginHost {
+             WEBSOURCE, // Content exposed via a local web server is available.
+             STREAMING, // Content can be streamed.
+             BLUETOOTH, // The bluetooth subsystem is up and running.
++            INSTALLATION, // (Package) Installation functionality is available.
+             END_LIST,
+ 
+             // Also define a "negative" value.
+@@ -73,7 +74,8 @@ namespace PluginHost {
+             NOT_DECRYPTION, // Decryption functionality is NOT available.
+             NOT_WEBSOURCE, // Content exposed via a local web server is NOT available.
+             NOT_STREAMING, // Content can NOT be streamed.
+-            NOT_BLUETOOTH // The Bluetooth communication system is NOT available.
++            NOT_BLUETOOTH, // The Bluetooth communication system is NOT available.
++            NOT_INSTALLATION // (Package) Installation is NOT available.
+         };
+ 
+         struct EXTERNAL INotification : virtual public Core::IUnknown {
+diff --git a/Source/plugins/SubSystem.cpp b/Source/plugins/SubSystem.cpp
+index 7a4a147c..b1166472 100644
+--- a/Source/plugins/SubSystem.cpp
++++ b/Source/plugins/SubSystem.cpp
+@@ -63,6 +63,9 @@ ENUM_CONVERSION_BEGIN(PluginHost::ISubSystem::subsystem)
+     { PluginHost::ISubSystem::subsystem::BLUETOOTH, _TXT("Bluetooth") },
+     { PluginHost::ISubSystem::subsystem::NOT_BLUETOOTH, _TXT("!Bluetooth") },
+ 
++    { PluginHost::ISubSystem::subsystem::INSTALLATION, _TXT("Installation") },
++    { PluginHost::ISubSystem::subsystem::NOT_INSTALLATION, _TXT("!Installation") },
++
+     ENUM_CONVERSION_END(PluginHost::ISubSystem::subsystem)
+ 
+ } // namespace WPEFramework

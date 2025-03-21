@@ -1,0 +1,75 @@
+From: Madana Gopal Thirumalai <madanagopal_thirumalai@comcast.com>
+Date: 25 Jul 2023 17:24:43 +0000
+Subject: [PATCH] RDK-43195: Changes for middleware initial build issues
+---
+diff --git a/ir/irMgr.c b/ir/irMgr.c
+index 9d823c23..ce641c0a 100755
+--- a/ir/irMgr.c
++++ b/ir/irMgr.c
+@@ -89,7 +89,8 @@ static void* _KeyRepeatThreadFunc (void *arg);
+    static void _IrKeyCallbackFrom(PLAT_irKey_metadata *irKey, int keySrc, unsigned int keySrcId);
+    static void _IrInputKeyEventHandler(PLAT_irKey_metadata_t *irKey, int keySrc, unsigned int keySrcId);
+ #else
+-   static void _IrKeyCallback(int keyType, int keyCode);
++   static void _IrKeyCallback(PLAT_irKey_metadata_t *irKey);
++   //static void _IrKeyCallback(int keyType, int keyCode);
+    static void _IrKeyCallbackFrom(int keyType, int keyCode, int keySrc, unsigned int keySrcId);
+    static void _IrInputKeyEventHandler(int keyType, int keyCode, int keySrc, unsigned int keySrcId);
+ #endif
+@@ -156,7 +157,8 @@ IARM_Result_t IRMgr_Start(int argc, char *argv[])
+ #ifdef XMP_TAG_OWNER_SUPPORT
+     PLAT_API_RegisterIRKeyCallbackExtended(_IrKeyCallback);
+ #else
+-    PLAT_API_RegisterIRKeyCallback(_IrKeyCallback);
++    PLAT_API_RegisterIRKeyCallbackExtended(_IrKeyCallback);
++//PLAT_API_RegisterIRKeyCallback(_IrKeyCallback);
+ #endif
+     IARM_Bus_RegisterEvent(IARM_BUS_IRMGR_EVENT_MAX);
+ 
+@@ -267,6 +269,7 @@ static IARM_Result_t _GetRepeatInterval(void *arg)
+     return IARM_RESULT_SUCCESS;
+ }
+ 
++/*
+ #ifndef XMP_TAG_OWNER_SUPPORT
+ static void _IrKeyCallback(int keyType, int keyCode)
+ {
+@@ -275,12 +278,14 @@ static void _IrKeyCallback(int keyType, int keyCode)
+ 
+ }
+ #else
++*/
+ static void _IrKeyCallback(PLAT_irKey_metadata_t *irKey)
+ {
+    __TIMESTAMP(); LOG("IR Key received (%x, %x, %x, %x)\n", irKey->tag,
+                                                             irKey->owner,
+                                                             irKey->type,
+                                                             irKey->code);
++/*
+ #if defined PLATCO || defined PLATCO_REMOTE_SUPPORT
+    if (irKey->tag != XMP_TAG_PLATCO && irKey->tag != XMP_TAG_PLATCOV2)
+    {
+@@ -342,10 +347,12 @@ static void _IrKeyCallback(PLAT_irKey_metadata_t *irKey)
+       _IrKeyCallbackFrom(irKey, IARM_BUS_IRMGR_KEYSRC_IR, 0x0);
+    }
+ #endif
++*/
+ }
+ 
+ static void _IrKeyPairing(PLAT_irKey_metadata_t *irKey)
+ {
++/*
+    IARM_Result_t                              result;
+    ctrlm_main_iarm_call_status_t              status;
+    ctrlm_iarm_call_StartPairWithCode_params_t pair_data;
+@@ -391,8 +398,9 @@ static void _IrKeyPairing(PLAT_irKey_metadata_t *irKey)
+          }
+       }
+    }
++*/
+ }
+-#endif
++//#endif
+ 
+ #ifndef XMP_TAG_OWNER_SUPPORT
+ static void _IrKeyCallbackFrom(int keyType, int keyCode, int keySrc, unsigned int keySrcId)

@@ -1,0 +1,38 @@
+From c92d71d86df0abb65dfcee35fa1af4a3fab530d4 Mon Sep 17 00:00:00 2001
+From: Thamim Razith Abbas Ali
+Date: Tue, 16 Jul 2024 02:39:47 +0000
+Subject: [PATCH] wpeframework_persistentpathchanges.patch
+
+Upstream-Status: Pending
+Signed-off-by: Thamim Razith Abbas Ali <tabbas651@cable.comcast.com>
+---
+ Source/WPEFramework/GenericConfig.cmake  | 2 +-
+ Source/WPEFramework/WPEFramework.conf.in | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Source/WPEFramework/GenericConfig.cmake b/Source/WPEFramework/GenericConfig.cmake
+index 1034c725..7abe4b72 100644
+--- a/Source/WPEFramework/GenericConfig.cmake
++++ b/Source/WPEFramework/GenericConfig.cmake
+@@ -74,7 +74,7 @@ endif()
+ map_set(${CONFIG} idletime ${IDLE_TIME})
+ map_set(${CONFIG} softkillcheckwaittime ${SOFT_KILL_CHECK_WAIT_TIME})
+ map_set(${CONFIG} hardkillcheckwaittime ${HARD_KILL_CHECK_WAIT_TIME})
+-map_set(${CONFIG} persistentpath ${PERSISTENT_PATH}/${NAMESPACE})
++map_set(${CONFIG} persistentpath ${PERSISTENT_PATH})
+ map_set(${CONFIG} volatilepath ${VOLATILE_PATH})
+ map_set(${CONFIG} datapath ${DATA_PATH})
+ map_set(${CONFIG} systempath ${SYSTEM_PATH})
+diff --git a/Source/WPEFramework/WPEFramework.conf.in b/Source/WPEFramework/WPEFramework.conf.in
+index 82ba85b8..aa8645c0 100644
+--- a/Source/WPEFramework/WPEFramework.conf.in
++++ b/Source/WPEFramework/WPEFramework.conf.in
+@@ -5,7 +5,7 @@ ipv6 = '@IPV6_SUPPORT@'
+ idletime = '@IDLE_TIME@'
+ softkillcheckwaittime = '@SOFT_KILL_CHECK_WAIT_TIME@'
+ hardkillcheckwaittime = '@HARD_KILL_CHECK_WAIT_TIME@'
+-persistentpath = '@PERSISTENT_PATH@/@NAMESPACE@'
++persistentpath = '@PERSISTENT_PATH@'
+ volatilepath = '@VOLATILE_PATH@'
+ datapath = '@DATA_PATH@'
+ systempath = '@SYSTEM_PATH@'

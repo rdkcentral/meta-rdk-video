@@ -1,0 +1,26 @@
+[Unit]
+Description=wpeframework
+Wants=network-online.target local-fs.target
+After= network-online.target local-fs.target
+
+[Service]
+Type=notify
+PIDFile=/var/run/WPEFramework.pid
+EnvironmentFile=-/etc/default/westeros-env
+Environment="LD_LIBRARY_PATH=/usr/lib:/media/apps/netflix/usr/lib:/tmp/netflix/usr/lib:/media/apps/libcobalt/usr/lib:/tmp/libcobalt/usr/lib"
+Environment="XDG_RUNTIME_DIR=/tmp"
+Environment="GST_REGISTRY=/opt/.gstreamer/registry.bin"
+Environment="GST_REGISTRY_UPDATE=no"
+Environment="ENABLE_WEBKITBROWSER_PLUGIN_ACCESSIBILITY=1"
+Environment="TTS_USE_THUNDER_CLIENT=1"
+Environment="XDG_DATA_HOME=/opt/QT/home"
+Environment="FORCE_SVP=TRUE"
+Environment="FORCE_SAP=TRUE"
+ExecStart=-/usr/bin/WPEFramework -b
+ExecStop=/usr/bin/killall -9 WPEFramework
+ExecStopPost=/usr/bin/killall -9 WPEProcess
+KillSignal=SIGKILL
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

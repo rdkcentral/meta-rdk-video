@@ -1,0 +1,30 @@
+From f57d88e3dbe7cda27257471ebddca59accbddd5a Mon Sep 17 00:00:00 2001
+From: mselva006c <mani_selvaraj@comcast.com>
+Date: Mon, 6 Jun 2022 11:05:51 +0000
+Subject: [PATCH] parodus pid file creation
+
+Source: COMCAST
+Upstream-Status: Pending
+Signed-off-by: mselva006c <mani_selvaraj@comcast.com>
+---
+ src/main.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/src/main.c b/src/main.c
+index 24691f1..815afcc 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -95,6 +95,13 @@ int main( int argc, char **argv)
+ 	signal(SIGFPE, sig_handler);
+ 	signal(SIGILL, sig_handler);
+ #endif	
++    FILE *pid_fd = fopen("/run/parodus.pid", "w+");
++    if (pid_fd != NULL)
++    {
++	    fprintf(pid_fd, "%d\n", getpid());
++	    fclose(pid_fd);
++    }
++
+     ParodusCfg *cfg;
+ 
+ 	ParodusInfo ("RAND_MAX is %ld (0x%lx)\n", RAND_MAX, RAND_MAX);

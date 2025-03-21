@@ -1,0 +1,35 @@
+From de093ab1815d076267383376043771ddf705d2ac Mon Sep 17 00:00:00 2001
+From: "Vivek.A" <Vivek_Arumugam@comcast.com>
+Date: Mon, 13 Mar 2023 08:34:28 +0000
+Subject: [PATCH] comcast DELIA-60613 WebRTC streaming fails with test
+ app
+
+Reason for change: Disable ICE candidate filtering as in wpe-2.22
+Test Procedure: Refer ticket
+Priority: P1
+Risks: None
+
+Signed-off-by: Vivek.A <vivek_arumugam@comcast.com>
+---
+ Source/WTF/Scripts/Preferences/WebPreferencesInternal.yaml | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Source/WTF/Scripts/Preferences/WebPreferencesInternal.yaml b/Source/WTF/Scripts/Preferences/WebPreferencesInternal.yaml
+index 88a944e07d0d..ea534f570fff 100644
+--- a/Source/WTF/Scripts/Preferences/WebPreferencesInternal.yaml
++++ b/Source/WTF/Scripts/Preferences/WebPreferencesInternal.yaml
+@@ -353,9 +353,9 @@ ICECandidateFilteringEnabled:
+     WebKitLegacy:
+       default: true
+     WebKit:
+-      default: true
++      default: false
+     WebCore:
+-      default: true
++      default: false
+ 
+ IOSFormControlRefreshEnabled:
+   type: bool
+-- 
+2.25.1
+

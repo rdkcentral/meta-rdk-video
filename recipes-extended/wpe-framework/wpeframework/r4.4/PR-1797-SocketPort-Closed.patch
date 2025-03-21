@@ -1,0 +1,35 @@
+From: Metro Team
+Date: Dec 20 12:08:22 2024
+Subject: [PATCH] 001-PR1832-RDKTV-35315.patch -This patch changes  ensures socketport is closed and removed from resource monitor when the channel is destructed.
+
+Upstream-Status: Backport from Thunder R4_4 branch
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+---
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index 77278abdd..66032accd 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -967,7 +967,7 @@ namespace PluginHost
+             _security = nullptr;
+         }
+ 
+-        Close(0);
++        Close(Core::infinite);
+     }
+ 
+ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+diff --git a/Source/websocket/WebSocketLink.h b/Source/websocket/WebSocketLink.h
+index b30031ec7..200618627 100644
+--- a/Source/websocket/WebSocketLink.h
++++ b/Source/websocket/WebSocketLink.h
+@@ -403,6 +403,10 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+             }
+ POP_WARNING()
+             ~HandlerType() override {
++                // If this assert fires, it means the socket was not closed
++                // by the one who opened it. That is unexpected. The creater
++                // of this link, should (besides opening it) also close it.
++                ASSERT(ACTUALLINK::IsClosed() == true);
+                 ACTUALLINK::Close(Core::infinite);
+             }
+ 

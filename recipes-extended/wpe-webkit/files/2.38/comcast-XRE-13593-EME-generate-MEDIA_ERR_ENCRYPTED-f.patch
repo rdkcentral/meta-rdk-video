@@ -1,0 +1,114 @@
+From 54f57a6ddedb9a055bbd85b74d6da384a451a896 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Sat, 6 Jul 2019 13:13:29 +0000
+Subject: [PATCH] comcast - XRE-13593 - EME generate MEDIA_ERR_ENCRYPTED
+ for decryption
+
+---
+ Source/WebCore/html/HTMLMediaElement.cpp                   | 7 +++++++
+ Source/WebCore/html/HTMLMediaElement.h                     | 1 +
+ Source/WebCore/html/MediaError.h                           | 2 +-
+ Source/WebCore/platform/graphics/MediaPlayer.cpp           | 5 +++++
+ Source/WebCore/platform/graphics/MediaPlayer.h             | 2 ++
+ .../graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp     | 6 ++++++
+ 6 files changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/html/HTMLMediaElement.cpp b/Source/WebCore/html/HTMLMediaElement.cpp
+index 7a0e66aa6e9b..b70776430076 100644
+--- a/Source/WebCore/html/HTMLMediaElement.cpp
++++ b/Source/WebCore/html/HTMLMediaElement.cpp
+@@ -2955,6 +2955,13 @@ void HTMLMediaElement::mediaPlayerWaitingForKeyChanged()
+     // GStreamer handles this without suspending explicitly.
+ }
+ 
++void HTMLMediaElement::mediaPlayerDecryptErrorEncountered()
++{
++    if (!m_error)
++        scheduleEvent(eventNames().errorEvent);
++    m_error = MediaError::create(MediaError::MEDIA_ERR_ENCRYPTED, m_player ? m_player->lastErrorMessage() : ""_s);
++}
++
+ void HTMLMediaElement::attemptToDecrypt()
+ {
+     // https://w3c.github.io/encrypted-media/#attempt-to-decrypt
+diff --git a/Source/WebCore/html/HTMLMediaElement.h b/Source/WebCore/html/HTMLMediaElement.h
+index ceeb760928b1..402ff5c84f24 100644
+--- a/Source/WebCore/html/HTMLMediaElement.h
++++ b/Source/WebCore/html/HTMLMediaElement.h
+@@ -723,6 +723,7 @@ private:
+ #if ENABLE(ENCRYPTED_MEDIA)
+     void mediaPlayerInitializationDataEncountered(const String&, RefPtr<ArrayBuffer>&&) final;
+     void mediaPlayerWaitingForKeyChanged() final;
++    void mediaPlayerDecryptErrorEncountered() final;
+ 
+     void attemptToDecrypt();
+     void attemptToResumePlaybackIfNecessary();
+diff --git a/Source/WebCore/html/MediaError.h b/Source/WebCore/html/MediaError.h
+index ff44a6550e85..a8a8de84b017 100644
+--- a/Source/WebCore/html/MediaError.h
++++ b/Source/WebCore/html/MediaError.h
+@@ -38,7 +38,7 @@ public:
+         MEDIA_ERR_NETWORK,
+         MEDIA_ERR_DECODE,
+         MEDIA_ERR_SRC_NOT_SUPPORTED
+-#if ENABLE(LEGACY_ENCRYPTED_MEDIA)
++#if ENABLE(LEGACY_ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA)
+         , MEDIA_ERR_ENCRYPTED
+ #endif
+     };
+diff --git a/Source/WebCore/platform/graphics/MediaPlayer.cpp b/Source/WebCore/platform/graphics/MediaPlayer.cpp
+index 76832faee329..0fafd15c09f9 100644
+--- a/Source/WebCore/platform/graphics/MediaPlayer.cpp
++++ b/Source/WebCore/platform/graphics/MediaPlayer.cpp
+@@ -1503,6 +1503,11 @@ bool MediaPlayer::waitingForKey() const
+         return false;
+     return m_private->waitingForKey();
+ }
++
++void MediaPlayer::decryptErrorEncountered()
++{
++    client().mediaPlayerDecryptErrorEncountered();
++}
+ #endif
+ 
+ String MediaPlayer::referrer() const
+diff --git a/Source/WebCore/platform/graphics/MediaPlayer.h b/Source/WebCore/platform/graphics/MediaPlayer.h
+index a103b671c33c..e74eb2971fc4 100644
+--- a/Source/WebCore/platform/graphics/MediaPlayer.h
++++ b/Source/WebCore/platform/graphics/MediaPlayer.h
+@@ -208,6 +208,7 @@ public:
+ #if ENABLE(ENCRYPTED_MEDIA)
+     virtual void mediaPlayerInitializationDataEncountered(const String&, RefPtr<ArrayBuffer>&&) { }
+     virtual void mediaPlayerWaitingForKeyChanged() { }
++    virtual void mediaPlayerDecryptErrorEncountered() {}
+ #endif
+     
+ #if ENABLE(WIRELESS_PLAYBACK_TARGET)
+@@ -579,6 +580,7 @@ public:
+     void initializationDataEncountered(const String&, RefPtr<ArrayBuffer>&&);
+     void waitingForKeyChanged();
+     bool waitingForKey() const;
++    void decryptErrorEncountered();
+ #endif
+ 
+     String referrer() const;
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index 031cd9be351e..a0f0e75c1c60 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -1819,6 +1819,12 @@ void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
+                 m_networkState = error;
+                 m_player->networkStateChanged();
+             }
++#if ENABLE(ENCRYPTED_MEDIA)
++            if (g_error_matches(err.get(), GST_STREAM_ERROR, GST_STREAM_ERROR_DECRYPT)) {
++                fprintf(stderr, "HTML5 video: Playback failed: Decryption error [%s]\n", m_url.string().utf8().data());
++                m_player->decryptErrorEncountered(); // override the error code
++            }
++#endif
+         }
+         break;
+     case GST_MESSAGE_WARNING:
+-- 
+2.25.1
+

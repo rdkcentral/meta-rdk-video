@@ -1,0 +1,79 @@
+From 9cba8fedbd70eafadc8fa2ada06ccd4dca844a58 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Thu, 29 Jul 2021 16:40:17 +0530
+Subject: [PATCH] comcast - XRE-15382 - libwebrtc fake encoder
+
+---
+ .../GStreamerVideoEncoderFactory.cpp          | 47 +++++++++++++++++++
+ 1 file changed, 47 insertions(+)
+
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoEncoderFactory.cpp b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoEncoderFactory.cpp
+index 4a2ac6956b0b..7cbbff3d1bac 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoEncoderFactory.cpp
++++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoEncoderFactory.cpp
+@@ -378,8 +378,50 @@ public:
+     webrtc::H264PacketizationMode packetizationMode;
+ };
+ 
++struct NoopEncoder : public webrtc::VideoEncoder
++{
++    int32_t InitEncode(const webrtc::VideoCodec*, int32_t, size_t) final
++    {
++        return WEBRTC_VIDEO_CODEC_ERROR;
++    }
++    int32_t RegisterEncodeCompleteCallback(webrtc::EncodedImageCallback*) final
++    {
++        return WEBRTC_VIDEO_CODEC_ERROR;
++    }
++    int32_t Release() final
++    {
++        return WEBRTC_VIDEO_CODEC_OK;
++    }
++    void SetRates(const webrtc::VideoEncoder::RateControlParameters&) final
++    {
++    }
++    int32_t Encode(const webrtc::VideoFrame&, const std::vector<webrtc::VideoFrameType>*) final
++    {
++        return WEBRTC_VIDEO_CODEC_ERROR;
++    }
++    VideoEncoder::EncoderInfo GetEncoderInfo() const override
++    {
++        VideoEncoder::EncoderInfo info;
++        info.implementation_name = "Noop";
++        return info;
++    }
++    void AddCodecIfSupported(std::vector<webrtc::SdpVideoFormat>* supportedFormats)
++    {
++        auto h264Format = webrtc::SdpVideoFormat(cricket::kH264CodecName,
++            { { cricket::kH264FmtpProfileLevelId, cricket::kH264ProfileLevelConstrainedBaseline },
++                { cricket::kH264FmtpLevelAsymmetryAllowed, "1" },
++                { cricket::kH264FmtpPacketizationMode, "1" } });
++        supportedFormats->push_back(h264Format);
++    }
++};
++
++static bool useNoopEncoder() {  return true; }
++
+ std::unique_ptr<webrtc::VideoEncoder> GStreamerVideoEncoderFactory::CreateVideoEncoder(const webrtc::SdpVideoFormat& format)
+ {
++    if (useNoopEncoder())
++        return std::make_unique<NoopEncoder>();
++
+     // FIXME: vpxenc doesn't support simulcast nor SVC. vp9enc supports only profile 0. These
+     // shortcomings trigger webrtc/vp9.html and webrtc/simulcast-h264.html timeouts and most likely
+     // bad UX in WPE/GTK browsers. So for now we prefer to use LibWebRTC's VPx encoders.
+@@ -422,6 +464,11 @@ std::vector<webrtc::SdpVideoFormat> GStreamerVideoEncoderFactory::GetSupportedFo
+ {
+     std::vector<webrtc::SdpVideoFormat> supportedCodecs;
+ 
++    if (useNoopEncoder()) {
++        NoopEncoder().AddCodecIfSupported(&supportedCodecs);
++        return supportedCodecs;
++    }
++
+     supportedCodecs.push_back(webrtc::SdpVideoFormat(cricket::kVp8CodecName));
+     if (m_isSupportingVP9Profile0)
+         supportedCodecs.push_back(webrtc::SdpVideoFormat(cricket::kVp9CodecName, {{"profile-id", "0"}}));
+-- 
+2.25.1
+

@@ -1,0 +1,63 @@
+From 9500ecacc7e3aaab7f0c954cb936ba9403b34c0f Mon Sep 17 00:00:00 2001
+From: Douglas Adler <douglas_adler2@comcast.com>
+Date: Mon, 8 Mar 2021 15:21:56 +0000
+Subject: [PATCH] RDK-31882 : Add GstCaps parsing in OCDM
+
+Reason for change: Amlogic needs to handle Audio data outside the SVP path
+Test Procedure: Verify that CDM module is detecting the stream type
+Risks: None
+
+Signed-off-by: Douglas Adler <douglas_adler2@comcast.com>
+---
+ interfaces/IDRM.h | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+diff --git a/interfaces/IDRM.h b/interfaces/IDRM.h
+index 0eebc0e..1b1f3b2 100644
+--- a/interfaces/IDRM.h
++++ b/interfaces/IDRM.h
+@@ -229,6 +229,28 @@ public:
+     virtual void OnKeyStatusesUpdated() const = 0;
+ };
+ 
++typedef enum 
++{
++    Unknown = 0,
++    Video,
++    Audio,
++    Data
++} MediaType;
++// ICapsParser to provide information about the current stream
++class ICapsParser {
++public:
++    ICapsParser(void) {}
++    virtual ~ICapsParser(void) {}
++
++    virtual void Parse(const uint8_t* info, uint16_t infoLength) = 0;
++
++    // Get stream video size
++    virtual const uint16_t GetHeight() const = 0;
++    virtual const uint16_t GetWidth() const = 0;
++    // Get stream type
++    virtual const MediaType GetMediaType() const = 0;
++};
++
+ // IMediaKeySession defines the MediaKeySession interface.
+ class IMediaKeySession {
+ public:
+@@ -289,7 +311,12 @@ public:
+         uint8_t* f_pbClearContentOpaque)
+         = 0;
+ 
++    // These are new methods that might not have been implemented by the 
++    // base implementations. If they are not implemented, the system will
++    // probably not need it, but it will continue to build :-)
+     virtual CDMi_RESULT ResetOutputProtection() {return CDMi_SUCCESS;}
++    virtual CDMi_RESULT SetParameter(const std::string& name, const std::string& value) {return CDMi_SUCCESS;}
++    virtual CDMi_RESULT SetCapsParser(const ICapsParser* parser) { return CDMi_SUCCESS; }
+ };
+ 
+ // IMediaKeySession defines the MediaKeySession interface.
+-- 
+2.24.0
+

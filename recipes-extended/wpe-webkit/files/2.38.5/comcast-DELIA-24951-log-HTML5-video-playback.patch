@@ -1,0 +1,232 @@
+From 0abd1dd63f5ca394c1df545217ce8e3dcb8f8257 Mon Sep 17 00:00:00 2001
+From: "Vivek.A" <Vivek_Arumugam@comcast.com>
+Date: Tue, 1 Aug 2023 09:45:19 +0000
+Subject: [PATCH] comcast - DELIA-24951 - log HTML5 video playback
+
+---
+ .../gstreamer/MediaPlayerPrivateGStreamer.cpp | 41 +++++++++++++++++--
+ .../gstreamer/MediaPlayerPrivateGStreamer.h   |  6 +++
+ .../mse/MediaPlayerPrivateGStreamerMSE.cpp    |  5 +++
+ .../gstreamer/GStreamerQuirkWesteros.cpp      | 25 +++++++++++
+ Source/WebCore/replay/UserInputBridge.cpp     |  5 +++
+ 5 files changed, 79 insertions(+), 3 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index 847492b8911d..7b7f5c146c34 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -216,6 +216,8 @@ MediaPlayerPrivateGStreamer::MediaPlayerPrivateGStreamer(MediaPlayer* player)
+     if (is<PlatformDisplayLibWPE>(sharedDisplay))
+         m_wpeVideoPlaneDisplayDmaBuf.reset(wpe_video_plane_display_dmabuf_source_create(downcast<PlatformDisplayLibWPE>(sharedDisplay).backend()));
+ #endif
++
++    fprintf(stderr, "HTML5 video: Player constructed [%p]\n", this);
+ }
+ 
+ MediaPlayerPrivateGStreamer::~MediaPlayerPrivateGStreamer()
+@@ -223,6 +225,9 @@ MediaPlayerPrivateGStreamer::~MediaPlayerPrivateGStreamer()
+     GST_DEBUG_OBJECT(pipeline(), "Disposing player");
+     m_isPlayerShuttingDown.store(true);
+ 
++    if (m_reportedPlaybackStarted && !(m_reportedPlaybackEOS || m_reportedPlaybackFailed))
++        fprintf(stderr, "HTML5 video: Playback terminated [%s]\n", m_url.string().utf8().data());
++
+     if (m_gstreamerHolePunchHost)
+         m_gstreamerHolePunchHost->playerPrivateWillBeDestroyed();
+ 
+@@ -289,6 +294,8 @@ MediaPlayerPrivateGStreamer::~MediaPlayerPrivateGStreamer()
+ 
+     m_player = nullptr;
+     m_notifier->invalidate();
++
++    fprintf(stderr, "HTML5 video: Player Destroyed [%p]\n", this);
+ }
+ 
+ bool MediaPlayerPrivateGStreamer::isAvailable()
+@@ -342,6 +349,11 @@ void MediaPlayerPrivateGStreamer::load(const String& urlString)
+ 
+     registerWebKitGStreamerElements();
+ 
++    fprintf(stderr, "HTML5 video: Loading [%s]\n", urlString.utf8().data());
++    m_reportedPlaybackStarted = false; // Clean up the flags
++    m_reportedPlaybackFailed = false;
++    m_reportedPlaybackEOS = false;
++
+     if (!m_pipeline)
+         createGSTPlayBin(url);
+     syncOnClock(true);
+@@ -581,6 +593,10 @@ void MediaPlayerPrivateGStreamer::seek(const MediaTime& mediaTime)
+         }
+     } else {
+         // We can seek now.
++        fprintf(stderr,"HTML5 video: Seeking from %s to %s seconds [%s]\n",
++                toString(currentMediaTime()).utf8().data(), toString(mediaTime).utf8().data(),
++                m_url.string().utf8().data());
++
+         if (!doSeek(time, m_player->rate(), static_cast<GstSeekFlags>(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE))) {
+             GST_DEBUG_OBJECT(pipeline(), "[Seek] seeking to %s failed", toString(time).utf8().data());
+             return;
+@@ -976,6 +992,15 @@ MediaPlayerPrivateGStreamer::ChangePipelineStateResult MediaPlayerPrivateGStream
+ {
+     ASSERT(m_pipeline);
+ 
++    if(newState == GST_STATE_PLAYING) {
++        fprintf(stderr,"HTML5 video: Play [%s]\n", m_url.string().utf8().data());
++        if (!m_reportedPlaybackStarted)
++            fprintf(stderr, "HTML5 video: Playback started [%s]\n",m_url.string().utf8().data());
++        m_reportedPlaybackStarted = true;
++    } else if(newState == GST_STATE_PAUSED) {
++        fprintf(stderr,"HTML5 video: Pause [%s]\n", m_url.string().utf8().data());
++    }
++
+     GstState currentState, pending;
+     GstStateChangeReturn change = gst_element_get_state(m_pipeline.get(), &currentState, &pending, 0);
+     if (isPipelineSeeking(currentState, pending, change)) {
+@@ -1826,18 +1851,23 @@ void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
+             || g_error_matches(err.get(), GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED)
+             || g_error_matches(err.get(), GST_CORE_ERROR, GST_CORE_ERROR_MISSING_PLUGIN)
+             || g_error_matches(err.get(), GST_CORE_ERROR, GST_CORE_ERROR_PAD)
+-            || g_error_matches(err.get(), GST_RESOURCE_ERROR, GST_RESOURCE_ERROR_NOT_FOUND))
++            || g_error_matches(err.get(), GST_RESOURCE_ERROR, GST_RESOURCE_ERROR_NOT_FOUND)) {
++            fprintf(stderr, "HTML5 video: Playback failed: Format error [%s]\n", m_url.string().utf8().data());
+             error = MediaPlayer::NetworkState::FormatError;
+-        else if (g_error_matches(err.get(), GST_STREAM_ERROR, GST_STREAM_ERROR_TYPE_NOT_FOUND)) {
++        } else if (g_error_matches(err.get(), GST_STREAM_ERROR, GST_STREAM_ERROR_TYPE_NOT_FOUND)) {
++            fprintf(stderr, "HTML5 video: Playback failed: element not found error [%s]\n", m_url.string().utf8().data());
+             GST_ERROR_OBJECT(pipeline(), "Decode error, let the Media element emit a stalled event.");
+             m_loadingStalled = true;
+             error = MediaPlayer::NetworkState::DecodeError;
+             attemptNextLocation = true;
+         } else if (err->domain == GST_STREAM_ERROR) {
++            fprintf(stderr, "HTML5 video: Playback failed: Decode error [%s]\n",m_url.string().utf8().data());
+             error = MediaPlayer::NetworkState::DecodeError;
+             attemptNextLocation = true;
+-        } else if (err->domain == GST_RESOURCE_ERROR)
++        } else if (err->domain == GST_RESOURCE_ERROR) {
++            fprintf(stderr, "HTML5 video: Playback failed: Network error [%s]\n",m_url.string().utf8().data());
+             error = MediaPlayer::NetworkState::NetworkError;
++        }
+ 
+         if (attemptNextLocation)
+             issueError = !loadNextLocation();
+@@ -2736,6 +2766,11 @@ bool MediaPlayerPrivateGStreamer::ended() const
+ 
+ void MediaPlayerPrivateGStreamer::didEnd()
+ {
++    if (!m_reportedPlaybackEOS && !m_player->isLooping()) {
++        fprintf(stderr, "HTML5 video: End of Stream [%s]\n", m_url.string().utf8().data());
++        m_reportedPlaybackEOS = true;
++    }
++
+     invalidateCachedPosition();
+     MediaTime now = currentMediaTime();
+     GST_INFO_OBJECT(pipeline(), "Playback ended, currentMediaTime = %s, duration = %s", now.toString().utf8().data(), durationMediaTime().toString().utf8().data());
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
+index c741675edef5..c98a745eccb2 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
+@@ -380,6 +380,8 @@ protected:
+     bool isPipelineSeeking(GstState current, GstState pending, GstStateChangeReturn) const;
+     bool isPipelineSeeking() const;
+ 
++    const URL& url() const { return m_url; }
++
+     Ref<MainThreadNotifier<MainThreadNotification>> m_notifier;
+     MediaPlayer* m_player;
+     String m_referrer;
+@@ -562,6 +564,10 @@ private:
+     void configureMediaStreamAudioTracks();
+     void invalidateCachedPositionOnNextIteration() const;
+ 
++    bool m_reportedPlaybackStarted { false };
++    bool m_reportedPlaybackFailed { false };
++    bool m_reportedPlaybackEOS { false };
++
+     Atomic<bool> m_isPlayerShuttingDown;
+     GRefPtr<GstElement> m_textSink;
+     GUniquePtr<GstStructure> m_mediaLocations;
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
+index 51d84b949327..bc6934f42765 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
+@@ -235,6 +235,11 @@ void MediaPlayerPrivateGStreamerMSE::seek(const MediaTime& time)
+ 
+ bool MediaPlayerPrivateGStreamerMSE::doSeek(const MediaTime& position, float rate, GstSeekFlags seekFlags)
+ {
++    fprintf(stderr,"HTML5 video: Seeking from %s to %s seconds [%s]\n",
++            toString(currentMediaTime()).utf8().data(),
++            toString(position).utf8().data(),
++            url().string().utf8().data());
++
+     // This method should only be called outside of MediaPlayerPrivateGStreamerMSE by MediaPlayerPrivateGStreamer::setRate().
+ 
+     // Note: An important difference between seek with WebKitMediaSrc and regular playback is that seeking before
+diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp b/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
+index 6c577dedc1f3..e0c2d3065fcf 100644
+--- a/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
++++ b/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
+@@ -31,6 +31,25 @@ namespace WebCore {
+ GST_DEBUG_CATEGORY_STATIC(webkit_westeros_quirks_debug);
+ #define GST_CAT_DEFAULT webkit_westeros_quirks_debug
+ 
++MonotonicTime gEnterKeyDownTime;
++void noticeEnterKeyDownEvent()
++{
++    gEnterKeyDownTime = WTF::MonotonicTime::now();
++}
++static void noticeFirstVideoFrame()
++{
++    if (gEnterKeyDownTime) {
++        auto diffTime = WTF::MonotonicTime::now() - gEnterKeyDownTime;
++        gEnterKeyDownTime = MonotonicTime();
++        fprintf(stderr, "Media: browse-to-watch = %.2f ms\n", diffTime.milliseconds());
++    }
++
++}
++static void onFirstVideoFrameCallback(gpointer /*data*/)
++{
++    noticeFirstVideoFrame();
++}
++
+ GStreamerQuirkWesteros::GStreamerQuirkWesteros()
+ {
+     GST_DEBUG_CATEGORY_INIT(webkit_westeros_quirks_debug, "webkitquirkswesteros", 0, "WebKit Westeros Quirks");
+@@ -53,6 +72,12 @@ GStreamerQuirkWesteros::GStreamerQuirkWesteros()
+ 
+ bool GStreamerQuirkWesteros::configureElement(GstElement* element, const OptionSet<ElementRuntimeCharacteristics>& characteristics)
+ {
++    if (!g_strcmp0(G_OBJECT_TYPE_NAME(G_OBJECT(element)), "GstWesterosSink") &&
++        !g_signal_handler_find(element, static_cast<GSignalMatchType>(G_SIGNAL_MATCH_FUNC),
++                               0, 0, nullptr, reinterpret_cast<gpointer>(G_CALLBACK(onFirstVideoFrameCallback)), nullptr)) {
++        g_signal_connect_swapped(element, "first-video-frame-callback", G_CALLBACK(onFirstVideoFrameCallback), nullptr);
++    }
++
+     if (!characteristics.contains(ElementRuntimeCharacteristics::IsMediaStream))
+         return false;
+ 
+diff --git a/Source/WebCore/replay/UserInputBridge.cpp b/Source/WebCore/replay/UserInputBridge.cpp
+index 4500f6165f07..2220b26b4b54 100644
+--- a/Source/WebCore/replay/UserInputBridge.cpp
++++ b/Source/WebCore/replay/UserInputBridge.cpp
+@@ -41,6 +41,9 @@
+ 
+ namespace WebCore {
+ 
++// Implemented in GStreamerQuirkWesteros.cpp
++void noticeEnterKeyDownEvent();
++
+ UserInputBridge::UserInputBridge(Page& page)
+     : m_page(page)
+ {
+@@ -80,6 +83,8 @@ bool UserInputBridge::handleMouseForceEvent(const PlatformMouseEvent& mouseEvent
+ 
+ bool UserInputBridge::handleKeyEvent(const PlatformKeyboardEvent& keyEvent, InputSource)
+ {
++    if (keyEvent.type() == PlatformEvent::KeyDown && keyEvent.keyIdentifier() == "Enter"_s)
++        noticeEnterKeyDownEvent();
+     return Ref(m_page.focusController().focusedOrMainFrame())->eventHandler().keyEvent(keyEvent);
+ }
+ 
+-- 
+2.25.1
+

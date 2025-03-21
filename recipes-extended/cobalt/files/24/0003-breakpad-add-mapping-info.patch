@@ -1,0 +1,31 @@
+
+Date: Tue Jan 17 22:13:38 UTC 2023
+From: Sunil Ramulu <sunil_ramulu@comcast.com>
+Subject: [PATCH] Update libcobalt library info to breakpad.
+Signed-off-by: Sunil Ramulu <sunil_ramulu@comcast.com>
+
+diff --git a/third_party/crashpad/client/crashpad_client_linux.cc b/third_party/crashpad/client/crashpad_client_linux.cc
+index 1b579bf9e5..c350bb4f48 100644
+--- a/third_party/crashpad/client/crashpad_client_linux.cc
++++ b/third_party/crashpad/client/crashpad_client_linux.cc
+@@ -38,6 +38,7 @@
+ #include "util/misc/from_pointer_cast.h"
+ #include "util/posix/double_fork_and_exec.h"
+ #include "util/posix/signals.h"
++#include <dlfcn.h>
+ // TODO(b/201538792): resolve conflict between mini_chromium and base functions.
+ #ifdef LogMessage
+ #define LOG_MESSAGE_DEFINED
+@@ -188,6 +189,12 @@ class SignalHandler {
+   }
+   bool SendEvergreenInfo(EvergreenInfo evergreen_info) {
+     evergreen_info_ = evergreen_info;
++    void (*breakpad_AddMappingInfoFptr)(char *, char *, size_t, uintptr_t, size_t, size_t);
++
++    *(void **)(&breakpad_AddMappingInfoFptr) = dlsym(RTLD_LOCAL , "breakpad_AddMappingInfo");
++    if(*breakpad_AddMappingInfoFptr)
++        (*breakpad_AddMappingInfoFptr)(evergreen_info.file_path_buf, evergreen_info.build_id, evergreen_info.build_id_length,
++                                       evergreen_info.base_address, evergreen_info.load_size, 0);
+     return SendEvergreenInfoImpl();
+   }
+ 

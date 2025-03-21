@@ -1,0 +1,22 @@
+From 119635483ac5a9c4d391a0701faf221984f29e79 Mon Sep 17 00:00:00 2001
+From: Gurdal Oruklu <gurdal_oruklu@comcast.com>
+Date: Fri, 14 Dec 2018 16:58:11 +0000
+Subject: [PATCH] Increased RPC communication timeout to 20 secs
+Upstream-Status: Pending
+Signed-off-by: Gurdal Oruklu <gurdal_oruklu@comcast.com>
+----
+ Source/com/Administrator.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/com/Administrator.h b/Source/com/Administrator.h
+index 24ce6097..bf861e8d 100644
+--- a/Source/com/Administrator.h
++++ b/Source/com/Administrator.h
+@@ -36,7 +36,7 @@ namespace RPC {
+ #ifdef __DEBUG__
+     enum { CommunicationTimeOut = Core::infinite }; // Time in ms. Forever
+ #else
+-    enum { CommunicationTimeOut = 3000 }; // Time in ms. 3 Seconds
++    enum { CommunicationTimeOut = 20000 }; // Time in ms. 20 Seconds
+ #endif
+     enum { CommunicationBufferSize = 8120 }; // 8K :-)

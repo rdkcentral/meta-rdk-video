@@ -1,0 +1,60 @@
+From 38bb50668b06a00cc2abf1ded09eb2863b58385a Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Tue, 26 Jan 2021 16:13:21 +0000
+Subject: [PATCH] comcast - RDKTV-1411 - force stop media on loading
+ about:blank
+
+---
+ Source/WebCore/html/HTMLMediaElement.cpp  | 9 +++++++++
+ Source/WebCore/replay/UserInputBridge.cpp | 6 ++++++
+ 2 files changed, 15 insertions(+)
+
+diff --git a/Source/WebCore/html/HTMLMediaElement.cpp b/Source/WebCore/html/HTMLMediaElement.cpp
+index b70776430076..fae4dfabc43c 100644
+--- a/Source/WebCore/html/HTMLMediaElement.cpp
++++ b/Source/WebCore/html/HTMLMediaElement.cpp
+@@ -232,6 +232,15 @@ static constexpr auto mediaStreamBlobProtocol = "blob"_s;
+ 
+ using namespace HTMLNames;
+ 
++void ForceStopMediaElements()
++{
++    for (auto* mediaElement : HTMLMediaElement::allMediaElements()) {
++        WTFLogAlways("Force stop '%s'", mediaElement->currentSrc().string().utf8().data());
++        ActiveDOMObject* obj = mediaElement;
++        obj->stop();
++    }
++}
++
+ String convertEnumerationToString(HTMLMediaElement::ReadyState enumerationValue)
+ {
+     static const NeverDestroyed<String> values[] = {
+diff --git a/Source/WebCore/replay/UserInputBridge.cpp b/Source/WebCore/replay/UserInputBridge.cpp
+index e895f6717674..bde6ea59a455 100644
+--- a/Source/WebCore/replay/UserInputBridge.cpp
++++ b/Source/WebCore/replay/UserInputBridge.cpp
+@@ -38,6 +38,7 @@
+ #include "PlatformKeyboardEvent.h"
+ #include "PlatformMouseEvent.h"
+ #include "PlatformWheelEvent.h"
++#include "LegacySchemeRegistry.h"
+ 
+ namespace WebCore {
+ 
+@@ -118,8 +119,13 @@ bool UserInputBridge::logicalScrollRecursively(ScrollLogicalDirection direction,
+     return Ref(m_page.focusController().focusedOrMainFrame())->eventHandler().logicalScrollRecursively(direction, granularity, nullptr);
+ }
+ 
++void ForceStopMediaElements();  // defined in HTMLMediaElement
+ void UserInputBridge::loadRequest(FrameLoadRequest&& request, InputSource)
+ {
++    if (request.resourceRequest().url().isEmpty() ||
++        LegacySchemeRegistry::shouldLoadURLSchemeAsEmptyDocument(request.resourceRequest().url().protocol().toStringWithoutCopying())) {
++        ForceStopMediaElements();
++    }
+ #if ENABLE(WEB_AUTHN)
+     m_page.authenticatorCoordinator().resetUserGestureRequirement();
+ #endif
+-- 
+2.25.1
+

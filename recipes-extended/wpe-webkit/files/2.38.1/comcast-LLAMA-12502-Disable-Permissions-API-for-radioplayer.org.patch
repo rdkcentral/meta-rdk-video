@@ -1,0 +1,26 @@
+From 63ebf183858dd18c8cc1b2dd9ce4ae0b970aabf3 Mon Sep 17 00:00:00 2001
+From: Pawel Lampe <pawel.lampe@sky.uk>
+Date: Fri, 27 Oct 2023 08:20:47 -0400
+Subject: [PATCH] Disable Permissions API for radioplayer.org
+
+---
+ Source/WebCore/page/Quirks.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/page/Quirks.cpp b/Source/WebCore/page/Quirks.cpp
+index 89aa38003c05..39f589b76f53 100644
+--- a/Source/WebCore/page/Quirks.cpp
++++ b/Source/WebCore/page/Quirks.cpp
+@@ -1408,7 +1408,8 @@ bool Quirks::hasBrokenPermissionsAPISupportQuirk() const
+ 
+     if (!m_hasBrokenPermissionsAPISupportQuirk) {
+         auto domain = m_document->securityOrigin().domain().convertToASCIILowercase();
+-        m_hasBrokenPermissionsAPISupportQuirk = domain.endsWith(".nfl.com"_s);
++        m_hasBrokenPermissionsAPISupportQuirk = domain.endsWith(".radioplayer.org"_s) ||
++                                                domain.endsWith(".nfl.com"_s);
+     }
+ 
+     return m_hasBrokenPermissionsAPISupportQuirk.value();
+-- 
+2.41.0
+

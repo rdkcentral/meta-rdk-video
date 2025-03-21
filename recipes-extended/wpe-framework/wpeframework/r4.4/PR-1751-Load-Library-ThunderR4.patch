@@ -1,0 +1,31 @@
+From: Metro Team <HaseenaSainul>
+Date: Thu, 10 Oct 2024 17:12:47 +0000
+Subject:  [PATCH] PR-1751-Load-Library-ThunderR4.patch
+
+Reason for Change: dlopen is essential in Thunder to manage shared libraries during plugin activation. 
+dlopen has a process wide lock and hence must be managed as a singleton. 
+This change helps streamline all dlopens are done through the ServiceAdministrator.
+
+Upstream-Status: Downstreamed from R4.4 tag release
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+---
+ Source/plugins/Shell.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Source/plugins/Shell.cpp b/Source/plugins/Shell.cpp
+index 2e2981b7..dc1337f1 100644
+--- a/Source/plugins/Shell.cpp
++++ b/Source/plugins/Shell.cpp
+@@ -78,9 +78,9 @@ namespace PluginHost
+                 std::vector<string>::const_iterator index = all_paths.begin();
+                 while ((result == nullptr) && (index != all_paths.end())) {
+                     Core::File file(index->c_str());
+-                    if (file.Exists())
+-                    {
+-                        Core::Library resource(index->c_str());
++                    if (file.Exists()) {
++
++                        Core::Library resource = Core::ServiceAdministrator::Instance().LoadLibrary(index->c_str());
+                         if (resource.IsLoaded())
+                             result = Core::ServiceAdministrator::Instance().Instantiate(
+                                 resource,

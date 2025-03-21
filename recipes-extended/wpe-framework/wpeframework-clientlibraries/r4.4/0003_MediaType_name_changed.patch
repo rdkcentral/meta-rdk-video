@@ -1,0 +1,27 @@
+Date:  Apr 30 14:49:57 2024
+From: Thamim Razith
+Subject: MediaType name change patch
+Source: COMCAST
+Upstream-Status: Pending
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+
+diff --git a/Source/ocdm/open_cdm.h b/Source/ocdm/open_cdm.h
+index 9411c13..93bfe85 100644
+--- a/Source/ocdm/open_cdm.h
++++ b/Source/ocdm/open_cdm.h
+@@ -124,7 +124,7 @@ typedef enum
+     MediaType_Video,
+     MediaType_Audio,
+     MediaType_Data
+-} MediaType;
++} MediaType_t;
+
+ //CENC3.0 pattern is a number of encrypted blocks followed a number of clear blocks after which the pattern repeats.
+ typedef struct {
+@@ -152,7 +152,7 @@ typedef struct {
+ typedef struct {
+     uint16_t height;
+     uint16_t width;
+-    MediaType media_type;
++    MediaType_t media_type;
+ } MediaProperties;

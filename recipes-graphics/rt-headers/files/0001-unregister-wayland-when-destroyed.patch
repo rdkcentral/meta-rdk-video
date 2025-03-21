@@ -1,0 +1,216 @@
+Date: Feb 26, 2020 1:00 PM
+From: ebecd56aaa2727b6305d39c69951fbdc8740f800 Oct 31, 2018 11:56 PM
+Subject: [PATCH] unregister wayland callbacks on destroy
+Source: COMCAST
+Upstream-Status: Pending
+Signed-off-by: mfiess200 <michael_fiess@cable.comcast.com>
+
+---
+ examples/pxScene2d/src/pxWayland.cpp | 39 +++++++++++++++++++++---------------
+ examples/pxScene2d/src/pxWayland.h   |  1 +
+ src/rtThreadQueue.cpp                | 36 ++++++++++++++++++++++-----------
+ src/rtThreadQueue.h                  |  7 ++++---
+ 4 files changed, 52 insertions(+), 31 deletions(-)
+
+diff --git a/examples/pxScene2d/src/pxWayland.cpp b/examples/pxScene2d/src/pxWayland.cpp
+index 3e23ed8..b1843eb 100644
+--- a/examples/pxScene2d/src/pxWayland.cpp
++++ b/examples/pxScene2d/src/pxWayland.cpp
+@@ -125,6 +125,10 @@ pxWayland::~pxWayland()
+ 
+   if ( mWCtx )
+   {
++     rtLogInfo("removing wayland callbacks before destroying");
++     WstCompositorSetInvalidateCallback(mWCtx, NULL, NULL);
++     WstCompositorSetHidePointerCallback(mWCtx, NULL, NULL);
++     WstCompositorSetClientStatusCallback(mWCtx, NULL, NULL);
+      terminateClient();
+      WstCompositorDestroy(mWCtx);
+      //Adding mClientTerminated flag check because SIGKILL has to be sent to
+@@ -141,6 +145,10 @@ pxWayland::~pxWayland()
+      mClientPID= -1;
+      mWCtx = NULL;
+   }
++  if (gUIThreadQueue)
++  {
++    gUIThreadQueue->removeAllTasksForObject(this, onRemoveTask);
++  }
+ }
+ 
+ rtError pxWayland::displayName(rtString& s) const { s = mDisplayName; return RT_OK; }
+@@ -552,7 +560,7 @@ uint32_t pxWayland::getModifiers( uint32_t flags )
+ bool pxWayland::isRotated()
+ {
+    pxMatrix4f matrix = context.getMatrix();
+-   float *f = matrix.data(); 
++   float *f = matrix.data();
+    const float e= 1.0e-2;
+ 
+    if ( (fabsf(f[1]) > e) ||
+@@ -659,34 +667,33 @@ struct pxWaylandClientStatus
+ 
+ void pxWayland::onClientStatus(void* context, void* data)
+ {
+-   pxWayland* pxw = (pxWayland*)context;
+-   pxWaylandClientStatus* statusData = (pxWaylandClientStatus*)data;
+-   if (pxw)
++   if (context && data)
+    {
++      pxWayland* pxw = (pxWayland*)context;
++      pxWaylandClientStatus* statusData = (pxWaylandClientStatus*)data;
+       pxw->handleClientStatus(statusData->status, statusData->pid, statusData->detail);
+-      pxw->Release();
+    }
+-   delete statusData;
++   onRemoveTask(context, data);
+ }
+ 
+ void pxWayland::clientStatus( WstCompositor *wctx, int status, int pid, int detail, void *userData )
+ {
+    (void)wctx;
++   if (userData && gUIThreadQueue)
++      gUIThreadQueue->addTask(onClientStatus, userData, new pxWaylandClientStatus(status, pid, detail));
++}
+ 
+-   pxWayland *pxw = (pxWayland*)userData;
+-
+-   if (pxw && gUIThreadQueue)
+-   {
+-      pxw->AddRef();
+-      pxWaylandClientStatus* statusData = new pxWaylandClientStatus(status, pid, detail);
+-      gUIThreadQueue->addTask(onClientStatus, pxw, statusData);
+-   }
++bool pxWayland::onRemoveTask(void* context, void* data)
++{
++   if (data)
++      delete (pxWaylandClientStatus*)data;
++   return true;
+ }
+ 
+ void pxWayland::remoteDisconnectedCB(void *data)
+ {
+     pxWayland *pxw = (pxWayland *)data;
+-    if(pxw->mEvents)
++    if (pxw->mEvents)
+         pxw->mEvents->remoteDisconnected(data);
+ }
+ 
+@@ -961,7 +968,7 @@ rtError pxWayland::drawToFbo(pxContextFramebufferRef& fbo)
+ 
+   context.setFramebuffer( previousFrameBuffer );
+   context.popState();
+-  
++
+   return RT_OK;
+ }
+ 
+diff --git a/examples/pxScene2d/src/pxWayland.h b/examples/pxScene2d/src/pxWayland.h
+index 3564816..291407b 100644
+--- a/examples/pxScene2d/src/pxWayland.h
++++ b/examples/pxScene2d/src/pxWayland.h
+@@ -189,6 +189,7 @@ private:
+   static void clientStatus( WstCompositor *wctx, int status, int pid, int detail, void *userData );
+   static void remoteDisconnectedCB(void *data);
+   static void onClientStatus(void* context, void* data);
++  static bool onRemoveTask(void* context, void* data);
+ 
+   void handleInvalidate();
+   void handleHidePointer( bool hide );
+diff --git a/src/rtThreadQueue.cpp b/src/rtThreadQueue.cpp
+index 98815fb..def7d1c 100644
+--- a/src/rtThreadQueue.cpp
++++ b/src/rtThreadQueue.cpp
+@@ -29,7 +29,7 @@ rtThreadQueue::~rtThreadQueue() {}
+ rtError rtThreadQueue::addTask(rtThreadTaskCB t, void* context, void* data)
+ {
+   mTaskMutex.lock();
+-  ThreadQueueEntry entry;
++  rtThreadQueueEntry entry;
+   entry.task = t;
+   entry.context = context;
+   entry.data = data;
+@@ -39,18 +39,30 @@ rtError rtThreadQueue::addTask(rtThreadTaskCB t, void* context, void* data)
+   return RT_OK;
+ }
+ 
+-rtError rtThreadQueue::removeAllTasksForObject(void* context)
++template<class It, class Pr>
++It removeIf(It first, It last, Pr pred)
++{
++  It result = first;
++  for (; first != last; ++first)
++    if (!pred(*first))
++      *result++ = move(*first);
++  return result;
++}
++
++rtError rtThreadQueue::removeAllTasksForObject(void* context, rtThreadQueueRemoveTaskCB cb)
+ {
+   mTaskMutex.lock();
+-  for(deque<ThreadQueueEntry>::iterator it = mTasks.begin();
+-        it != mTasks.end(); ++it)
+-  {
+-    if ((it)->context == context)
+-    {
+-      it = mTasks.erase(it);
+-      break;
+-    }
+-  }
++  mTasks.erase(
++    removeIf(
++      mTasks.begin(),
++      mTasks.end(),
++      [context, cb](const rtThreadQueueEntry& e)
++      {
++        return (e.context == context) && (!cb || cb(e.context, e.data));
++      }
++    ),
++    mTasks.end()
++  );
+   mTaskMutex.unlock();
+ 
+   return RT_OK;
+@@ -62,7 +74,7 @@ rtError rtThreadQueue::process(double maxSeconds)
+   double start = pxSeconds();
+   do
+   {
+-    ThreadQueueEntry entry;
++    rtThreadQueueEntry entry;
+     mTaskMutex.lock();
+     if (!mTasks.empty())
+     {
+diff --git a/src/rtThreadQueue.h b/src/rtThreadQueue.h
+index 36debb9..c73f34f 100644
+--- a/src/rtThreadQueue.h
++++ b/src/rtThreadQueue.h
+@@ -26,8 +26,9 @@
+ #include <deque>
+ 
+ typedef void (*rtThreadTaskCB)(void* context, void* data);
++typedef bool (*rtThreadQueueRemoveTaskCB)(void* context, void* data);
+ 
+-struct ThreadQueueEntry
++struct rtThreadQueueEntry
+ {
+   rtThreadTaskCB task;
+   void* context;
+@@ -44,14 +45,14 @@ public:
+   // Thread safe
+   rtError addTask(rtThreadTaskCB t, void* context, void* data);
+ 
+-  rtError removeAllTasksForObject(void* context);
++  rtError removeAllTasksForObject(void* context, rtThreadQueueRemoveTaskCB cb = nullptr);
+ 
+   // Invoke this method periodically on the dispatching (owning) thread
+   // maxSeconds=0 means process until empty
+   rtError process(double maxSeconds = 0);
+ 
+ private:
+-  std::deque<ThreadQueueEntry> mTasks;
++  std::deque<rtThreadQueueEntry> mTasks;
+   rtMutex mTaskMutex;
+ };
+ #endif //RT_THREAD_QUEUE_H
+-- 
+2.7.4
+

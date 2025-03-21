@@ -1,0 +1,113 @@
+From 47a50fe2fe82beb294b1a52db6070d6985039b39 Mon Sep 17 00:00:00 2001
+From: Filipe Norte <filipe.norte@sky.uk>
+Date: Wed, 5 Oct 2022 16:15:04 +0000
+Subject: [PATCH] comcast - LLAMA-8030: Fix init data filtering
+
+Reason for change: Asset with multiple protection systems
+may not resume playback after ads, as init data may contain
+pssh boxes for multiple key systems, but with wrong system
+id associated with the init data structure compared to
+current active key system
+Test Procedure: Verify assets play normally, after seek and
+after ads
+Risks: Medium
+
+Signed-off-by: Filipe Norte <filipe.norte@sky.uk>
+---
+ .../gstreamer/MediaPlayerPrivateGStreamer.cpp |  5 +++
+ .../gstreamer/eme/GStreamerEMEUtilities.cpp   | 43 +++++++++++++++++++
+ .../gstreamer/eme/GStreamerEMEUtilities.h     |  2 +
+ 3 files changed, 50 insertions(+)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index 8de3dcb792bf..6fd9bad7977c 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -4359,6 +4359,11 @@ void MediaPlayerPrivateGStreamer::initializationDataEncountered(InitData&& initD
+         if (!weakThis)
+             return;
+ 
++        if (weakThis->m_cdmInstance && equalIgnoringASCIICase(initData.payloadContainerType(), "cenc"_s) && !GStreamerEMEUtilities::cencHasInitDataForKeySystem(initData, weakThis->m_cdmInstance->keySystem())) {
++            GST_TRACE_OBJECT(weakThis->pipeline(), "skipping initialization data for a different key system");
++            return;
++        }
++
+         GST_DEBUG("scheduling initializationDataEncountered %s event of size %zu", initData.payloadContainerType().utf8().data(),
+             initData.payload()->size());
+         GST_MEMDUMP("init datas", reinterpret_cast<const uint8_t*>(initData.payload()->makeContiguous()->data()), initData.payload()->size());
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.cpp
+index 3f85afe73c84..26d2b4bb11e8 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.cpp
+@@ -20,6 +20,8 @@
+ 
+ #include "config.h"
+ #include "GStreamerEMEUtilities.h"
++#include "InitDataRegistry.h"
++#include "ISOProtectionSystemSpecificHeaderBox.h"
+ 
+ #include <wtf/text/Base64.h>
+ 
+@@ -90,5 +92,46 @@ RefPtr<SharedBuffer> InitData::extractCencIfNeeded(RefPtr<SharedBuffer>&& unpars
+     return payload;
+ }
+ 
++bool GStreamerEMEUtilities::cencHasInitDataForKeySystem(const InitData& initData, const String& keySystem)
++{
++    auto psshBoxes = InitDataRegistry::extractPsshBoxesFromCenc(*(initData.payload()));
++
++    if (!psshBoxes) {
++        return false; 
++    }
++
++    auto keySystemToUuidRaw = [&keySystem]() -> auto& {
++        static const Vector<uint8_t> s_ClearKeyUUIDRaw ({ 0x10,0x77,0xef,0xec,0xc0,0xb2,0x4d,0x02,0xac,0xe3,0x3c,0x1e,0x52,0xe2,0xfb,0x4b });
++#if ENABLE(THUNDER)
++        static const Vector<uint8_t> s_WidevineUUIDRaw ({ 0xed,0xef,0x8b,0xa9,0x79,0xd6,0x4a,0xce,0xa3,0xc8,0x27,0xdc,0xd5,0x1d,0x21,0xed });
++        static const Vector<uint8_t> s_PlayReadyUUIDRaw({ 0x9a,0x04,0xf0,0x79,0x98,0x40,0x42,0x86,0xab,0x92,0xe6,0x5b,0xe0,0x88,0x5f,0x95 });
++#endif
++        static const Vector<uint8_t> s_InvalidUUIDRaw;
++
++        if (isClearKeyKeySystem(keySystem))
++            return s_ClearKeyUUIDRaw;
++
++#if ENABLE(THUNDER)
++        if (isWidevineKeySystem(keySystem))
++            return s_WidevineUUIDRaw;
++
++        if (isPlayReadyKeySystem(keySystem))
++            return s_PlayReadyUUIDRaw;
++#endif
++
++        ASSERT_NOT_REACHED();
++        return s_InvalidUUIDRaw;
++    };
++
++    auto& keySystemUuidRaw = keySystemToUuidRaw();
++
++    for (auto& box : psshBoxes.value()) {
++        if (box->systemID() == keySystemUuidRaw) {
++            return true;
++        }
++    }
++    return false;
++}
++
+ }
+ #endif // ENABLE(ENCRYPTED_MEDIA) && USE(GSTREAMER)
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.h b/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.h
+index f78f876f1a68..86270b99a44f 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.h
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.h
+@@ -200,6 +200,8 @@ public:
+         static NeverDestroyed<ASCIILiteral> empty(""_s);
+         return empty;
+     }
++
++    static bool cencHasInitDataForKeySystem(const InitData& initData, const String& keySystem);
+ };
+ 
+ }
+-- 
+2.25.1
+

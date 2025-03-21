@@ -1,0 +1,37 @@
+From 5d8e5ab873392a0db9f978c42b60c3f6020c38f6 Mon Sep 17 00:00:00 2001
+From: Sunil Ramulu <sunil_ramulu@comcast.com>
+Date: Tue, 17 Jan 2023 22:13:38 +0000
+Subject: [PATCH] Update libcobalt library info to breakpad.
+
+---
+ .../crashpad/crashpad/client/crashpad_client_linux.cc      | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/third_party/crashpad/crashpad/client/crashpad_client_linux.cc b/third_party/crashpad/crashpad/client/crashpad_client_linux.cc
+index bc8a8c80442..f3036e0af3b 100644
+--- a/third_party/crashpad/crashpad/client/crashpad_client_linux.cc
++++ b/third_party/crashpad/crashpad/client/crashpad_client_linux.cc
+@@ -40,6 +40,7 @@
+ #include "util/misc/from_pointer_cast.h"
+ #include "util/posix/double_fork_and_exec.h"
+ #include "util/posix/signals.h"
++#include <dlfcn.h>
+ // TODO(b/201538792): resolve conflict between mini_chromium and base functions.
+ #ifdef LogMessage
+ #define LOG_MESSAGE_DEFINED
+@@ -190,6 +191,12 @@ class SignalHandler {
+   }
+   bool SendEvergreenInfo(EvergreenInfo evergreen_info) {
+     evergreen_info_ = evergreen_info;
++    void (*breakpad_AddMappingInfoFptr)(char *, char *, size_t, uintptr_t, size_t, size_t);
++
++    *(void **)(&breakpad_AddMappingInfoFptr) = dlsym(RTLD_LOCAL , "breakpad_AddMappingInfo");
++    if(*breakpad_AddMappingInfoFptr)
++        (*breakpad_AddMappingInfoFptr)(evergreen_info.file_path_buf, evergreen_info.build_id, evergreen_info.build_id_length,
++                                       evergreen_info.base_address, evergreen_info.load_size, 0);
+     return SendEvergreenInfoImpl();
+   }
+ 
+-- 
+2.25.1
+

@@ -1,0 +1,68 @@
+#!/bin/sh
+##########################################################################
+# If not stated otherwise in this file or this component's LICENSE
+# file the following copyright and licenses apply:
+#
+# Copyright 2016 RDK Management
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
+start() {
+	# Core dumps
+	echo 1 > /proc/sys/kernel/core_uses_pid
+	echo 2 > /proc/sys/fs/suid_dumpable
+	echo "/home/root/cores/core-pid_%p--process%E" > /proc/sys/kernel/core_pattern
+	mkdir -p /home/root/cores
+	ulimit -c unlimited
+	if [ ! -d /home/root/Netflix/dpi ]; then
+		mkdir -p /home/root/Netflix/dpi
+		ln -sfn /etc/playready /home/root/Netflix/dpi/playready
+	fi
+	export TZ=$(wget -qO- http://jsonip.metrological.com/ | sed -e 's/^.*"tz":"\([^"]*\)".*$/\1/')
+    
+    # needed for wayland/westeros/weston
+    export XDG_RUNTIME_DIR=/tmp
+    
+	echo -n "Starting WPEFramework: "
+	start-stop-daemon -S -q -b -m -p /var/run/WPEFramework.pid --exec /usr/bin/WPEFramework -- -b </dev/null >/dev/null 2>&1
+	[ $? == 0 ] && echo "OK" || echo "FAIL"
+}
+stop() {
+	echo -n "Stopping WPEFramework: "
+	start-stop-daemon -K -q -p /var/run/WPEFramework.pid
+	[ $? == 0 ] && echo "OK" || echo "FAIL"
+	rm -rf /var/run/WPEFramework.pid
+}
+restart() {
+	stop
+	sleep 3
+	start
+}
+
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart|reload)
+		restart
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart}"
+		exit 1
+esac
+
+exit $?

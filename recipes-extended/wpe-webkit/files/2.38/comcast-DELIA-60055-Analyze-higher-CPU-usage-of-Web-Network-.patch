@@ -1,0 +1,53 @@
+From 81f0fa3791286bb13ca8d68467baa9730af9b410 Mon Sep 17 00:00:00 2001
+From: "Vivek.A" <Vivek_Arumugam@comcast.com>
+Date: Tue, 7 Feb 2023 08:28:01 +0000
+Subject: [PATCH] comcast - DELIA-60055 : Analyze higher CPU usage of Web & Network
+ processes
+
+Port Resource loading related changes from wpe-2.22
+2.22/0045-comcast-Amazon-Prime-improvements.patch
+2.22/0050-Reduce-XHR-latency.patch
+
+Change-Id: Id0ee2e2ab663b7c8d35a366c8883be34c688bfcb
+---
+ Source/WebCore/xml/XMLHttpRequest.cpp                  | 5 +++++
+ Source/WebKit/WebProcess/Network/WebLoaderStrategy.cpp | 7 ++++++-
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/xml/XMLHttpRequest.cpp b/Source/WebCore/xml/XMLHttpRequest.cpp
+index 58eba8ace272..de5141012e51 100644
+--- a/Source/WebCore/xml/XMLHttpRequest.cpp
++++ b/Source/WebCore/xml/XMLHttpRequest.cpp
+@@ -985,6 +985,11 @@ void XMLHttpRequest::didSendData(unsigned long long bytesSent, unsigned long lon
+ void XMLHttpRequest::didReceiveResponse(ResourceLoaderIdentifier, const ResourceResponse& response)
+ {
+     m_response = response;
++
++    if (response.tainting() != ResourceResponseBase::Tainting::Opaque &&
++            response.tainting() != ResourceResponseBase::Tainting::Opaqueredirect &&
++            readyState() < HEADERS_RECEIVED)
++       changeState(HEADERS_RECEIVED);
+ }
+ 
+ static inline bool shouldDecodeResponse(XMLHttpRequest::ResponseType type)
+diff --git a/Source/WebKit/WebProcess/Network/WebLoaderStrategy.cpp b/Source/WebKit/WebProcess/Network/WebLoaderStrategy.cpp
+index 30048123d308..64d8a35e13d3 100644
+--- a/Source/WebKit/WebProcess/Network/WebLoaderStrategy.cpp
++++ b/Source/WebKit/WebProcess/Network/WebLoaderStrategy.cpp
+@@ -250,7 +250,12 @@ void WebLoaderStrategy::scheduleLoad(ResourceLoader& resourceLoader, CachedResou
+     }
+ 
+     WEBLOADERSTRATEGY_RELEASE_LOG("scheduleLoad: URL will be scheduled with the NetworkProcess");
+-    scheduleLoadFromNetworkProcess(resourceLoader, resourceLoader.request(), trackingParameters, shouldClearReferrerOnHTTPSToHTTPRedirect, maximumBufferingTime(resource));
++    const Seconds bufferingTime = ([&]{
++        if (resource && resource->type() == CachedResource::Type::RawResource && resourceLoader.request().timeoutInterval() > 0)
++            return Seconds(std::min(0.25, resourceLoader.request().timeoutInterval() / 2.0));
++        return maximumBufferingTime(resource);
++    })();
++    scheduleLoadFromNetworkProcess(resourceLoader, resourceLoader.request(), trackingParameters, shouldClearReferrerOnHTTPSToHTTPRedirect, bufferingTime);
+ }
+ 
+ bool WebLoaderStrategy::tryLoadingUsingURLSchemeHandler(ResourceLoader& resourceLoader, const WebResourceLoader::TrackingParameters& trackingParameters)
+-- 
+2.25.1
+

@@ -1,0 +1,46 @@
+##########################################
+Date: Mon, 21 Sep 2020 09:16:03 +0100
+From: 33b9d2b1741dad5cffe96517696ea31674cd2953 Mon, 21 Sep 2020 09:16:03 +0100
+Subject: [PATCH] Remove dependency of mfrlib in tenablehdcp
+Source: Sky
+Upstream-Status: Pending
+Signed-off-by: Anitha Susan Varghese <anitha.varghese@sky.uk>
+
+#########################################
+Index: git/tenableHDCP.cpp
+===================================================================
+--- git.orig/tenableHDCP.cpp
++++ git/tenableHDCP.cpp
+@@ -31,7 +31,7 @@
+ #include "libIBus.h"
+ #include "mfrMgr.h"
+ 
+-
++#define HDCP14_PARAM_KEY_SIZE 288
+ 
+ 
+ int main(int argc, char *argv[])
+@@ -53,9 +53,12 @@ int main(int argc, char *argv[])
+     if (strcmp(enabled, "true") == 0) {
+ 	    protectContent = true;
+     }
+-
+-    int keySize = 0;
++/**
++Patch to remove the mfr dependency for enabling hdcp. Devicesettings hal handle enabledHDCP call without HDCP key. Devicesettings-hal enable the hdcp content protection based on the sink capability. Here hardcoding keysize to 288 bytes. First lower soc layer try hdcp 2.2 first if sink supports and if failed try for hdcp 1.4 on startup.All the key information will be read by hdcpcontroller using TA apis during authentication procedure.
++**/
++    int keySize = HDCP14_PARAM_KEY_SIZE;
+     char *hdcpKey = 0;
++#ifdef MFR_HDCP_KEY_READ
+ 	int IsMfrDataRead = false;
+     IARM_Bus_MFRLib_GetSerializedData_Param_t param_, *param = &param_;
+    
+@@ -115,7 +118,7 @@ int main(int argc, char *argv[])
+ 			}
+ 		}while(false == IsMfrDataRead);	
+     }
+-
++#endif
+     try {
+ 	    printf("Setting HDCP [%s]\n", enabled);
+ 		if(0 == keySize){

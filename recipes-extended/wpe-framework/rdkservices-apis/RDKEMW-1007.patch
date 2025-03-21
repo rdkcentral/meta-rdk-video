@@ -1,0 +1,463 @@
+diff -uprN a/apis/AuthService/IAuthService.h b/apis/AuthService/IAuthService.h
+--- a/apis/AuthService/IAuthService.h	1970-01-01 03:00:00.000000000 +0300
++++ b/apis/AuthService/IAuthService.h	2025-03-03 23:14:51.704577261 +0200
+@@ -0,0 +1,459 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2024 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#pragma once
++#include "Module.h"
++
++// @stubgen:include <com/IIteratorType.h>
++
++namespace WPEFramework {
++namespace Exchange {
++
++/* @json @text:keep */
++struct EXTERNAL IAuthService : virtual public Core::IUnknown {
++    enum { ID = ID_AUTHSERVICE };
++
++    // @event
++    struct EXTERNAL INotification : virtual public Core::IUnknown {
++        enum { ID = ID_AUTHSERVICE_NOTIFICATION };
++
++        // @text onActivationStatusChanged
++        // @brief The Activation status changed has changed.
++        // @param oldActivationStatus status
++        // @param newdActivationStatus status
++        virtual void OnActivationStatusChanged(const string& oldActivationStatus, const string& newActivationStatus) = 0;
++        // @text onServiceAccountIdChanged
++        // @brief The Service account Id has changed.
++        // @param oldServiceAccountId Id
++        // @param newServiceAccountId Id
++        virtual void OnServiceAccountIdChanged(const string& oldServiceAccountId, const string& newServiceAccountId) = 0;
++        // @text authTokenChanged
++        // @brief The Auth token has changed.
++        virtual void AuthTokenChanged() = 0;
++        // @text sessionTokenChanged
++        // @brief The session token has changed.
++        virtual void SessionTokenChanged() = 0;
++        // @text serviceAccessTokenChanged
++        // @brief The service access token has changed.
++        virtual void ServiceAccessTokenChanged() = 0;
++    };
++
++    virtual uint32_t Register(IAuthService::INotification* notification /* @in */) = 0;
++    virtual uint32_t Unregister(IAuthService::INotification* notification /* @in */) = 0;
++    virtual uint32_t Configure() = 0;
++
++    /**********************getInfo() - start****************************/
++    struct EXTERNAL SuccessResult {
++        bool success;
++    };
++
++    struct EXTERNAL SuccessMsgResult {
++        string message;
++        bool success;
++    };
++
++    struct EXTERNAL GetInfoResult {
++        string version;
++        string host;
++        string aspath;
++        string asmode;
++        uint32_t minRenew;
++        uint32_t maxRenew;
++        bool success;
++    };
++    // @text getInfo
++    // @brief Returns the STB Auth Service info
++    // @param GetInfoResult - out -  struct
++    virtual uint32_t GetInfo(GetInfoResult& info /* @out */) = 0;
++    /**********************getInfo() - end****************************/
++
++    /**********************getDeviceInfo() - start****************************/
++    struct EXTERNAL GetDeviceInfoResult {
++        string deviceInfo;
++        bool success;
++    };
++    // @text getDeviceInfo
++    // @brief Returns device info - Deprecated
++    // @param GetDeviceInfoResult - out - struct
++    virtual uint32_t GetDeviceInfo(GetDeviceInfoResult& info /* @out */) = 0;
++    /**********************getDeviceInfo() - end****************************/
++
++    /**********************getDeviceId() - start****************************/
++    struct EXTERNAL GetDeviceIdResult {
++        string deviceId;
++        string partnerId;
++        bool success;
++    };
++    // @text getDeviceId
++    // @brief Returns the device (receiver) id
++    // @param GetDeviceIdResult - out - struct
++    virtual uint32_t GetDeviceId(GetDeviceIdResult& idInfo /* @out */) = 0;
++    /**********************getDeviceId() - end****************************/
++
++    // @text setDeviceId
++    // @brief Sets device id
++    // @param deviceId - in - string
++    // @param SuccessMsgResult - out
++    /**********************setDeviceId() - start****************************/
++    virtual uint32_t SetDeviceId(const string& deviceId /* @in */, SuccessMsgResult& idStatus /* @out */) = 0;
++    /**********************setDeviceId() - end****************************/
++
++    /**********************setPartnerId() - start****************************/
++    struct EXTERNAL SetPartnerIdResult {
++        string error;
++        bool success;
++    };
++    // @text setPartnerId
++    // @brief Sets partner id
++    // @param partnerId - in - string
++    // @param SetPartnerIdResult - out
++    virtual uint32_t SetPartnerId(const string& partnerId /* @in */, SetPartnerIdResult& idStatus /* @out */) = 0;
++    /**********************setPartnerId() - end****************************/
++
++    /**********************getAuthToken() - start****************************/
++    struct EXTERNAL GetAuthTokenResult {
++        int32_t status;
++        string token;
++        uint32_t expires;
++        string clientId;
++        string messageId;
++        string imageName;
++        bool success;
++    };
++    // @text getAuthToken
++    // @brief Returns the authorization token
++    // @param forceNew - in - bool
++    // @param GetAuthTokenResult - out
++    virtual uint32_t GetAuthToken(const bool forceNew /* @in */, const bool recoverRenewal /* @in */, GetAuthTokenResult& getResult /* @out */) = 0;
++    /**********************getAuthToken() - end****************************/
++
++    /**********************getSessionToken() - start****************************/
++    struct EXTERNAL GetSessionTokenResult {
++        int32_t status;
++        string token;
++        uint32_t expires;
++        string clientId;
++        string messageId;
++        bool success;
++        string message;
++    };
++    // @text getSessionToken
++    // @brief Returns the session token
++    // @param GetSessionTokenResult - out
++    virtual uint32_t GetSessionToken(GetSessionTokenResult& getResult /* @out */) = 0;
++    /**********************getSessionToken() - end****************************/
++
++    /**********************setSessionToken() - start****************************/
++    // @text setSessionToken
++    // @brief Sets the session token
++    // @param status - in - int32_t
++    // @param token - in - string
++    // @param expire - in - uint32_t
++    // @param clientId - in - string
++    // @param msgId - in - string
++    // @param SuccessMsgResult - out
++    virtual uint32_t SetSessionToken(const int32_t& status, const string& token, const uint32_t expires, const string& clientId, const string& messageId, SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************setSessionToken() - end****************************/
++
++    /**********************getServiceAccessToken() - start****************************/
++    struct EXTERNAL GetServiceAccessTokenResult {
++        int32_t status;
++        string token;
++        uint32_t expires;
++        bool success;
++        string message;
++    };
++    // @text getServiceAccessToken
++    // @brief Returns the service access token
++    // @param GetServiceAccessTokenResult - out
++    virtual uint32_t GetServiceAccessToken(GetServiceAccessTokenResult& getResult  /* @out */) = 0;
++    /**********************getServiceAccessToken() - end****************************/
++
++    /**********************setServiceAccessToken() - start****************************/
++    // @text setServiceAccessToken
++    // @brief Sets the service access token
++    // @param status - in - int32_t
++    // @param token - in - string
++    // @param expire - in - uint32_t
++    // @param SuccessMsgResult - out
++    virtual uint32_t SetServiceAccessToken(const int32_t& status, const string& token, const uint32_t expires, SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************setServiceAccessToken() - end****************************/
++
++    /**********************getServiceAccountId() - start****************************/
++    struct EXTERNAL GetServiceAccountIdResult {
++        string serviceAccountId;
++        bool success;
++    };
++    // @text getServiceAccountId
++    // @brief Returns the service account ID
++    // @param GetServiceAccountIdResult - out
++    virtual uint32_t GetServiceAccountId(GetServiceAccountIdResult& getResult /* @out */) = 0;
++    /**********************getServiceAccountId() - end****************************/
++
++    /**********************setServiceAccountId() - start****************************/
++    // @text setServiceAccountId
++    // @brief Sets the service account ID
++    // @param serviceAccId - in - string
++    // @param SuccessMsgResult - out
++    virtual uint32_t SetServiceAccountId(const string& serviceAccountId /* @in */, SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************setServiceAccountId() - end****************************/
++
++    /**********************setAuthIdToken() - start****************************/
++    // @text setAuthIdToken
++    // @brief Sets the authorization ID token
++    // @param idToken - in - string
++    // @param SuccessMsgResult - out
++    virtual uint32_t SetAuthIdToken(const string& authIdToken /* @in */, SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************setAuthIdToken() - end****************************/
++
++    /**********************ready() - start****************************/
++    // @text ready
++    // @brief Lets the Auth Service know that the device's provisioned keys, certificates, and binaries are present on the device
++    // @param status - in - string
++    // @param SuccessMsgResult - out
++    virtual uint32_t Ready(const string& status /* @in */, SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************ready() - end****************************/
++
++    /**********************getBootstrapProperty() - start****************************/
++    struct EXTERNAL GetBootstrapPropResult {
++        string ntpHost;
++        string message;
++        bool success;
++    };
++    // @text getBootstrapProperty
++    // @brief Returns the bootstrap property associated with the current partnerId
++    // @param bootstrapProperty - in - string
++    // @param GetBootstrapPropResult - out
++    virtual uint32_t GetBootstrapProperty(const string& bootstrapProperty /* @in */, GetBootstrapPropResult& setStat /* @out */) = 0;
++    /**********************getBootstrapProperty() - end****************************/
++
++    /**********************activationStarted() - start****************************/
++    // @text activationStarted
++    // @brief Lets the Auth Service know that the device's activation is started
++    // @param successResult - out
++    virtual uint32_t ActivationStarted(SuccessResult& successResult /* @out */) = 0;
++    /**********************activationStarted() - end****************************/
++
++    /**********************activationComplete() - start****************************/
++    // @text activationComplete
++    // @brief Lets the Auth Service know that the device's activation is completed
++    // @param successResult - out
++    virtual uint32_t ActivationComplete(SuccessResult& successResult /* @out */) = 0;
++    /**********************activationComplete() - end****************************/
++
++    /**********************getLostAndFoundAccessToken() - start****************************/
++    // @text getLostAndFoundAccessToken
++    // @brief Returns the stored Lost and Found access token (LFAT) if one is available
++    // @param LAFAccessTokenResult - out opaque json - string
++    virtual uint32_t GetLostAndFoundAccessToken(string& lostAndFoundAccessToken /* @out @opaque */, string& message /* @out */, bool& success /* @out */) = 0;
++
++    /**********************getLostAndFoundAccessToken() - end****************************/
++
++    /**********************setLostAndFoundAccessToken() - start****************************/
++    // @text setLostAndFoundAccessToken
++    // @brief Sets the Lost and Found access token
++    // @param lostAndFoundAccessToken - in opaque json - string
++    // @param SuccessMsgResult - out - struct
++    virtual uint32_t SetLostAndFoundAccessToken(const string& lostAndFoundAccessToken /* @in @opaque */, SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************setLostAndFoundAccessToken() - end****************************/
++
++    /**********************getXDeviceId() - start****************************/
++    struct EXTERNAL GetXDeviceIdResult {
++        string xDeviceId;
++        bool success;
++        string message;
++    };
++    // @text getXDeviceId
++    // @brief Returns the xDevice ID
++    // @param GetXDeviceIdResult - out - struct
++    virtual uint32_t GetXDeviceId(GetXDeviceIdResult& xdResult /* @out */) = 0;
++    /**********************getXDeviceId() - end****************************/
++
++    /**********************setXDeviceId() - start****************************/
++    // @text setXDeviceId
++    // @brief Sets the xDevice ID
++    // @param xDeviceId - in - string
++    // @param SuccessMsgResult - out - struct
++    virtual uint32_t SetXDeviceId(const string& xDeviceId /* @in */, SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************setXDeviceId() - end****************************/
++
++    /**********************getExperience() - start****************************/
++    struct EXTERNAL GetExpResult {
++        string experience;
++        bool success;
++    };
++    // @text getExperience
++    // @brief Returns the experience
++    // @param GetExpResult - out - struct
++    virtual uint32_t GetExperience(GetExpResult& expdResult /* @out */) = 0;
++    /**********************getExperience() - end****************************/
++
++    /**********************setExperience() - start****************************/
++    // @text setExperience
++    // @brief Sets the experience
++    // @param exp - in - string
++    // @param SuccessMsgResult - out - struct
++    virtual uint32_t SetExperience(const string& experience /* @in */, SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************setExperience() - end****************************/
++
++    /**********************getXifaId() - start****************************/
++    struct EXTERNAL GetxifaIdResult {
++        string xifaId;
++        bool success;
++    };
++    // @text getXifaId
++    // @brief Returns xifaId
++    // @param GetxifaIdResult - out - struct
++    virtual uint32_t GetXifaId(GetxifaIdResult& xifaIdResult /* @out */) = 0;
++    /**********************getXifaId() - end****************************/
++
++    /**********************setXifaId() - start****************************/
++    // @text setXifaId
++    // @brief Sets xifaId
++    // @param xifaId - in - string
++    // @param SuccessMsgResult - out - struct
++    virtual uint32_t SetXifaId(const string& xifaId /* @in */, SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************setXifaId() - end****************************/
++
++    /**********************getAdvtOptOut() - start****************************/
++    struct EXTERNAL AdvtOptOutResult {
++        bool advtOptOut;
++        bool success;
++    };
++    // @text getAdvtOptOut
++    // @brief Returns advtOptOut
++    // @param AdvtOptOutResult - out - struct
++    virtual uint32_t GetAdvtOptOut(AdvtOptOutResult& advtOptOutResult /* @out */) = 0;
++    /**********************getAdvtOptOut() - end****************************/
++
++    /**********************setAdvtOptOut() - start****************************/
++    // @text setAdvtOptOut
++    // @brief Sets advtOptOut
++    // @param advtOptOut - in - string
++    // @param SuccessMsgResult - out - struct
++    virtual uint32_t SetAdvtOptOut(const bool& advtOptOut /* @in */, SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************setAdvtOptOut() - end****************************/
++
++    /**********************getActivationStatus() - start****************************/
++    struct EXTERNAL ActivationStatusResult {
++        string status;
++        bool success;
++    };
++    // @text getActivationStatus
++    // @brief Returns the activation status
++    // @param ActivationStatusResult - out - struct
++    virtual uint32_t GetActivationStatus(ActivationStatusResult& statusResult /* @out */) = 0;
++    /**********************getActivationStatus() - end****************************/
++
++    /**********************setActivationStatus() - start****************************/
++    // @text setActivationStatus
++    // @param GetDeviceIdResult - out - struct
++    // @param status - in - string
++    // @param SuccessMsgResult - out - struct
++    virtual uint32_t SetActivationStatus(const string& status /* @in */, SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************setActivationStatus() - end****************************/
++
++    /**********************clearAuthToken() - start****************************/
++    // @text clearAuthToken
++    // @brief Clears the authorization token
++    // @param SuccessMsgResult - out - struct
++    virtual uint32_t ClearAuthToken(SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************clearAuthToken() - start****************************/
++
++    /**********************clearSessionToken() - start****************************/
++    // @text clearSessionToken
++    // @brief Clears the session token
++    // @param SuccessMsgResult - out - struct
++    virtual uint32_t ClearSessionToken(SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************clearSessionToken() - end****************************/
++
++    /**********************clearServiceAccessToken() - start****************************/
++    // @text clearServiceAccessToken
++    // @brief Clears the service access token
++    // @param SuccessMsgResult - out - struct
++    virtual uint32_t ClearServiceAccessToken(SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************clearServiceAccessToken() - end****************************/
++
++    /**********************clearLostAndFoundAccessToken() - start****************************/
++    // @text clearLostAndFoundAccessToken
++    // @brief Clears the Lost and Found access token
++    // @param SuccessMsgResult - out - struct
++    virtual uint32_t ClearLostAndFoundAccessToken(SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************clearLostAndFoundAccessToken() - end****************************/
++
++    /**********************clearServiceAccountId() - start****************************/
++    // @text clearServiceAccountId
++    // @brief Clears the service account ID
++    // @param SuccessMsgResult - out - struct
++    virtual uint32_t ClearServiceAccountId(SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************clearServiceAccountId() - end****************************/
++
++    /**********************clearCustomProperties() - start****************************/
++    // @text clearCustomProperties
++    // @brief Clears the custom properties
++    // @param SuccessMsgResult - out - struct
++    virtual uint32_t ClearCustomProperties(SuccessMsgResult& setStat /* @out */) = 0;
++    /**********************clearCustomProperties() - end****************************/
++
++    /**********************getCustomProperties() - start****************************/
++    // @text getCustomProperties
++    // @brief Returns the custom properties
++    // @param customProperties - out/json - string
++    // @param success - out - bool
++    virtual uint32_t GetCustomProperties(string& customProperties /* @out @opaque */, bool& success /* @out */) = 0;
++    /**********************getCustomProperties() - end****************************/
++
++    /**********************setCustomProperties() - start****************************/
++    // @text setCustomProperties
++    // @brief Sets the custom properties
++    // @param customProperties - in/json - string
++    // @param success - out - bool
++    virtual uint32_t SetCustomProperties(const string& customProperties /* @in @opaque */, bool& success /* @out */) = 0;
++    /**********************setCustomProperties() - end****************************/
++
++    /**********************getAlternateIds() - start****************************/
++    // @text getAlternateIds
++    // @brief Returns alternate IDs as key/value pairs
++    // @param alternateIds - out/json - string
++    // @param msg - out - string
++    // @param success - out - bool
++    virtual uint32_t GetAlternateIds(string& alternateIds /* @out @opaque */, string& message /* @out */, bool& success /* @out */) = 0;
++    /**********************getAlternateIds() - end****************************/
++
++    /**********************setAlternateIds() - start****************************/
++    // @text setAlternateIds
++    // @brief Sets alternate IDs as key/value pairs
++    // @param alternateIds - in/json - string
++    // @param msg - out - string
++    // @param success - out - bool
++    virtual uint32_t SetAlternateIds(const string& alternateIds /* @in @opaque */, string& message /* @out */, bool& success /* @out */) = 0;
++    /**********************setAlternateIds() - end****************************/
++
++    /**********************getTransitionData() - start****************************/
++    // @text getTransitionData
++    // @brief Returns the transition data
++    // @param transitionData - out/json - string
++    // @param msg - out - string
++    // @param success - out - string
++    virtual uint32_t GetTransitionData(string& transitionData /* @out @opaque */, string& message /* @out */, bool& success /* @out */) = 0;
++    /**********************getTransitionData() - end****************************/
++};
++
++} // namespace Exchange
++} // namespace WPEFramework

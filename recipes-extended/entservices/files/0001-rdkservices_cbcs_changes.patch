@@ -1,0 +1,2697 @@
+From d44e9bc784013a30a8dbaf3b0d3006f0572be555 Mon Sep 17 00:00:00 2001
+From: kkanag314 <krishnapriya_kanagaraj@comcast.com>
+From: Karunakaran A <Karunakaran_Amirthalingam@cable.comcast.com>
+Date: Wed, 21 Dec 2022 17:24:43 +0000
+Subject: [PATCH] rdkservice changes
+---
+ OpenCDMi/CENCParser.h     | 291 +++++++++++++++------
+ OpenCDMi/CMakeLists.txt   |   6 +-
+ OpenCDMi/CapsParser.cpp   | 204 ---------------
+ OpenCDMi/CapsParser.h     |  63 -----
+ OpenCDMi/FrameworkRPC.cpp | 437 +++++++++++++++++++------------
+ OpenCDMi/OCDM.config      |  37 +--
+ OpenCDMi/OCDM.cpp         |  99 ++++---
+ OpenCDMi/OCDM.h           |  68 ++---
+ OpenCDMi/Protobuf.h       | 530 ++++++++++++++++++++++++++++++++++++++
+ 9 files changed, 1120 insertions(+), 615 deletions(-)
+ delete mode 100644 OpenCDMi/CapsParser.cpp
+ delete mode 100644 OpenCDMi/CapsParser.h
+ create mode 100644 OpenCDMi/Protobuf.h
+Index: git/OpenCDMi/CENCParser.h
+===================================================================
+--- git.orig/OpenCDMi/CENCParser.h
++++ git/OpenCDMi/CENCParser.h
+@@ -21,6 +21,7 @@
+ #define __CENCPARSER_H
+ 
+ #include "Module.h"
++#include "Protobuf.h"
+ 
+ namespace WPEFramework {
+ namespace Plugin {
+@@ -46,25 +47,25 @@ namespace Plugin {
+             WIDEVINE = 0x0008
+         };
+ 
+-        class KeyId : public OCDM::KeyId {
++        class KeyId : public Exchange::KeyId {
+         public:
+             inline KeyId()
+-                : OCDM::KeyId()
++                : Exchange::KeyId()
+                 , _systems(0)
+             {
+             }
+             inline KeyId(const systemType type, const uint8_t kid[], const uint8_t length)
+-                : OCDM::KeyId(kid, length)
++                : Exchange::KeyId(kid, length)
+                 , _systems(type)
+             {
+             }
+             inline KeyId(const systemType type, const uint32_t a, const uint16_t b, const uint16_t c, const uint8_t d[])
+-                : OCDM::KeyId(a, b, c, d)
++                : Exchange::KeyId(a, b, c, d)
+                 , _systems(type)
+             {
+             }
+             inline KeyId(const KeyId& copy)
+-                : OCDM::KeyId(copy)
++                : Exchange::KeyId(copy)
+                 , _systems(copy._systems)
+             {
+             }
+@@ -74,23 +75,23 @@ namespace Plugin {
+ 
+             inline KeyId& operator=(const KeyId& rhs)
+             {
+-                OCDM::KeyId::operator=(rhs);
++                Exchange::KeyId::operator=(rhs);
+                 _systems = rhs._systems;
+                 return (*this);
+             }
+ 
+         public:
+-            inline bool operator==(const OCDM::KeyId& rhs) const
++            inline bool operator==(const Exchange::KeyId& rhs) const
+             {
+-                return (OCDM::KeyId::operator== (rhs));
++                return (Exchange::KeyId::operator== (rhs));
+             }   
+-            inline bool operator!=(const OCDM::KeyId& rhs) const
++            inline bool operator!=(const Exchange::KeyId& rhs) const
+             {
+                 return (!operator==(rhs));
+             }
+             inline bool operator==(const KeyId& rhs) const
+             {
+-                return (OCDM::KeyId::operator== (rhs));
++                return (Exchange::KeyId::operator== (rhs));
+             }   
+             inline bool operator!=(const KeyId& rhs) const
+             {
+@@ -126,13 +127,13 @@ namespace Plugin {
+         }
+ 
+     public:
+-        inline ::OCDM::ISession::KeyStatus Status() const
++        inline Exchange::ISession::KeyStatus Status() const
+         {
+-            return (_keyIds.size() > 0 ? _keyIds.begin()->Status() : ::OCDM::ISession::StatusPending);
++            return (_keyIds.size() > 0 ? _keyIds.begin()->Status() : Exchange::ISession::StatusPending);
+         }
+-        inline ::OCDM::ISession::KeyStatus Status(const KeyId& key) const
++        inline Exchange::ISession::KeyStatus Status(const KeyId& key) const
+         {
+-            ::OCDM::ISession::KeyStatus result(::OCDM::ISession::StatusPending);
++            Exchange::ISession::KeyStatus result(Exchange::ISession::StatusPending);
+             if (key.IsValid() == true) {
+                 std::list<KeyId>::const_iterator index(std::find(_keyIds.begin(), _keyIds.end(), key));
+                 if (index != _keyIds.end()) {
+@@ -145,7 +146,7 @@ namespace Plugin {
+         {
+             return (Iterator(_keyIds));
+         }
+-        inline bool HasKeyId(const OCDM::KeyId& keyId) const
++        inline bool HasKeyId(const Exchange::KeyId& keyId) const
+         {
+             return (std::find(_keyIds.begin(), _keyIds.end(), keyId) != _keyIds.end());
+         }
+@@ -161,7 +162,7 @@ namespace Plugin {
+                 index->Flag(key.Systems());
+             }
+         }
+-        inline const KeyId* UpdateKeyStatus(::OCDM::ISession::KeyStatus status, const KeyId& key)
++        inline const KeyId* UpdateKeyStatus(Exchange::ISession::KeyStatus status, const KeyId& key)
+         {
+             KeyId* entry = nullptr;
+ 
+@@ -256,87 +257,115 @@ namespace Plugin {
+ 
+             do {
+                 // Check if this is a PSSH box...
+-                uint32_t size = (data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3];
+-                if (size == 0) {
+-                    TRACE(Trace::Information, (_T("While parsing CENC, found chunk of size 0, are you sure the data is valid? %d\n"), __LINE__));
+-                    break;
+-                }
+-
+-                if ((size <= static_cast<uint32_t>(length - offset)) && (memcmp(&(data[offset + 4]), PSSHeader, 4) == 0)) {
+-                    ParsePSSHBox(&(data[offset + 4 + 4]), size - 4 - 4);
+-                } else {
+-                    uint32_t XMLSize = (data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16) | (data[offset + 3] << 24));
+-
+-                    if (XMLSize <= static_cast<uint32_t>(length - offset)) {
+-
+-                        uint16_t stringLength = (data[offset + 8] | (data[offset + 9] << 8));
+-                        if (stringLength <= (XMLSize - 10)) {
+-
+-                            // Seems like it is an XMLBlob, without PSSH header, we have seen that on PlayReady only..
+-                            ParseXMLBox(&(data[offset + 10]), stringLength);
+-                        }
+-
+-                        offset += XMLSize;
+-
+-                    } else if ((offset == 0) && (data[0] == '<') && (data[2] == 'W') && (data[4] == 'R') && (data[6] == 'M')) {
+-                        ParseXMLBox(data, size);
++                        uint32_t sizeBE = ((data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3]);
++                if ((sizeBE <= static_cast<uint32_t>(length - offset)) && ((length - offset) >= 4)
++                        && (::memcmp(&(data[offset + 4]), PSSHeader, 4) == 0)) {
++                    TRACE(Trace::Information, (_T("Initdata contains a PSSH box")));
++                    ParsePSSHBox(&(data[offset + 4 + 4]), (sizeBE - 4 - 4));
++                    offset += sizeBE;
++                } else if (offset == 0) {
++                    uint32_t sizeLE = (data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16) | (data[offset + 3] << 24));
++                    if ((data[0] == '<') && (data[2] == 'W') && (data[4] == 'R') && (data[6] == 'M')) {
++                        // Playready XML data without PSSH header and withouth Playready Rights Managment Header
++                        TRACE(Trace::Information, (_T("Initdata contains Playready XML data")));
++                        ParseXMLBox(data, length);
+                         offset = length;
+                     } else if (std::string(reinterpret_cast<const char*>(data), length).find(JSONKeyIds) != std::string::npos) {
+-                        /* keyids initdata type */
+-                        TRACE(Trace::Information, (_T("Initdata contains clearkey's key ids")));
+-
++                        // keyids initdata type
++                        TRACE(Trace::Information, (_T("Initdata contains ClearKey key IDs")));
+                         ParseJSONInitData(reinterpret_cast<const char*>(data), length);
+-                    } else {
+-                        TRACE(Trace::Information, (_T("Have no clue what this is!!! %d\n"), __LINE__));
++                        offset = length;
++                    } else if (sizeLE == length) {
++                        // Seems like it is an XMLBlob, without PSSH header, we have seen that on PlayReady only..
++                        TRACE(Trace::Information, (_T("Initdata contains Playready PSSH payload")));
++                        if (ParsePlayReadyPSSHData(&data[offset], length) == true) {
++                            offset = length;
++                        }
+                     }
++                    break;
++                } else {
++                    break;
+                 }
+-                offset += size;
+ 
+             } while (offset < length);
++            if (offset != length) {
++                TRACE(Trace::Information, (_T("Have no clue what this is!!!")));
++            }
+         }
+ 
+         void ParsePSSHBox(const uint8_t data[], const uint16_t length)
+         {
+-            systemType system(COMMON);
+-            const uint8_t* psshData(&(data[KeyId::Length() + 4 /* flags */]));
+-            uint32_t count((psshData[0] << 24) | (psshData[1] << 16) | (psshData[2] << 8) | psshData[3]);
+-            uint16_t stringLength = (data[8] | (data[9] << 8));
+-
+-            if (::memcmp(&(data[4]), CommonEncryption, KeyId::Length()) == 0) {
+-                psshData += 4;
+-                TRACE(Trace::Information, (_T("Common detected [%d]\n"), __LINE__));
+-            } else if (::memcmp(&(data[4]), PlayReady, KeyId::Length()) == 0) {
+-                if (stringLength <= (length - 10)) {
+-                    ParseXMLBox(&(psshData[10]), count);
+-                    TRACE(Trace::Information, (_T("PlayReady XML detected [%d]\n"), __LINE__));
+-                    count = 0;
++            const uint16_t PSSH_HEADER_SIZE_V0 = 24;
++            const uint16_t PSSH_HEADER_SIZE_V1 = 28;
++
++            if (length >= PSSH_HEADER_SIZE_V0) {
++                systemType system(COMMON);
++                const uint8_t version(data[0]);
++                const uint8_t* keyIdData(nullptr);
++                uint32_t keyIdCount(0);
++                const uint8_t* psshData(nullptr);
++                uint32_t psshDataSize(0);
++
++                auto Read32BE = [](const uint8_t ptr[]) -> uint32_t {
++                    return ((ptr[0] << 24) | (ptr[1] << 16) | (ptr[2] << 8) | ptr[3]);
++                };
++
++                if (version == 0) {
++                    psshData = &data[PSSH_HEADER_SIZE_V0];
++                    psshDataSize = Read32BE(psshData - 4);
++                    if ((psshDataSize + PSSH_HEADER_SIZE_V0) > length) {
++                        psshData = nullptr;
++                    }
++                } else if (version == 1) {
++                    /* Version 1 inserts raw key IDs before DRM system specific payload. */
++                    keyIdData = &data[PSSH_HEADER_SIZE_V0];
++                    keyIdCount = Read32BE(keyIdData - 4);
++                    if (((keyIdCount * KeyId::Length()) + PSSH_HEADER_SIZE_V1) > length) {
++                        keyIdData = nullptr;
++                    } else {
++                        psshData = &data[PSSH_HEADER_SIZE_V1 + (keyIdCount * KeyId::Length())];
++                        psshDataSize = Read32BE(psshData - 4);
++                        if (psshDataSize + PSSH_HEADER_SIZE_V1 + (keyIdCount * KeyId::Length()) > length) {
++                            psshData = nullptr;
++                        }
++                    }
++                } else {
++                    TRACE(Trace::Error, (_T("Unsupported PSSH version (%hhu)"), version));
++                }
++                if ((keyIdData != nullptr) || (psshData != nullptr)) {
++                    if (::memcmp(&(data[4]), CommonEncryption, 16) == 0) {
++                        TRACE(Trace::Information, (_T("Common encryption detected")));
++                    } else if (::memcmp(&(data[4]), PlayReady, 16) == 0) {
++                        TRACE(Trace::Information, (_T("PlayReady detected")));
++                        system = PLAYREADY;
++                        if (psshData != nullptr) {
++                            ParsePlayReadyPSSHData(psshData, psshDataSize);
++                        }
++                    } else if (::memcmp(&(data[4]), WideVine, 16) == 0) {
++                        TRACE(Trace::Information, (_T("Widevine detected")));
++                        system = WIDEVINE;
++                        if (psshData != nullptr) {
++                            ParseWidevinePSSHData(psshData, psshDataSize);
++                        }
++                    } else if (::memcmp(&(data[4]), ClearKey, 16) == 0) {
++                        TRACE(Trace::Information, (_T("ClearKey detected")));
++                        system = CLEARKEY;
++                    } else {
++                        TRACE(Trace::Information, (_T("Unknown DRM system: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X"),
++                                data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11]));
++                    }
++                    if (keyIdData != nullptr) {
++                        TRACE(Trace::Information, (_T("Adding %d keys from PSSHv1 box"), keyIdCount));
++                        while (keyIdCount-- != 0) {
++                            AddKeyId(KeyId(system, keyIdData, KeyId::Length()));
++                            keyIdData += KeyId::Length();
++                        }
++                    }
+                 } else {
+-                    TRACE(Trace::Information, (_T("PlayReady BIN detected [%d]\n"), __LINE__));
+-                    system = PLAYREADY;
+-                    psshData += 4;
+-                }
+-            } else if (::memcmp(&(data[4]), WideVine, KeyId::Length()) == 0) {
+-                TRACE(Trace::Information, (_T("WideVine detected [%d]\n"), __LINE__));
+-                system = WIDEVINE;
+-                psshData += 4 + 4 /* God knows what this uint32 means, we just skip it. */;
+-            } else if (::memcmp(&(data[4]), ClearKey, KeyId::Length()) == 0) {
+-                TRACE(Trace::Information, (_T("ClearKey detected [%d]\n"), __LINE__));
+-                system = CLEARKEY;
+-                psshData += 4;
++                    TRACE(Trace::Error, (_T("Invalid PSSH data")));
++                }
+             } else {
+-                TRACE(Trace::Information, (_T("Unknown system: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X.\n"), data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11]));
+-                count = 0;
+-            }
+-
+-            if (data[0] != 1) {
+-                count /= KeyId::Length();
+-            }
+-
+-            TRACE(Trace::Information, (_T("Adding %d keys from PSSH box\n"), count));
+-
+-            while (count-- != 0) {
+-                AddKeyId(KeyId(system, psshData, KeyId::Length()));
+-                psshData += KeyId::Length();
++                TRACE(Trace::Error, (_T("Invalid PSSH box")));
+             }
+         }
+ 
+@@ -413,7 +442,7 @@ namespace Plugin {
+                 while ((size > 0) && ((begin = FindInXML(slot, size, "<KID ", 5)) < size)) {
+                     uint16_t end = FindInXML(&(slot[begin + 10]), size - begin - 10, "</KID>", 6);
+ 
+-                    uint16_t keyValue = FindInXML(&(slot[begin + 10]), end, "VALUE", 5);  
++                    uint16_t keyValue = FindInXML(&(slot[begin + 10]), end, "VALUE", 5);
+                     uint16_t keyStart = FindInXML(&(slot[begin + 10 + keyValue + 10]), end - keyValue - 10, "\"", 1) + 2;
+                     uint16_t keyLength = FindInXML(&(slot[begin + 10 + keyValue + 10 + keyStart]), end - keyValue - 10 - keyStart - 2, "\"", 1) - 2;
+                     
+@@ -475,6 +504,100 @@ namespace Plugin {
+                 AddKeyId(KeyId(system, keyID, static_cast<uint8_t>(sizeof(keyID))));
+             }
+         }
++        bool ParsePlayReadyPSSHData(const uint8_t data[], const uint16_t length)
++        {
++            auto Read16LE = [](const uint8_t ptr[]) -> uint16_t {
++                return (ptr[0] | (ptr[1] << 8));
++            };
++            auto Read32LE = [](const uint8_t ptr[]) -> uint32_t {
++                return (ptr[0] | (ptr[1] << 8) | (ptr[2] << 16) | (ptr[3] << 24));
++            };
++
++            bool result = false;
++
++            uint32_t size = Read32LE(data);
++            data += 4;
++            if (size == length) {
++                uint16_t count = Read16LE(data);
++                if (count > 0) {
++                    const uint8_t* dataEnd = (data + length);
++                    data += 2;
++                    while ((data + 4) < dataEnd) {
++                        const uint16_t recordType = Read16LE(data);
++                        const uint16_t recordLength = Read16LE(data + 2);
++                        data += 4;
++                        if ((data + recordLength) >= dataEnd) {
++                            break;
++                        }
++                        if (recordType == 1 /* rights management */) {
++                            ParseXMLBox(data, recordLength);
++                        }
++                        data += recordLength;
++                        if (--count == 0) {
++                            break;
++                        }
++                    }
++                }
++                result = (count == 0);
++            }
++
++            return (result);
++        }
++
++        bool ParseWidevinePSSHData(const uint8_t data[], const uint16_t length)
++        {
++            class WidevinePsshPB2 : public Protobuf::Message {
++            public:
++                enum class algorithm : Protobuf::UInt32::type {
++                    UNENCRYPTED,
++                    AES_CTR = 1
++                };
++
++            public:
++                WidevinePsshPB2()
++                {
++                    Add(1, &Algorithm);
++                    Add(2, &KeyIDs);
++                    Add(3, &Provider);
++                    Add(4, &ContentID);
++                    Add(5, &TrackType);
++                    Add(6, &Policy);
++                    Add(7, &CryptoPeriodIndex);
++                    Add(8, &GroupedLicense);
++                    Add(9, &ProtectionScheme);
++                    Add(10,&CryptoPeriodDuration);
++                }
++
++            public:
++                Protobuf::EnumType<algorithm> Algorithm;
++                Protobuf::RepeatedType<Protobuf::Bytes> KeyIDs;
++                Protobuf::Utf8String Provider;
++                Protobuf::Utf8String ContentID;
++                Protobuf::Utf8String TrackType;
++                Protobuf::Utf8String Policy;
++                Protobuf::UInt32 CryptoPeriodIndex;
++                Protobuf::Bytes GroupedLicense;
++                Protobuf::UInt32 ProtectionScheme;
++                Protobuf::UInt32 CryptoPeriodDuration;
++            };
++
++            bool result = false;
++
++            WidevinePsshPB2 wvpb2;
++            if ((wvpb2.FromBuffer(data, length) == true) && (wvpb2.IsValid() == true)) {
++                if (wvpb2.KeyIDs.IsSet() == true) {
++                    for (auto const& keyID : wvpb2.KeyIDs.Elements()) {
++                        AddKeyId(KeyId(WIDEVINE, keyID.Value().data(), keyID.Value().size()));
++                    }
++                } else {
++                    TRACE(Trace::Information, (_T("No key IDs specified in Widevine PSSH data")));
++                }
++
++                result = true;
++            }
++
++            return (result);
++        }
+ 
+     private:
+         std::list<KeyId> _keyIds;
+Index: git/OpenCDMi/CMakeLists.txt
+===================================================================
+--- git.orig/OpenCDMi/CMakeLists.txt
++++ git/OpenCDMi/CMakeLists.txt
+@@ -24,8 +24,9 @@ set(PLUGIN_OPENCDMI_MODE "Local" CACHE S
+ set(PLUGIN_OCDM_STARTUPORDER "" CACHE STRING "To configure startup order of OCDM plugin")
+ 
+ # deprecated/legacy flags support
+-if(PLUGIN_OPENCDMI_OOP)
+-    unset(PLUGIN_OPENCDMI_MODE CACHE)
++if(PLUGIN_OPENCDMI_OOP STREQUAL "false")
++    set(PLUGIN_OPENCDMI_MODE "Off" CACHE STRING "Process mode"  FORCE)
++    unset(PLUGIN_OPENCDMI_OOP CACHE)
+ elseif(PLUGIN_OPENCDMI_OUTOFPROCESS STREQUAL "false")
+     set(PLUGIN_OPENCDMI_MODE "Off" CACHE STRING "Process mode"  FORCE)
+     unset(PLUGIN_OPENCDMI_OUTOFPROCESS CACHE)
+@@ -43,7 +44,6 @@ add_library(${MODULE_NAME} SHARED
+ add_library(${PLUGIN_OCDM_IMPLEMENTATION} SHARED
+         CENCParser.cpp
+         FrameworkRPC.cpp
+-        CapsParser.cpp
+         Module.cpp)
+ 
+ add_dependencies(${MODULE_NAME} ${PLUGIN_OCDM_IMPLEMENTATION})
+Index: git/OpenCDMi/CapsParser.cpp
+===================================================================
+--- git.orig/OpenCDMi/CapsParser.cpp
++++ /dev/null
+@@ -1,204 +0,0 @@
+-/*
+- * If not stated otherwise in this file or this component's LICENSE file the
+- * following copyright and licenses apply:
+- *
+- * Copyright 2020 RDK Management
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- * http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#include "CapsParser.h"
+-
+-#define START_CHAR ")"
+-#define END_CHAR ","
+-
+-#undef  LOG
+-#define LOG(level, ...) DebugLogging(level, __FUNCTION__, __LINE__, __VA_ARGS__)
+-static bool s_bLogTrace = false;
+-
+-typedef enum eLogLevel_
+-{
+-    eTrace,
+-    eWarning,
+-    eError
+-} eLogLevel;
+-
+-void DebugLogging(eLogLevel level, const char* function, int line, const char * format, ...)
+-{
+-#define LOG_MESSAGE_SIZE 4096
+-
+-    if(!s_bLogTrace && level < eWarning) {
+-        // Do not log
+-        return;
+-    }
+-
+-    char logMessage[LOG_MESSAGE_SIZE];
+-    // Generate the log string
+-    va_list ap;
+-    va_start(ap, format);
+-    vsnprintf(logMessage, LOG_MESSAGE_SIZE, format, ap);
+-    va_end(ap);
+-
+-    FILE* fpOut = stdout;
+-    if(level == eError) {
+-        fpOut = stderr;
+-    }
+-
+-    // printf for now.
+-    fprintf(fpOut, "CapParser: %s(%d) : %s", function, line, logMessage);
+-    fflush(fpOut);
+-    return;
+-}
+-
+-//#define ALWAYS_LOG 1
+-static void _SetLogLevelTrace(bool bTrace)
+-{
+-#ifndef ALWAYS_LOG
+-	if(s_bLogTrace != bTrace) {
+-		LOG(eError, "Setting s_bLogTrace to %d\n", bTrace);
+-		s_bLogTrace = bTrace;
+-	}
+-#else
+-	s_bLogTrace = true;
+-#endif
+-}
+-static inline bool _GetLogLevelTrace()
+-{
+-	return s_bLogTrace;
+-}
+-
+-namespace WPEFramework {
+-    namespace Plugin {
+-
+-        CapsParser::CapsParser()
+-	: _lastHash(0)
+-        , _mediaTag("original-media-type")
+-        , _widthTag("width")
+-	, _heightTag("height")
+-        {
+-            char* envTraceLog = getenv("GSTCAPS_ENABLE_TRACE_LOGGING");
+-            if(envTraceLog && strcasecmp(envTraceLog, "true") == 0) {
+-                _SetLogLevelTrace(true);
+-                LOG(eWarning, "using GSTCAPS_ENABLE_TRACE_LOGGING set TRACE Logging to %d\n", _GetLogLevelTrace());
+-            }
+-            else {
+-                _SetLogLevelTrace(false);
+-            }
+-        }
+-
+-        CapsParser::~CapsParser() 
+-        {
+-        }
+-
+-        void CapsParser::Parse(const uint8_t* info, uint16_t infoLength) /* override */ 
+-        {
+-            LOG(eTrace, "Got a new info string size %d (%p)\n", infoLength, info);
+-            if(infoLength > 0) {
+-                ::string infoStr((char*)info, (size_t)infoLength);
+-
+-                std::hash<::string> hash_fn;
+-                size_t info_hash = hash_fn(infoStr);
+-                if(_lastHash != info_hash) {
+-                    LOG(eTrace, "Got a new info string %s hash = %ld\n", infoStr.c_str(), info_hash);
+-                    _lastHash = info_hash;
+-                     ::string substring =infoStr.substr(0,5);
+-
+-                    // Parse the data
+-                    ::string result = FindMarker(infoStr, _mediaTag);
+-                    if(!result.empty()) {
+-                        SetMediaType(result);
+-                    }
+-                    else if(substring.compare("audio")==0||substring.compare("video")== 0){
+-                        SetMediaType(substring);
+-                    }
+-                    else {
+-                        LOG(eError, "No result for media type\n");
+-                    }
+-                    if(_mediaType == CDMi::Video) {
+-                        result = FindMarker(infoStr, _widthTag);
+-                        if(!result.empty()) {
+-                            SetWidth(result);
+-                        }
+-                        else {
+-                            LOG(eError, "No result for width\n");
+-                        }
+-                        result = FindMarker(infoStr, _heightTag);
+-                        if(!result.empty()) {
+-                            SetHeight(result);
+-                        }
+-                        else {
+-                            LOG(eError, "No result for height\n");
+-                        }
+-                    }
+-                    else {
+-                        // Audio
+-                        _width  = 0;
+-                        _height = 0;
+-                    }
+-                }
+-            }
+-        }
+-
+-        void CapsParser::SetMediaType(::string& media)
+-        {
+-            if(media.find("video") != ::string::npos) {
+-                _mediaType = CDMi::Video;
+-            }
+-            else if(media.find("audio") != ::string::npos) {
+-                _mediaType = CDMi::Audio;
+-            }
+-            else {
+-                LOG(eError, "Found and unknown media type %s\n", media);
+-                _mediaType = CDMi::Unknown;
+-            }
+-        }
+-
+-        void CapsParser::SetWidth(::string& width)
+-        {
+-            LOG(eTrace, "Setting width to %s\n", width.length() > 0 ? width.c_str() : "NULL");
+-            if(width.length() > 0) {
+-                _width = (uint16_t)stoi(width, NULL, 10);
+-            }
+-        }
+-
+-        void CapsParser::SetHeight(::string& height)
+-        {
+-            LOG(eTrace, "Setting height to %s\n", height.length() > 0 ? height.c_str() : "NULL");
+-            if(height.length() > 0) {
+-                _height = (uint16_t)stoi(height, NULL, 10);
+-            }
+-        }
+-
+-        ::string CapsParser::FindMarker(::string& data, ::string& tag) const
+-        {
+-            ::string retVal;
+-
+-            size_t found = data.find(tag);
+-            LOG(eTrace, "Found tag <%s> in <%s> at location %d\n", 
+-                    tag.c_str(), data.c_str(), (int)found);
+-            if(found != ::string::npos) {
+-                // Found the marker
+-                // Find the end of the gst caps type identifier
+-                size_t start = data.find(START_CHAR, found) + 1;  // step over the ")"
+-                size_t end = data.find(END_CHAR, start);
+-                if(end == ::string::npos) {
+-                    // Went past the end of the string
+-                    end = data.length();
+-                }
+-                retVal = data.substr(start, end - start);
+-                LOG(eTrace, "Found substr <%s>\n", retVal.c_str());
+-            }
+-            return retVal;
+-        }
+-    }
+-}
+Index: git/OpenCDMi/CapsParser.h
+===================================================================
+--- git.orig/OpenCDMi/CapsParser.h
++++ /dev/null
+@@ -1,63 +0,0 @@
+-/*
+- * If not stated otherwise in this file or this component's LICENSE file the
+- * following copyright and licenses apply:
+- *
+- * Copyright 2020 RDK Management
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- * http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#pragma once
+-
+-#include <string>
+-#include <functional>
+-
+-#include "Module.h"
+-
+-#include <interfaces/IDRM.h>
+-
+-namespace WPEFramework {
+-    namespace Plugin {
+-
+-        class CapsParser : public CDMi::ICapsParser {
+-        public:
+-            CapsParser(const CapsParser&) = delete;
+-            CapsParser& operator= (const CapsParser&) = delete;
+-
+-            CapsParser();
+-            ~CapsParser() override;
+-
+-        public:
+-            void Parse(const uint8_t* info, uint16_t infoLength) override; 
+-
+-            const uint16_t GetHeight() const { return _height; } 
+-            const uint16_t GetWidth() const { return _width; } 
+-            
+-            virtual const CDMi::MediaType GetMediaType() const { return _mediaType; } 
+-        
+-        private:
+-            virtual ::string FindMarker(::string& data, ::string& tag) const;
+-            virtual void SetMediaType(::string& media);
+-            virtual void SetWidth(::string& width);
+-            virtual void SetHeight(::string& height);
+-        private:
+-            size_t _lastHash;
+-            ::string _mediaTag;
+-            ::string _widthTag;
+-            ::string _heightTag;
+-            CDMi::MediaType _mediaType;
+-            uint16_t _width;
+-            uint16_t _height;
+-        };
+-    }
+-}
+Index: git/OpenCDMi/FrameworkRPC.cpp
+===================================================================
+--- git.orig/OpenCDMi/FrameworkRPC.cpp
++++ git/OpenCDMi/FrameworkRPC.cpp
+@@ -23,7 +23,6 @@
+ 
+ #include "Module.h"
+ #include "CENCParser.h"
+-#include "CapsParser.h"
+ 
+ // Get in the definitions required for access to the sepcific
+ // DRM engines.
+@@ -110,9 +109,10 @@ namespace Plugin {
+         public:
+             ExternalAccess(
+                 const Core::NodeId& source, 
+-                ::OCDM::IAccessorOCDM* parentInterface, 
++                Exchange::IAccessorOCDM* parentInterface, 
++                const string& proxyStubPath,
+                 const Core::ProxyType<RPC::InvokeServer> & engine)
+-                : RPC::Communicator(source, _T(""), Core::ProxyType<Core::IIPCServer>(engine))
++                : RPC::Communicator(source, proxyStubPath, Core::ProxyType<Core::IIPCServer>(engine))
+                 , _parentInterface(parentInterface)
+             {
+                 engine->Announcements(Announcement());
+@@ -124,15 +126,15 @@ namespace Plugin {
+
+         private:
+ #ifndef USE_THUNDER_R4
+-            virtual void* Aquire(const string& className, const uint32_t interfaceId, const uint32_t versionId)
++            virtual void* Aquire(const string&, const uint32_t interfaceId, const uint32_t versionId)
+ #else
+-            virtual void* Acquire(const string& className, const uint32_t interfaceId, const uint32_t versionId)
++            virtual void* Acquire(const string&, const uint32_t interfaceId, const uint32_t versionId)
+ #endif /* USE_THUNDER_R4 */
+             {
+                 void* result = nullptr;
+
+                 // Currently we only support version 1 of the IRPCLink :-)
+-                if (((versionId == 1) || (versionId == static_cast<uint32_t>(~0))) && ((interfaceId == ::OCDM::IAccessorOCDM::ID) || (interfaceId == Core::IUnknown::ID))) {
++                if (((versionId == 1) || (versionId == static_cast<uint32_t>(~0))) && ((interfaceId == Exchange::IAccessorOCDM::ID) || (interfaceId == Core::IUnknown::ID))) {
+                     // Reference count our parent
+                     _parentInterface->AddRef();
+                     TRACE(Trace::Information, ("OCDM interface acquired => %p", this));
+@@ -140,10 +140,10 @@ namespace Plugin {
+             }
+ 
+         private:
+-            ::OCDM::IAccessorOCDM* _parentInterface;
++            Exchange::IAccessorOCDM* _parentInterface;
+         };
+ 
+-        class AccessorOCDM : public ::OCDM::IAccessorOCDM {
++        class AccessorOCDM : public Exchange::IAccessorOCDM {
+         private:
+             AccessorOCDM() = delete;
+             AccessorOCDM(const AccessorOCDM&) = delete;
+@@ -230,35 +230,70 @@ namespace Plugin {
+             };
+ 
+             // IMediaKeys defines the MediaKeys interface.
+-            class SessionImplementation : public ::OCDM::ISession, public ::OCDM::ISessionExt {
++            class SessionImplementation : public Exchange::ISession, public Exchange::ISessionExt {
+             private:
+                 SessionImplementation() = delete;
+                 SessionImplementation(const SessionImplementation&) = delete;
+                 SessionImplementation& operator=(const SessionImplementation&) = delete;
+ 
+-                class DataExchange : public ::OCDM::DataExchange, public Core::Thread {
++                class MediaStreamProperties : public CDMi::IStreamProperties {
++                public:
++                    MediaStreamProperties() = delete;
++                    MediaStreamProperties(const MediaStreamProperties&) = delete;
++                    MediaStreamProperties& operator=(const MediaStreamProperties&) = delete;
++                    MediaStreamProperties(uint16_t height, uint16_t width, CDMi::MediaType type, uint8_t initLength = 0)
++                        : _height(height)
++                        , _width(width)
++                        , _type(type)
++                        , _initLength(initLength)
++                    {
++                    }
++
++                    uint16_t GetHeight() const override
++                    {
++                        return (_height);
++                    }
++                    uint16_t GetWidth() const override
++                    {
++                        return (_width);
++                    }
++                    CDMi::MediaType GetMediaType() const override
++                    {
++                        return (_type);
++                    }
++                    uint8_t InitLength() const override
++                    {
++                        return (_initLength);
++                    }
++
++                private:
++                    uint16_t _height;
++                    uint16_t _width;
++                    CDMi::MediaType _type;
++                    uint8_t _initLength;
++                };
++
++                class DataExchange : public Exchange::DataExchange, public Core::Thread {
+                 private:
+                     DataExchange() = delete;
+                     DataExchange(const DataExchange&) = delete;
+                     DataExchange& operator=(const DataExchange&) = delete;
+ 
+                 public:
+-                    DataExchange(CDMi::IMediaKeySession* mediaKeys, const string& name, const uint32_t defaultSize, CDMi::ICapsParser* parser)
+-                        : ::OCDM::DataExchange(name, defaultSize)
++                    DataExchange(CDMi::IMediaKeySession* mediaKeys, const string& name, const uint32_t defaultSize)
++                        : Exchange::DataExchange(name, defaultSize)
+                         , Core::Thread(Core::Thread::DefaultStackSize(), _T("DRMSessionThread"))
+                         , _mediaKeys(mediaKeys)
+                         , _mediaKeysExt(dynamic_cast<CDMi::IMediaKeySessionExt*>(mediaKeys))
+                         , _sessionKey(nullptr)
+                         , _sessionKeyLength(0)
+-                        , _parser(parser)
+                     {
+-                        ASSERT(parser != nullptr);
+                         Core::Thread::Run();
+                         TRACE(Trace::Information, (_T("Constructing buffer server side: %p - %s"), this, name.c_str()));
+                     }
+                     ~DataExchange()
+                     {
+-                        TRACE(Trace::Information, (_T("Destructing buffer server side: %p - %s"), this, ::OCDM::DataExchange::Name().c_str()));
++                        TRACE(Trace::Information, (_T("Destructing buffer server side: %p - %s"), this, Exchange::DataExchange::Name().c_str()));
+                         // Make sure the thread reaches a HALT.. We are done.
+                         Core::Thread::Stop();
+ 
+@@ -280,35 +315,43 @@ namespace Plugin {
+                             RequestConsume(Core::infinite);
+ 
+                             if (IsRunning() == true) {
+-                                uint8_t keyIdLength = 0;
+-                                const uint8_t* keyIdData = KeyId(keyIdLength);
++                                uint8_t *payloadBuffer = Buffer();
+ 
+-                                _parser->Parse(StreamInfo(), StreamInfoLength());
+-                                _mediaKeys->SetCapsParser(_parser);
++                                CDMi::SampleInfo sampleInfo;
++                                sampleInfo.scheme = static_cast<CDMi::EncryptionScheme>(EncScheme());
++                                EncPattern(sampleInfo.pattern.encrypted_blocks,sampleInfo.pattern.clear_blocks);
++                                sampleInfo.iv = const_cast<uint8_t *>(IVKey());
++                                sampleInfo.ivLength = IVKeyLength();
++                                sampleInfo.keyId = const_cast<uint8_t *>(KeyId(sampleInfo.keyIdLength));
++                                sampleInfo.subSample = const_cast<CDMi::SubSampleInfo *>(SubSamples());
++                                sampleInfo.subSampleCount = SubSampleLength();
++
++                                uint16_t width = 0, height = 0;
++                                uint8_t type = 0;
++                                MediaProperties(height, width, type);
++                                const MediaStreamProperties streamProperties(height, width, static_cast<CDMi::MediaType>(type));
+ 
+                                 int cr = _mediaKeys->Decrypt(
+-                                    _sessionKey,
+-                                    _sessionKeyLength,
+-                                    nullptr, //subsamples
+-                                    0, //number of subsamples
+-                                    IVKey(),
+-                                    IVKeyLength(),
+-                                    Buffer(),
+-                                    BytesWritten(),
+-                                    &clearContentSize,
+-                                    &clearContent,
+-                                    keyIdLength,
+-                                    keyIdData,
+-                                    InitWithLast15());
+-
++                                        payloadBuffer,
++                                        BytesWritten(),
++                                        &clearContent,
++                                        &clearContentSize,
++                                        const_cast<CDMi::SampleInfo *>(&sampleInfo),
++                                        dynamic_cast<const CDMi::IStreamProperties *>(&streamProperties));
++                                
+                                 if ((cr == 0) && (clearContentSize != 0)) {
+                                     if (clearContentSize != BytesWritten()) {
+                                         TRACE(Trace::Information, (_T("Returned clear sample size (%d) differs from encrypted buffer size (%d)"), clearContentSize, BytesWritten()));
+                                         Size(clearContentSize);
+                                     }
+ 
+-                                    // Adjust the buffer on our sied (this process) on what we will write back
+-                                    SetBuffer(0, clearContentSize, clearContent);
++                                    if(payloadBuffer != clearContent) {
++                                        // This wasn't a case of in-place decryption. So, make sure the decrypted buffer is copied to memory mapped file and released
++                                        // Adjust the buffer on our side (this process) on what we will write back
++                                        SetBuffer(0, clearContentSize, clearContent);
++                                        //Lets release the clear content buffer
++                                        _mediaKeys->ReleaseClearContent(nullptr, 0,clearContentSize,clearContent);
++                                    }
+                                 }
+ 
+                                 // Store the status we have for the other side.
+@@ -327,7 +370,6 @@ namespace Plugin {
+                     CDMi::IMediaKeySessionExt* _mediaKeysExt;
+                     uint8_t* _sessionKey;
+                     uint32_t _sessionKeyLength;
+-                    CDMi::ICapsParser* _parser;
+                 };
+ 
+                 // IMediaKeys defines the MediaKeys interface.
+@@ -338,7 +380,7 @@ namespace Plugin {
+                     Sink& operator=(const Sink&) = delete;
+ 
+                 public:
+-                    Sink(SessionImplementation* parent, ::OCDM::ISession::ICallback* callback)
++                    Sink(SessionImplementation* parent, Exchange::ISession::ICallback* callback)
+                         : _parent(*parent)
+                         , _callback(callback)
+                     {
+@@ -376,7 +418,7 @@ namespace Plugin {
+                         TRACE(Trace::Information, ("OnKeyError(%d,%s)", f_nError, errorMessage));
+                         if (_callback != nullptr) {
+                             std::string message(errorMessage, strlen(errorMessage));
+-                            _callback->OnError(f_nError, (::OCDM::OCDM_RESULT)f_crSysError, message);
++                            _callback->OnError(f_nError, (Exchange::OCDM_RESULT)f_crSysError, message);
+                         }
+                     }
+ 
+@@ -385,27 +427,27 @@ namespace Plugin {
+                     {
+                         ASSERT (buffer != nullptr);
+ 
+-                        ::OCDM::ISession::KeyStatus key;
++                        Exchange::ISession::KeyStatus key;
+                         CommonEncryptionData::KeyId keyId(CommonEncryptionData::COMMON, buffer, length);
+ 
+                         TRACE(Trace::Information, ("OnKeyStatusUpdate(%s)", keyMessage));
+ 
+                         if (::strcmp(keyMessage, "KeyUsable") == 0)
+-                            key = ::OCDM::ISession::Usable;
++                            key = Exchange::ISession::Usable;
+                         else if (::strcmp(keyMessage, "KeyReleased") == 0)
+-                            key = ::OCDM::ISession::Released;
++                            key = Exchange::ISession::Released;
+                         else if (::strcmp(keyMessage, "KeyExpired") == 0)
+-                            key = ::OCDM::ISession::Expired;
++                            key = Exchange::ISession::Expired;
+                         else if (::strcmp(keyMessage, "KeyOutputRestricted") == 0)
+-                            key = ::OCDM::ISession::OutputRestricted;
++                            key = Exchange::ISession::OutputRestricted;
+                         else if (::strcmp(keyMessage, "KeyOutputDownscaled") == 0)
+-                            key = ::OCDM::ISession::OutputDownscaled;
++                            key = Exchange::ISession::OutputDownscaled;
+                         else if (::strcmp(keyMessage, "SEC_RESULT_HW_FAILURE") == 0)
+-                            key = ::OCDM::ISession::HWError;
++                            key = Exchange::ISession::HWError;
+                         else if (::strcmp(keyMessage, "KeyOutputRestrictedHDCP22") == 0)
+-                            key = ::OCDM::ISession::OutputRestrictedHDCP22;
++                            key = Exchange::ISession::OutputRestrictedHDCP22;
+                         else
+-                            key = ::OCDM::ISession::InternalError;
++                            key = Exchange::ISession::InternalError;
+ 
+                         const CommonEncryptionData::KeyId* updated = _parent._cencData.UpdateKeyStatus(key, keyId);
+ 
+@@ -415,7 +457,7 @@ namespace Plugin {
+                             _callback->OnKeyStatusUpdate(updated->Id(), updated->Length(), key);
+                         }
+                     }
+-                    void Revoke(::OCDM::ISession::ICallback* callback)
++                    void Revoke(Exchange::ISession::ICallback* callback)
+                     {
+                         if ((_callback != nullptr) && (_callback == callback)) {
+                             _callback->Release();
+@@ -432,7 +474,7 @@ namespace Plugin {
+ 
+                 private:
+                     SessionImplementation& _parent;
+-                    ::OCDM::ISession::ICallback* _callback;
++                    Exchange::ISession::ICallback* _callback;
+                 };
+ 
+             public:
+@@ -443,7 +485,7 @@ namespace Plugin {
+                     AccessorOCDM* parent,
+                     const std::string keySystem,
+                     CDMi::IMediaKeySession* mediaKeySession,
+-                    ::OCDM::ISession::ICallback* callback,
++                    Exchange::ISession::ICallback* callback,
+                     const CommonEncryptionData* sessionData)
+                     : _parent(*parent)
+                     , _refCount(1)
+@@ -454,7 +496,6 @@ namespace Plugin {
+                     , _sink(this, callback)
+                     , _buffer(nullptr)
+                     , _cencData(*sessionData)
+-                    , _parser()
+                 {
+                     ASSERT(parent != nullptr);
+                     ASSERT(sessionData != nullptr);
+@@ -469,7 +510,7 @@ namespace Plugin {
+                     AccessorOCDM* parent,
+                     const std::string keySystem,
+                     CDMi::IMediaKeySessionExt* mediaKeySession,
+-                    ::OCDM::ISession::ICallback* callback,
++                    Exchange::ISession::ICallback* callback,
+                     const CommonEncryptionData* sessionData)
+                     : _parent(*parent)
+                     , _refCount(1)
+@@ -492,7 +533,6 @@ namespace Plugin {
+                     _mediaKeySession->Run(&_sink);
+                     TRACE(Trace::Information, (_T("Constructed the Session Server side: %p"), this));
+ 
+-                    _mediaKeySession->SetCapsParser(&_parser);
+                 }
+                 #ifdef __WINDOWS__
+                 #pragma warning(default : 4355)
+@@ -500,7 +540,6 @@ namespace Plugin {
+ 
+                 virtual ~SessionImplementation()
+                 {
+-                    _mediaKeySession->SetCapsParser(nullptr);
+ 
+                     TRACE(Trace::Information, (_T("Destructing the Session Server side: %p"), this));
+                     // this needs to be done in a thread safe way. Leave it up to
+@@ -518,44 +557,52 @@ namespace Plugin {
+                 {
+                     return ((keySystem == _keySystem) && (_cencData.IsSupported(keyIds) == true));
+                 }
+-                inline bool HasKeyId(const OCDM::KeyId& keyId) const
++                inline bool HasKeyId(const Exchange::KeyId& keyId) const
+                 {
+                     return (_cencData.HasKeyId(keyId));
+                 }
+-                virtual std::string SessionId() const override
++                std::string SessionId() const override
+                 {
+                     return (_sessionId);
+                 }
+ 
+-                virtual std::string Metadata() const override
++                std::string Metadata() const override
+                 {
+                     return _mediaKeySession->GetMetadata();
+                 }
+ 
+-                virtual ::OCDM::ISession::KeyStatus Status() const override
++                virtual Exchange::ISession::KeyStatus Status() const override
+                 {
+                     return (_cencData.Status());
+                 }
+ 
+-                ::OCDM::ISession::KeyStatus Status(const uint8_t keyId[], const uint8_t length) const override
++                Exchange::ISession::KeyStatus Status(const uint8_t keyId[], const uint8_t length) const override
+                 {
+                     return (_cencData.Status(CommonEncryptionData::KeyId(static_cast<CommonEncryptionData::systemType>(0), keyId, length)));
+                 }
+ 
+-                ::OCDM::OCDM_RESULT CreateSessionBuffer(std::string& bufferID) override {
++                Exchange::OCDM_RESULT CreateSessionBuffer(std::string& bufferID) override {
+ 
+-                    ::OCDM::OCDM_RESULT result = ::OCDM::OCDM_SUCCESS;
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_SUCCESS;
+                     _adminLock.Lock();
+                     if( _buffer == nullptr ) {
+ 
+                         if (_parent._administrator.AquireBuffer(bufferID) == true)
+                         {
+-                            _buffer = new DataExchange(_mediaKeySession, bufferID, _parent.DefaultSize(), &_parser);
++                            _buffer = new DataExchange(_mediaKeySession, bufferID, _parent.DefaultSize());
+                             _adminLock.Unlock();
++
++                            ASSERT(_buffer != nullptr);
++
++                            if(_buffer->IsValid() == false){
++                                TRACE(Trace::Fatal, ("Could not open session buffer %s", BufferId().c_str()));
++                            }
++
++
+                             TRACE(Trace::Information, ("Server::Session::CreateSessionBuffer(%s,%s,%s) => %p", _keySystem.c_str(), _sessionId.c_str(), BufferId().c_str(), this));
+                         } else {
+                             _adminLock.Unlock();
+-                            result = ::OCDM::OCDM_INVALID_DECRYPT_BUFFER;
++                            result = Exchange::OCDM_INVALID_DECRYPT_BUFFER;
+                             bufferID.clear();
+                             TRACE(Trace::Error, ("Failed to create buffer for Server::Session::CreateSessionBuffer(%s,%s) => %p", _keySystem.c_str(), _sessionId.c_str(), this));
+                         }
+@@ -563,13 +610,13 @@ namespace Plugin {
+                         _adminLock.Unlock();
+                         TRACE(Trace::Information, ("Buffer already created Server::Session::CreateSessionBuffer(%s,%s,%s) => %p", _keySystem.c_str(), _sessionId.c_str(), BufferId().c_str(), this));
+                         bufferID = _buffer->Name();
+-                        result = ::OCDM::OCDM_S_FALSE;
++                        result = Exchange::OCDM_S_FALSE;
+                     }
+ 
+                     return result;
+                 }
+ 
+-                virtual std::string BufferId() const override
++                std::string BufferId() const override
+                 {
+                     std::string bufferid;
+                     _adminLock.Lock();
+@@ -580,41 +627,41 @@ namespace Plugin {
+                     return bufferid;
+                 }
+ 
+-                virtual std::string BufferIdExt() const override
++                std::string BufferIdExt() const override
+                 {
+                     return BufferId();
+                 }
+ 
+                 // Loads the data stored for the specified session into the cdm object
+-                virtual ::OCDM::OCDM_RESULT Load() override
++                virtual Exchange::OCDM_RESULT Load() override
+                 {
+                     TRACE(Trace::Information, ("Load()"));
+-                    return (::OCDM::OCDM_RESULT)(_mediaKeySession->Load());
++                    return (Exchange::OCDM_RESULT)(_mediaKeySession->Load());
+                 }
+ 
+                 // Process a key message response.
+-                virtual void Update(const uint8_t* keyMessage, const uint16_t keyLength) override
++                void Update(const uint8_t* keyMessage, const uint16_t keyLength) override
+                 {
+                     TRACE(Trace::Information, ("Update(%d)", keyLength));
+                     return (_mediaKeySession->Update(keyMessage, keyLength));
+                 }
+ 
+                 //Removes all license(s) and key(s) associated with the session
+-                virtual ::OCDM::OCDM_RESULT Remove() override
++                virtual Exchange::OCDM_RESULT Remove() override
+                 {
+                     TRACE(Trace::Information, ("Remove()"));
+-                    return (::OCDM::OCDM_RESULT)(_mediaKeySession->Remove());
++                    return (Exchange::OCDM_RESULT)(_mediaKeySession->Remove());
+                 }
+ 
+                 //We are done with the Session, close what we can..
+-                virtual void Close() override
++                void Close() override
+                 {
+                     TRACE(Trace::Information, ("Close()"));
+ 
+                     _mediaKeySession->Close();
+                 }
+ 
+-                virtual void ResetOutputProtection() override {
++                void ResetOutputProtection() override {
+                     TRACE(Trace::Information, (_T("ResetOutputProtection! %p"), this));
+                     _mediaKeySession->ResetOutputProtection();
+                 }
+@@ -624,49 +671,52 @@ namespace Plugin {
+                     _mediaKeySession->SetParameter(name, value);
+                 }
+ 
+-                virtual void Revoke(OCDM::ISession::ICallback* callback) override
++                void Revoke(Exchange::ISession::ICallback* callback) override
+                 {
+                     _sink.Revoke(callback);
+                 }
+ 
+-                virtual uint32_t SessionIdExt() const override
++                uint32_t SessionIdExt() const override
+                 {
+                     return _mediaKeySessionExt->GetSessionIdExt();
+                 }
+ 
+-                virtual OCDM::OCDM_RESULT SetDrmHeader(const uint8_t drmHeader[], uint32_t drmHeaderLength) override
++                Exchange::OCDM_RESULT SetDrmHeader(const uint8_t drmHeader[], uint16_t drmHeaderLength) override
+                 {
+-                    return (OCDM::OCDM_RESULT)_mediaKeySessionExt->SetDrmHeader(drmHeader, drmHeaderLength);
++                    return (Exchange::OCDM_RESULT)_mediaKeySessionExt->SetDrmHeader(drmHeader, drmHeaderLength);
+                 }
+ 
+-                virtual OCDM::OCDM_RESULT GetChallengeDataExt(uint8_t* challenge, uint32_t& challengeSize, uint32_t isLDL) override
++                Exchange::OCDM_RESULT GetChallengeDataExt(uint8_t* challenge, uint16_t& challengeSize, uint32_t isLDL) override
+                 {
+-                    return (OCDM::OCDM_RESULT)_mediaKeySessionExt->GetChallengeDataExt(challenge, challengeSize, isLDL);
++                    uint32_t resultSize = challengeSize;
++                    Exchange::OCDM_RESULT outcome = static_cast<Exchange::OCDM_RESULT>(_mediaKeySessionExt->GetChallengeDataExt(challenge, resultSize, isLDL));
++                    challengeSize = (resultSize & 0xFFFF);
++                    return (outcome);
+                 }
+ 
+-                virtual OCDM::OCDM_RESULT CancelChallengeDataExt() override
++                Exchange::OCDM_RESULT CancelChallengeDataExt() override
+                 {
+-                    return (OCDM::OCDM_RESULT)_mediaKeySessionExt->CancelChallengeDataExt();
++                    return (Exchange::OCDM_RESULT)_mediaKeySessionExt->CancelChallengeDataExt();
+                 }
+ 
+-                virtual OCDM::OCDM_RESULT StoreLicenseData(const uint8_t licenseData[], uint32_t licenseDataSize, unsigned char* secureStopId) override
++                Exchange::OCDM_RESULT StoreLicenseData(const uint8_t licenseData[], uint16_t licenseDataSize, unsigned char* secureStopId) override
+                 {
+-                    return (OCDM::OCDM_RESULT)_mediaKeySessionExt->StoreLicenseData(licenseData, licenseDataSize, secureStopId);
++                    return (Exchange::OCDM_RESULT)_mediaKeySessionExt->StoreLicenseData(licenseData, licenseDataSize, secureStopId);
+                 }
+ 
+-                virtual OCDM::OCDM_RESULT SelectKeyId(const uint8_t keyLength, const uint8_t keyId[]) override
++                Exchange::OCDM_RESULT SelectKeyId(const uint8_t keyLength, const uint8_t keyId[]) override
+                 {
+-                    return (OCDM::OCDM_RESULT)_mediaKeySessionExt->SelectKeyId(keyLength, keyId);
++                    return (Exchange::OCDM_RESULT)_mediaKeySessionExt->SelectKeyId(keyLength, keyId);
+                 }
+ 
+-                virtual OCDM::OCDM_RESULT CleanDecryptContext() override
++                Exchange::OCDM_RESULT CleanDecryptContext() override
+                 {
+-                    return (OCDM::OCDM_RESULT)_mediaKeySessionExt->CleanDecryptContext();
++                    return (Exchange::OCDM_RESULT)_mediaKeySessionExt->CleanDecryptContext();
+                 }
+ 
+                 BEGIN_INTERFACE_MAP(Session)
+-                INTERFACE_ENTRY(::OCDM::ISession)
+-                INTERFACE_RELAY(::OCDM::ISessionExt, _mediaKeySessionExt)
++                INTERFACE_ENTRY(Exchange::ISession)
++                INTERFACE_RELAY(Exchange::ISessionExt, _mediaKeySessionExt)
+                 END_INTERFACE_MAP
+ 
+             private:
+@@ -680,7 +730,6 @@ namespace Plugin {
+                 Core::Sink<Sink> _sink;
+                 DataExchange* _buffer;
+                 CommonEncryptionData _cencData;
+-                CapsParser _parser;
+             };
+ 
+         public:
+@@ -693,31 +742,31 @@ namespace Plugin {
+             {
+                 ASSERT(parent != nullptr);
+             }
+-            virtual ~AccessorOCDM()
++            ~AccessorOCDM() override
+             {
+                 TRACE(Trace::Information, (_T("Released the AccessorOCDM server side [%d]"), __LINE__));
+             }
+ 
+         public:
+-            virtual bool IsTypeSupported(
++            bool IsTypeSupported(
+                 const std::string& keySystem,
+                 const std::string& mimeType) const override
+             {
+ 
+-                return (_parent.IsTypeSupported(keySystem, mimeType) ? 0 : 1);
++                return (_parent.IsTypeSupported(keySystem, mimeType) ? true :false);
+             }
+ 
+-            virtual OCDM::OCDM_RESULT Metadata(
++            Exchange::OCDM_RESULT Metadata(
+                 const std::string& keySystem,
+                 std::string& metadata) const override
+             {
+-                OCDM::OCDM_RESULT result = OCDM::OCDM_KEYSYSTEM_NOT_SUPPORTED;
++                Exchange::OCDM_RESULT result = Exchange::OCDM_KEYSYSTEM_NOT_SUPPORTED;
+                 metadata.clear();
+ 
+                 CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
+                 if (system != nullptr) {
+                     metadata = system->GetMetadata();
+-                    result = OCDM::OCDM_SUCCESS;
++                    result = Exchange::OCDM_SUCCESS;
+                 }
+ 
+                 return result;
+@@ -728,7 +777,7 @@ namespace Plugin {
+             }
+ 
+             // Create a MediaKeySession using the supplied init data and CDM data.
+-            virtual OCDM::OCDM_RESULT CreateSession(
++            Exchange::OCDM_RESULT CreateSession(
+                 const std::string& keySystem,
+                 const int32_t licenseType,
+                 const std::string& initDataType,
+@@ -736,9 +785,9 @@ namespace Plugin {
+                 const uint16_t initDataLength,
+                 const uint8_t* CDMData,
+                 const uint16_t CDMDataLength,
+-                ::OCDM::ISession::ICallback* callback,
++                Exchange::ISession::ICallback* callback,
+                 std::string& sessionId,
+-                ::OCDM::ISession*& session) override
++                Exchange::ISession*& session) override
+             {
+                  CDMi::IMediaKeys *system = _parent.KeySystem(keySystem);
+ 
+@@ -750,8 +799,8 @@ namespace Plugin {
+ 
+                      // OKe we got a buffer machanism to transfer the raw data, now create
+                      // the session.
+-                     if (system->CreateMediaKeySession(keySystem, licenseType, 
+-                                        initDataType.c_str(), initData, initDataLength, 
++                     if (system->CreateMediaKeySession(keySystem, licenseType,
++                                        initDataType.c_str(), initData, initDataLength,
+                                         CDMData, CDMDataLength, &sessionInterface) == 0)
+                      {
+                          if (sessionInterface != nullptr)
+@@ -773,7 +822,7 @@ namespace Plugin {
+                                     CommonEncryptionData::Iterator index(keyIds.Keys());
+                                     while (index.Next() == true) {
+                                         const CommonEncryptionData::KeyId& entry(index.Current());
+-                                        callback->OnKeyStatusUpdate( entry.Id(), entry.Length(), ::OCDM::ISession::StatusPending);
++                                        callback->OnKeyStatusUpdate( entry.Id(), entry.Length(), Exchange::ISession::StatusPending);
+                                     }
+                                 }
+                                 _adminLock.Unlock();
+@@ -785,35 +834,35 @@ namespace Plugin {
+                      TRACE(Trace::Error, (_T("Could not create a DRM session! [%d]"), __LINE__));
+                  }
+ 
+-                 return (session != nullptr ? ::OCDM::OCDM_RESULT::OCDM_SUCCESS : ::OCDM::OCDM_RESULT::OCDM_S_FALSE);
++                 return (session != nullptr ? Exchange::OCDM_RESULT::OCDM_SUCCESS : Exchange::OCDM_RESULT::OCDM_S_FALSE);
+             }
+ 
+             // Set Server Certificate
+-            virtual ::OCDM::OCDM_RESULT SetServerCertificate(
++            Exchange::OCDM_RESULT SetServerCertificate(
+                 const std::string& keySystem,
+                 const uint8_t* serverCertificate,
+                 const uint16_t serverCertificateLength) override
+             {
+ 
+                 CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
+-                ::OCDM::OCDM_RESULT result = ::OCDM::OCDM_RESULT::OCDM_S_FALSE;
++                Exchange::OCDM_RESULT result = Exchange::OCDM_RESULT::OCDM_S_FALSE;
+ 
+                 if (system != nullptr) {
+                     TRACE(Trace::Information, ("Set ServerCertificate()"));
+-                    result = static_cast<::OCDM::OCDM_RESULT>(system->SetServerCertificate(serverCertificate, serverCertificateLength));
++                    result = static_cast<Exchange::OCDM_RESULT>(system->SetServerCertificate(serverCertificate, serverCertificateLength));
+                 } else {
+                     TRACE(Trace::Error, (_T("Could not set the Server Certificates for system: %s"), keySystem.c_str()));
+                 }
+                 return result;
+             }
+ 
+-            virtual uint64_t GetDrmSystemTime(const std::string& keySystem) const override
++            uint64_t GetDrmSystemTime(const std::string& keySystem) const override
+             {
+                 CDMi::IMediaKeysExt* systemExt = dynamic_cast<CDMi::IMediaKeysExt*>(_parent.KeySystem(keySystem));
+                 if (systemExt) {
+-                    return (OCDM::OCDM_RESULT)systemExt->GetDrmSystemTime();
++                    return (Exchange::OCDM_RESULT)systemExt->GetDrmSystemTime();
+                 }
+-                return ::OCDM::OCDM_RESULT::OCDM_S_FALSE;
++                return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+             }
+ 
+             std::string GetVersionExt(const std::string& keySystem) const override
+@@ -843,13 +892,13 @@ namespace Plugin {
+                 return false;
+             }
+ 
+-            OCDM::OCDM_RESULT EnableSecureStop(const std::string& keySystem, bool enable) override
++            Exchange::OCDM_RESULT EnableSecureStop(const std::string& keySystem, bool enable) override
+             {
+                 CDMi::IMediaKeysExt* systemExt = dynamic_cast<CDMi::IMediaKeysExt*>(_parent.KeySystem(keySystem));
+                 if (systemExt) {
+-                    return (OCDM::OCDM_RESULT)systemExt->EnableSecureStop(enable);
++                    return (Exchange::OCDM_RESULT)systemExt->EnableSecureStop(enable);
+                 }
+-                return ::OCDM::OCDM_RESULT::OCDM_S_FALSE;
++                return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+             }
+ 
+             uint32_t ResetSecureStops(const std::string& keySystem) override
+@@ -861,7 +910,7 @@ namespace Plugin {
+                 return 0;
+             }
+ 
+-            OCDM::OCDM_RESULT GetSecureStopIds(
++            Exchange::OCDM_RESULT GetSecureStopIds(
+                 const std::string& keySystem,
+                 unsigned char Ids[],
+                 uint16_t idsLength,
+@@ -869,89 +918,89 @@ namespace Plugin {
+             {
+                 CDMi::IMediaKeysExt* systemExt = dynamic_cast<CDMi::IMediaKeysExt*>(_parent.KeySystem(keySystem));
+                 if (systemExt) {
+-                    return (OCDM::OCDM_RESULT)systemExt->GetSecureStopIds(Ids, idsLength, count);
++                    return (Exchange::OCDM_RESULT)systemExt->GetSecureStopIds(Ids, idsLength, count);
+                 }
+-                return ::OCDM::OCDM_RESULT::OCDM_S_FALSE;
++                return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+             }
+ 
+-            OCDM::OCDM_RESULT GetSecureStop(
++            Exchange::OCDM_RESULT GetSecureStop(
+                 const std::string& keySystem,
+                 const unsigned char sessionID[],
+-                uint32_t sessionIDLength,
++                uint16_t sessionIDLength,
+                 unsigned char* rawData,
+                 uint16_t& rawSize)
+             {
+                 CDMi::IMediaKeysExt* systemExt = dynamic_cast<CDMi::IMediaKeysExt*>(_parent.KeySystem(keySystem));
+                 if (systemExt) {
+-                    return (OCDM::OCDM_RESULT)systemExt->GetSecureStop(sessionID, sessionIDLength, rawData, rawSize);
++                    return (Exchange::OCDM_RESULT)systemExt->GetSecureStop(sessionID, sessionIDLength, rawData, rawSize);
+                 }
+-                return ::OCDM::OCDM_RESULT::OCDM_S_FALSE;
++                return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+             }
+ 
+-            OCDM::OCDM_RESULT CommitSecureStop(
++            Exchange::OCDM_RESULT CommitSecureStop(
+                 const std::string& keySystem,
+                 const unsigned char sessionID[],
+-                uint32_t sessionIDLength,
++                uint16_t sessionIDLength,
+                 const unsigned char serverResponse[],
+-                uint32_t serverResponseLength)
++                uint16_t serverResponseLength)
+             {
+                 CDMi::IMediaKeysExt* systemExt = dynamic_cast<CDMi::IMediaKeysExt*>(_parent.KeySystem(keySystem));
+                 if (systemExt) {
+-                    return (OCDM::OCDM_RESULT)systemExt->CommitSecureStop(sessionID, sessionIDLength, serverResponse, serverResponseLength);
++                    return (Exchange::OCDM_RESULT)systemExt->CommitSecureStop(sessionID, sessionIDLength, serverResponse, serverResponseLength);
+                 }
+-                return ::OCDM::OCDM_RESULT::OCDM_S_FALSE;
++                return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+             }
+ 
+-            OCDM::OCDM_RESULT DeleteKeyStore(const std::string& keySystem) override
++            Exchange::OCDM_RESULT DeleteKeyStore(const std::string& keySystem) override
+             {
+                 CDMi::IMediaKeysExt* systemExt = dynamic_cast<CDMi::IMediaKeysExt*>(_parent.KeySystem(keySystem));
+                 if (systemExt) {
+-                    return (OCDM::OCDM_RESULT)systemExt->DeleteKeyStore();
++                    return (Exchange::OCDM_RESULT)systemExt->DeleteKeyStore();
+                 }
+-                return ::OCDM::OCDM_RESULT::OCDM_S_FALSE;
++                return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+             }
+ 
+-            OCDM::OCDM_RESULT DeleteSecureStore(const std::string& keySystem) override
++            Exchange::OCDM_RESULT DeleteSecureStore(const std::string& keySystem) override
+             {
+                 CDMi::IMediaKeysExt* systemExt = dynamic_cast<CDMi::IMediaKeysExt*>(_parent.KeySystem(keySystem));
+                 if (systemExt) {
+-                    return (OCDM::OCDM_RESULT)systemExt->DeleteSecureStore();
++                    return (Exchange::OCDM_RESULT)systemExt->DeleteSecureStore();
+                 }
+-                return ::OCDM::OCDM_RESULT::OCDM_S_FALSE;
++                return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+             }
+ 
+-            OCDM::OCDM_RESULT GetKeyStoreHash(
++            Exchange::OCDM_RESULT GetKeyStoreHash(
+                 const std::string& keySystem,
+                 uint8_t keyStoreHash[],
+-                uint32_t keyStoreHashLength) override
++                uint16_t keyStoreHashLength) override
+             {
+                 CDMi::IMediaKeysExt* systemExt = dynamic_cast<CDMi::IMediaKeysExt*>(_parent.KeySystem(keySystem));
+                 if (systemExt) {
+-                    return (OCDM::OCDM_RESULT)systemExt->GetSecureStoreHash(keyStoreHash, keyStoreHashLength);
++                    return (Exchange::OCDM_RESULT)systemExt->GetSecureStoreHash(keyStoreHash, keyStoreHashLength);
+                 }
+-                return ::OCDM::OCDM_RESULT::OCDM_S_FALSE;
++                return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+             }
+ 
+-            OCDM::OCDM_RESULT GetSecureStoreHash(
++            Exchange::OCDM_RESULT GetSecureStoreHash(
+                 const std::string& keySystem,
+                 uint8_t secureStoreHash[],
+-                uint32_t secureStoreHashLength) override
++                uint16_t secureStoreHashLength) override
+             {
+                 CDMi::IMediaKeysExt* systemExt = dynamic_cast<CDMi::IMediaKeysExt*>(_parent.KeySystem(keySystem));
+                 if (systemExt) {
+-                    return (OCDM::OCDM_RESULT)systemExt->GetSecureStoreHash(secureStoreHash, secureStoreHashLength);
++                    return (Exchange::OCDM_RESULT)systemExt->GetSecureStoreHash(secureStoreHash, secureStoreHashLength);
+                 }
+-                return ::OCDM::OCDM_RESULT::OCDM_S_FALSE;
++                return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+             }
+ 
+             BEGIN_INTERFACE_MAP(AccessorOCDM)
+-            INTERFACE_ENTRY(::OCDM::IAccessorOCDM)
++            INTERFACE_ENTRY(Exchange::IAccessorOCDM)
+             END_INTERFACE_MAP
+ 
+         private:
+-            ::OCDM::ISession* FindSession(const CommonEncryptionData& keyIds, const string& keySystem) const
++            Exchange::ISession* FindSession(const CommonEncryptionData& keyIds, const string& keySystem) const
+             {
+-                ::OCDM::ISession* result = nullptr;
++                Exchange::ISession* result = nullptr;
+ 
+                 std::list<SessionImplementation*>::const_iterator index(_sessionList.begin());
+ 
+@@ -1089,47 +1138,85 @@ namespace Plugin {
+             Core::JSON::DecUInt32 ShareSize;
+             Core::JSON::ArrayType<Systems> KeySystems;
+         };
++            class AsyncInitThread {
++                public:
++                explicit AsyncInitThread(OCDMImplementation& parent)
++                    : _parent(parent)
++                    , _worker(*this)
++                {
++                }
++                ~AsyncInitThread() = default;
++
++                void Start()
++                {
++                    _worker.Submit();
++                }
++
++                void Stop()
++                {
++                    _worker.Revoke();
++                }
++                AsyncInitThread(const AsyncInitThread&) = delete;
++                AsyncInitThread& operator=(const AsyncInitThread&) = delete;
++
++                private:
++                void Dispatch()
++                {
++                    if (_parent.InitializeAsync() != Core::ERROR_NONE) {
++                        TRACE(Trace::Error, (_T("OCDM Async Intialization Failed")));
++                    }
++                }
++
++                private:
++                OCDMImplementation& _parent;
++                friend Core::ThreadPool::JobType<AsyncInitThread&>;
++                Core::WorkerPool::JobType<AsyncInitThread&> _worker;
++            };
+ 
+     public:
+         OCDMImplementation()
+             : _entryPoint(nullptr)
++            , _engine()
+             , _service(nullptr)
++            , _shell(nullptr)
+             , _compliant(false)
+             , _systemToFactory()
+             , _systemLibraries()
++            , _thread(*this)
+         {
+             TRACE(Trace::Information, (_T("Constructing OCDMImplementation Service: %p"), this));
+         }
+         virtual ~OCDMImplementation()
+         {
+-            if (_service != nullptr) {
+-                delete _service;
+-            }
+-
+-            if (_entryPoint != nullptr) {
+-                _entryPoint->Release();
+-            }
+-
+-            _systemLibraries.clear();
+-
+             TRACE(Trace::Information, (_T("Destructed OCDMImplementation Service: %p"), this));
+         }
+ 
+     public:
+         uint32_t Initialize(PluginHost::IShell* service) override
+         {
+-            uint32_t result = Core::ERROR_OPENING_FAILED;
++            uint32_t result = Core::ERROR_NONE;
+ 
+-            // On activation subscribe, on deactivation un-subscribe
+-            PluginHost::ISubSystem* subSystem = service->SubSystems();
++            _shell = service;
+ 
++            _shell->AddRef();
++            _thread.Start();
++
++            return (result);
++        }
++
++        uint32_t InitializeAsync()
++        {
++            uint32_t result = Core::ERROR_NONE;
++
++            // On activation subscribe, on deactivation un-subscribe
++            PluginHost::ISubSystem* subSystem = _shell->SubSystems();
+             ASSERT(subSystem != nullptr);
+ 
+             // Start loading the configured factories
+             Config config;
+-            config.FromString(service->ConfigLine());
++            config.FromString(_shell->ConfigLine());
+ 
+-            const string locator(service->DataPath() + config.Location.Value());
++            const string locator(_shell->DataPath() + config.Location.Value());
+ 
+             // Before we start loading the mapping of the Keys to the factories, load the factories :-)
+             Core::Directory entry(locator.c_str(), _T("*.drm"));
+@@ -1155,6 +1242,7 @@ namespace Plugin {
+                     }
+                 } else {
+                     SYSLOG(Logging::Startup, (_T("Could not load factory [%s], error [%s]"), Core::File::FileNameExtended(entry.Current()).c_str(), library.Error().c_str()));
++                    result = Core::ERROR_OPENING_FAILED;
+                 }
+             }
+ 
+@@ -1178,6 +1266,7 @@ namespace Plugin {
+ 
+                             } else {
+                                 SYSLOG(Logging::Startup, (_T("Required factory [%s], not found for [%s]"), system.c_str(), designator.c_str()));
++                                result = Core::ERROR_OPENING_FAILED;
+                             }
+                         }
+                     }
+@@ -1185,7 +1274,7 @@ namespace Plugin {
+                     //now handle the configuration
+                     if (factory != factories.end()) {
+                         const string configuration(index.Current().Configuration.Value());
+-                        factory->second.Factory->Initialize(service, configuration);
++                        factory->second.Factory->Initialize(_shell, configuration);
+                     }
+                 }
+ 
+@@ -1202,15 +1291,16 @@ namespace Plugin {
+                 SYSLOG(Logging::Startup, (_T("No DRM factories specified. OCDM can not service any DRM requests.")));
+             }
+ 
+-            _entryPoint = Core::Service<AccessorOCDM>::Create<::OCDM::IAccessorOCDM>(this, config.SharePath.Value(), config.ShareSize.Value());
+-            Core::ProxyType<RPC::InvokeServer> server = Core::ProxyType<RPC::InvokeServer>::Create(&Core::IWorkerPool::Instance());
+-            _service = new ExternalAccess(Core::NodeId(config.Connector.Value().c_str()), _entryPoint, server);
++            _entryPoint = Core::Service<AccessorOCDM>::Create<Exchange::IAccessorOCDM>(this, config.SharePath.Value(), config.ShareSize.Value());
++            _engine = Core::ProxyType<RPC::InvokeServer>::Create(&Core::IWorkerPool::Instance());
++            _service = new ExternalAccess(Core::NodeId(config.Connector.Value().c_str()), _entryPoint, _shell->ProxyStubPath(), _engine);
+ 
+             if (_service != nullptr) {
+ 
+                 if (_service->IsListening() == false) {
+                     delete _service;
+                     _entryPoint->Release();
++                    _engine.Release();
+                     _service = nullptr;
+                     _entryPoint = nullptr;
+                 } else {
+@@ -1230,6 +1320,8 @@ namespace Plugin {
+             return (result);
+         }
+         void Deinitialize(PluginHost::IShell* service) override {
++            _thread.Stop();
++
+             std::map<const string, SystemFactory>::iterator factory(_systemToFactory.begin());
+ 
+             std::list<CDMi::ISystemFactory*> deinitialized;
+@@ -1245,6 +1337,22 @@ namespace Plugin {
+                 
+                 factory++;
+             }
++            
++            if (_service != nullptr) {
++                delete _service;
++            }
++
++            if (_entryPoint != nullptr) {
++                _entryPoint->Release();
++            }
++
++            if (_engine.IsValid()) {
++                _engine.Release();
++            }
++            _systemLibraries.clear();
++
++            _shell->Release();
++            _shell = nullptr;
+         }
+         virtual uint32_t Reset()
+         {
+@@ -1395,14 +1503,17 @@ namespace Plugin {
+             blacklist.insert(std::pair<const std::string, std::vector<std::string>>(system, elements));
+         }
+ 
+-        ::OCDM::IAccessorOCDM* _entryPoint;
++        Exchange::IAccessorOCDM* _entryPoint;
++        Core::ProxyType<RPC::InvokeServer> _engine;
+         ExternalAccess* _service;
++        PluginHost::IShell* _shell;
+         bool _compliant;
+         std::map<const std::string, SystemFactory> _systemToFactory;
+         Blacklist _systemBlacklistedCodecRegexps;
+         Blacklist _systemBlacklistedMediaTypeRegexps;
+         std::list<Core::Library> _systemLibraries;
+         std::list<string> _keySystems;
++        AsyncInitThread _thread;
+     };
+ 
+     SERVICE_REGISTRATION(OCDMImplementation, 1, 0);
+Index: git/OpenCDMi/OCDM.config
+===================================================================
+--- git.orig/OpenCDMi/OCDM.config
++++ git/OpenCDMi/OCDM.config
+@@ -37,28 +37,31 @@ map()
+     kv(designators "___array___;org.chromium.externalclearkey;org.w3.clearkey")
+ end()
+ ans(keysystem)
+-map_append(${configuration} systems ${keysystem})
++map_append(${configuration} systems ___array___ ${keysystem})
+ endif()
+ 
+ if(PLUGIN_OPENCDMI_PLAYREADY OR PLUGIN_OPENCDMI_PLAYREADY_NEXUS OR PLUGIN_OPENCDMI_PLAYREADY_NEXUS_SVP OR PLUGIN_OPENCDMI_PLAYREADY_VGDRM)
+ map()
+     kv(name "PlayReady")
+     kv(designators "com.youtube.playready;com.microsoft.playready;com.netflix.playready")
+-if(PLUGIN_OPENCDMI_PLAYREADY_METERING_CERTIFICATE)
+     key(configuration)
+     map()
+-        kv(metering ${PLUGIN_OPENCDMI_PLAYREADY_METERING_CERTIFICATE})
+-    end()
+-else()
+-    key(configuration)
+-    map()
+-        kv(read-dir "${PLUGIN_OCDM_PLAYREADY_READ_DIR}")
+-        kv(store-location "${PLUGIN_OCDM_PLAYREADY_STORE_LOCATION}")
++        if(PLUGIN_OPENCDMI_PLAYREADY_METERING_CERTIFICATE)
++            kv(metering ${PLUGIN_OPENCDMI_PLAYREADY_METERING_CERTIFICATE})
++        endif()
++        if(PLUGIN_OCDM_PLAYREADY_READ_DIR)
++            kv(read-dir "${PLUGIN_OCDM_PLAYREADY_READ_DIR}")
++        endif()
++        if(PLUGIN_OCDM_PLAYREADY_STORE_LOCATION)
++            kv(store-location "${PLUGIN_OCDM_PLAYREADY_STORE_LOCATION}")
++        endif()
++        if(PLUGIN_OPENCDMI_PLAYREADY_CERTIFICATE_LABEL)
++            kv(certificatelabel "${PLUGIN_OPENCDMI_PLAYREADY_CERTIFICATE_LABEL}")
++        endif()
+     end()
+-endif()
+ end()
+ ans(keysystem)
+-map_append(${configuration} systems ${keysystem})
++map_append(${configuration} systems ___array___ ${keysystem})
+ endif()
+ 
+ if(PLUGIN_OPENCDMI_WIDEVINE OR OPENCDMI_WIDEVINE_NEXUS_SVP)
+@@ -72,11 +75,13 @@ map()
+         if(PLUGIN_OPENCDMI_WIDEVINE_KEYBOX)
+             kv(keybox ${PLUGIN_OPENCDMI_WIDEVINE_KEYBOX})
+         endif()
+-        
++        if(PLUGIN_OPENCDMI_WIDEVINE_STORAGE_LOCATION)
++            kv(storagelocation ${PLUGIN_OPENCDMI_WIDEVINE_STORAGE_LOCATION})
++        endif()        
+     end()
+ end()
+ ans(keysystem)
+-map_append(${configuration} systems ${keysystem})
++map_append(${configuration} systems ___array___ ${keysystem})
+ endif()
+ 
+ if(PLUGIN_OPENCDMI_NAGRA)
+@@ -90,13 +95,13 @@ map()
+     end()
+ end()
+ ans(keysystem)
+-map_append(${configuration} systems ${keysystem})
++map_append(${configuration} systems ___array___ ${keysystem})
+ map()
+     kv(name "NagraConnect")
+     kv(designators "___array___;com.nagra.connect")
+ end()
+ ans(keysystem)
+-map_append(${configuration} systems ${keysystem})
++map_append(${configuration} systems ___array___ ${keysystem})
+ endif()
+ 
+ 
+@@ -106,7 +111,7 @@ map()
+     kv(designators "___array___;com.ncas.alpha")
+ end()
+ ans(keysystem)
+-map_append(${configuration} systems ${keysystem})
++map_append(${configuration} systems ___array___ ${keysystem})
+ endif()
+ 
+ map_append(${configuration} root ${rootobject})
+Index: git/OpenCDMi/OCDM.cpp
+===================================================================
+--- git.orig/OpenCDMi/OCDM.cpp
++++ git/OpenCDMi/OCDM.cpp
+@@ -45,41 +45,38 @@ namespace OCDM {
+     Exchange::IMemory* MemoryObserver(const RPC::IRemoteConnection* connection)
+     {
+         class MemoryObserverImpl : public Exchange::IMemory {
+-        private:
+-            MemoryObserverImpl();
+-            MemoryObserverImpl(const MemoryObserverImpl&);
+-            MemoryObserverImpl& operator=(const MemoryObserverImpl&);
+-
+         public:
++            MemoryObserverImpl() = delete;
++            MemoryObserverImpl(const MemoryObserverImpl&) = delete;
++            MemoryObserverImpl& operator=(const MemoryObserverImpl&) = delete;
++
+             MemoryObserverImpl(const RPC::IRemoteConnection* connectionI)
+                 : _main(connectionI  == 0 ? Core::ProcessInfo().Id() : connectionI->RemoteId())
+             {
+             }
+-            ~MemoryObserverImpl()
+-            {
+-            }
++            ~MemoryObserverImpl() = default;
+ 
+         public:
+-            virtual uint64_t Resident() const
++            uint64_t Resident() const override
+             {
+                 return _main.Resident();
+             }
+-            virtual uint64_t Allocated() const
++            uint64_t Allocated() const override
+             {
+                 return _main.Allocated();
+             }
+-            virtual uint64_t Shared() const
++            uint64_t Shared() const override
+             {
+                 return _main.Shared();
+             }
+-            virtual uint8_t Processes() const
++            uint8_t Processes() const override
+             {
+                 return (IsOperational() ? 1 : 0);
+             }
+-#ifndef USE_THUNDER_R4
+-            virtual bool IsOperational() const
++#ifdef USE_THUNDER_R4
++            virtual bool IsOperational() const override
+ #else
+-            virtual const bool IsOperational() const
++            const bool IsOperational() const override
+ #endif /* USE_THUNDER_R4 */
+             {
+                 return _main.IsActive();
+@@ -114,25 +111,26 @@ namespace Plugin {
+ 
+         string message;
+ 
++        ASSERT(service != nullptr);
+         ASSERT(_service == nullptr);
+         ASSERT(_memory == nullptr);
+         ASSERT(_opencdmi == nullptr);
++        ASSERT(_connectionId == 0);
+ 
+-        _connectionId = 0;
+         _service = service;
++        _service->AddRef();
+         _skipURL = static_cast<uint8_t>(_service->WebPrefix().length());
+ 
+         // Register the Process::Notification stuff. The Remote process might die before we get a
+         // change to "register" the sink for these events !!! So do it ahead of instantiation.
+         _service->Register(&_notification);
+ 
+-        _opencdmi = _service->Root<Exchange::IContentDecryption>(_connectionId, WPEFramework::RPC::CommunicationTimeOut, _T("OCDMImplementation"));
++        _opencdmi = _service->Root<Exchange::IContentDecryption>(_connectionId, Core::infinite, _T("OCDMImplementation"));
+ 
+         if (_opencdmi == nullptr) {
+             message = _T("OCDM could not be instantiated.");
+-            _service->Unregister(&_notification);
+-            _service = nullptr;
+         } else {
++            RegisterAll();
+             _opencdmi->Initialize(_service);
+ 
+             ASSERT(_connectionId != 0);
+@@ -147,56 +145,75 @@ namespace Plugin {
+             }
+             else {
+                 message = _T("OCDM crashed at initialize!");
+-                _opencdmi = nullptr;
+-                _service->Unregister(&_notification);
+-                _service = nullptr;
+             }
+         }
+ 
++        if(message.length() != 0) {
++            Deinitialize(service);
++        }
++
+         return message;
+     }
+ 
+     /*virtual*/ void OCDM::Deinitialize(PluginHost::IShell* service)
+     {
+         ASSERT(_service == service);
+-        ASSERT(_memory != nullptr);
+-        ASSERT(_opencdmi != nullptr);
+ 
+         _service->Unregister(&_notification);
+-        _memory->Release();
+ 
+-        _opencdmi->Deinitialize(service);
+-        RPC::IRemoteConnection* connection(_service->RemoteConnection(_connectionId));
+-        uint32_t result = _opencdmi->Release();
+-        ASSERT(result == Core::ERROR_DESTRUCTION_SUCCEEDED);
++        if(_opencdmi != nullptr) {
+ 
+-        PluginHost::ISubSystem* subSystem = service->SubSystems();
++            if(_memory != nullptr) {
++                _memory->Release();
++                _memory = nullptr;
++            }
+ 
+-        ASSERT(subSystem != nullptr);
++            _opencdmi->Deinitialize(service);
+ 
+-        if (subSystem != nullptr) {
+-            ASSERT(subSystem->IsActive(PluginHost::ISubSystem::DECRYPTION) == true);
+-            subSystem->Set(PluginHost::ISubSystem::NOT_DECRYPTION, nullptr);
+-            subSystem->Release();
++            UnregisterAll();
++
++            RPC::IRemoteConnection* connection(_service->RemoteConnection(_connectionId));
++
++            VARIABLE_IS_NOT_USED uint32_t result = _opencdmi->Release();
++            _opencdmi = nullptr;
++            // It should have been the last reference we are releasing,
++            // so it should end up in a DESCRUCTION_SUCCEEDED, if not we
++            // are leaking...
++            ASSERT(result == Core::ERROR_DESTRUCTION_SUCCEEDED);
++
++            // If this was running in a (container) proccess...
++            if (connection != nullptr) {
++
++                // Lets trigger the cleanup sequence for
++                // out-of-process code. Which will guard
++                // that unwilling processes, get shot if
++                // not stopped friendly :~)
++                connection->Terminate();
++                connection->Release();
++            }
+         }
+-        if (connection != nullptr) {
+-            connection->Terminate();
+-            connection->Release();
++
++        PluginHost::ISubSystem* subSystem = service->SubSystems();
++
++        if (subSystem != nullptr) {
++            if(subSystem->IsActive(PluginHost::ISubSystem::DECRYPTION) == true) {
++                subSystem->Set(PluginHost::ISubSystem::NOT_DECRYPTION, nullptr);
++                subSystem->Release();
++            }
+         }
+ 
+-        // Deinitialize what we initialized..
+-        _memory = nullptr;
+-        _opencdmi = nullptr;
++        _service->Release();
+         _service = nullptr;
++        _connectionId = 0;
+     }
+ 
+     /* virtual */ string OCDM::Information() const
+     {
+         // No additional info to report.
+-        return (nullptr);
++        return string();
+     }
+ 
+-    /* virtual */ void OCDM::Inbound(Web::Request& request)
++    /* virtual */ void OCDM::Inbound(Web::Request&)
+     {
+     }
+ 
+Index: git/OpenCDMi/OCDM.h
+===================================================================
+--- git.orig/OpenCDMi/OCDM.h
++++ git/OpenCDMi/OCDM.h
+@@ -30,25 +30,20 @@ namespace Plugin {
+ 
+     class OCDM : public PluginHost::IPlugin, public PluginHost::IWeb, public PluginHost::JSONRPC {
+     private:
+-        OCDM(const OCDM&) = delete;
+-        OCDM& operator=(const OCDM&) = delete;
+ 
+         class Notification : public RPC::IRemoteConnection::INotification {
+ 
+-        private:
++        public:
+             Notification() = delete;
+             Notification(const Notification&) = delete;
+             Notification& operator=(const Notification&) = delete;
+ 
+-        public:
+             explicit Notification(OCDM* parent)
+                 : _parent(*parent)
+             {
+                 ASSERT(parent != nullptr);
+             }
+-            ~Notification()
+-            {
+-            }
++            ~Notification() override = default;
+ 
+         public:
+             virtual void Activated(RPC::IRemoteConnection*)
+@@ -69,10 +64,6 @@ namespace Plugin {
+ 
+     public:
+         class Data : public Core::JSON::Container {
+-        private:
+-            Data(const Data&) = delete;
+-            Data& operator=(const Data&) = delete;
+-
+         public:
+             class System : public Core::JSON::Container {
+             private:
+@@ -80,14 +71,16 @@ namespace Plugin {
+ 
+             public:
+                 System()
+-                    : Name()
++                    : Core::JSON::Container()
++                    , Name()
+                     , Designators()
+                 {
+                     Add(_T("name"), &Name);
+                     Add(_T("designators"), &Designators);
+                 }
+                 System(const string& name, RPC::IStringIterator* entries)
+-                    : Name()
++                    : Core::JSON::Container()
++                    , Name()
+                     , Designators()
+                 {
+                     Add(_T("name"), &Name);
+@@ -99,15 +92,14 @@ namespace Plugin {
+                     Load(entries);
+                 }
+                 System(const System& copy)
+-                    : Name(copy.Name)
++                    : Core::JSON::Container()
++                    , Name(copy.Name)
+                     , Designators(copy.Designators)
+                 {
+                     Add(_T("name"), &Name);
+                     Add(_T("designators"), &Designators);
+                 }
+-                virtual ~System()
+-                {
+-                }
++            ~System() override = default;
+ 
+             public:
+                 Core::JSON::String Name;
+@@ -126,39 +118,33 @@ namespace Plugin {
+             };
+ 
+         public:
++            Data(const Data&) = delete;
++            Data& operator=(const Data&) = delete;
+             Data()
+                 : Core::JSON::Container()
+             {
+                 Add(_T("systems"), &Systems);
+             }
+-            ~Data()
+-            {
+-            }
++        ~Data() = default;
+ 
+         public:
+             Core::JSON::ArrayType<System> Systems;
+         };
+ 
+     public:
+-        #ifdef __WINDOWS__
+-        #pragma warning(disable : 4355)
+-        #endif
++        OCDM(const OCDM&) = delete;
++        OCDM& operator=(const OCDM&) = delete;
+         OCDM()
+             : _skipURL(0)
+-            , _service(nullptr)
++            , _connectionId(0)
++            , _service(nullptr)
+             , _opencdmi(nullptr)
+             , _memory(nullptr)
+             , _notification(this)
+         {
+-            RegisterAll();
+-        }
+-        #ifdef __WINDOWS__
+-        #pragma warning(default : 4355)
+-        #endif
+-        virtual ~OCDM()
+-        {
+-            UnregisterAll();
+         }
+ 
++        ~OCDM() override = default;
++
+     public:
+         BEGIN_INTERFACE_MAP(OCDM)
+         INTERFACE_ENTRY(PluginHost::IPlugin)
+@@ -178,22 +164,22 @@ namespace Plugin {
+         // If there is an error, return a string describing the issue why the initialisation failed.
+         // The Service object is *NOT* reference counted, lifetime ends if the plugin is deactivated.
+         // The lifetime of the Service object is guaranteed till the deinitialize method is called.
+-        virtual const string Initialize(PluginHost::IShell* service);
++        const string Initialize(PluginHost::IShell* service) override;
+ 
+         // The plugin is unloaded from the webbridge. This is call allows the module to notify clients
+         // or to persist information if needed. After this call the plugin will unlink from the service path
+         // and be deactivated. The Service object is the same as passed in during the Initialize.
+         // After theis call, the lifetime of the Service object ends.
+-        virtual void Deinitialize(PluginHost::IShell* service);
++        void Deinitialize(PluginHost::IShell* service) override;
+ 
+         // Returns an interface to a JSON struct that can be used to return specific metadata information with respect
+         // to this plugin. This Metadata can be used by the MetData plugin to publish this information to the ouside world.
+-        virtual string Information() const;
++        string Information() const  override;
+ 
+         //  IWeb methods
+         // -------------------------------------------------------------------------------------------------------
+-        virtual void Inbound(Web::Request& request);
+-        virtual Core::ProxyType<Web::Response> Process(const Web::Request& request);
++        void Inbound(Web::Request& request)  override;
++        Core::ProxyType<Web::Response> Process(const Web::Request& request) override;
+ 
+     private:
+         void Deactivated(RPC::IRemoteConnection* process);
+@@ -207,8 +193,8 @@ namespace Plugin {
+         uint32_t get_keysystems(const string& index, Core::JSON::ArrayType<Core::JSON::String>& response) const;
+ 
+     private:
+-        uint8_t _skipURL{};
+-        uint32_t _connectionId{};
++        uint8_t _skipURL;
++        uint32_t _connectionId;
+         PluginHost::IShell* _service;
+         Exchange::IContentDecryption* _opencdmi;
+         Exchange::IMemory* _memory;
+diff --git a/OpenCDMi/Protobuf.h b/OpenCDMi/Protobuf.h
+new file mode 100644
+index 00000000..936de9e0
+--- /dev/null
++++ b/OpenCDMi/Protobuf.h
+@@ -0,0 +1,530 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2022 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++#pragma once
++
++#include "Module.h"
++
++namespace WPEFramework {
++
++namespace Protobuf {
++
++    struct IElement {
++        enum class WireType : uint8_t {
++            VARINT = 0,
++            FIXED64 = 1,
++            LENGTH_DELIMITED = 2,
++            GROUP_START = 3,
++            GROUP_END = 4,
++            FIXED32 = 5
++        };
++
++        virtual ~IElement() = default;
++        virtual uint32_t Deserialize(const uint8_t data[], const uint32_t length) = 0;
++        virtual bool IsSet() const = 0;
++        virtual WireType Type() const = 0;
++    }; // struct IElement
++
++    template<typename T>
++    class ValueElementType : public IElement {
++    public:
++        using type = T;
++        using IElement::WireType;
++        ValueElementType(const ValueElementType&) = default;
++        ValueElementType& operator=(const ValueElementType&) = default;
++        ValueElementType()
++            : _value()
++            , _set(false)
++        { }
++        ~ValueElementType() = default;
++
++    public:
++        bool IsSet() const override {
++            return (_set);
++        }
++        const T& Value() const {
++            return (_value);
++        }
++        T& Value() {
++            return (_value);
++        }
++
++    protected:
++        void Set(const bool set) {
++            _set = set;
++        }
++
++    private:
++        T _value;
++        bool _set;
++    }; // class ValueElementType
++
++    template<typename T>
++    class VarintType : public ValueElementType<T> {
++        static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "Varint requires int type");
++
++    public:
++        VarintType()
++            : ValueElementType<T>()
++        { }
++        VarintType(const VarintType<T>&) = default;
++        VarintType<T>& operator=(const VarintType<T>&) = default;
++        ~VarintType() = default;
++
++    public:
++        using typename ValueElementType<T>::WireType;
++        uint32_t Deserialize(const uint8_t data[], const uint32_t length) override
++        {
++            ASSERT(data != nullptr);
++            uint32_t result = 0;
++            result = ReadVarint(data, length, ValueElementType<T>::Value());
++            ValueElementType<T>::Set(result != 0);
++            return (result);
++        }
++        WireType Type() const override {
++            return (WireType::VARINT);
++        }
++
++    private:
++        static uint8_t ReadVarint(const uint8_t data[], const uint32_t length, T& out)
++        {
++            ASSERT(data != nullptr);
++            uint8_t result = 0;
++            const uint8_t* ptr = data;
++            uint8_t shift = 0;
++            uint64_t value = 0;
++            uint8_t size = sizeof(value);
++            while (size-- && (ptr < (data + length))) {
++                value |= (static_cast<uint64_t>(*ptr & 0x7F) << shift);
++                if (((*ptr++) & 0x80) == 0) {
++                    out = static_cast<T>(value);
++                    result = static_cast<uint8_t>(ptr - data);
++                    break;
++                }
++                shift += 7;
++            }
++            return (result);
++        }
++    }; // class VarintType
++
++    template<typename T>
++    class ZigzagVarintType : public VarintType<T> {
++        static_assert(std::is_signed<T>::value, "Zigzaged varint is meant for signed integer type");
++
++    public:
++        ZigzagVarintType()
++            : ValueElementType<T>()
++        { }
++        ZigzagVarintType(const ZigzagVarintType<T>&) = default;
++        ZigzagVarintType<T>& operator=(const ZigzagVarintType<T>&) = default;
++        ~ZigzagVarintType() = default;
++
++    public:
++        uint32_t Deserialize(const uint8_t data[], const uint32_t length) override
++        {
++            ASSERT(data != nullptr);
++            uint32_t result = 0;
++            result = VarintType<T>::ReadVarint(data, length, ValueElementType<T>::Value());
++            if (result != 0) {
++                T& value = ValueElementType<T>::Value();
++                // unzigzag the value...
++                if (value & 1) {
++                    value ^= static_cast<T>(-1);
++                }
++                value >>= 1;
++            }
++            ValueElementType<T>::Set(result != 0);
++            return (result);
++        }
++    }; // class ZigzagVarintType
++
++    template<typename T>
++    class FixedType : public ValueElementType<T> {
++    protected:
++        FixedType()
++            : ValueElementType<T>()
++        { }
++        FixedType(const FixedType<T>&) = default;
++        FixedType<T>& operator=(const FixedType<T>&) = default;
++        ~FixedType() = default;
++
++    public:
++        uint32_t Deserialize(const uint8_t data[], const uint32_t length) override
++        {
++            ASSERT(data != nullptr);
++            uint32_t result = 0;
++            result = ReadFixed(data, length, ValueElementType<T>::Value());
++            ValueElementType<T>::Set(result != 0);
++            return (result);
++        }
++
++    private:
++        static uint8_t ReadFixed(const uint8_t data[], const uint32_t length, T& out)
++        {
++            ASSERT(data != nullptr);
++            uint8_t result = 0;
++            if (length >= sizeof(out)) {
++                result = static_cast<uint8_t>(sizeof(out));
++#ifdef LITTLE_ENDIAN_PLATFORM
++                /* Can be int, float or double here... */
++                ::memcpy(&out, data, sizeof(out));
++#else
++#error ReadFixed not implemented for big endian
++#endif
++            }
++            return (result);
++        }
++    }; // class FixedType
++
++    template<typename T>
++    class Fixed32Type : public FixedType<T> {
++        static_assert(std::is_arithmetic<T>::value && (sizeof(T) == sizeof(uint32_t)), "Fixed32 requires int32 or float type");
++
++    public:
++        Fixed32Type()
++            : FixedType<T>()
++        { }
++        Fixed32Type(const Fixed32Type<T>&) = default;
++        Fixed32Type<T>& operator=(const Fixed32Type<T>&) = default;
++        ~Fixed32Type() = default;
++
++    public:
++        using typename ValueElementType<T>::WireType;
++        WireType Type() const override {
++            return (WireType::FIXED32);
++        }
++    }; // class Fixed32Type
++
++    template<typename T>
++    class Fixed64Type : public FixedType<T> {
++        static_assert(std::is_arithmetic<T>::value && (sizeof(T) == sizeof(uint64_t)), "Fixed64 requires int64 or double type");
++
++    public:
++        Fixed64Type()
++            : FixedType<T>()
++        { }
++        Fixed64Type(const Fixed64Type<T>&) = default;
++        Fixed64Type<T>& operator=(const Fixed64Type<T>&) = default;
++        ~Fixed64Type() = default;
++
++    public:
++        using typename ValueElementType<T>::WireType;
++        WireType Type() const override {
++            return (WireType::FIXED64);
++        }
++    }; // class Fixed64Type
++
++    template<typename T>
++    class BytesType : public ValueElementType<std::basic_string<T>> {
++    public:
++        using type = std::basic_string<T>;
++        BytesType()
++            : ValueElementType<type>()
++        { }
++        BytesType(const BytesType&) = default;
++        BytesType& operator=(const BytesType&) = default;
++        ~BytesType() = default;
++
++    public:
++        using typename ValueElementType<type>::WireType;
++        uint32_t Deserialize(const uint8_t data[], const uint32_t length) override
++        {
++            ASSERT(data != nullptr);
++            uint32_t result = 0;
++            const uint8_t* ptr = data;
++            VarintType<uint32_t> size{};
++            result = size.Deserialize(ptr, length);
++            if ((result != 0) && (size.IsSet() == true) && (size.Value() != 0) && (size.Value() <= length)) {
++                ptr += result;
++                if ((ptr + size.Value()) <= (data + length)) {
++                    ValueElementType<type>::Value().append(reinterpret_cast<const T*>(ptr), size.Value());
++                    result += size.Value();
++                }
++            }
++            return (result);
++        }
++        WireType Type() const override {
++            return (WireType::LENGTH_DELIMITED);
++        }
++    }; // class BytesType
++
++    template<typename ELEMENT>
++    class RepeatedType : public IElement{
++    public:
++        using type = typename ELEMENT::type;
++        RepeatedType()
++            : _elements()
++        { }
++        RepeatedType(const RepeatedType&) = default;
++        RepeatedType& operator=(const RepeatedType&) = default;
++        ~RepeatedType() = default;
++
++    public:
++        bool IsSet() const override {
++            return (_elements.empty() == false);
++        }
++        const std::list<ELEMENT>& Elements() const {
++            return (_elements);
++        }
++        void Clear() {
++            _elements.clear();
++        }
++        uint32_t Deserialize(const uint8_t data[], const uint32_t length) override
++        {
++            ASSERT(data != nullptr);
++            ELEMENT element{};
++            uint32_t result = element.Deserialize(data, length);
++            if (result != 0) {
++                _elements.push_back(std::move(element));
++            }
++            return (result);
++        }
++        WireType Type() const override {
++            ELEMENT element{};
++            return (element.Type());
++        }
++    private:
++        std::list<ELEMENT> _elements;
++    }; // class RepeatedType
++
++    template<typename ELEMENT>
++    class PackedRepeatedType : public IElement {
++        static_assert(std::is_arithmetic<typename ELEMENT::type>::value, "PackedRepeated requires elements of numerical type");
++
++    public:
++        using type = typename ELEMENT::type;
++        PackedRepeatedType()
++            : _elements()
++        { }
++        PackedRepeatedType(const PackedRepeatedType&) = default;
++        PackedRepeatedType& operator=(const PackedRepeatedType&) = default;
++        ~PackedRepeatedType() = default;
++
++    public:
++        bool IsSet() const override {
++            return (_elements.empty() == false);
++        }
++        const std::list<ELEMENT>& Elements() const {
++            return (_elements);
++        }
++        void Clear() {
++            _elements.clear();
++        }
++        uint32_t Deserialize(const uint8_t data[], const uint32_t length) override
++        {
++            ASSERT(data != nullptr);
++            uint32_t result = 0;
++            const uint8_t* ptr = data;
++            VarintType<uint32_t> size{};
++            result = size.Deserialize(ptr, length);
++            ptr += result;
++            if ((result != 0) && ((size.IsSet() == true) && (size.Value() != 0) && (size.Value() <= (length - result)))) {
++                const uint8_t* end = (ptr + size.Value());
++                while (ptr < end) {
++                    ELEMENT element{};
++                    uint32_t consumed = element.Deserialize(ptr, static_cast<uint32_t>(end - ptr));
++                    if (consumed != 0) {
++                        ptr += consumed;
++                        result += consumed;
++                        _elements.push_back(element);
++                    } else {
++                        // TRACE_L1("Failed to deserialize packed element");
++                        result = 0;
++                        break;
++                    }
++                }
++            }
++            return (result);
++        }
++
++    private:
++        std::list<ELEMENT> _elements;
++    }; // class PackedRepeatedType
++
++    class Message : public IElement {
++    private:
++        struct Entry {
++            IElement* element;
++            bool required;
++        };
++
++    public:
++        using type = void;
++        Message()
++            : _elements()
++        { }
++        Message(const Message&) = default;
++        Message& operator=(const Message&) = default;
++        ~Message() = default;
++
++    public:
++        bool IsSet() const override {
++            return (_elements.empty() == false);
++        }
++        void Clear() {
++            _elements.clear();
++        }
++        void Add(const uint8_t index, IElement* element, bool required = false)
++        {
++            ASSERT(index != 0); // 0 is not allowed as key
++            ASSERT(element != nullptr);
++            _elements.emplace(index, Entry{ element, required });
++        }
++        bool IsValid() const
++        {
++            bool valid = true;
++            for (auto const& entry : _elements) {
++                VARIABLE_IS_NOT_USED const IElement* const& element = entry.second.element;
++                ASSERT(element != nullptr);
++                if ((entry.second.required == true) && (entry.second.element->IsSet() == false)) {
++                    valid = false;
++                    break;
++                }
++            }
++            return (valid);
++        }
++        bool FromBuffer(const uint8_t data[], const uint32_t length)
++        {
++            ASSERT(data != nullptr);
++            bool result = true;
++            const uint8_t* ptr = data;
++            const uint8_t* end = (ptr + length);
++            while (ptr < end) {
++                VarintType<uint64_t> tag{};
++                uint32_t tagSize = tag.Deserialize(ptr, static_cast<uint32_t>(end - ptr));
++                if (tagSize > 0) {
++                    const IElement::WireType type = static_cast<IElement::WireType>(tag.Value() & 0x7);
++                    const uint32_t key = static_cast<uint32_t>(tag.Value() >> 3);
++                    const uint32_t available = static_cast<uint32_t>(end - ptr - tagSize);
++                    uint32_t consumed = 0;
++                    ptr += tagSize;
++
++                    if (key != 0) {
++                        auto it = _elements.find(key);
++                        if (it != _elements.end()) {
++                            IElement* const& element = (it->second).element;
++                            ASSERT(element != nullptr);
++                            if (type == element->Type()) {
++                                consumed = element->Deserialize(ptr, available);
++                            } else {
++                                // TRACE_L1("Wire type mismatch, check proto definition");
++                            }
++                        } else {
++                            consumed = Skip(ptr, available, type);
++                        }
++                    }
++
++                    if (consumed == 0) {
++                        // TRACE_L1("Failed to parse element");
++                        result = false;
++                        break;
++                    }
++
++                    ptr += consumed;
++                } else {
++                    // TRACE_L1("Failed to parse key/value pair");
++                    result = false;
++                    break;
++                }
++            }
++            return (result);
++        }
++
++    public:
++        uint32_t Deserialize(const uint8_t data[], const uint32_t length) override
++        {
++            ASSERT(data != nullptr);
++            uint32_t result = 0;
++            const uint8_t* ptr = data;
++            VarintType<uint32_t> size{};
++            result = size.Deserialize(ptr, length);
++            if ((result != 0) && (size.IsSet() == true) && (size.Value() > 0) && (size.Value() <= (length - result))) {
++                ptr += result;
++                if (FromBuffer(ptr, size.Value()) == true) {
++                    result += size.Value();
++                } else {
++                    // TRACE_L1("Failed to parse message");
++                }
++            }
++            return (result);
++        }
++        WireType Type() const {
++            return (WireType::LENGTH_DELIMITED);
++        }
++
++    private:
++        static uint32_t Skip(const uint8_t data[], const uint32_t length, const WireType type)
++        {
++            ASSERT(data != nullptr);
++            uint32_t result = 0;
++            switch (type) {
++            case WireType::VARINT:
++                result = Skip<VarintType<uint64_t>>(data, length);
++                break;
++            case WireType::FIXED64:
++                result = Skip<Fixed64Type<uint64_t>>(data, length);
++                break;
++            case WireType::LENGTH_DELIMITED:
++                result = Skip<BytesType<uint8_t>>(data, length);
++                break;
++            case WireType::FIXED32:
++                result = Skip<Fixed32Type<uint32_t>>(data, length);
++                break;
++            case WireType::GROUP_START:
++            case WireType::GROUP_END:
++                /* deprecated and not supported here */
++                // TRACE_L1("Groups are not supported!");
++                break;
++            default:
++                // TRACE_L1("Unknown wire type!");
++                break;
++            }
++            return (result);
++        }
++        template<typename ELEMENT>
++        static uint32_t Skip(const uint8_t data[], const uint32_t length)
++        {
++            ASSERT(data != nullptr);
++            ELEMENT element{};
++            return (element.Deserialize(data, length));
++        }
++
++    private:
++        std::map<uint8_t, Entry> _elements;
++    }; // class Message
++
++    using Bytes = BytesType<uint8_t>;
++    using Utf8String = BytesType<char>;
++    using Bool = VarintType<bool>;
++    using Int32 = VarintType<int32_t>;
++    using Int64 = VarintType<int64_t>;
++    using UInt32 = VarintType<uint32_t>;
++    using UInt64 = VarintType<uint64_t>;
++    using SInt32 = ZigzagVarintType<int32_t>;
++    using SInt64 = ZigzagVarintType<int64_t>;
++    using Fixed32 = Fixed32Type<uint32_t>;
++    using Fixed64 = Fixed64Type<uint64_t>;
++    using SFixed32 = Fixed32Type<int32_t>;
++    using SFixed64 = Fixed64Type<int64_t>;
++    using Float = FixedType<float>;
++    using Double = FixedType<double>;
++    template<typename T> using EnumType = VarintType<T>;
++
++}; // namespace Protobuf
++
++} // namespace
+-- 
+2.17.1

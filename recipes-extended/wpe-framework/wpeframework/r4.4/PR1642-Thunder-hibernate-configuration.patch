@@ -1,0 +1,60 @@
+From:   Muthuraj, Sundara Muneeswaran <SundaraMuneeswaran_Muthuraj@comcast.com>
+Date: 21 Feb 2025 17:24:43 +0000
+Subject: [PATCH] Enable the Hibernate related configurations for memcr
+Upstream-Status: Yes
+
+Reason for change: Added the thunder hibernate configuration.
+Risks: Medium
+Signed-off-by:  Muthuraj, Sundara Muneeswaran <SundaraMuneeswaran_Muthuraj@comcast.com>
+---
+Index: git/Source/WPEFramework/GenericConfig.cmake
+===================================================================
+--- git.orig/Source/WPEFramework/GenericConfig.cmake
++++ git/Source/WPEFramework/GenericConfig.cmake
+@@ -44,6 +44,7 @@ set(EXIT_REASONS "Failure;MemoryExceeded
+ set(ETHERNETCARD_NAME "eth0" CACHE STRING "Ethernet Card name which has to be associated for the Raw Device Id creation")
+ set(GROUP "" CACHE STRING "Define which system group will be used")
+ set(UMASK "" CACHE STRING "Set the permission mask for the creation of new files. e.g. 0760")
++set(LOCATOR "/tmp/memcrcom" CACHE STRING "Default Memecr Socket path")
+ 
+ # Controller Plugin Settings.
+ set(PLUGIN_CONTROLLER_UI_ENABLED "true" CACHE STRING "Enable the Controller's UI")
+@@ -87,6 +88,12 @@ if(COMMUNICATOR)
+ endif()
+ 
+ map()
++    kv(locator ${LOCATOR})
++end()
++ans(HIBERNATE_CONFIG)
++map_append(${CONFIG} hibernate ${HIBERNATE_CONFIG})
++
++map()
+     kv(priority ${PRIORITY})
+     kv(policy ${POLICY})
+     kv(oomadjust ${OOMADJUST})
+Index: git/Source/WPEFramework/params.config
+===================================================================
+--- git.orig/Source/WPEFramework/params.config
++++ git/Source/WPEFramework/params.config
+@@ -16,5 +16,6 @@ redirect
+ ethernetcard
+ communicator
+ exitreasons
++hibernate
+ messaging
+ plugins
+\ No newline at end of file
+Index: git/Source/WPEFramework/WPEFramework.conf.in
+===================================================================
+--- git.orig/Source/WPEFramework/WPEFramework.conf.in
++++ git/Source/WPEFramework/WPEFramework.conf.in
+@@ -15,6 +15,9 @@ redirect = '/Service/Controller/UI'
+ ethernetcard = '@ETHERNETCARD_NAME@'
+ communicator = '@COMMUNICATOR@'
+ 
++hibernate = JSON()
++hibernate.add("locator", '@LOCATOR@')
++
+ process = JSON()
+ process.add("priority", '@PRIORITY@')
+ process.add("policy", '@POLICY@')

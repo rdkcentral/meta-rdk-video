@@ -1,0 +1,36 @@
+From: Thamim Razith <ThamimRazith_AbbasAli@comcast.com>
+Date: Thu, 4 May 2023 16:00:01 +0000
+Subject: [PATCH] RDK-41887,RDK-41699:Recipe Cleanup for thunder R4&R2 recipes
+
+Upstream-Status: Pending
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+---
+ Source/WPEFramework/CMakeLists.txt | 1 -
+ Source/WPEProcess/CMakeLists.txt   | 2 --
+ 2 files changed, 3 deletions(-)
+
+diff --git a/Source/WPEFramework/CMakeLists.txt b/Source/WPEFramework/CMakeLists.txt
+index 608d7c3e..3ad0321f 100644
+--- a/Source/WPEFramework/CMakeLists.txt
++++ b/Source/WPEFramework/CMakeLists.txt
+@@ -90,7 +90,6 @@ set_target_properties(${TARGET} PROPERTIES
+         CXX_STANDARD 11
+         CXX_STANDARD_REQUIRED YES
+         FRAMEWORK FALSE
+-        VERSION ${VERSION}
+         )
+ 
+ install(
+diff --git a/Source/WPEProcess/CMakeLists.txt b/Source/WPEProcess/CMakeLists.txt
+index 166c8ba0..50d1c9a1 100644
+--- a/Source/WPEProcess/CMakeLists.txt
++++ b/Source/WPEProcess/CMakeLists.txt
+@@ -63,8 +63,6 @@ set_target_properties(${TARGET} PROPERTIES
+         CXX_STANDARD 11
+         CXX_STANDARD_REQUIRED YES
+         FRAMEWORK FALSE
+-        VERSION ${VERSION}
+-        SOVERSION ${VERSION_MAJOR}
+         )
+ 
+ install(

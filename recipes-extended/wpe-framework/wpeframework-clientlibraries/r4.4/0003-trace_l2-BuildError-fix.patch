@@ -1,0 +1,54 @@
+From d4dd8267c70c2d69156a73b38de5f000a180dd41 Mon Sep 17 00:00:00 2001
+From: Thamim Razith <ThamimRazith_AbbasAli@comcast.com>
+Date: Tue, 30 Apr 2024 14:49:57 +0000
+Subject: [PATCH] RDK-49093 RDK-49094 RDK-49095 : Sync up WPEFramework
+
+---
+ .../cryptography/implementation/SecApi/CipherNetflix.cpp  | 8 ++++----
+ .../cryptography/implementation/SecApi/DiffieHellman.cpp  | 2 +-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/Source/cryptography/implementation/SecApi/CipherNetflix.cpp b/Source/cryptography/implementation/SecApi/CipherNetflix.cpp
+index e03a912..3630b77 100644
+--- a/Source/cryptography/implementation/SecApi/CipherNetflix.cpp
++++ b/Source/cryptography/implementation/SecApi/CipherNetflix.cpp
+@@ -117,7 +117,7 @@ namespace Implementation {
+ 
+         if (inputLength % AES_128_BLOCK_SIZE != 0) {
+             outputbuf.resize(inputLength + 2 * AES_128_BLOCK_SIZE - (inputLength % AES_128_BLOCK_SIZE));
+-            TRACE_L2(_T("SecNetflix_Aescbc adding pad to output buffer %d\n", outputbuf.size()));
++            TRACE_L2(_T("SecNetflix_Aescbc adding pad to output buffer %d\n"), outputbuf.size());
+         }
+         else {
+             outputbuf.resize(inputLength + AES_128_BLOCK_SIZE);
+@@ -131,14 +131,14 @@ namespace Implementation {
+                 input, inputLength, out_buf, outputbuf.size(), &bytesWritten);
+ 
+             if (result != SEC_RESULT_SUCCESS) {
+-                TRACE_L1(_T("SecNetflix_Aescbc FAILED : retVal = %d\n", result));
++                TRACE_L1(_T("SecNetflix_Aescbc FAILED : retVal = %d\n"), result);
+             }
+         }
+         else {
+-            TRACE_L1(_T("FindKey did not find key handle = %d\n", keyHandle));
++            TRACE_L1(_T("FindKey did not find key handle = %d\n"), keyHandle);
+         }
+ 
+-        TRACE_L2(_T("Encrypted message: encdatalen=%u\n", bytesWritten));
++        TRACE_L2(_T("Encrypted message: encdatalen=%u\n"), bytesWritten);
+         memcpy(output, out_buf, bytesWritten);
+         retVal = bytesWritten;
+ 
+diff --git a/Source/cryptography/implementation/SecApi/DiffieHellman.cpp b/Source/cryptography/implementation/SecApi/DiffieHellman.cpp
+index 0024629..11eca66 100644
+--- a/Source/cryptography/implementation/SecApi/DiffieHellman.cpp
++++ b/Source/cryptography/implementation/SecApi/DiffieHellman.cpp
+@@ -124,7 +124,7 @@ namespace Implementation {
+                 hmacKeyId = _vault->AddKey(hKeyHMAC);
+                 wrappingKeyId = _vault->AddKey(hKeyWrap);
+                 result = RET_OK;
+-                TRACE_L2(_T("SEC:Netflix Derive  enc %d  hmac %d  wrapping handle %d \n", encryptionKeyId, hmacKeyId, wrappingKeyId));
++                TRACE_L2(_T("SEC:Netflix Derive  enc %d  hmac %d  wrapping handle %d \n"), encryptionKeyId, hmacKeyId, wrappingKeyId);
+             }
+             else {
+                 TRACE_L1(_T("SEC:SecNetflix_NetflixDHDerive failed ,retval = %d \n"),result_sec);

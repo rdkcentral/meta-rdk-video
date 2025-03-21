@@ -1,0 +1,18 @@
+Date: Jun, 13 2024 14:31:53 -0400
+From: Karunakaran A
+Subject: Removed debug macro definition
+Upstream-Status: Pending
+Signed-off-by: Karunakaran A <Karunakaran_Amirthalingam@cable.comcast.com>
+---
+diff --git a/Source/core/Portability.h b/Source/core/Portability.h
+index f9548dc1..01e34d39 100644
+--- a/Source/core/Portability.h
++++ b/Source/core/Portability.h
+@@ -526,7 +526,6 @@ inline void EXTERNAL SleepS(unsigned int a_Time)
+ 
+ #if !defined(NDEBUG)
+ #if defined(_THUNDER_DEBUG) || !defined(_THUNDER_NDEBUG)
+-#define __DEBUG__
+ #ifdef _THUNDER_PRODUCTION
+ #error "Production and Debug is not a good match. Select Production or Debug, not both !!"
+ #endif

@@ -1,0 +1,162 @@
+From eb4cef29a038b744a978174700743a3d3b647a0d Mon Sep 17 00:00:00 2001
+From: Thamim Razith <ThamimRazith_AbbasAli@comcast.com>
+Date: Thu, 4 May 2023 16:00:01 +0000
+Subject: [PATCH] RDK-41887,RDK-41699:Recipe Cleanup for thunder R4&R2 recipes
+
+---
+ Source/bluetoothaudiosink/CMakeLists.txt | 2 +-
+ Source/compositorclient/CMakeLists.txt   | 2 +-
+ Source/cryptography/CMakeLists.txt       | 2 +-
+ Source/deviceinfo/CMakeLists.txt         | 2 +-
+ Source/displayinfo/CMakeLists.txt        | 2 +-
+ Source/localtracer/CMakeLists.txt        | 2 +-
+ Source/ocdm/CMakeLists.txt               | 2 +-
+ Source/playerinfo/CMakeLists.txt         | 2 +-
+ Source/provisionproxy/CMakeLists.txt     | 2 +-
+ Source/securityagent/CMakeLists.txt      | 2 +-
+ Source/virtualinput/CMakeLists.txt       | 2 +-
+ 11 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/Source/bluetoothaudiosink/CMakeLists.txt b/Source/bluetoothaudiosink/CMakeLists.txt
+index ca2f58e..fbf6d11 100644
+--- a/Source/bluetoothaudiosink/CMakeLists.txt
++++ b/Source/bluetoothaudiosink/CMakeLists.txt
+@@ -21,7 +21,7 @@ find_package(WPEFramework)
+ 
+ project(BluetoothAudioSink)
+ 
+-project_version(1.0.0)
++project_version(4.4.1)
+ 
+ set(TARGET ${NAMESPACE}${PROJECT_NAME})
+ 
+diff --git a/Source/compositorclient/CMakeLists.txt b/Source/compositorclient/CMakeLists.txt
+index b6ff8ca..a4cd726 100644
+--- a/Source/compositorclient/CMakeLists.txt
++++ b/Source/compositorclient/CMakeLists.txt
+@@ -21,7 +21,7 @@ find_package(WPEFramework)
+ 
+ project(compositorclient)
+ 
+-project_version(1.0.0)
++project_version(4.4.1)
+ 
+ set(TARGET ${PROJECT_NAME})
+ 
+diff --git a/Source/cryptography/CMakeLists.txt b/Source/cryptography/CMakeLists.txt
+index 9039fce..9fb9de8 100644
+--- a/Source/cryptography/CMakeLists.txt
++++ b/Source/cryptography/CMakeLists.txt
+@@ -21,7 +21,7 @@ find_package(WPEFramework)
+ 
+ project(Cryptography)
+ 
+-project_version(1.0.0)
++project_version(4.4.1)
+ 
+ set(TARGET ${NAMESPACE}${PROJECT_NAME})
+ 
+diff --git a/Source/deviceinfo/CMakeLists.txt b/Source/deviceinfo/CMakeLists.txt
+index c1eef12..1ac78a4 100644
+--- a/Source/deviceinfo/CMakeLists.txt
++++ b/Source/deviceinfo/CMakeLists.txt
+@@ -21,7 +21,7 @@ find_package(WPEFramework)
+ 
+ project(DeviceInfo)
+ 
+-project_version(1.0.0)
++project_version(4.4.1)
+ 
+ set(TARGET ${NAMESPACE}${PROJECT_NAME})
+ 
+diff --git a/Source/displayinfo/CMakeLists.txt b/Source/displayinfo/CMakeLists.txt
+index 069448d..3c93bb8 100644
+--- a/Source/displayinfo/CMakeLists.txt
++++ b/Source/displayinfo/CMakeLists.txt
+@@ -21,7 +21,7 @@ find_package(WPEFramework)
+ 
+ project(DisplayInfo)
+ 
+-project_version(1.0.0)
++project_version(4.4.1)
+ 
+ set(TARGET ${NAMESPACE}${PROJECT_NAME})
+ 
+diff --git a/Source/localtracer/CMakeLists.txt b/Source/localtracer/CMakeLists.txt
+index 802a30a..4e27a73 100644
+--- a/Source/localtracer/CMakeLists.txt
++++ b/Source/localtracer/CMakeLists.txt
+@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.7)
+ 
+ find_package(WPEFramework)
+ 
+-project_version(1.0.0)
++project_version(4.4.1)
+ 
+ set(MODULE_NAME ${NAMESPACE}LocalTracer)
+ 
+diff --git a/Source/ocdm/CMakeLists.txt b/Source/ocdm/CMakeLists.txt
+index 4c856e0..736616d 100644
+--- a/Source/ocdm/CMakeLists.txt
++++ b/Source/ocdm/CMakeLists.txt
+@@ -21,7 +21,7 @@ find_package(WPEFramework)
+ 
+ project(ocdm)
+ 
+-project_version(1.0.0)
++project_version(4.4.1)
+ 
+ set(TARGET ${PROJECT_NAME})
+ 
+diff --git a/Source/playerinfo/CMakeLists.txt b/Source/playerinfo/CMakeLists.txt
+index 295becf..6528186 100644
+--- a/Source/playerinfo/CMakeLists.txt
++++ b/Source/playerinfo/CMakeLists.txt
+@@ -21,7 +21,7 @@ cmake_minimum_required(VERSION 3.3)
+ 
+ find_package(WPEFramework)
+ 
+-project_version(1.0.0)
++project_version(4.4.1)
+ 
+ set(TARGET ${PROJECT_NAME})
+ 
+diff --git a/Source/provisionproxy/CMakeLists.txt b/Source/provisionproxy/CMakeLists.txt
+index 8b5b96f..816dc90 100644
+--- a/Source/provisionproxy/CMakeLists.txt
++++ b/Source/provisionproxy/CMakeLists.txt
+@@ -21,7 +21,7 @@ find_package(WPEFramework)
+ 
+ project(ProvisionProxy)
+ 
+-project_version(1.0.0)
++project_version(4.4.1)
+ 
+ set(TARGET ${NAMESPACE}${PROJECT_NAME})
+ 
+diff --git a/Source/securityagent/CMakeLists.txt b/Source/securityagent/CMakeLists.txt
+index e1b981d..8c707b5 100644
+--- a/Source/securityagent/CMakeLists.txt
++++ b/Source/securityagent/CMakeLists.txt
+@@ -21,7 +21,7 @@ find_package(WPEFramework)
+ 
+ project(SecurityAgent)
+ 
+-project_version(1.0.0)
++project_version(4.4.1)
+ 
+ set(TARGET ${NAMESPACE}${PROJECT_NAME})
+ 
+diff --git a/Source/virtualinput/CMakeLists.txt b/Source/virtualinput/CMakeLists.txt
+index f4cbf61..23deb1c 100644
+--- a/Source/virtualinput/CMakeLists.txt
++++ b/Source/virtualinput/CMakeLists.txt
+@@ -21,7 +21,7 @@ find_package(WPEFramework)
+ 
+ project(VirtualInput)
+ 
+-project_version(1.0.0)
++project_version(4.4.1)
+ 
+ set(TARGET ${NAMESPACE}${PROJECT_NAME})
+ 

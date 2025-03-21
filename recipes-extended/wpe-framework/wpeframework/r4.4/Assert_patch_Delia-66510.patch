@@ -1,0 +1,23 @@
+From: Thamim Razith Abbas Ali
+Date:  Tue, 03 Jul 2024 05:39:47 +0000
+Subject: [PATCH] Enable_Trace_And_ASSERT_VERBOSE_in_wpeframework_R4.patch
+DELIA-65282: Update the tracing and syslog prints to be appropriate
+
+Upstream-Status: Pending
+Signed-off-by: Thamim Razith Abbas Ali <tabbas651@cable.comcast.com>
+---
+diff --git a/Source/com/Administrator.cpp b/Source/com/Administrator.cpp
+index 6fa2cde5..7c1d7e92 100644
+--- a/Source/com/Administrator.cpp
++++ b/Source/com/Administrator.cpp
+@@ -300,8 +300,10 @@ namespace RPC {
+                     }
+                 } while ((loop->Decrement()) && (result == Core::ERROR_NONE));
+
++#ifdef __DEBUG__
+                 ASSERT (loop->Flushed() == true);
+
++#endif
+                 loop++;
+             }
+             _channelReferenceMap.erase(remotes);

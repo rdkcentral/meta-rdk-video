@@ -1,0 +1,39 @@
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Wed, 16 Feb 2022 11:50:32 +0200
+Upstream-Status: Pending
+Subject: [PATCH] DELIA-54331: Don't set the receive buffer
+
+Reason for change: TCP delays caused by the receive buffer
+set after connect/accept to a value less than the localhost
+MSS and the TCP window advertised on connect/accept.
+Test Procedure: Check performance.
+
+Risks: Low
+Signed-off-by: Nikita Poltorapavlo <npoltorapavlo@productengine.com>
+---
+diff --git a/Source/plugins/Channel.cpp b/Source/plugins/Channel.cpp
+index 0de06471..fe5f50ea 100644
+--- a/Source/plugins/Channel.cpp
++++ b/Source/plugins/Channel.cpp
+@@ -26,7 +26,7 @@ namespace PluginHost {
+
+ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+     Channel::Channel(const SOCKET& connector, const Core::NodeId& remoteId)
+-        : BaseClass(true, false, 5, _requestAllocator, false, connector, remoteId, 1024, 1024)
++        : BaseClass(true, false, 5, _requestAllocator, false, connector, remoteId, 1024, -1)
+         , _ID(0)
+         , _nameOffset(~0)
+         , _state(WEB)
+diff --git a/Source/websocket/JSONRPCLink.h b/Source/websocket/JSONRPCLink.h
+index 3acfa38a..cb5d8b62 100644
+--- a/Source/websocket/JSONRPCLink.h
++++ b/Source/websocket/JSONRPCLink.h
+@@ -128,7 +128,7 @@ namespace WPEFramework {
+ 
+ 				public:
+ 					ChannelImpl(CommunicationChannel* parent, const Core::NodeId& remoteNode, const string& callsign, const string& query)
+-						: BaseClass(5, FactoryImpl::Instance(), callsign, _T("JSON"), query, "", false, false, false, remoteNode.AnyInterface(), remoteNode, 256, 256)
++						: BaseClass(5, FactoryImpl::Instance(), callsign, _T("JSON"), query, "", false, false, false, remoteNode.AnyInterface(), remoteNode, 256, -1)
+ 						, _parent(*parent)
+ 					{
+ 					}

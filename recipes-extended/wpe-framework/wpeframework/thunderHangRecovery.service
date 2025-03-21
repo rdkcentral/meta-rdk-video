@@ -1,0 +1,12 @@
+[Unit]
+Description=Thunder Hang Detection and Recovery
+After=wpeframework.service
+Requires=wpeframework.service
+
+[Service]
+ExecStart=/usr/bin/thunderHangRecovery
+Type=simple
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
