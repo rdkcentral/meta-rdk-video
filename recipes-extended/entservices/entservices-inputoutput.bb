@@ -8,12 +8,12 @@ PR ?= "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-inputoutput;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-inputoutput;protocol=${CMF_GITHUB_PROTOCOL};branch=topic/RDKEMW-1691 \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
 # Release version - 1.0.3
-SRCREV = "0a061f888be3637032c94f8c170c8a33d3a59869"
+SRCREV = "90ed5678016c45b38477ee5f22756092a4b47971"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
