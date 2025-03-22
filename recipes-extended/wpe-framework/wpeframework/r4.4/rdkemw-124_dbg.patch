@@ -1,0 +1,193 @@
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index 317be4fd..092257a6 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -4509,13 +4509,14 @@
+             return (_connections);
+         }
+         inline void DumpMetadata() {
++            printf("SOUND-DBG-PluginServer-DumpMetadata");
+             PostMortemData data;
+             _dispatcher.Snapshot(data.WorkerPool);
+
+             Core::JSON::ArrayType<MetaData::Server::Minion>::Iterator index(data.WorkerPool.ThreadPoolRuns.Elements());
+
+             while (index.Next() == true) {
+-
++                printf("SOUND-DBG-DumpCallStack-inside while");
+                 std::list<Core::callstack_info> stackList;
+
+                 ::DumpCallStack(static_cast<ThreadId>(index.Current().Id.Value()), stackList);
+diff --git a/Source/WPEFramework/PluginHost.cpp b/Source/WPEFramework/PluginHost.cpp
+index 213da58d..cc1c7ee4 100644
+--- a/Source/WPEFramework/PluginHost.cpp
++++ b/Source/WPEFramework/PluginHost.cpp
+@@ -159,7 +159,9 @@
+         static void DumpMetadata() {
+             _adminLock.Lock();
+             if (_dispatcher != nullptr) {
++                printf("SOUND-DBG-PluginHost-dumpmetadata");
+                 _dispatcher->DumpMetadata();
++                printf("SOUND-DBG-PluginHost-dumpmetadata-dumped\n");
+             }
+             _adminLock.Unlock();
+         }
+@@ -305,10 +307,13 @@
+     void ExitDaemonHandler(int signo)
+     {
+         const char* segname = "";
++
++        printf("SOUND-DBG: Signal received: %d\n", signo);
++        fflush(stdout);
+         if (_background) {
+-            syslog(LOG_NOTICE, "Signal received %d. in process [%d]", signo, getpid());
++            syslog(LOG_NOTICE, "SOUND-DBG-Running in _background -Signal received %d. in process [%d]", signo, getpid());
+         } else {
+-            fprintf(stderr, "Signal received %d. in process [%d]\n", signo, getpid());
++            fprintf(stderr, "SOUND-DBG-not Running in background-Signal received %d. in process [%d]\n", signo, getpid());
+         }
+ 
+         if ((signo == SIGTERM) || (signo == SIGQUIT)) {
+@@ -327,21 +332,72 @@
+             // From here on we do the best we can do. Have no clue what failed, try to log as much as possible and on
+             // a subsequent segmentation fault, just handle it the old fashion way. The root cause has been logged
+             // by than!
+-            sigaction(SIGSEGV, &_originalSegmentationHandler, nullptr);
+-            sigaction(SIGABRT, &_originalAbortHandler, nullptr);
++            // sigaction(SIGSEGV, &_originalSegmentationHandler, nullptr);
++            // perror("SOUND-DBG-ExitDaemonHandler-sigaction");
++            // printf("SOUND-DBG-ExitDaemonHandler-signal received %d", signo);
++            // fflush(stdout);
++            // sigaction(SIGABRT, &_originalAbortHandler, nullptr);
++            // perror("SOUND-DBG-ExitDaemonHandler-sigaction");
++            // printf("SOUND-DBG-ExitDaemonHandler-signal received %d", signo);
++            // fflush(stdout);
++             // Log the state of _originalSegmentationHandler
++            printf("SOUND-DBG: _originalSegmentationHandler.sa_handler = %p\n", (void*)_originalSegmentationHandler.sa_handler);
++            fflush(stdout);
++            printf("SOUND-DBG: _originalSegmentationHandler.sa_flags = %d\n", _originalSegmentationHandler.sa_flags);
++            fflush(stdout);
++            if (sigaction(SIGSEGV, &_originalSegmentationHandler, nullptr) != 0) {
++                perror("SOUND-DBG: Failed to restore SIGSEGV handler");
++            } else {
++                printf("SOUND-DBG: Successfully restored SIGSEGV handler\n");
++                fflush(stdout);
++            }
+ 
++            // Log the state of _originalAbortHandler
++            printf("SOUND-DBG: _originalAbortHandler.sa_handler = %p\n", (void*)_originalAbortHandler.sa_handler);
++            fflush(stdout);
++            printf("SOUND-DBG: _originalAbortHandler.sa_flags = %d\n", _originalAbortHandler.sa_flags);
++            fflush(stdout);
++
++            // Attempt to restore the original SIGABRT handler
++            if (sigaction(SIGABRT, &_originalAbortHandler, nullptr) != 0) {
++                perror("SOUND-DBG: Failed to restore SIGABRT handler");
++            } else {
++                printf("SOUND-DBG: Successfully restored SIGABRT handler\n");
++                fflush(stdout);
++            }
+ 
++            printf("SOUND-DBG-After sigaction-DumpMetaData");
++            fflush(stdout);
+             ExitHandler::DumpMetadata();
++            printf("SOUND-DBG-After DumpMetaData dump");
++            fflush(stdout);
+             segname = (signo == SIGSEGV) ? "a segmentation fault" : (signo == SIGABRT) ? "an abort" : "";
++            printf("SOUND-DBG: Handling %s (signal %d)\n", segname, signo);
++            fflush(stdout);
++
++            printf("SOUND-DBG: _originalSegmentationHandler.sa_handler = %p\n", (void*)_originalSegmentationHandler.sa_handler);
++            fflush(stdout);
++            printf("SOUND-DBG: _originalSegmentationHandler.sa_flags = %d\n", _originalSegmentationHandler.sa_flags);
++            fflush(stdout);
+ 
+             if (_background) {
+-                syslog(LOG_NOTICE, EXPAND_AND_QUOTE(APPLICATION_NAME) " shutting down due to %s signal. All relevant data dumped", segname);
++                printf("SOUND-DBG-Running in _background-%s",segname);
++                syslog(LOG_NOTICE, EXPAND_AND_QUOTE(APPLICATION_NAME) " shutting down due to %s signal. All relevant data dumped-SOUND-DBG-BGR", segname);
+             } else {
+-                fprintf(stderr, EXPAND_AND_QUOTE(APPLICATION_NAME) " shutting down due to %s signal. All relevant data dumped\n", segname);
++                printf("SOUND-DBG-Not Running in _background-%s",segname);
++                fprintf(stderr, EXPAND_AND_QUOTE(APPLICATION_NAME) " shutting down due to %s signal. All relevant data dumped-SOUND-DBG-BGNR\n", segname);
+                 fflush(stderr);
+             }
+-
+-            raise(signo);
++             // Attempt to re-raise the signal
++            printf("SOUND-DBG: Re-raising signal %d (%s)\n", signo, segname);
++            fflush(stdout);
++            int status = raise(signo);
++            if (status != 0) {
++                perror("SOUND-DBG: Failed to re-raise signal");
++            } else {
++                printf("SOUND-DBG: Successfully re-raised signal %d\n", signo);
++                fflush(stdout);
++            }
+         }
+         else if (signo == SIGUSR1) {
+             ExitHandler::DumpMetadata();
+@@ -354,39 +410,59 @@
+         struct sigaction sa, current_sa;
+ 
+         memset(&current_sa, 0, sizeof(struct sigaction));
++        perror("SOUND-DBG-Current SIGSEGV handler");
+         sigaction(SIGSEGV, nullptr, &current_sa);
++        perror("SOUND-DBG-Current SIGSEGV handler");
+         if (ExitDaemonHandler  != current_sa.sa_handler)
+         {
+             _originalSegmentationHandler = current_sa;
++            perror("SOUND-DBG-original SIGSEGV handler");
+              memset(&sa, 0, sizeof(struct sigaction));
++             perror("SOUND-DBG-sigaction-memset");
+              sigemptyset(&sa.sa_mask);
++            perror("SOUND-DBG-sigaction-sigemptyset");
+              sa.sa_handler = ExitDaemonHandler;
+              sa.sa_flags = 0;
+              if (_background) {
+-                 syslog(LOG_NOTICE, "Registering ExitDaemonHandler = %p for SIGSEGV & Previous Handler = %p", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
++                syslog(LOG_NOTICE, "SOUND-DBG-Running in background -Registering ExitDaemonHandler = %p for SIGSEGV & Previous Handler = %p", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
+              } else {
+-                 fprintf(stdout, "Registering ExitDaemonHandler = %p for SIGSEGV & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
++                fprintf(stdout, "SOUND-DBG-not Running in background-Registering ExitDaemonHandler = %p for SIGSEGV & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
+                  fflush(stdout);
+              }
++             printf("SOUND-DBG-SetupCrashHandler-reraising the signal SIGSEGV");
++             fflush(stdout);
+              sigaction(SIGSEGV, &sa, nullptr);
++             perror("SOUND-DBG-SetupCrashHandler-reraising the signal SIGSEGV");
+         }
+ 
+         memset(&current_sa, 0, sizeof(struct sigaction));
++        perror("SOUND-DBG-Current SIGABRT handler");
+         sigaction(SIGABRT, nullptr, &current_sa);
++        perror("SOUND-DBG-Current SIGABRT handler");
++        printf("SOUND-DBG-Current SIGABRT handler = %p\n", (void*)current_sa.sa_handler);
++        fflush(stdout);
++        
+         if (ExitDaemonHandler  != current_sa.sa_handler)
+         {
+             _originalAbortHandler = current_sa;
++            perror("SOUND-DBG-original SIGABRT handler");
+              memset(&sa, 0, sizeof(struct sigaction));
++                perror("SOUND-DBG-sigaction-memset");
+              sigemptyset(&sa.sa_mask);
++                perror("SOUND-DBG-sigaction-sigemptyset");
+              sa.sa_handler = ExitDaemonHandler;
+              sa.sa_flags = 0;
+              if (_background) {
+-                 syslog(LOG_NOTICE, "Registering ExitDaemonHandler = %p for SIGABRT & Previous Handler = %p", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
++                 syslog(LOG_NOTICE, "SOUND-DBG-Running in background -Registering ExitDaemonHandler = %p for SIGABRT & Previous Handler = %p", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
+              } else {
+-                 fprintf(stdout, "Registering ExitDaemonHandler = %p for SIGABRT & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
++                 fprintf(stdout, "SOUND-DBG-not Running in background-Registering ExitDaemonHandler = %p for SIGABRT & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
+                  fflush(stdout);
+              }
++             printf("SOUND-DBG-SetupCrashHandler-reraising the signal SIGABRT");
++             fflush(stdout);
+              sigaction(SIGABRT, &sa, nullptr);
++             perror("SOUND-DBG-SetupCrashHandler-reraising the signal SIGABRT");
++
+         }
+         _adminLock.Unlock();
+     }
