@@ -29,7 +29,6 @@ EXTRA_OECMAKE += " -DPLUGIN_ANALYTICS_SIFT_STORE_PATH=/opt/persistent/AnalyticsS
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings ", "", d)}"
 RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-plugins ", "", d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries rdknativescript javascriptcore"
 RDEPENDS:${PN} += "wpeframework"
 
 CFLAGS  += " \
