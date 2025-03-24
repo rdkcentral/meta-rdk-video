@@ -11,8 +11,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers"
-RDEPENDS:${PN} = " devicesettings"
+DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
+RDEPENDS:${PN} = " devicesettings telemetry"
 
 DEPENDS += "safec-common-wrapper"
 
