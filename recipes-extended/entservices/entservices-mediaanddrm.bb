@@ -90,7 +90,7 @@ EXTRA_OECMAKE += " -DBUILD_ENABLE_APP_CONTROL_AUDIOPORT_INIT=ON "
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
 # Enable the RDKShell memcr feature support flags
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DPLUGIN_HIBERNATESUPPORT=ON -DPLUGIN_HIBERNATE_NATIVE_APPS_ON_SUSPENDED=ON','',d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains_any('MULTTILIBS', 'multilib:lib32', ' -DLIB_SUFFIX=32', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains_any('MULTTILIBS', 'multilib:lib32', ' -LIB_32_SUFFIX', '', d)}"
 
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
