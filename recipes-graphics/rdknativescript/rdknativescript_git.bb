@@ -16,7 +16,7 @@ PV ?= "2.0.0"
 PR ?= "r1"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;protocol=${CMF_GITHUB_PROTOCOL};branch=develop"
-SRCREV = "bf11beac42c876441c0caa71acf231f3c103d6dc"
+SRCREV = "fa08198dbf27755b8d3940dd2069c46ed832cf55"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

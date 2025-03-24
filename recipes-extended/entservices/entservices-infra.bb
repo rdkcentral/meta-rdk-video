@@ -50,7 +50,11 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " monitor \
+PACKAGECONFIG ?= " wpeframework \
+    wpeframework-tools-native \
+    wpeframework-clientlibraries \
+    javascriptcore \
+    monitor \
     persistent_store \    
     resourcemanager \
     sharedstorage \
