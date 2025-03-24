@@ -12,8 +12,8 @@ DEPENDS = "wpeframework wpeframework-tools-native"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis"
 SRC_URI += "file://RDKEMW-1007.patch"
 
-# Tag 1.2.4
-SRCREV_entservices-apis = "b1d0ceebb1f02ee582afadeb697d69eadaa3b50c"
+# Tag 1.2.5
+SRCREV_entservices-apis = "b29f627f0ea202858679cbcb50a6787d3da57c27"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
