@@ -1,8 +1,16 @@
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
-index f2d27ed4..3aa55553 100644
+index f2d27ed4..4107ccdc 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.cpp
 +++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
-@@ -92,6 +92,8 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -23,6 +23,7 @@
+
+ #include <chrono>
+ #include <thread>
++#include <systemd/sd-daemon.h>
+
+ COMRPCStarter::COMRPCStarter(const string& pluginName)
+     : IPluginStarter()
+@@ -92,6 +93,8 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
              } else {
                  // Our work here is done!
                  LOG_INF(_pluginName.c_str(), "Successfully activated plugin after %dms", duration.MilliSeconds());
@@ -11,4 +19,3 @@ index f2d27ed4..3aa55553 100644
                  success = true;
              }
              lifetime->Release();
-
