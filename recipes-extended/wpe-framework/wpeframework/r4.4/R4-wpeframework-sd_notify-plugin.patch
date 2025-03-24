@@ -1,0 +1,14 @@
+diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
+index f2d27ed4..3aa55553 100644
+--- a/Utils/PluginActivator/source/COMRPCStarter.cpp
++++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
+@@ -92,6 +92,8 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+             } else {
+                 // Our work here is done!
+                 LOG_INF(_pluginName.c_str(), "Successfully activated plugin after %dms", duration.MilliSeconds());
++                LOG_INF(_pluginName.c_str(), "Plugin is now activated sending READY notification");
++                sd_notify(0, "READY=1");
+                 success = true;
+             }
+             lifetime->Release();
+
