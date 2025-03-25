@@ -16,7 +16,7 @@ require rialto_revision.inc
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
-DEPENDS = "openssl jsoncpp protobuf protobuf-native"
+DEPENDS = "openssl jsoncpp protobuf protobuf-native grpc"
 DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform "
 
 S = "${WORKDIR}/git"
