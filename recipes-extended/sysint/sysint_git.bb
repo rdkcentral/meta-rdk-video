@@ -324,8 +324,6 @@ SYSTEMD_SERVICE:${PN} += "NM_Bootstrap.service"
 
 SYSTEMD_SERVICE:${PN}:append:rdkzram = " zram.service"
 
-SYSTEMD_SERVICE:${PN}:append:rdktv = " vdec-statistics.service"
-
 FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
 FILES:${PN} += "${base_libdir}/rdk/*"
