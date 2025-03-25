@@ -29,7 +29,6 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/Remove_versioning_for_executables.patch \
            file://r4.4/wpeframework_version_r4.4.1.patch \
            file://r4.4/0001_Remove_DEBUG_Macro_Definition.patch \
-           file://r4.4/0001-RDK-28534-Security-Agent-Utility-and-Logging.patch \
            file://r4.4/0003-OCDM-increase-RPC-comm-timeout.patch \
            file://r4.4/wpeframework_added_optimization_flag_improvement.patch \
            file://r4.4/LLAMA-2254_fix_netlink_buffer_size_error.patch \
