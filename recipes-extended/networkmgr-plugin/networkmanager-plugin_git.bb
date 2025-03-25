@@ -13,14 +13,14 @@ NETWORKMANAGER_STUN_PORT ?= "19302"
 # Default Loglevel configuration
 NETWORKMANAGER_LOGLEVEL ?= "3"
 
-PR = "r3"
+PR = "r6"
 PV = "0.11.0"
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=develop"
 
-# Mar 13, 2025
-SRCREV = "341ac43aab9ec7321177fb9d99a62986fc5c0b64"
+# Mar 24, 2025
+SRCREV = "a429abe92743ecaf4f4878bc7fd4ea6b8fef09db"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework rdkservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
