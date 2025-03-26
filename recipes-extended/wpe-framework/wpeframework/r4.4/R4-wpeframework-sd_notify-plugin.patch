@@ -1,5 +1,5 @@
 diff --git a/Utils/PluginActivator/CMakeLists.txt b/Utils/PluginActivator/CMakeLists.txt
-index bd465e3a..6bf1b9b4 100644
+index bd465e3a..fd653138 100644
 --- a/Utils/PluginActivator/CMakeLists.txt
 +++ b/Utils/PluginActivator/CMakeLists.txt
 @@ -36,6 +36,15 @@ target_link_libraries(${PROJECT_NAME}
@@ -8,7 +8,7 @@ index bd465e3a..6bf1b9b4 100644
 
 +find_package(Systemd)
 +if (SYSTEMD_FOUND)
-+    target_link_libraries( ${TARGET}
++    target_link_libraries(${PROJECT_NAME}
 +            PRIVATE
 +            Systemd::Systemd
 +            )
