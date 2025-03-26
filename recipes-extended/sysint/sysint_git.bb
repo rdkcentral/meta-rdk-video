@@ -208,13 +208,7 @@ do_install() {
         # Try to use zcip.script from /etc if required
         rm -rf ${D}${base_libdir}/rdk/zcip.script
 
-	# FIXME: Not scalable sd card and non sd card (HDD) devices use different script
-        # not perfect but this will have to do for now untill disk
-        # checking is actually generic
-        if [ "${STG_TYPE}" = "SDCARD" ]; then
-            rm -f ${D}${systemd_unitdir}/system/disk-check.service
-            install -m 0644 ${S}/systemd_units/disk-check-sdcard.service ${D}${systemd_unitdir}/system/disk-check.service
-        fi
+
 
         if [ "${MMC_TYPE}" != "EMMC" ]; then
             rm -f ${D}${base_libdir}/rdk/emmc_format.sh
@@ -245,9 +239,7 @@ do_install() {
         if [ "${DUNFELL_BUILD}" = "true" ]; then
             sed -i -e 's|.*PathExists=.*|PathExists=/run/systemd/timesync/synchronized|g' ${D}${systemd_unitdir}/system/ntp-event.path
         fi
-	# override default disk check
-        rm -f ${D}${systemd_unitdir}/system/disk-check.service
-        install -m 0644 ${S}/systemd_units/disk-check-sdcard.service ${D}${systemd_unitdir}/system/disk-check.service 
+
 
         if [ -f ${D}${base_libdir}/rdk/iptables_init_xi ]; then
             mv ${D}${base_libdir}/rdk/iptables_init_xi ${D}${base_libdir}/rdk/iptables_init
