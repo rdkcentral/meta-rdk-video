@@ -67,22 +67,23 @@ do_install() {
    install -d ${D}${includedir}/WPEFramework/interfaces
    install -d ${D}${libdir}/wpeframework/plugins
    install -d ${D}/etc/WPEFramework/plugins
-   install -m 0644 ${S}/INetworkManager.h ${D}${includedir}/WPEFramework/interfaces
-   install -m 0644 ${B}/libWPEFramework*.so ${D}${libdir}/wpeframework/plugins
-   install -m 0644 ${B}/config/NetworkManager.json ${D}/etc/WPEFramework/plugins
-   install -m 0644 ${B}/config/LegacyPlugin*.json ${D}/etc/WPEFramework/plugins
+   install -m 0644 ${S}/interface/INetworkManager.h ${D}${includedir}/WPEFramework/interfaces
+   install -m 0644 ${B}/legacy/libWPEFramework*.so ${D}${libdir}/wpeframework/plugins
+   install -m 0644 ${B}/plugin/libWPEFramework*.so ${D}${libdir}/wpeframework/plugins
+   install -m 0644 ${B}/plugin/config/NetworkManager.json ${D}/etc/WPEFramework/plugins
+   install -m 0644 ${B}/legacy/config/Legacy*APIs.json ${D}/etc/WPEFramework/plugins
    if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
        if [ -d "${D}/etc/WPEFramework/plugins" ]; then
            find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
        fi
    fi
    install -d ${D}${bindir}
-   install -m 0755 ${B}/upnp/routerDiscovery ${D}${bindir}
+   install -m 0755 ${B}/tools/upnp/routerDiscovery ${D}${bindir}
    install -d ${D}${systemd_unitdir}/system
-   install -m 0644 ${S}/upnp/scripts/routerDiscovery@.service ${D}${systemd_unitdir}/system
+   install -m 0644 ${S}/tools/upnp/scripts/routerDiscovery@.service ${D}${systemd_unitdir}/system
    install -d ${D}${base_libdir}/rdk/
-   install -m 0755 ${S}/upnp/scripts/getRouterInfo-NMdispatcher.sh ${D}${base_libdir}/rdk/getRouterInfo.sh
-   install -m 0755 ${S}/upnp/scripts/readyToGetRouterInfo.sh ${D}${base_libdir}/rdk/
+   install -m 0755 ${S}/tools/upnp/scripts/getRouterInfo-NMdispatcher.sh ${D}${base_libdir}/rdk/getRouterInfo.sh
+   install -m 0755 ${S}/tools/upnp/scripts/readyToGetRouterInfo.sh ${D}${base_libdir}/rdk/
 }
 
 FILES:${PN} += "${bindir}/routerDiscovery"
