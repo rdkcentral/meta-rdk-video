@@ -2,7 +2,7 @@ diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServ
 index 317be4fd..092257a6 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
-@@ -4509,38 +4509,56 @@
+@@ -4509,38 +4509,53 @@
              return (_connections);
          }
          inline void DumpMetadata() {
@@ -26,20 +26,19 @@ index 317be4fd..092257a6 100644
                  {
 +                    printf("SOUND-DBG-DumpCallStack-inside while\n");
                      std::string symbol = entry.function.empty() ? "Unknown symbol" : entry.function;
-+                    printf(stderr, "[%s]:[%s]:[%d]:[%p]\n",entry.module.c_str(), symbol.c_str(),entry.line,entry.address);
+-                    fprintf(stderr, "[%s]:[%s]:[%d]:[%p]\n",entry.module.c_str(), symbol.c_str(),entry.line,entry.address);
++                    fprintf(stderr, "[%s]:[%s]:[%d]:[%p]\n", entry.module.c_str(), symbol.c_str(), entry.line, entry.address);
 +                    fflush(stderr);
-                     fprintf(stderr, "[%s]:[%s]:[%d]:[%p]\n",entry.module.c_str(), symbol.c_str(),entry.line,entry.address);
                  }
-                 fflush(stderr);
+-                fflush(stderr);
  
                  PostMortemData::Callstack dump;
                  dump.Id = index.Current().Id.Value();
 +                printf("SOUND-DBG-DumpCallStack-inside while-dump.Id = %d\n", dump.Id);
  
                  for (const Core::callstack_info& info : stackList) {
-+                    printf("SOUND-DBG-DumpCallStack-inside while-dump.Id = %d\n", dump.Id);
++                    printf("SOUND-DBG-DumpCallStack-inside for-dump.Id = %d\n", dump.Id);
                      dump.Data.Add() = CallstackData(info);
-+                    printf("SOUND-DBG-DumpCallStack-inside while-dump.Id = %d\n", dump.Id);
                  }
  
                  data.Callstacks.Add(dump);
@@ -60,6 +59,7 @@ index 317be4fd..092257a6 100644
          }
          inline ServiceMap& Services()
          {
+
 diff --git a/Source/WPEFramework/PluginHost.cpp b/Source/WPEFramework/PluginHost.cpp
 index 213da58d..cc1c7ee4 100644
 --- a/Source/WPEFramework/PluginHost.cpp
