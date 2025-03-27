@@ -13,14 +13,14 @@ NETWORKMANAGER_STUN_PORT ?= "19302"
 # Default Loglevel configuration
 NETWORKMANAGER_LOGLEVEL ?= "3"
 
-PR = "r3"
+PR = "r6"
 PV = "0.11.0"
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=develop"
 
-# Mar 13, 2025
-SRCREV = "341ac43aab9ec7321177fb9d99a62986fc5c0b64"
+# Mar 24, 2025
+SRCREV = "a429abe92743ecaf4f4878bc7fd4ea6b8fef09db"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework rdkservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
@@ -67,22 +67,23 @@ do_install() {
    install -d ${D}${includedir}/WPEFramework/interfaces
    install -d ${D}${libdir}/wpeframework/plugins
    install -d ${D}/etc/WPEFramework/plugins
-   install -m 0644 ${S}/INetworkManager.h ${D}${includedir}/WPEFramework/interfaces
-   install -m 0644 ${B}/libWPEFramework*.so ${D}${libdir}/wpeframework/plugins
-   install -m 0644 ${B}/config/NetworkManager.json ${D}/etc/WPEFramework/plugins
-   install -m 0644 ${B}/config/LegacyPlugin*.json ${D}/etc/WPEFramework/plugins
+   install -m 0644 ${S}/interface/INetworkManager.h ${D}${includedir}/WPEFramework/interfaces
+   install -m 0644 ${B}/legacy/libWPEFramework*.so ${D}${libdir}/wpeframework/plugins
+   install -m 0644 ${B}/plugin/libWPEFramework*.so ${D}${libdir}/wpeframework/plugins
+   install -m 0644 ${B}/plugin/config/NetworkManager.json ${D}/etc/WPEFramework/plugins
+   install -m 0644 ${B}/legacy/config/Legacy*APIs.json ${D}/etc/WPEFramework/plugins
    if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
        if [ -d "${D}/etc/WPEFramework/plugins" ]; then
            find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
        fi
    fi
    install -d ${D}${bindir}
-   install -m 0755 ${B}/upnp/routerDiscovery ${D}${bindir}
+   install -m 0755 ${B}/tools/upnp/routerDiscovery ${D}${bindir}
    install -d ${D}${systemd_unitdir}/system
-   install -m 0644 ${S}/upnp/scripts/routerDiscovery@.service ${D}${systemd_unitdir}/system
+   install -m 0644 ${S}/tools/upnp/scripts/routerDiscovery@.service ${D}${systemd_unitdir}/system
    install -d ${D}${base_libdir}/rdk/
-   install -m 0755 ${S}/upnp/scripts/getRouterInfo-NMdispatcher.sh ${D}${base_libdir}/rdk/getRouterInfo.sh
-   install -m 0755 ${S}/upnp/scripts/readyToGetRouterInfo.sh ${D}${base_libdir}/rdk/
+   install -m 0755 ${S}/tools/upnp/scripts/getRouterInfo-NMdispatcher.sh ${D}${base_libdir}/rdk/getRouterInfo.sh
+   install -m 0755 ${S}/tools/upnp/scripts/readyToGetRouterInfo.sh ${D}${base_libdir}/rdk/
 }
 
 FILES:${PN} += "${bindir}/routerDiscovery"

@@ -16,8 +16,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDK-41681-PR4013.patch \
           "
 
-# Release version - 1.1.7
-SRCREV = "7aa5199dcab63d967ce5967358050bbd29dac37a"
+# Release version - 1.1.8
+SRCREV = "218b941e74d8de469bfd034d1f22a6d5489c9762"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -62,6 +62,8 @@ PACKAGECONFIG ?= " monitor \
     ocicontainer \
     runtimemanager \
     messagecontrol \
+    rdknativescript \
+    javascriptcore \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
@@ -117,6 +119,7 @@ PACKAGECONFIG[rdkshell]             = "-DPLUGIN_RDKSHELL=ON,-DPLUGIN_RDKSHELL=OF
 PACKAGECONFIG[rdkshellrialto]       = "-DRIALTO_FEATURE=ON,-DRIALTO_FEATURE=OFF,rialto,rialto-servermanager-lib"
 PACKAGECONFIG[rustadapter]          = "-DPLUGIN_RUSTADAPTER=ON,,,"
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON,-DPLUGIN_RUNTIME_MANAGER=OFF,rdkservices-apis,rdkservices-apis"
+PACKAGECONFIG[rdknativescript]      = "-DPLUGIN_NATIVEJS=ON,-DPLUGIN_NATIVEJS=OFF,rdknativescript,libuv"
 
 # ----------------------------------------------------------------------------
 
@@ -129,10 +132,14 @@ MONITOR_PLUGIN_ARGS                ?= " \
                                        -DPLUGIN_MONITOR_NETFLIX_APP_MEMORYLIMIT=1048576 \
 "
 
+NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
+
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
+    -DPLUGIN_NATIVEJS=ON \
+    -DPLUGIN_NATIVEJS_CLIENTIDENTIFIER="${NATIVEJS_CLIENTIDENTIFIER}" \
 "
 
 # TBD - set SECAPI_LIB to hw secapi once RDK-12682 changes are available
