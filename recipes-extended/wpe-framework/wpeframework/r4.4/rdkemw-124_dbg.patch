@@ -2,22 +2,64 @@ diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServ
 index 317be4fd..092257a6 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
-@@ -4509,13 +4509,14 @@
+@@ -4509,38 +4509,56 @@
              return (_connections);
          }
          inline void DumpMetadata() {
 +            printf("SOUND-DBG-PluginServer-DumpMetadata");
              PostMortemData data;
              _dispatcher.Snapshot(data.WorkerPool);
-
+ 
              Core::JSON::ArrayType<MetaData::Server::Minion>::Iterator index(data.WorkerPool.ThreadPoolRuns.Elements());
-
+ 
              while (index.Next() == true) {
 -
-+                printf("SOUND-DBG-DumpCallStack-inside while");
++                printf("SOUND-DBG-DumpCallStack-inside while\n");
                  std::list<Core::callstack_info> stackList;
-
+ 
                  ::DumpCallStack(static_cast<ThreadId>(index.Current().Id.Value()), stackList);
++                //How can I check this DumpCallstack is successful by adding logs
++                printf("SOUND-DBG-DumpCallStack is done-index.Current().Id.Value() = %d\n,stackList.size() = %d\n", index.Current().Id.Value(), stackList.size());
++                
++
+                 for(const Core::callstack_info& entry : stackList)
+                 {
++                    printf("SOUND-DBG-DumpCallStack-inside while\n")
+                     std::string symbol = entry.function.empty() ? "Unknown symbol" : entry.function;
++                    printf(stderr, "[%s]:[%s]:[%d]:[%p]\n",entry.module.c_str(), symbol.c_str(),entry.line,entry.address);
++                    fflush(stderr);
+                     fprintf(stderr, "[%s]:[%s]:[%d]:[%p]\n",entry.module.c_str(), symbol.c_str(),entry.line,entry.address);
+                 }
+                 fflush(stderr);
+ 
+                 PostMortemData::Callstack dump;
+                 dump.Id = index.Current().Id.Value();
++                printf("SOUND-DBG-DumpCallStack-inside while-dump.Id = %d\n", dump.Id);
+ 
+                 for (const Core::callstack_info& info : stackList) {
++                    printf("SOUND-DBG-DumpCallStack-inside while-dump.Id = %d\n", dump.Id);
+                     dump.Data.Add() = CallstackData(info);
++                    printf("SOUND-DBG-DumpCallStack-inside while-dump.Id = %d\n", dump.Id);
+                 }
+ 
+                 data.Callstacks.Add(dump);
++                printf("SOUND-DBG-DumpCallStack-inside whike-dump.Id = %d\n", dump.Id);
+             }
+ 
+             // Drop the workerpool info (what is currently running and what is pending) to a file..
+             Core::File dumpFile(_config.PostMortemPath() + "ThunderInternals.json");
++            //print permission of the file ThunderInternals.json
++            printf("SOUND-DBG-DumpCallStack-dump.Id = %d,permission of the file ThunderInternals.json = %d\n", dump.Id, dumpFile.IsOpen());
+             if (dumpFile.Create(false) == true) {
++                printf("SOUND-DBG-DumpCallStack-dump.Id = %d,dumpFile.Create(false) = %d\n", dump.Id, dumpFile.IsOpen());
+                 data.IElement::ToFile(dumpFile);
++                printf("SOUND-DBG-DumpCallStack-dump.Id = %d,dumpFile.Create(false) = %d\n", dump.Id, dumpFile.IsOpen());
+             }
++            printf("SOUND-DBG-DumpCallStack-return\n");
++            fflush(stderr);
+         }
+         inline ServiceMap& Services()
+         {
 diff --git a/Source/WPEFramework/PluginHost.cpp b/Source/WPEFramework/PluginHost.cpp
 index 213da58d..cc1c7ee4 100644
 --- a/Source/WPEFramework/PluginHost.cpp
