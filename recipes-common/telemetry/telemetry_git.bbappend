@@ -14,8 +14,8 @@ LOGROTATE_SIZE_MEM_telemetry2="512000"
 LOGROTATE_ROTATION_MEM_telemetry2="3"
 
 #FOR TEST BUILD
-SRCREV = "aca13b784862975804545fd0c85aeb2693ccf348"
-PR = "r4"
+SRCREV_telemetry = "aca13b784862975804545fd0c85aeb2693ccf348"
+PR_telemetry = "r4"
 
 DEPENDS += " webconfig-framework  libsyswrapper "
 
