@@ -12,13 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-inputoutput;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-<<<<<<< HEAD
 # Release version - 1.0.6
-SRCREV = "f46b084ed21e61d89e20868eacdea4ba8198266d"
-=======
-# Release version - 1.0.3
-SRCREV = "e363b463f2daab39096e7003fb423675d3678b7a"
->>>>>>> 09237f3 (RDK-52028 : Add new features to AVOutput)
+SRCREV = "f777c6112c5e23a8b9043817e33f4c41553c7f6f"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
