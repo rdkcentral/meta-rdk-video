@@ -48,11 +48,11 @@ index 317be4fd..092257a6 100644
              // Drop the workerpool info (what is currently running and what is pending) to a file..
              Core::File dumpFile(_config.PostMortemPath() + "ThunderInternals.json");
 +            //print permission of the file ThunderInternals.json
-+            printf("SOUND-DBG-DumpCallStack-dump.Id = %d,permission of the file ThunderInternals.json = %d\n", dump.Id, dumpFile.IsOpen());
++            printf("SOUND-DBG-DumpCallStack-,permission of the file ThunderInternals.json = %d\n", dumpFile.IsOpen());
              if (dumpFile.Create(false) == true) {
-+                printf("SOUND-DBG-DumpCallStack-dump.Id = %d,dumpFile.Create(false) = %d\n", dump.Id, dumpFile.IsOpen());
++                printf("SOUND-DBG-DumpCallStack-dumpFile.Create(false) = %d\n" dumpFile.IsOpen());
                  data.IElement::ToFile(dumpFile);
-+                printf("SOUND-DBG-DumpCallStack-dump.Id = %d,dumpFile.Create(false) = %d\n", dump.Id, dumpFile.IsOpen());
++                printf("SOUND-DBG-DumpCallStack-dumpFile.Create(false) = %d\n", dumpFile.IsOpen());
              }
 +            printf("SOUND-DBG-DumpCallStack-return\n");
 +            fflush(stderr);
