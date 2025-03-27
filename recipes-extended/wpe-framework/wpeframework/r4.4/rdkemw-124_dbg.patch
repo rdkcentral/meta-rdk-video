@@ -24,7 +24,7 @@ index 317be4fd..092257a6 100644
 +
                  for(const Core::callstack_info& entry : stackList)
                  {
-+                    printf("SOUND-DBG-DumpCallStack-inside while\n")
++                    printf("SOUND-DBG-DumpCallStack-inside while\n");
                      std::string symbol = entry.function.empty() ? "Unknown symbol" : entry.function;
 +                    printf(stderr, "[%s]:[%s]:[%d]:[%p]\n",entry.module.c_str(), symbol.c_str(),entry.line,entry.address);
 +                    fflush(stderr);
