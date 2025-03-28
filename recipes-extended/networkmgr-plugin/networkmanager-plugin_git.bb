@@ -17,10 +17,10 @@ PR = "r6"
 PV = "0.11.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=develop"
+SRC_URI = "git://github.com/karuna2git/networkmanager.git;protocol=https;branch=develop"
 
-# Mar 24, 2025
-SRCREV = "a429abe92743ecaf4f4878bc7fd4ea6b8fef09db"
+# Mar 28, 2025
+SRCREV = "8402a40fc00b97d90ac02e435335a680c9d6b401"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework rdkservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
