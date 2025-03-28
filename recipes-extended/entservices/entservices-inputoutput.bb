@@ -2,7 +2,7 @@ SUMMARY = "ENTServices inputoutput plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV ?= "1.0.3"
+PV ?= "1.0.6"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-inputoutput;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.0.3
-SRCREV = "0a061f888be3637032c94f8c170c8a33d3a59869"
+# Release version - 1.0.6
+SRCREV = "f46b084ed21e61d89e20868eacdea4ba8198266d"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"

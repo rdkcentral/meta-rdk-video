@@ -13,14 +13,14 @@ NETWORKMANAGER_STUN_PORT ?= "19302"
 # Default Loglevel configuration
 NETWORKMANAGER_LOGLEVEL ?= "3"
 
-PR = "r3"
+PR = "r7"
 PV = "0.11.0"
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=develop"
 
-# Mar 13, 2025
-SRCREV = "341ac43aab9ec7321177fb9d99a62986fc5c0b64"
+# Mar 27, 2025
+SRCREV = "a116e40fa3eb46011900c585b2dc04921e422866"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework rdkservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
@@ -42,6 +42,8 @@ EXTRA_OECMAKE += " \
                 -DUSE_TELEMETRY=ON \
                 -DENABLE_ROUTER_DISCOVERY_TOOL=ON \
                 "
+
+# Configure Logging for the Router Discovery Tool
 inherit syslog-ng-config-gen logrotate_config
 SYSLOG-NG_FILTER = "routerDiscovery"
 SYSLOG-NG_SERVICE_routerDiscovery = "routerDiscovery@wlan0.service routerDiscovery@eth0.service"
@@ -50,43 +52,20 @@ SYSLOG-NG_LOGRATE_routerDiscovery = "low"
 
 LOGROTATE_NAME="routerDiscovery"
 LOGROTATE_LOGNAME_routerDiscovery="routerInfo.log"
-#HDD_ENABLE
 LOGROTATE_SIZE_routerDiscovery="512000"
 LOGROTATE_ROTATION_routerDiscovery="3"
-#HDD_DISABLE
 LOGROTATE_SIZE_MEM_routerDiscovery="512000"
 LOGROTATE_ROTATION_MEM_routerDiscovery="3"
 
-FILES:${PN} = "${libdir}/* ${sysconfdir}/*"
 #Restrict debian package renaming
 DEBIAN_NOAUTONAME:${PN} = "1"
 DEBIAN_NOAUTONAME:${PN}-dev = "1"
 DEBIAN_NOAUTONAME:${PN}-dbg = "1"
 
-do_install() {
-   install -d ${D}${includedir}/WPEFramework/interfaces
-   install -d ${D}${libdir}/wpeframework/plugins
-   install -d ${D}/etc/WPEFramework/plugins
-   install -m 0644 ${S}/INetworkManager.h ${D}${includedir}/WPEFramework/interfaces
-   install -m 0644 ${B}/libWPEFramework*.so ${D}${libdir}/wpeframework/plugins
-   install -m 0644 ${B}/config/NetworkManager.json ${D}/etc/WPEFramework/plugins
-   install -m 0644 ${B}/config/LegacyPlugin*.json ${D}/etc/WPEFramework/plugins
-   if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
-       if [ -d "${D}/etc/WPEFramework/plugins" ]; then
-           find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
-       fi
-   fi
-   install -d ${D}${bindir}
-   install -m 0755 ${B}/upnp/routerDiscovery ${D}${bindir}
-   install -d ${D}${systemd_unitdir}/system
-   install -m 0644 ${S}/upnp/scripts/routerDiscovery@.service ${D}${systemd_unitdir}/system
-   install -d ${D}${base_libdir}/rdk/
-   install -m 0755 ${S}/upnp/scripts/getRouterInfo-NMdispatcher.sh ${D}${base_libdir}/rdk/getRouterInfo.sh
-   install -m 0755 ${S}/upnp/scripts/readyToGetRouterInfo.sh ${D}${base_libdir}/rdk/
-}
-
-FILES:${PN} += "${bindir}/routerDiscovery"
-FILES:${PN} += "${systemd_unitdir}/system/routerDiscovery@.service"
+# Configure RootFS stuff
+FILES:${PN} += "${bindir}/* "
+FILES:${PN} += "${libdir}/* "
+FILES:${PN} += "${sysconfdir}/* "
+FILES:${PN} += "${systemd_unitdir}/system/* "
 FILES:${PN} += "${base_libdir}/rdk/*"
-FILES:${PN} += "${libdir}/* ${sysconfdir}/*"
-FILES:${PN}-dev += "${includedir}/WPEFramework/interfaces/INetworkManager.h"
+FILES:${PN}-dev += "${includedir}/*"

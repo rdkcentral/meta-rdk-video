@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Infra plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "1.1.6"
+PV ?= "1.1.10"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -16,8 +16,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDK-41681-PR4013.patch \
           "
 
-# Release version - 1.1.7
-SRCREV = "7aa5199dcab63d967ce5967358050bbd29dac37a"
+# Release version - 1.1.10
+SRCREV = "4c83512853beb63fa0c2bce96e8a8f89a200ad8e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -62,6 +62,8 @@ PACKAGECONFIG ?= " monitor \
     ocicontainer \
     runtimemanager \
     messagecontrol \
+    rdknativescript \
+    javascriptcore \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
@@ -117,6 +119,7 @@ PACKAGECONFIG[rdkshell]             = "-DPLUGIN_RDKSHELL=ON,-DPLUGIN_RDKSHELL=OF
 PACKAGECONFIG[rdkshellrialto]       = "-DRIALTO_FEATURE=ON,-DRIALTO_FEATURE=OFF,rialto,rialto-servermanager-lib"
 PACKAGECONFIG[rustadapter]          = "-DPLUGIN_RUSTADAPTER=ON,,,"
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON,-DPLUGIN_RUNTIME_MANAGER=OFF,rdkservices-apis,rdkservices-apis"
+PACKAGECONFIG[rdknativescript]      = "-DPLUGIN_NATIVEJS=ON,-DPLUGIN_NATIVEJS=OFF,rdknativescript,libuv"
 
 # ----------------------------------------------------------------------------
 
@@ -129,10 +132,14 @@ MONITOR_PLUGIN_ARGS                ?= " \
                                        -DPLUGIN_MONITOR_NETFLIX_APP_MEMORYLIMIT=1048576 \
 "
 
+NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
+
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
+    -DPLUGIN_NATIVEJS=ON \
+    -DPLUGIN_NATIVEJS_CLIENTIDENTIFIER="${NATIVEJS_CLIENTIDENTIFIER}" \
 "
 
 # TBD - set SECAPI_LIB to hw secapi once RDK-12682 changes are available
