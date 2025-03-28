@@ -18,37 +18,63 @@
 # limitations under the License.
 ##########################################################################
 
-file_read="/version.txt"
-file_write="/opt/.bootversion"
-file_temp="/tmp/boots1.txt"
+file_version="/version.txt"
+file_bootversion="/opt/.bootversion"
+file_bootType="/tmp/bootType"
+file_MigrationStatus="/opt/MigrationStatus"
 
-imagename=$(grep "^imagename" $file_read)
-version=$(grep "^VERSION" $file_read |  tr "=" ":")
-FW_Class=$(grep "^FW_CLASS" $file_read | tr "=" ":")
+# /version.txt image details
+v_imagename=$(grep "^imagename" $file_version)
+v_version=$(grep "^VERSION" $file_version |  tr "=" ":")
+v_FW_Class=$(grep "^FW_CLASS" $file_version | tr "=" ":")
+
+# if /opt/.bootversion does not exist initially on migration from rdkv to rdke
+if [ ! -e "$file_bootversion" ]; then
+     # s1 = v
+     echo "$v_imagename" > $file_bootversion
+     echo "$v_version" >> $file_bootversion
+     echo "$v_FW_Class" >> $file_bootversion
+     echo "BOOT_TYPE=BOOT_INIT" > $file_bootType
+     echo -e "BOOT_INIT is set since $file_bootversion is not present"
+     exit 0
+fi
+
+# S1 image details from /opt/.bootversion
+s1_imagename=$(grep -m 1 "imagename" $file_bootversion)
+s1_version=$(grep -m 1 "VERSION" $file_bootversion)
+s1_FW_Class=$(grep -m 1 "FW_CLASS" $file_bootversion)
+
+#copy slot information
+     # s1 = v
+     echo "$v_imagename" > $file_bootversion
+     echo "$v_version" >> $file_bootversion
+     echo "$v_FW_Class" >> $file_bootversion
+     # s2 = s1
+     echo "$s1_imagename" >> $file_bootversion
+     echo "$s1_version" >> $file_bootversion
+     echo "$s1_FW_Class" >> $file_bootversion
 
 
-#case 1: file does not exist
-if [ ! -e "$file_write" ]; then
-    touch $file_write
-    echo -e "bootversion-loader: $file_write does not exist so creating the file and writing values to slot1 \n"
-    echo "$imagename" > $file_write
-    echo "$version" >> $file_write
-    echo "$FW_Class" >> $file_write
-    echo -e "bootversion-loader: updated slot1 of $file_write successfully\n"
-#case 2: file already exist
+MigrationStatus=$(tr181 -g Device.DeviceInfo.Migration.MigrationStatus 2>&1)
+
+echo -e "MigrationStatus: $MigrationStatus"
+#comparing slot1 and slot2 FW Class
+if [ "$v_FW_Class" != "$s1_FW_Class" ]; then
+	# migration fw is run for first time, migration not completed
+	echo "NOT_STARTED" > $file_MigrationStatus
+	echo "BOOT_TYPE=BOOT_MIGRATION" > $file_bootType
+	echo -e "BOOT_MIGRATION is set since FW_Class is not same"
 else
-   echo -e "bootversion-loader: $file_write already exists so writing values to slot1 and moving the values from slot1 to slot2 \n"
-   #copy slot 1 to temp
-   touch $file_temp
-   head -n 3 $file_write > $file_temp
-   #empty the file
-   > $file_write
-   #write new content to slot 1
-   echo "$imagename" > $file_write
-   echo "$version" >> $file_write
-   echo "$FW_Class" >> $file_write
-   #write the slot 1 content to slot2
-   cat $file_temp >> $file_write
-   echo -e "bootversion-loader: updated $file_write with both slots successfully\n"
-   rm -rf $file_temp
+     if [ "$MigrationStatus" != "MIGRATION_COMPLETED" ]; then
+          echo "BOOT_TYPE=BOOT_MIGRATION" > $file_bootType
+	  echo -e "BOOT_MIGRATION since MigrationStatus is not equal to MIGRATION_COMPLETED"
+     elif [ "$MigrationStatus" == "MIGRATION_COMPLETED" ]; then
+	     if [ "$v_version" == "$s1_version" ]; then
+	         echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
+	    	 echo -e "BOOT_NORMAL since Version is equal and MigrationStatus is MIGRATION_COMPLETED"
+	     else
+	         echo "BOOT_TYPE=BOOT_UPDATE" > $file_bootType
+	         echo -e "BOOT_UPDATE since Version is not equal"
+             fi
+     fi
 fi
