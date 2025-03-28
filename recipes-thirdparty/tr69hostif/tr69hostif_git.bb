@@ -178,16 +178,10 @@ do_install:append() {
         install -d ${D}${NONROOT_USER_DIR}
         chown ${NONROOT_USER}:non-root -R ${D}${NONROOT_USER_DIR}
 
-        if ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'true', 'false', d)}; then
-            sed '/<\/model>/d; /<\/dm:document>/d' ${S}/src/hostif/parodusClient/waldb/data-model/data-model-tv.xml > ${S}/src/hostif/parodusClient/waldb/data-model/data-model-merged.xml
-        elif ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', 'true', 'false', d)}; then
-            sed '/<\/model>/d; /<\/dm:document>/d' ${S}/src/hostif/parodusClient/waldb/data-model/data-model-stb.xml > ${S}/src/hostif/parodusClient/waldb/data-model/data-model-merged.xml
-        fi
-
-        sed '/<?xml/,/<model/ d' ${S}/src/hostif/parodusClient/waldb/data-model/data-model-generic.xml >> ${S}/src/hostif/parodusClient/waldb/data-model/data-model-merged.xml
         install -d ${D}${sysconfdir}
-        install -m 0644 ${S}/src/hostif/parodusClient/waldb/data-model/data-model-merged.xml ${D}${sysconfdir}/data-model.xml
-        rm ${S}/src/hostif/parodusClient/waldb/data-model/data-model-merged.xml
+        install -m 0644 ${S}/src/hostif/parodusClient/waldb/data-model/data-model-generic.xml ${D}${sysconfdir}/data-model-generic.xml
+        install -m 0644 ${S}/src/hostif/parodusClient/waldb/data-model/data-model-tv.xml ${D}${sysconfdir}/data-model-tv.xml
+        install -m 0644 ${S}/src/hostif/parodusClient/waldb/data-model/data-model-stb.xml ${D}${sysconfdir}/data-model-stb.xml
 }
 
 addtask do_validate_data_model after do_install before do_package do_packagedata do_populate_sysroot
