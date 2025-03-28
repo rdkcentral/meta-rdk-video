@@ -1,0 +1,39 @@
+diff --git a/SystemServices/SystemServices.h b/SystemServices/SystemServices.h
+index 317be4fd..092257a6 100644
+--- a/SystemServices/SystemServices.h
++++ b/SystemServices/SystemServices.h
+@@ -322,6 +322,7 @@
+                 std::string getWakeupReasonString(WakeupReason reason);
+ #endif
+                 uint32_t getFriendlyName(const JsonObject& parameters, JsonObject& response);
++                uint32_t introduceSig11Crash(const JsonObject& parameters, JsonObject& response);
+                 uint32_t setFriendlyName(const JsonObject& parameters, JsonObject& response);
+                 uint32_t setTerritory(const JsonObject& parameters, JsonObject& response);
+ 		uint32_t getTerritory(const JsonObject& parameters, JsonObject& response);
+diff --git a/SystemServices/SystemServices.cpp b/SystemServices/SystemServices.cpp
+index 317be4fd..092257a6 100644
+--- a/SystemServices/SystemServices.cpp
++++ b/SystemServices/SystemServices.cpp
+@@ -542,6 +542,7 @@
+             GetHandler(2)->Register<JsonObject, PlatformCaps>("getPlatformConfiguration",
+                 &SystemServices::getPlatformConfiguration, this);
+ 	    registerMethod("getFriendlyName", &SystemServices::getFriendlyName, this);
++            registerMethod("introduceSig11Crash", &SystemServices::introduceSig11Crash, this);
+             registerMethod("setFriendlyName", &SystemServices::setFriendlyName, this);
+             registerMethod("getThunderStartReason", &SystemServices::getThunderStartReason, this);
+ 
+@@ -2958,7 +2959,13 @@
+             response["friendlyName"] = m_friendlyName;
+             returnResponse(resp);
+         }
+-
++        uint32_t SystemServices::introduceSig11Crash(const JsonObject& parameters, JsonObject& response)
++        {
++            //Use null reference method to crash the process
++            int *p = NULL;
++            *p = 0;
++            returnResponse(true);
++        }
+         uint32_t SystemServices::setFriendlyName(const JsonObject& parameters, JsonObject& response)
+         {
+             LOGINFOMETHOD();
