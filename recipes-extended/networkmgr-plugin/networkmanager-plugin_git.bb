@@ -20,7 +20,7 @@ S = "${WORKDIR}/git"
 SRC_URI = "git://github.com/karuna2git/networkmanager.git;protocol=https;branch=develop"
 
 # Mar 28, 2025
-SRCREV = "8402a40fc00b97d90ac02e435335a680c9d6b401"
+SRCREV = "8d705e706b31fc43bb7371e6df0f6fb612b03b5c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework rdkservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
