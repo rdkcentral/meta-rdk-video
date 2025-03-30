@@ -28,8 +28,6 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit coverity
 
-require devicesettings-hal-realtek_git.bbappend
-
 CFLAGS += "-DSAFEC_DUMMY_API"
 CXXFLAGS += "-DSAFEC_DUMMY_API "
 
@@ -118,7 +116,7 @@ INSANE_SKIP:${PN} = "ldflags"
 
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
-CFLAGS += "-DHAS_FLASH_PERSISTENT -DHAS_THERMAL_API "
+CFLAGS += "-DHAS_FLASH_PERSISTENT -DHAS_THERMAL_API -DdsFPD_BRIGHTNESS_DEFAULT=10 "
 #enabling HDCP callback in rpc server
 CFLAGS += " -DHAS_HDCP_CALLBACK"
 CFLAGS += "${@bb.utils.contains("DISTRO_FEATURES", "uhd_enabled", "-DHAS_4K_SUPPORT ", "", d)}"
