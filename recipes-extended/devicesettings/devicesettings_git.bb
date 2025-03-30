@@ -28,6 +28,8 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit coverity
 
+require devicesettings-hal-realtek_git.bbappend
+
 CFLAGS += "-DSAFEC_DUMMY_API"
 CXXFLAGS += "-DSAFEC_DUMMY_API "
 
