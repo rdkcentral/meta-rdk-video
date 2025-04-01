@@ -1,3 +1,9 @@
+From: Thamim Razith Abbas Ali
+Date: Tue 04 Apr 2025 04:05:47 +0000
+Subject: [PATCH] Update-Trace-Level-Logging-Logic.patch -  Update the TraceL1/L2 based on /opt/WPEFramework/enableTrace file presence
+Upstream-Status: NO
+Signed-off-by: <tabbas651m@cable.comcast.com>
+---
 diff --git a/Source/core/Trace.h b/Source/core/Trace.h
 index 9dbff76a..d2529e90 100644
 --- a/Source/core/Trace.h
