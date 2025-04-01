@@ -1,0 +1,34 @@
+# Copyright © 2019 Sky UK. All rights reserved.
+#
+# This file is systemd script for launching the subttxrend-app service
+# at boot time.
+#
+# Enable asplayer to start on boot:
+#         systemctl enable subttxrend-app.service
+#
+# Start asplayer immediately:
+#         systemctl start subttxrend-app.service
+#
+# Stop asplayer:
+#         systemctl stop subttxrend-app.service
+#
+# Status:
+#         systemctl status subttxrend-app.service
+
+[Unit]
+Description=Subtec subttxrend-app service
+Requisite=sky-appsservice.service
+After=sky-appsservice.service sky-epg.service
+
+[Service]
+Environment="XDG_RUNTIME_DIR=/tmp"
+Environment="WAYLAND_DISPLAY=westeros-asplayer-subtitles"
+ExecStartPre=/bin/sh /usr/bin/wait-for-subttxrend-socket.sh
+ExecStart=/usr/bin/subttxrend-app
+TimeoutSec=120
+TimeoutStopSec=3
+Restart=on-failure
+ExecStop=/bin/kill -9 $MAINPID
+
+[Install]
+WantedBy=multi-user.target
