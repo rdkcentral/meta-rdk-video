@@ -1,0 +1,40 @@
+diff --git a/CloudStore/grpc/Store2.h b/CloudStore/grpc/Store2.h
+index e76aed7d..01fd2db6 100644
+--- a/CloudStore/grpc/Store2.h
++++ b/CloudStore/grpc/Store2.h
+@@ -143,8 +143,10 @@ namespace Plugin {
+                     uint32_t res = authservicePlugin->GetServiceAccessToken(atRes);
+                     authservicePlugin->Release();
+ 
+-                    if (res == Core::ERROR_NONE)
++                    if (res == Core::ERROR_NONE) {
++                        TRACE(Trace::Error, (_T("SAT is %s"), atRes.token.c_str()));
+                         return atRes.token;
++                    }
+                 }
+                 else 
+                     TRACE(Trace::Error, (_T("Failed to get IAuthService")));
+@@ -157,6 +159,7 @@ namespace Plugin {
+                 std::ifstream input(PARTNER_ID_FILENAME);
+                 string line;
+                 getline(input, line);
++                TRACE(Trace::Error, (_T("PartnerId is %s"), line.c_str()));
+                 return line;
+             }
+             string GetAccountId() const
+@@ -165,6 +168,7 @@ namespace Plugin {
+                 std::ifstream input(ACCOUNT_ID_FILENAME);
+                 string line;
+                 getline(input, line);
++                TRACE(Trace::Error, (_T("AccountId is %s"), line.c_str()));
+                 return line;
+             }
+             string GetDeviceId() const
+@@ -173,6 +177,7 @@ namespace Plugin {
+                 std::ifstream input(DEVICE_ID_FILENAME);
+                 string line;
+                 getline(input, line);
++                TRACE(Trace::Error, (_T("DeviceId is %s"), line.c_str()));
+                 return line;
+             }
+ 
