@@ -21,7 +21,7 @@ DEPENDS:append = " safec-common-wrapper"
 PARALLEL_MAKE = ""
 DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal \
          virtual/vendor-iarmmgrs-hal ermgr iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
-         deepsleep-manager-headers power-manager-headers"
+         deepsleep-manager-headers power-manager-headers wpeframework-clientlibraries"
 DEPENDS:append:client = " virtual/mfrlib"
 DEPENDS:append = " virtual/vendor-devicesettings-hal virtual/vendor-iarmmgrs-hal "
 DEPENDS:append = " virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal "
@@ -77,6 +77,7 @@ INCLUDE_DIRS = " \
     -I=${includedir}/rdk/iarmmgrs-hal \
     -I=${includedir}/directfb \
     -I=${includedir}/glib-2.0 \
+    -I=${includedir}/WPEFramework/powercontroller \
     -I=${libdir}/glib-2.0/include \
     -I${S}/deviceUpdateMgr \
     -I${S}/utils \
@@ -108,7 +109,7 @@ CFLAGS:remove = "-DRF4CE_GPMSO_API"
 # JIRA: XRE-6537.
 #
 #MADAN
-LDFLAGS += " -lpthread -lglib-2.0 -ldbus-1 -lIARMBus -lsystemd -lsecure_wrapper -lprivilege -ldl"
+LDFLAGS += " -lpthread -lglib-2.0 -ldbus-1 -lIARMBus -lsystemd -lsecure_wrapper -lprivilege -ldl -lWPEFrameworkPowerController"
 CFLAGS += "-std=c++11 -fPIC -D_REENTRANT -Wall -I./include ${INCLUDE_DIRS}"
 
 CFLAGS:append:client = " -DMEDIA_CLIENT"
