@@ -8,8 +8,6 @@ DEPENDS = "sqlite3 curl rdkversion jansson glib-2.0 systemd iarmbus iarmmgrs bre
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 RDEPENDS:${PN}:append = " devicesettings iarmbus"
 
-DEPENDS:append = " ctrlm-hal-irdb"
-
 PROVIDES = "ctrlm"
 RPROVIDES:${PN} = "ctrlm"
 
