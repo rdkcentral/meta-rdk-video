@@ -7,7 +7,6 @@ After=wpeframework.service wpeframework-system.service wpeframework-powermanager
 Type=notify
 EnvironmentFile=-/opt/ripple.conf
 ExecStartPre=/usr/bin/ripple-start.sh
-ExecStartPre=/usr/bin/ripple-entos-start.sh
 ExecStart=/usr/bin/ripple
 ExecStartPost=/bin/sh -c '.  /etc/device.properties; if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/ripple_post.sh ];then  source /opt/ripple_post.sh; fi'
 ExecStop=/bin/kill -TERM $MAINPID
