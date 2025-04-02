@@ -4,7 +4,7 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d7a8c87b0741f248c5139ca80a783231"
 
-PV ?= "2.1.0"
+PV ?= "3.0.0"
 PR ?= "r0"
 S = "${WORKDIR}/git"
 
