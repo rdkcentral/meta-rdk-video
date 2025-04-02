@@ -14,6 +14,8 @@ SRC_URI += " \
     file://0002-ripple_thunder_service_dependency.patch \
     "
 
+SRC_URI += "file://ripple.common.rules.json"
+
 SRCREV_FORMAT ="rmain"
 PV = "${RIPPLE_VERSION}"
 
@@ -40,6 +42,10 @@ CARGO_BUILD_FLAGS += " --features 'sysd'"
 
 #Cargo default to install binaries and libraries. Just install systemd services
 do_install:append() {
+    # Create the /etc/ripple/rules/ directory
+    install -d ${D}${sysconfdir}/ripple/rules/
+    # Copy ripple.common.rules.json to the directory
+    install -m 0644 ${WORKDIR}/ripple.common.rules.json ${D}${sysconfdir}/ripple/rules/ripple.common.rules.json
 	install -d ${D}${systemd_unitdir}/system
 	install -m 0644 ${OPEN_RIPPLE_S}/systemd/ripple.service ${D}${systemd_unitdir}/system/ripple.service
     install -d ${D}${sysconfdir}/ripple/openrpc/
