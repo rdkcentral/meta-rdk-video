@@ -14,6 +14,10 @@ TEXTTOSPEECH_VOICE_FOR_FR ?= "amelie"
 TEXTTOSPEECH_VOICE_FOR_GB ?= "en-GB-Standard-N"
 TEXTTOSPEECH_VOICE_FOR_DE ?= "de-DE-Standard-G"
 TEXTTOSPEECH_VOICE_FOR_IT ?= "it-IT-Standard-E"
+TEXTTOSPEECH_LOCAL_ENDPOINT = "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk', 'http://localhost:50050/nuanceEve/tts?', '',d)}"
+TEXTTOSPEECH_ENDPOINT_TYPE = "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk', 'TTS2', '',d)}"
+TEXTTOSPEECH_SPEECHRATE =  "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk', 'medium', '',d)}"
+TEXTTOSPEECH_SATPLUGINCALLSIGN =  "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk', 'org.rdk.AuthService', '',d)}"
 
 # ----------------------------------------------------------------------------
 
