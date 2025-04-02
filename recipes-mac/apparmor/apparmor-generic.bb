@@ -3,7 +3,9 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://rdk-apparmor-profiles/LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 inherit pkgconfig autotools systemd
-SRC_URI = "${CMF_GITHUB_ROOT}/rdk-apparmor-profiles.git;${CMF_GITHUB_SRC_URI_SUFFIX};destsuffix=git/rdk-apparmor-profiles;name=rdk-apparmor-profiles"
+#SRC_URI = "${CMF_GITHUB_ROOT}/rdk-apparmor-profiles.git;${CMF_GITHUB_SRC_URI_SUFFIX};destsuffix=git/rdk-apparmor-profiles;name=rdk-apparmor-profiles"
+SRC_URI = "${CMF_GITHUB_ROOT}/rdk-apparmor-profiles.git;branch=topic/RDKEMW-2627;${CMF_GITHUB_SRC_URI_SUFFIX};destsuffix=git/rdk-apparmor-profiles;name=rdk-apparmor-profiles"
+
 
 S = "${WORKDIR}/git"
 PACKAGE_BEFORE_PN += "${PN}-optimized"
