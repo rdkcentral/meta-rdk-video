@@ -21,7 +21,7 @@
 file_version="/version.txt"
 file_bootversion="/opt/.bootversion"
 file_bootType="/tmp/bootType"
-file_MigrationStatus="/opt/MigrationStatus"
+file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
 
 # /version.txt image details
 v_imagename=$(grep "^imagename" $file_version)
