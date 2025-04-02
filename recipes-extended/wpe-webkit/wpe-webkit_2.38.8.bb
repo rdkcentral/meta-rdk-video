@@ -24,6 +24,9 @@ SRC_URI += "file://2.38.7/1410.patch"
 # Drop after issue is addressed and a corresponding PR is merged
 SRC_URI += "file://2.38.8/1456-RDKTV-35082-Workaround-premature-finishSeek.patch"
 
+# Drop after tip of branch has been revised
+SRC_URI += "file://2.38.8/1423-revert.patch"
+
 # Drop after libwpe upgrade
 SRC_URI += "file://2.38.8/RDK-54304-Fix-build-with-an-older-libpwe.patch"
 
