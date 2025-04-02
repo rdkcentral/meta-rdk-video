@@ -11,9 +11,9 @@ TEXTTOSPEECH_SATPLUGINCALLSIGN ?= " "
 TEXTTOSPEECH_VOICE_FOR_EN ?= "carol"
 TEXTTOSPEECH_VOICE_FOR_ES ?= "Angelica"
 TEXTTOSPEECH_VOICE_FOR_FR ?= "amelie"
-TEXTTOSPEECH_VOICE_FOR_GB ?= "en-GB-Standard-A"
-TEXTTOSPEECH_VOICE_FOR_DE ?= "de-DE-Standard-A"
-TEXTTOSPEECH_VOICE_FOR_IT ?= "it-IT-Standard-A"
+TEXTTOSPEECH_VOICE_FOR_GB ?= "en-GB-Standard-N"
+TEXTTOSPEECH_VOICE_FOR_DE ?= "de-DE-Standard-G"
+TEXTTOSPEECH_VOICE_FOR_IT ?= "it-IT-Standard-E"
 
 # ----------------------------------------------------------------------------
 
