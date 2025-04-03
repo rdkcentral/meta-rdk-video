@@ -165,8 +165,9 @@ python () {
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
     install -m 0644 ${WORKDIR}/rdkshell_post_startup.conf ${D}${sysconfdir}
-    install -m ${D}/opt/demo/
+    install -d ${D}/opt/demo/
     cp -r ${S}/RuntimeManager/demo/* ${D}/opt/demo/
+    chmod 755 ${D}/opt/demo/*
     if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
     then
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
