@@ -122,7 +122,7 @@ CFLAGS += " -DHAS_HDCP_CALLBACK"
 CFLAGS += "${@bb.utils.contains("DISTRO_FEATURES", "uhd_enabled", "-DHAS_4K_SUPPORT ", "", d)}"
 CFLAGS += "${@bb.utils.contains("MACHINE_FEATURES", "uhd", "-DHAS_4K_SUPPORT", "", d)}"
 CFLAGS += " -DENABLE_DEEP_SLEEP"
-CFLAGS += " -DIGNORE_EDID_LOGIC"
+CFLAGS += "${@bb.utils.contains("DISTRO_FEATURES", "RDKE_PLATFORM_TV", "", " -DIGNORE_EDID_LOGIC ", d)}"
 CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', '-DENABLE_EU_RESOLUTION', \
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_IT', '-DENABLE_EU_RESOLUTION', \
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_DE', '-DENABLE_EU_RESOLUTION', \
