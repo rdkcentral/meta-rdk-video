@@ -65,6 +65,7 @@ PACKAGECONFIG ?= " monitor \
     messagecontrol \
     rdknativescript \
     javascriptcore \
+    storagemanager \
     appmanager \
     lifecyclemanager \
     packagemanager \
@@ -127,7 +128,7 @@ PACKAGECONFIG[rdknativescript]      = "-DPLUGIN_NATIVEJS=ON,-DPLUGIN_NATIVEJS=OF
 PACKAGECONFIG[appmanager]           = "-DPLUGIN_APP_MANAGER=ON,-DPLUGIN_APP_MANAGER=OFF,rdkservices-apis,rdkservices-apis"
 PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LIFECYCLE_MANAGER=OFF,rdkservices-apis,rdkservices-apis"
 PACKAGECONFIG[packagemanager]       = "-DPLUGIN_PACKAGE_MANAGER=ON,-DPLUGIN_PACKAGE_MANAGER=OFF,rdkservices-apis,rdkservices-apis"
-
+PACKAGECONFIG[storagemanager]       = "-DPLUGIN_STORAGE_MANAGER=ON,-DPLUGIN_STORAGE_MANAGER=OFF,rdkservices-apis,rdkservices-apis"
 # ----------------------------------------------------------------------------
 
 MONITOR_PLUGIN_ARGS                ?= " \
