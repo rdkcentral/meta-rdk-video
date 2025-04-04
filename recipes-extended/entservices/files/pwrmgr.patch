@@ -1,0 +1,23 @@
+diff --git a/PowerManager/CMakeLists.txt b/PowerManager/CMakeLists.txt
+index 9122249..0ac5330 100644
+--- a/PowerManager/CMakeLists.txt
++++ b/PowerManager/CMakeLists.txt
+@@ -28,6 +28,8 @@ find_package(${NAMESPACE}Plugins REQUIRED)
+ find_package(${NAMESPACE}Definitions REQUIRED)
+ find_package(CompileSettingsDebug CONFIG REQUIRED)
+ find_library(PROCPS_LIBRARIES NAMES procps)
++find_library(POWER_HAL_LIB NAMES iarmmgrs-power-hal)
++find_package(RFC)
+ 
+ add_library(${MODULE_NAME} SHARED
+     PowerManager.cpp
+@@ -77,7 +79,8 @@ if (DS_FOUND)
+     add_definitions(-DDS_FOUND)
+     target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${IARMBUS_INCLUDE_DIRS})
+     target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${DS_INCLUDE_DIRS})
+-    target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${IARMBUS_LIBRARIES} ${DS_LIBRARIES})
++    target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${RFC_INCLUDE_DIRS})
++    target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${IARMBUS_LIBRARIES} ${DS_LIBRARIES} ${RFC_LIBRARIES})
+ else (DS_FOUND)
+     target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
+ endif(DS_FOUND)
