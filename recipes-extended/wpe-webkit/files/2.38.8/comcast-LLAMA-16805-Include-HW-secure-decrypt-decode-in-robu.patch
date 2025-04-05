@@ -1,0 +1,29 @@
+From 9683c90611a1421d846d483479002d2b35ba28b7 Mon Sep 17 00:00:00 2001
+From: Filipe Norte <filipe_norte@comcast.com>
+Date: Thu, 20 Feb 2025 10:17:11 +0000
+Subject: [PATCH] LLAMA-16805: Include HW secure decrypt/decode in robustness
+
+Widevine uses 3 robustness levels with increasing security.
+Highest security level (L1) corresponding to HW decryption
+and decoding while supported, was not being indicated to
+upper layers as such.
+---
+ Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
+index 903f78a4ab6d..a23ba3be23e8 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
+@@ -174,7 +174,7 @@ bool CDMPrivateThunder::supportsConfiguration(const CDMKeySystemConfiguration& c
+ 
+ Vector<AtomString> CDMPrivateThunder::supportedRobustnesses() const
+ {
+-    return { emptyAtom(), "SW_SECURE_DECODE"_s, "SW_SECURE_CRYPTO"_s };
++    return { emptyAtom(), "SW_SECURE_DECODE"_s, "SW_SECURE_CRYPTO"_s, "HW_SECURE_DECODE"_s, "HW_SECURE_CRYPTO"_s, "HW_SECURE_ALL"_s };
+ }
+ 
+ CDMRequirement CDMPrivateThunder::distinctiveIdentifiersRequirement(const CDMKeySystemConfiguration&, const CDMRestrictions&) const
+-- 
+2.43.0
+

@@ -3,7 +3,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r3"
+PR  = "r5"
 
 # Temporary build fix
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
@@ -23,6 +23,9 @@ SRC_URI += "file://2.38.7/1410.patch"
 
 # Drop after issue is addressed and a corresponding PR is merged
 SRC_URI += "file://2.38.8/1456-RDKTV-35082-Workaround-premature-finishSeek.patch"
+
+# Drop after tip of branch has been revised
+SRC_URI += "file://2.38.8/1423-revert.patch"
 
 # Drop after libwpe upgrade
 SRC_URI += "file://2.38.8/RDK-54304-Fix-build-with-an-older-libpwe.patch"
@@ -68,6 +71,7 @@ SRC_URI += "file://2.38.5/comcast-RDK-48799-disable-service-worker-by-default.pa
 SRC_URI += "file://2.38.8/comcast-DELIA-57933-Increase-minor-version-or-WPE-lib.patch"
 SRC_URI += "file://2.38.8/comcast-LLAMA-15112-sleep-150-microsecs-instead-of-s.patch"
 SRC_URI += "file://2.38.8/comcast-DELIA-67128-GCHeap-snapshot.patch"
+SRC_URI += "file://2.38.8/comcast-LLAMA-16805-Include-HW-secure-decrypt-decode-in-robu.patch"
 
 PACKAGECONFIG[wpeqtapi]          = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[westeros]          = "-DUSE_WPEWEBKIT_PLATFORM_WESTEROS=ON -DUSE_GSTREAMER_HOLEPUNCH=ON -DUSE_EXTERNAL_HOLEPUNCH=ON -DUSE_WESTEROS_SINK=ON,,westeros virtual/vendor-westeros-sink"
