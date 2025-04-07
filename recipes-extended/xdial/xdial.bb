@@ -10,8 +10,8 @@ S = "${WORKDIR}/git"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/tabbas651/xdialserver;protocol=${CMF_GIT_PROTOCOL};branch=topic/secRmoval"
-SRCREV = "30e88b36d58a09c06793d3b8fad1972b7dffa40f"
+SRC_URI = "git://github.com/tabbas651/xdialserver;protocol=${CMF_GIT_PROTOCOL};branch=develop"
+SRCREV = "4cee240cbafec861b12cb0db84dbc858df042f46"
 
 # Mar 26, 2025
 SRCREV = "a52d864df82b4dadd1b622067d79050b96d7a96d"
