@@ -45,6 +45,12 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
+
+INCLUDE_DIRS = " \
+    -I=${includedir}/rdk/halif/power-manager \
+    -I=${includedir}/WPEFramework/powercontroller \
+    "
+
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " breakpadsupport \
