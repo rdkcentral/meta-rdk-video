@@ -1,5 +1,5 @@
 diff --git a/PowerManager/CMakeLists.txt b/PowerManager/CMakeLists.txt
-index 9122249..0ac5330 100644
+index 9122249..38b34b9 100644
 --- a/PowerManager/CMakeLists.txt
 +++ b/PowerManager/CMakeLists.txt
 @@ -28,6 +28,8 @@ find_package(${NAMESPACE}Plugins REQUIRED)
@@ -11,18 +11,19 @@ index 9122249..0ac5330 100644
  
  add_library(${MODULE_NAME} SHARED
      PowerManager.cpp
-@@ -77,7 +79,8 @@ if (DS_FOUND)
+@@ -77,7 +79,9 @@ if (DS_FOUND)
      add_definitions(-DDS_FOUND)
      target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${IARMBUS_INCLUDE_DIRS})
      target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${DS_INCLUDE_DIRS})
 -    target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${IARMBUS_LIBRARIES} ${DS_LIBRARIES})
 +    target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${RFC_INCLUDE_DIRS})
++    target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${POWER_HAL_LIB})
 +    target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${IARMBUS_LIBRARIES} ${DS_LIBRARIES} ${RFC_LIBRARIES})
  else (DS_FOUND)
      target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
  endif(DS_FOUND)
 diff --git a/PowerManager/PowerManagerImplementation.cpp b/PowerManager/PowerManagerImplementation.cpp
-index b93d172..b706336 100644
+index b93d172..9e46d12 100644
 --- a/PowerManager/PowerManagerImplementation.cpp
 +++ b/PowerManager/PowerManagerImplementation.cpp
 @@ -23,6 +23,8 @@
@@ -30,7 +31,7 @@ index b93d172..b706336 100644
  
  #include "rdk/iarmmgrs-hal/pwrMgr.h"
 +#include "libIBusDaemon.h"
-+#include "plat_power.h"
++#include "rdk-halif-power_manager/include/plat_power.h"
  
  #define STANDBY_REASON_FILE "/opt/standbyReason.txt"
  #define IARM_BUS_PWRMGR_API_SetDeepSleepTimeOut "SetDeepSleepTimeOut" /*!< Sets the timeout for deep sleep*/
