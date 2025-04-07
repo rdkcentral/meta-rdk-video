@@ -22,18 +22,19 @@ index 9122249..0ac5330 100644
      target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
  endif(DS_FOUND)
 diff --git a/PowerManager/PowerManagerImplementation.cpp b/PowerManager/PowerManagerImplementation.cpp
-index b93d172..9b35e73 100644
+index b93d172..b706336 100644
 --- a/PowerManager/PowerManagerImplementation.cpp
 +++ b/PowerManager/PowerManagerImplementation.cpp
-@@ -23,6 +23,7 @@
+@@ -23,6 +23,8 @@
  #include "UtilsLogging.h"
  
  #include "rdk/iarmmgrs-hal/pwrMgr.h"
 +#include "libIBusDaemon.h"
++#include "plat_power.h"
  
  #define STANDBY_REASON_FILE "/opt/standbyReason.txt"
  #define IARM_BUS_PWRMGR_API_SetDeepSleepTimeOut "SetDeepSleepTimeOut" /*!< Sets the timeout for deep sleep*/
-@@ -579,7 +580,10 @@ namespace Plugin {
+@@ -579,7 +581,10 @@ namespace Plugin {
          uint32_t errorCode = Core::ERROR_GENERAL;
          IARM_Bus_PWRMgr_GetPowerState_Param_t param = {};
  
@@ -41,7 +42,7 @@ index b93d172..9b35e73 100644
 +        IARM_Bus_PWRMgr_PowerState_t state;
 +        int ret = PLAT_API_GetPowerState(&state);
 +
-+        LOGINFO("impl called for GetPowerState(%u)",state);
++        LOGINFO("impl called for GetPowerState(%u)ret: %d",state,ret);
          IARM_Result_t res = IARM_Bus_Call(IARM_BUS_PWRMGR_NAME, IARM_BUS_PWRMGR_API_GetPowerState,
              (void*)&param, sizeof(param));
  
