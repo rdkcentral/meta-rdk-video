@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-softwareupdate;${CMF_GITHUB_SRC_URI_SU
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.0.4
-SRCREV = "f44ec3decfa00f4b5de6275567ec5fdc69c6d3d2"
+# Release version - 1.0.3
+SRCREV = "8096b44c94deb16a4867d8f2b46a6d22e92d2136"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -21,6 +21,8 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
+
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
 DEPENDS += "wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
@@ -48,7 +50,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[maintenancemanager]   = "-DPLUGIN_MAINTENANCEMANAGER=ON -DDISABLE_DCM_TASK=ON,-DPLUGIN_MAINTENANCEMANAGER=OFF,iarmbus iarmmgrs rfc sysint rdkfwupgrader dcmd rdkservices-apis,iarmbus rfc sysint rdkfwupgrader dcmd rdkservices-apis"
+PACKAGECONFIG[maintenancemanager]   = "-DPLUGIN_MAINTENANCEMANAGER=ON -DDISABLE_DCM_TASK=ON,-DPLUGIN_MAINTENANCEMANAGER=OFF,iarmbus iarmmgrs rfc sysint rdkfwupgrader dcmd,iarmbus rfc sysint rdkfwupgrader dcmd"
 PACKAGECONFIG[firmwareupdate]          = "-DPLUGIN_FIRMWAREUPDATE=ON,-DPLUGIN_FIRMWAREUPDATE=OFF,wpeframework-clientlibraries,"
 
 # ----------------------------------------------------------------------------
