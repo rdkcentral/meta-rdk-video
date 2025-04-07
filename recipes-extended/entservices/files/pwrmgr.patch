@@ -23,7 +23,7 @@ index 9122249..38b34b9 100644
      target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
  endif(DS_FOUND)
 diff --git a/PowerManager/PowerManagerImplementation.cpp b/PowerManager/PowerManagerImplementation.cpp
-index b93d172..6082efd 100644
+index b93d172..4a2ffae 100644
 --- a/PowerManager/PowerManagerImplementation.cpp
 +++ b/PowerManager/PowerManagerImplementation.cpp
 @@ -23,6 +23,8 @@
@@ -31,7 +31,7 @@ index b93d172..6082efd 100644
  
  #include "rdk/iarmmgrs-hal/pwrMgr.h"
 +#include "libIBusDaemon.h"
-+#include "/rdk/halif/power-manager/plat_power.h"
++#include "rdk/halif/power-manager/plat_power.h"
  
  #define STANDBY_REASON_FILE "/opt/standbyReason.txt"
  #define IARM_BUS_PWRMGR_API_SetDeepSleepTimeOut "SetDeepSleepTimeOut" /*!< Sets the timeout for deep sleep*/
