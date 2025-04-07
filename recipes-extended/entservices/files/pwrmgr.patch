@@ -22,7 +22,7 @@ index 9122249..0ac5330 100644
      target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
  endif(DS_FOUND)
 diff --git a/PowerManager/PowerManagerImplementation.cpp b/PowerManager/PowerManagerImplementation.cpp
-index b93d172..172c0e5 100644
+index b93d172..9b35e73 100644
 --- a/PowerManager/PowerManagerImplementation.cpp
 +++ b/PowerManager/PowerManagerImplementation.cpp
 @@ -23,6 +23,7 @@
@@ -38,7 +38,7 @@ index b93d172..172c0e5 100644
          IARM_Bus_PWRMgr_GetPowerState_Param_t param = {};
  
 -        LOGINFO("impl called for GetPowerState()");
-+        PWRMgr_PowerState_t state;
++        IARM_Bus_PWRMgr_PowerState_t state;
 +        int ret = PLAT_API_GetPowerState(&state);
 +
 +        LOGINFO("impl called for GetPowerState(%u)",state);
