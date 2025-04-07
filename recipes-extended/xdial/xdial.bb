@@ -13,7 +13,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;protocol=${CMF_GIT_PROTOCOL};branch=develop"
 
 # Mar 26, 2025
-SRCREV = "974beb6d319890f33bbe23d6c01ac83c465c4e6b"
+SRCREV = "a52d864df82b4dadd1b622067d79050b96d7a96d"
 
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
