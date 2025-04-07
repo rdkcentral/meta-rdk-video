@@ -100,6 +100,7 @@ do_install() {
 	install -m 0644 ${S}/systemd_units/logrotate.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/logrotate.timer ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/scheduled-reboot.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/dump-backup.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/disk-check.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-secure-upload.service ${D}${systemd_unitdir}/system
@@ -296,6 +297,7 @@ SYSTEMD_SERVICE:${PN} += "previous-log-backup.service"
 SYSTEMD_SERVICE:${PN} += "vitalprocess-info.timer"
 SYSTEMD_SERVICE:${PN} += "logrotate.timer"
 SYSTEMD_SERVICE:${PN} += "scheduled-reboot.service"
+SYSTEMD_SERVICE:${PN} += "dump-backup.service"
 SYSTEMD_SERVICE:${PN} += "disk-check.service"
 SYSTEMD_SERVICE:${PN} += "coredump-upload.service"
 SYSTEMD_SERVICE:${PN} += "coredump-secure-upload.service"
