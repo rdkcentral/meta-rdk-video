@@ -17,7 +17,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
 # Release version - 1.1.10
-SRCREV = "b924436ad778c906eb8fc5ad7aef54b9d98d37b5"
+SRCREV = "959d7fe8cf74ad57a0f369f773eac816df9f7032"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -166,9 +166,9 @@ python () {
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
     install -m 0644 ${WORKDIR}/rdkshell_post_startup.conf ${D}${sysconfdir}
-    install -d ${D}/opt/demo/
-    cp -r ${S}/RuntimeManager/demo/* ${D}/opt/demo/
-    chmod 755 ${D}/opt/demo/*
+    install -d ${D}/usr/bin/demo
+    cp -r ${S}/RuntimeManager/demo/* ${D}/usr/bin/demo/
+    chmod 755 ${D}/usr/bin/demo/*
     if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
     then
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
@@ -183,7 +183,7 @@ do_install:append() {
 # ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/* /opt/demo/*"
+FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/* /usr/bin/demo/*"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
