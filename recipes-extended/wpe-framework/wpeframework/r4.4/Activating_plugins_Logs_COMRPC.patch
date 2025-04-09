@@ -1,0 +1,49 @@
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index 26609995..7cf05559 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -1137,7 +1137,7 @@ POP_WARNING()
+         {
+             if (service->State() != PluginHost::Service::state::UNAVAILABLE) {
+                 if (service->Startup() == PluginHost::IShell::startup::ACTIVATED) {
+-                    SYSLOG(Logging::Startup, (_T("Activating plugin [%s]:[%s]"),
++                    SYSLOG(Logging::Startup, (_T("Activating plugin [%s]:[%s] Startup"),
+                         service->ClassName().c_str(), service->Callsign().c_str()));
+                     service->Activate(PluginHost::IShell::STARTUP);
+                 }
+diff --git a/Source/WPEFramework/Controller.cpp b/Source/WPEFramework/Controller.cpp
+index 15cc523c..e531978c 100644
+--- a/Source/WPEFramework/Controller.cpp
++++ b/Source/WPEFramework/Controller.cpp
+@@ -877,6 +880,7 @@ namespace Plugin {
+
+             if (_pluginServer->Services().FromIdentifier(callsign, service) == Core::ERROR_NONE) {
+                 ASSERT(service.IsValid());
++                SYSLOG(Logging::Startup, (_T("Activating plugin [%s] Requested"),callsign.c_str()));
+                 result = service->Activate(PluginHost::IShell::REQUESTED);
+
+                 // Normalise return code
+diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
+index f2d27ed4..708fa962 100644
+--- a/Utils/PluginActivator/source/COMRPCStarter.cpp
++++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
+@@ -74,6 +74,7 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+             std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
+         } else {
+             // Will block until plugin is activated
++            LOG_INF(_pluginName.c_str(), "Attempting to call activate plugin");
+             uint32_t result = lifetime->Activate(_pluginName.c_str());
+
+             auto duration = Core::Time::Now().Sub(start.MilliSeconds());
+diff --git a/Utils/PluginActivator/source/Module.h b/Utils/PluginActivator/source/Module.h
+index b2500eec..2d69ec67 100644
+--- a/Utils/PluginActivator/source/Module.h
++++ b/Utils/PluginActivator/source/Module.h
+@@ -26,6 +26,7 @@
+ #include <com/com.h>
+ #include <core/core.h>
+ #include <plugins/plugins.h>
++#include <messaging/messaging.h>
+
+ #undef EXTERNAL
+ #define EXTERNAL
