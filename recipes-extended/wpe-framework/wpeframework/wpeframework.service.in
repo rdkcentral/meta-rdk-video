@@ -5,7 +5,6 @@ After= network-online.target local-fs.target
 
 [Service]
 Type=notify
-PIDFile=/var/run/WPEFramework.pid
 EnvironmentFile=-/etc/default/westeros-env
 Environment="LD_LIBRARY_PATH=/usr/lib:/media/apps/netflix/usr/lib:/tmp/netflix/usr/lib:/media/apps/libcobalt/usr/lib:/tmp/libcobalt/usr/lib:/usr/lib/javascriptcore"
 Environment="XDG_RUNTIME_DIR=/tmp"
@@ -17,6 +16,10 @@ Environment="XDG_DATA_HOME=/opt/QT/home"
 Environment="FORCE_SVP=TRUE"
 Environment="FORCE_SAP=TRUE"
 ExecStart=-/usr/bin/WPEFramework -b
+# Manually adding PID file support. This is used by Thunder clients to know if
+# Thunder aka WPEFramework process is restarted. Please note if PIDFile name is changed
+# it will need corresponding code change in ThunderClientLibraries (power_controller) too.
+ExecStartPost=-/bin/sh -c '/bin/echo ${MAINPID} > /tmp/wpeframework.pid'
 ExecStop=/usr/bin/killall -9 WPEFramework
 ExecStopPost=/usr/bin/killall -9 WPEProcess
 KillSignal=SIGKILL

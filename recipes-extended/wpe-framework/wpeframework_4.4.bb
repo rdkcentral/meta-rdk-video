@@ -52,6 +52,7 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/thunderHangRecovery.patch \
            file://r4.4/R4-wpeframework-sd_notify.patch \
            file://r4.4/RDKEMW-733-Add-ENTOS-IDS.patch \
+           file://r4.4/Update-Trace-Level-Logging-Logic.patch \
            "
 
 SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
@@ -145,7 +146,7 @@ EXTRA_OECMAKE += " \
     -DTREE_REFERENCE=${SRCREV_thunder} \
     -DPORT=${WPEFRAMEWORK_PORT} \
     -DBINDING=${WPEFRAMEWORK_BINDING} \
-    -DENABLED_TRACING_LEVEL=0 \
+    -DENABLED_TRACING_LEVEL=2 \
     -DPERSISTENT_PATH=${WPEFRAMEWORK_PERSISTENT_PATH} \
     -DSYSTEM_PREFIX=${WPEFRAMEWORK_SYSTEM_PREFIX} \
     -DIDLE_TIME=${WPEFRAMEWORK_IDLE_TIME} \
