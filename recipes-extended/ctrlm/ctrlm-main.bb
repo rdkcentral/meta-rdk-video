@@ -209,20 +209,20 @@ EXTRA_OECMAKE:append  = "${@ ' -DCUSTOM_AUTH_LIB=${CUSTOM_AUTH_LIB}' if (d.getVa
 
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${S}/../ctrlm-main.service ${D}${systemd_unitdir}/system/
+    install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
 
     if ${@bb.utils.contains('EXTRA_OECMAKE', '-DRF4CE_ENABLED=ON', 'true', 'false', d)}; then
        install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
-       install -m 0644 ${S}/../1_rf4ce.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
+       install -m 0644 ${WORKDIR}/1_rf4ce.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
     fi
 
     if ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'true', 'false', d)}; then
        install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
-       install -m 0644 ${S}/../2_bluetooth.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
+       install -m 0644 ${WORKDIR}/2_bluetooth.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
     fi
 
     if [ "${CTRLM_GENERIC}" = "true" ]; then
-       install -m 0644 ${S}/../ctrlm-hal-rf4ce.service ${D}${systemd_unitdir}/system/
+       install -m 0644 ${WORKDIR}/ctrlm-hal-rf4ce.service ${D}${systemd_unitdir}/system/
     fi
 }
 
