@@ -1,3 +1,4 @@
+#sample
 SUMMARY = "RDK AAMP component"
 SECTION = "console/utils"
 LICENSE = "Apache-2.0"
