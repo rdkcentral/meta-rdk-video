@@ -57,8 +57,8 @@ SYSLOG-NG_FILTER += "messages"
 SYSLOG-NG_DESTINATION_messages = "messages.txt"
 SYSLOG-NG_LOGRATE_messages = "low"
 
-BIND_CONFIGURATIONS = "/var/volatile/www /www\n"
-BIND_CONFIGURATIONS:append = "/var/volatile/hosts /etc/hosts\n"
+BIND_CONFIGURATIONS = "/var/volatile/debug /debug\n"
+BIND_CONFIGURATIONS:append = "/var/volatile/sindhu /etc/sindhu\n"
 # Get kernel logs via journal
 SYSLOG-NG_PROGRAM_messages += " kernel"
 
