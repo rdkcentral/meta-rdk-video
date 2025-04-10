@@ -11,13 +11,6 @@ SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=
 S = "${WORKDIR}/git"
 
 inherit systemd syslog-ng-config-gen logrotate_config bind-config
-FILESEXTRAPATHS:prepend = "/home/smuthu545/apr-26-xione/rdke/common/meta-rdk-auxiliary/recipes-support/binds-helper:"
-
-SRC_URI += "\
-    file://mount-copybind \
-    file://volatile-binds.service.in \
-    "
-
 
 SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup rfc-config update-device-details applications vitalprocess-info iptables mount_log swupdate reboot-reason messages rdnssd zram"
 SYSLOG-NG_FILTER:append = " ConnectionStats systemd_timesyncd"
