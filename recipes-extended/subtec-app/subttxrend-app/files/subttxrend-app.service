@@ -1,20 +1,3 @@
-# Copyright © 2019 Sky UK. All rights reserved.
-#
-# This file is systemd script for launching the subttxrend-app service
-# at boot time.
-#
-# Enable asplayer to start on boot:
-#         systemctl enable subttxrend-app.service
-#
-# Start asplayer immediately:
-#         systemctl start subttxrend-app.service
-#
-# Stop asplayer:
-#         systemctl stop subttxrend-app.service
-#
-# Status:
-#         systemctl status subttxrend-app.service
-
 [Unit]
 Description=Subtec subttxrend-app service
 Requisite=sky-appsservice.service
