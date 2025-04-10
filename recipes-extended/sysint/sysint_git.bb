@@ -10,7 +10,15 @@ PV = "1.0"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
-inherit systemd syslog-ng-config-gen logrotate_config
+inherit systemd syslog-ng-config-gen logrotate_config bind-config
+FILESEXTRAPATHS:prepend = "/home/smuthu545/apr-26-xione/rdke/common/meta-rdk-auxiliary/recipes-support/binds-helper:"
+
+SRC_URI += "\
+    file://mount-copybind \
+    file://volatile-binds.service.in \
+    "
+
+
 SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup rfc-config update-device-details applications vitalprocess-info iptables mount_log swupdate reboot-reason messages rdnssd zram"
 SYSLOG-NG_FILTER:append = " ConnectionStats systemd_timesyncd"
 SYSLOG-NG_SERVICE_ConnectionStats = "network-connection-stats.service"
@@ -56,6 +64,8 @@ SYSLOG-NG_FILTER += "messages"
 SYSLOG-NG_DESTINATION_messages = "messages.txt"
 SYSLOG-NG_LOGRATE_messages = "low"
 
+BIND_CONFIGURATIONS = "/var/volatile/www /www\n"
+BIND_CONFIGURATIONS:append = "/var/volatile/hosts /etc/hosts\n"
 # Get kernel logs via journal
 SYSLOG-NG_PROGRAM_messages += " kernel"
 
