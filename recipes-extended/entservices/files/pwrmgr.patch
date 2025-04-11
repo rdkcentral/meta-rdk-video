@@ -23,19 +23,20 @@ index 9122249..9eebded 100644
      target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
  endif(DS_FOUND)
 diff --git a/PowerManager/PowerManagerImplementation.cpp b/PowerManager/PowerManagerImplementation.cpp
-index b93d172..65b822c 100644
+index b93d172..4806a6f 100644
 --- a/PowerManager/PowerManagerImplementation.cpp
 +++ b/PowerManager/PowerManagerImplementation.cpp
-@@ -23,6 +23,8 @@
+@@ -23,6 +23,9 @@
  #include "UtilsLogging.h"
  
  #include "rdk/iarmmgrs-hal/pwrMgr.h"
 +#include "libIBusDaemon.h"
 +#include "rdk/halif/power-manager/plat_power.h"
++#include "rdk/halif/deepsleep-manager/deepSleepMgr.h"
  
  #define STANDBY_REASON_FILE "/opt/standbyReason.txt"
  #define IARM_BUS_PWRMGR_API_SetDeepSleepTimeOut "SetDeepSleepTimeOut" /*!< Sets the timeout for deep sleep*/
-@@ -579,7 +581,10 @@ namespace Plugin {
+@@ -579,7 +582,10 @@ namespace Plugin {
          uint32_t errorCode = Core::ERROR_GENERAL;
          IARM_Bus_PWRMgr_GetPowerState_Param_t param = {};
  
@@ -47,3 +48,15 @@ index b93d172..65b822c 100644
          IARM_Result_t res = IARM_Bus_Call(IARM_BUS_PWRMGR_NAME, IARM_BUS_PWRMGR_API_GetPowerState,
              (void*)&param, sizeof(param));
  
+@@ -814,6 +820,11 @@ namespace Plugin {
+     {
+         uint32_t errorCode = Core::ERROR_GENERAL;
+         DeepSleep_WakeupReason_t deepSleepWakeupReason = DEEPSLEEP_WAKEUPREASON_IR;
++        DeepSleep_Return_Status_t retStatus;
++        DeepSleep_WakeupReason_t platWakeupReason
++
++        retStatus = PLAT_DS_GetLastWakeupReason(&platWakeupReason);
++        LOGINFO("platWakeupReason: %d, retStatus: %u", platWakeupReason, retStatus);
+ 
+         IARM_Result_t res = IARM_Bus_Call(IARM_BUS_PWRMGR_NAME,
+             IARM_BUS_PWRMGR_API_GetLastWakeupReason, (void*)&deepSleepWakeupReason,
