@@ -72,13 +72,6 @@ EXTRA_OECMAKE:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' -DUS
 #EXTRA_OECMAKE:append = " -DMEM_DEBUG=ON"
 #EXTRA_OECMAKE:append = " -DANSI_CODES_DISABLED=ON"
 
-# Default to HDMI / CEC discovery for IRDB
-# Options: NONE / HDMI / CEC / ALL
-IRDB_DISCOVERY_DEFAULT = "ALL"
-IRDB_DISCOVERY ??= "${IRDB_DISCOVERY_DEFAULT}"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('IRDB_DISCOVERY', 'ALL', ' -DIRDB_HDMI_DISCOVERY=ON -DIRDB_CEC_DISCOVERY=ON', '', d)}"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('IRDB_DISCOVERY', 'HDMI', ' -DIRDB_HDMI_DISCOVERY=ON', '', d)}"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('IRDB_DISCOVERY', 'CEC', ' -DIRDB_CEC_DISCOVERY=ON', '', d)}"
 
 # Thunder Dependency
 THUNDER             ??= "true"
@@ -133,10 +126,10 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('ASB', 'true', ' -DASB=ON', '', d)}
 # Authorization Support
 AUTH                ?= "true"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('AUTH', 'true', ' -DAUTH_ENABLED=ON', '', d)}"
+# Auth Activation Status Support
+AUTH_ACTIVATION_STATUS ?= "false"
+EXTRA_OECONF:append = "${@bb.utils.contains('AUTH_ACTIVATION_STATUS', 'true', ' -DAUTH_ACTIVACTION_STATUS', '', d)}"
 
-IRDB ??= "true"
-
-EXTRA_OECMAKE:append = "${@bb.utils.contains('IRDB', 'true', ' -DIRDB=ON', '', d)}"
 
 RF4CE_PACKET_ANALYSIS ??= "true"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('RF4CE_PACKET_ANALYSIS', 'true', ' -DRF4CE_PACKET_ANALYSIS=ON', '', d)}"
