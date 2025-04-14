@@ -11,10 +11,9 @@ S = "${WORKDIR}/git"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/tabbas651/xdialserver;protocol=${CMF_GIT_PROTOCOL};branch=develop"
-SRCREV = "4cee240cbafec861b12cb0db84dbc858df042f46"
 
-# Mar 26, 2025
-SRCREV = "a52d864df82b4dadd1b622067d79050b96d7a96d"
+# Apr 14, 2025
+SRCREV = "8e05add4289eba25842ebe05f5dadc3191b8347c"
 
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
@@ -22,7 +21,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 EXTRA_OEMAKE+= "PLATFORM_FLAGS="-DPLATFORM=-DNETFLIX_CALLSIGN_0=1""
 
 # Enable DISABLE_SECURITY_TOKEN
-EXTRA_OEMAKE += "DISABLE_FLAG="-DDISABLE_SECURITY_TOKEN="-DDISABLE_SECURITY_TOKEN=1""
+EXTRA_OEMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '"DISABLE_SECURITY_TOKEN="-DDISABLE_SECURITY_TOKEN=1""', ' ', d)}"
 
 DEPENDS:append =  " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', ' libsoup ', ' libsoup-2.4 ', d)}"
 DEPENDS:append = " gssdp"
