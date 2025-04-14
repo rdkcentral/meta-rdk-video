@@ -11,7 +11,8 @@ SRCREV_rmain = "${OPEN_RIPPLE_SRCVER}"
 
 SRC_URI += " \
     file://0001-strip-abort-on-panic.patch \
-    file://0002-ripple_thunder_service_dependency.patch \
+    file://ripple-start.sh \
+    file://ripple.service \
     "
 
 SRCREV_FORMAT ="rmain"
@@ -27,6 +28,8 @@ RPROVIDES:${PN} = "virtual/firebolt"
 #Runtime dependency on wpeframework
 RDEPENDS:${PN} = "wpeframework"
 
+RDEPENDS:${PN} += "bash"
+
 #RDK logging support
 inherit syslog-ng-config-gen pkgconfig
 
@@ -41,7 +44,8 @@ CARGO_BUILD_FLAGS += " --features 'sysd'"
 #Cargo default to install binaries and libraries. Just install systemd services
 do_install:append() {
 	install -d ${D}${systemd_unitdir}/system
-	install -m 0644 ${OPEN_RIPPLE_S}/systemd/ripple.service ${D}${systemd_unitdir}/system/ripple.service
+        install -m 0644 ${WORKDIR}/ripple.service ${D}${systemd_unitdir}/system/ripple.service
+        install -m 0755 ${WORKDIR}/ripple-start.sh ${D}${bindir}
     install -d ${D}${sysconfdir}/ripple/openrpc/
     install -m 0644 ${OPEN_RIPPLE_S}/examples/reference-manifest/IpStb/firebolt-device-manifest.json ${D}${sysconfdir}/firebolt-device-manifest.json
     install -m 0644 ${OPEN_RIPPLE_S}/examples/reference-manifest/IpStb/firebolt-extn-manifest.json ${D}${sysconfdir}/firebolt-extn-manifest.json

@@ -46,6 +46,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-usbmassstorage.service \
     wpeframework-firmwareupdate.service \
     wpeframework-powermanager.service \
+    wpeframework-networkmanager.service \
     "
 
 do_install() {
