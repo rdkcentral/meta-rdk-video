@@ -23,7 +23,7 @@ index 9122249..9eebded 100644
      target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
  endif(DS_FOUND)
 diff --git a/PowerManager/PowerManagerImplementation.cpp b/PowerManager/PowerManagerImplementation.cpp
-index b93d172..4806a6f 100644
+index b93d172..00a21d4 100644
 --- a/PowerManager/PowerManagerImplementation.cpp
 +++ b/PowerManager/PowerManagerImplementation.cpp
 @@ -23,6 +23,9 @@
@@ -53,7 +53,7 @@ index b93d172..4806a6f 100644
          uint32_t errorCode = Core::ERROR_GENERAL;
          DeepSleep_WakeupReason_t deepSleepWakeupReason = DEEPSLEEP_WAKEUPREASON_IR;
 +        DeepSleep_Return_Status_t retStatus;
-+        DeepSleep_WakeupReason_t platWakeupReason
++        DeepSleep_WakeupReason_t platWakeupReason = DEEPSLEEP_WAKEUPREASON_UNKNOWN;
 +
 +        retStatus = PLAT_DS_GetLastWakeupReason(&platWakeupReason);
 +        LOGINFO("platWakeupReason: %d, retStatus: %u", platWakeupReason, retStatus);
