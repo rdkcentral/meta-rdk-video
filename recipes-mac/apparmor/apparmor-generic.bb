@@ -4,7 +4,8 @@ LIC_FILES_CHKSUM = "file://rdk-apparmor-profiles/LICENSE;md5=86d3f3a95c324c9479b
 
 inherit pkgconfig autotools systemd
 #SRC_URI = "${CMF_GITHUB_ROOT}/rdk-apparmor-profiles.git;${CMF_GITHUB_SRC_URI_SUFFIX};destsuffix=git/rdk-apparmor-profiles;name=rdk-apparmor-profiles"
-SRC_URI = "${CMF_GITHUB_ROOT}/rdk-apparmor-profiles.git;branch=topic/RDKEMW-2627;${CMF_GITHUB_SRC_URI_SUFFIX};destsuffix=git/rdk-apparmor-profiles;name=rdk-apparmor-profiles"
+#SRC_URI = "${CMF_GITHUB_ROOT}/rdk-apparmor-profiles.git;branch=topic/RDKEMW-2627;${CMF_GITHUB_SRC_URI_SUFFIX};destsuffix=git/rdk-apparmor-profiles;name=rdk-apparmor-profiles"
+SRC_URI = "${RDKE_GITHUB_ROOT}/rdk-apparmor-profiles.git;${RDKE_GITHUB_SRC_URI_SUFFIX};destsuffix=git/rdk-apparmor-profiles;name=rdk-apparmor-profiles"
 
 
 S = "${WORKDIR}/git"
