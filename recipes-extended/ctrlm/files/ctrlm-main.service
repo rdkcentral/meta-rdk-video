@@ -3,6 +3,7 @@ Description=Control Manager Main Service
 After=iarmbusd.service securemount.service tr69hostif.service dsmgr.service
 Requires=iarmbusd.service dsmgr.service
 Wants=tr69hostif.service
+RequiresMountsFor=/opt/secure
 
 [Service]
 Type=notify
