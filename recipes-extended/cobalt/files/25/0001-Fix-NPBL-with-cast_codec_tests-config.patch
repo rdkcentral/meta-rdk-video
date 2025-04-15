@@ -1,0 +1,25 @@
+From 3883bc89a025b4b4cebd8ef69e20b05f7fc96135 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Tue, 1 Apr 2025 18:57:43 +0000
+Subject: [PATCH] Fix NPBL with cast_codec_tests config
+
+---
+ starboard/nplb/BUILD.gn | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/starboard/nplb/BUILD.gn b/starboard/nplb/BUILD.gn
+index 33997e67e14..ca1f90be780 100644
+--- a/starboard/nplb/BUILD.gn
++++ b/starboard/nplb/BUILD.gn
+@@ -19,7 +19,7 @@ declare_args() {
+ }
+ 
+ config("cast_codec_tests") {
+-  cflags = [ "ENABLE_CAST_CODEC_TESTS" ]
++  cflags = [ "-DENABLE_CAST_CODEC_TESTS" ]
+ }
+ 
+ target(gtest_target_type, "nplb") {
+-- 
+2.25.1
+
