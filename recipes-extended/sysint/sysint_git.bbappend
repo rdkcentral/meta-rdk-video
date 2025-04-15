@@ -4,7 +4,7 @@ DOBBY_ENABLED = "${@bb.utils.contains('DISTRO_FEATURES', 'DOBBY_CONTAINERS','tru
 
 SRC_URI += "file://udhcpc.vendor_specific"
 SRC_URI += "file://timeZone_offset_map"
-SRC_URI += "file://volatile-binds.service.in"
+SRC_URI += "file://mount-copybind"
 
 inherit logrotate_config 
 
@@ -25,7 +25,9 @@ LOGROTATE_ROTATION_MEM_pqstats="3"
 do_install:append() {
     install -m 0755 ${WORKDIR}/udhcpc.vendor_specific ${D}${sysconfdir}/udhcpc.vendor_specific
     install -m 0644 ${WORKDIR}/timeZone_offset_map ${D}${sysconfdir}/timeZone_offset_map
-    install -m 0644 ${WORKDIR}/timeZone_offset_map ${D}${sysconfdir}/volatile-binds.service.in
+
+    install -d ${D}${base_sbindir}
+    install -m 0755 ${WORKDIR}/mount-copybind ${D}${base_sbindir}/
 
     if [ "${DOBBY_ENABLED}" = "true" ]; then
         echo "DOBBY_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
@@ -45,7 +47,6 @@ do_install:append() {
 
 FILES:${PN} += "${sysconfdir}/udhcpc.vendor_specific"
 FILES:${PN} += "${sysconfdir}/timeZone_offset_map"
-FILES:${PN} += "${sysconfdir}/volatile-binds.service.in"
 
 LOGROTATE_NAME = "applications"
 LOGROTATE_LOGNAME_applications = "applications.log"
