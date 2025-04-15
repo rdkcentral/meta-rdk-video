@@ -10,7 +10,7 @@ PV = "1.0"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
-inherit systemd syslog-ng-config-gen logrotate_config 
+inherit systemd syslog-ng-config-gen logrotate_config
 SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup rfc-config update-device-details applications vitalprocess-info iptables mount_log swupdate reboot-reason messages rdnssd zram"
 SYSLOG-NG_FILTER:append = " ConnectionStats systemd_timesyncd"
 SYSLOG-NG_SERVICE_ConnectionStats = "network-connection-stats.service"
