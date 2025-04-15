@@ -91,6 +91,7 @@ TELEMETRY_SUPPORT  ??= "true"
 DEPENDS:append      = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' telemetry', '', d)}"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' -DTELEMETRY_SUPPORT=ON', '', d)}"
 
+#
 CXXFLAGS:append = "${@bb.utils.contains('FLEX2_RDK', 'true', ' -DIRDB_CEC_FLEX2', '', d)}"
 
 ##################################################
