@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-inputoutput;branch=topic/RDKEMW-2884;n
           "
 
 # Release version - 1.0.6
-SRCREV = "f46b084ed21e61d89e20868eacdea4ba8198266d"
+SRCREV = "d6e5a4d9ad4200452db1140d2fbe0342c4a43345"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
