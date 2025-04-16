@@ -66,7 +66,7 @@ do_install() {
    cp -a ${S}/src/jsc/modules/node-fetch.js ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
-
+   cp -a ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
 
    install -d ${D}/${libdir}
    cp -a ${B}/libJSRuntimeJSC.so ${D}/${libdir}
