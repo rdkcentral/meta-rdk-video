@@ -4,6 +4,7 @@ After=tr69hostif.service
 
 [Service]
 ExecStart=/bin/sh -c 'exec /lib/rdk/bootversion-loader.sh'
+ExecStartPost=/bin/sh -c 'exec /lib/rdk/boot_FSR.sh'
 RemainAfterExit=yes
 
 [Install]
