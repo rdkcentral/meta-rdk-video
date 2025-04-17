@@ -121,9 +121,6 @@ CFLAGS += "-DHAS_FLASH_PERSISTENT -DHAS_THERMAL_API -DdsFPD_BRIGHTNESS_DEFAULT=1
 CFLAGS += " -DHAS_HDCP_CALLBACK"
 CFLAGS += "${@bb.utils.contains("DISTRO_FEATURES", "uhd_enabled", "-DHAS_4K_SUPPORT ", "", d)}"
 
-#Below change not needed hence, uhd_enabled distro already enabling this support
-#CFLAGS += "${@bb.utils.contains("MACHINE_FEATURES", "uhd", "-DHAS_4K_SUPPORT", "", d)}"
-
 CFLAGS += " -DENABLE_DEEP_SLEEP"
 CFLAGS += "${@bb.utils.contains("DISTRO_FEATURES", "RDKE_PLATFORM_TV", "", " -DIGNORE_EDID_LOGIC ", d)}"
 CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', '-DENABLE_EU_RESOLUTION', \
