@@ -2,7 +2,7 @@ SUMMARY = "ENTServices deviceanddisplay plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV ?= "1.0.8"
+PV ?= "1.1.2"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.1.1
-SRCREV = "a4249900d50b655d12b92a442749f8295bd8f72a"
+# Release version - 1.1.2
+SRCREV = "c7bc228770c565d782271e9f9a9ce735fb0ac819"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -29,7 +29,7 @@ EXTRA_OECMAKE += " -DBUILD_ENABLE_DEVICE_MANUFACTURER_INFO=ON "
 EXTRA_OECMAKE += " -DBUILD_ENABLE_APP_CONTROL_AUDIOPORT_INIT=ON "
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native"
+DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
@@ -42,6 +42,11 @@ CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
+
+INCLUDE_DIRS = " \
+    -I=${includedir}/rdk/halif/power-manager \
+    -I=${includedir}/WPEFramework/powercontroller \
+    "
 
 # ----------------------------------------------------------------------------
 
@@ -70,7 +75,7 @@ PACKAGECONFIG[userpreferences]      = "-DPLUGIN_USERPREFERENCES=ON,-DPLUGIN_USER
 PACKAGECONFIG[systemservices]       = "-DPLUGIN_SYSTEMSERVICES=ON,-DPLUGIN_SYSTEMSERVICES=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal curl procps entservices-apis,tzcode iarmbus rfc devicesettings curl procps entservices-apis"
 PACKAGECONFIG[systimemgrsupport]    = "-DBUILD_ENABLE_SYSTIMEMGR_SUPPORT=ON,,systimemgrinetrface,"
 PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc devicesettings"
-PACKAGECONFIG[powermanager]         = "-DPLUGIN_POWERMANAGER=ON,-DPLUGIN_POWERMANAGER=OFF,iarmbus"
+PACKAGECONFIG[powermanager]         = "-DPLUGIN_POWERMANAGER=ON,-DPLUGIN_POWERMANAGER=OFF,iarmbus virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal"
 PACKAGECONFIG[systemmode] = "-DPLUGIN_SYSTEMMODE=ON,-DPLUGIN_SYSTEMMODE=OFF,"
 
 # ----------------------------------------------------------------------------
