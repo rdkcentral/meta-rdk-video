@@ -24,8 +24,6 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-set-OCDM-process-thread-name.patch \
           "
 
-SRC_URI += "file://RDK-55149.patch"
-
 # Release version - 1.1.2.1
 SRCREV = "35f2247aa6f3fc45a81e1b35fb1f11b454faca88"
 
