@@ -44,11 +44,10 @@ EXTRA_OECMAKE += "  -DCMAKE_WPEFRAMEWORK_REQUIRED=1 "
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'sec_manager', ' -DCMAKE_USE_SECMANAGER=1 ', '', d)}"
 EXTRA_OECMAKE += " -DCMAKE_WPEWEBKIT_WATERMARK_JSBINDINGS=1 "
 
-#Removing it hence Macro is not defined in RDKE
-#EXTRA_OECMAKE:append += "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk' , ' -DCMAKE_SUBTEC_CC_ENABLED=1 -DCMAKE_FLEX2_RDK=1', '', d)}"
+EXTRA_OECMAKE:append += "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk' , ' -DCMAKE_SUBTEC_CC_ENABLED=1 -DCMAKE_FLEX2_RDK=1', '', d)}"
 
-#Removing SECMANAGER from the AAMP config for XiOne FLEX2/XOE builds -> need to be investigated
-#EXTRA_OECMAKE:remove += "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk' , '-DCMAKE_WPEFRAMEWORK_REQUIRED=1 -DCMAKE_USE_SECMANAGER=1', '', d)}"
+#Removing SECMANAGER from the AAMP config for XiOne FLEX2/XOE builds
+EXTRA_OECMAKE:remove += "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk' , '-DCMAKE_WPEFRAMEWORK_REQUIRED=1 -DCMAKE_USE_SECMANAGER=1', '', d)}"
 
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)}"
