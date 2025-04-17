@@ -1,7 +1,7 @@
 SUMMARY = "rdkservices-apis"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
-PV ?= "1.2.8"
+PV ?= "1.3.3"
 PR ?= "r0"
 
 inherit python3native cmake pkgconfig
@@ -12,8 +12,8 @@ DEPENDS = "wpeframework wpeframework-tools-native"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;protocol=${CMF_GITHUB_PROTOCOL};branch=topic/RDKEMW-1014;name=entservices-apis"
 SRC_URI += "file://RDKEMW-1007.patch"
 
-# Tag 1.3.2
-SRCREV_entservices-apis = "4fe50ad83d6db196004d21d8a34200db0dffbe95"
+# Tag 1.3.3
+SRCREV_entservices-apis = "e65b46a287e31f47814eeb73f84fcd86097eaf97"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
