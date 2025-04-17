@@ -24,6 +24,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
           "
 SRC_URI += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'file://0001-LLAMA-3066-10405-increase-OCDM-process-priority.patch', "", d)}"
 
+SRC_URI += "file://RDK-55149.patch"
+
 # Release version - 1.1.1
 SRCREV = "d08ce0d64e78ea4b17fc42c4a596400856d019ae"
 
@@ -75,6 +77,7 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 OPENCDM_DRMS ??= " ${@bb.utils.contains('DISTRO_FEATURES' , 'widevine_v16', 'opencdmi_wv', '', d)} ${@bb.utils.contains('DISTRO_FEATURES' , 'playready4', 'opencdmi_pr4', '', d)}"
 PACKAGECONFIG:append = " ${OPENCDM_DRMS}"
 PACKAGECONFIG:append = " systemaudioplayer"
+PACKAGECONFIG:append = " cryptography"
 PACKAGECONFIG:append = " playerinfo"
 
 inherit features_check
@@ -96,6 +99,7 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[playerinfo]           = "-DPLUGIN_PLAYERINFO=ON -DUSE_DEVICESETTINGS=1,-DPLUGIN_PLAYERINFO=OFF,iarmbus iarmmgrs rdkservices-apis devicesettings virtual/vendor-devicesettings-hal gstreamer1.0,iarmbus rdkservices-apis devicesettings gstreamer1.0"
 PACKAGECONFIG[screencapture]        = "-DPLUGIN_SCREENCAPTURE=ON,-DPLUGIN_SCREENCAPTURE=OFF,rdkservices-apis curl libpng drm,rdkservices-apis curl libpng libdrm"
 PACKAGECONFIG[systemaudioplayer]    = "-DPLUGIN_SYSTEMAUDIOPLAYER=ON,,rdkservices-apis trower-base64 boost websocketpp wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app,rdkservices-apis trower-base64 wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app"
+PACKAGECONFIG[cryptography] = "-DPLUGIN_CRYPTOGRAPHY=ON,,rdkservices-apis, rdkservices-apis"
 PACKAGECONFIG[unifiedcasmanagement] = "-DPLUGIN_UNIFIEDCASMANAGEMENT=ON,,rmfgeneric, rmfgeneric"
 
 # ----------------------------------------------------------------------------
