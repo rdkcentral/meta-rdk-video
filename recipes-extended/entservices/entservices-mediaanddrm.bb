@@ -24,6 +24,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-set-OCDM-process-thread-name.patch \
           "
 
+SRC_URI += "file://RDK-55149.patch"
+
 # Release version - 1.1.2.1
 SRCREV = "35f2247aa6f3fc45a81e1b35fb1f11b454faca88"
 
@@ -75,6 +77,7 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 OPENCDM_DRMS ??= " ${@bb.utils.contains('DISTRO_FEATURES' , 'widevine_v16', 'opencdmi_wv', '', d)} ${@bb.utils.contains('DISTRO_FEATURES' , 'playready4', 'opencdmi_pr4', '', d)}"
 PACKAGECONFIG:append = " ${OPENCDM_DRMS}"
 PACKAGECONFIG:append = " systemaudioplayer"
+PACKAGECONFIG:append = " cryptography"
 PACKAGECONFIG:append = " playerinfo"
 
 inherit features_check
@@ -93,9 +96,16 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE',
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
+<<<<<<< HEAD
 PACKAGECONFIG[playerinfo]           = "-DPLUGIN_PLAYERINFO=ON -DUSE_DEVICESETTINGS=1,-DPLUGIN_PLAYERINFO=OFF,iarmbus iarmmgrs entservices-apis devicesettings virtual/vendor-devicesettings-hal gstreamer1.0,iarmbus entservices-apis devicesettings gstreamer1.0"
 PACKAGECONFIG[screencapture]        = "-DPLUGIN_SCREENCAPTURE=ON,-DPLUGIN_SCREENCAPTURE=OFF,entservices-apis curl libpng drm,entservices-apis curl libpng libdrm"
 PACKAGECONFIG[systemaudioplayer]    = "-DPLUGIN_SYSTEMAUDIOPLAYER=ON,,entservices-apis trower-base64 boost websocketpp wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app,entservices-apis trower-base64 wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app"
+=======
+PACKAGECONFIG[playerinfo]           = "-DPLUGIN_PLAYERINFO=ON -DUSE_DEVICESETTINGS=1,-DPLUGIN_PLAYERINFO=OFF,iarmbus iarmmgrs rdkservices-apis devicesettings virtual/vendor-devicesettings-hal gstreamer1.0,iarmbus rdkservices-apis devicesettings gstreamer1.0"
+PACKAGECONFIG[screencapture]        = "-DPLUGIN_SCREENCAPTURE=ON,-DPLUGIN_SCREENCAPTURE=OFF,rdkservices-apis curl libpng drm,rdkservices-apis curl libpng libdrm"
+PACKAGECONFIG[systemaudioplayer]    = "-DPLUGIN_SYSTEMAUDIOPLAYER=ON,,rdkservices-apis trower-base64 boost websocketpp wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app,rdkservices-apis trower-base64 wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app"
+PACKAGECONFIG[cryptography] = "-DPLUGIN_CRYPTOGRAPHY=ON,,rdkservices-apis, rdkservices-apis"
+>>>>>>> f78b8a3 (RDK-55149 : Enabled cryptography plugin.)
 PACKAGECONFIG[unifiedcasmanagement] = "-DPLUGIN_UNIFIEDCASMANAGEMENT=ON,,rmfgeneric, rmfgeneric"
 
 # ----------------------------------------------------------------------------
