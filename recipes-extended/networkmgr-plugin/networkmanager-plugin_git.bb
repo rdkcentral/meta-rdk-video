@@ -11,16 +11,16 @@ NETWORKMANAGER_STUN_ENDPOINT ?= "stun.l.google.com"
 NETWORKMANAGER_STUN_PORT ?= "19302"
 
 # Default Loglevel configuration
-NETWORKMANAGER_LOGLEVEL ?= "3"
+NETWORKMANAGER_LOGLEVEL ?= "4"
 
 PR = "r0"
 PV = "0.13.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/cmuhammedrafi/networkmanager.git;protocol=https;branch=release/RDKEMW-3561"
+SRC_URI = "git://github.com/cmuhammedrafi/networkmanager.git;protocol=https;branch=hotfix/RDKEMW-3414"
 
 # Apr 07, 2025
-SRCREV = "351705100c50c44ff7ffafd4a093f174e7f5415d"
+SRCREV = "1cab1b5b86e4e4bfee1dc269d23a4578a11db8ef"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework rdkservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
