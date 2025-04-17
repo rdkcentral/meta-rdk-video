@@ -26,9 +26,6 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-#Below change not needed this change was handled in tts.bbappend
-#EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk', ' -DTTS_DEFAULT_BACKEND=firebolt ', ' ', d)}"
-
 INSANE_SKIP:${PN} = "dev-so"
 INSANE_SKIP:${PN} += "ldflags"
 FILES_SOLIBSDEV = ""
