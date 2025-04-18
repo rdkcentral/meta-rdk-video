@@ -23,4 +23,4 @@ do_install:append () {
 SYSTEMD_SERVICE:${PN} = "bootversion-loader.service"
 FILES:${PN} += "${systemd_unitdir}/system/bootversion-loader.service"
 FILES:${PN} += "/lib/rdk/bootversion-loader.sh"
-FILES:${PN} += "/lib/rdk/boot_FSR.sh
+FILES:${PN} += "/lib/rdk/boot_FSR.sh"
