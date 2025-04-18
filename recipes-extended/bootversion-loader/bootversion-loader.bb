@@ -12,20 +12,15 @@ SRC_URI += "file://boot_FSR.sh"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-python __anonymous() {
-    if d.getVar("XUMOTV_MIGRRATION_ENTOS") == "yes":
-        d.appendVar("FILES:${PN}", " /lib/rdk/boot_FSR.sh")
-}
-
 do_install:append () {
     install -d ${D}/lib/systemd/system
     install -m 0644 ${WORKDIR}/bootversion-loader.service ${D}/lib/systemd/system/bootversion-loader.service
     install -d ${D}/lib/rdk
     install -m 0755 ${WORKDIR}/bootversion-loader.sh ${D}/lib/rdk/bootversion-loader.sh
-    if [ "${XUMOTV_MIGRATION_ENTOS}" = "yes" ]; then
-    	install -m 0755 ${WORKDIR}/boot_FSR.sh ${D}/lib/rdk/boot_FSR.sh
+    install -m 0755 ${WORKDIR}/boot_FSR.sh ${D}/lib/rdk/boot_FSR.sh
 }
 
 SYSTEMD_SERVICE:${PN} = "bootversion-loader.service"
 FILES:${PN} += "${systemd_unitdir}/system/bootversion-loader.service"
 FILES:${PN} += "/lib/rdk/bootversion-loader.sh"
+FILES:${PN} += "/lib/rdk/boot_FSR.sh
