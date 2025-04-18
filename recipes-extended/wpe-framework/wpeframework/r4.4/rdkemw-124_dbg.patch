@@ -210,12 +210,13 @@ index 213da58d..cc1c7ee4 100644
  
          if (options.RequestUsage()) {
  #ifndef __WINDOWS__
-@@ -515,13 +556,18 @@
+@@ -515,13 +556,19 @@
              sa.sa_handler = ExitDaemonHandler;
              sa.sa_flags = 0; // not SA_RESTART!;
  
 +            printf("SOUND-DBG: sa : %p , _originalSegmentationHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
 +            printf("SOUND-DBG: sa : %p , _originalAbortHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
++            sleep(5);
              sigaction(SIGINT, &sa, nullptr);
              sigaction(SIGTERM, &sa, nullptr);
              sigaction(SIGQUIT, &sa, nullptr);
@@ -229,7 +230,7 @@ index 213da58d..cc1c7ee4 100644
  
          if (atexit(ForcedExit) != 0) {
              TRACE_L1("Could not register @exit handler. Argc %d.", argc);
-@@ -1082,3 +1128,4 @@
+@@ -1082,3 +1129,4 @@
      } // extern "C"
  }
  }
