@@ -19,7 +19,7 @@ index 317be4fd..092257a6 100644
  
                  ::DumpCallStack(static_cast<ThreadId>(index.Current().Id.Value()), stackList);
 +                //How can I check this DumpCallstack is successful by adding logs
-+                printf("SOUND-DBG-DumpCallStack is done-index.Current().Id.Value() = %d\n,stackList.size() = %d\n", index.Current().Id.Value(), stackList.size());
++                // printf("SOUND-DBG-DumpCallStack is done-index.Current().Id.Value() = %d\n,stackList.size() = %d\n", index.Current().Id.Value(), stackList.size());
 +                
 +
                  for(const Core::callstack_info& entry : stackList)
@@ -83,7 +83,7 @@ index 213da58d..cc1c7ee4 100644
          }
  
          if ((signo == SIGTERM) || (signo == SIGQUIT)) {
-@@ -327,21 +332,45 @@
+@@ -327,23 +332,48 @@
              // From here on we do the best we can do. Have no clue what failed, try to log as much as possible and on
              // a subsequent segmentation fault, just handle it the old fashion way. The root cause has been logged
              // by than!
@@ -134,17 +134,26 @@ index 213da58d..cc1c7ee4 100644
 +            }
          }
          else if (signo == SIGUSR1) {
++            printf("SOUND-DBG: Received SIGUSR1 signal, dumping metadata\n");
              ExitHandler::DumpMetadata();
-@@ -352,7 +381,7 @@
+         }
+     }
+@@ -351,10 +381,13 @@
+     static void SetupCrashHandler(void)
      {
          _adminLock.Lock();
++        static int32_t crashHandlerSetup = 0;
          struct sigaction sa, current_sa;
 -
 +        printf("SOUND-DBG-SetupCrashHandler\n");
          memset(&current_sa, 0, sizeof(struct sigaction));
++        printf("SOUND-DBG-SetupCrashHandler-crashHandlerSetup-%d,current_sa : %p, _originalSegmentationHandler.sa_handler : %p\n", crashHandlerSetup, (void*)current_sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
          sigaction(SIGSEGV, nullptr, &current_sa);
++        printf("SOUND-DBG-SetupCrashHandler-crashHandlerSetup-%d,current_sa : %p, _originalSegmentationHandler.sa_handler : %p\n", crashHandlerSetup, (void*)current_sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
          if (ExitDaemonHandler  != current_sa.sa_handler)
-@@ -363,29 +392,30 @@
+         {
+             _originalSegmentationHandler = current_sa;
+@@ -363,31 +396,37 @@
               sa.sa_handler = ExitDaemonHandler;
               sa.sa_flags = 0;
               if (_background) {
@@ -157,11 +166,14 @@ index 213da58d..cc1c7ee4 100644
               }
 +             printf("SOUND-DBG-SetupCrashHandler-Registering the signal SIGSEGV");
               sigaction(SIGSEGV, &sa, nullptr);
++             printf("SOUND-DBG-SetupCrashHandler-crashHandlerSetup-%d,current_sa : %p, _originalSegmentationHandler.sa_handler : %p\n", crashHandlerSetup, (void*)current_sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
++
          }
  
          memset(&current_sa, 0, sizeof(struct sigaction));
++        printf("SOUND-DBG-SetupCrashHandler-crashHandlerSetup-%d,current_sa : %p, _originalAbortHandler.sa_handler : %p\n", crashHandlerSetup, (void*)current_sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
          sigaction(SIGABRT, nullptr, &current_sa);
-+        
++        printf("SOUND-DBG-SetupCrashHandler-crashHandlerSetup-%d,current_sa : %p, _originalAbortHandler.sa_handler : %p\n", crashHandlerSetup, (void*)current_sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
          if (ExitDaemonHandler  != current_sa.sa_handler)
          {
              _originalAbortHandler = current_sa;
@@ -181,13 +193,48 @@ index 213da58d..cc1c7ee4 100644
               }
 +             printf("SOUND-DBG-SetupCrashHandler-Registering the signal SIGABRT");
               sigaction(SIGABRT, &sa, nullptr);
++            printf("SOUND-DBG-SetupCrashHandler-crashHandlerSetup-%d,current_sa : %p, _originalAbortHandler.sa_handler : %p\n", crashHandlerSetup, (void*)current_sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
          }
++        ++crashHandlerSetup;
          _adminLock.Unlock();
-@@ -1082,3 +1112,4 @@
+     }
+ #endif
+@@ -492,7 +531,9 @@
+ #endif
+ 
+         ConsoleOptions options(argc, argv);
+-        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
++        _adminLock.Lock();
++        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler); 
++        printf("SOUND-DBG: RegisterLibraryLoadCallback\n");
+ 
+         if (options.RequestUsage()) {
+ #ifndef __WINDOWS__
+@@ -515,13 +556,18 @@
+             sa.sa_handler = ExitDaemonHandler;
+             sa.sa_flags = 0; // not SA_RESTART!;
+ 
++            printf("SOUND-DBG: sa : %p , _originalSegmentationHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
++            printf("SOUND-DBG: sa : %p , _originalAbortHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
+             sigaction(SIGINT, &sa, nullptr);
+             sigaction(SIGTERM, &sa, nullptr);
+             sigaction(SIGQUIT, &sa, nullptr);
+             sigaction(SIGUSR1, &sa, nullptr);
+             sigaction(SIGSEGV, &sa, &_originalSegmentationHandler);
+             sigaction(SIGABRT, &sa, &_originalAbortHandler);
++            printf("SOUND-DBG: sa : %p , _originalSegmentationHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
++            printf("SOUND-DBG: sa : %p , _originalAbortHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
+         }
++        _adminLock.Unlock();
+ 
+         if (atexit(ForcedExit) != 0) {
+             TRACE_L1("Could not register @exit handler. Argc %d.", argc);
+@@ -1082,3 +1128,4 @@
      } // extern "C"
  }
  }
 +
+
 diff --git a/Source/core/Library.cpp b/Source/core/Library.cpp
 index 213da58d..cc1c7ee4 100644
 --- a/Source/core/Library.cpp
@@ -205,3 +252,4 @@ index 213da58d..cc1c7ee4 100644
  }
  } // namespace Core
 +
+
