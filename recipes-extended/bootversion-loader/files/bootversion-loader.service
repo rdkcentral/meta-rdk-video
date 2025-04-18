@@ -3,6 +3,7 @@ Description=Boot version loader for RDK
 After=tr69hostif.service
 
 [Service]
+Type=simple
 ExecStart=/bin/sh -c 'if [ -f /lib/rdk/bootversion-loader.sh ]; then exec /lib/rdk/bootversion-loader.sh; else exit 0; fi'
 ExecStartPost=/bin/sh -c 'if [ -f /lib/rdk/boot_FSR.sh ]; then exec /lib/rdk/boot_FSR.sh; else exit 0; fi'
 RemainAfterExit=yes
