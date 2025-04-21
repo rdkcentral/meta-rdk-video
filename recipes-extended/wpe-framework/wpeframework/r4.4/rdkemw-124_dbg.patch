@@ -216,7 +216,7 @@ index 213da58d..cc1c7ee4 100644
  
 +            printf("SOUND-DBG: sa : %p , _originalSegmentationHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
 +            printf("SOUND-DBG: sa : %p , _originalAbortHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
-+            sleep(20);
++            SetupCrashHandler();
              sigaction(SIGINT, &sa, nullptr);
              sigaction(SIGTERM, &sa, nullptr);
              sigaction(SIGQUIT, &sa, nullptr);
