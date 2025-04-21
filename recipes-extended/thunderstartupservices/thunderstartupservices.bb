@@ -47,6 +47,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-firmwareupdate.service \
     wpeframework-powermanager.service \
     wpeframework-networkmanager.service \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_US', 'wpeframework-lostandfound.service', '', d)} \
     "
 
 do_install() {
