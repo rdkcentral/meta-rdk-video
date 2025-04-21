@@ -11,7 +11,7 @@ NETWORKMANAGER_STUN_ENDPOINT ?= "stun.l.google.com"
 NETWORKMANAGER_STUN_PORT ?= "19302"
 
 # Default Loglevel configuration
-NETWORKMANAGER_LOGLEVEL ?= "4"
+NETWORKMANAGER_LOGLEVEL ?= "3"
 
 PR = "r0"
 PV = "0.13.0"
@@ -20,7 +20,7 @@ S = "${WORKDIR}/git"
 SRC_URI = "git://github.com/cmuhammedrafi/networkmanager.git;protocol=https;branch=release/rearch"
 
 # Apr 07, 2025
-SRCREV = "b747864c90fee206654e51bc62abf2150963a783"
+SRCREV = "e0fc749d09793ad61f7529f76b77470c929b1eb1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework rdkservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
