@@ -135,8 +135,8 @@ CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_hdmiin_support', ' -D
 CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_compositein_support', ' -DHAS_COMPOSITE_IN_SUPPORT ', '', d)}"
 CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_spdif_support', ' -DHAS_SPDIF_SUPPORT ', '', d)}"
 CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_headphone_support', ' -DHAS_HEADPHONE_SUPPORT ', '', d)}"
-#CFLAGS += "${@oe.utils.conditional("SKY_VARIANT", "false", "-DENABLE_US_RESOLUTION -DENABLE_US_LED_CONFIG", "" ,d)}"
-#CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk', '-DENABLE_FLEX2_RESOLUTION ', '', d)}"
+CFLAGS += "${@oe.utils.conditional("SKY_VARIANT", "false", "-DENABLE_US_RESOLUTION -DENABLE_US_LED_CONFIG", "" ,d)}"
+CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk', '-DENABLE_FLEX2_RESOLUTION ', '', d)}"
 
 do_install:append() {
     if ${@bb.utils.contains('DISTRO_FEATURES' , 'RDKE_PLATFORM_TV', 'true', 'false', d)}; then
