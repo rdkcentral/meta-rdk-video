@@ -1,4 +1,4 @@
-From 068bef79bb4597136b9c1c0a7270ee14474c85d1 Mon Sep 17 00:00:00 2001
+From 4cd3b5f4d2c55a004dc3202baea93b81709ea1d8 Mon Sep 17 00:00:00 2001
 From: Shrinivas Kamath <skamath@synamedia.com>
 Date: Wed, 22 Jan 2025 15:52:21 +0000
 Subject: [PATCH] PowerController (PowerManager plugin client) implementation
@@ -13,6 +13,7 @@ interface changes for enhanced instance management and add operational state tra
   `Dispose` (older API now removed)
 - Introduced isOperational and it's state change callback
 - PowerModePreChange & Thunder restart handling
+- Adapt to IPowerManager interface changes
 
 %% original patch: 0001-PowerManagerClient-library-implementation.patch
 ---
@@ -227,7 +228,7 @@ index 0000000..c9c1321
 +#endif
 diff --git a/Source/powercontroller/power_controller.cpp b/Source/powercontroller/power_controller.cpp
 new file mode 100644
-index 0000000..93f10cf
+index 0000000..eb23c38
 --- /dev/null
 +++ b/Source/powercontroller/power_controller.cpp
 @@ -0,0 +1,1834 @@
@@ -945,27 +946,27 @@ index 0000000..93f10cf
 +        Notification(Notification&&) = delete; // Delete move constructor
 +        Notification& operator=(Notification&&) = delete; // Delete move assignment operator
 +
-+        virtual void OnPowerModeChanged(const PowerState& currentState, const PowerState& newState) override
++        virtual void OnPowerModeChanged(const PowerState currentState, const PowerState newState) override
 +        {
 +            _parent.NotifyPowerModeChanged(currentState, newState);
 +        }
 +
-+        virtual void OnPowerModePreChange(const PowerState& currentState, const PowerState& newState, const int transactionId, const int stateChangeAfter) override
++        virtual void OnPowerModePreChange(const PowerState currentState, const PowerState newState, const int transactionId, const int stateChangeAfter) override
 +        {
 +            _parent.NotifyPowerModePreChange(currentState, newState, transactionId, stateChangeAfter);
 +        }
 +
-+        virtual void OnDeepSleepTimeout(const int& wakeupTimeout) override
++        virtual void OnDeepSleepTimeout(const int wakeupTimeout) override
 +        {
 +            _parent.NotifyDeepSleepTimeout(wakeupTimeout);
 +        }
 +
-+        virtual void OnNetworkStandbyModeChanged(const bool& enabled) override
++        virtual void OnNetworkStandbyModeChanged(const bool enabled) override
 +        {
 +            _parent.NotifyNetworkStandbyModeChanged(enabled);
 +        }
 +
-+        virtual void OnThermalModeChanged(const ThermalTemperature& currentThermalLevel, const ThermalTemperature& newThermalLevel, const float& currentTemperature) override
++        virtual void OnThermalModeChanged(const ThermalTemperature currentThermalLevel, const ThermalTemperature newThermalLevel, const float currentTemperature) override
 +        {
 +            _parent.NotifyThermalModeChanged(currentThermalLevel, newThermalLevel, currentTemperature);
 +        }
@@ -1552,7 +1553,7 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    void NotifyPowerModeChanged(const PowerState& currentState, const PowerState& newState)
++    void NotifyPowerModeChanged(const PowerState currentState, const PowerState newState)
 +    {
 +        PowerController_PowerState_t currentState_ = convert(currentState);
 +        PowerController_PowerState_t newState_ = convert(newState);
@@ -1565,7 +1566,7 @@ index 0000000..93f10cf
 +        _callbackLock.Unlock();
 +    }
 +
-+    void NotifyPowerModePreChange(const PowerState& currentState, const PowerState& newState, const int transactionId, const int stateChangeAfter)
++    void NotifyPowerModePreChange(const PowerState currentState, const PowerState newState, const int transactionId, const int stateChangeAfter)
 +    {
 +        PowerController_PowerState_t currentState_ = convert(currentState);
 +        PowerController_PowerState_t newState_ = convert(newState);
@@ -1578,7 +1579,7 @@ index 0000000..93f10cf
 +        _callbackLock.Unlock();
 +    }
 +
-+    void NotifyDeepSleepTimeout(const int& wakeupTimeout)
++    void NotifyDeepSleepTimeout(const int wakeupTimeout)
 +    {
 +        _callbackLock.Lock();
 +
@@ -1589,7 +1590,7 @@ index 0000000..93f10cf
 +        _callbackLock.Unlock();
 +    }
 +
-+    void NotifyNetworkStandbyModeChanged(const bool& enabled)
++    void NotifyNetworkStandbyModeChanged(const bool enabled)
 +    {
 +        _callbackLock.Lock();
 +
@@ -1600,7 +1601,7 @@ index 0000000..93f10cf
 +        _callbackLock.Unlock();
 +    }
 +
-+    void NotifyThermalModeChanged(const ThermalTemperature& currentThermalLevel, const ThermalTemperature& newThermalLevel, const float& currentTemperature)
++    void NotifyThermalModeChanged(const ThermalTemperature currentThermalLevel, const ThermalTemperature newThermalLevel, const float currentTemperature)
 +    {
 +        PowerController_ThermalTemperature_t currentThermalLevel_ = convert(currentThermalLevel);
 +        PowerController_ThermalTemperature_t newThermalLevel_ = convert(newThermalLevel);
