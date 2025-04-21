@@ -1,0 +1,17 @@
+[Unit]
+Description=Subtec subttxrend-app service
+Requisite=sky-appsservice.service
+After=sky-appsservice.service sky-epg.service
+
+[Service]
+Environment="XDG_RUNTIME_DIR=/tmp"
+Environment="WAYLAND_DISPLAY=westeros-asplayer-subtitles"
+ExecStartPre=/bin/sh /usr/bin/wait-for-subttxrend-socket.sh
+ExecStart=/usr/bin/subttxrend-app
+TimeoutSec=120
+TimeoutStopSec=3
+Restart=on-failure
+ExecStop=/bin/kill -9 $MAINPID
+
+[Install]
+WantedBy=multi-user.target
