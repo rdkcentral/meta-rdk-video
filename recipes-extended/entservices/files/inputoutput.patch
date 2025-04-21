@@ -1,0 +1,52 @@
+diff --git a/HdcpProfile/HdcpProfile.cpp b/HdcpProfile/HdcpProfile.cpp
+index 65bae97..1d7edab 100644
+--- a/HdcpProfile/HdcpProfile.cpp
++++ b/HdcpProfile/HdcpProfile.cpp
+@@ -306,7 +306,7 @@ namespace WPEFramework
+ 
+         void HdcpProfile::dsHdmiEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
+         {
+-            uint32_t res = Core::ERROR_GENERAL;
++            Core::hresult res = Core::ERROR_GENERAL;
+             PowerState pwrStateCur = WPEFramework::Exchange::IPowerManager::POWER_STATE_UNKNOWN;
+             PowerState pwrStatePrev = WPEFramework::Exchange::IPowerManager::POWER_STATE_UNKNOWN;
+ 
+diff --git a/HdmiCecSink/HdmiCecSink.cpp b/HdmiCecSink/HdmiCecSink.cpp
+index 79d53a8..f986fb6 100644
+--- a/HdmiCecSink/HdmiCecSink.cpp
++++ b/HdmiCecSink/HdmiCecSink.cpp
+@@ -765,7 +765,7 @@ namespace WPEFramework
+            m_arcStartStopTimer.connect( std::bind( &HdmiCecSink::arcStartStopTimerFunction, this ) );
+            m_arcStartStopTimer.setSingleShot(true);
+             // get power state:
+-            uint32_t res = Core::ERROR_GENERAL;
++            Core::hresult res = Core::ERROR_GENERAL;
+             PowerState pwrStateCur = WPEFramework::Exchange::IPowerManager::POWER_STATE_UNKNOWN;
+             PowerState pwrStatePrev = WPEFramework::Exchange::IPowerManager::POWER_STATE_UNKNOWN;
+ 
+diff --git a/HdmiCecSource/HdmiCecSourceImplementation.cpp b/HdmiCecSource/HdmiCecSourceImplementation.cpp
+index d31b4df..0974f72 100644
+--- a/HdmiCecSource/HdmiCecSourceImplementation.cpp
++++ b/HdmiCecSource/HdmiCecSourceImplementation.cpp
+@@ -398,7 +398,7 @@ namespace WPEFramework
+         ASSERT(service != nullptr);
+         PowerState pwrStateCur = WPEFramework::Exchange::IPowerManager::POWER_STATE_UNKNOWN;
+         PowerState pwrStatePrev = WPEFramework::Exchange::IPowerManager::POWER_STATE_UNKNOWN;
+-        uint32_t res = Core::ERROR_GENERAL;
++        Core::hresult res = Core::ERROR_GENERAL;
+         string msg;
+         if (Utils::IARM::init()) {
+             //Initialize cecEnableStatus to false in ctor
+diff --git a/helpers/frontpanel.cpp b/helpers/frontpanel.cpp
+index 699bc34..a602046 100644
+--- a/helpers/frontpanel.cpp
++++ b/helpers/frontpanel.cpp
+@@ -160,7 +160,7 @@ namespace WPEFramework
+ 
+ #if defined(HAS_API_POWERSTATE)
+                     {
+-                        uint32_t res = Core::ERROR_GENERAL;
++                        Core::hresult res = Core::ERROR_GENERAL;
+                         PowerState pwrStateCur = WPEFramework::Exchange::IPowerManager::POWER_STATE_UNKNOWN;
+                         PowerState pwrStatePrev = WPEFramework::Exchange::IPowerManager::POWER_STATE_UNKNOWN;
+                         ASSERT (_powerManagerPlugin);

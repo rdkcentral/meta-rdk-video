@@ -10,7 +10,8 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
-          "
+           file://deviceanddisplay.patch \
+         "
 
 # Release version - 1.1.2
 SRCREV = "c7bc228770c565d782271e9f9a9ce735fb0ac819"

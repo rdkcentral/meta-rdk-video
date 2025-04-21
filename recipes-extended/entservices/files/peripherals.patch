@@ -1,0 +1,13 @@
+diff --git a/helpers/frontpanel.cpp b/helpers/frontpanel.cpp
+index 39188fb..83192cb 100644
+--- a/helpers/frontpanel.cpp
++++ b/helpers/frontpanel.cpp
+@@ -160,7 +160,7 @@ namespace WPEFramework
+ 
+ #if defined(HAS_API_POWERSTATE)
+                     {
+-                        uint32_t res = Core::ERROR_GENERAL;
++                        Core::hresult res = Core::ERROR_GENERAL;
+                         PowerState pwrStateCur = WPEFramework::Exchange::IPowerManager::POWER_STATE_UNKNOWN;
+                         PowerState pwrStatePrev = WPEFramework::Exchange::IPowerManager::POWER_STATE_UNKNOWN;
+                         ASSERT (_powerManagerPlugin);

@@ -1,0 +1,258 @@
+diff --git a/apis/PowerManager/IPowerManager.h b/apis/PowerManager/IPowerManager.h
+index 6821041..f87a035 100644
+--- a/apis/PowerManager/IPowerManager.h
++++ b/apis/PowerManager/IPowerManager.h
+@@ -96,10 +96,10 @@ namespace WPEFramework
+             // @param rebootReasonCustom: Reboot reason custom
+             // @param rebootReasonOther: Reboot reason other
+             // @param rebootRequestor: Reboot requested by
+-            virtual void OnRebootBegin(const string &rebootReasonCustom, const string &rebootReasonOther, const string &rebootRequestor) = 0;
++            virtual void OnRebootBegin(const string &rebootReasonCustom, const string &rebootReasonOther, const string &rebootRequestor) {};
+         };
+-        virtual uint32_t Register(Exchange::IPowerManager::IRebootNotification* notification /* @in */) = 0;
+-        virtual uint32_t Unregister(Exchange::IPowerManager::IRebootNotification* notification /* @in */) = 0;
++        virtual Core::hresult Register(Exchange::IPowerManager::IRebootNotification* notification /* @in */) = 0;
++        virtual Core::hresult Unregister(Exchange::IPowerManager::IRebootNotification* notification /* @in */) = 0;
+ 
+         // @event
+         struct EXTERNAL IModePreChangeNotification : virtual public Core::IUnknown
+@@ -111,14 +111,14 @@ namespace WPEFramework
+             // @param newState: Changing power state to this New Power State
+             // @param transactionId: transactionId to be used when invoking prePowerChangeComplete() / delayPowerModeChangeBy API
+             // @param stateChangeAfter: seconds after which the actual power mode will be applied.
+-            virtual void OnPowerModePreChange(const PowerState currentState, const PowerState newState, const int transactionId, const int stateChangeAfter) = 0;
++            virtual void OnPowerModePreChange(const PowerState currentState, const PowerState newState, const int transactionId, const int stateChangeAfter) {};
+         };
+         // @brief Register for Power Mode pre-change event
+-        virtual uint32_t Register(IModePreChangeNotification* notification /* @in */) = 0;
++        virtual Core::hresult Register(IModePreChangeNotification* notification /* @in */) = 0;
+         // @brief Unregister for Power Mode pre-change event
+         //       IMPORTANT: If client is also engaged in power mode pre-change operation (requested via AddPowerModePreChangeClient API),
+         //                  make sure to disengage (using RemovePowerModePreChangeClient API) before calling Unregister.
+-        virtual uint32_t Unregister(IModePreChangeNotification* notification /* @in */) = 0;
++        virtual Core::hresult Unregister(IModePreChangeNotification* notification /* @in */) = 0;
+ 
+         // @event
+         struct EXTERNAL IModeChangedNotification : virtual public Core::IUnknown
+@@ -128,10 +128,10 @@ namespace WPEFramework
+             // @text onPowerModeChanged
+             // @param currentState: Current Power State
+             // @param newState: New Power State
+-            virtual void OnPowerModeChanged(const PowerState currentState, const PowerState newState) = 0;
++            virtual void OnPowerModeChanged(const PowerState currentState, const PowerState newState) {};
+         };
+-        virtual uint32_t Register(IModeChangedNotification* notification /* @in */) = 0;
+-        virtual uint32_t Unregister(IModeChangedNotification* notification /* @in */) = 0;
++        virtual Core::hresult Register(IModeChangedNotification* notification /* @in */) = 0;
++        virtual Core::hresult Unregister(IModeChangedNotification* notification /* @in */) = 0;
+ 
+         // @event
+         struct EXTERNAL IDeepSleepTimeoutNotification : virtual public Core::IUnknown
+@@ -140,10 +140,10 @@ namespace WPEFramework
+             // @brief Deep sleep timeout event
+             // @text onDeepSleepTimeout
+             // @param wakeupTimeout: Deep sleep wakeup timeout in seconds
+-            virtual void OnDeepSleepTimeout(const int wakeupTimeout) = 0;
++            virtual void OnDeepSleepTimeout(const int wakeupTimeout) {};
+         };
+-        virtual uint32_t Register(IDeepSleepTimeoutNotification* notification /* @in */) = 0;
+-        virtual uint32_t Unregister(IDeepSleepTimeoutNotification* notification /* @in */) = 0;
++        virtual Core::hresult Register(IDeepSleepTimeoutNotification* notification /* @in */) = 0;
++        virtual Core::hresult Unregister(IDeepSleepTimeoutNotification* notification /* @in */) = 0;
+ 
+          // @event
+          struct EXTERNAL INetworkStandbyModeChangedNotification : virtual public Core::IUnknown
+@@ -152,10 +152,10 @@ namespace WPEFramework
+              // @brief Network Standby Mode changed event - only on XIone
+              // @text onNetworkStandbyModeChanged
+              // @param enabled: network standby enabled or disabled
+-             virtual void OnNetworkStandbyModeChanged(const bool enabled) = 0;
++             virtual void OnNetworkStandbyModeChanged(const bool enabled) {};
+          };
+-         virtual uint32_t Register(INetworkStandbyModeChangedNotification* notification /* @in */) = 0;
+-         virtual uint32_t Unregister(INetworkStandbyModeChangedNotification* notification /* @in */) = 0;
++         virtual Core::hresult Register(INetworkStandbyModeChangedNotification* notification /* @in */) = 0;
++         virtual Core::hresult Unregister(INetworkStandbyModeChangedNotification* notification /* @in */) = 0;
+ 
+          // @event
+          struct EXTERNAL IThermalModeChangedNotification : virtual public Core::IUnknown
+@@ -166,10 +166,10 @@ namespace WPEFramework
+              // @param currentThermalLevel: current thermal level
+              // @param newThermalLevel: new thermal level
+              // @param currentTemperature: current temperature
+-             virtual void OnThermalModeChanged(const ThermalTemperature currentThermalLevel, const ThermalTemperature newThermalLevel, const float currentTemperature) = 0;
++             virtual void OnThermalModeChanged(const ThermalTemperature currentThermalLevel, const ThermalTemperature newThermalLevel, const float currentTemperature) {};
+          };
+-         virtual uint32_t Register(IThermalModeChangedNotification* notification /* @in */) = 0;
+-         virtual uint32_t Unregister(IThermalModeChangedNotification* notification /* @in */) = 0;
++         virtual Core::hresult Register(IThermalModeChangedNotification* notification /* @in */) = 0;
++         virtual Core::hresult Unregister(IThermalModeChangedNotification* notification /* @in */) = 0;
+ 
+         /** Engage a client in power mode change operation. */
+         // @text addPowerModePreChangeClient
+@@ -186,100 +186,100 @@ namespace WPEFramework
+         // @param clientName: Name of the client
+         // @param clientId: Unique identifier for the client to be used while acknowledging the pre-change operation (`PowerModePreChangeComplete`) 
+         //                  or to delay the power mode change (`DelayPowerModeChangeBy`)
+-        virtual uint32_t AddPowerModePreChangeClient(const string& clientName /* @in */, uint32_t& clientId /* @out */) = 0;
++        virtual Core::hresult AddPowerModePreChangeClient(const string& clientName /* @in */, uint32_t& clientId /* @out */) = 0;
+ 
+         /** Disengage a client from the power mode change operation. */
+         // @text removePowerModePreChangeClient
+         // @brief Removes a registered client from participating in power mode pre-change operations.
+         //        NOTE client will still continue to receive pre-change notifications.
+         // @param clientId: Unique identifier for the client. See `AddPowerModePreChangeClient`
+-        virtual uint32_t RemovePowerModePreChangeClient(const uint32_t clientId /* @in */) = 0;
++        virtual Core::hresult RemovePowerModePreChangeClient(const uint32_t clientId /* @in */) = 0;
+ 
+         /** Sets Power State . */
+         // @text setPowerState
+         // @brief Set Power State
+         // @param powerState: Set power to this state
+         // @param reason: Reason for moving to the power state
+-        virtual uint32_t SetPowerState(const int keyCode /* @in */, const PowerState powerState /* @in */,const string &reason /* @in */) = 0;
++        virtual Core::hresult SetPowerState(const int keyCode /* @in */, const PowerState powerState /* @in */,const string &reason /* @in */) = 0;
+ 
+         /** Gets the Power State.*/
+         // @text getPowerState
+         // @brief Get Power State
+         // @param powerState: Get current power state
+-        virtual uint32_t GetPowerState(PowerState& currentState /* @out */, PowerState &previousState /* @out */) const = 0;
++        virtual Core::hresult GetPowerState(PowerState& currentState /* @out */, PowerState &previousState /* @out */) const = 0;
+ 
+         /** Gets the current Thermal state.*/
+         // @text getThermalState
+         // @brief Get Current Thermal State (temperature)
+         // @param currentTemperature: current temperature
+-        virtual uint32_t GetThermalState(float& currentTemperature /* @out */) const = 0;
++        virtual Core::hresult GetThermalState(float& currentTemperature /* @out */) const = 0;
+ 
+         /** Sets the Temperature Thresholds.*/
+         // @text setTemperatureThresholds
+         // @brief Set Temperature Thresholds
+         // @param high: high threshold
+         // @param critical : critical threshold
+-        virtual uint32_t SetTemperatureThresholds(float high /* @in */, float critical /* @in */) = 0;
++        virtual Core::hresult SetTemperatureThresholds(float high /* @in */, float critical /* @in */) = 0;
+ 
+         /** Gets the current Temperature Thresholds.*/
+         // @text getTemperatureThresholds
+         // @brief Get Temperature Thresholds
+         // @param high: high threshold
+         // @param critical : critical threshold
+-        virtual uint32_t GetTemperatureThresholds(float& high /* @out */, float& critical /* @out */) const = 0;
++        virtual Core::hresult GetTemperatureThresholds(float& high /* @out */, float& critical /* @out */) const = 0;
+ 
+         /** Sets the current Temperature Grace interval.*/
+         // @property
+         // @text setOvertempGraceInterval
+         // @brief Set Temperature Thresholds
+         // @param graceInterval: interval in secs?
+-        virtual uint32_t SetOvertempGraceInterval(const int graceInterval /* @in */) = 0;
++        virtual Core::hresult SetOvertempGraceInterval(const int graceInterval /* @in */) = 0;
+ 
+         /** Gets the current Temperature Thresholds.*/
+         // @property
+         // @text getOvertempGraceInterval
+         // @brief Get Temperature Grace interval
+         // @param graceInterval: interval in secs?
+-        virtual uint32_t GetOvertempGraceInterval(int& graceInterval /* @out */) const = 0;
++        virtual Core::hresult GetOvertempGraceInterval(int& graceInterval /* @out */) const = 0;
+ 
+         /** Set Deep Sleep Timer for later wakeup */
+         // @property
+         // @text setDeepSleepTimer
+         // @brief Set Deep sleep timer for timeOut period
+         // @param timeOut: deep sleep timeout
+-        virtual uint32_t SetDeepSleepTimer(const int timeOut /* @in */) = 0;
++        virtual Core::hresult SetDeepSleepTimer(const int timeOut /* @in */) = 0;
+ 
+         /** Get Last Wakeup reason */
+         // @property
+         // @text getLastWakeupReason
+         // @brief Get Last Wake up reason
+         // @param wakeupReason: wake up reason
+-        virtual uint32_t GetLastWakeupReason(WakeupReason &wakeupReason /* @out */) const = 0;
++        virtual Core::hresult GetLastWakeupReason(WakeupReason &wakeupReason /* @out */) const = 0;
+ 
+         /** Get Last Wakeup key code */
+         // @property
+         // @text getLastWakeupKeyCode
+         // @brief Get the key code that can be used for wakeup
+         // @param keycode: Key code for wakeup
+-        virtual uint32_t GetLastWakeupKeyCode(int &keycode /* @out */) const = 0;
++        virtual Core::hresult GetLastWakeupKeyCode(int &keycode /* @out */) const = 0;
+ 
+         /** Perform Reboot */
+         // @text reboot
+         // @brief Reboot device
+-        virtual uint32_t Reboot(const string &rebootRequestor /* @in */, const string &rebootReasonCustom /* @in */, const string &rebootReasonOther /* @in */) = 0;
++        virtual Core::hresult Reboot(const string &rebootRequestor /* @in */, const string &rebootReasonCustom /* @in */, const string &rebootReasonOther /* @in */) = 0;
+ 
+         /** Set Network Standby Mode */
+         // @property
+         // @text setNetworkStandbyMode
+         // @brief Set the standby mode for Network
+         // @param standbyMode: Network standby mode
+-        virtual uint32_t SetNetworkStandbyMode(const bool standbyMode /* @in */) = 0;
++        virtual Core::hresult SetNetworkStandbyMode(const bool standbyMode /* @in */) = 0;
+ 
+         /** Get Network Standby Mode */
+         // @text getNetworkStandbyMode
+         // @brief Get the standby mode for Network
+         // @param standbyMode: Network standby mode
+-        virtual uint32_t GetNetworkStandbyMode(bool &standbyMode /* @out */) = 0;
++        virtual Core::hresult GetNetworkStandbyMode(bool &standbyMode /* @out */) = 0;
+ 
+         /** Set Wakeup source configuration */
+         // @text setWakeupSrcConfig
+@@ -287,7 +287,7 @@ namespace WPEFramework
+         // @param powerMode: power mode
+         // @param wakeSrcType: source type
+         // @param config: config
+-        virtual uint32_t SetWakeupSrcConfig(const int powerMode /* @in */, const int wakeSrcType /* @in */, int config /* @in */ ) = 0;
++        virtual Core::hresult SetWakeupSrcConfig(const int powerMode /* @in */, const int wakeSrcType /* @in */, int config /* @in */ ) = 0;
+ 
+         /** Get Wakeup source configuration */
+         // @text getWakeupSrcConfig
+@@ -295,27 +295,27 @@ namespace WPEFramework
+         // @param powerMode: power mode
+         // @param srcType: source type
+         // @param config: config
+-        virtual uint32_t GetWakeupSrcConfig(int &powerMode /* @out */, int &srcType /* @out */, int &config /* @out */) const = 0;
++        virtual Core::hresult GetWakeupSrcConfig(int &powerMode /* @out */, int &srcType /* @out */, int &config /* @out */) const = 0;
+ 
+         /** Initiate System mode change */
+         // @text setSystemMode
+         // @brief System mode change
+         // @param oldMode: old mode
+         // @param newMode: new mode
+-        virtual uint32_t SetSystemMode(const SystemMode currentMode /* @in */, const SystemMode newMode /* @in */) const = 0;
++        virtual Core::hresult SetSystemMode(const SystemMode currentMode /* @in */, const SystemMode newMode /* @in */) const = 0;
+ 
+         /** Get Power State before reboot */
+         // @text getPowerStateBeforeReboot
+         // @brief Get Power state before reboot
+         // @param powerStateBeforeReboot: power state
+-        virtual uint32_t GetPowerStateBeforeReboot(PowerState &powerStateBeforeReboot /* @out */) = 0;
++        virtual Core::hresult GetPowerStateBeforeReboot(PowerState &powerStateBeforeReboot /* @out */) = 0;
+ 
+         /** Power prechange activity completed */
+         // @text powerModePreChangeComplete
+         // @brief Pre power mode handling complete for given client and transation id
+         // @param clientId: Unique identifier for the client, as received in AddPowerModePreChangeClient
+         // @param transactionId: transaction id as received in OnPowerModePreChange
+-        virtual uint32_t PowerModePreChangeComplete(const uint32_t clientId /* @in */, const int transactionId /* @in */) = 0;
++        virtual Core::hresult PowerModePreChangeComplete(const uint32_t clientId /* @in */, const int transactionId /* @in */) = 0;
+ 
+         /** Delay Powermode change by given time */
+         // @text delayPowerModeChangeBy
+@@ -323,7 +323,7 @@ namespace WPEFramework
+         // @param clientId: Unique identifier for the client, as received in AddPowerModePreChangeClient
+         // @param transactionId: transaction id as received in OnPowerModePreChange
+         // @param delayPeriod: delay in seconds
+-        virtual uint32_t DelayPowerModeChangeBy(const uint32_t clientId /* @in */, const int transactionId /* @in */, const int delayPeriod /* @in */) = 0;
++        virtual Core::hresult DelayPowerModeChangeBy(const uint32_t clientId /* @in */, const int transactionId /* @in */, const int delayPeriod /* @in */) = 0;
+     };
+ 
+ } // namespace Exchange
