@@ -25,7 +25,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
 SRC_URI += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'file://0001-LLAMA-3066-10405-increase-OCDM-process-priority.patch', "", d)}"
 
 # Release version - 1.1.1
-SRCREV = "d08ce0d64e78ea4b17fc42c4a596400856d019ae"
+SRCREV = "169f07c7d03ea5a9e417ef3808556027e068acf6"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
