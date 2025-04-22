@@ -12,7 +12,7 @@ PR ?= "r0"
 PROVIDES = "virtual/libpackage"
 RPROVIDES:${PN} = "virtual/libpackage"
 
-SRCREV_lisapack = "8947a9faefd6e2bd1c71590bcf2993b1da3e3c66"
+SRCREV_lisapack = "91e2798617f1b6d3f50963726ba81016fa7b558c"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/libpackage;${CMF_GITHUB_SRC_URI_SUFFIX};name=lisapack"
 SRCREV_FORMAT = "lisapack"
