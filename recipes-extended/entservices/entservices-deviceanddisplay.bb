@@ -10,6 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+           file://0001-RDKEMW-1012-framerate-comrpc-changes-for-testing.patch \
           "
 
 # Release version - 1.1.2
@@ -22,6 +23,7 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
+EXTRA_OECMAKE += " -DTESTBINARIES=ON"
 EXTRA_OECMAKE += " -DBUILD_ENABLE_THERMAL_PROTECTION=ON "
 EXTRA_OECMAKE += "-DDISABLE_GEOGRAPHY_TIMEZONE=ON"
 EXTRA_OECMAKE += " -DENABLE_SYSTEM_GET_STORE_DEMO_LINK=ON "

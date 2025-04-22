@@ -1,0 +1,163 @@
+From a2907b9a3569ccbbfb9eeb946208754070a4e627 Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Tue, 22 Apr 2025 08:56:35 -0400
+Subject: [PATCH] RDKEMW-1012: COMRPC FrameRate IFace changes
+
+---
+ apis/FrameRate/IFrameRate.h | 115 ++++++++++++++++++++++++++++++++++++
+ apis/Ids.h                  |   8 ++-
+ 2 files changed, 120 insertions(+), 3 deletions(-)
+ create mode 100644 apis/FrameRate/IFrameRate.h
+
+diff --git a/apis/FrameRate/IFrameRate.h b/apis/FrameRate/IFrameRate.h
+new file mode 100644
+index 0000000..6e5a673
+--- /dev/null
++++ b/apis/FrameRate/IFrameRate.h
+@@ -0,0 +1,115 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2025 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#pragma once
++#include "Module.h"
++
++// @stubgen:include <com/IIteratorType.h>
++
++namespace WPEFramework
++{
++    namespace Exchange
++    {
++        /* @json @text:keep */
++        struct EXTERNAL IFrameRate : virtual public Core::IUnknown
++        {
++            enum { ID = ID_FRAMERATE };
++
++            // @event
++            struct EXTERNAL INotification : virtual public Core::IUnknown
++            {
++                enum { ID = ID_FRAMERATE_NOTIFICATION };
++
++                // @text onFpsEvent
++                // @brief Triggered by callback from FrameRate after onFpsEvent
++                // @param average - in - int
++                // @param min - in - int
++                // @param max - in - int
++                virtual void OnFpsEvent( int average, int min, int max ) = 0;
++
++                // @text onDisplayFrameRateChanging
++                // @brief Triggered when the framerate changes started
++                // @param displayFrameRate - in - string
++                virtual void OnDisplayFrameRateChanging(const string& displayFrameRate) = 0;
++
++                // @text onDisplayFrameRateChanged
++                // @brief Triggered when the framerate changed.
++                // @param displayFrameRate - in - string
++                virtual void OnDisplayFrameRateChanged(const string& displayFrameRate) = 0;
++            };
++
++            virtual uint32_t Register(IFrameRate::INotification* notification /* @in */) = 0;
++            virtual uint32_t Unregister(IFrameRate::INotification* notification /* @in */) = 0;
++
++            /** Gets the Display Frame Rate*/
++            // @text getDisplayFrameRate
++            // @brief Gets the current display frame rate values.
++            // @param framerate - out - string
++            // @param success - out - boolean
++            virtual uint32_t GetDisplayFrameRate(string& framerate /* @out */, bool& success /* @out */) = 0;
++
++            /** Gets framerate mode */
++            // @text getFrmMode
++            // @brief Gets the current auto framerate mode.
++            // @param frmmode - out - int
++            // @param success - out - boolean
++            virtual uint32_t GetFrmMode(int &frmmode /* @out */, bool& success /* @out */) = 0;
++
++            /** Sets the FPS data collection interval */
++            // @text setCollectionFrequency
++            // @brief Sets the FPS data collection interval.
++            // @param frequency - in -  int
++            // @param success - out - boolean
++            virtual uint32_t SetCollectionFrequency(int frequency /* @in */, bool& success /* @out */) = 0;
++
++            /** Sets the display framerate values */
++            // @text setDisplayFrameRate
++            // @brief Sets the display framerate values.
++            // @param framerate - in - string
++            // @param success - out - boolean
++            virtual uint32_t SetDisplayFrameRate(const string& framerate /* @in */, bool& success /* @out */) = 0;
++
++            /** Sets the auto framerate mode */
++            // @text setFrmMode
++            // @brief Set the Frm mode.
++            // @param frmmode - in - string
++            // @param success - out - boolean
++            virtual uint32_t SetFrmMode(int frmmode /* @in */, bool& success /* @out */) = 0;
++
++            /** Starts the FPS data collection */
++            // @text startFpsCollection
++            // @brief Starts the FPS data collection. Starts the FPS data collection
++            // @param success - out - boolean
++            virtual uint32_t StartFpsCollection(bool& success /* @out */) = 0;
++
++            /** Stops the FPS data collection */
++            // @text stopFpsCollection
++            // @brief Stops the FPS data collection
++            // @param success - out - boolean
++            virtual uint32_t StopFpsCollection(bool& success /* @out */) = 0;
++
++            /** Update the FPS value */
++            // @text updateFps
++            // @brief Update the FPS value
++            // @param newFpsValue - in - int
++            // @param success - out - boolean
++            virtual uint32_t UpdateFps(int newFpsValue /* @in */, bool& success /* @out */) = 0;
++        };
++    } // namespace Exchange
++} // namespace WPEFramework
+diff --git a/apis/Ids.h b/apis/Ids.h
+index 4f6d44e..84f2816 100755
+--- a/apis/Ids.h
++++ b/apis/Ids.h
+@@ -244,7 +244,7 @@ namespace Exchange {
+         ID_PACKAGE_INFO_ITERATOR                     = ID_APP_PACKAGE_MANAGER + 7,
+         ID_PACKAGE_ITERATOR                          = ID_APP_PACKAGE_MANAGER + 8,
+         ID_PACKAGE_KEY_VALUE_ITERATOR                = ID_APP_PACKAGE_MANAGER + 9,
+-	
++
+ 	ID_STORAGEMANAGER                            = ID_ENTOS_OFFSET + 0x310,
+ 
+         ID_AUTHSERVICE                               = ID_ENTOS_OFFSET + 0x320,
+@@ -261,10 +261,12 @@ namespace Exchange {
+ 
+         ID_SCREEN_CAPTURE                            = ID_ENTOS_OFFSET + 0x360,
+         ID_SCREEN_CAPTURE_NOTIFICATION               = ID_SCREEN_CAPTURE + 1,
+-      
++
+         ID_DEVICE_DIAGNOSTICS                        = ID_ENTOS_OFFSET + 0x370,
+         ID_DEVICE_DIAGNOSTICS_PARAM_LIST_ITERATOR    = ID_DEVICE_DIAGNOSTICS + 1,
+-        ID_DEVICE_DIAGNOSTICS_NOTIFICATION           = ID_DEVICE_DIAGNOSTICS + 2
++        ID_DEVICE_DIAGNOSTICS_NOTIFICATION           = ID_DEVICE_DIAGNOSTICS + 2,
++    ID_FRAMERATE                                     = ID_ENTOS_OFFSET + 0x380,
++        ID_FRAMERATE_NOTIFICATION                    = ID_FRAMERATE + 1
+     };
+ }
+ }
+-- 
+2.34.1.windows.1
+
