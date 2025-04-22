@@ -14,11 +14,10 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://0001-RDK-41681-PR4013.patch \
-           file://infra.patch \
           "
 
 # Release version - 1.1.11
-SRCREV = "70a5cbf3d8e28be96fde8a938f1ea2fa92366a25"
+SRCREV = "09a2519c8c0c5bc109a944648dfed9024b727c4f"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"

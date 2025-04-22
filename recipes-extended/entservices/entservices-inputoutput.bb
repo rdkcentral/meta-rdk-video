@@ -10,11 +10,10 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-inputoutput;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
-           file://inputoutput.patch \
           "
 
 # Release version - 1.0.9
-SRCREV = "668cc7ce09864ac16e6c609cabbfcf94ae16faba"
+SRCREV = "5d1bf4f9aa7cc416c232aee11e268749512636a0"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"

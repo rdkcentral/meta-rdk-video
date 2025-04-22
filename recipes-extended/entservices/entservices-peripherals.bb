@@ -10,11 +10,10 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-peripherals;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
-           file://peripherals.patch \
           "
 
 # Release version - 1.0.3
-SRCREV = "5e635e0a476e7e363ae93e7cde50dd0bee6b24be"
+SRCREV = "09c150c2c20a0d33f1b6a0c02ee869519aa4b122"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
