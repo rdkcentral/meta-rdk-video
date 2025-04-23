@@ -1,0 +1,22 @@
+diff --git a/OpenCDMi/FrameworkRPC.cpp b/OpenCDMi/FrameworkRPC.cpp
+index 7095853..bb4254b 100644
+--- a/OpenCDMi/FrameworkRPC.cpp
++++ b/OpenCDMi/FrameworkRPC.cpp
+@@ -20,6 +20,7 @@
+ #include <regex>
+ #include <string>
+ #include <vector>
++#include <sys/prctl.h>
+ 
+ #include "Module.h"
+ #include "CENCParser.h"
+@@ -312,6 +313,9 @@ namespace Plugin {
+                 private:
+                     virtual uint32_t Worker() override
+                     {
++                        char name [16];
++                        snprintf(name, sizeof(name), "OCDM_decrypt");
++                        prctl(PR_SET_NAME, name, 0, 0, 0);
+ 
+                         while (IsRunning() == true) {
+ 
