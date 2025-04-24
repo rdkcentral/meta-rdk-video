@@ -33,11 +33,10 @@ do_FSR () {
 }
 
 if [ "$ftue_key_available" != "ftue" ]; then
-    #echo -e "ftue does not exist"
     if [ "$current_bootType" == "BOOT_INIT" ] || [ "$current_bootType" == "BOOT_NORMAL" ]; then
         echo -e "current BootType is $current_bootType and ftue key is not present"
     elif [ "$current_bootType" == "BOOT_MIGRATION" ]; then 
-        if [ -e "file_DataStore" ]; then
+        if [ -e "$file_DataStore" ]; then
             echo -e "current BootType is $current_bootType ftue key is not present"
         else
             #DataStore file is not present 
@@ -46,7 +45,6 @@ if [ "$ftue_key_available" != "ftue" ]; then
         fi 
     fi
 elif [ "$ftue_key_available" == "ftue" ]; then
-    #echo -e "ftue exists"
     if [ "$current_bootType" == "BOOT_NORMAL" ]; then
         echo -e "current BootType is $current_bootType and ftue key is present"
     elif [ "$current_bootType" == "BOOT_INIT" ]; then
@@ -54,7 +52,7 @@ elif [ "$ftue_key_available" == "ftue" ]; then
         do_FSR
     elif [ "$current_bootType" == "BOOT_MIGRATION" ]; then
         echo -e "current BootType is $current_bootType and ftue key is present"
-        if [ -e "file_DataStore" ]; then
+        if [ -e "$file_DataStore" ]; then
             echo -e "DataStore file is present"
         else
             #DataStore file is not present 
