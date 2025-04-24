@@ -2,7 +2,7 @@ SUMMARY = "ENTServices deviceanddisplay plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV ?= "1.0.8"
+PV ?= "1.1.4"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.0.8
-SRCREV = "b6e7fae32872b3770ce6ce6c14a10388749fb4eb"
+# Release version - 1.1.4
+SRCREV = "e4b662c04c878ad563dba222dc3105d2eaa54c92"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -29,7 +29,7 @@ EXTRA_OECMAKE += " -DBUILD_ENABLE_DEVICE_MANUFACTURER_INFO=ON "
 EXTRA_OECMAKE += " -DBUILD_ENABLE_APP_CONTROL_AUDIOPORT_INIT=ON "
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native"
+DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
@@ -42,6 +42,11 @@ CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
+
+INCLUDE_DIRS = " \
+    -I=${includedir}/rdk/halif/power-manager \
+    -I=${includedir}/WPEFramework/powercontroller \
+    "
 
 # ----------------------------------------------------------------------------
 
@@ -56,19 +61,21 @@ PACKAGECONFIG ?= " breakpadsupport \
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 
 PACKAGECONFIG:append = " displayinfo deviceinfo systemmode"
+PACKAGECONFIG:append = " erm"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[devicediagnostics]    = "-DPLUGIN_DEVICEDIAGNOSTICS=ON,-DPLUGIN_DEVICEDIAGNOSTICS=OFF,curl,curl"
+PACKAGECONFIG[devicediagnostics]    = "-DPLUGIN_DEVICEDIAGNOSTICS=ON,-DPLUGIN_DEVICEDIAGNOSTICS=OFF,curl rdkservices-apis,curl rdkservices-apis"
 PACKAGECONFIG[deviceinfo]           = "-DPLUGIN_DEVICEINFO=ON,-DPLUGIN_DEVICEINFO=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal rdkservices-apis,iarmbus rfc devicesettings rdkservices-apis"
-PACKAGECONFIG[displayinfo]          = "-DPLUGIN_DISPLAYINFO=ON  -DUSE_DEVICESETTINGS=1,-DPLUGIN_DISPLAYINFO=OFF,iarmbus iarmmgrs drm rdkservices-apis devicesettings virtual/vendor-devicesettings-hal,iarmbus libdrm rdkservices-apis devicesettings"
+PACKAGECONFIG[displayinfo]          = "-DPLUGIN_DISPLAYINFO=ON  -DUSE_DEVICESETTINGS=1,-DPLUGIN_DISPLAYINFO=OFF,iarmbus iarmmgrs drm rdkservices-apis devicesettings virtual/vendor-devicesettings-hal virtual/vendor-displayinfo-soc,iarmbus libdrm rdkservices-apis devicesettings virtual/vendor-displayinfo-soc"
 PACKAGECONFIG[displaysettings]      = "-DPLUGIN_DISPLAYSETTINGS=ON,-DPLUGIN_DISPLAYSETTINGS=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc devicesettings"
+PACKAGECONFIG[erm]                  = "-DBUILD_ENABLE_ERM=ON,-DBUILD_ENABLE_ERM=OFF,essos,essos"
 PACKAGECONFIG[framerate]            = "-DPLUGIN_FRAMERATE=ON,-DPLUGIN_FRAMERATE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal,iarmbus devicesettings"
 PACKAGECONFIG[userpreferences]      = "-DPLUGIN_USERPREFERENCES=ON,-DPLUGIN_USERPREFERENCES=OFF,glib-2.0,glib-2.0"
 PACKAGECONFIG[systemservices]       = "-DPLUGIN_SYSTEMSERVICES=ON,-DPLUGIN_SYSTEMSERVICES=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal curl procps rdkservices-apis,tzcode iarmbus rfc devicesettings curl procps rdkservices-apis"
 PACKAGECONFIG[systimemgrsupport]    = "-DBUILD_ENABLE_SYSTIMEMGR_SUPPORT=ON,,systimemgrinetrface,"
 PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc devicesettings"
-PACKAGECONFIG[powermanager]         = "-DPLUGIN_POWERMANAGER=ON,-DPLUGIN_POWERMANAGER=OFF,iarmbus"
+PACKAGECONFIG[powermanager]         = "-DPLUGIN_POWERMANAGER=ON,-DPLUGIN_POWERMANAGER=OFF,iarmbus virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal"
 PACKAGECONFIG[systemmode] = "-DPLUGIN_SYSTEMMODE=ON,-DPLUGIN_SYSTEMMODE=OFF,"
 
 # ----------------------------------------------------------------------------

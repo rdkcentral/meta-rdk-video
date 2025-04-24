@@ -11,7 +11,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=
 S = "${WORKDIR}/git"
 
 inherit systemd syslog-ng-config-gen logrotate_config
-SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup rfc-config update-device-details applications vitalprocess-info iptables mount_log swupdate reboot-reason messages rdnssd"
+SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup rfc-config update-device-details applications vitalprocess-info iptables mount_log swupdate reboot-reason messages rdnssd zram"
 SYSLOG-NG_FILTER:append = " ConnectionStats systemd_timesyncd"
 SYSLOG-NG_SERVICE_ConnectionStats = "network-connection-stats.service"
 SYSLOG-NG_DESTINATION_ConnectionStats = "ConnectionStats.txt"
@@ -37,9 +37,9 @@ SYSLOG-NG_LOGRATE_update-device-details = "low"
 SYSLOG-NG_SERVICE_iptables = "iptables.service"
 SYSLOG-NG_DESTINATION_iptables = "iptables.log"
 SYSLOG-NG_LOGRATE_iptables = "low"
-SYSLOG-NG_SERVICE_applications:append = " zram.service "
-SYSLOG-NG_DESTINATION_applications = "applications.log"
-SYSLOG-NG_LOGRATE_applications = "low"
+SYSLOG-NG_SERVICE_zram = " zram.service "
+SYSLOG-NG_DESTINATION_zram = "zram.log"
+SYSLOG-NG_LOGRATE_zram = "low"
 SYSLOG-NG_SERVICE_vitalprocess-info = "vitalprocess-info.service"
 SYSLOG-NG_DESTINATION_vitalprocess-info = "top_log.txt"
 SYSLOG-NG_LOGRATE_vitalprocess-info = "high"
@@ -100,6 +100,7 @@ do_install() {
 	install -m 0644 ${S}/systemd_units/logrotate.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/logrotate.timer ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/scheduled-reboot.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/dump-backup.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/disk-check.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-secure-upload.service ${D}${systemd_unitdir}/system
@@ -147,6 +148,7 @@ do_install() {
         install -m 0644 ${S}/systemd_units/network-connection-stats.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/rdnssd.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/NM_Bootstrap.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/zram.service ${D}${systemd_unitdir}/system
 
 
 
@@ -185,9 +187,6 @@ do_install() {
         rm -rf ${D}${base_libdir}/rdk/pNexus.sh
         rm -rf ${D}${base_libdir}/rdk/stackCalls.sh
         rm -rf ${D}${base_libdir}/rdk/watchdog-starter
-        # zram is a machine feature and its script should be removed from
-        # generic portion
-        rm -f ${D}${base_libdir}/rdk/init-zram.sh
 	#
 	# The below scripts are installed by xre for emulator so need to
 	# delete from sysint generic repo. For now, we will prevent these
@@ -269,10 +268,9 @@ do_install() {
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
 }
 
-do_install:append:rdkzram() {
-        install -m 0755 ${S}/lib/rdk/init-zram.sh ${D}${base_libdir}/rdk
-        install -m 0644 ${S}/systemd_units/zram.service ${D}${systemd_unitdir}/system
-}
+
+
+
 
 do_install:append:rdkstb() {
         install -m 0755 ${S}/lib/rdk/heap-usage-stats.sh ${D}/lib/rdk/heap-usage-stats.sh
@@ -296,6 +294,7 @@ SYSTEMD_SERVICE:${PN} += "previous-log-backup.service"
 SYSTEMD_SERVICE:${PN} += "vitalprocess-info.timer"
 SYSTEMD_SERVICE:${PN} += "logrotate.timer"
 SYSTEMD_SERVICE:${PN} += "scheduled-reboot.service"
+SYSTEMD_SERVICE:${PN} += "dump-backup.service"
 SYSTEMD_SERVICE:${PN} += "disk-check.service"
 SYSTEMD_SERVICE:${PN} += "coredump-upload.service"
 SYSTEMD_SERVICE:${PN} += "coredump-secure-upload.service"
@@ -326,8 +325,7 @@ SYSTEMD_SERVICE:${PN} += "ntp-event.path"
 SYSTEMD_SERVICE:${PN} += "network-connection-stats.service"
 SYSTEMD_SERVICE:${PN} += "network-connection-stats.timer"
 SYSTEMD_SERVICE:${PN} += "NM_Bootstrap.service"
-
-SYSTEMD_SERVICE:${PN}:append:rdkzram = " zram.service"
+SYSTEMD_SERVICE:${PN} += "zram.service"
 
 SYSTEMD_SERVICE:${PN}:append:rdktv = " vdec-statistics.service"
 
