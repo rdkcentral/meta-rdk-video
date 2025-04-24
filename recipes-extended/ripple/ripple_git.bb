@@ -15,11 +15,11 @@ SRC_URI += " \
     file://ripple.service \
     "
 
-SRC_URI += "git://github.com/rdkcentral/firebolt.git;protocol=https;branch=main;subpath=requirements/1.3.0/specifications;destsuffix=firebolt_specs"
+SRC_URI += "${CMF_GITHUB_ROOT}/firebolt;${CMF_GITHUB_SRC_URI_SUFFIX};name=firebolt;branch=main;subpath=requirements/1.3.0/specifications;destsuffix=firebolt_specs"
 SRCREV = "7b01285cd575cff11142e94796d5fb894ee0f441"
 
 
-SRCREV_FORMAT ="rmain"
+SRCREV_FORMAT ="rmain_firebolt"
 PV = "${RIPPLE_VERSION}"
 
 #Working directory for open components
@@ -55,7 +55,7 @@ do_install:append() {
     install -m 0644 ${OPEN_RIPPLE_S}/examples/reference-manifest/IpStb/firebolt-extn-manifest.json ${D}${sysconfdir}/firebolt-extn-manifest.json
     install -m 0644 ${OPEN_RIPPLE_S}/examples/reference-manifest/IpStb/firebolt-app-library.json ${D}${sysconfdir}/firebolt-app-library.json
     # Install firebolt-open-rpc.json from the cloned repo
-    install -m 0644 ${WORKDIR}/firebolt_specs/firebolt-open-rpc.json ${D}${sysconfdir}/ripple/openrpc/firebolt-open-rpc.json
+    install -Dm0644 ${OPEN_RIPPLE_S}/systemd/ripple.service ${D}${systemd_unitdir}/system/ripple.service
     #TODO This should be a packageoption instead.
     rm ${D}${libdir}/rust/liblauncher.so
 }
