@@ -17,7 +17,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
 # Release version - 1.1.11
-SRCREV = "70a5cbf3d8e28be96fde8a938f1ea2fa92366a25"
+#SRCREV = "70a5cbf3d8e28be96fde8a938f1ea2fa92366a25"
+SRCREV = "2ef7b32dd673283a7fd0ef56f935d94a1c51c7cb"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -29,6 +30,7 @@ EXTRA_OECMAKE += " -DPLUGIN_ANALYTICS_SIFT_STORE_PATH=/opt/persistent/AnalyticsS
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
+DEPENDS += "dobby"
 RDEPENDS:${PN} += "wpeframework"
 
 CFLAGS  += " \
@@ -63,6 +65,10 @@ PACKAGECONFIG ?= " monitor \
     messagecontrol \
     rdknativescript \
     javascriptcore \
+    storagemanager \
+    appmanager \
+    lifecyclemanager \
+    packagemanager \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
@@ -119,7 +125,10 @@ PACKAGECONFIG[rdkshellrialto]       = "-DRIALTO_FEATURE=ON,-DRIALTO_FEATURE=OFF,
 PACKAGECONFIG[rustadapter]          = "-DPLUGIN_RUSTADAPTER=ON,,,"
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON,-DPLUGIN_RUNTIME_MANAGER=OFF,rdkservices-apis,rdkservices-apis"
 PACKAGECONFIG[rdknativescript]      = "-DPLUGIN_NATIVEJS=ON,-DPLUGIN_NATIVEJS=OFF,rdknativescript,libuv"
-
+PACKAGECONFIG[appmanager]           = "-DPLUGIN_APPMANAGER=ON,-DPLUGIN_APPMANAGER=OFF,rdkservices-apis,rdkservices-apis"
+PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LIFECYCLE_MANAGER=OFF,rdkservices-apis,rdkservices-apis"
+PACKAGECONFIG[packagemanager] = "-DPLUGIN_PACKAGE_MANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_PACKAGE_MANAGER=OFF -DLIB_PACKAGE=OFF,curl libpackage,curl libpackage"
+PACKAGECONFIG[storagemanager]       = "-DPLUGIN_STORAGE_MANAGER=ON,-DPLUGIN_STORAGE_MANAGER=OFF,rdkservices-apis,rdkservices-apis"
 # ----------------------------------------------------------------------------
 
 MONITOR_PLUGIN_ARGS                ?= " \
