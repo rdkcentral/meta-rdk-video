@@ -22,15 +22,23 @@ file_bootType="/tmp/bootType"
 file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
 file_DataStore="/opt/secure/migration/migration_data_store.json"
 
-Output=$(sqlite3 $RA_Web_Store "select * from ItemTable where key = 'ftue';" 2>&1)
-ftue_key_available=${Output:0:4}
+ftue_key_available="null"
 current_bootType=$(<"$file_bootType")
 current_bootType=${current_bootType:10}
+
+do_ftue_check () {
+Output=$(sqlite3 $RA_Web_Store "select * from ItemTable where key = 'ftue';" 2>&1)
+ftue_key_available=${Output:0:4}
+}
 
 do_FSR () {
     touch /tmp/data/.trigger_reformat
     sh /rebootNow.sh -s boot_FSR -o "Rebooting the box for triggering FSR..."
 }
+
+if [ -e "$RA_Web_Store" ]; then
+     echo -e "calling ftue_check"
+     do_ftue_check
 
 if [ "$ftue_key_available" != "ftue" ]; then
     if [ "$current_bootType" == "BOOT_INIT" ] || [ "$current_bootType" == "BOOT_NORMAL" ]; then
