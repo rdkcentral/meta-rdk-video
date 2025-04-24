@@ -14,7 +14,8 @@ SRC_URI += " \
     file://0002-ripple_thunder_service_dependency.patch \
     "
 
-SRC_URI += "file://ripple.common.rules.json"
+SRC_URI += "https://raw.githubusercontent.com/rdkcentral/Ripple/main/examples/rules/ripple.common.rules.json;name=ripple_rules"
+SRC_URI[ripple_rules.sha256sum] = "5c1f7c5b0c4d6e278c591152e1aa5aed867d835f17531feccbfdec9a5be939d8"
 
 SRCREV_FORMAT ="rmain"
 PV = "${RIPPLE_VERSION}"
