@@ -72,13 +72,6 @@ EXTRA_OECMAKE:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' -DUS
 #EXTRA_OECMAKE:append = " -DMEM_DEBUG=ON"
 #EXTRA_OECMAKE:append = " -DANSI_CODES_DISABLED=ON"
 
-# Default to HDMI / CEC discovery for IRDB
-# Options: NONE / HDMI / CEC / ALL
-IRDB_DISCOVERY_DEFAULT = "ALL"
-IRDB_DISCOVERY ??= "${IRDB_DISCOVERY_DEFAULT}"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('IRDB_DISCOVERY', 'ALL', ' -DIRDB_HDMI_DISCOVERY=ON -DIRDB_CEC_DISCOVERY=ON', '', d)}"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('IRDB_DISCOVERY', 'HDMI', ' -DIRDB_HDMI_DISCOVERY=ON', '', d)}"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('IRDB_DISCOVERY', 'CEC', ' -DIRDB_CEC_DISCOVERY=ON', '', d)}"
 
 # Thunder Dependency
 THUNDER             ??= "true"
@@ -131,10 +124,10 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('ASB', 'true', ' -DASB=ON', '', d)}
 # Authorization Support
 AUTH                ?= "true"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('AUTH', 'true', ' -DAUTH_ENABLED=ON', '', d)}"
+# Auth Activation Status Support
+AUTH_ACTIVATION_STATUS ?= "false"
+EXTRA_OECONF:append = "${@bb.utils.contains('AUTH_ACTIVATION_STATUS', 'true', ' -DAUTH_ACTIVACTION_STATUS', '', d)}"
 
-IRDB ??= "true"
-
-EXTRA_OECMAKE:append = "${@bb.utils.contains('IRDB', 'true', ' -DIRDB=ON', '', d)}"
 
 RF4CE_PACKET_ANALYSIS ??= "true"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('RF4CE_PACKET_ANALYSIS', 'true', ' -DRF4CE_PACKET_ANALYSIS=ON', '', d)}"
@@ -209,20 +202,20 @@ EXTRA_OECMAKE:append  = "${@ ' -DCUSTOM_AUTH_LIB=${CUSTOM_AUTH_LIB}' if (d.getVa
 
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${S}/../ctrlm-main.service ${D}${systemd_unitdir}/system/
+    install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
 
     if ${@bb.utils.contains('EXTRA_OECMAKE', '-DRF4CE_ENABLED=ON', 'true', 'false', d)}; then
        install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
-       install -m 0644 ${S}/../1_rf4ce.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
+       install -m 0644 ${WORKDIR}/1_rf4ce.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
     fi
 
     if ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'true', 'false', d)}; then
        install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
-       install -m 0644 ${S}/../2_bluetooth.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
+       install -m 0644 ${WORKDIR}/2_bluetooth.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
     fi
 
     if [ "${CTRLM_GENERIC}" = "true" ]; then
-       install -m 0644 ${S}/../ctrlm-hal-rf4ce.service ${D}${systemd_unitdir}/system/
+       install -m 0644 ${WORKDIR}/ctrlm-hal-rf4ce.service ${D}${systemd_unitdir}/system/
     fi
 }
 
