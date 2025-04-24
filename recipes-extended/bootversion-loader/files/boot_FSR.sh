@@ -39,6 +39,7 @@ do_FSR () {
 if [ -e "$RA_Web_Store" ]; then
      echo -e "calling ftue_check"
      do_ftue_check
+fi
 
 if [ "$ftue_key_available" != "ftue" ]; then
     if [ "$current_bootType" == "BOOT_INIT" ] || [ "$current_bootType" == "BOOT_NORMAL" ]; then
