@@ -15,7 +15,7 @@ TOOLCHAIN = "gcc"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI  = "git://github.com/youtube/cobalt.git;protocol=https;name=cobalt;branch=24.lts.stable"
-SRC_URI += "${LARBOARD_SRC_URI};protocol=${RDKE_GITHUB_PROTOCOL};destsuffix=larboard;name=larboard;branch=24.lts.stable"
+SRC_URI += "${LARBOARD_SRC_URI};protocol=${CMF_GITHUB_PROTOCOL};destsuffix=larboard;name=larboard;branch=24.lts.stable"
 SRC_URI += "file://24/0001-Include-RDK-platforms.patch"
 SRC_URI += "file://24/0002-Fix-crashpad-build.patch"
 SRC_URI += "file://24/0003-breakpad-add-mapping-info.patch"
@@ -35,7 +35,7 @@ do_fetch[vardeps] += " SRCREV_FORMAT SRCREV_cobalt SRCREV_larboard"
 S = "${WORKDIR}/git"
 
 DEPENDS += "virtual/libgles2 virtual/egl essos gstreamer1.0 gstreamer1.0-plugins-base"
-DEPENDS += " wpeframework rdkservices-apis wpeframework-clientlibraries"
+DEPENDS += " wpeframework entservices-apis wpeframework-clientlibraries"
 DEPENDS += " ninja-native bison-native openssl-native gn-native ccache-native"
 DEPENDS += " python3-six-native python3-urllib3-native"
 
