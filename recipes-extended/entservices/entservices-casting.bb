@@ -2,8 +2,8 @@ SUMMARY = "ENTServices Casting plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV ?= "1.0.6"
-PR ?= "r0"
+PV ?= "1.0.7"
+PR ?= "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-casting;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.0.6
-SRCREV = "ceb1e28b7d0b67e67c94e19f137df77766acb581"
+# Release version - 1.0.7
+SRCREV = "6985d3ae65312d2bacc30ca830325717fd254a9a"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
