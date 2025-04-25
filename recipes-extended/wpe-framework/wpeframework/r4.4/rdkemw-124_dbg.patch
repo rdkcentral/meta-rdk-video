@@ -204,7 +204,7 @@ index 213da58d..cc1c7ee4 100644
  
          ConsoleOptions options(argc, argv);
 -        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
-+        _adminLock.Lock();
++        //_adminLock.Lock();
 +        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler); 
 +        printf("SOUND-DBG: RegisterLibraryLoadCallback\n");
  
@@ -216,7 +216,7 @@ index 213da58d..cc1c7ee4 100644
  
 +            printf("SOUND-DBG: sa : %p , _originalSegmentationHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
 +            printf("SOUND-DBG: sa : %p , _originalAbortHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
-+            SetupCrashHandler();
++            sleep(30);
              sigaction(SIGINT, &sa, nullptr);
              sigaction(SIGTERM, &sa, nullptr);
              sigaction(SIGQUIT, &sa, nullptr);
@@ -226,7 +226,7 @@ index 213da58d..cc1c7ee4 100644
 +            printf("SOUND-DBG: sa : %p , _originalSegmentationHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
 +            printf("SOUND-DBG: sa : %p , _originalAbortHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
          }
-+        _adminLock.Unlock();
++        //_adminLock.Unlock();
  
          if (atexit(ForcedExit) != 0) {
              TRACE_L1("Could not register @exit handler. Argc %d.", argc);
