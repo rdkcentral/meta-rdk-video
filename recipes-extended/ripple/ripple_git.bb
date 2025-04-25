@@ -46,7 +46,7 @@ do_install:append() {
     # Create the /etc/ripple/rules/ directory
     install -d ${D}${sysconfdir}/ripple/rules/
     # Copy ripple.common.rules.json to the directory
-    install -m 0644 ${OPEN_RIPPLE_S}/examples/manifest/mock/rules/ripple.common.rules.json ${D}${sysconfdir}/ripple/rules/ripple.common.rules.json
+    install -Dm0644 ${OPEN_RIPPLE_S}/examples/manifest/mock/rules/ripple.common.rules.json ${D}${sysconfdir}/ripple.common.rules.json
 	install -d ${D}${systemd_unitdir}/system
         install -m 0644 ${WORKDIR}/ripple.service ${D}${systemd_unitdir}/system/ripple.service
         install -m 0755 ${WORKDIR}/ripple-start.sh ${D}${bindir}
