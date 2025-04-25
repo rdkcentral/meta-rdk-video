@@ -183,3 +183,14 @@ LOGROTATE_SIZE_dcm="1572864"
 LOGROTATE_ROTATION_dcm="1"
 LOGROTATE_SIZE_MEM_dcm="512000"
 LOGROTATE_ROTATION_MEM_dcm="1"
+
+SYSLOG-NG_SERVICE:mount_log:remove = " disk-check.service "
+SYSTEMD_SERVICE:${PN}:remove = "disk-check.service"
+SYSTEMD_SERVICE:${PN}:remove = " vdec-statistics.service"
+ 
+do_install:append() {
+     rm -f ${D}${systemd_unitdir}/system/disk-check.service
+     rm -f ${D}${systemd_unitdir}/system/vdec-statistics.service
+     rm -f ${D}${base_libdir}/rdk/get-reboot-reason.sh
+     rm -f ${D}${base_libdir}/rdk/vdec-statistics.sh
+}
