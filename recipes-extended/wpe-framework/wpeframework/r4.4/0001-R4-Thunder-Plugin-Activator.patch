@@ -1,0 +1,16 @@
+diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
+index f2d27ed4..21b04b1c 100644
+--- a/Utils/PluginActivator/source/COMRPCStarter.cpp
++++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
+@@ -73,9 +73,11 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+             // Sleep, then try again
+             std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
+         } else {
++            LOG_INF(_pluginName.c_str(), "Before Attempting to activate plugin");
+             // Will block until plugin is activated
+             uint32_t result = lifetime->Activate(_pluginName.c_str());
+ 
++            LOG_INF(_pluginName.c_str(), "After activate plugin");
+             auto duration = Core::Time::Now().Sub(start.MilliSeconds());
+ 
+             if (result != Core::ERROR_NONE) {
