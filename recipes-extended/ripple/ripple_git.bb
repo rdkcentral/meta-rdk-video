@@ -15,7 +15,7 @@ SRC_URI += " \
     file://ripple.service \
     "
 
-SRC_URI += "${CMF_GITHUB_ROOT}/firebolt;${CMF_GITHUB_SRC_URI_SUFFIX};name=firebolt;branch=main;subpath=requirements/1.3.0/specifications;destsuffix=${OPEN_RIPPLE_S}"
+SRC_URI += "${CMF_GITHUB_ROOT}/firebolt;${CMF_GITHUB_SRC_URI_SUFFIX};name=firebolt;branch=main;subpath=requirements/1.3.0/specifications;destsuffix=firebolt_specs"
 SRCREV_firebolt = "7b01285cd575cff11142e94796d5fb894ee0f441"
 
 
@@ -44,6 +44,10 @@ SYSLOG-NG_DESTINATION_ripple = "ripple.log"
 SYSLOG-NG_LOGRATE_ripple = "high"
 
 CARGO_BUILD_FLAGS += " --features 'sysd'"
+
+do_configure:prepend() {
+    cp ${WORKDIR}/firebolt_specs/firebolt-open-rpc.json ${OPEN_RIPPLE_S}/
+}
 
 #Cargo default to install binaries and libraries. Just install systemd services
 do_install:append() {
