@@ -41,6 +41,7 @@ EXTRA_OECMAKE += " \
                 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON    \
                 -DUSE_TELEMETRY=ON \
                 -DENABLE_ROUTER_DISCOVERY_TOOL=ON \
+                -DENABLE_GNOME_GDBUS=ON \
                 "
 
 # Configure Logging for the Router Discovery Tool
