@@ -39,7 +39,7 @@ require recipes-extended/entservices/include/compositor.inc
 #include include/compositor.inc
 
 DEPENDS = " \
-    rdkservices-apis \
+    entservices-apis \
     wpeframework-tools-native \
     ${@bb.utils.contains('DISTRO_FEATURES', 'compositor', '${WPE_COMPOSITOR_DEP}', '', d)} \
     gstreamer1.0 \

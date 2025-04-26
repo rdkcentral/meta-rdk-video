@@ -19,7 +19,7 @@ S = "${WORKDIR}/git/plugin"
 
 inherit cmake pkgconfig
 
-DEPENDS = "wpeframework wpeframework-tools-native rdkservices-apis"
+DEPENDS = "wpeframework wpeframework-tools-native entservices-apis"
 DEPENDS += "libloader-app"
 
 RDEPENDS:${PN} = "libloader-app virtual/cobalt-evergreen"
