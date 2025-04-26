@@ -9,7 +9,7 @@ PR ?= "r1"
 
 inherit cmake pkgconfig coverity
 
-DEPENDS += "wpeframework boost curl libarchive wpeframework-tools-native rdkservices-apis"
+DEPENDS += "wpeframework boost curl libarchive wpeframework-tools-native entservices-apis"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 SRC_URI = "${CMF_GITHUB_ROOT}/LISA;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MAIN_BRANCH}"

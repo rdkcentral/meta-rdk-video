@@ -2,7 +2,7 @@ SUMMARY = "WPE Framework OpenCDMi module for clearkey"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=ef252d84bf4d7b45388c93f6e5691f3d"
 
-DEPENDS += "rdkservices-apis openssl"
+DEPENDS += "entservices-apis openssl"
 
 require include/wpeframework-plugins.inc
 
