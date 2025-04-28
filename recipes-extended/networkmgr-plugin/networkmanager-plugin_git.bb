@@ -11,7 +11,7 @@ NETWORKMANAGER_STUN_ENDPOINT ?= "stun.l.google.com"
 NETWORKMANAGER_STUN_PORT ?= "19302"
 
 # Default Loglevel configuration
-NETWORKMANAGER_LOGLEVEL ?= "4"
+NETWORKMANAGER_LOGLEVEL ?= "3"
 
 PR = "r0"
 PV = "0.15.0"
@@ -20,7 +20,7 @@ S = "${WORKDIR}/git"
 SRC_URI = "git://github.com/cmuhammedrafi/networkmanager.git;protocol=https;branch=develop"
 
 # Apr 24, 2025
-SRCREV = "f800b80b027bb091ad2eed17bcd71624767cd98e"
+SRCREV = "d19a1bfb499d44326bfb90f6097aac34b263515e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
@@ -36,7 +36,7 @@ EXTRA_OECMAKE += " \
                 -DPLUGIN_NETWORKMANAGER_STUN_PORT="${NETWORKMANAGER_STUN_PORT}" \
                 -DPLUGIN_NETWORKMANAGER_LOGLEVEL="${NETWORKMANAGER_LOGLEVEL}" \
                 -DPLUGIN_NETWORKMANAGER_CONN_MONITOR_INTERVAL="${NETWORKMANAGER_CONN_MONITOR_INTERVAL}" \
-                ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '-DENABLE_GNOME_NETWORKMANAGER=ON', '', d)}  \
+                ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '-DENABLE_GNOME_NETWORKMANAGER=ON -DENABLE_PLUGIN_CLI=ON', '', d)}  \
                 -DPLUGIN_BUILD_REFERENCE="${SRCREV}" \
                 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON    \
                 -DUSE_TELEMETRY=ON \
