@@ -1,7 +1,7 @@
-SUMMARY = "rdkservices-apis"
+SUMMARY = "entservices-apis"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
-PV ?= "1.3.3"
+PV ?= "1.3.5"
 PR ?= "r0"
 
 inherit python3native cmake pkgconfig
@@ -14,8 +14,8 @@ SRC_URI += "file://RDKEMW-1007.patch \
            file://RDK-55149.patch \
            "
 
-# Tag 1.3.3
-SRCREV_entservices-apis = "50fc555c94178377bb6eb355825b00ea272c1c17"
+# Tag 1.3.5
+SRCREV_entservices-apis = "10b7afbfd87d1073718d74d9f7c4a6a46364946b"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
