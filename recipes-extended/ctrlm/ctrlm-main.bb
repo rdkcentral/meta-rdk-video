@@ -46,6 +46,9 @@ SRC_URI:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' ${RDK_ART
 SRC_URI[test_tones.md5sum]    = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', 'd9e7829785f011214ec948f417873825', '', d)}"
 SRC_URI[test_tones.sha256sum] = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', 'ef10d7174a8bc79aff71b30980cd1304a2a33cf10afc38049c13cb11d1a309cc', '', d)}"
 
+SRC_URI:append = " file://ble_network_timeouts.json"
+SRC_URI:append = " file://ble_remote_whitelist.json"
+
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 SRCREV_FORMAT = "ctrlm-main"
 
@@ -217,6 +220,11 @@ do_install:append() {
     if [ "${CTRLM_GENERIC}" = "true" ]; then
        install -m 0644 ${WORKDIR}/ctrlm-hal-rf4ce.service ${D}${systemd_unitdir}/system/
     fi
+    
+    install -d ${D}${sysconfdir}/vendor/
+    install -d ${D}${sysconfdir}/vendor/input/
+    install -m 0644 ${WORKDIR}/ble_network_timeouts.json ${D}${sysconfdir}/vendor/input/ble_network_timeouts.json
+    install -m 0644 ${WORKDIR}/ble_remote_whitelist.json ${D}${sysconfdir}/vendor/input/ble_remote_whitelist.json
 }
 
 addtask clean_oem_config after do_unpack before do_configure
