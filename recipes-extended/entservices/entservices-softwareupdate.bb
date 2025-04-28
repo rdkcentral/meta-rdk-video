@@ -6,14 +6,14 @@ PV ?= "1.0.3"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
-inherit cmake pkgconfig
+inherit cmake pkgconfig syslog-ng-config logrotate
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-softwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
 # Release version - 1.0.4
-SRCREV = "f44ec3decfa00f4b5de6275567ec5fdc69c6d3d2"
+SRCREV = "5d2e8ab1a7f51e978b8942ffa84d5a9188768d96"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -36,19 +36,19 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
+include include/maintenanceMgr.inc
+
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
     firmwareupdate \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'enable_maintenance_manager', 'maintenancemanager', '', d)} \
     "
 
 #PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES' , 'enable_maintenance_manager', ' maintenancemanager', '', d)}"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[maintenancemanager]   = "-DPLUGIN_MAINTENANCEMANAGER=ON -DDISABLE_DCM_TASK=ON,-DPLUGIN_MAINTENANCEMANAGER=OFF,iarmbus iarmmgrs rfc sysint rdkfwupgrader dcmd entservices-apis,iarmbus rfc sysint rdkfwupgrader dcmd entservices-apis"
 PACKAGECONFIG[firmwareupdate]          = "-DPLUGIN_FIRMWAREUPDATE=ON,-DPLUGIN_FIRMWAREUPDATE=OFF,wpeframework-clientlibraries,"
 
 # ----------------------------------------------------------------------------
