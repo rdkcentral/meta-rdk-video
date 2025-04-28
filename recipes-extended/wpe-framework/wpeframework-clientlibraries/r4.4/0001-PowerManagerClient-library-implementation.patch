@@ -1872,65 +1872,65 @@ index 0000000..eb23c38
 +    return PowerController::Instance().IsOperational();
 +}
 +
-+Core::hresult PowerController_GetPowerState(PowerController_PowerState_t* currentState, PowerController_PowerState_t* previousState)
++uint32_t PowerController_GetPowerState(PowerController_PowerState_t* currentState, PowerController_PowerState_t* previousState)
 +{
 +    ASSERT(nullptr != currentState);
 +    ASSERT(nullptr != previousState);
 +    return PowerController::Instance().GetPowerState(currentState, previousState);
 +}
 +
-+Core::hresult PowerController_SetPowerState(const int keyCode, const PowerController_PowerState_t powerstate, const char* reason)
++uint32_t PowerController_SetPowerState(const int keyCode, const PowerController_PowerState_t powerstate, const char* reason)
 +{
 +    return PowerController::Instance().SetPowerState(keyCode, powerstate, reason);
 +}
 +
-+Core::hresult PowerController_GetThermalState(float* currentTemperature)
++uint32_t PowerController_GetThermalState(float* currentTemperature)
 +{
 +    ASSERT(nullptr != currentTemperature);
 +    return PowerController::Instance().GetThermalState(currentTemperature);
 +}
 +
-+Core::hresult PowerController_SetTemperatureThresholds(float high, float critical)
++uint32_t PowerController_SetTemperatureThresholds(float high, float critical)
 +{
 +    return PowerController::Instance().SetTemperatureThresholds(high, critical);
 +}
 +
-+Core::hresult PowerController_GetTemperatureThresholds(float* high, float* critical)
++uint32_t PowerController_GetTemperatureThresholds(float* high, float* critical)
 +{
 +    ASSERT(nullptr != high);
 +    ASSERT(nullptr != critical);
 +    return PowerController::Instance().GetTemperatureThresholds(high, critical);
 +}
 +
-+Core::hresult PowerController_SetOvertempGraceInterval(const int graceInterval)
++uint32_t PowerController_SetOvertempGraceInterval(const int graceInterval)
 +{
 +    return PowerController::Instance().SetOvertempGraceInterval(graceInterval);
 +}
 +
-+Core::hresult PowerController_GetOvertempGraceInterval(int* graceInterval /* @out */)
++uint32_t PowerController_GetOvertempGraceInterval(int* graceInterval /* @out */)
 +{
 +    ASSERT(nullptr != graceInterval);
 +    return PowerController::Instance().GetOvertempGraceInterval(graceInterval);
 +}
 +
-+Core::hresult PowerController_SetDeepSleepTimer(const int timeOut)
++uint32_t PowerController_SetDeepSleepTimer(const int timeOut)
 +{
 +    return PowerController::Instance().SetDeepSleepTimer(timeOut);
 +}
 +
-+Core::hresult PowerController_GetLastWakeupReason(PowerController_WakeupReason_t* wakeupReason)
++uint32_t PowerController_GetLastWakeupReason(PowerController_WakeupReason_t* wakeupReason)
 +{
 +    ASSERT(nullptr != wakeupReason);
 +    return PowerController::Instance().GetLastWakeupReason(wakeupReason);
 +}
 +
-+Core::hresult PowerController_GetLastWakeupKeyCode(int* keycode)
++uint32_t PowerController_GetLastWakeupKeyCode(int* keycode)
 +{
 +    ASSERT(nullptr != keycode);
 +    return PowerController::Instance().GetLastWakeupKeyCode(keycode);
 +}
 +
-+Core::hresult PowerController_Reboot(const char* rebootRequestor, const char* rebootReasonCustom, const char* rebootReasonOther)
++uint32_t PowerController_Reboot(const char* rebootRequestor, const char* rebootReasonCustom, const char* rebootReasonOther)
 +{
 +    ASSERT(nullptr != rebootRequestor);
 +    ASSERT(nullptr != rebootReasonCustom);
@@ -1938,23 +1938,23 @@ index 0000000..eb23c38
 +    return PowerController::Instance().Reboot(rebootRequestor, rebootReasonCustom, rebootReasonOther);
 +}
 +
-+Core::hresult PowerController_SetNetworkStandbyMode(const bool standbyMode)
++uint32_t PowerController_SetNetworkStandbyMode(const bool standbyMode)
 +{
 +    return PowerController::Instance().SetNetworkStandbyMode(standbyMode);
 +}
 +
-+Core::hresult PowerController_GetNetworkStandbyMode(bool* standbyMode)
++uint32_t PowerController_GetNetworkStandbyMode(bool* standbyMode)
 +{
 +    ASSERT(standbyMode != nullptr);
 +    return PowerController::Instance().GetNetworkStandbyMode(standbyMode);
 +}
 +
-+Core::hresult PowerController_SetWakeupSrcConfig(const int powerMode, const int wakeSrcType, int config)
++uint32_t PowerController_SetWakeupSrcConfig(const int powerMode, const int wakeSrcType, int config)
 +{
 +    return PowerController::Instance().SetWakeupSrcConfig(powerMode, wakeSrcType, config);
 +}
 +
-+Core::hresult PowerController_GetWakeupSrcConfig(int* powerMode, int* srcType, int* config)
++uint32_t PowerController_GetWakeupSrcConfig(int* powerMode, int* srcType, int* config)
 +{
 +    ASSERT(nullptr != powerMode);
 +    ASSERT(nullptr != srcType);
@@ -1962,105 +1962,105 @@ index 0000000..eb23c38
 +    return PowerController::Instance().GetWakeupSrcConfig(*powerMode, *srcType, *config);
 +}
 +
-+Core::hresult PowerController_SetSystemMode(const PowerController_SystemMode_t currentMode, const PowerController_SystemMode_t newMode)
++uint32_t PowerController_SetSystemMode(const PowerController_SystemMode_t currentMode, const PowerController_SystemMode_t newMode)
 +{
 +    return PowerController::Instance().SetSystemMode(currentMode, newMode);
 +}
 +
-+Core::hresult PowerController_GetPowerStateBeforeReboot(PowerController_PowerState_t* powerStateBeforeReboot)
++uint32_t PowerController_GetPowerStateBeforeReboot(PowerController_PowerState_t* powerStateBeforeReboot)
 +{
 +    ASSERT(nullptr != powerStateBeforeReboot);
 +    return PowerController::Instance().GetPowerStateBeforeReboot(powerStateBeforeReboot);
 +}
 +
-+Core::hresult PowerController_AddPowerModePreChangeClient(const char* clientName, uint32_t* clientId)
++uint32_t PowerController_AddPowerModePreChangeClient(const char* clientName, uint32_t* clientId)
 +{
 +    ASSERT(nullptr != clientName);
 +    ASSERT(nullptr != clientId);
 +    return PowerController::Instance().AddPowerModePreChangeClient(clientName, *clientId);
 +}
 +
-+Core::hresult PowerController_RemovePowerModePreChangeClient(const uint32_t clientId)
++uint32_t PowerController_RemovePowerModePreChangeClient(const uint32_t clientId)
 +{
 +    return PowerController::Instance().RemovePowerModePreChangeClient(clientId);
 +}
 +
-+Core::hresult PowerController_DelayPowerModeChangeBy(const uint32_t clientId, const int transactionId, const int delayPeriod)
++uint32_t PowerController_DelayPowerModeChangeBy(const uint32_t clientId, const int transactionId, const int delayPeriod)
 +{
 +    return PowerController::Instance().DelayPowerModeChangeBy(clientId, transactionId, delayPeriod);
 +}
 +
-+Core::hresult PowerController_PowerModePreChangeComplete(const uint32_t clientId, const int transactionId)
++uint32_t PowerController_PowerModePreChangeComplete(const uint32_t clientId, const int transactionId)
 +{
 +    return PowerController::Instance().PowerModePreChangeComplete(clientId, transactionId);
 +}
 +
-+Core::hresult PowerController_RegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback, void* userdata)
++uint32_t PowerController_RegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback, void* userdata)
 +{
 +    return PowerController::Instance().RegisterOperationalStateChangedCallback(callback, userdata);
 +}
 +
-+Core::hresult PowerController_UnRegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback)
++uint32_t PowerController_UnRegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback)
 +{
 +    return PowerController::Instance().UnRegisterOperationalStateChangedCallback(callback);
 +}
 +
-+Core::hresult PowerController_RegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback, void* userdata)
++uint32_t PowerController_RegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback, void* userdata)
 +{
 +    return PowerController::Instance().RegisterPowerModeChangedCallback(callback, userdata);
 +}
 +
-+Core::hresult PowerController_UnRegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback)
++uint32_t PowerController_UnRegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback)
 +{
 +    return PowerController::Instance().UnRegisterPowerModeChangedCallback(callback);
 +}
 +
-+Core::hresult PowerController_RegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback, void* userdata)
++uint32_t PowerController_RegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback, void* userdata)
 +{
 +    return PowerController::Instance().RegisterPowerModePreChangeCallback(callback, userdata);
 +}
 +
-+Core::hresult PowerController_UnRegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback)
++uint32_t PowerController_UnRegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback)
 +{
 +    return PowerController::Instance().UnRegisterPowerModePreChangeCallback(callback);
 +}
 +
-+Core::hresult PowerController_RegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback, void* userdata)
++uint32_t PowerController_RegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback, void* userdata)
 +{
 +    return PowerController::Instance().RegisterDeepSleepTimeoutCallback(callback, userdata);
 +}
 +
-+Core::hresult PowerController_UnRegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback)
++uint32_t PowerController_UnRegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback)
 +{
 +    return PowerController::Instance().UnRegisterDeepSleepTimeoutCallback(callback);
 +}
 +
-+Core::hresult PowerController_RegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback, void* userdata)
++uint32_t PowerController_RegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback, void* userdata)
 +{
 +    return PowerController::Instance().RegisterNetworkStandbyModeChangedCallback(callback, userdata);
 +}
 +
-+Core::hresult PowerController_UnRegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback)
++uint32_t PowerController_UnRegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback)
 +{
 +    return PowerController::Instance().UnRegisterNetworkStandbyModeChangedCallback(callback);
 +}
 +
-+Core::hresult PowerController_RegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback, void* userdata)
++uint32_t PowerController_RegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback, void* userdata)
 +{
 +    return PowerController::Instance().RegisterThermalModeChangedCallback(callback, userdata);
 +}
 +
-+Core::hresult PowerController_UnRegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback)
++uint32_t PowerController_UnRegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback)
 +{
 +    return PowerController::Instance().UnRegisterThermalModeChangedCallback(callback);
 +}
 +
-+Core::hresult PowerController_RegisterRebootBeginCallback(PowerController_RebootBeginCb callback, void* userdata)
++uint32_t PowerController_RegisterRebootBeginCallback(PowerController_RebootBeginCb callback, void* userdata)
 +{
 +    return PowerController::Instance().RegisterRebootBeginCallback(callback, userdata);
 +}
 +
-+Core::hresult PowerController_UnRegisterRebootBeginCallback(PowerController_RebootBeginCb callback)
++uint32_t PowerController_UnRegisterRebootBeginCallback(PowerController_RebootBeginCb callback)
 +{
 +    return PowerController::Instance().UnRegisterRebootBeginCallback(callback);
 +}
@@ -2250,7 +2250,7 @@ index 0000000..8739760
 +// @text getPowerState
 +// @brief Get Power State
 +// @param powerState: Get current power state
-+EXTERNAL Core::hresult PowerController_GetPowerState(PowerController_PowerState_t* currentState /* @out */, PowerController_PowerState_t* previousState /* @out */);
++EXTERNAL uint32_t PowerController_GetPowerState(PowerController_PowerState_t* currentState /* @out */, PowerController_PowerState_t* previousState /* @out */);
 +
 +/** Sets Power State . */
 +// @text setPowerState
@@ -2258,62 +2258,62 @@ index 0000000..8739760
 +// @param keyCode: NA for most platfroms, to be depricated
 +// @param powerState: Set power to this state
 +// @param reason: null terminated string stating reason for for state change
-+EXTERNAL Core::hresult PowerController_SetPowerState(const int keyCode /* @in */, const PowerController_PowerState_t powerstate /* @in */, const char* reason /* @in */);
++EXTERNAL uint32_t PowerController_SetPowerState(const int keyCode /* @in */, const PowerController_PowerState_t powerstate /* @in */, const char* reason /* @in */);
 +
 +/** Gets the current Thermal state.*/
 +// @text getThermalState
 +// @brief Get Current Thermal State (temperature)
 +// @param currentTemperature: current temperature
-+EXTERNAL Core::hresult PowerController_GetThermalState(float* currentTemperature /* @out */);
++EXTERNAL uint32_t PowerController_GetThermalState(float* currentTemperature /* @out */);
 +
 +/** Sets the Temperature Thresholds.*/
 +// @text setTemperatureThresholds
 +// @brief Set Temperature Thresholds
 +// @param high: high threshold
 +// @param critical : critical threshold
-+EXTERNAL Core::hresult PowerController_SetTemperatureThresholds(float high /* @in */, float critical /* @in */);
++EXTERNAL uint32_t PowerController_SetTemperatureThresholds(float high /* @in */, float critical /* @in */);
 +
 +/** Gets the current Temperature Thresholds.*/
 +// @text getTemperatureThresholds
 +// @brief Get Temperature Thresholds
 +// @param high: high threshold
 +// @param critical : critical threshold
-+EXTERNAL Core::hresult PowerController_GetTemperatureThresholds(float* high /* @out */, float* critical /* @out */);
++EXTERNAL uint32_t PowerController_GetTemperatureThresholds(float* high /* @out */, float* critical /* @out */);
 +
 +/** Sets the current Temperature Grace interval.*/
 +// @property
 +// @text PowerController_SetOvertempGraceInterval
 +// @brief Set Temperature Thresholds
 +// @param graceInterval: interval in secs?
-+EXTERNAL Core::hresult PowerController_SetOvertempGraceInterval(const int graceInterval /* @in */);
++EXTERNAL uint32_t PowerController_SetOvertempGraceInterval(const int graceInterval /* @in */);
 +
 +/** Gets the grace interval for over-temperature.*/
 +// @property
 +// @text PowerController_GetOvertempGraceInterval
 +// @brief Get Temperature Grace interval
 +// @param graceInterval: interval in secs?
-+EXTERNAL Core::hresult PowerController_GetOvertempGraceInterval(int* graceInterval /* @out */);
++EXTERNAL uint32_t PowerController_GetOvertempGraceInterval(int* graceInterval /* @out */);
 +
 +/** Set Deep Sleep Timer for later wakeup */
 +// @property
 +// @text setDeepSleepTimer
 +// @brief Set Deep sleep timer for timeOut period
 +// @param timeOut: deep sleep timeout
-+EXTERNAL Core::hresult PowerController_SetDeepSleepTimer(const int timeOut /* @in */);
++EXTERNAL uint32_t PowerController_SetDeepSleepTimer(const int timeOut /* @in */);
 +
 +/** Get Last Wakeup reason */
 +// @property
 +// @text getLastWakeupReason
 +// @brief Get Last Wake up reason
 +// @param wakeupReason: wake up reason
-+EXTERNAL Core::hresult PowerController_GetLastWakeupReason(PowerController_WakeupReason_t* wakeupReason /* @out */);
++EXTERNAL uint32_t PowerController_GetLastWakeupReason(PowerController_WakeupReason_t* wakeupReason /* @out */);
 +
 +/** Get Last Wakeup key code */
 +// @property
 +// @text getLastWakeupKeyCode
 +// @brief Get the key code that can be used for wakeup
 +// @param keycode: Key code for wakeup
-+EXTERNAL Core::hresult PowerController_GetLastWakeupKeyCode(int* keycode /* @out */);
++EXTERNAL uint32_t PowerController_GetLastWakeupKeyCode(int* keycode /* @out */);
 +
 +/** Request Reboot with PowerManager */
 +// @text reboot
@@ -2321,20 +2321,20 @@ index 0000000..8739760
 +// @param rebootRequestor: null terminated string identifier for the entity requesting the reboot.
 +// @param rebootReasonCustom: custom-defined reason for the reboot, provided as a null terminated string.
 +// @param rebootReasonOther: null terminated string describing any other reasons for the reboot.
-+EXTERNAL Core::hresult PowerController_Reboot(const char* rebootRequestor /* @in */, const char* rebootReasonCustom /* @in */, const char* rebootReasonOther /* @in */);
++EXTERNAL uint32_t PowerController_Reboot(const char* rebootRequestor /* @in */, const char* rebootReasonCustom /* @in */, const char* rebootReasonOther /* @in */);
 +
 +/** Set Network Standby Mode */
 +// @property
 +// @text setNetworkStandbyMode
 +// @brief Set the standby mode for Network
 +// @param standbyMode: Network standby mode
-+EXTERNAL Core::hresult PowerController_SetNetworkStandbyMode(const bool standbyMode /* @in */);
++EXTERNAL uint32_t PowerController_SetNetworkStandbyMode(const bool standbyMode /* @in */);
 +
 +/** Get Network Standby Mode */
 +// @text getNetworkStandbyMode
 +// @brief Get the standby mode for Network
 +// @param standbyMode: Network standby mode
-+EXTERNAL Core::hresult PowerController_GetNetworkStandbyMode(bool* standbyMode /* @out */);
++EXTERNAL uint32_t PowerController_GetNetworkStandbyMode(bool* standbyMode /* @out */);
 +
 +/** Set Wakeup source configuration */
 +// @text setWakeupSrcConfig
@@ -2342,7 +2342,7 @@ index 0000000..8739760
 +// @param powerMode: power mode
 +// @param wakeSrcType: source type
 +// @param config: config
-+EXTERNAL Core::hresult PowerController_SetWakeupSrcConfig(const int powerMode /* @in */, const int wakeSrcType /* @in */, int config /* @in */);
++EXTERNAL uint32_t PowerController_SetWakeupSrcConfig(const int powerMode /* @in */, const int wakeSrcType /* @in */, int config /* @in */);
 +
 +/** Get Wakeup source configuration */
 +// @text getWakeupSrcConfig
@@ -2350,20 +2350,20 @@ index 0000000..8739760
 +// @param powerMode: power mode
 +// @param srcType: source type
 +// @param config: config
-+EXTERNAL Core::hresult PowerController_GetWakeupSrcConfig(int* powerMode /* @out */, int* srcType /* @out */, int* config /* @out */);
++EXTERNAL uint32_t PowerController_GetWakeupSrcConfig(int* powerMode /* @out */, int* srcType /* @out */, int* config /* @out */);
 +
 +/** Initiate System mode change */
 +// @text PowerController_SetSystemMode
 +// @brief System mode change
 +// @param oldMode: current mode
 +// @param newMode: new mode
-+EXTERNAL Core::hresult PowerController_SetSystemMode(const PowerController_SystemMode_t currentMode /* @in */, const PowerController_SystemMode_t newMode /* @in */);
++EXTERNAL uint32_t PowerController_SetSystemMode(const PowerController_SystemMode_t currentMode /* @in */, const PowerController_SystemMode_t newMode /* @in */);
 +
 +/** Get Power State before last reboot */
 +// @text PowerController_GetPowerStateBeforeReboot
 +// @brief Get Power state before last reboot
 +// @param powerStateBeforeReboot: power state
-+EXTERNAL Core::hresult PowerController_GetPowerStateBeforeReboot(PowerController_PowerState_t* powerStateBeforeReboot /* @out */);
++EXTERNAL uint32_t PowerController_GetPowerStateBeforeReboot(PowerController_PowerState_t* powerStateBeforeReboot /* @out */);
 +
 +/** Engage a client in power mode change operation. */
 +// @text PowerController_AddPowerModePreChangeClient
@@ -2382,21 +2382,21 @@ index 0000000..8739760
 +// @param clientName: Name of the client as null terminated string
 +// @param clientId: Unique identifier for the client to be used while acknowledging the pre-change operation (`PowerModePreChangeComplete`) 
 +//                  or to delay the power mode change (`DelayPowerModeChangeBy`)
-+EXTERNAL Core::hresult PowerController_AddPowerModePreChangeClient(const char *clientName /* @in */, uint32_t* clientId /* @out */);
++EXTERNAL uint32_t PowerController_AddPowerModePreChangeClient(const char *clientName /* @in */, uint32_t* clientId /* @out */);
 +
 +/** Disengage a client from the power mode change operation. */
 +// @text PowerController_RemovePowerModePreChangeClient
 +// @brief Removes a registered client from participating in power mode pre-change operations.
 +//        NOTE client will still continue to receive pre-change notifications.
 +// @param clientId: Unique identifier for the client. See `AddPowerModePreChangeClient`
-+EXTERNAL Core::hresult PowerController_RemovePowerModePreChangeClient(const uint32_t clientId /* @in */);
++EXTERNAL uint32_t PowerController_RemovePowerModePreChangeClient(const uint32_t clientId /* @in */);
 +
 +/** Power prechange activity completed */
 +// @text PowerController_PowerModePreChangeComplete
 +// @brief Pre power mode handling complete for given client and transation id
 +// @param clientId: Unique identifier for the client, as received in AddPowerModePreChangeClient
 +// @param transactionId: transaction id as received in OnPowerModePreChange
-+EXTERNAL Core::hresult PowerController_PowerModePreChangeComplete(const uint32_t clientId /* @in */, const int transactionId /* @in */);
++EXTERNAL uint32_t PowerController_PowerModePreChangeComplete(const uint32_t clientId /* @in */, const int transactionId /* @in */);
 +
 +/** Delay Powermode change by given time */
 +// @text PowerController_DelayPowerModeChangeBy
@@ -2404,7 +2404,7 @@ index 0000000..8739760
 +// @param clientId: Unique identifier for the client, as received in AddPowerModePreChangeClient
 +// @param transactionId: transaction id as received in OnPowerModePreChange
 +// @param delayPeriod: delay in seconds
-+EXTERNAL Core::hresult PowerController_DelayPowerModeChangeBy(const uint32_t clientId /* @in */, const int transactionId /* @in */, const int delayPeriod /* @in */);
++EXTERNAL uint32_t PowerController_DelayPowerModeChangeBy(const uint32_t clientId /* @in */, const int transactionId /* @in */, const int delayPeriod /* @in */);
 +
 +/* Callback data types for event notifications from power manager plugin */
 +// @brief Operational state changed event
@@ -2454,33 +2454,33 @@ index 0000000..8739760
 +/* userdata in all callbacks are opaque, clients can use it to have context to callbacks */
 +
 +/** Register for PowerManager plugin operational state change event callback, for initial state use `PowerController_IsOperational` call */
-+EXTERNAL Core::hresult PowerController_RegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback, void* userdata);
++EXTERNAL uint32_t PowerController_RegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback, void* userdata);
 +/** UnRegister (previously registered) PowerManager plugin operational state change event callback */
-+EXTERNAL Core::hresult PowerController_UnRegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback);
++EXTERNAL uint32_t PowerController_UnRegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback);
 +/** Register for PowerMode changed callback */
-+EXTERNAL Core::hresult PowerController_RegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback, void* userdata);
++EXTERNAL uint32_t PowerController_RegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback, void* userdata);
 +/** UnRegister (previously registered) PowerMode changed callback */
-+EXTERNAL Core::hresult PowerController_UnRegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback);
++EXTERNAL uint32_t PowerController_UnRegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback);
 +/** Register for PowerMode pre-change callback */
-+EXTERNAL Core::hresult PowerController_RegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback, void* userdata);
++EXTERNAL uint32_t PowerController_RegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback, void* userdata);
 +/** UnRegister (previously registered) PowerMode pre-change callback */
-+EXTERNAL Core::hresult PowerController_UnRegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback);
++EXTERNAL uint32_t PowerController_UnRegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback);
 +/** Register for PowerMode pre-change callback */
-+EXTERNAL Core::hresult PowerController_RegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback, void* userdata);
++EXTERNAL uint32_t PowerController_RegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback, void* userdata);
 +/** UnRegister (previously registered) DeepSleep Timeout callback */
-+EXTERNAL Core::hresult PowerController_UnRegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback);
++EXTERNAL uint32_t PowerController_UnRegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback);
 +/** Register for Network Standby Mode changed event - only on XIone */
-+EXTERNAL Core::hresult PowerController_RegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback, void* userdata);
++EXTERNAL uint32_t PowerController_RegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback, void* userdata);
 +/** UnRegister (previously registered) Network Standby Mode changed callback */
-+EXTERNAL Core::hresult PowerController_UnRegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback);
++EXTERNAL uint32_t PowerController_UnRegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback);
 +/** Register for Thermal Mode changed event callback */
-+EXTERNAL Core::hresult PowerController_RegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback, void* userdata);
++EXTERNAL uint32_t PowerController_RegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback, void* userdata);
 +/** UnRegister (previously registered) Thermal Mode changed event callback */
-+EXTERNAL Core::hresult PowerController_UnRegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback);
++EXTERNAL uint32_t PowerController_UnRegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback);
 +/** Register for reboot start event callback */
-+EXTERNAL Core::hresult PowerController_RegisterRebootBeginCallback(PowerController_RebootBeginCb callback, void* userdata);
++EXTERNAL uint32_t PowerController_RegisterRebootBeginCallback(PowerController_RebootBeginCb callback, void* userdata);
 +/** UnRegister (previously registered) reboot start event callback */
-+EXTERNAL Core::hresult PowerController_UnRegisterRebootBeginCallback(PowerController_RebootBeginCb callback);
++EXTERNAL uint32_t PowerController_UnRegisterRebootBeginCallback(PowerController_RebootBeginCb callback);
 +
 +#ifdef __cplusplus
 +}; // extern "C"
