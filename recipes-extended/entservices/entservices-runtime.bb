@@ -51,7 +51,7 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[performancemetrics]   = "-DPLUGIN_PERFORMANCEMETRICS=ON \
                                        -DPLUGIN_PERFORMANCEMETRICS_LOGGER_IMPLEMENTATION=SYSLOG \
                                        -DPLUGIN_PERFORMANCEMETRICS_WEBKITBROWSER_CLASSNAME=ON \
-                                      ,-DPLUGIN_PERFORMANCEMETRICS=OFF, rdkservices-apis,"
+                                      ,-DPLUGIN_PERFORMANCEMETRICS=OFF, entservices-apis,"
 
 # ----------------------------------------------------------------------------
 
