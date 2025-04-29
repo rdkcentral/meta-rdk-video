@@ -26,8 +26,6 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-add-svp-header-to-data-before-decryption.patch \
           "
 
-SRC_URI += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' ', ' file://r4.4/0001-RDK-28534-Security-Agent-Utility-and-Logging-ClientLibs.patch', d)}"
-
 # Oct 17, 2023
 SRCREV_wpeframework-clientlibraries = "699f6c5f83aaffafdfdb75c01b281f292287f6ce"
 

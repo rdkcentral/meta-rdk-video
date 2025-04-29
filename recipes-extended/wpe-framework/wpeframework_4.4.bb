@@ -72,8 +72,6 @@ SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
             file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
            "
 
-SRC_URI += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' ', ' file://r4.4/0001-RDK-28534-Security-Agent-Utility-and-Logging.patch', d)}"
-
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
 
