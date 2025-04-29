@@ -77,7 +77,7 @@ index 44fecef8..d7d8def4 100644
 +};
 diff --git a/Utils/PluginActivator/source/INotification.h b/Utils/PluginActivator/source/INotification.h
 new file mode 100755
-index 00000000..db410acc
+index 00000000..64a2a9cc
 --- /dev/null
 +++ b/Utils/PluginActivator/source/INotification.h
 @@ -0,0 +1,53 @@
@@ -115,7 +115,7 @@ index 00000000..db410acc
 +using namespace WPEFramework;
 +
 +
-+class IPluginNotification : public ILifeTime::INotification{
++class IPluginNotification : public WPEFramework::Exchange::ILifeTime::INotification{
 +public:
 +
 +    IPluginNotification() = default;
