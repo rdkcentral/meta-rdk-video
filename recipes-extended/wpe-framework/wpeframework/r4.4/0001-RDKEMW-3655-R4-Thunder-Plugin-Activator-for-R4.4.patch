@@ -77,10 +77,10 @@ index 44fecef8..d7d8def4 100644
 +};
 diff --git a/Utils/PluginActivator/source/INotification.h b/Utils/PluginActivator/source/INotification.h
 new file mode 100755
-index 00000000..8d5b0411
+index 00000000..db410acc
 --- /dev/null
 +++ b/Utils/PluginActivator/source/INotification.h
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,53 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -102,6 +102,7 @@ index 00000000..8d5b0411
 +
 +#pragma once
 +#include "Module.h"
++#include "IPluginStarter.h"
 +#include "IShell.h"
 +#include <string>
 +
@@ -110,6 +111,8 @@ index 00000000..8d5b0411
 + *
 + * Could be implemented with JSON-RPC or COM-RPC
 + */
++
++using namespace WPEFramework;
 +
 +
 +class IPluginNotification : public ILifeTime::INotification{
