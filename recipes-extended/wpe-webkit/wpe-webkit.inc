@@ -9,7 +9,7 @@ CMAKE_VERBOSE = ""
 DEPENDS += " \
      libwpe \
      bison-native ccache-native glib-2.0-native gperf-native libxml2-native ninja-native ruby-native chrpath-replacement-native \
-     cairo pixman freetype glib-2.0 gnutls harfbuzz icu jpeg pcre sqlite3 zlib \
+     pixman freetype glib-2.0 gnutls harfbuzz icu jpeg pcre sqlite3 zlib \
      libepoxy libpng libwebp libxml2 libxslt \
      virtual/egl virtual/libgles2 \
      libinput libepoxy libgcrypt \
@@ -28,12 +28,10 @@ PACKAGECONFIG ?= "2dcanvas mediasource encryptedmedia \
 PACKAGECONFIG:remove:libc-musl = "sampling-profiler"
 
 # WPE features
-PACKAGECONFIG[2dcanvas] = "-DENABLE_ACCELERATED_2D_CANVAS=ON,-DENABLE_ACCELERATED_2D_CANVAS=OFF,"
 PACKAGECONFIG[deviceorientation] = "-DENABLE_DEVICE_ORIENTATION=ON,-DENABLE_DEVICE_ORIENTATION=OFF,"
 PACKAGECONFIG[fullscreenapi] = "-DENABLE_FULLSCREEN_API=ON,-DENABLE_FULLSCREEN_API=OFF,"
 PACKAGECONFIG[gamepad] = "-DENABLE_GAMEPAD=ON,-DENABLE_GAMEPAD=OFF,"
 PACKAGECONFIG[geolocation] = "-DENABLE_GEOLOCATION=ON,-DENABLE_GEOLOCATION=OFF,"
-PACKAGECONFIG[indexeddb] = "-DENABLE_DATABASE_PROCESS=ON -DENABLE_INDEXED_DATABASE=ON,-DENABLE_DATABASE_PROCESS=OFF -DENABLE_INDEXED_DATABASE=OFF,"
 PACKAGECONFIG[mediasource] = "-DENABLE_MEDIA_SOURCE=ON,-DENABLE_MEDIA_SOURCE=OFF,gstreamer1.0 gstreamer1.0-plugins-good,${RDEPS_MEDIASOURCE}"
 PACKAGECONFIG[notifications] = "-DENABLE_NOTIFICATIONS=ON,-DENABLE_NOTIFICATIONS=OFF,"
 PACKAGECONFIG[sampling-profiler] = "-DENABLE_SAMPLING_PROFILER=ON,-DENABLE_SAMPLING_PROFILER=OFF,"
@@ -60,7 +58,6 @@ LDFLAGS:append = " -Wl,--no-keep-memory"
 
 # don't build debug
 FULL_OPTIMIZATION:remove = "-g"
-FULL_OPTIMIZATION:append = " -g1"
 FULL_OPTIMIZATION:remove = "-Os"
 FULL_OPTIMIZATION:remove = "-O2"
 FULL_OPTIMIZATION:remove = "-O3"
@@ -140,3 +137,9 @@ do_add_version () {
     echo "WPE_WEBKIT_VERSION=${PV}-${PR}" > ${EXTRA_VERSIONS_PATH}/${PN}.txt
 }
 
+do_generate_toolchain_file:append() {
+    cat >> ${WORKDIR}/toolchain.cmake <<EOF
+set ( CMAKE_C_FLAGS_RELWITHDEBINFO "-g1 -DNDEBUG" CACHE STRING "C_FLAGS_RELWITHDEBINFO" )
+set ( CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g1 -DNDEBUG" CACHE STRING "CXX_FLAGS_RELWITHDEBINFO" )
+EOF
+}
