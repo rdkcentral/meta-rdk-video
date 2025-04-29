@@ -4,12 +4,11 @@ HOMEPAGE = "https://github.com/rdkcentral/ThunderClientlibraries"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=847677038847363222ffb66cfa6406c2"
 
 PR = "r15"
-PV = "4.4.1"
+PV = "4.4.2"
 
 inherit python3native cmake pkgconfig
 
 SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https;branch=R4_4;name=wpeframework-clientlibraries \
-           file://r4.4/0001-RDK-28534-Security-Agent-Utility-and-Logging-ClientLibs.patch \
            file://r4.4/Library-version-Matched-With-Release-ClientLibs.patch \
            file://r4.4/0004-R4-Security-Agent-Library-NameChange.patch \
            file://r4.4/0001-Add-functionality-to-construct-Session-private-data.patch \
@@ -20,15 +19,13 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/R4.2_compilation_error_assert.patch \
            file://r4.4/0001-Cryptography-CipherNetflix.r4.4.patch \
            file://r4.4/0003-trace_l2-BuildError-fix.patch \
-           file://r4.4/DELIA-64604-RialtoServer-crash-clientlibraries.patch \
            file://r4.4/0001-reconnect-if-connection-establishment-is-failed.patch \
            file://r4.4/0001-check-_session-has-a-valid-pointer.patch \
-           file://r4.4/0001-PowerManagerClient-library-implementation.patch \
            file://r4.4/0001-add-svp-header-to-data-before-decryption.patch \
           "
 
 # Oct 17, 2023
-SRCREV_wpeframework-clientlibraries = "699f6c5f83aaffafdfdb75c01b281f292287f6ce"
+SRCREV_wpeframework-clientlibraries = "09a75a85e1263e0520f182dea6dc19c673e070a1"
 
 # ----------------------------------------------------------------------------
 
