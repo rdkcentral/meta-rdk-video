@@ -186,9 +186,7 @@ do_install() {
         rm -rf ${D}${base_libdir}/rdk/pNexus.sh
         rm -rf ${D}${base_libdir}/rdk/stackCalls.sh
         rm -rf ${D}${base_libdir}/rdk/watchdog-starter
-        # zram is a machine feature and its script should be removed from
-        # generic portion
-        rm -f ${D}${base_libdir}/rdk/init-zram.sh
+      
 	#
 	# The below scripts are installed by xre for emulator so need to
 	# delete from sysint generic repo. For now, we will prevent these
@@ -270,11 +268,6 @@ do_install() {
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
 }
 
-do_install:append:rdkzram() {
-        install -m 0755 ${S}/lib/rdk/init-zram.sh ${D}${base_libdir}/rdk
-        install -m 0644 ${S}/systemd_units/zram.service ${D}${systemd_unitdir}/system
-}
-
 do_install:append:rdkstb() {
         install -m 0755 ${S}/lib/rdk/heap-usage-stats.sh ${D}/lib/rdk/heap-usage-stats.sh
         install -m 0644 ${S}/systemd_units/usbmodule-whitelist.service ${D}${systemd_unitdir}/system
@@ -328,8 +321,6 @@ SYSTEMD_SERVICE:${PN} += "network-connection-stats.service"
 SYSTEMD_SERVICE:${PN} += "network-connection-stats.timer"
 SYSTEMD_SERVICE:${PN} += "NM_Bootstrap.service"
 SYSTEMD_SERVICE:${PN} += "zram.service"
-
-SYSTEMD_SERVICE:${PN}:append:rdkzram = " zram.service"
 
 SYSTEMD_SERVICE:${PN}:append:rdktv = " vdec-statistics.service"
 
