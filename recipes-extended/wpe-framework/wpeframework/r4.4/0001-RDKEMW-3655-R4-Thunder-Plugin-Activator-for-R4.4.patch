@@ -77,10 +77,10 @@ index 44fecef8..d7d8def4 100644
 +};
 diff --git a/Utils/PluginActivator/source/INotification.h b/Utils/PluginActivator/source/INotification.h
 new file mode 100755
-index 00000000..64a2a9cc
+index 00000000..9a19b945
 --- /dev/null
 +++ b/Utils/PluginActivator/source/INotification.h
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,56 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -103,6 +103,7 @@ index 00000000..64a2a9cc
 +#pragma once
 +#include "Module.h"
 +#include "IPluginStarter.h"
++#include <interfaces/ILifeTime.h>
 +#include "IShell.h"
 +#include <string>
 +
@@ -113,6 +114,8 @@ index 00000000..64a2a9cc
 + */
 +
 +using namespace WPEFramework;
++using namespace Exchange;
++using namespace Controller;
 +
 +
 +class IPluginNotification : public WPEFramework::Exchange::ILifeTime::INotification{
