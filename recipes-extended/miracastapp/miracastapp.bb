@@ -10,9 +10,10 @@ DEPENDS += " sqlite3"
 DEPENDS += " alsa-lib"
 DEPENDS += " libopus"
 DEPENDS += " curl"
-DEPENDS += " rdkservices-apis"
+DEPENDS += " entservices-apis"
 DEPENDS += " wpeframework wpeframework-clientlibraries"
 DEPENDS += " essos"
+DEPENDS += " qtbase"
 DEPENDS += " rdk-gstreamer-utils"
 DEPENDS += " rdkperf"
 DEPENDS:append = " gstreamer1.0 gstreamer1.0-plugins-base secapi2-adapter virtual/vendor-rdk-gstreamer-utils-platform virtual/vendor-gst-drm-plugins"
@@ -32,6 +33,8 @@ SRC_URI += "file://MiracastAppPackage.json"
 SRC_URI += "file://config.xml"
 SRC_URI += "file://run-miracastapp.sh"
 SRC_URI += "file://icon.png"
+SRC_URI += "file://spinner.png"
+SRC_URI += "file://bg.jpg"
 CURR_DIR := "${THISDIR}"
 
 MIRACASTAPP_WIDGET_VERSION ?= "1.0"
@@ -53,6 +56,8 @@ do_create_widget() {
     install -m 755 ${WORKDIR}/run-miracastapp.sh ${WIDGET_FILES_DIR}/
     install -m 755 ${WORKDIR}/config.xml ${WIDGET_FILES_DIR}/
     install -m 755 ${WORKDIR}/icon.png ${WIDGET_FILES_DIR}/
+    install -m 755 ${WORKDIR}/spinner.png ${WIDGET_FILES_DIR}/
+    install -m 755 ${WORKDIR}/bg.jpg ${WIDGET_FILES_DIR}/
     file ${STAGING_DIR_NATIVE}${bindir}/create-sign-sky-app
     ${STAGING_DIR_NATIVE}${bindir}/create-sign-sky-app --skipvalid --indir ${WIDGET_FILES_DIR} --outwgt ${WIDGET_DIR}/package.wgt --pkcs12 ${STAGING_DIR_NATIVE}${datadir}/sky-debug-widget-cert.p12
     mkdir -p ${DEPLOY_DIR_IMAGE}/MiracastApp_widget
@@ -60,7 +65,7 @@ do_create_widget() {
 }
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-SRCREV ?= "70b019729159c93dc5ffbd49b90fe2d5d0b6f329"
+SRCREV ?= "176c557bfea05d690e03947657502f7e969044a0"
 
 PV ?= "1.0"
 PR ?= "r0"
@@ -92,6 +97,8 @@ EXTRA_OEMAKE += " SKY_BUILD=1"
 CXXFLAGS += " -DSKY_BUILD=1"
 CXXFLAGS += " -I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal -I${STAGING_INCDIR}/rdk/ds -I${STAGING_INCDIR}/rdk/ds-hal -I${STAGING_INCDIR}/rdk/halif/ds-hal -I${STAGING_INCDIR}/rdk/ds-rpc -I${STAGING_INCDIR}/systemd"
 CFLAGS += " -DSKY_BUILD=1"
+
+#EXTRA_OEMAKE += "'CXX=${CXX}' 'CXXFLAGS=${CXXFLAGS} $(shell pkg-config --cflags Qt5Gui Qt5Widgets Qt5Core)' 'LDFLAGS=${LDFLAGS} $(shell pkg-config --libs Qt5Gui Qt5Widgets Qt5Core)'"
 
 
 inherit autotools pkgconfig
