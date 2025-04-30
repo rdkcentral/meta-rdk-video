@@ -2,7 +2,7 @@ SUMMARY = "ENTServices deviceanddisplay plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV ?= "1.1.5"
+PV ?= "1.1.6"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.1.5
-SRCREV = "136bce20d5ba2ad6174a24d9557b4a6194d5d4ec"
+# Release version - 1.1.6
+SRCREV = "c1aae6190ccbddd9af3f594a5f03a73e07e92d20"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
