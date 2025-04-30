@@ -6,9 +6,9 @@ Source: COMCAST
 Upstream-Status: N/A
 Signed-off-by: Sergey Borushevsky <Sergey_Borushevsky2@cable.comcast.com>
 
-diff -uprN a/systemd/system/wpeframework-displaysettings.service b/systemd/system/wpeframework-displaysettings.service
---- a/systemd/system/wpeframework-displaysettings.service	2024-07-09 23:22:54.827863978 +0300
-+++ b/systemd/system/wpeframework-displaysettings.service	2024-07-10 19:27:36.708407535 +0300
+diff -uprN a/wpeframework-displaysettings.service b/wpeframework-displaysettings.service
+--- a/wpeframework-displaysettings.service	2024-07-09 23:22:54.827863978 +0300
++++ b/wpeframework-displaysettings.service	2024-07-10 19:27:36.708407535 +0300
 @@ -1,7 +1,7 @@
  [Unit]
  Description=WPEFramework DisplaySettings Initialiser
