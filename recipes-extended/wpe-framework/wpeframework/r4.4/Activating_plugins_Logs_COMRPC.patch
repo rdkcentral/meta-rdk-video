@@ -7,7 +7,7 @@ index 26609995..7cf05559 100644
              if (service->State() != PluginHost::Service::state::UNAVAILABLE) {
                  if (service->Startup() == PluginHost::IShell::startup::ACTIVATED) {
 -                    SYSLOG(Logging::Startup, (_T("Activating plugin [%s]:[%s]"),
-+                    SYSLOG(Logging::Startup, (_T("Activating plugin [%s]:[%s] started, autostart is true"),
++                    SYSLOG(Logging::Startup, (_T("Activating plugin [%s]:[%s], autostart is true"),
                          service->ClassName().c_str(), service->Callsign().c_str()));
                      service->Activate(PluginHost::IShell::STARTUP);
                  }
