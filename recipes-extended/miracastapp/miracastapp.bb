@@ -65,7 +65,7 @@ do_create_widget() {
 }
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-SRCREV ?= "176c557bfea05d690e03947657502f7e969044a0"
+SRCREV ?= "6fbcc7e97917d767887012de2943ad454385c4c7"
 
 PV ?= "1.0"
 PR ?= "r0"
