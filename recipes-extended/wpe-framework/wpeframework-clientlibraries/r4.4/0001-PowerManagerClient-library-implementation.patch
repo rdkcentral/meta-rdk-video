@@ -1,4 +1,4 @@
-From 068bef79bb4597136b9c1c0a7270ee14474c85d1 Mon Sep 17 00:00:00 2001
+From 4cd3b5f4d2c55a004dc3202baea93b81709ea1d8 Mon Sep 17 00:00:00 2001
 From: Shrinivas Kamath <skamath@synamedia.com>
 Date: Wed, 22 Jan 2025 15:52:21 +0000
 Subject: [PATCH] PowerController (PowerManager plugin client) implementation
@@ -13,6 +13,7 @@ interface changes for enhanced instance management and add operational state tra
   `Dispose` (older API now removed)
 - Introduced isOperational and it's state change callback
 - PowerModePreChange & Thunder restart handling
+- Adapt to IPowerManager interface changes
 
 %% original patch: 0001-PowerManagerClient-library-implementation.patch
 ---
@@ -227,7 +228,7 @@ index 0000000..c9c1321
 +#endif
 diff --git a/Source/powercontroller/power_controller.cpp b/Source/powercontroller/power_controller.cpp
 new file mode 100644
-index 0000000..93f10cf
+index 0000000..eb23c38
 --- /dev/null
 +++ b/Source/powercontroller/power_controller.cpp
 @@ -0,0 +1,1834 @@
@@ -945,27 +946,27 @@ index 0000000..93f10cf
 +        Notification(Notification&&) = delete; // Delete move constructor
 +        Notification& operator=(Notification&&) = delete; // Delete move assignment operator
 +
-+        virtual void OnPowerModeChanged(const PowerState& currentState, const PowerState& newState) override
++        virtual void OnPowerModeChanged(const PowerState currentState, const PowerState newState) override
 +        {
 +            _parent.NotifyPowerModeChanged(currentState, newState);
 +        }
 +
-+        virtual void OnPowerModePreChange(const PowerState& currentState, const PowerState& newState, const int transactionId, const int stateChangeAfter) override
++        virtual void OnPowerModePreChange(const PowerState currentState, const PowerState newState, const int transactionId, const int stateChangeAfter) override
 +        {
 +            _parent.NotifyPowerModePreChange(currentState, newState, transactionId, stateChangeAfter);
 +        }
 +
-+        virtual void OnDeepSleepTimeout(const int& wakeupTimeout) override
++        virtual void OnDeepSleepTimeout(const int wakeupTimeout) override
 +        {
 +            _parent.NotifyDeepSleepTimeout(wakeupTimeout);
 +        }
 +
-+        virtual void OnNetworkStandbyModeChanged(const bool& enabled) override
++        virtual void OnNetworkStandbyModeChanged(const bool enabled) override
 +        {
 +            _parent.NotifyNetworkStandbyModeChanged(enabled);
 +        }
 +
-+        virtual void OnThermalModeChanged(const ThermalTemperature& currentThermalLevel, const ThermalTemperature& newThermalLevel, const float& currentTemperature) override
++        virtual void OnThermalModeChanged(const ThermalTemperature currentThermalLevel, const ThermalTemperature newThermalLevel, const float currentTemperature) override
 +        {
 +            _parent.NotifyThermalModeChanged(currentThermalLevel, newThermalLevel, currentTemperature);
 +        }
@@ -1216,9 +1217,9 @@ index 0000000..93f10cf
 +        return *_instance;
 +    }
 +
-+    uint32_t GetPowerState(PowerController_PowerState_t* currentState, PowerController_PowerState_t* previousState)
++    Core::hresult GetPowerState(PowerController_PowerState_t* currentState, PowerController_PowerState_t* previousState)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        PowerState currentState_ = PowerState::POWER_STATE_UNKNOWN;
 +        PowerState previousState_ = PowerState::POWER_STATE_UNKNOWN;
@@ -1239,9 +1240,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t SetPowerState(const int keyCode, const PowerController_PowerState_t powerState, const char* reason)
++    Core::hresult SetPowerState(const int keyCode, const PowerController_PowerState_t powerState, const char* reason)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        PowerState powerState_ = convert(powerState);
 +
@@ -1256,9 +1257,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t GetThermalState(float* currentTemperature)
++    Core::hresult GetThermalState(float* currentTemperature)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1271,9 +1272,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t SetTemperatureThresholds(float high, float critical)
++    Core::hresult SetTemperatureThresholds(float high, float critical)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1286,9 +1287,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t GetTemperatureThresholds(float* high, float* critical)
++    Core::hresult GetTemperatureThresholds(float* high, float* critical)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1301,9 +1302,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t SetOvertempGraceInterval(const int graceInterval)
++    Core::hresult SetOvertempGraceInterval(const int graceInterval)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1316,9 +1317,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t GetOvertempGraceInterval(int* graceInterval)
++    Core::hresult GetOvertempGraceInterval(int* graceInterval)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1331,9 +1332,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t SetDeepSleepTimer(const int timeOut)
++    Core::hresult SetDeepSleepTimer(const int timeOut)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1346,9 +1347,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t GetLastWakeupReason(PowerController_WakeupReason_t* wakeupReason)
++    Core::hresult GetLastWakeupReason(PowerController_WakeupReason_t* wakeupReason)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +        WakeupReason wakeupReason_ = WakeupReason::WAKEUP_REASON_UNKNOWN;
 +
 +        _apiLock.Lock();
@@ -1366,9 +1367,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t GetLastWakeupKeyCode(int* keycode)
++    Core::hresult GetLastWakeupKeyCode(int* keycode)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1381,9 +1382,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t Reboot(const char* rebootRequestor, const char* rebootReasonCustom, const char* rebootReasonOther)
++    Core::hresult Reboot(const char* rebootRequestor, const char* rebootReasonCustom, const char* rebootReasonOther)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1396,9 +1397,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t SetNetworkStandbyMode(const bool standbyMode)
++    Core::hresult SetNetworkStandbyMode(const bool standbyMode)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1410,9 +1411,9 @@ index 0000000..93f10cf
 +
 +        return result;
 +    }
-+    uint32_t GetNetworkStandbyMode(bool* standbyMode)
++    Core::hresult GetNetworkStandbyMode(bool* standbyMode)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1425,9 +1426,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t SetWakeupSrcConfig(const int powerMode, const int wakeSrcType, int config)
++    Core::hresult SetWakeupSrcConfig(const int powerMode, const int wakeSrcType, int config)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1440,9 +1441,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t GetWakeupSrcConfig(int& powerMode, int& srcType, int& config)
++    Core::hresult GetWakeupSrcConfig(int& powerMode, int& srcType, int& config)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1455,9 +1456,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t SetSystemMode(const PowerController_SystemMode_t currentMode, const PowerController_SystemMode_t newMode)
++    Core::hresult SetSystemMode(const PowerController_SystemMode_t currentMode, const PowerController_SystemMode_t newMode)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +        SystemMode currentMode_ = convert(currentMode);
 +        SystemMode newMode_ = convert(newMode);
 +
@@ -1472,9 +1473,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t GetPowerStateBeforeReboot(PowerController_PowerState_t* powerStateBeforeReboot)
++    Core::hresult GetPowerStateBeforeReboot(PowerController_PowerState_t* powerStateBeforeReboot)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +        PowerState powerStateBeforeReboot_ = PowerState::POWER_STATE_UNKNOWN;
 +
 +        _apiLock.Lock();
@@ -1492,9 +1493,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t AddPowerModePreChangeClient(const std::string& clientName, uint32_t& clientId)
++    Core::hresult AddPowerModePreChangeClient(const std::string& clientName, uint32_t& clientId)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1507,9 +1508,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t RemovePowerModePreChangeClient(const uint32_t clientId)
++    Core::hresult RemovePowerModePreChangeClient(const uint32_t clientId)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1522,9 +1523,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t DelayPowerModeChangeBy(const uint32_t clientId, const int transactionId, const int delay)
++    Core::hresult DelayPowerModeChangeBy(const uint32_t clientId, const int transactionId, const int delay)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1537,9 +1538,9 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    uint32_t PowerModePreChangeComplete(const uint32_t clientId, const int transactionId)
++    Core::hresult PowerModePreChangeComplete(const uint32_t clientId, const int transactionId)
 +    {
-+        uint32_t result = Core::ERROR_UNAVAILABLE;
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
 +        _apiLock.Lock();
 +
@@ -1552,7 +1553,7 @@ index 0000000..93f10cf
 +        return result;
 +    }
 +
-+    void NotifyPowerModeChanged(const PowerState& currentState, const PowerState& newState)
++    void NotifyPowerModeChanged(const PowerState currentState, const PowerState newState)
 +    {
 +        PowerController_PowerState_t currentState_ = convert(currentState);
 +        PowerController_PowerState_t newState_ = convert(newState);
@@ -1565,7 +1566,7 @@ index 0000000..93f10cf
 +        _callbackLock.Unlock();
 +    }
 +
-+    void NotifyPowerModePreChange(const PowerState& currentState, const PowerState& newState, const int transactionId, const int stateChangeAfter)
++    void NotifyPowerModePreChange(const PowerState currentState, const PowerState newState, const int transactionId, const int stateChangeAfter)
 +    {
 +        PowerController_PowerState_t currentState_ = convert(currentState);
 +        PowerController_PowerState_t newState_ = convert(newState);
@@ -1578,7 +1579,7 @@ index 0000000..93f10cf
 +        _callbackLock.Unlock();
 +    }
 +
-+    void NotifyDeepSleepTimeout(const int& wakeupTimeout)
++    void NotifyDeepSleepTimeout(const int wakeupTimeout)
 +    {
 +        _callbackLock.Lock();
 +
@@ -1589,7 +1590,7 @@ index 0000000..93f10cf
 +        _callbackLock.Unlock();
 +    }
 +
-+    void NotifyNetworkStandbyModeChanged(const bool& enabled)
++    void NotifyNetworkStandbyModeChanged(const bool enabled)
 +    {
 +        _callbackLock.Lock();
 +
@@ -1600,7 +1601,7 @@ index 0000000..93f10cf
 +        _callbackLock.Unlock();
 +    }
 +
-+    void NotifyThermalModeChanged(const ThermalTemperature& currentThermalLevel, const ThermalTemperature& newThermalLevel, const float& currentTemperature)
++    void NotifyThermalModeChanged(const ThermalTemperature currentThermalLevel, const ThermalTemperature newThermalLevel, const float currentTemperature)
 +    {
 +        PowerController_ThermalTemperature_t currentThermalLevel_ = convert(currentThermalLevel);
 +        PowerController_ThermalTemperature_t newThermalLevel_ = convert(newThermalLevel);
@@ -1627,9 +1628,9 @@ index 0000000..93f10cf
 +
 +    // Generic template function for callback register
 +    template <typename CallbackType, typename PARENT>
-+    uint32_t RegisterCallback(CallbackList<CallbackType, PARENT>& callbacklist, typename CallbackType::Type callback, void* userdata)
++    Core::hresult RegisterCallback(CallbackList<CallbackType, PARENT>& callbacklist, typename CallbackType::Type callback, void* userdata)
 +    {
-+        uint32_t result = Core::ERROR_INVALID_PARAMETER;
++        Core::hresult result = Core::ERROR_INVALID_PARAMETER;
 +
 +        ASSERT(nullptr != callback);
 +
@@ -1646,9 +1647,9 @@ index 0000000..93f10cf
 +
 +    // Generic template function for callback unregister
 +    template <typename CallbackType, typename PARENT>
-+    uint32_t UnRegisterCallback(CallbackList<CallbackType, PARENT>& callbacklist, typename CallbackType::Type callback)
++    Core::hresult UnRegisterCallback(CallbackList<CallbackType, PARENT>& callbacklist, typename CallbackType::Type callback)
 +    {
-+        uint32_t result = Core::ERROR_INVALID_PARAMETER;
++        Core::hresult result = Core::ERROR_INVALID_PARAMETER;
 +
 +        ASSERT(nullptr != callback);
 +
@@ -1663,72 +1664,72 @@ index 0000000..93f10cf
 +        return (result);
 +    }
 +
-+    uint32_t RegisterOperationalStateChangedCallback(PowerController_OperationalStateChangeCb callback, void* userdata)
++    Core::hresult RegisterOperationalStateChangedCallback(PowerController_OperationalStateChangeCb callback, void* userdata)
 +    {
 +        return RegisterCallback(_operationalStateChangeCallbacks, callback, userdata);
 +    }
 +
-+    uint32_t UnRegisterOperationalStateChangedCallback(PowerController_OperationalStateChangeCb callback)
++    Core::hresult UnRegisterOperationalStateChangedCallback(PowerController_OperationalStateChangeCb callback)
 +    {
 +        return UnRegisterCallback(_operationalStateChangeCallbacks, callback);
 +    }
 +
-+    uint32_t RegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback, void* userdata)
++    Core::hresult RegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback, void* userdata)
 +    {
 +        return RegisterCallback(_powerModeChangedCallbacks, callback, userdata);
 +    }
 +
-+    uint32_t UnRegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback)
++    Core::hresult UnRegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback)
 +    {
 +        return UnRegisterCallback(_powerModeChangedCallbacks, callback);
 +    }
 +
-+    uint32_t RegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback, void* userdata)
++    Core::hresult RegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback, void* userdata)
 +    {
 +        return RegisterCallback(_powerModePreChangeCallbacks, callback, userdata);
 +    }
 +
-+    uint32_t UnRegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback)
++    Core::hresult UnRegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback)
 +    {
 +        return UnRegisterCallback(_powerModePreChangeCallbacks, callback);
 +    }
 +
-+    uint32_t RegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback, void* userdata)
++    Core::hresult RegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback, void* userdata)
 +    {
 +        return RegisterCallback(_deepSleepTimeoutCallbacks, callback, userdata);
 +    }
 +
-+    uint32_t UnRegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback)
++    Core::hresult UnRegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback)
 +    {
 +        return UnRegisterCallback(_deepSleepTimeoutCallbacks, callback);
 +    }
 +
-+    uint32_t RegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback, void* userdata)
++    Core::hresult RegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback, void* userdata)
 +    {
 +        return RegisterCallback(_networkStandbyModeChangedCallbacks, callback, userdata);
 +    }
 +
-+    uint32_t UnRegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback)
++    Core::hresult UnRegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback)
 +    {
 +        return UnRegisterCallback(_networkStandbyModeChangedCallbacks, callback);
 +    }
 +
-+    uint32_t RegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback, void* userdata)
++    Core::hresult RegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback, void* userdata)
 +    {
 +        return RegisterCallback(_thermalModeChangedCallbacks, callback, userdata);
 +    }
 +
-+    uint32_t UnRegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback)
++    Core::hresult UnRegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback)
 +    {
 +        return UnRegisterCallback(_thermalModeChangedCallbacks, callback);
 +    }
 +
-+    uint32_t RegisterRebootBeginCallback(PowerController_RebootBeginCb callback, void* userdata)
++    Core::hresult RegisterRebootBeginCallback(PowerController_RebootBeginCb callback, void* userdata)
 +    {
 +        return RegisterCallback(_rebootBeginCallbacks, callback, userdata);
 +    }
 +
-+    uint32_t UnRegisterRebootBeginCallback(PowerController_RebootBeginCb callback)
++    Core::hresult UnRegisterRebootBeginCallback(PowerController_RebootBeginCb callback)
 +    {
 +        return UnRegisterCallback(_rebootBeginCallbacks, callback);
 +    }

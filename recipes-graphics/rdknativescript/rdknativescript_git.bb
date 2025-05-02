@@ -2,7 +2,7 @@ DESCRIPTION = "JSRuntime"
 HOMEPAGE = ""
 
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://${MANIFEST_PATH_META_RDK}/licenses/Apache-2.0;md5=3b83ef96387f14655fc854ddc3c6bd57"
+LIC_FILES_CHKSUM = "file://${THISDIR}/files/Apache-2.0;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 DEPENDS = "westeros essos rapidjson rtcore libuv gstreamer1.0 uwebsockets javascriptcore aamp websocketpp"
 DEPENDS:append = " virtual/egl"
@@ -66,7 +66,7 @@ do_install() {
    cp -a ${S}/src/jsc/modules/node-fetch.js ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
-
+   cp -a ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
 
    install -d ${D}/${libdir}
    cp -a ${B}/libJSRuntimeJSC.so ${D}/${libdir}

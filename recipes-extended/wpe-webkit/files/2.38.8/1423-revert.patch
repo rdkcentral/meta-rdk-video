@@ -1,0 +1,111 @@
+From 78ce372adae0cf7f80730fe7432a03b12ee8f80a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Enrique=20Oca=C3=B1a=20Gonz=C3=A1lez?= <eocanha@igalia.com>
+Date: Thu, 13 Feb 2025 18:18:49 +0100
+Subject: [PATCH] Unreviewed, reverting 287274@main (71a7e0a)
+ https://bugs.webkit.org/show_bug.cgi?id=285568 rdar://142517488
+
+Broke duolingo, calling play() during a seek() is allowed by the spec. And the play event should be fired even if the seek hasn't completed.
+
+Reverted change:
+
+    [Media] Avoid play() call during seek flow before the finishSeek()
+    https://bugs.webkit.org/show_bug.cgi?id=283172
+    287274@main (71a7e0a)
+
+Canonical link: https://commits.webkit.org/288588@main
+
+---
+
+Revert "[Media] Avoid play() call during seek flow before the finishSeek()"
+
+This reverts commit 6e84da2d0ec3cee5a8b20b07018c2dfcf776c7c8.
+
+See upstream revert: https://bugs.webkit.org/show_bug.cgi?id=285568
+See downstream discussion: https://github.com/WebPlatformForEmbedded/WPEWebKit/pull/1423
+---
+ Source/WebCore/html/HTMLMediaElement.cpp | 27 +++---------------------
+ Source/WebCore/html/HTMLMediaElement.h   |  2 --
+ 2 files changed, 3 insertions(+), 26 deletions(-)
+
+diff --git a/Source/WebCore/html/HTMLMediaElement.cpp b/Source/WebCore/html/HTMLMediaElement.cpp
+index d309d96e0627b..d5f88dfb47ced 100644
+--- a/Source/WebCore/html/HTMLMediaElement.cpp
++++ b/Source/WebCore/html/HTMLMediaElement.cpp
+@@ -3212,10 +3212,6 @@ void HTMLMediaElement::seekWithTolerance(const MediaTime& inTime, const MediaTim
+     refreshCachedTime();
+     MediaTime now = currentMediaTime();
+ 
+-    // Needed to detect a special case in updatePlayState().
+-    if (now >= durationMediaTime())
+-        m_seekAfterPlaybackEnded = true;
+-
+     // 3 - If the element's seeking IDL attribute is true, then another instance of this algorithm is
+     // already running. Abort that other instance of the algorithm without waiting for the step that
+     // it is running to complete.
+@@ -3387,8 +3383,6 @@ void HTMLMediaElement::finishSeek()
+ #endif
+     if (wasPlayingBeforeSeeking)
+         playInternal();
+-
+-    m_seekAfterPlaybackEnded = false;
+ }
+ 
+ HTMLMediaElement::ReadyState HTMLMediaElement::readyState() const
+@@ -3810,10 +3804,8 @@ void HTMLMediaElement::playInternal()
+     if (!m_player || m_networkState == NETWORK_EMPTY)
+         selectMediaResource();
+ 
+-    if (endedPlayback()) {
+-        m_seekAfterPlaybackEnded = true;
++    if (endedPlayback())
+         seekInternal(MediaTime::zeroTime());
+-    }
+ 
+     if (m_mediaController)
+         m_mediaController->bringElementUpToSpeed(*this);
+@@ -5776,17 +5768,7 @@ void HTMLMediaElement::updatePlayState()
+     if (shouldBePlaying) {
+         invalidateCachedTime();
+ 
+-        // Play is always allowed, except when seeking (to avoid unpausing the video by mistake until the
+-        // target time is reached). However, there are some exceptional situations when we allow playback
+-        // during seek. This is because GStreamer-based implementation have a design limitation that doesn't
+-        // allow initial seeks (seeking before going to playing state), and these exceptions make things
+-        // work for those platforms.
+-        bool isLooping = loop() && m_lastSeekTime == MediaTime::zeroTime();
+-        bool playExceptionsWhenSeeking = m_seeking && (m_firstTimePlaying
+-            || isLooping || m_isResumingPlayback || m_seekAfterPlaybackEnded);
+-        bool allowPlay = !m_seeking || playExceptionsWhenSeeking;
+-
+-        if (playerPaused && allowPlay) {
++        if (playerPaused) {
+             mediaSession().clientWillBeginPlayback();
+ 
+             // Set rate, muted and volume before calling play in case they were set before the media engine was set up.
+@@ -8131,11 +8113,8 @@ void HTMLMediaElement::resumeAutoplaying()
+ void HTMLMediaElement::mayResumePlayback(bool shouldResume)
+ {
+     ALWAYS_LOG(LOGIDENTIFIER, "paused = ", paused());
+-    if (paused() && shouldResume) {
+-        m_isResumingPlayback = true;
++    if (paused() && shouldResume)
+         play();
+-        m_isResumingPlayback = false;
+-    }
+ }
+ 
+ String HTMLMediaElement::mediaSessionTitle() const
+diff --git a/Source/WebCore/html/HTMLMediaElement.h b/Source/WebCore/html/HTMLMediaElement.h
+index 70eb082e5944a..219c6ef3e6823 100644
+--- a/Source/WebCore/html/HTMLMediaElement.h
++++ b/Source/WebCore/html/HTMLMediaElement.h
+@@ -1162,8 +1162,6 @@ class HTMLMediaElement
+     bool m_shouldAudioPlaybackRequireUserGesture : 1;
+     bool m_shouldVideoPlaybackRequireUserGesture : 1;
+     bool m_volumeLocked : 1;
+-    bool m_isResumingPlayback : 1 { false };
+-    bool m_seekAfterPlaybackEnded : 1 { false };
+ 
+     AutoplayEventPlaybackState m_autoplayEventPlaybackState { AutoplayEventPlaybackState::None };
+
+

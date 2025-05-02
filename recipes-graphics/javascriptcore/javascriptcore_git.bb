@@ -49,6 +49,12 @@ SELECTED_OPTIMIZATION:append = " ${WPE_WEBKIT_OPTIMIZATION}"
 SELECTED_OPTIMIZATION:remove = "-g"
 SELECTED_OPTIMIZATION:append = " -g1 "
 
+#Optimize for size
+SELECTED_OPTIMIZATION:append = " -Os"
+SELECTED_OPTIMIZATION:append = " -fdata-sections -ffunction-sections"
+SELECTED_OPTIMIZATION:append = " -flto"
+SELECTED_OPTIMIZATION:append = " -fstack-usage"
+
 TUNE_CCARGS:remove = "-fno-omit-frame-pointer -fno-optimize-sibling-calls"
 TUNE_CCARGS:append = " -fno-delete-null-pointer-checks"
 
@@ -58,6 +64,7 @@ LDFLAGS:append = " -Wl,--no-keep-memory,--strip-all"
 do_install() {
    install -d ${D}/${libdir}
    install -d ${D}/${libdir}/javascriptcore
+   rm -f ${B}/lib/libJavaScriptCore.so*.ltrans*
    cp -a ${B}/lib/libJavaScriptCore.so* ${D}/${libdir}/javascriptcore/.
 
    install -d ${D}${includedir}
@@ -71,7 +78,7 @@ do_install() {
    cp -R ${B}/WTF/Headers/* ${D}${includedir}/.
 }
 
-FILES:${PN} += " ${libdir}/javascriptcore/libJavaScriptCore*"
+FILES:${PN} += " ${libdir}/javascriptcore/libJavaScriptCore.so*"
 FILES_SOLIBSDEV = ""
 INSANE_SKIP:${PN} += "dev-so staticdev"
 INSANE_SKIP:${PN}:append:morty = " ldflags"
