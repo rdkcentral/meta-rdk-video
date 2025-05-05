@@ -58,6 +58,7 @@ PACKAGECONFIG ?= " monitor \
     usbmass_storage \
     usersettings \
     analytics \
+    storagemanager \
     ocicontainer \
     runtimemanager \
     messagecontrol \
@@ -119,6 +120,7 @@ PACKAGECONFIG[rdkshellrialto]       = "-DRIALTO_FEATURE=ON,-DRIALTO_FEATURE=OFF,
 PACKAGECONFIG[rustadapter]          = "-DPLUGIN_RUSTADAPTER=ON,,,"
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON,-DPLUGIN_RUNTIME_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[rdknativescript]      = "-DPLUGIN_NATIVEJS=ON,-DPLUGIN_NATIVEJS=OFF,rdknativescript,libuv"
+PACKAGECONFIG[storagemanager]       = "-DPLUGIN_STORAGE_MANAGER=ON,-DPLUGIN_STORAGE_MANAGER=OFF,entservices-apis,entservices-apis"
 
 # ----------------------------------------------------------------------------
 
@@ -156,7 +158,11 @@ python () {
 
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
+    install -d ${D}${libdir}/wpeframework/plugins
+    install -d ${D}${sysconfdir}/WPEFramework/plugins
     install -m 0644 ${WORKDIR}/rdkshell_post_startup.conf ${D}${sysconfdir}
+    touch ${D}${libdir}/wpeframework/plugins/libWPEFrameworkL3Tests.so
+    echo '{}' > ${D}${sysconfdir}/WPEFramework/plugins/L3Tests.json
     if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
     then
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
