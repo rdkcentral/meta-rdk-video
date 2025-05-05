@@ -11,18 +11,19 @@ index bd465e3a..5f88d771 100644
  
  target_link_libraries(${PROJECT_NAME}
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
-index f2d27ed4..774506cd 100644
+index f2d27ed4..ab0c9f59 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.cpp
 +++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
-@@ -49,6 +49,7 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -49,6 +49,8 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
      // Attempt to open the plugin shell
      bool success = false;
      int currentRetry = 1;
-+    Exchange::Controller::ILifeTime::IPluginNotification pluginNotification;	
++    //Exchange::Controller::ILifeTime::IPluginNotification pluginNotification;	
++    IPluginNotification pluginNotification;	
  
      while (!success && currentRetry <= maxRetries) {
          LOG_INF(_pluginName.c_str(), "Attempting to activate plugin - attempt %d/%d", currentRetry, maxRetries);
-@@ -73,9 +74,16 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -73,9 +75,16 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
              // Sleep, then try again
              std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
          } else {
@@ -41,7 +42,7 @@ index f2d27ed4..774506cd 100644
              auto duration = Core::Time::Now().Sub(start.MilliSeconds());
  
              if (result != Core::ERROR_NONE) {
-@@ -91,7 +99,13 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -91,7 +100,13 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
                  std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
              } else {
                  // Our work here is done!
