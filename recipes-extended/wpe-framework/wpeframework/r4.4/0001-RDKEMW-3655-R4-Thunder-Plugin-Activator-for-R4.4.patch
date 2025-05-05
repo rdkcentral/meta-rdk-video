@@ -78,10 +78,10 @@ index 44fecef8..d7d8def4 100644
 +};
 diff --git a/Utils/PluginActivator/source/INotification.h b/Utils/PluginActivator/source/INotification.h
 new file mode 100755
-index 00000000..cc8d489d
+index 00000000..dca3535f
 --- /dev/null
 +++ b/Utils/PluginActivator/source/INotification.h
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,67 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -145,13 +145,16 @@ index 00000000..cc8d489d
 +     Core::hresult Hibernate(const string& callsign, const Core::hresult timeout);
 +     Core::hresult Suspend(const string& callsign);
 +     Core::hresult Resume(const string& callsign);
++     void IPluginNotification::AddRef() const;
++     uint32_t IPluginNotification::Release() const;
++     void* IPluginNotification::QueryInterface(const uint32_t interfaceNumber);
 +};
 diff --git a/Utils/PluginActivator/source/NotificationHandler.cpp b/Utils/PluginActivator/source/NotificationHandler.cpp
 new file mode 100755
-index 00000000..3cb0c266
+index 00000000..c80e7091
 --- /dev/null
 +++ b/Utils/PluginActivator/source/NotificationHandler.cpp
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,83 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -220,3 +223,18 @@ index 00000000..3cb0c266
 +     {
 +	 return Core::ERROR_NONE;
 +     }
++
++
++     void IPluginNotification::AddRef() const
++{
++
++}
++     uint32_t IPluginNotification::Release() const
++{
++	 return 1;
++}	
++void* IPluginNotification::QueryInterface(const uint32_t interfaceNumber)
++{
++    void *temp;
++    return temp;
++}
