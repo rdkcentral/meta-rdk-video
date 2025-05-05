@@ -117,7 +117,7 @@ index 00000000..02559204
 +using namespace Controller;
 +
 +
-+class IPluginNotification : public WPEFramework::Exchange::ILifeTime::INotification{
++class IPluginNotification : public WPEFramework::Exchange::Controller::ILifeTime::INotification{
 +public:
 +
 +    IPluginNotification() = default;
