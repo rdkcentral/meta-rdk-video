@@ -16,6 +16,7 @@ Environment="XDG_DATA_HOME=/opt/QT/home"
 Environment="FORCE_SVP=TRUE"
 Environment="FORCE_SAP=TRUE"
 Environment="WESTEROS_GL_GRAPHICS_MAX_SIZE=1920x1080"
+Environment="WESTEROS_GL_NO_VBLANK=1"
 ExecStart=-/usr/bin/WPEFramework -b
 # Manually adding PID file support. This is used by Thunder clients to know if
 # Thunder aka WPEFramework process is restarted. Please note if PIDFile name is changed

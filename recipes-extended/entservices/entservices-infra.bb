@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Infra plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "1.1.11"
+PV ?= "1.1.12"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -16,10 +16,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDK-41681-PR4013.patch \
           "
 
-# Release version - 1.1.11
-#SRCREV = "70a5cbf3d8e28be96fde8a938f1ea2fa92366a25"
-#SRCREV = "2ef7b32dd673283a7fd0ef56f935d94a1c51c7cb"
-SRCREV = "b3974078d5fad6b8f56afdac4d4d5266f3cd80a4"
+# Release version - 1.1.12
+SRCREV = "0551df81d44636574a3da05e2bc505564799f1af"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -76,7 +74,7 @@ PACKAGECONFIG ?= " monitor \
     ${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' messagecontrol ', '', d)} \
 "
 
-# TODO: As advised, 'ocicointainer' plugin has been modified to build unconditionally. It will be revisited in the upcoming sprint to control it via DISTRO_FEATURES."
+# TODO: As advised, 'ocicointainer' plugin has been modified to build unconditionally. It will be revisited in the upcoming sprint to control it via DISTRO_FEATURES.
 #PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'DAC_SUPPORT', 'ocicontainer', '', d)}"
 
 # enable CloudStore plugin for UK region
@@ -127,8 +125,8 @@ PACKAGECONFIG[rustadapter]          = "-DPLUGIN_RUSTADAPTER=ON,,,"
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON,-DPLUGIN_RUNTIME_MANAGER=OFF,rdkservices-apis,rdkservices-apis"
 PACKAGECONFIG[rdknativescript]      = "-DPLUGIN_NATIVEJS=ON,-DPLUGIN_NATIVEJS=OFF,rdknativescript,libuv"
 PACKAGECONFIG[appmanager]           = "-DPLUGIN_APPMANAGER=ON,-DPLUGIN_APPMANAGER=OFF,rdkservices-apis,rdkservices-apis"
-PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LIFECYCLE_MANAGER=OFF,rdkservices-apis,rdkservices-apis"
-PACKAGECONFIG[packagemanager] = "-DPLUGIN_PACKAGE_MANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_PACKAGE_MANAGER=OFF -DLIB_PACKAGE=OFF,curl libpackage,curl libpackage"
+PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LIFECYCLE_MANAGER=OFF,websocketpp rdkservices-apis,rdkservices-apis"
+PACKAGECONFIG[packagemanager]       = "-DPLUGIN_PACKAGE_MANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_PACKAGE_MANAGER=OFF -DLIB_PACKAGE=OFF,curl libpackage rdkservices-apis,curl libpackage rdkservices-apis"
 PACKAGECONFIG[storagemanager]       = "-DPLUGIN_STORAGE_MANAGER=ON,-DPLUGIN_STORAGE_MANAGER=OFF,rdkservices-apis,rdkservices-apis"
 # ----------------------------------------------------------------------------
 
