@@ -11,14 +11,14 @@ index bd465e3a..5f88d771 100644
  
  target_link_libraries(${PROJECT_NAME}
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
-index f2d27ed4..4899ab24 100644
+index f2d27ed4..774506cd 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.cpp
 +++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
 @@ -49,6 +49,7 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
      // Attempt to open the plugin shell
      bool success = false;
      int currentRetry = 1;
-+    IPluginNotification pluginNotification;	
++    Exchange::Controller::ILifeTime::IPluginNotification pluginNotification;	
  
      while (!success && currentRetry <= maxRetries) {
          LOG_INF(_pluginName.c_str(), "Attempting to activate plugin - attempt %d/%d", currentRetry, maxRetries);
@@ -77,7 +77,7 @@ index 44fecef8..d7d8def4 100644
 +};
 diff --git a/Utils/PluginActivator/source/INotification.h b/Utils/PluginActivator/source/INotification.h
 new file mode 100755
-index 00000000..9dcdaf3a
+index 00000000..ee2a7f44
 --- /dev/null
 +++ b/Utils/PluginActivator/source/INotification.h
 @@ -0,0 +1,55 @@
@@ -134,7 +134,7 @@ index 00000000..9dcdaf3a
 +     *                             
 +     * @param[in]   reason
 +     */
-+    void StateChange(const string& callsign, const PluginHost::IShell::state& state, const PluginHost::IShell::reason& reason);
++    void StateChange(const string& callsign, const PluginHost::IShell::state& state, const PluginHost::IShell::reason& reason) override;
 +};
 diff --git a/Utils/PluginActivator/source/NotificationHandler.cpp b/Utils/PluginActivator/source/NotificationHandler.cpp
 new file mode 100755
