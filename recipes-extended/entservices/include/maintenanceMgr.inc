@@ -17,7 +17,7 @@ LOGROTATE_ROTATION_maintenancemanager = "3"
 LOGROTATE_SIZE_MEM_maintenancemanager = "786432"
 LOGROTATE_ROTATION_MEM_maintenancemanager = "3"
 
-PACKAGECONFIG_append = "${@bb.utils.contains('DISTRO_FEATURES' , 'enable_maintenance_manager', ' maintenancemanager', '', d)}"
+PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES' , 'enable_maintenance_manager', ' maintenancemanager', '', d)}"
 
 # Enable suppress maintenance
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'suppress_maintenance', '-DSUPPRESS_MAINTENANCE=ON', '', d)}"
