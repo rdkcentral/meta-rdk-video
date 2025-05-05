@@ -20,7 +20,7 @@ SRC_URI  = "git://github.com/youtube/cobalt.git;protocol=https;name=cobalt;branc
 SRC_URI += "https://commondatastorage.googleapis.com/chromium-browser-clang/Linux_x64/clang-llvmorg-${CLANG_BUILD_REVISION}.tgz;subdir=${CLANG_BUILD_SUBDIR};name=clang"
 SRC_URI += "file://25/0006-Use-certifi-to-tell-urllib-where-to-find-CA-file-397.patch"
 SRC_URI += "file://25/0001-Fix-NPBL-with-cast_codec_tests-config.patch"
-SRC_URI += "file://25/0001-fix-for-build-failure-due-to-static-storage-URL-change.patch"
+SRC_URI += "file://25/0001-Ensure-GCS-buckets-are-publicly-accessible-mirrors-5.patch"
 
 SRC_URI[clang.sha256sum] = "1ac590c011158940037ce9442d4bf12943dc14a7ddaab6094e75a8750b47b861"
 
