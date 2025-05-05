@@ -1,8 +1,9 @@
-From 3365785107714f5dcb5626bfd390a84a8970a78f Mon Sep 17 00:00:00 2001
-From: Ansu Mathew <Ansu_Mathew@comcast.com>
-Date: Sat, 3 May 2025 09:19:21 +0000
-Subject: [PATCH] fix build failure due to static storage URL change
+From f981f63f1c23484be51a3a2bc2e17fa88febff8a Mon Sep 17 00:00:00 2001
+From: Arjun Menon <agmenon@google.com>
+Date: Tue, 1 Apr 2025 14:32:29 -0700
+Subject: [PATCH] Ensure GCS buckets are publicly accessible mirrors (#5255)
 
+b/406321498
 ---
  cobalt/media/testing/BUILD.gn               | 2 +-
  cobalt/renderer/BUILD.gn                    | 2 +-
@@ -100,5 +101,5 @@ index 46de5c9ecf4..94f0170fd34 100644
      sha1_dir,
      "--output",
 -- 
-2.25.1
+2.49.0
 
