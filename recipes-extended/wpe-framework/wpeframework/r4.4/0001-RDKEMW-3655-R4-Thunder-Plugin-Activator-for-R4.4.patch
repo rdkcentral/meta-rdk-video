@@ -138,7 +138,7 @@ index 00000000..ee2a7f44
 +};
 diff --git a/Utils/PluginActivator/source/NotificationHandler.cpp b/Utils/PluginActivator/source/NotificationHandler.cpp
 new file mode 100755
-index 00000000..5d705a14
+index 00000000..fa385aa6
 --- /dev/null
 +++ b/Utils/PluginActivator/source/NotificationHandler.cpp
 @@ -0,0 +1,34 @@
@@ -170,7 +170,7 @@ index 00000000..5d705a14
 +
 +
 +
-+IPluginNotification::StateChange(const std::string& callsign, const PluginHost::IShell::state& state, const PluginHost::IShell::reason& reason)
++void IPluginNotification::StateChange(const std::string& callsign, const PluginHost::IShell::state& state, const PluginHost::IShell::reason& reason)
 +{
 +        LOG_INF(callsign.c_str(), "State Change Notification Received state=%d reason=%d", state, reason);
 +
