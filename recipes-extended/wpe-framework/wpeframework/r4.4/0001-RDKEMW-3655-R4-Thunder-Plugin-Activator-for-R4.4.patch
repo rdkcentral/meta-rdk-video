@@ -78,10 +78,10 @@ index 44fecef8..d7d8def4 100644
 +};
 diff --git a/Utils/PluginActivator/source/INotification.h b/Utils/PluginActivator/source/INotification.h
 new file mode 100755
-index 00000000..ee2a7f44
+index 00000000..cc8d489d
 --- /dev/null
 +++ b/Utils/PluginActivator/source/INotification.h
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,64 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -136,13 +136,22 @@ index 00000000..ee2a7f44
 +     * @param[in]   reason
 +     */
 +    void StateChange(const string& callsign, const PluginHost::IShell::state& state, const PluginHost::IShell::reason& reason) override;
++
++     Core::hresult Register(INotification* sink);
++     Core::hresult Unregister(INotification* sink);
++     Core::hresult Activate(const string& callsign);
++     Core::hresult Deactivate(const string& callsign);
++     Core::hresult Unavailable(const string& callsign);
++     Core::hresult Hibernate(const string& callsign, const Core::hresult timeout);
++     Core::hresult Suspend(const string& callsign);
++     Core::hresult Resume(const string& callsign);
 +};
 diff --git a/Utils/PluginActivator/source/NotificationHandler.cpp b/Utils/PluginActivator/source/NotificationHandler.cpp
 new file mode 100755
-index 00000000..fa385aa6
+index 00000000..3cb0c266
 --- /dev/null
 +++ b/Utils/PluginActivator/source/NotificationHandler.cpp
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,68 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -177,3 +186,37 @@ index 00000000..fa385aa6
 +
 +        LOG_INF(callsign.c_str(), "State Change Exit");
 +}
++
++
++     Core::hresult IPluginNotification::Register(INotification* sink)
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Unregister(INotification* sink)
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Activate(const string& callsign);
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Deactivate(const string& callsign);
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Unavailable(const string& callsign);
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Hibernate(const string& callsign, const Core::hresult timeout);
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Suspend(const string& callsign);
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Resume(const string& callsign);
++     {
++	 return Core::ERROR_NONE;
++     }
