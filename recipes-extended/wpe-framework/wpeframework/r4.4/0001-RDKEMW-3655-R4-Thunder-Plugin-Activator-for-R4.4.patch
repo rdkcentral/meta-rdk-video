@@ -77,10 +77,10 @@ index 44fecef8..d7d8def4 100644
 +};
 diff --git a/Utils/PluginActivator/source/INotification.h b/Utils/PluginActivator/source/INotification.h
 new file mode 100755
-index 00000000..9a19b945
+index 00000000..02559204
 --- /dev/null
 +++ b/Utils/PluginActivator/source/INotification.h
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,55 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -103,7 +103,6 @@ index 00000000..9a19b945
 +#pragma once
 +#include "Module.h"
 +#include "IPluginStarter.h"
-+#include <interfaces/ILifeTime.h>
 +#include "IShell.h"
 +#include <string>
 +
