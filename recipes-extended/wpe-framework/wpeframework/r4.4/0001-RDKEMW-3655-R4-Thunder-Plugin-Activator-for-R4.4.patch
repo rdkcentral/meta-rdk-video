@@ -151,7 +151,7 @@ index 00000000..e7efaf16
 +};
 diff --git a/Utils/PluginActivator/source/NotificationHandler.cpp b/Utils/PluginActivator/source/NotificationHandler.cpp
 new file mode 100755
-index 00000000..c80e7091
+index 00000000..8d20570c
 --- /dev/null
 +++ b/Utils/PluginActivator/source/NotificationHandler.cpp
 @@ -0,0 +1,83 @@
@@ -199,27 +199,27 @@ index 00000000..c80e7091
 +     {
 +	 return Core::ERROR_NONE;
 +     }
-+     Core::hresult IPluginNotification::Activate(const string& callsign);
++     Core::hresult IPluginNotification::Activate(const string& callsign)
 +     {
 +	 return Core::ERROR_NONE;
 +     }
-+     Core::hresult IPluginNotification::Deactivate(const string& callsign);
++     Core::hresult IPluginNotification::Deactivate(const string& callsign)
 +     {
 +	 return Core::ERROR_NONE;
 +     }
-+     Core::hresult IPluginNotification::Unavailable(const string& callsign);
++     Core::hresult IPluginNotification::Unavailable(const string& callsign)
 +     {
 +	 return Core::ERROR_NONE;
 +     }
-+     Core::hresult IPluginNotification::Hibernate(const string& callsign, const Core::hresult timeout);
++     Core::hresult IPluginNotification::Hibernate(const string& callsign, const Core::hresult timeout)
 +     {
 +	 return Core::ERROR_NONE;
 +     }
-+     Core::hresult IPluginNotification::Suspend(const string& callsign);
++     Core::hresult IPluginNotification::Suspend(const string& callsign)
 +     {
 +	 return Core::ERROR_NONE;
 +     }
-+     Core::hresult IPluginNotification::Resume(const string& callsign);
++     Core::hresult IPluginNotification::Resume(const string& callsign)
 +     {
 +	 return Core::ERROR_NONE;
 +     }
