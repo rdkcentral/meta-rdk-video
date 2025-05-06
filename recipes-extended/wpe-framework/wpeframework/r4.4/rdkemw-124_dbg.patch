@@ -2,6 +2,15 @@ diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServ
 index 317be4fd..092257a6 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
+@@ -1878,7 +1878,7 @@
+
+                 while ( (iter != std::end(all_paths)) && (progressedState <= 2) ) {
+                     Core::File libraryToLoad(*iter);
+-
++                   printf("Loading library: %s\n", libraryToLoad.Name().c_str());
+                     if (libraryToLoad.Exists() == true) {
+                         if (progressedState == 0) {
+                             progressedState = 1;
 @@ -4509,22 +4509,28 @@
              return (_connections);
          }
@@ -9,18 +18,18 @@ index 317be4fd..092257a6 100644
 +            printf("SOUND-DBG-PluginServer-DumpMetadata");
              PostMortemData data;
              _dispatcher.Snapshot(data.WorkerPool);
- 
+
              Core::JSON::ArrayType<MetaData::Server::Minion>::Iterator index(data.WorkerPool.ThreadPoolRuns.Elements());
- 
+
              while (index.Next() == true) {
 -
 +                // printf("SOUND-DBG-DumpCallStack-inside while\n");
                  std::list<Core::callstack_info> stackList;
- 
+
                  ::DumpCallStack(static_cast<ThreadId>(index.Current().Id.Value()), stackList);
 +                //How can I check this DumpCallstack is successful by adding logs
 +                // printf("SOUND-DBG-DumpCallStack is done-index.Current().Id.Value() = %d\n,stackList.size() = %d\n", index.Current().Id.Value(), stackList.size());
-+                
++
 +
                  for(const Core::callstack_info& entry : stackList)
                  {
@@ -31,11 +40,11 @@ index 317be4fd..092257a6 100644
 +                    fflush(stderr);
                  }
 -                fflush(stderr);
- 
+
                  PostMortemData::Callstack dump;
                  dump.Id = index.Current().Id.Value();
 @@ -4538,9 +4544,12 @@
- 
+
              // Drop the workerpool info (what is currently running and what is pending) to a file..
              Core::File dumpFile(_config.PostMortemPath() + "ThunderInternals.json");
 +            //print permission of the file ThunderInternals.json
@@ -49,10 +58,9 @@ index 317be4fd..092257a6 100644
          {
 @@ -4643,3 +4652,4 @@
  }
- 
+
  #endif // __WEBPLUGINSERVER_H
 +
-
 diff --git a/Source/WPEFramework/PluginHost.cpp b/Source/WPEFramework/PluginHost.cpp
 index 213da58d..cc1c7ee4 100644
 --- a/Source/WPEFramework/PluginHost.cpp
@@ -138,7 +146,7 @@ index 213da58d..cc1c7ee4 100644
              ExitHandler::DumpMetadata();
          }
      }
-@@ -351,10 +381,13 @@
+@@ -351,43 +381,62 @@
      static void SetupCrashHandler(void)
      {
          _adminLock.Lock();
@@ -153,7 +161,17 @@ index 213da58d..cc1c7ee4 100644
          if (ExitDaemonHandler  != current_sa.sa_handler)
          {
              _originalSegmentationHandler = current_sa;
-@@ -363,31 +396,37 @@
++
++            //make a funciton call the function pointer stored in the original handler
++            //to find the function name
++            Dl_info info;
++            if (dladdr(_originalSegmentationHandler.sa_handler, &info)) {
++                printf("SOUND-DBG: Original handler function name: %s\n", info.dli_sname);
++            } else {   
++                printf("SOUND-DBG: Failed to get function name for original handler\n");
++            }
+              memset(&sa, 0, sizeof(struct sigaction));
+              sigemptyset(&sa.sa_mask);
               sa.sa_handler = ExitDaemonHandler;
               sa.sa_flags = 0;
               if (_background) {
@@ -179,6 +197,7 @@ index 213da58d..cc1c7ee4 100644
              _originalAbortHandler = current_sa;
 -             memset(&sa, 0, sizeof(struct sigaction));
 -             sigemptyset(&sa.sa_mask);
++            
 +            memset(&sa, 0, sizeof(struct sigaction));
 +            sigemptyset(&sa.sa_mask);
               sa.sa_handler = ExitDaemonHandler;
@@ -191,7 +210,7 @@ index 213da58d..cc1c7ee4 100644
 -                 fflush(stdout);
 +                 fprintf(stdout, "SOUND-DBG-not Running in background-Registering ExitDaemonHandler = %p for SIGABRT & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
               }
-+             printf("SOUND-DBG-SetupCrashHandler-Registering the signal SIGABRT");
++             printf("SOUND-DBG-SetupCrashHandler-Registering the signal SIGABRT\n");
               sigaction(SIGABRT, &sa, nullptr);
 +            printf("SOUND-DBG-SetupCrashHandler-crashHandlerSetup-%d,current_sa : %p, _originalAbortHandler.sa_handler : %p\n", crashHandlerSetup, (void*)current_sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
          }
@@ -199,24 +218,24 @@ index 213da58d..cc1c7ee4 100644
          _adminLock.Unlock();
      }
  #endif
-@@ -492,7 +531,9 @@
+@@ -492,7 +541,9 @@
  #endif
  
          ConsoleOptions options(argc, argv);
 -        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
-+        //_adminLock.Lock();
-+        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler); 
++        _adminLock.Lock();
++        //WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler); 
 +        printf("SOUND-DBG: RegisterLibraryLoadCallback\n");
  
          if (options.RequestUsage()) {
  #ifndef __WINDOWS__
-@@ -515,13 +556,19 @@
+@@ -515,13 +566,19 @@
              sa.sa_handler = ExitDaemonHandler;
              sa.sa_flags = 0; // not SA_RESTART!;
  
 +            printf("SOUND-DBG: sa : %p , _originalSegmentationHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
 +            printf("SOUND-DBG: sa : %p , _originalAbortHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
-+            sleep(30);
++            sleep(5);
              sigaction(SIGINT, &sa, nullptr);
              sigaction(SIGTERM, &sa, nullptr);
              sigaction(SIGQUIT, &sa, nullptr);
@@ -226,11 +245,11 @@ index 213da58d..cc1c7ee4 100644
 +            printf("SOUND-DBG: sa : %p , _originalSegmentationHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
 +            printf("SOUND-DBG: sa : %p , _originalAbortHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
          }
-+        //_adminLock.Unlock();
++        _adminLock.Unlock();
  
          if (atexit(ForcedExit) != 0) {
              TRACE_L1("Could not register @exit handler. Argc %d.", argc);
-@@ -1082,3 +1129,4 @@
+@@ -1082,3 +1139,4 @@
      } // extern "C"
  }
  }
@@ -253,4 +272,3 @@ index 213da58d..cc1c7ee4 100644
  }
  } // namespace Core
 +
-
