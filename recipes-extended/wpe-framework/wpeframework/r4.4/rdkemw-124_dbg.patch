@@ -224,7 +224,7 @@ index 213da58d..cc1c7ee4 100644
          ConsoleOptions options(argc, argv);
 -        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
 +        //_adminLock.Lock();
-+        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler); 
++        //WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler); 
 +        printf("SOUND-DBG: RegisterLibraryLoadCallback\n");
  
          if (options.RequestUsage()) {
@@ -254,7 +254,6 @@ index 213da58d..cc1c7ee4 100644
  }
  }
 +
-
 
 diff --git a/Source/core/Library.cpp b/Source/core/Library.cpp
 index 213da58d..cc1c7ee4 100644
