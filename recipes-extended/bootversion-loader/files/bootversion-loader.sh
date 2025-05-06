@@ -65,10 +65,10 @@ if [ "$v_FW_Class" != "$s1_FW_Class" ]; then
 	echo "BOOT_TYPE=BOOT_MIGRATION" > $file_bootType
 	echo -e "BOOT_MIGRATION is set since FW_Class is not same"
 else
-     if [ "$MigrationStatus" != "MIGRATION_COMPLETED" ]; then
+     if [ "$MigrationStatus" != "MIGRATION_COMPLETED" ] && [ "$MigrationStatus" != "NOT_NEEDED" ]; then
           echo "BOOT_TYPE=BOOT_MIGRATION" > $file_bootType
 	  echo -e "BOOT_MIGRATION since MigrationStatus is not equal to MIGRATION_COMPLETED"
-     elif [ "$MigrationStatus" == "MIGRATION_COMPLETED" ]; then
+     elif [ "$MigrationStatus" == "MIGRATION_COMPLETED" ] || [ "$MigrationStatus" == "NOT_NEEDED" ]; then
 	     if [ "$v_version" == "$s1_version" ]; then
 	         echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
 	    	 echo -e "BOOT_NORMAL since Version is equal and MigrationStatus is MIGRATION_COMPLETED"
