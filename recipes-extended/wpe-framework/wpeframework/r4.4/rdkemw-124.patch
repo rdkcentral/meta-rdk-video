@@ -165,7 +165,7 @@ index 213da58d..cc1c7ee4 100644
 +            //make a funciton call the function pointer stored in the original handler
 +            //to find the function name
 +            Dl_info info;
-+            if (dladdr(reinterpret_cast<const void*>(_originalSegmentationHandler.sa_handler), &info)) {
++            if (dladdr(_originalSegmentationHandler.sa_handler, &info)) {
 +                printf("SOUND-DBG: Original handler function name: %s\n", info.dli_sname);
 +            } else {   
 +                printf("SOUND-DBG: Failed to get function name for original handler\n");
@@ -223,8 +223,8 @@ index 213da58d..cc1c7ee4 100644
  
          ConsoleOptions options(argc, argv);
 -        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
-+        //_adminLock.Lock();
-+        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler); 
++        _adminLock.Lock();
++        //WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler); 
 +        printf("SOUND-DBG: RegisterLibraryLoadCallback\n");
  
          if (options.RequestUsage()) {
@@ -245,7 +245,7 @@ index 213da58d..cc1c7ee4 100644
 +            printf("SOUND-DBG: sa : %p , _originalSegmentationHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
 +            printf("SOUND-DBG: sa : %p , _originalAbortHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
          }
-+        //_adminLock.Unlock();
++        _adminLock.Unlock();
  
          if (atexit(ForcedExit) != 0) {
              TRACE_L1("Could not register @exit handler. Argc %d.", argc);
@@ -254,7 +254,6 @@ index 213da58d..cc1c7ee4 100644
  }
  }
 +
-
 
 diff --git a/Source/core/Library.cpp b/Source/core/Library.cpp
 index 213da58d..cc1c7ee4 100644
