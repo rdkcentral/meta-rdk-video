@@ -53,6 +53,7 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/R4-wpeframework-sd_notify.patch \
            file://r4.4/RDKEMW-733-Add-ENTOS-IDS.patch \
            file://r4.4/Update-Trace-Level-Logging-Logic.patch \
+           file://r4.4/Activating_plugins_Logs_COMRPC.patch \
            "
 
 SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
