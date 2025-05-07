@@ -75,23 +75,40 @@ index 213da58d..cc1c7ee4 100644
              }
              _adminLock.Unlock();
          }
-@@ -305,10 +307,13 @@
+@@ -305,10 +307,30 @@
      void ExitDaemonHandler(int signo)
      {
          const char* segname = "";
-+
++        //Get and print the value of the original handler and its function name
++        printf("PluginHost.cpp-SOUND-DBG: ExitDaemonHandler Start-_originalSegmentationHandler.sa_handler = %p,originalAbortHandler = %p\n", (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++        //use dladdr to get the function name of the original handler
++        Dl_info info1;
++        if (dladdr(reinterpret_cast<const void*>(_originalSegmentationHandler.sa_handler), &info1)) {
++            printf("PluginHost.cpp-SOUND-DBG: ExitDaemonHandler Start-Original handler function name: %s\n", info1.dli_sname);
++        } else {   
++            printf("PluginHost.cpp-SOUND-DBG: ExitDaemonHandler Start-Failed to get function name for original handler\n");
++        }
 +        printf("PluginHost.cpp-SOUND-DBG: Signal received: %d\n", signo);
-+        fflush(stdout);
++
          if (_background) {
 -            syslog(LOG_NOTICE, "Signal received %d. in process [%d]", signo, getpid());
 +            syslog(LOG_NOTICE, "PluginHost.cpp-SOUND-DBG-Running in _background -Signal received %d. in process [%d]", signo, getpid());
++            //Get and print the value of the original handler and its function name
++        printf("PluginHost.cpp- SOUND-DBG: EXitDaemonHandler Start-_originalSegmentationHandler.sa_handler = %p,originalAbortHandler = %p\n", (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++        //use dladdr to get the function name of the original handler
++        Dl_info info2;
++        if (dladdr(reinterpret_cast<const void*>(_originalSegmentationHandler.sa_handler), &info2)) {
++            printf("PluginHost.cpp-SOUND-DBG: EXitDaemonHandler Start-Original handler function name: %s\n", info2.dli_sname);
++        } else {   
++            printf("PluginHost.cpp-SOUND-DBG: EXitDaemonHandler Start-Failed to get function name for original handler\n");
++        }
          } else {
 -            fprintf(stderr, "Signal received %d. in process [%d]\n", signo, getpid());
 +            fprintf(stderr, "PluginHost.cpp-SOUND-DBG-not Running in background-Signal received %d. in process [%d]\n", signo, getpid());
          }
  
          if ((signo == SIGTERM) || (signo == SIGQUIT)) {
-@@ -327,23 +332,57 @@
+@@ -327,23 +349,57 @@
              // From here on we do the best we can do. Have no clue what failed, try to log as much as possible and on
              // a subsequent segmentation fault, just handle it the old fashion way. The root cause has been logged
              // by than!
@@ -155,7 +172,7 @@ index 213da58d..cc1c7ee4 100644
              ExitHandler::DumpMetadata();
          }
      }
-@@ -351,43 +390,63 @@
+@@ -351,43 +407,63 @@
      static void SetupCrashHandler(void)
      {
          _adminLock.Lock();
@@ -228,7 +245,7 @@ index 213da58d..cc1c7ee4 100644
          _adminLock.Unlock();
      }
  #endif
-@@ -492,7 +551,9 @@
+@@ -492,7 +568,9 @@
  #endif
  
          ConsoleOptions options(argc, argv);
@@ -239,7 +256,7 @@ index 213da58d..cc1c7ee4 100644
  
          if (options.RequestUsage()) {
  #ifndef __WINDOWS__
-@@ -515,13 +576,26 @@
+@@ -515,13 +593,26 @@
              sa.sa_handler = ExitDaemonHandler;
              sa.sa_flags = 0; // not SA_RESTART!;
  
@@ -266,7 +283,7 @@ index 213da58d..cc1c7ee4 100644
  
          if (atexit(ForcedExit) != 0) {
              TRACE_L1("Could not register @exit handler. Argc %d.", argc);
-@@ -1082,3 +1156,4 @@
+@@ -1082,3 +1173,4 @@
      } // extern "C"
  }
  }
