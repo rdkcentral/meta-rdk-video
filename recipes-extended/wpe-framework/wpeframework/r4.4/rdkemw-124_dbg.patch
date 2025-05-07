@@ -234,7 +234,7 @@ index 213da58d..cc1c7ee4 100644
          ConsoleOptions options(argc, argv);
 -        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
 +        //_adminLock.Lock();
-+        //WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler); 
++          WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler); 
 +        //printf("PluginHost.cpp-SOUND-DBG: RegisterLibraryLoadCallback\n");
  
          if (options.RequestUsage()) {
