@@ -263,6 +263,8 @@ do_install() {
 	install -d ${D}${sysconfdir}/NetworkManager/conf.d
 	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d
 	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
+        install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
+        install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
         install -d ${D}/opt
         install -d ${D}/opt/secure
         install -d ${D}/opt/secure/NetworkManager
