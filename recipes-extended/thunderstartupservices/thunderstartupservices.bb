@@ -26,7 +26,8 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-monitor.service \
     wpeframework-network.service \
     wpeframework-ocdm.service \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'DAC_SUPPORT',' wpeframework-lisa.service wpeframework-ocicontainer.service', '', d)} \
+    wpeframework-ocicontainer.service \
+    wpeframework-runtimemanager.service \
     wpeframework-persistentstore.service \
     wpeframework-playerinfo.service \
     wpeframework-sharedstorage.service \
