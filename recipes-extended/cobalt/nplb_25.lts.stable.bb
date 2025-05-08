@@ -24,7 +24,7 @@ SRC_URI += "file://25/0001-fix-for-build-failure-due-to-static-storage-URL-chang
 
 SRC_URI[clang.sha256sum] = "1ac590c011158940037ce9442d4bf12943dc14a7ddaab6094e75a8750b47b861"
 
-CR = "20"
+CR = "30"
 PR = "r${CR}"
 SRCREV_cobalt = "25.lts.${CR}"
 do_fetch[vardeps] += " SRCREV_FORMAT SRCREV_cobalt"
