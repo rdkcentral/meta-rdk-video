@@ -89,7 +89,7 @@ do_install() {
 	install -m 0644 ${S}/etc/*.properties ${D}${sysconfdir}
 	install -m 0644 ${S}/etc/*.conf ${D}${sysconfdir}
 	install -m 0644 ${S}/etc/env_setup.sh ${D}${sysconfdir}
-        install -m 0755 ${S}/rdktv/etc/rfcdefaults/sysint-generic.ini ${D}${sysconfdir}/rfcdefaults/sysint-generic.ini
+        install -m 0755 ${S}/etc/rfcdefaults/sysint-generic.ini ${D}${sysconfdir}/rfcdefaults/sysint-generic.ini
 
 	install -d ${D}${base_bindir} ${D}/var/spool/cron
         install -d ${D}${systemd_unitdir}/system
