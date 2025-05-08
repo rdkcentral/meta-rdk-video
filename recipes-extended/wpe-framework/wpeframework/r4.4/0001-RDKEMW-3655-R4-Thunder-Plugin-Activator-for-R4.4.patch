@@ -11,7 +11,7 @@ index bd465e3a..5f88d771 100644
  
  target_link_libraries(${PROJECT_NAME}
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
-index f2d27ed4..5406bd50 100644
+index f2d27ed4..3f8f2449 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.cpp
 +++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
 @@ -49,6 +49,8 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
@@ -23,13 +23,14 @@ index f2d27ed4..5406bd50 100644
  
      while (!success && currentRetry <= maxRetries) {
          LOG_INF(_pluginName.c_str(), "Attempting to activate plugin - attempt %d/%d", currentRetry, maxRetries);
-@@ -73,9 +75,25 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -73,10 +75,26 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
              // Sleep, then try again
              std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
          } else {
 -            // Will block until plugin is activated
 -            uint32_t result = lifetime->Activate(_pluginName.c_str());
  
+-            auto duration = Core::Time::Now().Sub(start.MilliSeconds());
 +	    LOG_INF(_pluginName.c_str(), "Before Register to state change activate plugin");
 +           Core::hresult result_changestate_notify = lifetime->Register(&pluginNotification);
 +
@@ -44,13 +45,14 @@ index f2d27ed4..5406bd50 100644
 +	    LOG_INF(_pluginName.c_str(), "Waiting to activate plugin");
 +	    pluginNotification.WaitforPluginActivationCompletion(_pluginName, 3000);
 +	    LOG_INF(_pluginName.c_str(), "Waiting to activate plugin Completed");		
-+            Core::hresult result_changestate_notify = lifetime->Unregister(&pluginNotification);
-+            LOG_INF(_pluginName.c_str(), "Activate UnRegister is Completed");
-+	     pluginNotification._pluginActivated[_pluginName.c_str()] = false;
++           Core::hresult result_changestate_notify = lifetime->Unregister(&pluginNotification);
++           LOG_INF(_pluginName.c_str(), "Activate UnRegister is Completed");
++	    pluginNotification.ResetActivationPluginFlag(_pluginName.c_str());		
 +			
-             auto duration = Core::Time::Now().Sub(start.MilliSeconds());
++           auto duration = Core::Time::Now().Sub(start.MilliSeconds());
  
              if (result != Core::ERROR_NONE) {
+                 if (result == Core::ERROR_PENDING_CONDITIONS) {
 @@ -91,7 +109,13 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
                  std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
              } else {
@@ -87,10 +89,10 @@ index 44fecef8..d7d8def4 100644
 +};
 diff --git a/Utils/PluginActivator/source/INotification.h b/Utils/PluginActivator/source/INotification.h
 new file mode 100755
-index 00000000..845f8ef5
+index 00000000..2fbc9e89
 --- /dev/null
 +++ b/Utils/PluginActivator/source/INotification.h
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,77 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -154,6 +156,7 @@ index 00000000..845f8ef5
 +     * @param[in]   reason
 +     */
 +     void StateChange(const string& callsign, const PluginHost::IShell::state& state, const PluginHost::IShell::reason& reason) override;
++     void ResetActivationPluginFlag(const std::string& pluginName);
 +     bool WaitforPluginActivationCompletion(const std::string& pluginName, int timeoutMs);
 +     Core::hresult Register(INotification* sink);
 +     Core::hresult Unregister(INotification* sink);
@@ -169,10 +172,10 @@ index 00000000..845f8ef5
 +};
 diff --git a/Utils/PluginActivator/source/NotificationHandler.cpp b/Utils/PluginActivator/source/NotificationHandler.cpp
 new file mode 100755
-index 00000000..8c40192c
+index 00000000..230c72b8
 --- /dev/null
 +++ b/Utils/PluginActivator/source/NotificationHandler.cpp
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,116 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -216,16 +219,22 @@ index 00000000..8c40192c
 +}
 +
 +
-+bool WaitforPluginActivationCompletion(const std::string& pluginName, int timeoutMs) {
++bool IPluginNotification::WaitforPluginActivationCompletion(const std::string& pluginName, int timeoutMs) {
 +    std::unique_lock<std::mutex> lock(_mutex);
 +    auto& condVar = _pluginCondVars[pluginName];
 +
-+	LOG_INF(callsign.c_str(), "WaitforPluginActivationCompletion pluginName=%s", pluginName, reason);
++	LOG_INF(pluginName.c_str(), "WaitforPluginActivationCompletion pluginName=%s", pluginName.c_str());
 +	
 +    _pluginActivated[pluginName] = false; 
 +    return condVar.wait_for(lock, std::chrono::milliseconds(timeoutMs), [&]() {
 +        return _pluginActivated[pluginName];
 +    });
++}
++
++void IPluginNotification::ResetActivationPluginFlag(const std::string& pluginName) {
++    std::unique_lock<std::mutex> lock(_mutex);
++     _pluginActivated[pluginName] = false;
++	LOG_INF(pluginName.c_str(), "ResetActivationPluginFlag _pluginActivated=%d", _pluginActivated[pluginName]);
 +}
 +
 +Core::hresult IPluginNotification::Register(INotification* sink)
