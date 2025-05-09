@@ -2,8 +2,8 @@ SUMMARY = "ENTServices Casting plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV ?= "1.0.7"
-PR ?= "r0"
+PV ?= "1.0.9"
+PR ?= "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-casting;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.0.7
-SRCREV = "412c26e757877f61a55c3191b7bb21c776db0d10"
+# Release version - 1.0.9
+SRCREV = "8bee3f73707c71e4cb5d80f90f7fc470c4ce12f1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -40,7 +40,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_MIRACAST', 'miracast', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'miracast', '', d)} \
 "
 
 PACKAGECONFIG:append = " xcast"
