@@ -48,6 +48,19 @@ INCLUDE_DIRS = " \
     -I=${includedir}/WPEFramework/powercontroller \
     "
 
+CFLAGS += "-D_DISABLE_SCHD_REBOOT_AT_DEEPSLEEP"
+CFLAGS += "-DPLATCO_BOOTTO_STANDBY"
+CFLAGS += "-DENABLE_THERMAL_PROTECTION"
+CFLAGS += "-DUSE_WAKEUP_TIMER_EVT"
+CFLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
+CXXLAGS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
+
+LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
+CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
+CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
+CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
+CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
+
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " breakpadsupport \
