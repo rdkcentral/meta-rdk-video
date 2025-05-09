@@ -49,14 +49,34 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-networkmanager.service \
     "
 
+CONTROL_FILES = "\
+    wpeframework-services.path \
+    wpeframework-services.target \
+    "
+
 do_install() {
     install -d ${D}${systemd_system_unitdir}
+
+    for y in ${CONTROL_FILES}; do
+        install -m 0644 ${S}/${y} ${D}${systemd_system_unitdir}
+        install -d ${D}${sysconfdir}/systemd/system/multi-user.target.wants
+        ln -sf ${systemd_system_unitdir}/${y} ${D}${sysconfdir}/systemd/system/multi-user.target.wants/${y}
+    done
 
     for x in ${THUNDER_STARTUP_SERVICES}; do
         install -m 0644 ${S}/${x} ${D}${systemd_system_unitdir}
         install -d ${D}${sysconfdir}/systemd/system/${x}.requires
         ln -sf ${systemd_system_unitdir}/wpeframework.service ${D}${sysconfdir}/systemd/system/${x}.requires/wpeframework.service
     done
+
+    # Adding final SERVICES_COMMON into the Requires= line of the target
+    FINAL_SERVICES="$(echo "${SERVICES_COMMON}" | tr '\n' ' ')"
+    TARGET_FILE="${D}${systemd_system_unitdir}/wpeframework-services.target"
+
+    if grep -q "^Requires=" "$TARGET_FILE"; then
+        # Append to existing Requires= line
+        sed -i "/^Requires=/ s|$| ${FINAL_SERVICES}|" "$TARGET_FILE"
+    fi
 }
 
 FILES:${PN} += "${systemd_system_unitdir} ${sysconfdir}/systemd/system"
