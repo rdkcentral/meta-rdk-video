@@ -47,6 +47,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-firmwareupdate.service \
     wpeframework-powermanager.service \
     wpeframework-networkmanager.service \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'rdkwindowmanager',' wpeframework-rdkwindowmanager.service', '', d)} \
     "
 
 do_install() {
