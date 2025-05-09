@@ -1,0 +1,17 @@
+diff --git a/PowerManager/PowerManagerImplementation.cpp b/PowerManager/PowerManagerImplementation.cpp
+index e83df62..6722c63 100644
+--- a/PowerManager/PowerManagerImplementation.cpp
++++ b/PowerManager/PowerManagerImplementation.cpp
+@@ -17,6 +17,12 @@
+  * limitations under the License.
+  */
+ 
++#ifdef USE_WAKEUP_TIMER_EVT
++#USE_WAKEUP_TIMER_EVT_enabled
++#else
++#USE_WAKEUP_TIMER_EVT_disabled
++#endif
++
+ #include "PowerManagerImplementation.h"
+ 
+ #include "UtilsIarm.h"

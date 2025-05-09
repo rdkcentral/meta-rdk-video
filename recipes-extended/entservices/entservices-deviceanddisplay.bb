@@ -48,11 +48,11 @@ INCLUDE_DIRS = " \
     -I=${includedir}/WPEFramework/powercontroller \
     "
 
-CFLAGS += "-D_DISABLE_SCHD_REBOOT_AT_DEEPSLEEP"
-CFLAGS += "-DPLATCO_BOOTTO_STANDBY"
-CFLAGS += "-DENABLE_THERMAL_PROTECTION"
-CFLAGS += "-DUSE_WAKEUP_TIMER_EVT"
-CFLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
+CXXLAGS += "-D_DISABLE_SCHD_REBOOT_AT_DEEPSLEEP"
+CXXLAGS += "-DPLATCO_BOOTTO_STANDBY"
+CXXLAGS += "-DENABLE_THERMAL_PROTECTION"
+CXXLAGS += "-DUSE_WAKEUP_TIMER_EVT"
+CXXLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 CXXLAGS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
@@ -104,6 +104,10 @@ python () {
     machine_name = d.getVar('MACHINE')
     if 'raspberrypi4' in machine_name:
         d.appendVar('EXTRA_OECMAKE', ' -DBUILD_RPI=ON')
+}
+
+do_compile() {
+    oe_runmake CFLAGS=" ${CFLAGS}" CXXLAGS=" ${CXXLAGS}"
 }
 
 do_install:append() {
