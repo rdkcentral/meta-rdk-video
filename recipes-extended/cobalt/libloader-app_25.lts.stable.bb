@@ -26,7 +26,7 @@ SRC_URI += "file://25/0004-Build-fix-for-ARM64.patch"
 SRC_URI += "file://25/0005-Use-Yocto-host-toolchain.patch"
 SRC_URI += "file://25/0006-Use-certifi-to-tell-urllib-where-to-find-CA-file-397.patch"
 
-CR = "20"
+CR = "30"
 PR = "r${CR}"
 SRCREV_cobalt = "25.lts.${CR}"
 SRCREV_larboard = "${LARBOARD_SRCREV_DEV}"
