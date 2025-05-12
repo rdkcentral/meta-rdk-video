@@ -211,7 +211,6 @@ BREAKPAD_LOGMAPPER_LOGLIST = "uimgr_log.txt"
 DEPENDS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' sqlite3  ', '',d)}"
 RDEPENDS:${PN}:client += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' sqlite3  ', '',d)}"
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' sqlite3', '',d)}"
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' virtual/vendor-xsign', '',d)}"
 
 INCLUDE_DIRS += " \
         -I${S}/hal/include \
