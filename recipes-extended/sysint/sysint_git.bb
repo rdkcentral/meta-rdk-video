@@ -89,6 +89,7 @@ do_install() {
 	install -m 0644 ${S}/etc/*.properties ${D}${sysconfdir}
 	install -m 0644 ${S}/etc/*.conf ${D}${sysconfdir}
 	install -m 0644 ${S}/etc/env_setup.sh ${D}${sysconfdir}
+        install -m 0755 ${S}/etc/rfcdefaults/sysint-generic.ini ${D}${sysconfdir}/rfcdefaults/sysint-generic.ini
 
 	install -d ${D}${base_bindir} ${D}/var/spool/cron
         install -d ${D}${systemd_unitdir}/system
@@ -257,20 +258,12 @@ do_install() {
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
 }
 
-
-
-
-
 do_install:append:rdkstb() {
         install -m 0755 ${S}/lib/rdk/heap-usage-stats.sh ${D}/lib/rdk/heap-usage-stats.sh
         install -m 0644 ${S}/systemd_units/usbmodule-whitelist.service ${D}${systemd_unitdir}/system
         install -m 0755 ${S}/lib/rdk/usbmodule-whitelist.sh ${D}${base_libdir}/rdk/
 
 
-}
-
-do_install:append:rdktv() {
-        install -m 0755 ${S}/rdktv/etc/rfcdefaults/rdktv.ini ${D}${sysconfdir}/rfcdefaults
 }
 
 SYSTEMD_SERVICE:${PN}:append:rdkstb = " usbmodule-whitelist.service"
