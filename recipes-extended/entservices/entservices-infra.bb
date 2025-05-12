@@ -16,8 +16,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDK-41681-PR4013.patch \
           "
 
-# Release version - 1.1.16
-SRCREV = "1ef300d90caa2437037eae52e00be938ec9ccf91"
+# Release version - 1.1.17
+SRCREV = "f983477874ae7dad7424bb28964bf81b0a15cfce"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
