@@ -18,7 +18,7 @@ PR ?= "r0"
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/pxCore;branch=rtcore"
-SRCREV = "bca187881a6d85c37c15115462376e1120d351ea"
+SRCREV = "b4f004a8c2347e0ba8c0bf76cfbdc064cb8d6fd8"
 
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations -Wno-maybe-uninitialized -Wno-address"
 
