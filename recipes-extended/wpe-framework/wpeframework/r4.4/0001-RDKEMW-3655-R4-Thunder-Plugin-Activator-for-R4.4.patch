@@ -11,7 +11,7 @@ index bd465e3a..5f88d771 100644
  
  target_link_libraries(${PROJECT_NAME}
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
-index f2d27ed4..fa0f0712 100644
+index f2d27ed4..bfbf5431 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.cpp
 +++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
 @@ -49,6 +49,8 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
@@ -23,7 +23,7 @@ index f2d27ed4..fa0f0712 100644
  
      while (!success && currentRetry <= maxRetries) {
          LOG_INF(_pluginName.c_str(), "Attempting to activate plugin - attempt %d/%d", currentRetry, maxRetries);
-@@ -73,10 +75,25 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -73,10 +75,26 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
              // Sleep, then try again
              std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
          } else {
@@ -31,13 +31,14 @@ index f2d27ed4..fa0f0712 100644
 -            uint32_t result = lifetime->Activate(_pluginName.c_str());
  
 -            auto duration = Core::Time::Now().Sub(start.MilliSeconds());
-+	    LOG_INF(_pluginName.c_str(), "Before Register to state change activate plugin");
++	    LOG_INF(_pluginName.c_str(), "Before Register to state change activate plugin New");
 +	    result_changestate_notify = lifetime->Register(&pluginNotification);
-+			
++
++            LOG_INF(_pluginName.c_str(), "Return Value result_changestate_notify=%u and Core::ERROR_NONE=%u",result_changestate_notify,Core::ERROR_NONE);			
 +            if (result_changestate_notify == Core::ERROR_NONE) {
-+	            LOG_INF(_pluginName.c_str(), "Register to state change activate plugin Success");
++	            LOG_INF(_pluginName.c_str(), "New Register to state change activate plugin Success");
 +            } else{
-+	            LOG_INF(_pluginName.c_str(), "Register to state change activate plugin Failed result_changestate_notify=%u",result_changestate_notify);
++	            LOG_INF(_pluginName.c_str(), "New Register to state change activate plugin Failed result_changestate_notify=%u",result_changestate_notify);
 +            }
 +    	     uint32_t result = lifetime->Activate(_pluginName.c_str());
 +
@@ -52,7 +53,7 @@ index f2d27ed4..fa0f0712 100644
  
              if (result != Core::ERROR_NONE) {
                  if (result == Core::ERROR_PENDING_CONDITIONS) {
-@@ -91,7 +108,7 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -91,7 +109,7 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
                  std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
              } else {
                  // Our work here is done!
