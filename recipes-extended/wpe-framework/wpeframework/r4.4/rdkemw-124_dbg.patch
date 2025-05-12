@@ -2,291 +2,329 @@ diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServ
 index 317be4fd..092257a6 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
-@@ -1878,7 +1878,7 @@
-
+@@ -26,6 +26,7 @@
+ #include "IRemoteInstantiation.h"
+ #include "WarningReportingCategories.h"
+ #include "PostMortem.h"
++#include <unistd.h>
+ 
+ #ifdef PROCESSCONTAINERS_ENABLED
+ #include "../processcontainers/ProcessContainer.h"
+@@ -1878,6 +1879,7 @@
+ 
                  while ( (iter != std::end(all_paths)) && (progressedState <= 2) ) {
                      Core::File libraryToLoad(*iter);
--
-+                   printf("Loading library: %s\n", libraryToLoad.Name().c_str());
++                    syslog(LOG_NOTICE, "Immortal WPEFramework - Line -1883 - Loading library: %s\n", libraryToLoad.Name().c_str());
+ 
                      if (libraryToLoad.Exists() == true) {
                          if (progressedState == 0) {
-                             progressedState = 1;
-@@ -4509,22 +4509,28 @@
+@@ -4509,6 +4511,8 @@
              return (_connections);
          }
          inline void DumpMetadata() {
-+            printf("SOUND-DBG-PluginServer-DumpMetadata");
++            
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginServer - Dumping Metadata - Pid: %d\n", getpid());
              PostMortemData data;
              _dispatcher.Snapshot(data.WorkerPool);
-
-             Core::JSON::ArrayType<MetaData::Server::Minion>::Iterator index(data.WorkerPool.ThreadPoolRuns.Elements());
-
-             while (index.Next() == true) {
--
-+                // printf("SOUND-DBG-DumpCallStack-inside while\n");
-                 std::list<Core::callstack_info> stackList;
-
-                 ::DumpCallStack(static_cast<ThreadId>(index.Current().Id.Value()), stackList);
-+                //How can I check this DumpCallstack is successful by adding logs
-+                // printf("SOUND-DBG-DumpCallStack is done-index.Current().Id.Value() = %d\n,stackList.size() = %d\n", index.Current().Id.Value(), stackList.size());
-+
-+
-                 for(const Core::callstack_info& entry : stackList)
-                 {
-+                    // printf("SOUND-DBG-DumpCallStack-inside while\n");
-                     std::string symbol = entry.function.empty() ? "Unknown symbol" : entry.function;
--                    fprintf(stderr, "[%s]:[%s]:[%d]:[%p]\n",entry.module.c_str(), symbol.c_str(),entry.line,entry.address);
-+                    fprintf(stderr, "[%s]:[%s]:[%d]:[%p]\n", entry.module.c_str(), symbol.c_str(), entry.line, entry.address);
-+                    fflush(stderr);
-                 }
--                fflush(stderr);
-
-                 PostMortemData::Callstack dump;
-                 dump.Id = index.Current().Id.Value();
-@@ -4538,9 +4544,12 @@
-
-             // Drop the workerpool info (what is currently running and what is pending) to a file..
-             Core::File dumpFile(_config.PostMortemPath() + "ThunderInternals.json");
-+            //print permission of the file ThunderInternals.json
+ 
+@@ -4541,6 +4545,8 @@
              if (dumpFile.Create(false) == true) {
                  data.IElement::ToFile(dumpFile);
              }
-+            printf("SOUND-DBG-DumpCallStack-return\n");
-+            fflush(stderr);
++
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginServer - Dumping Metadata - Pid: %d - Done\n", getpid());
          }
          inline ServiceMap& Services()
          {
-@@ -4643,3 +4652,4 @@
- }
 
- #endif // __WEBPLUGINSERVER_H
-+
+
 diff --git a/Source/WPEFramework/PluginHost.cpp b/Source/WPEFramework/PluginHost.cpp
 index 213da58d..cc1c7ee4 100644
 --- a/Source/WPEFramework/PluginHost.cpp
 +++ b/Source/WPEFramework/PluginHost.cpp
-@@ -159,7 +159,9 @@
-         static void DumpMetadata() {
-             _adminLock.Lock();
-             if (_dispatcher != nullptr) {
-+                printf("PluginHost.cpp-SOUND-DBG-PluginHost-dumpmetadata");
-                 _dispatcher->DumpMetadata();
-+                printf("PluginHost.cpp-SOUND-DBG-PluginHost-dumpmetadata-dumped\n");
-             }
-             _adminLock.Unlock();
-         }
-@@ -305,10 +307,13 @@
+@@ -21,12 +21,18 @@
+ #include "core/Library.h"
+ 
+ #include <fstream>
+-
++#include <unistd.h>
+ #ifndef __WINDOWS__
+ #include <dlfcn.h> // for dladdr
+ #include <syslog.h>
+ #endif
+ 
++#include <pthread.h>
++#include <signal.h>
++#include <sys/types.h>
++#include <sys/syscall.h>
++#include <unistd.h>
++
+ MODULE_NAME_DECLARATION(BUILD_REFERENCE)
+ 
+ namespace WPEFramework {
+@@ -304,15 +310,32 @@
+ 
      void ExitDaemonHandler(int signo)
      {
-         const char* segname = "";
++        
++        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [Entering func - %s]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
 +
-+        printf("PluginHost.cpp-SOUND-DBG: Signal received: %d\n", signo);
-+        fflush(stdout);
++        //Use dladdr to get the function name of the original handler
++        Dl_info info2;
++        if (dladdr(reinterpret_cast<const void*>(_originalSegmentationHandler.sa_handler), &info2)) {
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Original handler function name: %s\n", __LINE__, getpid(), __FUNCTION__, info2.dli_sname);
++        } else {   
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Failed to get function name for original handler\n", __LINE__, getpid(), __FUNCTION__);
++        }
++
+         const char* segname = "";
          if (_background) {
--            syslog(LOG_NOTICE, "Signal received %d. in process [%d]", signo, getpid());
-+            syslog(LOG_NOTICE, "PluginHost.cpp-SOUND-DBG-Running in _background -Signal received %d. in process [%d]", signo, getpid());
+             syslog(LOG_NOTICE, "Signal received %d. in process [%d]", signo, getpid());
++
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [Entering func - %s - Running in background]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
          } else {
--            fprintf(stderr, "Signal received %d. in process [%d]\n", signo, getpid());
-+            fprintf(stderr, "PluginHost.cpp-SOUND-DBG-not Running in background-Signal received %d. in process [%d]\n", signo, getpid());
+             fprintf(stderr, "Signal received %d. in process [%d]\n", signo, getpid());
++
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [Entering func - %s - Not Running in background]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
          }
  
          if ((signo == SIGTERM) || (signo == SIGQUIT)) {
-@@ -327,23 +332,57 @@
+ 
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [Entering func - %s]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
++
+             if (_background) {
+                 syslog(LOG_NOTICE, EXPAND_AND_QUOTE(APPLICATION_NAME) " shutting down due to a SIGTERM or SIGQUIT signal. Regular shutdown");
+             } else {
+@@ -327,23 +350,83 @@
              // From here on we do the best we can do. Have no clue what failed, try to log as much as possible and on
              // a subsequent segmentation fault, just handle it the old fashion way. The root cause has been logged
              // by than!
 -            sigaction(SIGSEGV, &_originalSegmentationHandler, nullptr);
 -            sigaction(SIGABRT, &_originalAbortHandler, nullptr);
-+           
-+            printf("PluginHost.cpp-SOUND-DBG: _originalSegmentationHandler.sa_handler = %p\n", (void*)_originalSegmentationHandler.sa_handler);
-+            if (sigaction(SIGSEGV, &_originalSegmentationHandler, nullptr) != 0) {
-+                perror("PluginHost.cpp-SOUND-DBG: Failed to restore SIGSEGV handler");
+ 
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [Entering func - %s]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
++
++            //sigaction(SIGSEGV, &_originalSegmentationHandler, nullptr);
++            if(sigaction(SIGSEGV, &_originalSegmentationHandler, nullptr) != 0) {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Failed to restore SIGSEGV handler , _originalSegmentationHandler.sa_handler : %p , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, signo);
 +            } else {
-+                printf("PluginHost.cpp-SOUND-DBG: Successfully restored SIGSEGV handler-%p\n", (void*)_originalSegmentationHandler.sa_handler);
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Successfully restored SIGSEGV handler , _originalSegmentationHandler.sa_handler : %p , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, signo);
 +            }
-+            printf("PluginHost.cpp-SOUND-DBG: _originalAbortHandler.sa_handler = %p\n", (void*)_originalAbortHandler.sa_handler);
- 
-+            // Attempt to restore the original SIGABRT handler
-+            if (sigaction(SIGABRT, &_originalAbortHandler, nullptr) != 0) {
-+                perror("PluginHost.cpp-SOUND-DBG: Failed to restore SIGABRT handler\n");
++
++            //sigaction(SIGABRT, &_originalAbortHandler, nullptr);
++            if(sigaction(SIGABRT, &_originalAbortHandler, nullptr) != 0) {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Failed to restore SIGABRT handler , _originalAbortHandler.sa_handler : %p , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalAbortHandler.sa_handler, signo);
 +            } else {
-+                printf("PluginHost.cpp-SOUND-DBG: Successfully restored SIGABRT handler-%p\n", (void*)_originalAbortHandler.sa_handler);
-+                
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Successfully restored SIGABRT handler , _originalAbortHandler.sa_handler : %p , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalAbortHandler.sa_handler, signo);
 +            }
- 
-+            printf("PluginHost.cpp-SOUND-DBG-After sigaction-DumpMetaData");
-             ExitHandler::DumpMetadata();
-+            printf("PluginHost.cpp-SOUND-DBG-After DumpMetaData dump");
-             segname = (signo == SIGSEGV) ? "a segmentation fault" : (signo == SIGABRT) ? "an abort" : "";
-+            printf("PluginHost.cpp-SOUND-DBG: Handling %s (signal %d)\n", segname, signo);
- 
-+            printf("PluginHost.cpp-SOUND-DBG: _originalSegmentationHandler.sa_handler = %p\n", (void*)_originalSegmentationHandler.sa_handler);
-             if (_background) {
--                syslog(LOG_NOTICE, EXPAND_AND_QUOTE(APPLICATION_NAME) " shutting down due to %s signal. All relevant data dumped", segname);
-+                printf("PluginHost.cpp-SOUND-DBG-Running in _background-%s",segname);
-+                syslog(LOG_NOTICE, EXPAND_AND_QUOTE(APPLICATION_NAME) " shutting down due to %s signal. All relevant data dumped-PluginHost.cpp-SOUND-DBG-BGR", segname);
-             } else {
--                fprintf(stderr, EXPAND_AND_QUOTE(APPLICATION_NAME) " shutting down due to %s signal. All relevant data dumped\n", segname);
-+                printf("PluginHost.cpp-SOUND-DBG-Not Running in _background-%s",segname);
-+                fprintf(stderr, EXPAND_AND_QUOTE(APPLICATION_NAME) " shutting down due to %s signal. All relevant data dumped-PluginHost.cpp-SOUND-DBG-BGNR\n", segname);
-                 fflush(stderr);
-             }
--
--            raise(signo);
 +            
-+            printf("PluginHost.cpp-SOUND-DBG: Sleeping for 5 seconds before re-raising signal %d with handler %p\n", signo, (void*)_originalSegmentationHandler.sa_handler);
-+            sleep(5);
++
 +            Dl_info info;
 +            if (dladdr(reinterpret_cast<const void*>(_originalSegmentationHandler.sa_handler), &info)) {
-+                printf("PluginHost.cpp-SOUND-DBG: Original handler function name: %s\n", info.dli_sname);
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func - %s - SIGSEGV or SIGABRT]  : Original handler function name: %s\n", __LINE__, getpid(), __FUNCTION__, info.dli_sname);
 +            } else {   
-+                printf("PluginHost.cpp-SOUND-DBG: Failed to get function name for original handler\n");
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func - %s - SIGSEGV or SIGABRT]  : Failed to get function name for original handler\n", __LINE__, getpid(), __FUNCTION__); 
 +            }
-+            printf("PluginHost.cpp-SOUND-DBG: Re-raising signal %d (%s) with handler %p\n", signo, segname, (void*)_originalSegmentationHandler.sa_handler);
++
++            Dl_info info1;
++            if (dladdr(reinterpret_cast<const void*>(_originalAbortHandler.sa_handler), &info1)) {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Original handler function name: %s\n", __LINE__, getpid(), __FUNCTION__, info1.dli_sname);
++            } else {   
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Failed to get function name for original handler\n", __LINE__, getpid(), __FUNCTION__);
++            }
++
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Before metadata dump , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
+ 
+             ExitHandler::DumpMetadata();
++
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : After metadata dump , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
++
+             segname = (signo == SIGSEGV) ? "a segmentation fault" : (signo == SIGABRT) ? "an abort" : "";
+ 
+             if (_background) {
+                 syslog(LOG_NOTICE, EXPAND_AND_QUOTE(APPLICATION_NAME) " shutting down due to %s signal. All relevant data dumped", segname);
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT - Running in background]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
+             } else {
++                syslog(LOG_NOTICE, EXPAND_AND_QUOTE(APPLICATION_NAME) " shutting down due to %s signal. All relevant data dumped", segname);
+                 fprintf(stderr, EXPAND_AND_QUOTE(APPLICATION_NAME) " shutting down due to %s signal. All relevant data dumped\n", segname);
+                 fflush(stderr);
+             }
+ 
+-            raise(signo);
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT - Sleeping for 10 seconds before re-raising signal]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
++            sleep(5);
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT - After sleep]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
++            //raise(signo);
++
++            sigset_t current;
++            pthread_sigmask(SIG_SETMASK, nullptr, &current);
++
++            if (sigismember(&current, SIGSEGV)) {
++                char name[16] = {0};
++                pthread_getname_np(pthread_self(), name, sizeof(name));
++                pid_t tid = syscall(SYS_gettid);
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- Thread [%s] (TID: %d) has SIGSEGV blocked", name, tid);
++            }
++            else {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- Thread has SIGSEGV unblocked");
++            }
++
++
 +            int status = raise(signo);
 +            if (status != 0) {
-+                perror("PluginHost.cpp-SOUND-DBG: Failed to re-raise signal");
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Failed to re-raise signal , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
 +            } else {
-+                printf("PluginHost.cpp-SOUND-DBG: Successfully re-raised signal %d\n", signo);
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Successfully re-raised signal , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
 +            }
          }
          else if (signo == SIGUSR1) {
-+            printf("PluginHost.cpp-SOUND-DBG: Received SIGUSR1 signal, dumping metadata\n");
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGUSR1]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
              ExitHandler::DumpMetadata();
          }
      }
-@@ -351,43 +390,63 @@
-     static void SetupCrashHandler(void)
-     {
+@@ -353,10 +436,22 @@
          _adminLock.Lock();
-+        static int32_t crashHandlerSetup = 0;
          struct sigaction sa, current_sa;
--
-+        printf("PluginHost.cpp-SOUND-DBG-SetupCrashHandler\n");
+ 
++        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++
++
          memset(&current_sa, 0, sizeof(struct sigaction));
-+        printf("PluginHost.cpp-SOUND-DBG-SetupCrashHandler-crashHandlerSetup-%d,current_sa : %p, _originalSegmentationHandler.sa_handler : %p\n", crashHandlerSetup, (void*)current_sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
++
++        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s ]  : Before sigaction for SIGSEGV - current_sa.sa_handler : %p , sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__, getpid(), __FUNCTION__, (void*)current_sa.sa_handler, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++
          sigaction(SIGSEGV, nullptr, &current_sa);
-+        printf("PluginHost.cpp-SOUND-DBG-SetupCrashHandler-crashHandlerSetup-%d,current_sa : %p, _originalSegmentationHandler.sa_handler : %p\n", crashHandlerSetup, (void*)current_sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
++
++        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s ]  : After sigaction for SIGSEGV - current_sa.sa_handler : %p , sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__, getpid(), __FUNCTION__, (void*)current_sa.sa_handler, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++
          if (ExitDaemonHandler  != current_sa.sa_handler)
          {
++
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [ func - %s ]  : Entering [if (ExitDaemonHandler  != current_sa.sa_handler)] - current_sa.sa_handler : %p , sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__, getpid(), __FUNCTION__, (void*)current_sa.sa_handler, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++
              _originalSegmentationHandler = current_sa;
-+
-+            //make a funciton call the function pointer stored in the original handler
-+            //to find the function name
-+            Dl_info info;
-+
-+            if (dladdr(reinterpret_cast<const void*>(_originalSegmentationHandler.sa_handler), &info)) {
-+                printf("PluginHost.cpp-SOUND-DBG: Original handler function name: %s\n", info.dli_sname);
-+            } else {   
-+                printf("PluginHost.cpp-SOUND-DBG: Failed to get function name for original handler\n");
-+            }
               memset(&sa, 0, sizeof(struct sigaction));
               sigemptyset(&sa.sa_mask);
-              sa.sa_handler = ExitDaemonHandler;
-              sa.sa_flags = 0;
-              if (_background) {
--                 syslog(LOG_NOTICE, "Registering ExitDaemonHandler = %p for SIGSEGV & Previous Handler = %p", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
-+                syslog(LOG_NOTICE, "PluginHost.cpp-SOUND-DBG-Running in background -Registering ExitDaemonHandler = %p for SIGSEGV & Previous Handler = %p", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
-              } else {
--                 fprintf(stdout, "Registering ExitDaemonHandler = %p for SIGSEGV & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
--                 fflush(stdout);
-+                fprintf(stdout, "PluginHost.cpp-SOUND-DBG-not Running in background-Registering ExitDaemonHandler = %p for SIGSEGV & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
+@@ -368,13 +463,29 @@
+                  fprintf(stdout, "Registering ExitDaemonHandler = %p for SIGSEGV & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
+                  fflush(stdout);
               }
-+             printf("PluginHost.cpp-SOUND-DBG-SetupCrashHandler-Registering the signal SIGSEGV\n");
-              sigaction(SIGSEGV, &sa, nullptr);
-+             printf("PluginHost.cpp-SOUND-DBG-SetupCrashHandler-crashHandlerSetup-%d,current_sa : %p, _originalSegmentationHandler.sa_handler : %p\n", crashHandlerSetup, (void*)current_sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
 +
++             syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func - %s ]  : [ExitDaemonHandler  != current_sa.sa_handler]- Before sigaction - current_sa.sa_handler : %p , sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p , _background : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)current_sa.sa_handler, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, _background);
++
+              sigaction(SIGSEGV, &sa, nullptr);
++
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func - %s ]  : [ExitDaemonHandler  != current_sa.sa_handler]- After sigaction - current_sa.sa_handler : %p , sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__, getpid(), __FUNCTION__, (void*)current_sa.sa_handler, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
          }
  
++        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++
          memset(&current_sa, 0, sizeof(struct sigaction));
-+        printf("PluginHost.cpp-SOUND-DBG-SetupCrashHandler-crashHandlerSetup-%d,current_sa : %p, _originalAbortHandler.sa_handler : %p\n", crashHandlerSetup, (void*)current_sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
++
++        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s ]  : Before sigaction for SIGABRT - current_sa.sa_handler : %p , sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__, getpid(), __FUNCTION__, (void*)current_sa.sa_handler, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++
          sigaction(SIGABRT, nullptr, &current_sa);
-+        printf("PluginHost.cpp-SOUND-DBG-SetupCrashHandler-crashHandlerSetup-%d,current_sa : %p, _originalAbortHandler.sa_handler : %p\n", crashHandlerSetup, (void*)current_sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
++
++        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s ]  : After sigaction for SIGABRT - current_sa.sa_handler : %p , sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__, getpid(), __FUNCTION__, (void*)current_sa.sa_handler, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++
          if (ExitDaemonHandler  != current_sa.sa_handler)
          {
++
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [ func - %s ]  : Entering [if (ExitDaemonHandler  != current_sa.sa_handler)] - current_sa.sa_handler : %p , sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__, getpid(), __FUNCTION__, (void*)current_sa.sa_handler, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++
              _originalAbortHandler = current_sa;
--             memset(&sa, 0, sizeof(struct sigaction));
--             sigemptyset(&sa.sa_mask);
-+            
-+            memset(&sa, 0, sizeof(struct sigaction));
-+            sigemptyset(&sa.sa_mask);
-              sa.sa_handler = ExitDaemonHandler;
-              sa.sa_flags = 0;
-              if (_background) {
--                 syslog(LOG_NOTICE, "Registering ExitDaemonHandler = %p for SIGABRT & Previous Handler = %p", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
-+                 syslog(LOG_NOTICE, "PluginHost.cpp-SOUND-DBG-Running in background -Registering ExitDaemonHandler = %p for SIGABRT & Previous Handler = %p", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
-              } else {
--                 fprintf(stdout, "Registering ExitDaemonHandler = %p for SIGABRT & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
--                 fflush(stdout);
-+                 fprintf(stdout, "PluginHost.cpp-SOUND-DBG-not Running in background-Registering ExitDaemonHandler = %p for SIGABRT & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
+              memset(&sa, 0, sizeof(struct sigaction));
+              sigemptyset(&sa.sa_mask);
+@@ -386,8 +497,30 @@
+                  fprintf(stdout, "Registering ExitDaemonHandler = %p for SIGABRT & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
+                  fflush(stdout);
               }
-+             printf("PluginHost.cpp-SOUND-DBG-SetupCrashHandler-Registering the signal SIGABRT\n");
++
++             syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func - %s ]  : [ExitDaemonHandler  != current_sa.sa_handler]- Before sigaction - current_sa.sa_handler : %p , sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p , _background : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)current_sa.sa_handler, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, _background);
++
               sigaction(SIGABRT, &sa, nullptr);
-+            printf("PluginHost.cpp-SOUND-DBG-SetupCrashHandler-crashHandlerSetup-%d,current_sa : %p, _originalAbortHandler.sa_handler : %p\n", crashHandlerSetup, (void*)current_sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
++
++             syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func - %s ]  : [ExitDaemonHandler  != current_sa.sa_handler]- After sigaction - current_sa.sa_handler : %p , sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__, getpid(), __FUNCTION__, (void*)current_sa.sa_handler, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++            }
++
++        //use dladdr to get the function name of the original handler
++        Dl_info info4;
++        if (dladdr(reinterpret_cast<const void*>(_originalAbortHandler.sa_handler), &info4)) {
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Original handler function name: %s\n", __LINE__, getpid(), __FUNCTION__, info4.dli_sname);
++        } else {   
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Failed to get function name for original handler\n", __LINE__, getpid(), __FUNCTION__);
++        }
++
++        //Use dladdr to get the function name of the original handler
++        Dl_info info5;
++        if (dladdr(reinterpret_cast<const void*>(_originalAbortHandler.sa_handler), &info5)) {
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Original handler function name: %s\n", __LINE__, getpid(), __FUNCTION__, info5.dli_sname);
++        } else {   
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Failed to get function name for original handler\n", __LINE__, getpid(), __FUNCTION__);
          }
-+        ++crashHandlerSetup;
++
          _adminLock.Unlock();
      }
  #endif
-@@ -492,7 +551,9 @@
+@@ -492,8 +625,11 @@
  #endif
  
          ConsoleOptions options(argc, argv);
--        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
-+        //_adminLock.Lock();
-+          WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler); 
-+        //printf("PluginHost.cpp-SOUND-DBG: RegisterLibraryLoadCallback\n");
++
++        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s] :  Before RegisterLibraryLoadCallback _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
+         WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
  
++        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s] :  After RegisterLibraryLoadCallback _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
          if (options.RequestUsage()) {
  #ifndef __WINDOWS__
-@@ -515,13 +576,26 @@
+             syslog(LOG_ERR, EXPAND_AND_QUOTE(APPLICATION_NAME) " Daemon failed to start. Incorrect Options.");
+@@ -509,18 +645,34 @@
+         }
+ #ifndef __WINDOWS__
+         else {
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
+             struct sigaction sa;
+             memset(&sa, 0, sizeof(struct sigaction));
++
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]  : sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++
+             sigemptyset(&sa.sa_mask);
              sa.sa_handler = ExitDaemonHandler;
              sa.sa_flags = 0; // not SA_RESTART!;
  
-+            printf("PluginHost.cpp-SOUND-DBG: sa : %p , _originalSegmentationHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
-+            printf("PluginHost.cpp-SOUND-DBG: sa : %p , _originalAbortHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
-+            sleep(5);
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]  : Before sigaction - sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++            sleep(10);
              sigaction(SIGINT, &sa, nullptr);
              sigaction(SIGTERM, &sa, nullptr);
              sigaction(SIGQUIT, &sa, nullptr);
              sigaction(SIGUSR1, &sa, nullptr);
              sigaction(SIGSEGV, &sa, &_originalSegmentationHandler);
              sigaction(SIGABRT, &sa, &_originalAbortHandler);
-+            //Find the function name of the original handler
-+            Dl_info info;
-+            if (dladdr(reinterpret_cast<const void*>(_originalSegmentationHandler.sa_handler), &info)) {
-+                printf("PluginHost.cpp-SOUND-DBG: Original handler function name: %s\n", info.dli_sname);
++
++            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]  : After sigaction - sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++            //dladdr(reinterpret_cast<const void*>(sa.sa_handler), &info);
++            Dl_info info3;
++            if (dladdr(reinterpret_cast<const void*>(sa.sa_handler), &info3)) {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func - %s]  : Original handler function name: %s\n", __LINE__, getpid(), __FUNCTION__, info3.dli_sname);
 +            } else {   
-+                printf("PluginHost.cpp-SOUND-DBG: Failed to get function name for original handler\n");
-+            }
-+            printf("PluginHost.cpp-SOUND-DBG: sa : %p , _originalSegmentationHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler);
-+            printf("PluginHost.cpp-SOUND-DBG: sa : %p , _originalAbortHandler.sa_handler : %p\n", (void*)sa.sa_handler, (void*)_originalAbortHandler.sa_handler);
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func - %s]  : Failed to get function name for original handler\n", __LINE__, getpid(), __FUNCTION__);
++            } 
++
          }
-+        //_adminLock.Unlock();
  
          if (atexit(ForcedExit) != 0) {
-             TRACE_L1("Could not register @exit handler. Argc %d.", argc);
-@@ -1082,3 +1156,4 @@
-     } // extern "C"
- }
- }
-+
 
 
 diff --git a/Source/core/Library.cpp b/Source/core/Library.cpp
 index 213da58d..cc1c7ee4 100644
 --- a/Source/core/Library.cpp
 +++ b/Source/core/Library.cpp
-@@ -34,6 +34,7 @@
+@@ -34,6 +34,8 @@
      {
         assert(callback != nullptr);
         assert(g_loadCallback == nullptr);
-+       printf("SOUND-DBG-RegisterLibraryLoadCallback-callback = %p\n", callback);
++       
++       syslog(LOG_INFO, "Immortal WPEFramework::Core::Library::RegisterLibraryLoadCallback - g_loadCallback = %p\n", callback);
         g_loadCallback = callback;
      }
  
-@@ -231,3 +232,4 @@
-     }
- }
- } // namespace Core
-+
