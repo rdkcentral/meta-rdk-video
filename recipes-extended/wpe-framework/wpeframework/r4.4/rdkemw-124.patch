@@ -10,7 +10,16 @@ index 317be4fd..092257a6 100644
  
  #ifdef PROCESSCONTAINERS_ENABLED
  #include "../processcontainers/ProcessContainer.h"
-@@ -4509,6 +4510,9 @@
+@@ -1879,6 +1880,8 @@
+                 while ( (iter != std::end(all_paths)) && (progressedState <= 2) ) {
+                     Core::File libraryToLoad(*iter);
+ 
++                    printf("Immortal WPEFramework - Line -1883 - Loading library: %s\n", libraryToLoad.Name().c_str());
++
+                     if (libraryToLoad.Exists() == true) {
+                         if (progressedState == 0) {
+                             progressedState = 1;
+@@ -4509,6 +4512,9 @@
              return (_connections);
          }
          inline void DumpMetadata() {
@@ -20,7 +29,7 @@ index 317be4fd..092257a6 100644
              PostMortemData data;
              _dispatcher.Snapshot(data.WorkerPool);
  
-@@ -4541,6 +4545,8 @@
+@@ -4541,6 +4547,8 @@
              if (dumpFile.Create(false) == true) {
                  data.IElement::ToFile(dumpFile);
              }
@@ -29,8 +38,6 @@ index 317be4fd..092257a6 100644
          }
          inline ServiceMap& Services()
          {
-
-
 diff --git a/Source/WPEFramework/PluginHost.cpp b/Source/WPEFramework/PluginHost.cpp
 index 213da58d..cc1c7ee4 100644
 --- a/Source/WPEFramework/PluginHost.cpp
@@ -235,36 +242,36 @@ index 213da58d..cc1c7ee4 100644
          _adminLock.Unlock();
      }
  #endif
-@@ -492,8 +606,13 @@
+@@ -492,7 +606,12 @@
  #endif
  
          ConsoleOptions options(argc, argv);
+-        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
 +
-+        printf("Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]\n  :  Before RegisterLibraryLoadCallback _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++        printf("Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s] :  Before RegisterLibraryLoadCallback _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
 +
-         WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
++        //WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
++
++        printf("Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]  :  After RegisterLibraryLoadCallback _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
  
-+        printf("Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]\n  :  After RegisterLibraryLoadCallback _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
-+
          if (options.RequestUsage()) {
  #ifndef __WINDOWS__
-             syslog(LOG_ERR, EXPAND_AND_QUOTE(APPLICATION_NAME) " Daemon failed to start. Incorrect Options.");
 @@ -509,18 +628,35 @@
          }
  #ifndef __WINDOWS__
          else {
-+            printf("Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]\n  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++            printf("Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
              struct sigaction sa;
              memset(&sa, 0, sizeof(struct sigaction));
 +
-+            printf("Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]\n  : sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++            printf("Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]  : sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
 +
              sigemptyset(&sa.sa_mask);
              sa.sa_handler = ExitDaemonHandler;
              sa.sa_flags = 0; // not SA_RESTART!;
  
-+            printf("Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]\n  : sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
-+
++            printf("Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]  : sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++            sleep(10);
              sigaction(SIGINT, &sa, nullptr);
              sigaction(SIGTERM, &sa, nullptr);
              sigaction(SIGQUIT, &sa, nullptr);
@@ -272,7 +279,7 @@ index 213da58d..cc1c7ee4 100644
              sigaction(SIGSEGV, &sa, &_originalSegmentationHandler);
              sigaction(SIGABRT, &sa, &_originalAbortHandler);
 +
-+            printf("Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]\n  : sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
++            printf("Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]  : sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
 +
 +            //dladdr(reinterpret_cast<const void*>(sa.sa_handler), &info);
 +            Dl_info info3;
