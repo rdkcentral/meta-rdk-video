@@ -26,7 +26,6 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-monitor.service \
     wpeframework-network.service \
     wpeframework-ocdm.service \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'DAC_SUPPORT',' wpeframework-lisa.service wpeframework-ocicontainer.service', '', d)} \
     wpeframework-persistentstore.service \
     wpeframework-playerinfo.service \
     wpeframework-sharedstorage.service \
@@ -47,6 +46,14 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-firmwareupdate.service \
     wpeframework-powermanager.service \
     wpeframework-networkmanager.service \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'DAC_SUPPORT',' wpeframework-lisa.service', '', d)} \
+    wpeframework-ocicontainer.service \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'rdkwindowmanager',' wpeframework-rdkwindowmanager.service', '', d)} \
+    wpeframework-lifecyclemanager.service \
+    wpeframework-runtimemanager.service \
+    wpeframework-storagemanager.service \
+    wpeframework-packagemanager.service \
+    wpeframework-appmanager.service \
     "
 
 do_install() {
