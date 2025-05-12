@@ -42,7 +42,7 @@ diff --git a/Source/WPEFramework/PluginHost.cpp b/Source/WPEFramework/PluginHost
 index 213da58d..cc1c7ee4 100644
 --- a/Source/WPEFramework/PluginHost.cpp
 +++ b/Source/WPEFramework/PluginHost.cpp
-@@ -21,7 +21,7 @@
+@@ -21,12 +21,18 @@
  #include "core/Library.h"
  
  #include <fstream>
@@ -51,7 +51,18 @@ index 213da58d..cc1c7ee4 100644
  #ifndef __WINDOWS__
  #include <dlfcn.h> // for dladdr
  #include <syslog.h>
-@@ -304,15 +304,32 @@
+ #endif
+ 
++#include <pthread.h>
++#include <signal.h>
++#include <sys/types.h>
++#include <sys/syscall.h>
++#include <unistd.h>
++
+ MODULE_NAME_DECLARATION(BUILD_REFERENCE)
+ 
+ namespace WPEFramework {
+@@ -304,15 +310,32 @@
  
      void ExitDaemonHandler(int signo)
      {
@@ -84,7 +95,7 @@ index 213da58d..cc1c7ee4 100644
              if (_background) {
                  syslog(LOG_NOTICE, EXPAND_AND_QUOTE(APPLICATION_NAME) " shutting down due to a SIGTERM or SIGQUIT signal. Regular shutdown");
              } else {
-@@ -327,23 +344,68 @@
+@@ -327,23 +350,83 @@
              // From here on we do the best we can do. Have no clue what failed, try to log as much as possible and on
              // a subsequent segmentation fault, just handle it the old fashion way. The root cause has been logged
              // by than!
@@ -144,6 +155,21 @@ index 213da58d..cc1c7ee4 100644
 +            sleep(5);
 +            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT - After sleep]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
 +            //raise(signo);
++
++            sigset_t current;
++            pthread_sigmask(SIG_SETMASK, nullptr, &current);
++
++            if (sigismember(&current, SIGSEGV)) {
++                char name[16] = {0};
++                pthread_getname_np(pthread_self(), name, sizeof(name));
++                pid_t tid = syscall(SYS_gettid);
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- Thread [%s] (TID: %d) has SIGSEGV blocked", name, tid);
++            }
++            else {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- Thread has SIGSEGV unblocked");
++            }
++
++
 +            int status = raise(signo);
 +            if (status != 0) {
 +                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Failed to re-raise signal , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
@@ -156,7 +182,7 @@ index 213da58d..cc1c7ee4 100644
              ExitHandler::DumpMetadata();
          }
      }
-@@ -353,10 +415,22 @@
+@@ -353,10 +436,22 @@
          _adminLock.Lock();
          struct sigaction sa, current_sa;
  
@@ -179,7 +205,7 @@ index 213da58d..cc1c7ee4 100644
              _originalSegmentationHandler = current_sa;
               memset(&sa, 0, sizeof(struct sigaction));
               sigemptyset(&sa.sa_mask);
-@@ -368,13 +442,29 @@
+@@ -368,13 +463,29 @@
                   fprintf(stdout, "Registering ExitDaemonHandler = %p for SIGSEGV & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
                   fflush(stdout);
               }
@@ -209,7 +235,7 @@ index 213da58d..cc1c7ee4 100644
              _originalAbortHandler = current_sa;
               memset(&sa, 0, sizeof(struct sigaction));
               sigemptyset(&sa.sa_mask);
-@@ -386,8 +476,30 @@
+@@ -386,8 +497,30 @@
                   fprintf(stdout, "Registering ExitDaemonHandler = %p for SIGABRT & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
                   fflush(stdout);
               }
@@ -240,20 +266,19 @@ index 213da58d..cc1c7ee4 100644
          _adminLock.Unlock();
      }
  #endif
-@@ -492,8 +604,11 @@
+@@ -492,8 +625,11 @@
  #endif
  
          ConsoleOptions options(argc, argv);
--        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
- 
-+        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s] :  Before RegisterLibraryLoadCallback _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
-+        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
 +
++        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s] :  Before RegisterLibraryLoadCallback _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
+         WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
+ 
 +        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s] :  After RegisterLibraryLoadCallback _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
          if (options.RequestUsage()) {
  #ifndef __WINDOWS__
              syslog(LOG_ERR, EXPAND_AND_QUOTE(APPLICATION_NAME) " Daemon failed to start. Incorrect Options.");
-@@ -509,18 +624,34 @@
+@@ -509,18 +645,34 @@
          }
  #ifndef __WINDOWS__
          else {
@@ -288,6 +313,7 @@ index 213da58d..cc1c7ee4 100644
          }
  
          if (atexit(ForcedExit) != 0) {
+
 
 diff --git a/Source/core/Library.cpp b/Source/core/Library.cpp
 index 213da58d..cc1c7ee4 100644
