@@ -49,12 +49,12 @@ INCLUDE_DIRS = " \
     -I=${includedir}/WPEFramework/powercontroller \
     "
 
-CXXLAGS += "-D_DISABLE_SCHD_REBOOT_AT_DEEPSLEEP"
-CXXLAGS += "-DPLATCO_BOOTTO_STANDBY"
-CXXLAGS += "-DENABLE_THERMAL_PROTECTION"
-CXXLAGS += "-DUSE_WAKEUP_TIMER_EVT"
-#CXXLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
-#CXXLAGS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
+CXXFLAGS += "-D_DISABLE_SCHD_REBOOT_AT_DEEPSLEEP"
+CXXFLAGS += "-DPLATCO_BOOTTO_STANDBY"
+CXXFLAGS += "-DENABLE_THERMAL_PROTECTION"
+CXXFLAGS += "-DUSE_WAKEUP_TIMER_EVT"
+#CXXFLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
+#CXXFLAGS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 
 #LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
 #CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
@@ -108,8 +108,7 @@ python () {
 }
 
 do_compile() {
-    oe_runmake -B -C ${S}/PowerManager/
-    CFLAGS=" ${CFLAGS}" CXXLAGS=" ${CXXLAGS}"
+    CFLAGS=" ${CFLAGS}" CXXFLAGS=" ${CXXLAGS}"
 }
 
 do_install:append() {
