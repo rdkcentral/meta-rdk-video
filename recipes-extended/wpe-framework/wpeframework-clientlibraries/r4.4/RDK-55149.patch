@@ -1,60 +1,14 @@
 diff -upr a/Source/cryptography/Cryptography.cpp b/Source/cryptography/Cryptography.cpp
 --- a/Source/cryptography/Cryptography.cpp	2025-04-18 03:39:14.047491329 +0300
-+++ b/Source/cryptography/Cryptography.cpp	2025-04-18 03:32:37.495091165 +0300
-@@ -34,7 +34,7 @@ namespace WPEFramework {
++++ b/Source/cryptography/Cryptography.cpp	2025-05-02 01:46:12.219180519 +0300
+@@ -34,8 +34,8 @@ namespace WPEFramework {
  namespace Implementation {
      static constexpr uint16_t TimeOut = 3000;
      static constexpr const TCHAR* PluginConnector = "/tmp/communicator";
 -    static constexpr const TCHAR* Callsign = "Svalbard";
+-    static constexpr const TCHAR* CryptographyConnector = "/tmp/svalbard";
 +    static constexpr const TCHAR* Callsign = "org.rdk.Cryptography";
-     static constexpr const TCHAR* CryptographyConnector = "/tmp/svalbard";
++    static constexpr const TCHAR* CryptographyConnector = "/tmp/icryptography";
  
      class CryptographyLink : public RPC::SmartInterfaceType<PluginHost::IPlugin> {
-@@ -286,6 +286,11 @@ namespace Implementation {
-             return (_accessor != nullptr ? _accessor->Get(id, maxLength, blob) : 0);
-         }
- 
-+        uint32_t Generate(const uint16_t length)
-+        {
-+            return 0;
-+        }
-+
-         // Delete a data blob from the vault
-         bool Delete(const uint32_t id) override
-         {
-@@ -403,6 +408,11 @@ namespace Implementation {
-         END_INTERFACE_MAP
- 
-     public:
-+        Exchange::IRandom* Random()
-+        {
-+            return 0;
-+        }
-+        
-         // Retrieve a hash calculator
-         Exchange::IHash* Hash(const Exchange::hashtype hashType) override
-         {
-@@ -562,6 +572,11 @@ namespace Implementation {
-         {
-             return (vault_get(_implementation, id, maxLength, blob));
-         }
-+        
-+        uint32_t Generate(const uint16_t length)
-+        {
-+            return 0;
-+        }
- 
-         bool Delete(const uint32_t id) override
-         {
-@@ -769,6 +784,11 @@ namespace Implementation {
-         ~CryptographyImpl() override = default;
- 
-     public:
-+        WPEFramework::Exchange::IRandom* Random()
-+        {
-+            return nullptr;
-+        }
-+        
-         WPEFramework::Exchange::IHash* Hash(const WPEFramework::Exchange::hashtype hashType) override
-         {
-             WPEFramework::Exchange::IHash* hash(nullptr);
+     private:
