@@ -2,6 +2,7 @@
 Description=Run another wpa_supplicant on p2p ctrl interface for Miracast.
 After=wifi.service network@wlan0.service
 Wants=network@wlan0.service
+ConditionPathExists=/etc/wifi_p2p/wpa_supplicant.conf
 
 [Service]
 ExecStartPre=/bin/sh -c 'source /usr/bin/wlan-p2p.sh'
