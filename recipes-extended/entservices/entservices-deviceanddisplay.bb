@@ -53,12 +53,12 @@ CXXLAGS += "-D_DISABLE_SCHD_REBOOT_AT_DEEPSLEEP"
 CXXLAGS += "-DPLATCO_BOOTTO_STANDBY"
 CXXLAGS += "-DENABLE_THERMAL_PROTECTION"
 CXXLAGS += "-DUSE_WAKEUP_TIMER_EVT"
-CXXLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
-CXXLAGS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
+#CXXLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
+#CXXLAGS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 
-LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
-CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
-CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
+#LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
+#CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
+#CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
 
@@ -108,7 +108,8 @@ python () {
 }
 
 do_compile() {
-    oe_runmake CFLAGS=" ${CFLAGS}" CXXLAGS=" ${CXXLAGS}"
+    oe_runmake -B -C ${S}/PowerManager/
+    CFLAGS=" ${CFLAGS}" CXXLAGS=" ${CXXLAGS}"
 }
 
 do_install:append() {
