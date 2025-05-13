@@ -149,7 +149,7 @@ do_install() {
         install -m 0644 ${S}/systemd_units/rdnssd.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/NM_Bootstrap.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/zram.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/dsn-monitor.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/dns-monitor.service ${D}${systemd_unitdir}/system
 
 
 
