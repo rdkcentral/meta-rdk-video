@@ -17,10 +17,11 @@ SRC_URI = "${CMF_GITHUB_ROOT}/gstreamer-netflix-platform;${CMF_GITHUB_SRC_URI_SU
 
 S = "${WORKDIR}/git"
 CXXFLAGS += "-I${STAGING_INCDIR}/glib-2.0 -I${STAGING_INCDIR}/gstreamer-1.0 -I${STAGING_DIR_TARGET}/${libdir}/glib-2.0/include/ "
+CXXFLAGS += " -I${STAGING_INCDIR}/playready"
 
 
 do_compile () {
-    oe_runmake -C ${S} -f Makefile                            
+    oe_runmake -C ${S} -f Makefile LDFLAGS="${LDFLAGS} -Wl,--hash-style=gnu -lrdkgstreamerutilsplatform"
 }
 
 do_install() {
