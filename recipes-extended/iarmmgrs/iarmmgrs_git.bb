@@ -265,7 +265,6 @@ do_install:append(){
 }
 
 
-export MFR_LDFLAGS+="${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' -lxsign ', '',d)}"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'ctrlm-headers', '', d)}"
 
