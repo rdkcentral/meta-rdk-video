@@ -97,5 +97,4 @@ do_install:append() {
     fi
 }
 
-
 FILES:${PN} += "${systemd_system_unitdir} ${sysconfdir}/systemd/system"
