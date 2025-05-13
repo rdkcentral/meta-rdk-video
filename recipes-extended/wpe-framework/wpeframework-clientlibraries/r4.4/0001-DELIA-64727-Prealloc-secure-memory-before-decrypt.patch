@@ -1,0 +1,39 @@
+From aa880f1ffe13124b2fc05978dc9603573d497f61 Mon Sep 17 00:00:00 2001
+From: Callum Wilson <callum_wilson@comcast.com>
+Date: Thu, 20 Mar 2025 14:15:04 +0000
+Subject: [PATCH] DELIA-64727-Prealloc-secure-memory-before-decrypt
+
+---
+ Source/ocdm/adapter/rdk/open_cdm_adapter.cpp | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
+index d42bb80..9d1948f 100644
+--- a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
++++ b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
+@@ -161,7 +161,7 @@ OpenCDMError opencdm_gstreamer_session_decrypt(struct OpenCDMSession* session, G
+                 gsize dataBlockSize = gst_svp_allocate_data_block(session->SessionPrivateData(), (void**) &svpData, totalEncrypted, totalEncrypted);
+ 
+                 uint8_t* encryptedDataIter = reinterpret_cast<uint8_t *>(gst_svp_header_get_start_of_data(session->SessionPrivateData(), svpData));
+-                
++
+                 uint32_t index = 0;
+                 for (unsigned int position = 0; position < subSampleCount; position++) {
+ 
+@@ -432,7 +432,15 @@ OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
+ 
+             if(total_encrypted_bytes > 0) {
+                uint8_t* svpData;
+-               uint32_t dataBlockSize = gst_svp_allocate_data_block(session->SessionPrivateData(), (void**) &svpData, mappedDataSize, mappedDataSize);
++
++              const gboolean needSecureMemoryPrealloc = (streamProperties.media_type == MediaType_Video)
++                                                      && gst_svp_context_supports_memory_prealloc(session->SessionPrivateData());
++
++              uint32_t dataBlockSize = gst_svp_allocate_data_block(session->SessionPrivateData(),
++                                                                   (void**) &svpData,
++                                                                   mappedDataSize,
++                                                                   mappedDataSize,
++                                                                   needSecureMemoryPrealloc);
+ 
+                void * encryptedData = reinterpret_cast<uint8_t *>(gst_svp_header_get_start_of_data(session->SessionPrivateData(), svpData));
+ 
