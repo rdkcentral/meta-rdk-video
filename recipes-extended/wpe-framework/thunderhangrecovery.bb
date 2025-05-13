@@ -10,7 +10,7 @@ SRC_URI = "file://thunderHangRecovery.cpp \
 inherit systemd
 
 DEPENDS = "rbus curl cjson"
-RDEPENDS_${PN} = "rbus curl cjson"
+RDEPENDS:${PN} = "rbus curl cjson"
 LDFLAGS = " -lrbus -lcurl -lcjson"
 CXXFLAGS = " -I${includedir}/rbus -I${includedir}/curl -I=${includedir}/cjson"
 
