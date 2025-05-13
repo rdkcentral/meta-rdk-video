@@ -6,10 +6,10 @@ index e83df62..6722c63 100644
   * limitations under the License.
   */
  
-+#ifdef USE_WAKEUP_TIMER_EVT
-+#USE_WAKEUP_TIMER_EVT_enabled
++#if defined (USE_WAKEUP_TIMER_EVT) && defined (_DISABLE_SCHD_REBOOT_AT_DEEPSLEEP) && defined (PLATCO_BOOTTO_STANDBY) && defined (MFR_TEMP_CLOCK_READ)
++#CFlags_enabled
 +#else
-+#USE_WAKEUP_TIMER_EVT_disabled
++#CFlags_disabled
 +#endif
 +
  #include "PowerManagerImplementation.h"
