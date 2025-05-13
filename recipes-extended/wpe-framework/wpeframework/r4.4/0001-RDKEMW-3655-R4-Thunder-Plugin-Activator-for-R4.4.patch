@@ -11,19 +11,22 @@ index bd465e3a..5f88d771 100644
  
  target_link_libraries(${PROJECT_NAME}
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
-index f2d27ed4..b57e588b 100644
+index f2d27ed4..26fdc9f1 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.cpp
 +++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
-@@ -49,6 +49,8 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -49,7 +49,10 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
      // Attempt to open the plugin shell
      bool success = false;
      int currentRetry = 1;
+-
 +    IPluginNotification pluginNotification;
 +    Core::hresult result_changestate_notify=Core::ERROR_NONE;
- 
++    bool result_waitstate = false;
++	
      while (!success && currentRetry <= maxRetries) {
          LOG_INF(_pluginName.c_str(), "Attempting to activate plugin - attempt %d/%d", currentRetry, maxRetries);
-@@ -73,10 +75,29 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+ 
+@@ -73,10 +76,37 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
              // Sleep, then try again
              std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
          } else {
@@ -33,22 +36,30 @@ index f2d27ed4..b57e588b 100644
 -            auto duration = Core::Time::Now().Sub(start.MilliSeconds());
 +	    LOG_INF(_pluginName.c_str(), "Before Register to state change activate plugin New");
 +	    result_changestate_notify = lifetime->Register(&pluginNotification);
-+
-+            LOG_INF(_pluginName.c_str(), "Return Value result_changestate_notify=%u and Core::ERROR_NONE=%u",result_changestate_notify,Core::ERROR_NONE);			
-+            if (result_changestate_notify == Core::ERROR_NONE) {
-+	            LOG_INF(_pluginName.c_str(), "New Register to state change activate plugin Success");
-+            } else{
-+	            LOG_INF(_pluginName.c_str(), "New Register to state change activate plugin Failed result_changestate_notify=%u",result_changestate_notify);
-+            }
-+
-+           LOG_INF(_pluginName.c_str(), "Activate ResetActivationPluginFlagcalled ");
++           LOG_INF(_pluginName.c_str(), "Return Value result_changestate_notify=%u and Core::ERROR_NONE=%u",result_changestate_notify,Core::ERROR_NONE);			
++           if (result_changestate_notify == Core::ERROR_NONE) 
++	    {
++		  LOG_INF(_pluginName.c_str(), "New Register to state change activate plugin Success");
++	    } 
++	    else
++	    {
++	         LOG_INF(_pluginName.c_str(), "New Register to state change activate plugin Failed result_changestate_notify=%u",result_changestate_notify);
++           }
++	    LOG_INF(_pluginName.c_str(), "ResetActivationPluginFlag called for =%s",_pluginName.c_str());					
 +	    pluginNotification.ResetActivationPluginFlag(_pluginName.c_str());		
++			
++    	    uint32_t result = lifetime->Activate(_pluginName.c_str());
 +
-+    	     uint32_t result = lifetime->Activate(_pluginName.c_str());
-+
-+	    LOG_INF(_pluginName.c_str(), "Waiting to activate plugin and max limit 1 min");
-+	    pluginNotification.WaitforPluginActivationCompletion(_pluginName, 60000);
-+	    LOG_INF(_pluginName.c_str(), "Waiting to activate plugin Completed");		
++	    LOG_INF(_pluginName.c_str(), "Waiting to activate plugin and max limit 60 secs or 1 min");
++	    result_waitstate = pluginNotification.WaitforPluginActivationCompletion(_pluginName, PLUGIN_ACTIVATION_TIMEOUT_MS);
++	    if(!result_waitstate)
++	    {
++	    	LOG_INF(_pluginName.c_str(), "WaitforPluginActivationCompletion Timed out after timeout delay of %d msec",PLUGIN_ACTIVATION_TIMEOUT_MS);
++	    }
++	    else
++	    {
++	    	LOG_INF(_pluginName.c_str(), "Waiting to activate plugin Completed setting in CB and either waited or no wait ");		
++	    }
 +           result_changestate_notify = lifetime->Unregister(&pluginNotification);
 +           LOG_INF(_pluginName.c_str(), "Activate UnRegister is Completed");
 +			
@@ -56,7 +67,7 @@ index f2d27ed4..b57e588b 100644
  
              if (result != Core::ERROR_NONE) {
                  if (result == Core::ERROR_PENDING_CONDITIONS) {
-@@ -91,7 +112,7 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -91,7 +121,7 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
                  std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
              } else {
                  // Our work here is done!
@@ -86,10 +97,10 @@ index 44fecef8..d7d8def4 100644
 +};
 diff --git a/Utils/PluginActivator/source/INotification.h b/Utils/PluginActivator/source/INotification.h
 new file mode 100755
-index 00000000..83c4fbbb
+index 00000000..2a5a1645
 --- /dev/null
 +++ b/Utils/PluginActivator/source/INotification.h
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,89 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -129,12 +140,24 @@ index 00000000..83c4fbbb
 +using namespace Exchange;
 +using namespace Controller;
 +
++#define PLUGIN_ACTIVATION_TIMEOUT_MS      (60000)
++
 +
 +class IPluginNotification : public WPEFramework::Exchange::Controller::ILifeTime::INotification{
 +private:
++    /*
++      * This is the mutex variable used to handle the other condition variables and lock it during accessing. 
++      */
 +    std::mutex _mutex;
++    /*
++      * This is the Condition variable used to wait and signal for the activation.
++      */
++    std::unordered_map<std::string, std::condition_variable> _pluginCondVars;
++    /*
++      * This is the _pluginActivated variable used maintain the activation state, initally it will be set to false, 
++      * if plugin is activated, it will be set to true in call back.
++      */
 +    std::unordered_map<std::string, bool> _pluginActivated;
-+    std::mutex _activationWaitMutex;
 +
 +public:
 +
@@ -169,10 +192,10 @@ index 00000000..83c4fbbb
 +};
 diff --git a/Utils/PluginActivator/source/NotificationHandler.cpp b/Utils/PluginActivator/source/NotificationHandler.cpp
 new file mode 100755
-index 00000000..faac13fe
+index 00000000..e915422d
 --- /dev/null
 +++ b/Utils/PluginActivator/source/NotificationHandler.cpp
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,131 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -207,35 +230,47 @@ index 00000000..faac13fe
 +
 +	if ((state == PluginHost::IShell::ACTIVATED) && (_pluginActivated[callsign] == false)) 
 +	{
-+		LOG_INF(callsign.c_str(), "State Change State is Activated and pluginactivated is false");
-+		if (_activationWaitMutex.try_lock()) 
-+		{
-+			LOG_INF(callsign.c_str(), "State Change State is Activated and Signaling");
-+			std::lock_guard<std::mutex> lock(_mutex);
-+	        	_pluginActivated[callsign] = true;
-+                	_activationWaitMutex.unlock();
-+            	}
++		LOG_INF(callsign.c_str(), "State Change State is Activated and Signaling");
++		std::lock_guard<std::mutex> lock(_mutex);
++        	_pluginActivated[callsign] = true;
++        	_pluginCondVars[callsign].notify_one();
 +    	}
 +	LOG_INF(callsign.c_str(), "State Change Exit");
 +}
 +
 +
 +bool IPluginNotification::WaitforPluginActivationCompletion(const std::string& pluginName, int timeoutMs) {
-+	LOG_INF(pluginName.c_str(), "WaitforPluginActivationCompletion pluginName=%s", pluginName.c_str());
++	LOG_INF(pluginName.c_str(), "WaitforPluginActivationCompletion pluginName=%s and _pluginActivated[pluginName]=%s", pluginName.c_str(),_pluginActivated[pluginName] ? "true" : "false");
++
 +	std::unique_lock<std::mutex> lock(_mutex);
-+      _pluginActivated[pluginName] = false; 
-+	lock.unlock();
-+	_activationWaitMutex.lock();
-+      	return true;
++	auto& condVar = _pluginCondVars[pluginName];
++
++	/*
++	  * This is observed the intermittently before the WaitforPluginActivationCompletion waiting happening
++	  * The call back of the StateChange has been triggered with state as acivated, which will set the 
++	  * 
++	  * _pluginActivated state to true. 
++	  * This is a case if _pluginActivated is true, we need not wait for the plugin activation 
++	  * to activate as it is already true and activated.
++	  */
++	if(_pluginActivated[pluginName] == false)
++	{
++	    return condVar.wait_for(lock, std::chrono::milliseconds(timeoutMs), [&]() {
++	        return _pluginActivated[pluginName];
++	    });	
++	}
++	else
++	{
++	    LOG_INF(pluginName.c_str(), "WaitforPluginActivationCompletion is already True");
++	}
++	return _pluginActivated[pluginName];
 +}
 +
 +void IPluginNotification::ResetActivationPluginFlag(const std::string& pluginName) {
-+      std::unique_lock<std::mutex> lock(_mutex);
++    std::unique_lock<std::mutex> lock(_mutex);
 +     _pluginActivated[pluginName] = false;
-+     _activationWaitMutex.lock();
 +	LOG_INF(pluginName.c_str(), "ResetActivationPluginFlag _pluginActivated=%d", _pluginActivated[pluginName]);
 +}
-+
 +
 +Core::hresult IPluginNotification::Register(INotification* sink)
 +{
