@@ -1,6 +1,6 @@
 SUMMARY = "Create wlan p2p device and rename it for mediacast usage"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://${MANIFEST_PATH_RDK_VIDEO}/licenses/Apache-2.0;md5=3b83ef96387f14655fc854ddc3c6bd57"
+LIC_FILES_CHKSUM = "file://${THISDIR}/files/Apache-2.0;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 DEPENDS = "wpa-supplicant"
 
