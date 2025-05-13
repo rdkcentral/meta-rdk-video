@@ -2,6 +2,8 @@
 SUMMARY = "Thunder Hang Recovery Application"
 DESCRIPTION = "Application to recovery thunder when it hangs by restarting thunder wpeframework"
 
+LICENSE = "Apache-2.0"
+LIC_FILES_CHKSUM = "file://../../LICENSE;md5=5bfad6e034e497ee148eec56e175c6e8"
 # The source file to compile
 SRC_URI = "file://thunderHangRecovery.cpp \
            file://thunderHangRecovery.service \
