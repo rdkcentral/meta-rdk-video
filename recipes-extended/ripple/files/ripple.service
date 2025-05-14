@@ -6,6 +6,7 @@ After=wpeframework.service wpeframework-system.service wpeframework-powermanager
 [Service]
 Type=notify
 EnvironmentFile=-/opt/ripple.conf
+ExecStartPre=/bin/sh -c 'if [ -f /lib/rdk/logMilestone.sh ];then sh /lib/rdk/logMilestone.sh "RIPPLE_START"; fi;'
 ExecStartPre=/usr/bin/ripple-start.sh
 ExecStart=/usr/bin/ripple
 ExecStartPost=/bin/sh -c '.  /etc/device.properties; if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/ripple_post.sh ];then  source /opt/ripple_post.sh; fi'
