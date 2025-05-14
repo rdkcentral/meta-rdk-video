@@ -15,7 +15,7 @@ RPROVIDES:${PN} = "virtual/libpackage"
 DEPENDS = "sqlite3 boost libarchive"
 RDEPENDS_${PN} = " sqlite3 boost libarchive"
 
-SRCREV_lisapack = "f82f3f150c54b06f0e04a6eae571df0b33240259"
+SRCREV_lisapack = "fb4386b6a0a150b06faf837bfbb4fad2f0693f09"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/libpackage;${CMF_GITHUB_SRC_URI_SUFFIX};name=lisapack"
 SRCREV_FORMAT = "lisapack"
