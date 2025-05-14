@@ -11,7 +11,7 @@ index bd465e3a..5f88d771 100644
  
  target_link_libraries(${PROJECT_NAME}
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
-index f2d27ed4..26fdc9f1 100644
+index f2d27ed4..9a93c070 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.cpp
 +++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
 @@ -49,7 +49,10 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
@@ -34,7 +34,7 @@ index f2d27ed4..26fdc9f1 100644
 -            uint32_t result = lifetime->Activate(_pluginName.c_str());
  
 -            auto duration = Core::Time::Now().Sub(start.MilliSeconds());
-+	    LOG_INF(_pluginName.c_str(), "Before Register to state change activate plugin New");
++	    LOG_INF(_pluginName.c_str(), "Before Register to state change activate plugin lifetime =  0x%x",lifetime);
 +	    result_changestate_notify = lifetime->Register(&pluginNotification);
 +           LOG_INF(_pluginName.c_str(), "Return Value result_changestate_notify=%u and Core::ERROR_NONE=%u",result_changestate_notify,Core::ERROR_NONE);			
 +           if (result_changestate_notify == Core::ERROR_NONE) 
@@ -97,7 +97,7 @@ index 44fecef8..d7d8def4 100644
 +};
 diff --git a/Utils/PluginActivator/source/INotification.h b/Utils/PluginActivator/source/INotification.h
 new file mode 100755
-index 00000000..2a5a1645
+index 00000000..c814bce5
 --- /dev/null
 +++ b/Utils/PluginActivator/source/INotification.h
 @@ -0,0 +1,89 @@
@@ -140,7 +140,7 @@ index 00000000..2a5a1645
 +using namespace Exchange;
 +using namespace Controller;
 +
-+#define PLUGIN_ACTIVATION_TIMEOUT_MS      (60000)
++#define PLUGIN_ACTIVATION_TIMEOUT_MS      (180 * 1000)
 +
 +
 +class IPluginNotification : public WPEFramework::Exchange::Controller::ILifeTime::INotification{
@@ -192,10 +192,10 @@ index 00000000..2a5a1645
 +};
 diff --git a/Utils/PluginActivator/source/NotificationHandler.cpp b/Utils/PluginActivator/source/NotificationHandler.cpp
 new file mode 100755
-index 00000000..e915422d
+index 00000000..897f0efe
 --- /dev/null
 +++ b/Utils/PluginActivator/source/NotificationHandler.cpp
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,130 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -227,11 +227,10 @@ index 00000000..e915422d
 +void IPluginNotification::StateChange(const std::string& callsign, const PluginHost::IShell::state& state, const PluginHost::IShell::reason& reason)
 +{
 +	LOG_INF(callsign.c_str(), "State Change Notification Received state=%d reason=%d", state, reason);
-+
++	std::lock_guard<std::mutex> lock(_mutex);
 +	if ((state == PluginHost::IShell::ACTIVATED) && (_pluginActivated[callsign] == false)) 
 +	{
 +		LOG_INF(callsign.c_str(), "State Change State is Activated and Signaling");
-+		std::lock_guard<std::mutex> lock(_mutex);
 +        	_pluginActivated[callsign] = true;
 +        	_pluginCondVars[callsign].notify_one();
 +    	}
