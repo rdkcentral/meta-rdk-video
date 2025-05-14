@@ -7,6 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=5bfad6e034e497ee148eec56e175c6e8"
 # The source file to compile
 SRC_URI = "file://thunderHangRecovery.cpp \
            file://thunderHangRecovery.service \
+           file://LICENSE \
           "
 
 inherit systemd
