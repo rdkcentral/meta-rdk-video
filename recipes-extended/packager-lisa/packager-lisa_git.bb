@@ -12,12 +12,15 @@ PR ?= "r0"
 PROVIDES = "virtual/libpackage"
 RPROVIDES:${PN} = "virtual/libpackage"
 
-SRCREV_lisapack = "91e2798617f1b6d3f50963726ba81016fa7b558c"
+DEPENDS = "sqlite3 boost libarchive"
+RDEPENDS_${PN} = " sqlite3 boost libarchive"
+
+SRCREV_lisapack = "f82f3f150c54b06f0e04a6eae571df0b33240259"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/libpackage;${CMF_GITHUB_SRC_URI_SUFFIX};name=lisapack"
 SRCREV_FORMAT = "lisapack"
 
 S = "${WORKDIR}/git"
 
-inherit cmake
+inherit cmake pkgconfig
 
