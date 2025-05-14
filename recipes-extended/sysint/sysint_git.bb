@@ -281,7 +281,7 @@ do_install:append:rdkstb() {
 }
 
 do_install:append:rdktv() {
-        install -m 0755 ${S}/rdktv/etc/rfcdefaults/rdktv.ini ${D}${sysconfdir}/rfcdefaults
+        install -m 0755 ${S}/rdktv/etc/rfcdefaults/sysint-generic.ini ${D}${sysconfdir}/rfcdefaults
         install -m 0755 ${S}/rdktv/lib/rdk/vdec-statistics.sh ${D}${base_libdir}/rdk/vdec-statistics.sh
         install -m 0644 ${S}/rdktv/systemd_units/vdec-statistics.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/rdktv/systemd_units/disk-check.service ${D}${systemd_unitdir}/system
