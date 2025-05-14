@@ -43,7 +43,7 @@ SYSLOG-NG_LOGRATE_zram = "low"
 SYSLOG-NG_SERVICE_vitalprocess-info = "vitalprocess-info.service"
 SYSLOG-NG_DESTINATION_vitalprocess-info = "top_log.txt"
 SYSLOG-NG_LOGRATE_vitalprocess-info = "high"
-SYSLOG-NG_SERVICE_mount_log += " disk-check.service "
+
 SYSLOG-NG_DESTINATION_mount_log = "mount_log.txt"
 SYSLOG-NG_LOGRATE_mount_log = "low"
 SYSLOG-NG_SERVICE_reboot-reason = "reboot-reason-logger.service update-reboot-info.service"
@@ -101,7 +101,7 @@ do_install() {
 	install -m 0644 ${S}/systemd_units/logrotate.timer ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/scheduled-reboot.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/dump-backup.service ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/disk-check.service ${D}${systemd_unitdir}/system
+
         install -m 0644 ${S}/systemd_units/coredump-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-secure-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.path ${D}${systemd_unitdir}/system
@@ -212,10 +212,7 @@ do_install() {
 	# FIXME: Not scalable sd card and non sd card (HDD) devices use different script
         # not perfect but this will have to do for now untill disk
         # checking is actually generic
-        if [ "${STG_TYPE}" = "SDCARD" ]; then
-            rm -f ${D}${systemd_unitdir}/system/disk-check.service
-            install -m 0644 ${S}/systemd_units/disk-check-sdcard.service ${D}${systemd_unitdir}/system/disk-check.service
-        fi
+      
 
         if [ "${MMC_TYPE}" != "EMMC" ]; then
             rm -f ${D}${base_libdir}/rdk/emmc_format.sh
@@ -247,7 +244,7 @@ do_install() {
             sed -i -e 's|.*PathExists=.*|PathExists=/run/systemd/timesync/synchronized|g' ${D}${systemd_unitdir}/system/ntp-event.path
         fi
 	# override default disk check
-        rm -f ${D}${systemd_unitdir}/system/disk-check.service
+       
         install -m 0644 ${S}/systemd_units/disk-check-sdcard.service ${D}${systemd_unitdir}/system/disk-check.service 
 
         if [ -f ${D}${base_libdir}/rdk/iptables_init_xi ]; then
@@ -282,10 +279,6 @@ do_install:append:rdkstb() {
 
 do_install:append:rdktv() {
         install -m 0755 ${S}/etc/rfcdefaults/sysint-generic.ini ${D}${sysconfdir}/rfcdefaults
-        install -m 0755 ${S}/rdktv/lib/rdk/vdec-statistics.sh ${D}${base_libdir}/rdk/vdec-statistics.sh
-        install -m 0644 ${S}/rdktv/systemd_units/vdec-statistics.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/rdktv/systemd_units/disk-check.service ${D}${systemd_unitdir}/system
-        install -m 0755 ${S}/rdktv/lib/rdk/get-reboot-reason.sh ${D}${base_libdir}/rdk/get-reboot-reason.sh
 }
 
 SYSTEMD_SERVICE:${PN}:append:rdkstb = " usbmodule-whitelist.service"
@@ -295,7 +288,6 @@ SYSTEMD_SERVICE:${PN} += "vitalprocess-info.timer"
 SYSTEMD_SERVICE:${PN} += "logrotate.timer"
 SYSTEMD_SERVICE:${PN} += "scheduled-reboot.service"
 SYSTEMD_SERVICE:${PN} += "dump-backup.service"
-SYSTEMD_SERVICE:${PN} += "disk-check.service"
 SYSTEMD_SERVICE:${PN} += "coredump-upload.service"
 SYSTEMD_SERVICE:${PN} += "coredump-secure-upload.service"
 SYSTEMD_SERVICE:${PN} += "coredump-upload.path"
@@ -327,7 +319,6 @@ SYSTEMD_SERVICE:${PN} += "network-connection-stats.timer"
 SYSTEMD_SERVICE:${PN} += "NM_Bootstrap.service"
 SYSTEMD_SERVICE:${PN} += "zram.service"
 
-SYSTEMD_SERVICE:${PN}:append:rdktv = " vdec-statistics.service"
 
 FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
