@@ -43,6 +43,7 @@ SYSLOG-NG_LOGRATE_zram = "low"
 SYSLOG-NG_SERVICE_vitalprocess-info = "vitalprocess-info.service"
 SYSLOG-NG_DESTINATION_vitalprocess-info = "top_log.txt"
 SYSLOG-NG_LOGRATE_vitalprocess-info = "high"
+SYSLOG-NG_SERVICE_mount_log += " disk-check.service "
 SYSLOG-NG_DESTINATION_mount_log = "mount_log.txt"
 SYSLOG-NG_LOGRATE_mount_log = "low"
 SYSLOG-NG_SERVICE_reboot-reason = "reboot-reason-logger.service update-reboot-info.service"
@@ -101,6 +102,7 @@ do_install() {
 	install -m 0644 ${S}/systemd_units/logrotate.timer ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/scheduled-reboot.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/dump-backup.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/disk-check.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-secure-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.path ${D}${systemd_unitdir}/system
@@ -273,6 +275,7 @@ SYSTEMD_SERVICE:${PN} += "vitalprocess-info.timer"
 SYSTEMD_SERVICE:${PN} += "logrotate.timer"
 SYSTEMD_SERVICE:${PN} += "scheduled-reboot.service"
 SYSTEMD_SERVICE:${PN} += "dump-backup.service"
+SYSTEMD_SERVICE:${PN} += "disk-check.service"
 SYSTEMD_SERVICE:${PN} += "coredump-upload.service"
 SYSTEMD_SERVICE:${PN} += "coredump-secure-upload.service"
 SYSTEMD_SERVICE:${PN} += "coredump-upload.path"
