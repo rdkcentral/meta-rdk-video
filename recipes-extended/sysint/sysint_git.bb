@@ -242,6 +242,10 @@ do_install() {
             sed -i -e 's|.*PathExists=.*|PathExists=/run/systemd/timesync/synchronized|g' ${D}${systemd_unitdir}/system/ntp-event.path
         fi
 
+        # override default disk check
+        rm -f ${D}${systemd_unitdir}/system/disk-check.service
+        install -m 0644 ${S}/systemd_units/disk-check-sdcard.service ${D}${systemd_unitdir}/system/disk-check.service 
+
         if [ -f ${D}${base_libdir}/rdk/iptables_init_xi ]; then
             mv ${D}${base_libdir}/rdk/iptables_init_xi ${D}${base_libdir}/rdk/iptables_init
         fi
