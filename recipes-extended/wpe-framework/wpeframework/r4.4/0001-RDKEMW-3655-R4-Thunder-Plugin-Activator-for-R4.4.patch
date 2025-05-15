@@ -11,10 +11,18 @@ index bd465e3a..5f88d771 100644
  
  target_link_libraries(${PROJECT_NAME}
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
-index f2d27ed4..e791b931 100644
+index f2d27ed4..765d089c 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.cpp
 +++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
-@@ -49,6 +49,9 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -27,6 +27,7 @@
+ COMRPCStarter::COMRPCStarter(const string& pluginName)
+     : IPluginStarter()
+     , _connector()
++    , _connectmetadata()
+     , _pluginName(pluginName)
+ {
+ }
+@@ -49,6 +50,9 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
      // Attempt to open the plugin shell
      bool success = false;
      int currentRetry = 1;
@@ -24,7 +32,7 @@ index f2d27ed4..e791b931 100644
  
      while (!success && currentRetry <= maxRetries) {
          LOG_INF(_pluginName.c_str(), "Attempting to activate plugin - attempt %d/%d", currentRetry, maxRetries);
-@@ -73,10 +76,49 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -73,10 +77,57 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
              // Sleep, then try again
              std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
          } else {
@@ -45,8 +53,16 @@ index f2d27ed4..e791b931 100644
 +           }
 +	    LOG_INF(_pluginName.c_str(), "ResetActivationPluginFlag called for =%s",_pluginName.c_str());					
 +	    pluginNotification.ResetActivationPluginFlag(_pluginName.c_str());		
++		
 +#if 1
-+	    Exchange::Controller::IMetadata* metadata = _connector.QueryInterface<Exchange::Controller::IMetadata>();
++		if (_connectmetadata.IsOperational() == false) {
++		    uint32_t result = _connectmetadata.Open(RPC::CommunicationTimeOut, ControllerMetadata::Connector());
++		    if(result != Core::ERROR_NONE) {
++		        LOG_ERROR(_pluginName.c_str(), "Failed to get controller interface, error %u (%s)", result, Core::ErrorToString(result));
++		    }	
++		}
++
++	    Exchange::Controller::IMetadata* metadata = _connectmetadata.Interface();
 +	    if (metadata != nullptr)
 +	    {
 +	    	CheckPluginActivation(metadata, _pluginName);
@@ -77,7 +93,7 @@ index f2d27ed4..e791b931 100644
  
              if (result != Core::ERROR_NONE) {
                  if (result == Core::ERROR_PENDING_CONDITIONS) {
-@@ -91,7 +133,7 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -91,7 +142,7 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
                  std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
              } else {
                  // Our work here is done!
@@ -86,7 +102,7 @@ index f2d27ed4..e791b931 100644
                  success = true;
              }
              lifetime->Release();
-@@ -108,3 +150,41 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -108,3 +159,41 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
  
      return success;
  }
@@ -129,7 +145,7 @@ index f2d27ed4..e791b931 100644
 +}
 +#endif
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.h b/Utils/PluginActivator/source/COMRPCStarter.h
-index 44fecef8..d513283d 100644
+index 44fecef8..f4b0981e 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.h
 +++ b/Utils/PluginActivator/source/COMRPCStarter.h
 @@ -21,6 +21,7 @@
@@ -140,7 +156,7 @@ index 44fecef8..d513283d 100644
  
  using namespace WPEFramework;
  
-@@ -35,11 +36,13 @@ public:
+@@ -35,11 +36,15 @@ public:
      ~COMRPCStarter() override;
  
      bool activatePlugin(const uint8_t maxRetries, const uint16_t retryDelayMs) override;
@@ -148,10 +164,12 @@ index 44fecef8..d513283d 100644
      
  private:
      using ControllerConnector = RPC::SmartControllerInterfaceType<Exchange::Controller::ILifeTime>;
++    using ControllerMetadata  = RPC::SmartControllerInterfaceType<Exchange::Controller::IMetadata>;
 +    void CheckPluginActivation(Exchange::Controller::IMetadata* metadata, const std::string& pluginName);
  
  private:
      ControllerConnector _connector;
++    ControllerMetadata _connectmetadata;
      const string _pluginName;
 -};
 \ No newline at end of file
