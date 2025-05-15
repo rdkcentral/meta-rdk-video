@@ -11,22 +11,20 @@ index bd465e3a..5f88d771 100644
  
  target_link_libraries(${PROJECT_NAME}
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
-index f2d27ed4..9a93c070 100644
+index f2d27ed4..e791b931 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.cpp
 +++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
-@@ -49,7 +49,10 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -49,6 +49,9 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
      // Attempt to open the plugin shell
      bool success = false;
      int currentRetry = 1;
--
 +    IPluginNotification pluginNotification;
 +    Core::hresult result_changestate_notify=Core::ERROR_NONE;
 +    bool result_waitstate = false;
-+	
+ 
      while (!success && currentRetry <= maxRetries) {
          LOG_INF(_pluginName.c_str(), "Attempting to activate plugin - attempt %d/%d", currentRetry, maxRetries);
- 
-@@ -73,10 +76,37 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -73,10 +76,49 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
              // Sleep, then try again
              std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
          } else {
@@ -47,7 +45,19 @@ index f2d27ed4..9a93c070 100644
 +           }
 +	    LOG_INF(_pluginName.c_str(), "ResetActivationPluginFlag called for =%s",_pluginName.c_str());					
 +	    pluginNotification.ResetActivationPluginFlag(_pluginName.c_str());		
-+			
++#if 1
++	    Exchange::Controller::IMetadata* metadata = _connector.QueryInterface<Exchange::Controller::IMetadata>();
++	    if (metadata != nullptr)
++	    {
++	    	CheckPluginActivation(metadata, _pluginName);
++	    	metadata->Release();
++	    } 
++	    else 
++	    {
++	    	LOG_ERROR(_pluginName.c_str(), "Failed to get IMetadata interface");
++	    }
++#endif
++
 +    	    uint32_t result = lifetime->Activate(_pluginName.c_str());
 +
 +	    LOG_INF(_pluginName.c_str(), "Waiting to activate plugin and max limit 60 secs or 1 min");
@@ -67,7 +77,7 @@ index f2d27ed4..9a93c070 100644
  
              if (result != Core::ERROR_NONE) {
                  if (result == Core::ERROR_PENDING_CONDITIONS) {
-@@ -91,7 +121,7 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -91,7 +133,7 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
                  std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
              } else {
                  // Our work here is done!
@@ -76,8 +86,50 @@ index f2d27ed4..9a93c070 100644
                  success = true;
              }
              lifetime->Release();
+@@ -108,3 +150,41 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+ 
+     return success;
+ }
++
++#if 1
++void CheckPluginActivation(Exchange::Controller::IMetadata* metadata, const std::string& pluginName) {
++    if (metadata == nullptr) {
++        LOG_ERROR(pluginName.c_str(), "Metadata interface is null");
++        return;
++    }
++
++    std::string jsonResponse;
++    Core::hresult result = metadata->Status(pluginName, jsonResponse);
++
++    if (result != Core::ERROR_NONE) {
++        LOG_ERROR(pluginName.c_str(), "Failed to retrieve status for plugin %s",pluginName.c_str());
++        return;
++    }
++
++    // Parse the JSON response
++    Core::JSON::Object responseObj;
++    if (responseObj.FromString(jsonResponse)) 
++    {
++        // Assume the JSON has a "state" field like: { "name": "MyPlugin", "state": "activated", ... }
++        string state;
++        if (responseObj.Get("state").IsString()) 
++	 {
++            state = responseObj.Get("state").Value();
++	     LOG_INF(pluginName.c_str(), "Plugin %s State=%s", pluginName.c_str(), (state == "activated" ) ? "activated" : "not activated");
++        } 
++	  else 
++	  {
++            LOG_ERROR(pluginName.c_str(), "Invalid in response %s",pluginName.c_str());
++         }
++    } 
++    else 
++    {
++            LOG_ERROR(pluginName.c_str(), "Failed Json Response %s",pluginName.c_str());
++    }
++}
++#endif
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.h b/Utils/PluginActivator/source/COMRPCStarter.h
-index 44fecef8..d7d8def4 100644
+index 44fecef8..d513283d 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.h
 +++ b/Utils/PluginActivator/source/COMRPCStarter.h
 @@ -21,6 +21,7 @@
@@ -88,7 +140,16 @@ index 44fecef8..d7d8def4 100644
  
  using namespace WPEFramework;
  
-@@ -42,4 +43,4 @@ private:
+@@ -35,11 +36,13 @@ public:
+     ~COMRPCStarter() override;
+ 
+     bool activatePlugin(const uint8_t maxRetries, const uint16_t retryDelayMs) override;
++
+     
+ private:
+     using ControllerConnector = RPC::SmartControllerInterfaceType<Exchange::Controller::ILifeTime>;
++    void CheckPluginActivation(Exchange::Controller::IMetadata* metadata, const std::string& pluginName);
+ 
  private:
      ControllerConnector _connector;
      const string _pluginName;
@@ -97,7 +158,7 @@ index 44fecef8..d7d8def4 100644
 +};
 diff --git a/Utils/PluginActivator/source/INotification.h b/Utils/PluginActivator/source/INotification.h
 new file mode 100755
-index 00000000..c814bce5
+index 00000000..6b2faaa4
 --- /dev/null
 +++ b/Utils/PluginActivator/source/INotification.h
 @@ -0,0 +1,89 @@
@@ -140,7 +201,7 @@ index 00000000..c814bce5
 +using namespace Exchange;
 +using namespace Controller;
 +
-+#define PLUGIN_ACTIVATION_TIMEOUT_MS      (180 * 1000)
++#define PLUGIN_ACTIVATION_TIMEOUT_MS      (30 * 1000)
 +
 +
 +class IPluginNotification : public WPEFramework::Exchange::Controller::ILifeTime::INotification{
