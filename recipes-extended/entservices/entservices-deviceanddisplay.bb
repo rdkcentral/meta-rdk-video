@@ -103,22 +103,8 @@ do_install:append() {
         install -m 0644 ${THISDIR}/files/displaysettings.ini ${D}${sysconfdir}/rfcdefaults/
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
-           find ${D}/etc/WPEFramework/plugins/ -type f ! -name "PowerManager.json" | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g' 
-	    #find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
+            find ${D}/etc/WPEFramework/plugins/ -type f ! -name "PowerManager.json" | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
-
-	#if [ -d "${D}/etc/WPEFramework/plugins" ]; then
-        # Add "autostart": false if missing in all plugin files
-        #find "${D}/etc/WPEFramework/plugins/" -type f | while read -r file; do
-        #    if ! grep -q '"autostart"[[:space:]]*:' "$file"; then
-        #        echo "Adding missing autostart=false to $file"
-        #        sed -i '0,/{/s/{/{\n  "autostart": false,/' "$file"
-        #    fi
-        #done
-
-    fi
-
-
     fi
 }
 
