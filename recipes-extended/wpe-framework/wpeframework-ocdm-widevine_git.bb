@@ -1,5 +1,5 @@
 SUMMARY = "WPE Framework OpenCDMi module for Widevine"
-LICENSE = "CLOSED"
+LICENSE = "Apache-2.0"
 
 include recipes-extended/wpe-framework/include/wpeframework-plugins.inc
 
