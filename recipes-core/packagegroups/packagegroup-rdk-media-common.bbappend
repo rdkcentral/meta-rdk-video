@@ -9,5 +9,4 @@ RDEPENDS:packagegroup-rdk-media-common += "\
    ${@bb.utils.contains('DISTRO_FEATURES', 'fwupgrader', 'rdkfwupgrader', '', d)} \
    ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto','rialto-client rialto-server rialto-servermanager rialto-gstreamer rialto-ocdm', '', d) } \
    ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'thunderstartupservices', '', d)} \
-   thunderhangrecovery \
    "

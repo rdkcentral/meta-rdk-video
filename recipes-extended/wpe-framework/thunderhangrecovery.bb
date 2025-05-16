@@ -12,6 +12,8 @@ SRC_URI = "file://thunderHangRecovery.cpp \
 
 inherit systemd
 
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
 DEPENDS = "rbus curl cjson"
 RDEPENDS:${PN} = "rbus curl cjson"
 LDFLAGS = " -lrbus -lcurl -lcjson"
