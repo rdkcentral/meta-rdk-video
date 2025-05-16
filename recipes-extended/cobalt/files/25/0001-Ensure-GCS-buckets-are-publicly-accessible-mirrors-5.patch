@@ -1,0 +1,105 @@
+From f981f63f1c23484be51a3a2bc2e17fa88febff8a Mon Sep 17 00:00:00 2001
+From: Arjun Menon <agmenon@google.com>
+Date: Tue, 1 Apr 2025 14:32:29 -0700
+Subject: [PATCH] Ensure GCS buckets are publicly accessible mirrors (#5255)
+
+b/406321498
+---
+ cobalt/media/testing/BUILD.gn               | 2 +-
+ cobalt/renderer/BUILD.gn                    | 2 +-
+ cobalt/site/docs/development/setup-raspi.md | 4 ++--
+ components/crx_file/BUILD.gn                | 2 +-
+ docker/linux/raspi/Dockerfile               | 2 +-
+ starboard/shared/starboard/player/BUILD.gn  | 2 +-
+ 6 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/cobalt/media/testing/BUILD.gn b/cobalt/media/testing/BUILD.gn
+index 0e0529c2969..95fe573aa2c 100644
+--- a/cobalt/media/testing/BUILD.gn
++++ b/cobalt/media/testing/BUILD.gn
+@@ -46,7 +46,7 @@ action("cobalt_media_download_test_data") {
+ 
+   args = [
+     "--bucket",
+-    "cobalt-static-storage",
++    "cobalt-static-storage-public",
+     "--sha1",
+     sha1_dir,
+     "--output",
+diff --git a/cobalt/renderer/BUILD.gn b/cobalt/renderer/BUILD.gn
+index 97e9bd3a49b..a8b8cefb7fa 100644
+--- a/cobalt/renderer/BUILD.gn
++++ b/cobalt/renderer/BUILD.gn
+@@ -552,7 +552,7 @@ action("renderer_download_lottie_test_data") {
+   sha_dir = rebase_path(_lottie_resource_path, root_build_dir)
+   args = [
+     "--bucket",
+-    "lottie-coverage-testdata",
++    "lottie-coverage-testdata-public",
+     "--sha1",
+     sha_dir,
+     "--output",
+diff --git a/cobalt/site/docs/development/setup-raspi.md b/cobalt/site/docs/development/setup-raspi.md
+index c737e197dcf..013f0de43f9 100644
+--- a/cobalt/site/docs/development/setup-raspi.md
++++ b/cobalt/site/docs/development/setup-raspi.md
+@@ -10,7 +10,7 @@ Raspberry Pi device. They have been tested with Ubuntu:20.04 and a Raspberry Pi
+ ## Set up your device
+ 
+ Download the latest Cobalt customized Raspbian image from <a
+-href="https://storage.googleapis.com/cobalt-static-storage/2020-02-13-raspbian-buster-lite_shrunk_20210427.img">GCS bucket</a>
++href="https://storage.googleapis.com/cobalt-static-storage-public/2020-02-13-raspbian-buster-lite_shrunk_20210427.img">GCS bucket</a>
+ (this is built via <a
+ href="https://github.com/youtube/cobalt/tree/main/cobalt/tools/raspi_image">this
+ customization tool</a>)
+@@ -73,7 +73,7 @@ Raspberry Pi.
+ 1.  Download the pre-packaged toolchain and extract it in `$RASPI_HOME`.
+ 
+     ```
+-    $ curl -O https://storage.googleapis.com/cobalt-static-storage/cobalt_raspi_tools.tar.bz2
++    $ curl -O https://storage.googleapis.com/cobalt-static-storage-public/cobalt_raspi_tools.tar.bz2
+     $ tar xvpf cobalt_raspi_tools.tar.bz2
+     ```
+ 
+diff --git a/components/crx_file/BUILD.gn b/components/crx_file/BUILD.gn
+index 074de4c708a..fa122003a15 100644
+--- a/components/crx_file/BUILD.gn
++++ b/components/crx_file/BUILD.gn
+@@ -64,7 +64,7 @@ if (is_starboard) {
+ 
+     args = [
+       "--bucket",
+-      "cobalt-static-storage",
++      "cobalt-static-storage-public",
+       "--sha1",
+       sha1_dir,
+       "--output",
+diff --git a/docker/linux/raspi/Dockerfile b/docker/linux/raspi/Dockerfile
+index ab98a8129bb..c6c18ec9a52 100644
+--- a/docker/linux/raspi/Dockerfile
++++ b/docker/linux/raspi/Dockerfile
+@@ -34,7 +34,7 @@ RUN apt update -qqy \
+ # Get the combined toolchains package.
+ RUN cd /tmp \
+     && curl --silent -O -J \
+-    "https://storage.googleapis.com/cobalt-static-storage/${raspi_tools}" \
++    "https://storage.googleapis.com/cobalt-static-storage-public/${raspi_tools}" \
+     && mkdir -p ${raspi_home} \
+     && cd ${raspi_home} \
+     && tar xjvf /tmp/${raspi_tools} --no-same-owner \
+diff --git a/starboard/shared/starboard/player/BUILD.gn b/starboard/shared/starboard/player/BUILD.gn
+index 46de5c9ecf4..94f0170fd34 100644
+--- a/starboard/shared/starboard/player/BUILD.gn
++++ b/starboard/shared/starboard/player/BUILD.gn
+@@ -64,7 +64,7 @@ action("player_download_test_data") {
+ 
+   args = [
+     "--bucket",
+-    "cobalt-static-storage",
++    "cobalt-static-storage-public",
+     "--sha1",
+     sha1_dir,
+     "--output",
+-- 
+2.49.0
+
