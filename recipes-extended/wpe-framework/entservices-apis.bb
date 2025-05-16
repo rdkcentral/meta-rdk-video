@@ -10,10 +10,11 @@ inherit python3native cmake pkgconfig
 DEPENDS = "wpeframework wpeframework-tools-native"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis"
+
 SRC_URI += "file://RDKEMW-1007.patch"
 
 # Tag 1.3.10
-SRCREV_entservices-apis = "f29e4883ca390415e577118610cee9c8b0afe1fc"
+SRCREV_entservices-apis = "872f7daa36563bec7127d80fd3e9fd147a807a9f"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
