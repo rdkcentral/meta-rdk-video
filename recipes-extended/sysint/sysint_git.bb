@@ -43,7 +43,6 @@ SYSLOG-NG_LOGRATE_zram = "low"
 SYSLOG-NG_SERVICE_vitalprocess-info = "vitalprocess-info.service"
 SYSLOG-NG_DESTINATION_vitalprocess-info = "top_log.txt"
 SYSLOG-NG_LOGRATE_vitalprocess-info = "high"
-SYSLOG-NG_SERVICE_mount_log += " disk-check.service "
 SYSLOG-NG_DESTINATION_mount_log = "mount_log.txt"
 SYSLOG-NG_LOGRATE_mount_log = "low"
 SYSLOG-NG_SERVICE_reboot-reason = "reboot-reason-logger.service update-reboot-info.service"
@@ -102,7 +101,6 @@ do_install() {
 	install -m 0644 ${S}/systemd_units/logrotate.timer ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/scheduled-reboot.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/dump-backup.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/disk-check.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-secure-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.path ${D}${systemd_unitdir}/system
@@ -150,8 +148,10 @@ do_install() {
         install -m 0644 ${S}/systemd_units/rdnssd.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/NM_Bootstrap.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/zram.service ${D}${systemd_unitdir}/system
-
-
+        install -m 0644 ${S}/systemd_units/dbus-monitor.service ${D}${systemd_unitdir}/system 
+        install -m 0644 ${S}/systemd_units/ntp-response-telemetry.service  ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/ntp-telemetry-log.path  ${D}${systemd_unitdir}/system
+        
 
         if [ "${BIND_ENABLED}" = "true" ]; then
            echo "BIND_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
@@ -243,7 +243,7 @@ do_install() {
         fi
 
         # override default disk check
-        rm -f ${D}${systemd_unitdir}/system/disk-check.service
+
         install -m 0644 ${S}/systemd_units/disk-check-sdcard.service ${D}${systemd_unitdir}/system/disk-check.service 
 
         if [ -f ${D}${base_libdir}/rdk/iptables_init_xi ]; then
@@ -279,7 +279,6 @@ SYSTEMD_SERVICE:${PN} += "vitalprocess-info.timer"
 SYSTEMD_SERVICE:${PN} += "logrotate.timer"
 SYSTEMD_SERVICE:${PN} += "scheduled-reboot.service"
 SYSTEMD_SERVICE:${PN} += "dump-backup.service"
-SYSTEMD_SERVICE:${PN} += "disk-check.service"
 SYSTEMD_SERVICE:${PN} += "coredump-upload.service"
 SYSTEMD_SERVICE:${PN} += "coredump-secure-upload.service"
 SYSTEMD_SERVICE:${PN} += "coredump-upload.path"
@@ -310,6 +309,9 @@ SYSTEMD_SERVICE:${PN} += "network-connection-stats.service"
 SYSTEMD_SERVICE:${PN} += "network-connection-stats.timer"
 SYSTEMD_SERVICE:${PN} += "NM_Bootstrap.service"
 SYSTEMD_SERVICE:${PN} += "zram.service"
+SYSTEMD_SERVICE:${PN} += "dbus-monitor.service"
+SYSTEMD_SERVICE:${PN} += "ntp-response-telemetry.service"
+SYSTEMD_SERVICE:${PN} += "ntp-telemetry-log.path"
 
 FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
