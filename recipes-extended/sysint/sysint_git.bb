@@ -148,7 +148,7 @@ do_install() {
         install -m 0644 ${S}/systemd_units/rdnssd.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/NM_Bootstrap.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/zram.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/dbus-monitor.service ${D}${systemd_unitdir}/system 
+        install -m 0644 ${S}/systemd_units/dns-monitor.service ${D}${systemd_unitdir}/system 
         install -m 0644 ${S}/systemd_units/ntp-response-telemetry.service  ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/ntp-telemetry-log.path  ${D}${systemd_unitdir}/system
         
@@ -309,7 +309,7 @@ SYSTEMD_SERVICE:${PN} += "network-connection-stats.service"
 SYSTEMD_SERVICE:${PN} += "network-connection-stats.timer"
 SYSTEMD_SERVICE:${PN} += "NM_Bootstrap.service"
 SYSTEMD_SERVICE:${PN} += "zram.service"
-SYSTEMD_SERVICE:${PN} += "dbus-monitor.service"
+SYSTEMD_SERVICE:${PN} += "dns-monitor.service"
 SYSTEMD_SERVICE:${PN} += "ntp-response-telemetry.service"
 SYSTEMD_SERVICE:${PN} += "ntp-telemetry-log.path"
 
