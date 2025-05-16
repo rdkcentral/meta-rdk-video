@@ -4,6 +4,7 @@ After=wpeframework.service
 Requires=wpeframework.service
 
 [Service]
+ExecStartPre=/bin/sh -c 'mkdir -p /opt/thunderHangDetector'
 ExecStart=/usr/bin/thunderHangRecovery
 Type=simple
 Restart=always
