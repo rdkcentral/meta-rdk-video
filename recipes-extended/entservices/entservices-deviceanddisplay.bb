@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
           "
 
 # Release version - 1.1.9
-SRCREV = "a05904428e68b39bb19d274976ff03ed5e29445b"
+SRCREV = "7b3edfa8c3ed7c3fea904049e0327af763a41267"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -47,6 +47,19 @@ INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/power-manager \
     -I=${includedir}/WPEFramework/powercontroller \
     "
+
+CXXFLAGS += "-D_DISABLE_SCHD_REBOOT_AT_DEEPSLEEP"
+CXXFLAGS += "-DPLATCO_BOOTTO_STANDBY"
+CXXFLAGS += "-DENABLE_THERMAL_PROTECTION"
+CXXFLAGS += "-DUSE_WAKEUP_TIMER_EVT"
+CXXFLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
+CXXFLAGS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
+
+LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
+CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
+CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
+CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
+CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
 
 # ----------------------------------------------------------------------------
 
@@ -91,6 +104,10 @@ python () {
     machine_name = d.getVar('MACHINE')
     if 'raspberrypi4' in machine_name:
         d.appendVar('EXTRA_OECMAKE', ' -DBUILD_RPI=ON')
+}
+
+do_compile() {
+    CFLAGS=" ${CFLAGS}" CXXFLAGS=" ${CXXLAGS}"
 }
 
 do_install:append() {
