@@ -43,7 +43,7 @@ SYSLOG-NG_LOGRATE_zram = "low"
 SYSLOG-NG_SERVICE_vitalprocess-info = "vitalprocess-info.service"
 SYSLOG-NG_DESTINATION_vitalprocess-info = "top_log.txt"
 SYSLOG-NG_LOGRATE_vitalprocess-info = "high"
-SYSLOG-NG_SERVICE_mount_log += " disk-check.service "
+SYSLOG-NG_SERVICE_mount_log:append:rdkstb = " disk-check.service "
 SYSLOG-NG_DESTINATION_mount_log = "mount_log.txt"
 SYSLOG-NG_LOGRATE_mount_log = "low"
 SYSLOG-NG_SERVICE_reboot-reason = "reboot-reason-logger.service update-reboot-info.service"
@@ -102,7 +102,6 @@ do_install() {
 	install -m 0644 ${S}/systemd_units/logrotate.timer ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/scheduled-reboot.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/dump-backup.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/disk-check.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-secure-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.path ${D}${systemd_unitdir}/system
@@ -242,10 +241,6 @@ do_install() {
             sed -i -e 's|.*PathExists=.*|PathExists=/run/systemd/timesync/synchronized|g' ${D}${systemd_unitdir}/system/ntp-event.path
         fi
 
-        # override default disk check
-        rm -f ${D}${systemd_unitdir}/system/disk-check.service
-        install -m 0644 ${S}/systemd_units/disk-check-sdcard.service ${D}${systemd_unitdir}/system/disk-check.service 
-
         if [ -f ${D}${base_libdir}/rdk/iptables_init_xi ]; then
             mv ${D}${base_libdir}/rdk/iptables_init_xi ${D}${base_libdir}/rdk/iptables_init
         fi
@@ -268,7 +263,7 @@ do_install:append:rdkstb() {
         install -m 0755 ${S}/lib/rdk/heap-usage-stats.sh ${D}/lib/rdk/heap-usage-stats.sh
         install -m 0644 ${S}/systemd_units/usbmodule-whitelist.service ${D}${systemd_unitdir}/system
         install -m 0755 ${S}/lib/rdk/usbmodule-whitelist.sh ${D}${base_libdir}/rdk/
-
+        install -m 0644 ${S}/systemd_units/disk-check-sdcard.service ${D}${systemd_unitdir}/system/disk-check.service
 
 }
 
@@ -279,7 +274,7 @@ SYSTEMD_SERVICE:${PN} += "vitalprocess-info.timer"
 SYSTEMD_SERVICE:${PN} += "logrotate.timer"
 SYSTEMD_SERVICE:${PN} += "scheduled-reboot.service"
 SYSTEMD_SERVICE:${PN} += "dump-backup.service"
-SYSTEMD_SERVICE:${PN} += "disk-check.service"
+SYSTEMD_SERVICE:${PN}:append:rdkstb = " disk-check.service "
 SYSTEMD_SERVICE:${PN} += "coredump-upload.service"
 SYSTEMD_SERVICE:${PN} += "coredump-secure-upload.service"
 SYSTEMD_SERVICE:${PN} += "coredump-upload.path"
