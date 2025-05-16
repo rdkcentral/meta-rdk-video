@@ -11,7 +11,7 @@ index bd465e3a..5f88d771 100644
  
  target_link_libraries(${PROJECT_NAME}
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
-index f2d27ed4..12f61d39 100644
+index f2d27ed4..a1839b4b 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.cpp
 +++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
 @@ -27,6 +27,7 @@
@@ -123,7 +123,7 @@ index f2d27ed4..12f61d39 100644
 +    }
 +
 +    // Parse the JSON response
-+	WPEFramework::Core::JSON::VariantContainer responseObj;
++	Core::JSON::VariantContainer responseObj;
 +	if (responseObj.FromString(jsonResponse)) {
 +    		Core::JSON::String state;
 +    		if (responseObj.Get("state", state) == true) {
