@@ -11,7 +11,7 @@ index bd465e3a..5f88d771 100644
  
  target_link_libraries(${PROJECT_NAME}
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
-index f2d27ed4..765d089c 100644
+index f2d27ed4..12f61d39 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.cpp
 +++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
 @@ -27,6 +27,7 @@
@@ -102,7 +102,7 @@ index f2d27ed4..765d089c 100644
                  success = true;
              }
              lifetime->Release();
-@@ -108,3 +159,41 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -108,3 +159,36 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
  
      return success;
  }
@@ -123,25 +123,20 @@ index f2d27ed4..765d089c 100644
 +    }
 +
 +    // Parse the JSON response
-+    Core::JSON::Object responseObj;
-+    if (responseObj.FromString(jsonResponse)) 
-+    {
-+        // Assume the JSON has a "state" field like: { "name": "MyPlugin", "state": "activated", ... }
-+        string state;
-+        if (responseObj.Get("state").IsString()) 
-+	 {
-+            state = responseObj.Get("state").Value();
-+	     LOG_INF(pluginName.c_str(), "Plugin %s State=%s", pluginName.c_str(), (state == "activated" ) ? "activated" : "not activated");
-+        } 
-+	  else 
-+	  {
-+            LOG_ERROR(pluginName.c_str(), "Invalid in response %s",pluginName.c_str());
-+         }
-+    } 
-+    else 
-+    {
-+            LOG_ERROR(pluginName.c_str(), "Failed Json Response %s",pluginName.c_str());
-+    }
++	WPEFramework::Core::JSON::VariantContainer responseObj;
++	if (responseObj.FromString(jsonResponse)) {
++    		Core::JSON::String state;
++    		if (responseObj.Get("state", state) == true) {
++        		LOG_INF(pluginName.c_str(),
++                	"Plugin %s State=%s",
++                	pluginName.c_str(),
++                	(state.Value() == "activated") ? "activated" : "not activated");
++    		} else {
++        		LOG_ERROR(pluginName.c_str(), "Missing or invalid 'state' field in JSON");
++    		}
++	} else {
++    		LOG_ERROR(pluginName.c_str(), "Failed to parse JSON response");
++	}
 +}
 +#endif
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.h b/Utils/PluginActivator/source/COMRPCStarter.h
