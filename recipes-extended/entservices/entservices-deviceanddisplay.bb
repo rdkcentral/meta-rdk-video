@@ -2,7 +2,7 @@ SUMMARY = "ENTServices deviceanddisplay plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV ?= "1.1.6"
+PV ?= "1.1.9"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
            file://rdkemw_124_systemservices.patch \
           "
 
-# Release version - 1.1.7
-SRCREV = "54b8a14dd82b52974311897b8781f09a330cbd35"
+# Release version - 1.1.9
+SRCREV = "a05904428e68b39bb19d274976ff03ed5e29445b"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
