@@ -40,7 +40,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'miracast', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_MIRACAST', 'miracast', '', d)} \
 "
 
 PACKAGECONFIG:append = " xcast"
