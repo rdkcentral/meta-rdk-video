@@ -182,11 +182,7 @@ BLE_ENABLED   = "${@bb.utils.contains('MACHINE_FEATURES', 'ble-rcu' ,'true', 'fa
 
 addtask ctrlm_config after do_configure before do_compile
 do_ctrlm_config() {
-    if [ "${RF4CE_ENABLED}" = false -a "${BLE_ENABLED}" = true ]; then
-        echo '{"network_rf4ce":{}}' > ${CTRLM_CONFIG_MAIN_SUB}
-    fi
-
-    if [ "${BLE_ENABLED}" = false -a "${RF4CE_ENABLED}" = true ]; then
+    if [ "${BLE_ENABLED}" = false ]; then
         echo '{"network_ble":{}}' > ${CTRLM_CONFIG_MAIN_SUB}
     fi
 }
@@ -204,7 +200,7 @@ do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
 
-    if ${@bb.utils.contains('EXTRA_OECMAKE', '-DRF4CE_ENABLED=ON', 'true', 'false', d)}; then
+    if [ "${RF4CE_ENABLED}" = "true" ]; then
        install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
        install -m 0644 ${WORKDIR}/1_rf4ce.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
     fi
