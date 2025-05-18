@@ -149,6 +149,11 @@ do_install() {
         install -m 0644 ${S}/systemd_units/rdnssd.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/NM_Bootstrap.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/zram.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/dns-monitor.service ${D}${systemd_unitdir}/system 
+        install -m 0644 ${S}/systemd_units/ntp-response-telemetry.service  ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/ntp-telemetry-log.path  ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/get_NM_status.service  ${D}${systemd_unitdir}/system
+
 
 
 
@@ -304,6 +309,10 @@ SYSTEMD_SERVICE:${PN} += "network-connection-stats.service"
 SYSTEMD_SERVICE:${PN} += "network-connection-stats.timer"
 SYSTEMD_SERVICE:${PN} += "NM_Bootstrap.service"
 SYSTEMD_SERVICE:${PN} += "zram.service"
+SYSTEMD_SERVICE:${PN} += "dns-monitor.service"
+SYSTEMD_SERVICE:${PN} += "ntp-response-telemetry.service"
+SYSTEMD_SERVICE:${PN} += "ntp-telemetry-log.path"
+SYSTEMD_SERVICE:${PN} += "get_NM_status.service"
 
 FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
