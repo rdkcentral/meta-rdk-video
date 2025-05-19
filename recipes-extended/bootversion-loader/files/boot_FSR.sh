@@ -39,7 +39,8 @@ do_FSR () {
 
 if [ -e "$file_Migration_Ready_check" ]; then
 	echo -e "Triggering FSR since IUI is not ready for Migration"
-        do_FSR
+      #  do_FSR
+        exit 0
 fi
 
 if [ -e "$RA_Web_Store" ]; then

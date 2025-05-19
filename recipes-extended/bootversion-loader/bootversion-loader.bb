@@ -15,7 +15,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 python __anonymous() {
     if d.getVar("XUMOTV_MIGRATION_ENTOS") == "yes":
         d.appendVar("FILES:${PN}", " /lib/rdk/boot_FSR.sh")
-	d.appendVar("FILES:${PN}", " /opt/secure/migration/iui_not_fully_ready_for_migration")
+        d.appendVar("FILES:${PN}", " /opt/secure/migration/iui_not_fully_ready_for_migration")
 }
 
 do_install:append () {
