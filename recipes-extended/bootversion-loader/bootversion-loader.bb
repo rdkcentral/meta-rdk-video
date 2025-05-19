@@ -24,7 +24,8 @@ do_install:append () {
     install -d ${D}/lib/rdk
     install -m 0755 ${WORKDIR}/bootversion-loader.sh ${D}/lib/rdk/bootversion-loader.sh
     if [ "${XUMOTV_MIGRATION_ENTOS}" = "yes" ]; then
-	install -d ${D}/opt/secure/migration/
+    	install -d ${D}/opt/
+	mkdir -p  ${D}/opt/secure/migration/
 	touch ${D}/opt/secure/migration/iui_not_fully_ready_for_migration
         install -m 0755 ${WORKDIR}/boot_FSR.sh ${D}/lib/rdk/boot_FSR.sh
     fi
