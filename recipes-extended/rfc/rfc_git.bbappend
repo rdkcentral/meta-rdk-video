@@ -12,7 +12,6 @@ PACKAGECONFIG:append = " breakpad"
 PACKAGECONFIG[breakpad] = "--enable-breakpad,,breakpad,"
 
 LDFLAGS += "-lbreakpadwrapper -lpthread -lstdc++"
-CFLAGS += "-DINCLUDE_BREAKPAD"
 CXXFLAGS += "-DINCLUDE_BREAKPAD"
 
 do_install:append() {
