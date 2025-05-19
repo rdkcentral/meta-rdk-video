@@ -57,7 +57,7 @@ do_install() {
     # IRDB Support
     install -m 644 ${S}/src/irdb/ctrlm_irdb_interface.h ${D}${includedir}/ctrlm_private
     install -m 644 ${S}/src/ipc/ctrlm_ipc_iarm.h ${D}${includedir}/ctrlm_private
-    install -m 644 ${S}/src/irdb/ctrlm_irdb_plugin.h ${D}${includedir}
+    install -m 644 ${S}/src/irdb/ctrlm_irdb_plugin.h ${D}${includedir}/ctrlm_private
 
     # Network Support
     install -m 644 ${S}/src/ctrlm.h ${D}${includedir}/ctrlm_private
