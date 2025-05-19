@@ -21,6 +21,7 @@ RA_Web_Store="/opt/persistent/rdkservices/ResidentApp/wpe/local-storage/http_pla
 file_bootType="/tmp/bootType"
 file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
 file_DataStore="/opt/secure/migration/migration_data_store.json"
+file_Migration_Ready_check="/opt/secure/migration/iui_not_fully_ready_for_migration"
 
 ftue_key_available="null"
 current_bootType=$(<"$file_bootType")
@@ -35,6 +36,12 @@ do_FSR () {
     touch /tmp/data/.trigger_reformat
     sh /rebootNow.sh -s boot_FSR -o "Rebooting the box for triggering FSR..."
 }
+
+if [ -e "$file_Migration_Ready_check" ]; then
+	echo -e "Triggering FSR since IUI is not ready for Migration"
+       #do_FSR
+       exit 0
+fi
 
 if [ -e "$RA_Web_Store" ]; then
      echo -e "calling ftue_check"
