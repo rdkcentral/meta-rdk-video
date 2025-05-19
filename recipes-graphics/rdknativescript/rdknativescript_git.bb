@@ -2,7 +2,7 @@ DESCRIPTION = "JSRuntime"
 HOMEPAGE = ""
 
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://${MANIFEST_PATH_META_RDK}/licenses/Apache-2.0;md5=3b83ef96387f14655fc854ddc3c6bd57"
+LIC_FILES_CHKSUM = "file://${THISDIR}/files/Apache-2.0;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 DEPENDS = "westeros essos rapidjson rtcore libuv gstreamer1.0 uwebsockets javascriptcore aamp websocketpp"
 DEPENDS:append = " virtual/egl"
@@ -17,8 +17,8 @@ PR ?= "r1"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-#Release 1.0.0
-SRCREV = "55d66dfa5f636e408c18367ade1804a1595fba68"
+#Release 1.0.1
+SRCREV = "7a0abb8de4db6c29f595c8ab746bb7501416f786"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

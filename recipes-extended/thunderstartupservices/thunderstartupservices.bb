@@ -9,7 +9,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = "systemd"
 
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch;patchdir=${WORKDIR}/git', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
 S = "${WORKDIR}/git/systemd/system"
 
@@ -26,7 +26,6 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-monitor.service \
     wpeframework-network.service \
     wpeframework-ocdm.service \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'DAC_SUPPORT',' wpeframework-lisa.service wpeframework-ocicontainer.service', '', d)} \
     wpeframework-persistentstore.service \
     wpeframework-playerinfo.service \
     wpeframework-sharedstorage.service \
@@ -47,6 +46,14 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-firmwareupdate.service \
     wpeframework-powermanager.service \
     wpeframework-networkmanager.service \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'DAC_SUPPORT',' wpeframework-lisa.service', '', d)} \
+    wpeframework-ocicontainer.service \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'rdkwindowmanager',' wpeframework-rdkwindowmanager.service', '', d)} \
+    wpeframework-lifecyclemanager.service \
+    wpeframework-runtimemanager.service \
+    wpeframework-storagemanager.service \
+    wpeframework-packagemanager.service \
+    wpeframework-appmanager.service \
     "
 
 do_install() {

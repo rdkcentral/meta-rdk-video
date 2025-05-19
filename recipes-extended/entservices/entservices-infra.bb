@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Infra plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "1.1.15"
+PV ?= "1.1.19"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -16,8 +16,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDK-41681-PR4013.patch \
           "
 
-# Release version - 1.1.15
-SRCREV = "b3527d074c7ff6e6f5b2dd379ac3ea0fa05246c3"
+# Release version - 1.1.19
+SRCREV = "e1743c4869e7cec8b4e8100a65798bc6673c3889"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -63,6 +63,10 @@ PACKAGECONFIG ?= " monitor \
     messagecontrol \
     rdknativescript \
     javascriptcore \
+    packagemanager \
+    lifecyclemanager \
+    storagemanager \
+    appmanager \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
@@ -119,6 +123,10 @@ PACKAGECONFIG[rdkshellrialto]       = "-DRIALTO_FEATURE=ON,-DRIALTO_FEATURE=OFF,
 PACKAGECONFIG[rustadapter]          = "-DPLUGIN_RUSTADAPTER=ON,,,"
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON,-DPLUGIN_RUNTIME_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[rdknativescript]      = "-DPLUGIN_NATIVEJS=ON,-DPLUGIN_NATIVEJS=OFF,rdknativescript,libuv"
+PACKAGECONFIG[packagemanager]       = "-DPLUGIN_PACKAGE_MANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_PACKAGE_MANAGER=OFF -DLIB_PACKAGE=OFF,curl virtual/libpackage,curl virtual/libpackage"
+PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LIFECYCLE_MANAGER=OFF,websocketpp entservices-apis,entservices-apis"
+PACKAGECONFIG[storagemanager]       = "-DPLUGIN_STORAGE_MANAGER=ON,-DPLUGIN_STORAGE_MANAGER=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[appmanager]           = "-DPLUGIN_APPMANAGER=ON,-DPLUGIN_APPMANAGER=OFF,entservices-apis,entservices-apis"
 
 # ----------------------------------------------------------------------------
 

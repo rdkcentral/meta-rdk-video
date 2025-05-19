@@ -12,7 +12,7 @@ PV = "${RDK_RELEASE}+git${SRCPV}"
 SRCREV = "${AUTOREV}"
 S = "${WORKDIR}/git"
 
-DEPENDS = "virtual/vendor-iarmmgrs-hal iarmbus glib-2.0"
+DEPENDS = "iarmbus glib-2.0"
 
 export LINK = "${LD}"
 
