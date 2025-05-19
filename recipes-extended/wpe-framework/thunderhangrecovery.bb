@@ -4,6 +4,9 @@ DESCRIPTION = "Application to recovery thunder when it hangs by restarting thund
 
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${COREBASE}/../../middleware/generic/meta-rdk-video/LICENSE;md5=5bfad6e034e497ee148eec56e175c6e8"
+
+PR = "r0"
+PV = "1.0.0"
 # The source file to compile
 SRC_URI = "file://thunderHangRecovery.cpp \
            file://thunderHangRecovery.service \
@@ -17,6 +20,9 @@ DEPENDS = "rbus curl cjson"
 RDEPENDS:${PN} = "rbus curl cjson"
 LDFLAGS = " -lrbus -lcurl -lcjson"
 CXXFLAGS = " -I${includedir}/rbus -I${includedir}/curl -I=${includedir}/cjson"
+
+SYSLOG-NG_FILTER = "wpeframework"
+SYSLOG-NG_SERVICE_wpeframework = "thunderHangRecovery.service"
 
 # Define build and install steps
 do_compile:append() {
