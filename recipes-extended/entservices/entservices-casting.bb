@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-casting;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
 # Release version - 1.0.8
-SRCREV = "2ce8b6c9e49b42c52015010b4d3d730519f8e127"
+SRCREV = "eb985eb50b94f7ee0991e9d9842bfa7937a41bb4"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
