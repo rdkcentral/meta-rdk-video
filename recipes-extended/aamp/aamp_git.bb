@@ -10,18 +10,18 @@ SRCREV_FORMAT = "aamp"
 
 inherit pkgconfig
 
-DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline"
+DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline player-interface"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0  gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)}"
 RDEPENDS_${PN} +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 DEPENDS += " wpe-webkit"
 DEPENDS += " wpeframework-clientlibraries"
-RDEPENDS:${PN} += "devicesettings"
+RDEPENDS:${PN} += "devicesettings player-interface"
 DEPENDS:append = " virtual/vendor-gst-drm-plugins essos "
 NO_RECOMMENDATIONS = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 #To be removed later, the AAMP_RELEASE_TAG_NAME is not using.
-AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
+AAMP_RELEASE_TAG_NAME ?= "feature/RDKEMW-4040_sep"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
 
