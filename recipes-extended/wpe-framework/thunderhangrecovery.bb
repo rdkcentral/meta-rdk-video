@@ -39,5 +39,5 @@ do_install:append() {
 SYSTEMD_SERVICE:${PN} += "thunderHangRecovery.service"
 
 # Specify where to install the executable
-FILES:${PN} = "${bindir}/thunderHangRecovery"
+FILES:${PN} += "${bindir}/thunderHangRecovery"
 FILES:${PN} += "${systemd_unitdir}/system/thunderHangRecovery.service"
