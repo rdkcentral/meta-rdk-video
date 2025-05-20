@@ -12,7 +12,7 @@ SRC_URI = "file://thunderHangRecovery.cpp \
            file://thunderHangRecovery.service \
           "
 
-inherit systemd
+inherit systemd syslog-ng-config-gen
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -23,6 +23,7 @@ CXXFLAGS = " -I${includedir}/rbus -I${includedir}/curl -I=${includedir}/cjson"
 
 SYSLOG-NG_FILTER = "wpeframework"
 SYSLOG-NG_SERVICE_wpeframework = "thunderHangRecovery.service"
+SYSLOG-NG_DESTINATION_wpeframework = "wpeframework.log"
 
 # Define build and install steps
 do_compile:append() {
