@@ -37,6 +37,8 @@ do_FSR () {
     sh /rebootNow.sh -s boot_FSR -o "Rebooting the box for triggering FSR..."
 }
 
+echo -e "This is a Special Build for Handling FSR on Non-Activated Devices" 
+
 if [ -e "$file_Migration_Ready_check" ]; then
 	echo -e "Triggering FSR since IUI is not ready for Migration"
         do_FSR
