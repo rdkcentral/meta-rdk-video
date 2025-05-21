@@ -3,8 +3,8 @@ DESCRIPTION = "This layer provides the Entos Player Firebolt Interface library f
 HOMEPAGE = "https://github.com/rdkcentral/middleware-player-interface"
 LICENSE = "CLOSED"
 
-PV = "1.0.0"
-PR = "r0"
+PV ?= "1.0.0"
+PR ?= "r0"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
