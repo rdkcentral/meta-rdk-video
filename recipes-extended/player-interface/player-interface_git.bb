@@ -27,6 +27,9 @@ DEPENDS += "iarmmgrs wpeframework wpe-webkit wpeframework-clientlibraries"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)}"
 
+FILES:${PN} += "${libdir}/lib*.so"
+FILES:${PN} += "${libdir}/player-interface/lib*.so"
+
 CXXFLAGS += "-I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ -lWPEFrameworkSecurityUtil"
 
 PACKAGES = "${PN} ${PN}-dev ${PN}-dbg"
