@@ -1,0 +1,67 @@
+From 4e5b01d0ebec25d4b11684479a26575ff3e8ed1d Mon Sep 17 00:00:00 2001
+From: Vidhathri Joshi <vidhathri.joshi@gmail.com>
+Date: Thu, 14 Aug 2025 19:16:08 +0530
+Subject: [PATCH] RDKEMW-6980: Airplay set env variables from App to Daemon
+
+Reason for change: entservicesapis - Airplay HomeKit Thunder plugin
+Enable New  interface to set pass Airplay app containers env variables to Host Daemon
+
+Priority: P1
+
+Test Procedure: Airplay audio sanity and no regression with/without Rialto
+Risks: Medium
+
+Signed-off-by: Vidhathri Joshi <vidhathri_joshi@comcast.com>
+---
+ apis/HomeKitTV/HomeKitTV.json | 22 ++++++++++++++++++++++
+ apis/HomeKitTV/IHomeKitTV.h   |  1 +
+ 2 files changed, 23 insertions(+)
+
+diff --git a/apis/HomeKitTV/HomeKitTV.json b/apis/HomeKitTV/HomeKitTV.json
+index 1b9d42f..6aae643 100644
+--- a/apis/HomeKitTV/HomeKitTV.json
++++ b/apis/HomeKitTV/HomeKitTV.json
+@@ -39,6 +39,28 @@
+         }
+     },
+     "properties": {
++	"setEnvVarsForDaemon": {
++		"summary": "Set the Environment variable from Airplay Application containers to Daemon side",
++		"params": {
++			"type": "object",
++			"properties": {
++				"environVars": {
++					"description": "Environment variables of Application container passed to Daemon Semicolon seperated",
++					"type": "string",
++					"example": "SOCKET_PATH=/tmp/1234;CLIENT_LIB=/usr/lib/lib1234.so"
++				}
++			},
++			"required": [
++				"environVars"
++			]
++		},
++		"errors": [
++			{
++				"description": "General error",
++				"$ref": "#/common/errors/general"
++			}
++		]
++    },
+ 	"setAppContainerIPAddress": {
+ 		"summary": "Set the Airplay Application containers IP address to Daemon side",
+ 		"params": {
+diff --git a/apis/HomeKitTV/IHomeKitTV.h b/apis/HomeKitTV/IHomeKitTV.h
+index b7ab8db..685ef35 100644
+--- a/apis/HomeKitTV/IHomeKitTV.h
++++ b/apis/HomeKitTV/IHomeKitTV.h
+@@ -56,6 +56,7 @@ namespace WPEFramework {
+ 	    virtual uint32_t setCurrentInputSource(const string& inputsource /* @in */, string& response /* @out */) = 0;
+            virtual void getEnabledStatus(bool& result /* @out */) = 0;
+ 	        virtual void getConnectionStatus(bool& result /* @out */) = 0;
++	    virtual uint32_t setEnvVarsForDaemon(const string& environVars) = 0;
+ 	    virtual uint32_t setAppContainerIPAddress(const string& ipaddress) = 0;
+         };
+     }
+-- 
+2.44.0
+

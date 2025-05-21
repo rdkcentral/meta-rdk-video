@@ -16,11 +16,17 @@ require rialto_revision.inc
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto-gstreamer;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
 
 DEPENDS = "openssl jsoncpp glib-2.0 gstreamer1.0 gstreamer1.0-plugins-base wpeframework-clientlibraries protobuf protobuf-native rialto rialto-ocdm"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', " gst-svp-ext", "", d)}"
 
 S = "${WORKDIR}/git"
 inherit pkgconfig cmake coverity features_check
 
 FILES:${PN} += "${libdir}/gstreamer-1.0/libgstrialtosinks.so"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', '-DCMAKE_RDK_SVP=1', "", d)}"
+
+RDEPENDS_${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', " gst-svp-ext", "", d)}"
+
+FILES_${PN} += "${libdir}/gstreamer-1.0/libgstrialtosinks.so"
  
 REQUIRED_DISTRO_FEATURES = "enable_rialto"
 
