@@ -18,11 +18,14 @@ SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
 DEPENDS = "openssl jsoncpp protobuf protobuf-native"
 DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform "
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', " gst-svp-ext", "", d)}"
 
 S = "${WORKDIR}/git"
 inherit pkgconfig cmake coverity features_check
 
 EXTRA_OECMAKE += " ${@bb.utils.contains("IMAGE_FEATURES", "prod", "-DRIALTO_BUILD_TYPE=Release", "-DRIALTO_BUILD_TYPE=Debug", d)} "
+EXTRA_OECMAKE += " ${@bb.utils.contains('DISTRO_FEATURES', 'texttrack', '-DRIALTO_ENABLE_TEXT_TRACK=1', '', d)} "
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', '-DCMAKE_RDK_SVP=1', "", d)}"
 
 PACKAGES =+ "${PN}-client ${PN}-server ${PN}-servermanager-lib ${PN}-servermanager ${PN}-client-dev ${PN}-server-dev ${PN}-servermanager-lib-dev ${PN}-servermanager-dev "
 
@@ -35,10 +38,11 @@ PACKAGECONFIG[servermanager] = "-DENABLE_SERVER_MANAGER=ON,-DENABLE_SERVER_MANAG
 # requires the 'server' package config to be enabled as well.
 PACKAGECONFIG ??= "server servermanager"
 
-RDEPENDS:${PN} += "protobuf mongoose"
-RDEPENDS:${PN}-server += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
-RDEPENDS:${PN}-servermanager += "${PN}-server"
-RDEPENDS:${PN}-servermanager-lib += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
+RDEPENDS_${PN} += "protobuf mongoose"
+RDEPENDS_${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', " gst-svp-ext", "", d)}"
+RDEPENDS_${PN}-server += " rdk-gstreamer-utils"
+RDEPENDS_${PN}-servermanager += "${PN}-server"
+RDEPENDS_${PN}-servermanager-lib += " rdk-gstreamer-utils"
 
 FILES:${PN}-client += "${libdir}/libRialtoClient.so.*"
 FILES:${PN}-server += "${bindir}/RialtoServer"
