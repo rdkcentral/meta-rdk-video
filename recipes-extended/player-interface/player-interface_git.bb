@@ -29,7 +29,7 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${W
 
 CXXFLAGS += "-I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ -lWPEFrameworkSecurityUtil"
 
-PACKAGES =+ "${PN}-dev"
+PACKAGES = "${PN}-dev"
 
 SRC_URI += " file://libEntosPlayerFireboltInterface.pc"
 SRC_URI += " file://libBaseConversion.pc"
