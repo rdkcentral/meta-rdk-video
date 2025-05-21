@@ -6,7 +6,7 @@
 LICENSE = "Apache-2.0 & MIT & BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://../LICENSE;md5=626bbc2ac7625da5b97fcb8a24bd88b3"
 DEPENDS = "glib-2.0"
-DEPENDS += " subttxrend-common subttxrend-socksrc subttxrend-dbus"
+DEPENDS += " subttxrend-common subttxrend-socksrc subttxrend-dbus subttxrend-ctrl"
 DEPENDS += " subttxrend-gfx subttxrend-dvbsub subttxrend-ttxt subttxrend-protocol"
 DEPENDS += " subttxrend-ttml subttxrend-scte subttxrend-cc subttxrend-webvtt"
 
