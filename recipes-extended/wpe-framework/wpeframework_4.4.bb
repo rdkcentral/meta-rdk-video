@@ -206,6 +206,7 @@ RDEPENDS:${PN}:append:rpi = " ${@bb.utils.contains('DISTRO_FEATURES', 'vc4graphi
 inherit breakpad-logmapper syslog-ng-config-gen logrotate_config
 
 SYSLOG-NG_FILTER = "wpeframework"
+SYSLOG-NG_SERVICE_wpeframework = "wpeframework.service thunderHangRecovery.service"
 SYSLOG-NG_DESTINATION_wpeframework = "wpeframework.log"
 SYSLOG-NG_LOGRATE_wpeframework = "high"
 
