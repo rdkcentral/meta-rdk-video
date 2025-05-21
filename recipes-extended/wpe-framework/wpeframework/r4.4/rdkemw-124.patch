@@ -18,25 +18,75 @@ index 317be4fd..092257a6 100644
  
                      if (libraryToLoad.Exists() == true) {
                          if (progressedState == 0) {
-@@ -4509,6 +4511,8 @@
+@@ -4509,38 +4511,44 @@
              return (_connections);
          }
          inline void DumpMetadata() {
+-            PostMortemData data;
+-            _dispatcher.Snapshot(data.WorkerPool);
 +            
 +            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginServer - Dumping Metadata - Pid: %d\n", getpid());
-             PostMortemData data;
-             _dispatcher.Snapshot(data.WorkerPool);
++            // Ensure PostMortemData is defined and included
++            // PostMortemData data;
  
-@@ -4541,6 +4545,8 @@
-             if (dumpFile.Create(false) == true) {
-                 data.IElement::ToFile(dumpFile);
-             }
+-            Core::JSON::ArrayType<MetaData::Server::Minion>::Iterator index(data.WorkerPool.ThreadPoolRuns.Elements());
++            // _dispatcher.Snapshot(data.WorkerPool);
+ 
+-            while (index.Next() == true) {
++            // Core::JSON::ArrayType<MetaData::Server::Minion>::Iterator index(data.WorkerPool.ThreadPoolRuns.Elements());
+ 
+-                std::list<Core::callstack_info> stackList;
++            // while (index.Next() == true) {
+ 
+-                ::DumpCallStack(static_cast<ThreadId>(index.Current().Id.Value()), stackList);
+-                for(const Core::callstack_info& entry : stackList)
+-                {
+-                    std::string symbol = entry.function.empty() ? "Unknown symbol" : entry.function;
+-                    fprintf(stderr, "[%s]:[%s]:[%d]:[%p]\n",entry.module.c_str(), symbol.c_str(),entry.line,entry.address);
+-                }
+-                fflush(stderr);
++            //     std::list<Core::callstack_info> stackList;
+ 
+-                PostMortemData::Callstack dump;
+-                dump.Id = index.Current().Id.Value();
++            //     ::DumpCallStack(static_cast<ThreadId>(index.Current().Id.Value()), stackList);
++            //     for(const Core::callstack_info& entry : stackList)
++            //     {
++            //         std::string symbol = entry.function.empty() ? "Unknown symbol" : entry.function;
++            //         fprintf(stderr, "[%s]:[%s]:[%d]:[%p]\n",entry.module.c_str(), symbol.c_str(),entry.line,entry.address);
++            //     }
++            //     fflush(stderr);
+ 
+-                for (const Core::callstack_info& info : stackList) {
+-                    dump.Data.Add() = CallstackData(info);
+-                }
++            //     PostMortemData::Callstack dump;
++            //     dump.Id = index.Current().Id.Value();
+ 
+-                data.Callstacks.Add(dump);
+-            }
++            //     for (const Core::callstack_info& info : stackList) {
++            //         dump.Data.Add() = CallstackData(info);
++            //     }
+ 
+-            // Drop the workerpool info (what is currently running and what is pending) to a file..
+-            Core::File dumpFile(_config.PostMortemPath() + "ThunderInternals.json");
+-            if (dumpFile.Create(false) == true) {
+-                data.IElement::ToFile(dumpFile);
+-            }
++            //     data.Callstacks.Add(dump);
++            // }
++
++            // // Drop the workerpool info (what is currently running and what is pending) to a file..
++            // Core::File dumpFile(_config.PostMortemPath() + "ThunderInternals.json");
++            // if (dumpFile.Create(false) == true) {
++            //     data.IElement::ToFile(dumpFile);
++            // }
 +
 +            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginServer - Dumping Metadata - Pid: %d - Done\n", getpid());
          }
          inline ServiceMap& Services()
          {
-
 
 diff --git a/Source/WPEFramework/PluginHost.cpp b/Source/WPEFramework/PluginHost.cpp
 index 213da58d..cc1c7ee4 100644
