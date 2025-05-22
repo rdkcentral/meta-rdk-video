@@ -21,7 +21,7 @@ RA_Web_Store="/opt/persistent/rdkservices/ResidentApp/wpe/local-storage/http_pla
 file_bootType="/tmp/bootType"
 file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
 file_DataStore="/opt/secure/migration/migration_data_store.json"
-file_Migration_Ready_check="/opt/secure/migration/iui_not_fully_ready_for_migration"
+file_Migration_Ready_check="/opt/migration/iui_not_fully_ready_for_migration"
 
 ftue_key_available="null"
 current_bootType=$(<"$file_bootType")
@@ -40,8 +40,8 @@ do_FSR () {
 echo -e "This is a Special Build for Handling FSR on Non-Activated Devices" 
 
 if [ -e "$file_Migration_Ready_check" ]; then
-	echo -e "Triggering FSR since IUI is not ready for Migration"
+	echo -e "The folder is present so consider this for implementation"
         #do_FSR
+else
+     echo -e "something is wrong with this build JP It is not working...."
 fi
-
-echo -e "something is wrong with this build JP It is not working...."
