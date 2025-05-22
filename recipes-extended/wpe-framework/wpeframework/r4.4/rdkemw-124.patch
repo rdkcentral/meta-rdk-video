@@ -547,7 +547,7 @@ index 213da58d..cc1c7ee4 100644
 +        syslog(LOG_NOTICE, "Immortal WPEProcess - pid - %d , breakpad enabled and current handler for SIGSEGV is %p\n", getpid(), (void*)current_sa.sa_handler);
 +        //Use dl to find the function name of current handler
 +        Dl_info dlinfo;
-+        if (dladdr(current_sa.sa_handler, &dlinfo)) {
++        if (dladdr(reinterpret_cast<const void*>(current_sa.sa_handler), &dlinfo)) {
 +            syslog(LOG_NOTICE, "Immortal WPEProcess - pid - %d , breakpad enabled and current handler for SIGSEGV is %s\n", getpid(), dlinfo.dli_sname);
 +        } else {
 +            syslog(LOG_NOTICE, "Immortal WPEProcess - pid - %d , breakpad enabled and current handler for SIGSEGV is unknown\n", getpid());
