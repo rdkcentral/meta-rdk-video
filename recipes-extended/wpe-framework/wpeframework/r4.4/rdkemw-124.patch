@@ -515,4 +515,43 @@ index 213da58d..cc1c7ee4 100644
 +       syslog(LOG_INFO, "Immortal WPEFramework::Core::Library::RegisterLibraryLoadCallback - g_loadCallback = %p\n", callback);
         g_loadCallback = callback;
      }
+
+diff --git a/Source/WPEProcess/Process.cpp b/WPEProcess/Process.cpp
+index 213da58d..cc1c7ee4 100644
+--- a/Source/WPEProcess/Process.cpp
++++ b/Source/WPEProcess/Process.cpp
+ @@ -6,6 +6,8 @@
+ #ifdef USE_BREAKPAD
+ #include <client/linux/handler/exception_handler.h>
+ #endif
++#include <unistd.h>
++#include <dlfcn.h> 
  
+ MODULE_NAME_DECLARATION(BUILD_REFERENCE)
+ 
+@@ -598,11 +600,25 @@
+         WARNING_REPORTING_THREAD_SETCALLSIGN_GUARD(callsign.c_str());
+ 
+         #ifdef USE_BREAKPAD
++        syslog(LOG_NOTICE, "Immortal WPEProcess - pid - %d , breakpad enabled\n", getpid());
+         google_breakpad::MinidumpDescriptor descriptor(options.PostMortemPath);
+         google_breakpad::ExceptionHandler eh(descriptor, NULL,
+             [](const google_breakpad::MinidumpDescriptor&, void*, bool succeeded)
+                 { return succeeded; },
+             NULL, true, -1);
++        syslog(LOG_NOTICE, "Immortal WPEProcess - pid - %d , breakpad enabled and google_breakpad::ExceptionHandler registered\n", getpid());
++        //Get and print the current handler for the signal SIGSEGV
++        struct sigaction current_sa;
++        memset(&current_sa, 0, sizeof(struct sigaction));
++        sigaction(SIGSEGV, nullptr, &current_sa);
++        syslog(LOG_NOTICE, "Immortal WPEProcess - pid - %d , breakpad enabled and current handler for SIGSEGV is %p\n", getpid(), (void*)current_sa.sa_handler);
++        //Use dl to find the function name of current handler
++        Dl_info dlinfo;
++        if (dladdr(current_sa.sa_handler, &dlinfo)) {
++            syslog(LOG_NOTICE, "Immortal WPEProcess - pid - %d , breakpad enabled and current handler for SIGSEGV is %s\n", getpid(), dlinfo.dli_sname);
++        } else {
++            syslog(LOG_NOTICE, "Immortal WPEProcess - pid - %d , breakpad enabled and current handler for SIGSEGV is unknown\n", getpid());
++        }
+         #endif
+ 
+         // Any remote connection that will be spawned from here, will have this ExchangeId as its parent ID.
