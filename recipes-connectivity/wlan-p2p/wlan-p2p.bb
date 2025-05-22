@@ -7,6 +7,7 @@ DEPENDS = "wpa-supplicant"
 SRC_URI = "\
         file://wlan-p2p.sh \
         file://wlan-p2p.service \
+        file://p2p_udhcpc.script \
         "
 S = "${WORKDIR}"
 
@@ -23,13 +24,17 @@ do_install () {
     install -d ${D}${bindir}
     install -d ${D}${sbindir}
     install -d ${D}${systemd_unitdir}/system
+    install -d ${D}${sysconfdir}
+    install -d ${D}${sysconfdir}/wifi_p2p
 
     install -m 0755 ${S}/wlan-p2p.sh ${D}${bindir}
     install -m 0644 ${S}/wlan-p2p.service ${D}${systemd_unitdir}/system/wlan-p2p.service
     ln -sf ${sbindir}/wpa_supplicant ${D}${sbindir}/wpa_p2p_supplicant
+    install -m 0755 ${S}/p2p_udhcpc.script ${D}${sysconfdir}/wifi_p2p/udhcpc.script
 }
 
 SYSTEMD_SERVICE:${PN} = "wlan-p2p.service"
 SYSTEMD_AUTO_ENABLE = "enable"
 FILES:${PN} += "${systemd_unitdir}/system/wlan-p2p.service"
 FILES:${PN} += "${sbindir}/wpa_p2p_supplicant"
+FILES:${PN} += "${sysconfdir}/wifi_p2p/udhcpc.script"
