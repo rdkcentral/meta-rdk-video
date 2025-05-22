@@ -7,7 +7,7 @@
 RESOLV_CONF="/etc/resolv.conf"
 [ -n "$subnet" ] && NETMASK="netmask $subnet"
 
-echo "`date +"%b %d %T.%6N"` : udhcpc : $1,$interface,$ip,$subnet,$broadcast,DNS=$dns,$message" >> /opt/logs/netsrvmgr.log
+echo "`date +"%b %d %T.%6N"` : udhcpc : $1,$interface,$ip,$subnet,$broadcast,DNS=$dns,$message" >> /opt/logs/wpa_p2p_supplicant.log
 
 # return 0 if root is mounted on a network filesystem
 root_is_nfs() {
@@ -71,7 +71,7 @@ case "$1" in
 			fi
 		else
 			echo "`date +"%b %d %T.%6N"` : udhcpc : default gw add/remove ignored for P2P[$interface]"
-			echo "`date +"%b %d %T.%6N"` : udhcpc : default gw add/remove ignored for P2P[$interface]" >> /opt/logs/netsrvmgr.log
+			echo "`date +"%b %d %T.%6N"` : udhcpc : default gw add/remove ignored for P2P[$interface]" >> /opt/logs/wpa_p2p_supplicant.log
 		fi
 
 		# Update resolver configuration file
@@ -89,11 +89,11 @@ case "$1" in
 				echo -n "$R" | /sbin/resolvconf -a "${interface}.udhcpc"
 			else
 				#echo -n "$R" > "$RESOLV_CONF"
-                                echo "`date +"%b %d %T.%6N"` : udhcpc : WARNING DNS updation ignored for Non-P2P[$interface]" >> /opt/logs/netsrvmgr.log
+                                echo "`date +"%b %d %T.%6N"` : udhcpc : WARNING DNS updation ignored for Non-P2P[$interface]" >> /opt/logs/wpa_p2p_supplicant.log
 			fi
 		else
 			echo "`date +"%b %d %T.%6N"` : udhcpc : DNS updation ignored for P2P[$interface]"
-			echo "`date +"%b %d %T.%6N"` : udhcpc : DNS updation ignored for P2P[$interface]" >> /opt/logs/netsrvmgr.log
+			echo "`date +"%b %d %T.%6N"` : udhcpc : DNS updation ignored for P2P[$interface]" >> /opt/logs/wpa_p2p_supplicant.log
 		fi
 		;;
 esac
