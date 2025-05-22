@@ -1,6 +1,5 @@
 SUMMARY = "Middleware Player Interface layer for AAMP"
-DESCRIPTION = "This layer provides the Entos Player Firebolt Interface library for AAMP integration. It sources from https://github.com/rdkcentral/middleware-player-interface."
-HOMEPAGE = "https://github.com/rdkcentral/middleware-player-interface"
+DESCRIPTION = "This layer provides the Player Firebolt Interface library for Player integration."
 LICENSE = "CLOSED"
 
 PV ?= "1.0.0"
@@ -8,8 +7,7 @@ PR ?= "r0"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/middleware-player-interface.git;protocol=https;branch=feature/RDKEMW-4040"
-SRCREV = "11480e59e7f2a677b308f928d421e9520c187bf8"
+SRC_URI = "${CMF_GITHUB_ROOT}/middleware-player-interface;${CMF_GITHUB_SRC_URI_SUFFIX};name=player-interface"
 
 S = "${WORKDIR}/git"
 
