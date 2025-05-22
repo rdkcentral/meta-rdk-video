@@ -41,40 +41,7 @@ echo -e "This is a Special Build for Handling FSR on Non-Activated Devices"
 
 if [ -e "$file_Migration_Ready_check" ]; then
 	echo -e "Triggering FSR since IUI is not ready for Migration"
-        do_FSR
+        #do_FSR
 fi
 
-if [ -e "$RA_Web_Store" ]; then
-     echo -e "calling ftue_check"
-     do_ftue_check
-fi
-
-if [ "$ftue_key_available" != "ftue" ]; then
-    if [ "$current_bootType" == "BOOT_INIT" ] || [ "$current_bootType" == "BOOT_NORMAL" ]; then
-        echo -e "current BootType is $current_bootType and ftue key is not present"
-    elif [ "$current_bootType" == "BOOT_MIGRATION" ]; then 
-        if [ -e "$file_DataStore" ]; then
-            echo -e "current BootType is $current_bootType ftue key is not present"
-        else
-            #DataStore file is not present 
-            echo -e "Triggering FSR since DataStore is not present"
-            do_FSR
-        fi 
-    fi
-elif [ "$ftue_key_available" == "ftue" ]; then
-    if [ "$current_bootType" == "BOOT_NORMAL" ]; then
-        echo -e "current BootType is $current_bootType and ftue key is present"
-    elif [ "$current_bootType" == "BOOT_INIT" ]; then
-        echo -e "Triggering FSR since ftue is present and current BootType is $current_bootType"
-        do_FSR
-    elif [ "$current_bootType" == "BOOT_MIGRATION" ]; then
-        echo -e "current BootType is $current_bootType and ftue key is present"
-        if [ -e "$file_DataStore" ]; then
-            echo -e "DataStore file is present"
-        else
-            #DataStore file is not present 
-            echo -e "Triggering FSR since DataStore is not present"
-            do_FSR
-        fi
-    fi    
-fi
+echo -e "something is wrong with this build JP It is not working...."
