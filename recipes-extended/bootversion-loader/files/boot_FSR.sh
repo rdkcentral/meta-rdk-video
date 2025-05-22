@@ -21,7 +21,7 @@ RA_Web_Store="/opt/persistent/rdkservices/ResidentApp/wpe/local-storage/http_pla
 file_bootType="/tmp/bootType"
 file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
 file_DataStore="/opt/secure/migration/migration_data_store.json"
-file_Migration_Ready_check="/opt/migration/iui_not_fully_ready_for_migration"
+file_Migration_Ready_check="/opt/secure/migration/iui_not_fully_ready_for_migration"
 
 ftue_key_available="null"
 current_bootType=$(<"$file_bootType")
@@ -37,7 +37,7 @@ do_FSR () {
     sh /rebootNow.sh -s boot_FSR -o "Rebooting the box for triggering FSR..."
 }
 
-echo -e "This is a Special Build for Handling FSR on Non-Activated Devices" 
+echo -e "This is a Special Build for Handling FSR on Non-Activated Devices T2" 
 
 if [ -e "$file_Migration_Ready_check" ]; then
 	echo -e "The folder is present so consider this for implementation"
