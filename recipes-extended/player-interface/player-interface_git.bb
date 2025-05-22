@@ -1,4 +1,4 @@
-SUMMARY = "Middleware Player Interface layer for AAMP"
+SUMMARY = "Middleware Player Interface layer for Player"
 DESCRIPTION = "This layer provides the Player Firebolt Interface library for Player integration."
 LICENSE = "CLOSED"
 
