@@ -11,8 +11,6 @@ EXTRA_OECMAKE += " \
     -DAUDIOMIXER_NOT_SUPPORTED=${AUDIOMIXER_NOT_SUPPORTED} \
 "
 
-PV = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', "1.3.1", "2.0.0", d)}"
-SRCREV = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', "ceb1e846dc1c959dae401db6036bd133fecc9d52", "f6e7e0c0e09e67785d0c59531719b970bbe32c86", d)}"
 PV ?= "1.0.0"
 PR ?= "r0"
 
@@ -22,11 +20,7 @@ S = "${WORKDIR}/git"
 CXXFLAGS += "-I${STAGING_INCDIR}/glib-2.0 -I${STAGING_INCDIR}/gstreamer-1.0 -I${STAGING_DIR_TARGET}/${libdir}/glib-2.0/include/ "
 
 do_compile () {
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', 'true', 'false', d)} == 'true'; then
-        oe_runmake -C ${S} -f Makefile
-    else
-        oe_runmake -C ${S} -f Makefile LDFLAGS="${LDFLAGS} -Wl,--hash-style=gnu -lrdkgstreamerutilsplatform"
-    fi
+    oe_runmake -C ${S} -f Makefile LDFLAGS="${LDFLAGS} -Wl,--hash-style=gnu -lrdkgstreamerutilsplatform"
 }
 
 do_install() {
