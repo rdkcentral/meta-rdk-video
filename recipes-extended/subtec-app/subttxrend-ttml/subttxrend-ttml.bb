@@ -20,8 +20,3 @@ S = "${WORKDIR}/git/subttxrend-ttml"
 inherit pkgconfig cmake coverity
 
 EXTRA_OECMAKE:append = "-DBUILD_RDK_REFERENCE=1"
-
-FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
-
-SRC_URI += "${@ 'file://006-subttxrend-ttml-hardcode-center-textalign.patch' if (d.getVar('BUILTIN_PARTNER_ID',True) == "sky-it") else 'file://006-subttxrend-ttml-hardcode-center-textalign.patch' if (d.getVar('TARGET_REGION',True) == "IT") else ""}"
-
