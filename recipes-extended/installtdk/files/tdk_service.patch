@@ -16,7 +16,6 @@ Signed-off-by: Vimal <Vimal_KuttanPillai@comcast.com>
 --- a/tdk.service       2016-06-08 04:16:10.116472329 +0000
 +++ b/tdk.service       2016-06-08 04:16:29.140473985 +0000
 @@ -13,7 +13,8 @@
- Requires=swupdate.service
 
  [Service]
 -ExecStartPre=/bin/sh -c 'rm -rf /opt/TDK/lib* && cp -r /var/TDK /opt/'
