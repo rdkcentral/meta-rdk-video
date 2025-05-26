@@ -61,6 +61,8 @@ CXXFLAGS += "-DUSE_WAKEUP_TIMER_EVT"
 CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
 
+LDFLAGS += "-lrfcapi"
+
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " breakpadsupport \
@@ -107,7 +109,7 @@ python () {
 }
 
 do_compile() {
-    CFLAGS=" ${CFLAGS}" CXXFLAGS=" ${CXXLAGS}"
+    LDFLAGS="-lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" CXXFLAGS=" ${CXXLAGS}"
 }
 
 do_install:append() {
