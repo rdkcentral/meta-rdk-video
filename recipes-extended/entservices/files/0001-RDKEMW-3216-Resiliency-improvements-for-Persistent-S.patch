@@ -1,0 +1,175 @@
+From 91d10fc1962c092494688ffc9a7e314ee5e33833 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Mon, 19 May 2025 17:48:14 +0300
+Subject: [PATCH] RDKEMW-3216 : Resiliency improvements for Persistent Store
+ (#6244)
+
+* RDKEMW-3216 : Resiliency improvements for Persistent Store
+
+Reason for change: Create or use backup on start.
+Test Procedure: Corrupt store and reboot.
+Risks: None
+Signed-off-by: Nikita Poltorapavlo <npoltorapavlo@productengine.com>
+
+* combine copy-paste workflows
+
+---------
+
+Signed-off-by: Nikita Poltorapavlo <npoltorapavlo@productengine.com>
+---
+ .github/workflows/PersistentStoreTests.yml | 61 ++++++++++++++++++++++
+ PersistentStore/sqlite/Store2.h            | 51 ++++++++++++------
+ 2 files changed, 97 insertions(+), 15 deletions(-)
+ create mode 100644 .github/workflows/PersistentStoreTests.yml
+
+diff --git a/.github/workflows/PersistentStoreTests.yml b/.github/workflows/PersistentStoreTests.yml
+new file mode 100644
+index 00000000..3938f2ce
+--- /dev/null
++++ b/.github/workflows/PersistentStoreTests.yml
+@@ -0,0 +1,61 @@
++name: PersistentStore
++
++on:
++  push:
++    paths:
++      - PersistentStore/**
++      - .github/workflows/*PersistentStore*.yml
++  pull_request:
++    paths:
++      - PersistentStore/**
++      - .github/workflows/*PersistentStore*.yml
++
++jobs:
++  tests:
++    runs-on: ubuntu-latest
++    strategy:
++      matrix:
++        include:
++          - src: 'PersistentStore/sqlite/l1test'
++            build: 'build/sqlitel1test'
++            test: 'sqlitel1test'
++          - src: 'PersistentStore/l0test'
++            build: 'build/persistentstorel0test'
++            test: 'persistentstorel0test'
++          - src: 'PersistentStore/l1test'
++            build: 'build/persistentstorel1test'
++            test: 'persistentstorel1test'
++          - src: 'PersistentStore'
++            build: 'build/PersistentStore'
++    steps:
++      - uses: actions/checkout@v4
++        with:
++          path: ${{github.repository}}
++      - run: |
++          sudo apt update
++          sudo apt install -y valgrind cmake libsqlite3-dev
++      - run: sh +x ${GITHUB_REPOSITORY}/.github/workflows/BuildThunder.sh
++      - run: |
++          cmake \
++            -S ${GITHUB_REPOSITORY}/${{ matrix.src }} \
++            -B ${{ matrix.build }} \
++            -DCMAKE_INSTALL_PREFIX="install" \
++            -DCMAKE_CXX_FLAGS="-Wall -Werror"
++          cmake --build ${{ matrix.build }} --target install
++      - if: ${{ matrix.test }}
++        run: |
++          PATH=${PWD}/install/bin:${PATH} \
++            LD_LIBRARY_PATH=${PWD}/install/lib:${LD_LIBRARY_PATH} \
++            valgrind --tool=memcheck --log-file=valgrind_log \
++            --leak-check=yes \
++            --show-reachable=yes \
++            --track-fds=yes \
++            --fair-sched=try \
++            ${{ matrix.test }}
++      - if: ${{ !env.ACT && matrix.test }}
++        uses: actions/upload-artifact@v4
++        with:
++          name: artifacts-${{ matrix.test }}
++          path: |
++            valgrind_log
++          if-no-files-found: warn
+diff --git a/PersistentStore/sqlite/Store2.h b/PersistentStore/sqlite/Store2.h
+index c52afb14..1e591537 100644
+--- a/PersistentStore/sqlite/Store2.h
++++ b/PersistentStore/sqlite/Store2.h
+@@ -87,9 +87,11 @@ namespace Plugin {
+                 , _maxSize(maxSize)
+                 , _maxValue(maxValue)
+                 , _limit(limit)
++                , _corrupt(false)
+             {
+                 TempDirectoryCheck();
+                 IntegrityCheck();
++                Backup();
+                 Open();
+             }
+             ~Store2() override
+@@ -115,23 +117,41 @@ namespace Plugin {
+             void IntegrityCheck()
+             {
+                 Core::File file(_path);
+-                Core::Directory(file.PathName().c_str()).CreatePath();
+-                auto rc = sqlite3_open(_path.c_str(), &_data);
+-                sqlite3_stmt* stmt;
+-                sqlite3_prepare_v2(_data, "pragma integrity_check;",
+-                    -1, &stmt, nullptr);
+-                while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+-                    TRACE(Trace::Information,
+-                        (_T("%s %s"), __FUNCTION__,
+-                            (const char*)sqlite3_column_text(stmt, 0)));
+-                }
+-                sqlite3_finalize(stmt);
+-                sqlite3_close_v2(_data);
+-                if (rc != SQLITE_DONE) {
+-                    OnError(__FUNCTION__, rc);
+-                    if ((rc == SQLITE_MISUSE) || (rc == SQLITE_CORRUPT)) {
++                if (file.Exists()) {
++                    sqlite3_open(file.Name().c_str(), &_data);
++                    auto rc = sqlite3_exec(_data,
++                        "pragma integrity_check;", 0, 0, 0);
++                    sqlite3_close_v2(_data);
++                    if ((rc == SQLITE_CORRUPT) || (rc == SQLITE_NOTADB)) {
++                        OnError(__FUNCTION__, rc);
+                         ASSERT(file.Destroy());
++                        _corrupt = true;
++                    }
++                }
++            }
++            void Backup()
++            {
++                Core::File file(_path);
++                Core::File fileB(_path + "-backup");
++                if (_corrupt ? fileB.Exists() : file.Exists()) {
++                    sqlite3* bkp;
++                    sqlite3_open(file.Name().c_str(), &_data);
++                    sqlite3_open(fileB.Name().c_str(), &bkp);
++                    auto to = _corrupt ? _data : bkp,
++                         from = _corrupt ? bkp : _data;
++                    auto ptr = sqlite3_backup_init(
++                        to, "main", from, "main");
++                    if (ptr != nullptr) {
++                        sqlite3_backup_step(ptr, -1);
++                        auto rc = sqlite3_backup_finish(ptr);
++                        if (rc != SQLITE_OK) {
++                            OnError(__FUNCTION__, rc);
++                        }
++                    } else {
++                        OnError(__FUNCTION__, sqlite3_errcode(to));
+                     }
++                    sqlite3_close_v2(bkp);
++                    sqlite3_close_v2(_data);
+                 }
+             }
+             void Open()
+@@ -631,6 +651,7 @@ namespace Plugin {
+             sqlite3* _data;
+             std::list<INotification*> _clients;
+             Core::CriticalSection _clientLock;
++            bool _corrupt;
+         };
+ 
+     } // namespace Sqlite
+-- 
+2.43.0
+
