@@ -48,11 +48,10 @@ do_FSR () {
 }
 
 
-echo -e "This is a special build only for non-activated devices"
-
+#Checks for the file and decides the flow
 if [ ! -e "$file_check_dev" ]; then
      if [ "$current_bootType" == "BOOT_MIGRATION" ]; then 
-	  echo -e "We have transitioned from RDKV to RDKE not triggerring FSR will be exiting just for checking"
+	  echo -e "We have transitioned from RDKV to RDKE So Triggerring FSR"
           do_FSR
      fi
 fi
