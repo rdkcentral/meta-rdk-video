@@ -109,7 +109,7 @@ python () {
 }
 
 do_compile() {
-    CFLAGS=" ${CFLAGS}" CXXFLAGS=" ${CXXLAGS}"
+    LDFLAGS="-lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" CXXFLAGS=" ${CXXLAGS}"
 }
 
 do_install:append() {
