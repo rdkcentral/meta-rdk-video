@@ -17,10 +17,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
+
+. /etc/device.properties
+#This is specific to only XUMO TV's
+if [ "$DEVICE_NAME" == "PLATCO" ]; then
+     echo -e "Running the script for PLATCO devices"
+else
+     echo -e "Exiting since this script is not intended for this Device"
+     exit 0
+fi
+
 RA_Web_Store="/opt/persistent/rdkservices/ResidentApp/wpe/local-storage/http_platco.thor.local_50050.localstorage"
 file_bootType="/tmp/bootType"
 file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
 file_DataStore="/opt/secure/migration/migration_data_store.json"
+file_check_dev="/opt/secure/migration/iui_not_fully_ready_for_migration"
 
 ftue_key_available="null"
 current_bootType=$(<"$file_bootType")
@@ -35,6 +46,18 @@ do_FSR () {
     touch /tmp/data/.trigger_reformat
     sh /rebootNow.sh -s boot_FSR -o "Rebooting the box for triggering FSR..."
 }
+
+
+echo -e "This is a special build only for non-activated devices"
+
+if [ ! -e "$file_check_dev" ]; then
+     if [ "$current_bootType" == "BOOT_MIGRATION" ]; then 
+	  echo -e "We have transitioned from RDKV to RDKE not triggerring FSR will be exiting just for checking"
+          do_FSR
+     fi
+fi
+
+echo -e "$file_check_dev is present going with existing flow"
 
 if [ -e "$RA_Web_Store" ]; then
      echo -e "calling ftue_check"
