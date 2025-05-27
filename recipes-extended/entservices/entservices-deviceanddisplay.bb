@@ -108,9 +108,9 @@ python () {
         d.appendVar('EXTRA_OECMAKE', ' -DBUILD_RPI=ON')
 }
 
-do_compile() {
-    LDFLAGS="-lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" CXXFLAGS=" ${CXXLAGS}"
-}
+#do_compile() {
+#    LDFLAGS="-lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" CXXFLAGS=" ${CXXLAGS}"
+#}
 
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
