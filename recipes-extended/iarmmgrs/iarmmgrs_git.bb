@@ -20,10 +20,10 @@ DEPENDS:append = " safec-common-wrapper"
 
 PARALLEL_MAKE = ""
 DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal \
-         virtual/vendor-iarmmgrs-hal ermgr iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
+         ermgr iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
          deepsleep-manager-headers power-manager-headers wpeframework-clientlibraries"
 DEPENDS:append:client = " virtual/mfrlib"
-DEPENDS:append = " virtual/vendor-devicesettings-hal virtual/vendor-iarmmgrs-hal "
+DEPENDS:append = " virtual/vendor-devicesettings-hal "
 DEPENDS:append = " virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal "
 RDEPENDS:${PN}:append = " devicesettings rfc"
 RDEPENDS:${PN}_client_morty += " virtual/mfrlib"
@@ -211,7 +211,6 @@ BREAKPAD_LOGMAPPER_LOGLIST = "uimgr_log.txt"
 DEPENDS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' sqlite3  ', '',d)}"
 RDEPENDS:${PN}:client += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' sqlite3  ', '',d)}"
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' sqlite3', '',d)}"
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' virtual/vendor-xsign', '',d)}"
 
 INCLUDE_DIRS += " \
         -I${S}/hal/include \
@@ -266,7 +265,6 @@ do_install:append(){
 }
 
 
-export MFR_LDFLAGS+="${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' -lxsign ', '',d)}"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'ctrlm-headers', '', d)}"
 
