@@ -467,3 +467,4 @@ diff -uprN a/apis/AuthService/IAuthService.h b/apis/AuthService/IAuthService.h
 +
 +} // namespace Exchange
 +} // namespace WPEFramework
++
