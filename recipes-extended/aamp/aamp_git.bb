@@ -25,6 +25,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
 
 S = "${WORKDIR}/git"
 
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)}"
+
 DEPENDS:append = " virtual/vendor-secapi2-adapter "
 
 require aamp-common.inc
