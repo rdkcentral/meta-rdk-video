@@ -205,7 +205,7 @@ index 213da58d..cc1c7ee4 100644
 -            raise(signo);
 +            //syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT - Sleeping for 10 seconds before re-raising signal]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
 +            //sleep(5);
-+            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT - After sleep]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
++            //syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT - After sleep]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
 +            //raise(signo);
 +
 +            sigset_t current;
@@ -249,7 +249,7 @@ index 213da58d..cc1c7ee4 100644
              ExitHandler::DumpMetadata();
          }
      }
-@@ -353,10 +453,50 @@
+@@ -353,11 +453,63 @@
          _adminLock.Lock();
          struct sigaction sa, current_sa;
  
@@ -296,11 +296,24 @@ index 213da58d..cc1c7ee4 100644
          {
 +
 +            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [ func - %s ]  : Entering [if (ExitDaemonHandler  != current_sa.sa_handler)] - current_sa.sa_handler : %p , sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__, getpid(), __FUNCTION__, (void*)current_sa.sa_handler, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
-+
              _originalSegmentationHandler = current_sa;
++            sigaction previousHandler;
++            if (sigaction(SIGSEGV, nullptr, &previousHandler) == 0) {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Previous handler for SIGSEGV: %p\n", __LINE__, getpid(), __FUNCTION__, (void*)previousHandler.sa_handler);
++            } else {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Failed to get previous handler for SIGSEGV\n", __LINE__, getpid(), __FUNCTION__);
++            }
++            //use dladdr to get the function name of the previous handler
++            Dl_info info13;
++            if (dladdr(reinterpret_cast<const void*>(previousHandler.sa_handler), &info13)) {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Previous handler function name: %s\n", __LINE__, getpid(), __FUNCTION__, info13.dli_sname);
++            } else {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Failed to get function name for previous handler\n", __LINE__, getpid(), __FUNCTION__);
++            }
               memset(&sa, 0, sizeof(struct sigaction));
               sigemptyset(&sa.sa_mask);
-@@ -368,13 +508,79 @@
+              sa.sa_handler = ExitDaemonHandler;
+@@ -368,14 +520,94 @@
                   fprintf(stdout, "Registering ExitDaemonHandler = %p for SIGSEGV & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
                   fflush(stdout);
               }
@@ -378,9 +391,24 @@ index 213da58d..cc1c7ee4 100644
 +            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [ func - %s ]  : Entering [if (ExitDaemonHandler  != current_sa.sa_handler)] - current_sa.sa_handler : %p , sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__, getpid(), __FUNCTION__, (void*)current_sa.sa_handler, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
 +
              _originalAbortHandler = current_sa;
++
++            sigaction previousHandler;
++            if (sigaction(SIGABRT, nullptr, &previousHandler) == 0) {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Previous handler for SIGABRT: %p\n", __LINE__, getpid(), __FUNCTION__, (void*)previousHandler.sa_handler);
++            } else {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Failed to get previous handler for SIGABRT\n", __LINE__, getpid(), __FUNCTION__);
++            }
++            //use dladdr to get the function name of the previous handler
++            Dl_info info3;
++            if (dladdr(reinterpret_cast<const void*>(previousHandler.sa_handler), &info3)) {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Previous handler function name-SIGABRT: %s\n", __LINE__, getpid(), __FUNCTION__, info3.dli_sname);
++            } else {
++                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [Entering func - %s]  : Failed to get function name for previous handler-SIGABRT\n", __LINE__, getpid(), __FUNCTION__);
++            }
               memset(&sa, 0, sizeof(struct sigaction));
               sigemptyset(&sa.sa_mask);
-@@ -386,8 +592,56 @@
+              sa.sa_handler = ExitDaemonHandler;
+@@ -386,8 +618,56 @@
                   fprintf(stdout, "Registering ExitDaemonHandler = %p for SIGABRT & Previous Handler = %p \n", (void*)ExitDaemonHandler, (void*)current_sa.sa_handler);
                   fflush(stdout);
               }
@@ -437,7 +465,7 @@ index 213da58d..cc1c7ee4 100644
          _adminLock.Unlock();
      }
  #endif
-@@ -492,8 +746,36 @@
+@@ -492,8 +772,36 @@
  #endif
  
          ConsoleOptions options(argc, argv);
@@ -469,13 +497,13 @@ index 213da58d..cc1c7ee4 100644
 +
 +
 +        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s] :  Before RegisterLibraryLoadCallback _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
-+         WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
++        WPEFramework::Core::Library::RegisterLibraryLoadCallback(SetupCrashHandler);
 +
 +        syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s] :  After RegisterLibraryLoadCallback _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
          if (options.RequestUsage()) {
  #ifndef __WINDOWS__
              syslog(LOG_ERR, EXPAND_AND_QUOTE(APPLICATION_NAME) " Daemon failed to start. Incorrect Options.");
-@@ -509,18 +791,50 @@
+@@ -509,18 +817,50 @@
          }
  #ifndef __WINDOWS__
          else {
@@ -526,7 +554,6 @@ index 213da58d..cc1c7ee4 100644
          }
  
          if (atexit(ForcedExit) != 0) {
-
 
 diff --git a/Source/core/Library.cpp b/Source/core/Library.cpp
 index 213da58d..cc1c7ee4 100644
