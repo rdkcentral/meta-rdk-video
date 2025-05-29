@@ -159,7 +159,7 @@ index 213da58d..cc1c7ee4 100644
 +                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Failed to restore SIGSEGV handler , _originalSegmentationHandler.sa_handler : %p , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, signo);
 +            } else {
 +                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Successfully restored SIGSEGV handler , _originalSegmentationHandler.sa_handler : %p , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, signo);
-+                memset(&_originalSegmentationHandler, 0, sizeof(_originalSegmentationHandler));
++                //memset(&_originalSegmentationHandler, 0, sizeof(_originalSegmentationHandler));
 +            }
 +
 +            // Restore the original SIGABRT handler and reset the struct
@@ -167,7 +167,7 @@ index 213da58d..cc1c7ee4 100644
 +                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Failed to restore SIGABRT handler , _originalAbortHandler.sa_handler : %p , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalAbortHandler.sa_handler, signo);
 +            } else {
 +                syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT]  : Successfully restored SIGABRT handler , _originalAbortHandler.sa_handler : %p , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalAbortHandler.sa_handler, signo);
-+                memset(&_originalAbortHandler, 0, sizeof(_originalAbortHandler));
++                //memset(&_originalAbortHandler, 0, sizeof(_originalAbortHandler));
 +            }
 +            
 +
