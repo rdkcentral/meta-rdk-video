@@ -8,7 +8,9 @@ S = "${WORKDIR}/git"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 #Apr 22 2018
 SRC_URI = "git://github.com/uNetworking/uWebSockets.git;branch=v0.14 \
+           file://0001-libuv-makefile.patch
           "
+
 SRCREV = "c7aa984726e41aa37a7dd75b76e45113759199ee"
 #SRC_URI[sha256sum] = "f1981bedabb71995641529986570c69be873d3f148b34e865876e4fd34b389b9"
 
