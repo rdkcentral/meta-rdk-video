@@ -15,7 +15,6 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-softwareupdate;${CMF_GITHUB_SRC_URI_SU
 # Release version - 1.3.0
 SRCREV = "c3bc2907a396c6c60410a8f422014d33c407ea63"
 
-
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
@@ -27,6 +26,8 @@ DEPENDS += "wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
+
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
