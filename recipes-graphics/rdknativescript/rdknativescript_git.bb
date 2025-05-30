@@ -23,6 +23,7 @@ SRCREV = "d098874e30e991e12621de2c85e6cfc3caa16b91"
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 EXTRA_OECMAKE += " -DPKG_CONFIG_SYSROOT_DIR=${PKG_CONFIG_SYSROOT_DIR}"
+EXTRA_OECMAKE += " -DENABLE_JSRUNTIME_LAUNCHER=ON"
 
 EXTRA_OECMAKE += " -DJSRUNTIME_ENGINE_NAME=jsc"
 EXTRA_OECMAKE += " -DBUILD_JSRUNTIME_DESKTOP=OFF"
@@ -50,6 +51,7 @@ do_install() {
    fi
 
    cp -a ${B}/JSRuntimeJSC ${D}/home/root/JSRuntimeJSC
+   cp -a ${B}/JSRuntimeLauncher ${D}/home/root/JSRuntimeLauncher
 
    cp -a ${S}/utils/xhr.js ${D}/home/root/modules/.
    cp -a ${S}/utils/punycode.js ${D}/home/root/modules/.
@@ -93,3 +95,4 @@ FILES:${PN} += "${@'/home/root/JSRuntimeClient' if d.getVar('BUILD_CLIENT') == '
 FILES:${PN} += "/home/root/JSRuntimeJSC"
 FILES:${PN} += "/home/root/modules"
 FILES:${PN} += "${libdir}/libJSRuntimeJSC.so"
+FILES:${PN} += "/home/root/JSRuntimeLauncher"
