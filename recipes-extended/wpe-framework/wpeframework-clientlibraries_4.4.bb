@@ -21,6 +21,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0003-trace_l2-BuildError-fix.patch \
            file://r4.4/0001-reconnect-if-connection-establishment-is-failed.patch \
            file://r4.4/0001-check-_session-has-a-valid-pointer.patch \
+           file://r4.4/0001-PowerManagerClient-library-implementation.patch \
            file://r4.4/0001-add-svp-header-to-data-before-decryption.patch \
           "
 
