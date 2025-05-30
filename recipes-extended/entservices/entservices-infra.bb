@@ -16,10 +16,10 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDK-41681-PR4013.patch \
           "
 
-# Release version - 1.1.10
-SRCREV = "4c83512853beb63fa0c2bce96e8a8f89a200ad8e"
+# Release version - 1.1.10-RDK7.1 from support/rdk7-main
+SRCREV = "183ec6ac9a4492f12e2d6fce42878025ee5f9da9"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
