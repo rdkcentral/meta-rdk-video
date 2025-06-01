@@ -204,7 +204,7 @@ index 213da58d..cc1c7ee4 100644
  
 -            raise(signo);
 +            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT - Sleeping for 10 seconds before re-raising signal]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
-+            sleep(5);
++            //sleep(5);
 +            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp- [%d] [PID-%d] [func -  %s - SIGSEGV or SIGABRT - After sleep]  : _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p  , signo : %d\n", __LINE__, getpid(), __FUNCTION__, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler, signo);
 +            //raise(signo);
 +
@@ -518,7 +518,7 @@ index 213da58d..cc1c7ee4 100644
              sa.sa_flags = 0; // not SA_RESTART!;
  
 +            syslog(LOG_NOTICE, "Immortal WPEFramework - PluginHost.cpp - [%d] [PID-%d] [fn-%s]  : Before sigaction - sa.sa_handler : %p , _originalSegmentationHandler.sa_handler : %p , _originalAbortHandler.sa_handler : %p\n", __LINE__ , getpid(), __FUNCTION__, (void*)sa.sa_handler, (void*)_originalSegmentationHandler.sa_handler, (void*)_originalAbortHandler.sa_handler);
-+            sleep(10);
++            //sleep(10);
              sigaction(SIGINT, &sa, nullptr);
              sigaction(SIGTERM, &sa, nullptr);
              sigaction(SIGQUIT, &sa, nullptr);
