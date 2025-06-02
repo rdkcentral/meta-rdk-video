@@ -16,7 +16,10 @@ DEPENDS = "openssl libuv zlib"
 
 do_compile() {
   cd  ${S}
-  make -f Makefile
+  DEFS=" -DUSE_LIBUV"
+  CFLAGS="$CFLAGS $DEFS"
+  make -f Makefile CFLAGS="$CFLAGS"
+
 }
 
 do_install() {

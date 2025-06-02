@@ -27,6 +27,6 @@ index 15cc523cd..88f3af798 100644
          else {
              result = Core::ERROR_PRIVILIGED_REQUEST;
          }
-+        SYSLOG(Logging::Startup, (_T("Activating plugin [%u] returned code"),result));
++        SYSLOG(Logging::Startup, (_T("Activating plugin [%s] returned %u"),callsign.c_str(), result));
          return result;
      }
