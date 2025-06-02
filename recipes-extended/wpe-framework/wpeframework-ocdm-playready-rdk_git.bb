@@ -25,7 +25,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRCREV = "1.0.0"
 SRCREV_FORMAT = "pr-source pr-header"
-SRC_URI = "git://github.com/rdkcentral/playready-rdk.git;${CMF_GIT_SRC_URI_SUFFIX};name=pr-source"
+SRC_URI = "git://github.com/rdkcentral/playready-rdk.git;${CMF_GITHUB_SRC_URI_SUFFIX};name=pr-source"
 
 WPEFRAMEWORK_PERSISTENT_PATH := "${@bb.utils.contains('DISTRO_FEATURES', 'DOBBY_CONTAINERS', '/opt/persistent/rdkservices/', '/data/persistent/', d)}"
 EXTRA_OECMAKE += " -DPERSISTENT_PATH=${WPEFRAMEWORK_PERSISTENT_PATH} "
