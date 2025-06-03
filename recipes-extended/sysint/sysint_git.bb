@@ -319,4 +319,6 @@ FILES:${PN} += "${sbindir}/*"
 FILES:${PN} += " /HrvInitScripts/*"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/NM_Dispatcher.sh"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d/NM_preDown.sh"
+FILES:${PN} += "${sysconfdir}/NetworkManager/NetworkManager.conf"
+FILES:${PN} += "${sysconfdir}/NetworkManager/conf.d/95-logging.conf"
                                                           
