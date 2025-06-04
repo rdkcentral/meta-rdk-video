@@ -12,7 +12,7 @@ DEPENDS:append = " virtual/egl "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX};branch=RDKEMW-4206"
 S = "${WORKDIR}/git/subttxrend-app"
 
 #
@@ -24,7 +24,7 @@ inherit pkgconfig cmake coverity
 
 do_install:append() {
     install -d ${D}${sysconfdir}/tmpfiles.d
-    install -m 0644 ${S}/conf/subttxrend-app.conf ${D}${sysconfdir}/tmpfiles.d/
+#    install -m 0644 ${S}/conf/subttxrend-app.conf ${D}${sysconfdir}/tmpfiles.d/
     install -d ${D}/${sysconfdir}/subttxrend
     install -m 0755 ${WORKDIR}/config.ini ${D}${sysconfdir}/subttxrend/
 }
@@ -33,7 +33,7 @@ do_install:append() {
 # files to be installed
 #
 
-FILES:${PN} += "${sysconfdir}/tmpfiles.d/subttxrend-app.conf"
+#FILES:${PN} += "${sysconfdir}/tmpfiles.d/subttxrend-app.conf"
 FILES:${PN} += "${sysconfdir}/subttxrend/config.ini"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
