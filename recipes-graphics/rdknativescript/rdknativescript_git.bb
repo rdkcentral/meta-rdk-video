@@ -18,12 +18,12 @@ PR ?= "r1"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-3466"
 
 #Release 1.0.1
-SRCREV = "87a4588627f8f11f8fb6ac8881efd4fdcdf1f969"
+SRCREV = "064d334a9a95cace6b967c46a8ba5c2ffed6fcff"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 EXTRA_OECMAKE += " -DPKG_CONFIG_SYSROOT_DIR=${PKG_CONFIG_SYSROOT_DIR}"
-EXTRA_OECMAKE += " -DENABLE_JSRUNTIME_LAUNCHER=ON"
+#EXTRA_OECMAKE += " -DENABLE_JSRUNTIME_LAUNCHER=ON"
 
 EXTRA_OECMAKE += " -DJSRUNTIME_ENGINE_NAME=jsc"
 EXTRA_OECMAKE += " -DBUILD_JSRUNTIME_DESKTOP=OFF"
@@ -51,7 +51,7 @@ do_install() {
    fi
 
    cp -a ${B}/JSRuntimeJSC ${D}/home/root/JSRuntimeJSC
-   cp -a ${B}/JSRuntimeLauncher ${D}/home/root/JSRuntimeLauncher
+   #cp -a ${B}/JSRuntimeLauncher ${D}/home/root/JSRuntimeLauncher
 
    cp -a ${S}/utils/xhr.js ${D}/home/root/modules/.
    cp -a ${S}/utils/punycode.js ${D}/home/root/modules/.
@@ -95,4 +95,4 @@ FILES:${PN} += "${@'/home/root/JSRuntimeClient' if d.getVar('BUILD_CLIENT') == '
 FILES:${PN} += "/home/root/JSRuntimeJSC"
 FILES:${PN} += "/home/root/modules"
 FILES:${PN} += "${libdir}/libJSRuntimeJSC.so"
-FILES:${PN} += "/home/root/JSRuntimeLauncher"
+#FILES:${PN} += "/home/root/JSRuntimeLauncher"
