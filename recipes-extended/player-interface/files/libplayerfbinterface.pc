@@ -5,5 +5,5 @@ includedir=/usr/include
 Name: EntosPlayerFireboltInterface
 Description: iarm rfc interfaces library
 Version: 1.0.0
-Libs: -L${libdir} -lEntosPlayerFireboltInterface
+Libs: -L${libdir} -lplayerfbinterface
 Cflags: -I${includedir}
