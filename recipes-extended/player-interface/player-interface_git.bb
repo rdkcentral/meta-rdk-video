@@ -7,8 +7,7 @@ PR ?= "r0"
 
 inherit pkgconfig
 
-DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline"
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0  gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)}"
+DEPENDS += "iarmmgrs wpeframework"
 RDEPENDS_${PN} +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 DEPENDS += " wpe-webkit"
 DEPENDS += " wpeframework-clientlibraries"
@@ -55,23 +54,6 @@ INSANE_SKIP:${PN} = "dev-so"
 CXXFLAGS += "-DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 -I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ -lWPEFrameworkSecurityUtil"
 EXTRA_OECMAKE += " -DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 "
 
-CXXFLAGS += " -DAAMP_BUILD_INFO=${AAMP_RELEASE_TAG_NAME}" 
-
-#required for specific products but for now distro is available only for UK 
-CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', ' -DENABLE_USE_SINGLE_PIPELINE=1', '', d)}"
-CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_IT', ' -DENABLE_USE_SINGLE_PIPELINE=1', '', d)}"
-CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_DE', ' -DENABLE_USE_SINGLE_PIPELINE=1', '', d)}"
-CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_AU', ' -DENABLE_USE_SINGLE_PIPELINE=1', '', d)}"
-
-# Enable PTS restamp feature
-CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', ' -DENABLE_PTS_RESTAMP=1', '', d)}"
-CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_IT', ' -DENABLE_PTS_RESTAMP=1', '', d)}"
-CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_DE', ' -DENABLE_PTS_RESTAMP=1', '', d)}"
-CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_AU', ' -DENABLE_PTS_RESTAMP=1', '', d)}"
-
-INCLUDE_DIRS = " \
-    -I=${includedir}/rdk/halif/ds-hal \
-    "
 
 SRC_URI += " file://libplayerfbinterface.pc"
 SRC_URI += " file://libbaseconversion.pc"
@@ -83,3 +65,4 @@ do_install:append() {
     install -m0644 ${WORKDIR}/libbaseconversion.pc ${D}${libdir}/pkgconfig/
     install -m0644 ${WORKDIR}/libplayerlogmanager.pc ${D}${libdir}/pkgconfig/
 }
+
