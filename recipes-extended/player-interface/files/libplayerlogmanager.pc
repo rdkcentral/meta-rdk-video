@@ -5,5 +5,5 @@ includedir=/usr/include
 Name: PlayerLogManager
 Description: player log manager library
 Version: 1.0.0
-Libs: -L${libdir} -lPlayerLogManager
+Libs: -L${libdir} -lplayerlogmanager
 Cflags: -I${includedir}
