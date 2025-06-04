@@ -9,7 +9,7 @@ DEPENDS = "glib-2.0-native glib-2.0 jansson subttxrend-common"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX};branch=RDKEMW-4206"
+SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX};branch=RDKEMW-4206_kv"
 S = "${WORKDIR}/git/subttxrend-dbus"
 
 #
