@@ -29,7 +29,7 @@ PR = "r${CR}"
 SRCREV_cobalt = "24.lts.${CR}"
 SRCREV_larboard = "${LARBOARD_SRCREV_24}"
 SRCREV_FORMAT = "cobalt_larboard"
-PV = "${SRCREV_cobalt}"
+PV .= "+git${SRCPV}"
 
 do_fetch[vardeps] += " SRCREV_FORMAT SRCREV_cobalt SRCREV_larboard"
 S = "${WORKDIR}/git"
