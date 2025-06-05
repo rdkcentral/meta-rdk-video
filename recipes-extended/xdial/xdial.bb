@@ -30,6 +30,7 @@ EXTRANATIVEPATH += "cmake-native"
 
 CFLAGS += "-fcommon"
 
+
 DEPENDS += "gssdp openssl c-ares curl util-linux glib-2.0 cmake-native wpeframework wpeframework-clientlibraries entservices-apis iarmmgrs"
 
 inherit logrotate_config

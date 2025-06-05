@@ -15,6 +15,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-softwareupdate;${CMF_GITHUB_SRC_URI_SU
 # Release version - 1.3.0
 SRCREV = "c3bc2907a396c6c60410a8f422014d33c407ea63"
 
+
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
