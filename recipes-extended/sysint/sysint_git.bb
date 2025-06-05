@@ -259,6 +259,12 @@ do_install() {
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
         install -m 0755 ${S}/etc/NetworkManager.conf ${D}${sysconfdir}/NetworkManager/NetworkManager.conf
         install -m 0755 ${S}/etc/95-logging.conf ${D}${sysconfdir}/NetworkManager/conf.d/95-logging.conf
+        
+        rm -f ${S}/etc/95-logging.conf
+        rm -f ${S}/etc/NetworkManager.conf
+        rm -f ${S}/etc/10-unmanaged-devices
+        rm -f ${S}/lib/rdk/NM_preDown.sh
+        rm -f ${S}/lib/rdk/NM_Dispatcher.sh
 }
 
 do_install:append:rdkstb() {
