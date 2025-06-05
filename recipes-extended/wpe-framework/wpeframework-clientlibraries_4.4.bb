@@ -9,6 +9,7 @@ PV = "4.4.1"
 inherit python3native cmake pkgconfig
 
 SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https;branch=R4_4;name=wpeframework-clientlibraries \
+           file://r4.4/0001-RDK-28534-Security-Agent-Utility-and-Logging-ClientLibs.patch \
            file://r4.4/Library-version-Matched-With-Release-ClientLibs.patch \
            file://r4.4/0004-R4-Security-Agent-Library-NameChange.patch \
            file://r4.4/0001-Add-functionality-to-construct-Session-private-data.patch \
