@@ -263,8 +263,8 @@ do_install() {
         rm -f ${S}/etc/95-logging.conf
         rm -f ${S}/etc/NetworkManager.conf
         rm -f ${S}/etc/10-unmanaged-devices
-        rm -f ${S}/lib/rdk/NM_preDown.sh
-        rm -f ${S}/lib/rdk/NM_Dispatcher.sh
+        rm -rf ${D}${base_libdir}/rdk/NM_preDown.sh
+        rm -rf ${D}${base_libdir}/rdk/NM_Dispatcher.sh
 }
 
 do_install:append:rdkstb() {
