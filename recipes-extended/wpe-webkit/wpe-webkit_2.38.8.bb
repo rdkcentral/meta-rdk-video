@@ -72,6 +72,7 @@ SRC_URI += "file://2.38.8/comcast-DELIA-57933-Increase-minor-version-or-WPE-lib.
 SRC_URI += "file://2.38.8/comcast-LLAMA-15112-sleep-150-microsecs-instead-of-s.patch"
 SRC_URI += "file://2.38.8/comcast-DELIA-67128-GCHeap-snapshot.patch"
 SRC_URI += "file://2.38.8/comcast-LLAMA-16805-Include-HW-secure-decrypt-decode-in-robu.patch"
+SRC_URI += "file://2.38.8/comcast-Add-cencparse-element-before-thunder-decrypt.patch"
 
 PACKAGECONFIG[wpeqtapi]          = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[westeros]          = "-DUSE_WPEWEBKIT_PLATFORM_WESTEROS=ON -DUSE_GSTREAMER_HOLEPUNCH=ON -DUSE_EXTERNAL_HOLEPUNCH=ON -DUSE_WESTEROS_SINK=ON,,westeros virtual/vendor-westeros-sink"
