@@ -29,6 +29,7 @@ EXTRA_OECMAKE += " -DBUILD_ENABLE_DEVICE_MANUFACTURER_INFO=ON "
 EXTRA_OECMAKE += " -DBUILD_ENABLE_APP_CONTROL_AUDIOPORT_INIT=ON "
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
 
+include include/deviceinfo.inc
 DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
 
@@ -42,6 +43,7 @@ CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
+CXXFLAGS += "-DMACHINE_SOC_NAME=${SOC}"
 
 INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/power-manager \
