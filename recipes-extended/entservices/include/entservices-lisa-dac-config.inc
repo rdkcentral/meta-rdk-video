@@ -47,7 +47,7 @@ def get_lisa_dac_config(d):
                 return machine_config_map_kirkstone[key]
         return '',''
 
-CONFIG_URL ?= ""
+CONFIG_URL ?= "https://280222515084-rdkm-apps-resources.s3.eu-central-1.amazonaws.com/configuration/cpe.json"
 LISA_DAC_CONFIG_PLATFORM ?= "${@get_lisa_dac_config(d)[0]}"
 LISA_DAC_CONFIG_FIRMWARE ?= "${@get_lisa_dac_config(d)[1]}"
 
