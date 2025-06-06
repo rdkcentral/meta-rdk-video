@@ -20,11 +20,6 @@
 
 . /etc/device.properties
 
-if [ ! -f /etc/wifi_p2p/wpa_supplicant.conf ];then
-   echo "default p2p conf file /etc/wifi_p2p/wpa_supplicant.conf missing..."
-   exit 1
-fi
-
 WPA_P2P_SUPP_CONF_DIR="/opt/secure/wifi/p2p"
 WPA_P2P_SUPP_CONF_FILE=$WPA_P2P_SUPP_CONF_DIR/wpa_supplicant.conf
 LOG_LEVEL_STR=""

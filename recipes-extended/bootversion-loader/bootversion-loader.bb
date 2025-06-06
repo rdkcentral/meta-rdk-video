@@ -16,7 +16,6 @@ do_install:append () {
     install -m 0644 ${WORKDIR}/bootversion-loader.service ${D}/lib/systemd/system/bootversion-loader.service
     install -d ${D}/lib/rdk
     install -m 0755 ${WORKDIR}/bootversion-loader.sh ${D}/lib/rdk/bootversion-loader.sh
-
 }
 
 SYSTEMD_SERVICE:${PN} = "bootversion-loader.service"

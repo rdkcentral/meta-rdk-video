@@ -5,7 +5,7 @@ HOMEPAGE = "https://github.com/rdkcentral/Thunder"
 
 LIC_FILES_CHKSUM = "file://LICENSE;md5=85bcfede74b96d9a58c6ea5d4b607e58"
 
-DEPENDS = "zlib wpeframework-tools-native rfc"
+DEPENDS = "zlib wpeframework-tools-native rfc thunderhangrecovery"
 DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
 
@@ -23,7 +23,6 @@ SRCREV_thunder = "b81d0f079345739cc2d8ee142b3499be7e4e6b15"
 SRC_URI += "file://wpeframework-init \
            file://wpeframework.service.in \
            file://network_manager_migration.conf \
-           file://thunderHangRecovery.service \
            file://wpeframework_config_path.conf \
            file://r4.4/Library_version_matched_with_release_tag.patch \
            file://r4.4/Remove_versioning_for_executables.patch \
@@ -49,10 +48,10 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/1004-Add-support-for-project-dir.patch \
            file://r4.4/Enable_Thunder_Logging_R4.4.1.patch \
            file://r4.4/Thunder_FirmwareUpdate_USB_Mount_Error_codes.patch \
-           file://r4.4/thunderHangRecovery.patch \
            file://r4.4/R4-wpeframework-sd_notify.patch \
            file://r4.4/RDKEMW-733-Add-ENTOS-IDS.patch \
            file://r4.4/Update-Trace-Level-Logging-Logic.patch \
+           file://r4.4/Activating_plugins_Logs_COMRPC.patch \
            "
 
 SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
@@ -71,6 +70,7 @@ SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
             file://r4.4/PR-1797-SocketPort-Closed.patch \
             file://r4.4/PR1832-Thunder-ABBA-Deadlock-Fix.patch \
             file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
+            file://r4.4/0001-SmarkLink-Crash-Fix.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -172,13 +172,9 @@ do_install:append() {
     install -d ${D}${systemd_unitdir}/system/wpeframework.service.d
     install -m 0644 ${WORKDIR}/network_manager_migration.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
     install -m 0644 ${WORKDIR}/wpeframework_config_path.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
-    install -m 0644 ${WORKDIR}/thunderHangRecovery.service ${D}${systemd_unitdir}/system
-    install -d ${D}${bindir}
-    install -m 0755 ${WORKDIR}/build/thunderHangRecovery ${D}${bindir}
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
-SYSTEMD_SERVICE:${PN} += "thunderHangRecovery.service"
 
 # ----------------------------------------------------------------------------
 
@@ -191,7 +187,6 @@ FILES:${PN} += "${libdir}/*.so ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN} += "${includedir}/cdmi.h"
 FILES:${PN} += "${systemd_unitdir}/system/wpeframework.service.d/network_manager_migration.conf"
 FILES:${PN} += "${systemd_unitdir}/system/wpeframework.service.d/wpeframework_config_path.conf"
-FILES:${PN} += "${systemd_unitdir}/system/thunderHangRecovery.service"
 FILES:${PN}-dev += "${libdir}/cmake/*"
 FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/"
 
@@ -203,7 +198,7 @@ INSANE_SKIP:${PN}-dbg += "dev-so"
 # ----------------------------------------------------------------------------
 
 RDEPENDS:${PN}_rpi = "userland"
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)} thunderhangrecovery"
 # Should be able to remove this when generic rdk_svp flag
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'sage_svp', 'gst-svp-ext', '', d)}"
 
