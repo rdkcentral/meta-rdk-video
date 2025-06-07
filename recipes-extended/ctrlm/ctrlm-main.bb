@@ -91,6 +91,7 @@ TELEMETRY_SUPPORT  ??= "true"
 DEPENDS:append      = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' telemetry', '', d)}"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' -DTELEMETRY_SUPPORT=ON', '', d)}"
 
+
 ##################################################
 # BLE support BEGIN
 
