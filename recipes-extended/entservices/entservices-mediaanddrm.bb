@@ -21,11 +21,11 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
            file://0002-Adding-Support-For-R4.patch \
            file://0001-Add-a-new-metrics-punch-through-on-the-OCDM-framework-rdkservice.patch \
            ${@bb.utils.contains('DISTRO_FEATURES', 'wpe_r4_4','file://0003-R4.4.1-SystemAudioPlayer-compilation-error.patch','',d)} \
+           file://0001-set-OCDM-process-thread-name.patch \
           "
-SRC_URI += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'file://0001-LLAMA-3066-10405-increase-OCDM-process-priority.patch', "", d)}"
 
-# Release version - 1.1.1
-SRCREV = "7d8f9db3145c4ddc23bff67c3fa39cb43078ef57"
+# Release version - 1.1.2
+SRCREV = "d70202add4c70ca52e446433e4023cb76e534663"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
