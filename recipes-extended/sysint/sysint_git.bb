@@ -151,6 +151,14 @@ do_install() {
         install -m 0644 ${S}/systemd_units/zram.service ${D}${systemd_unitdir}/system
 
 
+	install -m 0644 ${S}/systemd_units/connectivitycheck.path ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/connectivitycheck.service ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/myservice.service ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/ntp-sync.path ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/ntp-sync.target ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/ntp-sync.timer ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/systime-set.path ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/systime-set.target ${D}${systemd_unitdir}/system
 
         if [ "${BIND_ENABLED}" = "true" ]; then
            echo "BIND_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
