@@ -1,7 +1,7 @@
 SUMMARY = "entservices-apis"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
-PV ?= "1.4.2"
+PV ?= "1.5.1"
 PR ?= "r0"
 
 inherit python3native cmake pkgconfig
@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name
 
 SRC_URI += "file://RDKEMW-1007.patch"
 
-# Tag 1.4.2
-SRCREV_entservices-apis = "be5c0f288aa36918eacda46fc11d1b2096045ba5"
+# Tag 1.5.1
+SRCREV_entservices-apis = "6392f1ed6b75e0822e41e77b6f3a8f901b3d6fee"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
