@@ -1,0 +1,13 @@
+{
+    "$schema": "https://raw.githubusercontent.com/rdkcentral/rdkservices/main/Tools/json_generator/schemas/plugin.schema.json",
+    "info": {
+        "title": "EntOSMigrationTestApp Plugin",
+        "callsign": "org.rdk.EntOSMigrationTestApp",
+        "locator": "libWPEFrameworkEntOSMigrationTestApp.so",
+        "status": "production",
+        "description": "The `EntOSMigrationTestApp` that is responsible for set the device settings"
+   },
+    "interface": {
+        "$ref": "EntOSMigrationTestApp.json#"
+    }
+}

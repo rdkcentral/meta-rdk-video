@@ -1,0 +1,11 @@
+callsign = "org.rdk.EntOSMigrationTestApp"
+precondition = ["Platform"]
+autostart = "@PLUGIN_ENTOSMIGRATIONTESTAPP_AUTOSTART@"
+startuporder = "@PLUGIN_ENTOSMIGRATIONTESTAPP_STARTUPORDER@"
+
+configuration = JSON()
+
+rootobject = JSON()
+rootobject.add("mode", "@PLUGIN_ENTOSMIGRATIONTESTAPP_MODE@")
+rootobject.add("locator", "lib@PLUGIN_IMPLEMENTATION@.so")
+configuration.add("root", rootobject)

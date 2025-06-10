@@ -1,0 +1,48 @@
+{
+    "$schema": "interface.schema.json",
+    "jsonrpc": "2.0",
+    "info": {
+      "title": "EntOSMigrationTestApp API",
+      "class": "EntOSMigrationTestApp",
+      "description": "EntOSMigrationTestApp Store JSON-RPC interface"
+    },
+    "common": {
+      "$ref": "common.json"
+    },
+    "definitions": {
+        "name": {
+            "summary": "key",
+            "type": "string",
+            "example": "name1"
+        },
+        "value": {
+            "summary": "value",
+            "type": "string",
+            "example": "value1"
+        },
+        "success": {
+            "summary": "Legacy parameter (always true)",
+            "type": "boolean",
+            "default": true,
+            "example": true
+        },
+        "componentName": {
+            "summary": "Name of the component that is ready for migration",
+            "type": "string",
+            "example": "RA01"
+        },
+        "componentList": {
+            "summary": "Name of the component that is ready for migration",
+            "type": "string",
+            "example": "RA02"
+        },
+        "resetType": {
+            "summary": "Type indicates whether it should delete all entries in the datastore or componentList for migration or both",
+            "type": "string",
+            "example": "RESET_ALL"
+        }
+    },
+    "methods": {
+        
+    }
+}
