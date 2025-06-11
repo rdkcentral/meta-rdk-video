@@ -3,6 +3,7 @@ Description=wpeframework
 Wants=network-online.target local-fs.target
 After= network-online.target local-fs.target securemount.service
 RequiresMountsFor=/opt/secure
+DefaultDependencies=no
 
 [Service]
 Type=notify
@@ -16,6 +17,7 @@ Environment="TTS_USE_THUNDER_CLIENT=1"
 Environment="XDG_DATA_HOME=/opt/QT/home"
 Environment="FORCE_SVP=TRUE"
 Environment="FORCE_SAP=TRUE"
+ExecStartPre=/bin/sh -c 'if [ -f /lib/rdk/logMilestone.sh ];then sh /lib/rdk/logMilestone.sh "WPE_FRAMEWORK_START"; fi;'
 ExecStart=-/usr/bin/WPEFramework -b
 # Manually adding PID file support. This is used by Thunder clients to know if
 # Thunder aka WPEFramework process is restarted. Please note if PIDFile name is changed
