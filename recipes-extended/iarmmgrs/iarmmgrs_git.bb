@@ -251,13 +251,15 @@ do_compile:append() {
     LDFLAGS="-ldshalcli -lds -liarmmgrs-deepsleep-hal -lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" oe_runmake -B -C ${S}/mfr/test_mfr/
 }
 
+if ${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', 'true', 'false', d)}; then
+    install -m 0755 ${S}/mfr/test_mfr/test_mfr_client ${D}${bindir}
+fi
 do_install:append(){
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiGetCredentials ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiSetCredentials ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiEraseAllData ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_deletePDRI ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_scrubAllBanks ${D}${bindir}
-        install -m 0755 ${S}/mfr/test_mfr/test_mfr_client ${D}${bindir}
         install -m 0755 ${S}/test/test_pwrMgr ${D}${bindir}
 
         sed -i "/Type=notify/aEnvironment="RDK_DEEPSLEEP_WAKEUP_ON_POWER_BUTTON=1"" ${D}${systemd_unitdir}/system/pwrmgr.service
