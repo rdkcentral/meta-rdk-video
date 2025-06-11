@@ -2,7 +2,7 @@
 Description=Cleans up browser cache
 
 After=local-fs.target nvram.service
-Before=swupdate.service wpeframework.service
+Before=wpeframework.service
 DefaultDependencies=no
 
 [Service]
