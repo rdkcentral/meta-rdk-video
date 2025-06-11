@@ -30,9 +30,8 @@ LDFLAGS += "-lIARMBus -Wl,--no-as-needed -ldl"
 
 do_install() {
         install -d ${D}${bindir}  
-        if ${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', 'true', 'false', d)}; then
-          install -m 0755 ${B}/mfr_util ${D}${bindir}
-        fi
+        install -m 0755 ${B}/mfr_util ${D}${bindir}
+       
 }
 
 FILES:${PN} += "${bindir}/mfr_util"
