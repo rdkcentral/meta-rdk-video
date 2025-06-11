@@ -12,7 +12,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;protocol=${CMF_GIT_PROTOCOL};branch=develop"
 
-# Mar 26, 2025
+# Apr 23, 2025
 SRCREV = "8a97f283f5382214184316bd63cfa03996d60550"
 
 
