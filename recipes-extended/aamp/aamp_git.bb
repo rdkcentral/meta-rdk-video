@@ -15,6 +15,7 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0 
 RDEPENDS_${PN} +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 DEPENDS += " wpe-webkit"
 DEPENDS += " wpeframework-clientlibraries"
+DEPENDS += " firebolt-native-sdk"
 RDEPENDS:${PN} += "devicesettings"
 DEPENDS:append = " virtual/vendor-gst-drm-plugins essos "
 NO_RECOMMENDATIONS = "1"
@@ -23,7 +24,9 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 #To be removed later, the AAMP_RELEASE_TAG_NAME is not using.
 AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
+#SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
+SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;protocol=${CMF_GITHUB_PROTOCOL};branch=custombuild_drm"
+SRCREV = "cf2f76a5cd29e9871821b3d75e8f002ff1dbf805"
 
 S = "${WORKDIR}/git"
 
@@ -51,7 +54,9 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal
 #Ethan log is implemented by Dobby hence enabling it.
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 PACKAGES = "${PN} ${PN}-dev ${PN}-dbg"
-
+CXXFLAGS += " -std=gnu++17"
+EXTRA_OECMAKE_remove = " -std=gnu++11"
+CXXFLAGS_remove = " -std=gnu++11"
 FILES:${PN} += "${libdir}/lib*.so"
 FILES:${PN} += "${libdir}/aamp-cli"
 FILES:${PN} += "${libdir}/aamp/lib*.so"
@@ -62,6 +67,9 @@ INSANE_SKIP:${PN} = "dev-so"
 CXXFLAGS += "-DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 -I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
 
 CXXFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '', ' -lWPEFrameworkSecurityUtil ', d)}"
+
+CXXFLAGS += " -I${STAGING_INCDIR}/Firebolt -I${STAGING_INCDIR}/glib-2.0 -I${STAGING_INCDIR}/../usr/lib/glib-2.0/include "
+
 EXTRA_OECMAKE += " -DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 "
 
 CXXFLAGS += " -DAAMP_BUILD_INFO=${AAMP_RELEASE_TAG_NAME}" 
