@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
           "
 
 # Release version - 2.0.0
-SRCREV = "98fc0f09aae10cd452f8a154470f078226fca2d8"
+SRCREV = "3d339b50eda3ce460c18a089fea42c047b786b4c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -75,7 +75,7 @@ PACKAGECONFIG[userpreferences]      = "-DPLUGIN_USERPREFERENCES=ON,-DPLUGIN_USER
 PACKAGECONFIG[systemservices]       = "-DPLUGIN_SYSTEMSERVICES=ON,-DPLUGIN_SYSTEMSERVICES=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal curl procps entservices-apis,tzcode iarmbus rfc devicesettings curl procps entservices-apis"
 PACKAGECONFIG[systimemgrsupport]    = "-DBUILD_ENABLE_SYSTIMEMGR_SUPPORT=ON,,systimemgrinetrface,"
 PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc entservices-apis devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc entservices-apis devicesettings"
-PACKAGECONFIG[powermanager]         = "-DPLUGIN_POWERMANAGER=ON,-DPLUGIN_POWERMANAGER=OFF,iarmbus virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal"
+PACKAGECONFIG[powermanager]         = "-DPLUGIN_POWERMANAGER=ON,-DPLUGIN_POWERMANAGER=OFF,iarmbus virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal virtual/mfrlib, virtual/mfrlib"
 PACKAGECONFIG[systemmode] = "-DPLUGIN_SYSTEMMODE=ON,-DPLUGIN_SYSTEMMODE=OFF,"
 
 # ----------------------------------------------------------------------------
