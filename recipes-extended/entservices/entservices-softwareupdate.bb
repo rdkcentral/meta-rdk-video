@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-softwareupdate;${CMF_GITHUB_SRC_URI_SU
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.3.0
-SRCREV = "c3bc2907a396c6c60410a8f422014d33c407ea63"
+# Release version - 1.3.1
+SRCREV = "8fc9d51c01ee97ce69ea64e5e05ad3803910e6a2"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -27,6 +27,8 @@ DEPENDS += "wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
+
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
