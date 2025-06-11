@@ -156,9 +156,11 @@ do_install() {
 	install -m 0644 ${S}/systemd_units/myservice.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-sync.path ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-sync.target ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/ntp-sync-dbus-event.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-sync.timer ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/systime-set.path ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/systime-set.target ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/systime-dbus-event.service ${D}${systemd_unitdir}/system
 
         if [ "${BIND_ENABLED}" = "true" ]; then
            echo "BIND_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
