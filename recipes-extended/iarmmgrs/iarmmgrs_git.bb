@@ -251,9 +251,7 @@ do_compile:append() {
     LDFLAGS="-ldshalcli -lds -liarmmgrs-deepsleep-hal -lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" oe_runmake -B -C ${S}/mfr/test_mfr/
 }
 
-if ${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', 'true', 'false', d)}; then
-    install -m 0755 ${S}/mfr/test_mfr/test_mfr_client ${D}${bindir}
-fi
+
 do_install:append(){
      if ${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', 'true', 'false', d)}; then
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiGetCredentials ${D}${bindir}
