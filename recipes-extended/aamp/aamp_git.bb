@@ -55,7 +55,7 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 PACKAGES = "${PN} ${PN}-dev ${PN}-dbg"
 CXXFLAGS += " -std=gnu++17"
-EXTRA_OECMAKE_remove = " -std=gnu++11"
+EXTRA_OECMAKE:remove = " -std=gnu++11"
 CXXFLAGS_remove = " -std=gnu++11"
 FILES:${PN} += "${libdir}/lib*.so"
 FILES:${PN} += "${libdir}/aamp-cli"
