@@ -25,7 +25,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
 
 #SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
-SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;protocol=${CMF_GITHUB_PROTOCOL};branch=custombuild_drm"
+SRC_URI = "${CMF_GITHUB_ROOT}/aamp;protocol=${CMF_GITHUB_PROTOCOL};branch=custombuild_drm"
 SRCREV = "cf2f76a5cd29e9871821b3d75e8f002ff1dbf805"
 
 S = "${WORKDIR}/git"
