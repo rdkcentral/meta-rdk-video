@@ -51,6 +51,9 @@ CONFIG_URL ?= "https://280222515084-rdkm-apps-resources.s3.eu-central-1.amazonaw
 LISA_DAC_CONFIG_PLATFORM ?= "${@get_lisa_dac_config(d)[0]}"
 LISA_DAC_CONFIG_FIRMWARE ?= "${@get_lisa_dac_config(d)[1]}"
 
+LISA_DEFAULT_PATH ?= "/opt"
+LISA_PATH ?= "${@d.getVar('PRODUCT_CONF_LISA_PATH') or d.getVar('LISA_DEFAULT_PATH') }"
+
 python do_inject_dac_config() {
     import json
 
