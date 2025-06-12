@@ -40,6 +40,8 @@ PACKAGES = "${PN} ${PN}-dev ${PN}-dbg"
 FILES:${PN} += "${libdir}/lib*.so"
 FILES:${PN} += "${libdir}/aamp-cli"
 FILES:${PN} += "${libdir}/aamp/lib*.so"
+FILES:${PN} +="${libdir}/gstreamer-1.0/lib*.so"
+FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
 
