@@ -16,10 +16,10 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDK-41681-PR4013.patch \
           "
 
-# Release version - 1.4.0
-SRCREV = "b0d36830cff07d91246b2b2ac97750fc1bb63fdc"
+# Release version - 1.4.x
+SRCREV = "6d9ac42699f8f4fd43828f1a8b70f7a77343edc8"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
@@ -52,7 +52,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " monitor \
-    persistent_store \    
+    persistent_store \
     resourcemanager \
     sharedstorage \
     telemetrysupport \
