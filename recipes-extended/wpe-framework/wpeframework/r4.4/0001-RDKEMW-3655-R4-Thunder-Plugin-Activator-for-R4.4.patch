@@ -1,0 +1,289 @@
+diff --git a/Utils/PluginActivator/CMakeLists.txt b/Utils/PluginActivator/CMakeLists.txt
+index bd465e3a..5f88d771 100644
+--- a/Utils/PluginActivator/CMakeLists.txt
++++ b/Utils/PluginActivator/CMakeLists.txt
+@@ -26,6 +26,7 @@ add_executable(${PROJECT_NAME}
+     source/Module.cpp
+     source/main.cpp
+     source/COMRPCStarter.cpp
++    source/NotificationHandler.cpp
+ )
+ 
+ target_link_libraries(${PROJECT_NAME}
+diff --git a/Utils/PluginActivator/source/CMakeLists.txt b/Utils/PluginActivator/source/CMakeLists.txt
+new file mode 100644
+index 00000000..5f88d771
+--- /dev/null
++++ b/Utils/PluginActivator/source/CMakeLists.txt
+@@ -0,0 +1,43 @@
++
++# If not stated otherwise in this file or this component's license file the
++# following copyright and licenses apply:
++#
++# Copyright 2020 Metrological
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++# http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++cmake_minimum_required(VERSION 3.10.3)
++
++project( PluginActivator )
++
++set( CMAKE_CXX_STANDARD 11 )
++
++add_executable(${PROJECT_NAME}
++    source/Module.cpp
++    source/main.cpp
++    source/COMRPCStarter.cpp
++    source/NotificationHandler.cpp
++)
++
++target_link_libraries(${PROJECT_NAME}
++    PRIVATE
++    CompileSettingsDebug::CompileSettingsDebug
++    ${NAMESPACE}Core::${NAMESPACE}Core
++    ${NAMESPACE}COM::${NAMESPACE}COM
++    ${NAMESPACE}Plugins::${NAMESPACE}Plugins
++)
++
++install(
++    TARGETS ${PROJECT_NAME}
++    RUNTIME DESTINATION bin
++)
+diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
+index f2d27ed4..d2cebf67 100644
+--- a/Utils/PluginActivator/source/COMRPCStarter.cpp
++++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
+@@ -49,6 +49,8 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+     // Attempt to open the plugin shell
+     bool success = false;
+     int currentRetry = 1;
++    //Exchange::Controller::ILifeTime::IPluginNotification pluginNotification;	
++    IPluginNotification pluginNotification;	
+ 
+     while (!success && currentRetry <= maxRetries) {
+         LOG_INF(_pluginName.c_str(), "Attempting to activate plugin - attempt %d/%d", currentRetry, maxRetries);
+@@ -73,9 +75,16 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+             // Sleep, then try again
+             std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
+         } else {
+-            // Will block until plugin is activated
+-            uint32_t result = lifetime->Activate(_pluginName.c_str());
++	    LOG_INF(_pluginName.c_str(), "Before Register to state change activate plugin");
++            Core::hresult result_changestate_notify = lifetime->Register(&pluginNotification);
++            if (result_changestate_notify == Core::ERROR_NONE) {
++	            LOG_INF(_pluginName.c_str(), "Register to state change activate plugin Success");
++            } else{
++	            LOG_INF(_pluginName.c_str(), "Register to state change activate plugin Failed result_changestate_notify=%u",result_changestate_notify);
++            }
++    	    uint32_t result = lifetime->Activate(_pluginName.c_str());
+ 
++            LOG_INF(_pluginName.c_str(), "After activate plugin");
+             auto duration = Core::Time::Now().Sub(start.MilliSeconds());
+ 
+             if (result != Core::ERROR_NONE) {
+@@ -91,7 +100,13 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+                 std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
+             } else {
+                 // Our work here is done!
+-                LOG_INF(_pluginName.c_str(), "Successfully activated plugin after %dms", duration.MilliSeconds());
++           
++	        if(result_changestate_notify == Core::ERROR_NONE)
++                {
++                	LOG_INF(_pluginName.c_str(), "Successfully Registered for Activation - result_changestate_notify %u", result_changestate_notify);
++                }
++
++	        LOG_INF(_pluginName.c_str(), "Successfully activated plugin after %dms", duration.MilliSeconds());
+                 success = true;
+             }
+             lifetime->Release();
+diff --git a/Utils/PluginActivator/source/COMRPCStarter.h b/Utils/PluginActivator/source/COMRPCStarter.h
+index 44fecef8..d7d8def4 100644
+--- a/Utils/PluginActivator/source/COMRPCStarter.h
++++ b/Utils/PluginActivator/source/COMRPCStarter.h
+@@ -21,6 +21,7 @@
+ #include "Module.h"
+ 
+ #include "IPluginStarter.h"
++#include "INotification.h"
+ 
+ using namespace WPEFramework;
+ 
+@@ -42,4 +43,4 @@ private:
+ private:
+     ControllerConnector _connector;
+     const string _pluginName;
+-};
+\ No newline at end of file
++};
+diff --git a/Utils/PluginActivator/source/INotification.h b/Utils/PluginActivator/source/INotification.h
+new file mode 100755
+index 00000000..e7efaf16
+--- /dev/null
++++ b/Utils/PluginActivator/source/INotification.h
+@@ -0,0 +1,67 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2020 Metrological
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#pragma once
++#include "Module.h"
++#include "IPluginStarter.h"
++#include "IShell.h"
++#include <string>
++
++/**
++ * Interface to start a specified plugin
++ *
++ * Could be implemented with JSON-RPC or COM-RPC
++ */
++
++using namespace WPEFramework;
++using namespace Exchange;
++using namespace Controller;
++
++
++class IPluginNotification : public WPEFramework::Exchange::Controller::ILifeTime::INotification{
++public:
++
++    IPluginNotification() = default;
++    ~IPluginNotification() override = default;
++
++    /**
++     * @brief Activate a Thunder plugin
++     *
++     * Will call back StateChange after the Transition has happened
++     *
++     * @param[in]   callsign 
++     *
++     * @param[in]   state  
++     *                             
++     * @param[in]   reason
++     */
++    void StateChange(const string& callsign, const PluginHost::IShell::state& state, const PluginHost::IShell::reason& reason) override;
++
++     Core::hresult Register(INotification* sink);
++     Core::hresult Unregister(INotification* sink);
++     Core::hresult Activate(const string& callsign);
++     Core::hresult Deactivate(const string& callsign);
++     Core::hresult Unavailable(const string& callsign);
++     Core::hresult Hibernate(const string& callsign, const Core::hresult timeout);
++     Core::hresult Suspend(const string& callsign);
++     Core::hresult Resume(const string& callsign);
++     void AddRef() const;
++     uint32_t Release() const;
++     void* QueryInterface(const uint32_t interfaceNumber);
++};
+diff --git a/Utils/PluginActivator/source/NotificationHandler.cpp b/Utils/PluginActivator/source/NotificationHandler.cpp
+new file mode 100755
+index 00000000..8d20570c
+--- /dev/null
++++ b/Utils/PluginActivator/source/NotificationHandler.cpp
+@@ -0,0 +1,83 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2020 Metrological
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "COMRPCStarter.h"
++
++#include "Log.h"
++
++#include <chrono>
++#include <thread>
++
++
++
++void IPluginNotification::StateChange(const std::string& callsign, const PluginHost::IShell::state& state, const PluginHost::IShell::reason& reason)
++{
++        LOG_INF(callsign.c_str(), "State Change Notification Received state=%d reason=%d", state, reason);
++
++        LOG_INF(callsign.c_str(), "State Change Exit");
++}
++
++
++     Core::hresult IPluginNotification::Register(INotification* sink)
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Unregister(INotification* sink)
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Activate(const string& callsign)
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Deactivate(const string& callsign)
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Unavailable(const string& callsign)
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Hibernate(const string& callsign, const Core::hresult timeout)
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Suspend(const string& callsign)
++     {
++	 return Core::ERROR_NONE;
++     }
++     Core::hresult IPluginNotification::Resume(const string& callsign)
++     {
++	 return Core::ERROR_NONE;
++     }
++
++
++     void IPluginNotification::AddRef() const
++{
++
++}
++     uint32_t IPluginNotification::Release() const
++{
++	 return 1;
++}	
++void* IPluginNotification::QueryInterface(const uint32_t interfaceNumber)
++{
++    void *temp;
++    return temp;
++}
