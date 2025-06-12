@@ -58,11 +58,15 @@ EXTRA_OECMAKE += " -DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 "
 SRC_URI += " file://libplayerfbinterface.pc"
 SRC_URI += " file://libbaseconversion.pc"
 SRC_URI += " file://libplayerlogmanager.pc"
+SRC_URI += " file://libplayergstinterface.pc"
+SRC_URI += " file://libsubtec.pc"
 
 do_install:append() {
     install -d ${D}${libdir}/pkgconfig
     install -m0644 ${WORKDIR}/libplayerfbinterface.pc ${D}${libdir}/pkgconfig/
     install -m0644 ${WORKDIR}/libbaseconversion.pc ${D}${libdir}/pkgconfig/
     install -m0644 ${WORKDIR}/libplayerlogmanager.pc ${D}${libdir}/pkgconfig/
+    install -m0644 ${WORKDIR}/libplayergstinterface.pc ${D}${libdir}/pkgconfig/
+    install -m0644 ${WORKDIR}/libsubtec.pc ${D}${libdir}/pkgconfig/
 }
 
