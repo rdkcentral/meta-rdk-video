@@ -1,7 +1,9 @@
-diff -uprN a/apis/AuthService/IAuthService.h b/apis/AuthService/IAuthService.h
---- a/apis/AuthService/IAuthService.h	1970-01-01 03:00:00.000000000 +0300
-+++ b/apis/AuthService/IAuthService.h	2025-03-03 23:14:51.704577261 +0200
-@@ -0,0 +1,459 @@
+diff --git a/apis/AuthService/IAuthService.h b/apis/AuthService/IAuthService.h
+new file mode 100644
+index 0000000..aabed49
+--- /dev/null
++++ b/apis/AuthService/IAuthService.h
+@@ -0,0 +1,465 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -56,6 +58,11 @@ diff -uprN a/apis/AuthService/IAuthService.h b/apis/AuthService/IAuthService.h
 +        // @text serviceAccessTokenChanged
 +        // @brief The service access token has changed.
 +        virtual void ServiceAccessTokenChanged() = 0;
++        // @text onPartnerIdChanged
++        // @brief The Partner ID has changed.
++        // @param oldPartnerId old partner ID
++        // @param newPartnerId new partner ID
++        virtual void OnPartnerIdChanged(const string& oldPartnerId, const string& newPartnerId) = 0;
 +    };
 +
 +    virtual uint32_t Register(IAuthService::INotification* notification /* @in */) = 0;
@@ -461,3 +468,4 @@ diff -uprN a/apis/AuthService/IAuthService.h b/apis/AuthService/IAuthService.h
 +
 +} // namespace Exchange
 +} // namespace WPEFramework
++
