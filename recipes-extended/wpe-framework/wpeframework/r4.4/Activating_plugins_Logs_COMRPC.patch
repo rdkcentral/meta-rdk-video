@@ -11,10 +11,3 @@ index 26609995..7cf05559 100644
                          service->ClassName().c_str(), service->Callsign().c_str()));
                      service->Activate(PluginHost::IShell::STARTUP);
                  }
-@@ -891,6 +892,7 @@ namespace Plugin {
-         else {
-             result = Core::ERROR_PRIVILIGED_REQUEST;
-         }
-+        SYSLOG(Logging::Startup, (_T("Activating plugin [%s] returned %u"),callsign.c_str(), result));
-         return result;
-     }
