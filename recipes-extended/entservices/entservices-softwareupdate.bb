@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-softwareupdate;${CMF_GITHUB_SRC_URI_SU
           "
 
 # Release version - 1.3.1
-SRCREV = "8fc9d51c01ee97ce69ea64e5e05ad3803910e6a2"
+SRCREV = "6f625f0e307d0e906d71f4e0fcfac8fa214aa5cd"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
