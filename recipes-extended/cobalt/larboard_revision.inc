@@ -3,5 +3,5 @@ LARBOARD_SRC_URI = "${CMF_GITHUB_ROOT}/larboard"
 # 24.lts.stable. March 13, 2025
 LARBOARD_SRCREV_24 ?= "10f8d522b8a26727bc03dfe1e3f619bad91df5c3"
 
-# June. June 5, 2025
+# topic/PREMIUMAPP-3381. June 5, 2025
 LARBOARD_SRCREV_DEV ?= "8050dd7c39b21d20c5193336ee3ebc8cf5ff56be"
