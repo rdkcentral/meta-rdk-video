@@ -1,0 +1,116 @@
+From 6f42a47acb5c5c827f2b228b06fa0bd850b5656d Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Wed, 11 Jun 2025 17:24:53 +0300
+Subject: [PATCH] RDKEMW-2861 : follow coding guidelines
+
+Reason for change: following coding guidelines
+Test Procedure: None
+Risks: None
+Signed-off-by: Nikita Poltorapavlo <npoltorapavlo@productengine.com>
+---
+ apis/PersistentStore/IStore.h      | 16 ++++++++--------
+ apis/PersistentStore/IStore2.h     | 24 ++++++++++++------------
+ apis/PersistentStore/IStoreCache.h |  2 +-
+ 3 files changed, 21 insertions(+), 21 deletions(-)
+
+diff --git a/apis/PersistentStore/IStore.h b/apis/PersistentStore/IStore.h
+index f00f457..e1e1e1b 100644
+--- a/apis/PersistentStore/IStore.h
++++ b/apis/PersistentStore/IStore.h
+@@ -30,16 +30,16 @@ struct EXTERNAL IStore : virtual public Core::IUnknown {
+     struct EXTERNAL INotification : virtual public Core::IUnknown {
+         enum { ID = ID_STORE_NOTIFICATION };
+ 
+-        virtual void ValueChanged(const string &ns, const string &key, const string &value) = 0;
+-        virtual void StorageExceeded() = 0;
++        virtual void ValueChanged(const string &ns, const string &key, const string &value) {}
++        virtual void StorageExceeded() {}
+     };
+ 
+-    virtual uint32_t Register(Exchange::IStore::INotification *notification) = 0;
+-    virtual uint32_t Unregister(Exchange::IStore::INotification *notification) = 0;
+-    virtual uint32_t SetValue(const string &ns, const string &key, const string &value) = 0;
+-    virtual uint32_t GetValue(const string &ns, const string &key, string &value /* @out */) = 0;
+-    virtual uint32_t DeleteKey(const string &ns, const string &key) = 0;
+-    virtual uint32_t DeleteNamespace(const string &ns) = 0;
++    virtual Core::hresult Register(Exchange::IStore::INotification *notification) = 0;
++    virtual Core::hresult Unregister(Exchange::IStore::INotification *notification) = 0;
++    virtual Core::hresult SetValue(const string &ns, const string &key, const string &value) = 0;
++    virtual Core::hresult GetValue(const string &ns, const string &key, string &value /* @out */) = 0;
++    virtual Core::hresult DeleteKey(const string &ns, const string &key) = 0;
++    virtual Core::hresult DeleteNamespace(const string &ns) = 0;
+ };
+ 
+ } // namespace Exchange
+diff --git a/apis/PersistentStore/IStore2.h b/apis/PersistentStore/IStore2.h
+index 3b84f08..eb643e3 100644
+--- a/apis/PersistentStore/IStore2.h
++++ b/apis/PersistentStore/IStore2.h
+@@ -44,20 +44,20 @@ namespace Exchange {
+             ~INotification() override = default;
+ 
+             // @alt onValueChanged
+-            virtual void ValueChanged(const ScopeType scope, const string& ns /* @text:namespace */, const string& key, const string& value) = 0;
++            virtual void ValueChanged(const ScopeType scope, const string& ns /* @text:namespace */, const string& key, const string& value) {}
+         };
+ 
+-        virtual uint32_t Register(Exchange::IStore2::INotification* notification) = 0;
+-        virtual uint32_t Unregister(Exchange::IStore2::INotification* notification) = 0;
++        virtual Core::hresult Register(Exchange::IStore2::INotification* notification) = 0;
++        virtual Core::hresult Unregister(Exchange::IStore2::INotification* notification) = 0;
+ 
+         // @alt setValue
+-        virtual uint32_t SetValue(const ScopeType scope, const string& ns /* @text:namespace */, const string& key, const string& value, const uint32_t ttl) = 0;
++        virtual Core::hresult SetValue(const ScopeType scope, const string& ns /* @text:namespace */, const string& key, const string& value, const uint32_t ttl) = 0;
+         // @alt getValue
+-        virtual uint32_t GetValue(const ScopeType scope, const string& ns /* @text:namespace */, const string& key, string& value /* @out */, uint32_t& ttl /* @out */) = 0;
++        virtual Core::hresult GetValue(const ScopeType scope, const string& ns /* @text:namespace */, const string& key, string& value /* @out */, uint32_t& ttl /* @out */) = 0;
+         // @alt deleteKey
+-        virtual uint32_t DeleteKey(const ScopeType scope, const string& ns /* @text:namespace */, const string& key) = 0;
++        virtual Core::hresult DeleteKey(const ScopeType scope, const string& ns /* @text:namespace */, const string& key) = 0;
+         // @alt deleteNamespace
+-        virtual uint32_t DeleteNamespace(const ScopeType scope, const string& ns /* @text:namespace */) = 0;
++        virtual Core::hresult DeleteNamespace(const ScopeType scope, const string& ns /* @text:namespace */) = 0;
+     };
+ 
+     struct EXTERNAL IStoreInspector : virtual public Core::IUnknown {
+@@ -74,9 +74,9 @@ namespace Exchange {
+         using IStringIterator = RPC::IIteratorType<string, RPC::ID_STRINGITERATOR>;
+         using INamespaceSizeIterator = RPC::IIteratorType<NamespaceSize, ID_STORE_INSPECTOR_NAMESPACE_SIZE_ITERATOR>;
+ 
+-        virtual uint32_t GetKeys(const ScopeType scope, const string& ns, IStringIterator*& keys /* @out */) = 0;
+-        virtual uint32_t GetNamespaces(const ScopeType scope, IStringIterator*& namespaces /* @out */) = 0;
+-        virtual uint32_t GetStorageSizes(const ScopeType scope, INamespaceSizeIterator*& storageList /* @out */) = 0;
++        virtual Core::hresult GetKeys(const ScopeType scope, const string& ns, IStringIterator*& keys /* @out */) = 0;
++        virtual Core::hresult GetNamespaces(const ScopeType scope, IStringIterator*& namespaces /* @out */) = 0;
++        virtual Core::hresult GetStorageSizes(const ScopeType scope, INamespaceSizeIterator*& storageList /* @out */) = 0;
+     };
+ 
+     struct EXTERNAL IStoreLimit : virtual public Core::IUnknown {
+@@ -86,8 +86,8 @@ namespace Exchange {
+ 
+         using ScopeType = IStore2::ScopeType;
+ 
+-        virtual uint32_t SetNamespaceStorageLimit(const ScopeType scope, const string& ns, const uint32_t size) = 0;
+-        virtual uint32_t GetNamespaceStorageLimit(const ScopeType scope, const string& ns, uint32_t& size /* @out */) = 0;
++        virtual Core::hresult SetNamespaceStorageLimit(const ScopeType scope, const string& ns, const uint32_t size) = 0;
++        virtual Core::hresult GetNamespaceStorageLimit(const ScopeType scope, const string& ns, uint32_t& size /* @out */) = 0;
+     };
+ 
+ } // namespace Exchange
+diff --git a/apis/PersistentStore/IStoreCache.h b/apis/PersistentStore/IStoreCache.h
+index e58be6b..8241785 100644
+--- a/apis/PersistentStore/IStoreCache.h
++++ b/apis/PersistentStore/IStoreCache.h
+@@ -27,7 +27,7 @@ namespace Exchange {
+ struct EXTERNAL IStoreCache : virtual public Core::IUnknown {
+     enum { ID = ID_STORE_CACHE };
+ 
+-    virtual uint32_t FlushCache() = 0;
++    virtual Core::hresult FlushCache() = 0;
+ };
+ 
+ } // namespace Exchange
+-- 
+2.43.0
+
