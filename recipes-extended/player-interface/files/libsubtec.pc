@@ -1,0 +1,10 @@
+prefix=/home/nhclpt070/AAMP/github/aamp/.libs/lib 
+exec_prefix=/home/nhclpt070/AAMP/github/aamp/.libs 
+libdir=/home/nhclpt070/AAMP/github/aamp/.libs/lib 
+includedir=/home/nhclpt070/AAMP/github/aamp/.libs/include 
+ 
+Name: subtec 
+Description: subtec library 
+Version: 1.0 
+Libs: -L${libdir} -lsubtec 
+Cflags: -I${includedir}

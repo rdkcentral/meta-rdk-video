@@ -1,29 +1,25 @@
-SUMMARY = "RDK AAMP component"
-SECTION = "console/utils"
-LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
+SUMMARY = "Middleware Player Interface layer for Player"
+DESCRIPTION = "This layer provides the Player Firebolt Interface library for Player integration."
+LICENSE = "CLOSED"
 
-PV ?= "2.0.2"
+PV ?= "1.0.0"
 PR ?= "r0"
 
-SRCREV_FORMAT = "aamp"
 
 inherit pkgconfig
 
-DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline player-interface"
+DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0  gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)}"
 RDEPENDS_${PN} +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 DEPENDS += " wpe-webkit"
 DEPENDS += " wpeframework-clientlibraries"
-RDEPENDS:${PN} += "devicesettings player-interface"
+RDEPENDS:${PN} += "devicesettings"
 DEPENDS:append = " virtual/vendor-gst-drm-plugins essos "
 NO_RECOMMENDATIONS = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-#To be removed later, the AAMP_RELEASE_TAG_NAME is not using.
-AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
+SRC_URI = "${CMF_GITHUB_ROOT}/middleware-player-interface;${CMF_GITHUB_SRC_URI_SUFFIX};name=player-interface"
 
 S = "${WORKDIR}/git"
 
@@ -31,7 +27,7 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${W
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter "
 
-require aamp-common.inc
+require player-interface-common.inc
 
 PACKAGECONFIG:append = " playready widevine clearkey"
 
@@ -53,8 +49,7 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', ''
 PACKAGES = "${PN} ${PN}-dev ${PN}-dbg"
 
 FILES:${PN} += "${libdir}/lib*.so"
-FILES:${PN} += "${libdir}/aamp-cli"
-FILES:${PN} += "${libdir}/aamp/lib*.so"
+FILES:${PN} += "${libdir}/player-interface/lib*.so"
 FILES:${PN} +="${libdir}/gstreamer-1.0/lib*.so"
 FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
@@ -64,7 +59,6 @@ CXXFLAGS += "-DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 -I${STAGING_DIR_TARGET}${inc
 CXXFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '', ' -lWPEFrameworkSecurityUtil ', d)}"
 EXTRA_OECMAKE += " -DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 "
 
-CXXFLAGS += " -DAAMP_BUILD_INFO=${AAMP_RELEASE_TAG_NAME}" 
 
 #required for specific products but for now distro is available only for UK 
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', ' -DENABLE_USE_SINGLE_PIPELINE=1', '', d)}"
@@ -78,15 +72,17 @@ CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_IT', ' -
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_DE', ' -DENABLE_PTS_RESTAMP=1', '', d)}"
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_AU', ' -DENABLE_PTS_RESTAMP=1', '', d)}"
 
-INCLUDE_DIRS = " \
-    -I=${includedir}/rdk/halif/ds-hal \
-    "
+SRC_URI += " file://libplayerfbinterface.pc"
+SRC_URI += " file://libbaseconversion.pc"
+SRC_URI += " file://libplayerlogmanager.pc"
+SRC_URI += " file://libplayergstinterface.pc"
+SRC_URI += " file://libsubtec.pc"
 
 do_install:append() {
-    echo "Installing aamp-cli..."
-    install -m755 ${B}/aamp-cli ${D}${libdir}
-
-    # remove the static library if it is installed, 
-    # CMakelist in aamp code installing static lib below line should avoid build error 
-    rm -f ${D}${libdir}/libtsb.a
+    install -d ${D}${libdir}/pkgconfig
+    install -m0644 ${WORKDIR}/libplayerfbinterface.pc ${D}${libdir}/pkgconfig/
+    install -m0644 ${WORKDIR}/libbaseconversion.pc ${D}${libdir}/pkgconfig/
+    install -m0644 ${WORKDIR}/libplayerlogmanager.pc ${D}${libdir}/pkgconfig/
+    install -m0644 ${WORKDIR}/libplayergstinterface.pc ${D}${libdir}/pkgconfig/
+    install -m0644 ${WORKDIR}/libsubtec.pc ${D}${libdir}/pkgconfig/
 }
