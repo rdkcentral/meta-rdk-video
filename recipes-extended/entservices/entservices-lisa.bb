@@ -13,23 +13,12 @@ DEPENDS += "wpeframework boost curl libarchive wpeframework-tools-native entserv
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 SRC_URI = "${CMF_GITHUB_ROOT}/LISA;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MAIN_BRANCH}"
-SRC_URI += "file://0100-update-config.patch;apply=no"
-
-do_lisa_patches() {
-    cd ${S}
-    if [ -e ${WORKDIR}/0100-update-config.patch ]; then
-        if [ ! -e lisa_patch_0100_applied ]; then
-            bbnote "Patching 0100-update-config.patch"
-            patch -p1 < ${WORKDIR}/0100-update-config.patch
-            touch lisa_patch_0100_applied
-        fi
-    fi
-}
-addtask lisa_patches after do_unpack before do_configure
 
 TOOLCHAIN = "gcc"
 EXTRA_OECMAKE += "-DCMAKE_SYSROOT=${STAGING_DIR_HOST}"
 EXTRA_OECMAKE += "-DBUILD_REFERENCE=${SRCREV}"
+EXTRA_OECMAKE += "-DPLUGIN_LISA_IMAGE_PATH=${LISA_IMAGE_PATH}"
+EXTRA_OECMAKE += "-DPLUGIN_LISA_APPDATA_PATH=${LISA_APPDATA_PATH}"
 
 # 18 Dec 2023 or head
 SRCREV = "f0888c8f5a3919540952fb24cc466cfc97d08f07"
