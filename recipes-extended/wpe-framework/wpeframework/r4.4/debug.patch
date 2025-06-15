@@ -1,0 +1,73 @@
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index 04bae6775..96b0e5088 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -318,22 +330,24 @@ namespace PluginHost
+     // Methods to stop/start/update the service.
+     /* virtual */ Core::hresult Server::Service::Activate(const PluginHost::IShell::reason why)
+     {
++        std::cout << "akshay inside Server::Service::Activate started" << std::endl;
+         Core::hresult result = Core::ERROR_NONE;
+-
++        std::cout << "akshay Pluginserver locking" << std::endl;
+         Lock();
+-
++        std::cout << "akshay Pluginserver locked" << std::endl;
+         IShell::state currentState(State());
+
+         if (currentState == IShell::state::ACTIVATION) {
+             Unlock();
++            std::cout << "akshay Server::Service::Activate returning " << result << std::endl;
+             result = Core::ERROR_INPROGRESS;
+         }
+         else if ((currentState == IShell::state::UNAVAILABLE) || (currentState == IShell::state::DEACTIVATION) || (currentState == IShell::state::DESTROYED) ) {
+             Unlock();
+             result = Core::ERROR_ILLEGAL_STATE;
+         } else if (currentState == IShell::state::HIBERNATED) {
++            result = Wakeup();
+             Unlock();
+-            result = Wakeup(3000);
+         } else if ((currentState == IShell::state::DEACTIVATED) || (currentState == IShell::state::PRECONDITION)) {
+
+             // Load the interfaces, If we did not load them yet...
+@@ -383,6 +397,7 @@ namespace PluginHost
+
+             } else {
+
++                std::cout << "akshay Pluginserver else " << std::endl;
+                 // Before we dive into the "new" initialize lets see if this has a pending OOP running, if so forcefully kill it now, no time to wait !
+                 if (_lastId != 0) {
+                     _administrator.Destroy(_lastId);
+@@ -390,7 +405,7 @@ namespace PluginHost
+                 }
+
+                 TRACE(Activity, (_T("Activation plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
+-
++                std::cout << "akshay calling Initialize" << std::endl;
+                 _administrator.Initialize(callSign, this);
+                 State(ACTIVATION);
+@@ -432,7 +447,7 @@ namespace PluginHost
+                             TRACE(Trace::Error, (_T("Could not open the external connector for %s"), Callsign().c_str()));
+                         }
+                     }
+-
++                    std::cout << "akshay plugin activated " << std::endl;
+                     SYSLOG(Logging::Startup, (_T("Activated plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
+                     Lock();
+                     State(ACTIVATED);
+@@ -499,10 +514,11 @@ namespace PluginHost
+
+     /* virtual */ Core::hresult Server::Service::Deactivate(const reason why)
+     {
++        std::cout << "akshay inside Server::Service::Deactivate started" << std::endl;
+         Core::hresult result = Core::ERROR_NONE;
+-
++        std::cout << "akshay Pluginserver going lock" << std::endl;
+         Lock();
+-
++        std::cout << "akshay Pluginserver locked" << std::endl;
+         IShell::state currentState(State());
+
+         if (currentState == IShell::state::DEACTIVATION) {
+
+
