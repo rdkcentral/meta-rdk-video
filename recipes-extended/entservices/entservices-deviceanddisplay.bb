@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
           "
 
 # Release version - 3.0.4
-SRCREV = "fe8e4ac933970b58b7fe659b020062007cf6c40d"
+SRCREV = "5d40aa4f808baabdf996ba7b9649831643737d5c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -23,7 +23,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 EXTRA_OECMAKE += " -DBUILD_ENABLE_THERMAL_PROTECTION=ON "
-EXTRA_OECMAKE += "-DDISABLE_GEOGRAPHY_TIMEZONE=ON"
+EXTRA_OECMAKE += " -DDISABLE_GEOGRAPHY_TIMEZONE=ON"
 EXTRA_OECMAKE += " -DENABLE_SYSTEM_GET_STORE_DEMO_LINK=ON "
 EXTRA_OECMAKE += " -DBUILD_ENABLE_DEVICE_MANUFACTURER_INFO=ON "
 EXTRA_OECMAKE += " -DBUILD_ENABLE_APP_CONTROL_AUDIOPORT_INIT=ON "
@@ -47,6 +47,15 @@ INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/power-manager \
     -I=${includedir}/WPEFramework/powercontroller \
     "
+
+CXXFLAGS += " -D_DISABLE_SCHD_REBOOT_AT_DEEPSLEEP"
+CXXFLAGS += " -DPLATCO_BOOTTO_STANDBY"
+CXXFLAGS += " -DENABLE_THERMAL_PROTECTION"
+CXXFLAGS += " -DUSE_WAKEUP_TIMER_EVT"
+CXXFLAGS += " -DOFFLINE_MAINT_REBOOT"
+
+CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
+CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
 
 # ----------------------------------------------------------------------------
 
@@ -75,7 +84,7 @@ PACKAGECONFIG[userpreferences]      = "-DPLUGIN_USERPREFERENCES=ON,-DPLUGIN_USER
 PACKAGECONFIG[systemservices]       = "-DPLUGIN_SYSTEMSERVICES=ON,-DPLUGIN_SYSTEMSERVICES=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal curl procps entservices-apis,tzcode iarmbus rfc devicesettings curl procps entservices-apis"
 PACKAGECONFIG[systimemgrsupport]    = "-DBUILD_ENABLE_SYSTIMEMGR_SUPPORT=ON,,systimemgrinetrface,"
 PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc entservices-apis devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc entservices-apis devicesettings"
-PACKAGECONFIG[powermanager]         = "-DPLUGIN_POWERMANAGER=ON,-DPLUGIN_POWERMANAGER=OFF,iarmbus virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal"
+PACKAGECONFIG[powermanager]         = "-DPLUGIN_POWERMANAGER=ON,-DPLUGIN_POWERMANAGER=OFF,iarmbus virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal virtual/mfrlib,virtual/mfrlib"
 PACKAGECONFIG[systemmode] = "-DPLUGIN_SYSTEMMODE=ON,-DPLUGIN_SYSTEMMODE=OFF,"
 
 # ----------------------------------------------------------------------------
