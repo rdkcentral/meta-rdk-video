@@ -262,8 +262,8 @@ do_install:append(){
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiSetCredentials ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiGetCredentials ${D}${bindir}
 
-      sed -i "/Type=notify/aEnvironment="RDK_DEEPSLEEP_WAKEUP_ON_POWER_BUTTON=1"" ${D}${systemd_unitdir}/system/pwrmgr.service
-      sed -i "/ExecStart=.*/aExecStop=/bin/touch /tmp/pwrmgr_restarted" ${D}${systemd_unitdir}/system/pwrmgr.service
+       sed -i "/Type=notify/aEnvironment="RDK_DEEPSLEEP_WAKEUP_ON_POWER_BUTTON=1"" ${D}${systemd_unitdir}/system/pwrmgr.service
+       sed -i "/ExecStart=.*/aExecStop=/bin/touch /tmp/pwrmgr_restarted" ${D}${systemd_unitdir}/system/pwrmgr.service
 }
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'ctrlm-headers', '', d)}"
