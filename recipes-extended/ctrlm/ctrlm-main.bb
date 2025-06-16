@@ -178,13 +178,9 @@ EXTRA_OECMAKE:append = " -DGIT_BRANCH=${CMF_GIT_BRANCH}"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm_mic_tap', ' -DMIC_TAP=ON', '', d)}"
 
 RF4CE_ENABLED = "${@bb.utils.contains('MACHINE_FEATURES', 'rf4ce' ,'true', 'false', d)}"
-BLE_ENABLED   = "${@bb.utils.contains('MACHINE_FEATURES', 'ble-rcu' ,'true', 'false', d)}"
 
 addtask ctrlm_config after do_configure before do_compile
 do_ctrlm_config() {
-    if [ "${BLE_ENABLED}" = false ]; then
-        echo '{"network_ble":{}}' > ${CTRLM_CONFIG_MAIN_SUB}
-    fi
 }
 
 FACTORY_AUDIO_PLAYBACK ?= "false"
