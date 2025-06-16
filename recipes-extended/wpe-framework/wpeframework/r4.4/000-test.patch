@@ -63,12 +63,12 @@ index 15cc523cd..9e17c01aa 100644
              if (_pluginServer->Services().FromIdentifier(callsign, service) == Core::ERROR_NONE) {
                  ASSERT(service.IsValid());
 +                SYSLOG(Logging::Startup, (_T("Activating plugin [%s] Requested"),callsign.c_str()));
-+                std::cout << "akshay Controller::Activate completed returning " << result << std::endl;
                  result = service->Activate(PluginHost::IShell::REQUESTED);
++                std::cout << "akshay inside if condition Controller::Activate completed returning " << result << std::endl;
  
                  // Normalise return code
                  if ((result != Core::ERROR_NONE) && (result != Core::ERROR_ILLEGAL_STATE) && (result !=  Core::ERROR_INPROGRESS) && (result != Core::ERROR_PENDING_CONDITIONS)) {
-+                    std::cout << "akshay Controller::Activate completed returning " << result << std::endl;
++                    std::cout << "akshay iside 2nd if condition Controller::Activate completed returning " << result << std::endl;
                      result = Core::ERROR_OPENING_FAILED;
                  }
              }
@@ -82,7 +82,7 @@ index 15cc523cd..9e17c01aa 100644
              result = Core::ERROR_PRIVILIGED_REQUEST;
          }
 +        SYSLOG(Logging::Startup, (_T("Activating plugin [%s] returned %u"),callsign.c_str(), result));
-+        std::cout << "akshay Controller::Activate completed returning " << result << std::endl;
++        std::cout << "akshay before returing Controller::Activate completed returning " << result << std::endl;
          return result;
      }
  
@@ -115,7 +115,7 @@ index 15cc523cd..9e17c01aa 100644
              result = Core::ERROR_PRIVILIGED_REQUEST;
          }
 -
-+        std::cout << "akshay Controller::Deactivate completed returning " << result << std::endl;
++        std::cout << "akshay before returing Controller::Deactivate completed returning " << result << std::endl;
          return result;
      }
  
