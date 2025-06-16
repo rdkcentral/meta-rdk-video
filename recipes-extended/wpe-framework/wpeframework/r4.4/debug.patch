@@ -1,16 +1,18 @@
-diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
-index 11f19a49a..0a8bbdb46 100644
---- a/Source/WPEFramework/PluginServer.cpp
-+++ b/Source/WPEFramework/PluginServer.cpp
-@@ -330,20 +330,26 @@ namespace PluginHost
+Index: git/Source/WPEFramework/PluginServer.cpp
+===================================================================
+--- git.orig/Source/WPEFramework/PluginServer.cpp
++++ git/Source/WPEFramework/PluginServer.cpp
+@@ -330,21 +330,25 @@ namespace PluginHost
      // Methods to stop/start/update the service.
      /* virtual */ Core::hresult Server::Service::Activate(const PluginHost::IShell::reason why)
      {
 +        std::cout << "akshay inside Server::Service::Activate" << std::endl;
          Core::hresult result = Core::ERROR_NONE;
-+        std::cout << "akshay going for lock" << std::endl;
+-
++        std::cout << "akshay going for lock Service::Activate" << std::endl;
          Lock();
-+        std::cout << "akshay lock acquired" << std::endl;
+-
++        std::cout << "akshay lock acquired Service::Activate" << std::endl;
          IShell::state currentState(State());
  
          if (currentState == IShell::state::ACTIVATION) {
@@ -24,38 +26,50 @@ index 11f19a49a..0a8bbdb46 100644
              result = Core::ERROR_ILLEGAL_STATE;
          } else if (currentState == IShell::state::HIBERNATED) {
              result = Wakeup();
++            std::cout << "akshay unlock and wake up from HIBERNATED" << std::endl;
              Unlock();
-+            std::cout << "akshay unlock and wake up" << std::endl;
          } else if ((currentState == IShell::state::DEACTIVATED) || (currentState == IShell::state::PRECONDITION)) {
  
-             // Load the interfaces, If we did not load them yet...
-@@ -400,8 +406,12 @@ namespace PluginHost
+@@ -402,9 +406,11 @@ namespace PluginHost
                  }
  
                  TRACE(Activity, (_T("Activation plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
+-
 +                std::cout << "akshay Activation plugin [" << className.c_str() << "]:[" << callSign.c_str() << "]" << std::endl;
 +                std::cout << "akshay going for Initialize call from service::activate" << std::endl;
                  _administrator.Initialize(callSign, this);
                  
 +                std::cout << "akshay back from Initialize to service::activate function" << std::endl;
-+
                  State(ACTIVATION);
  
                  Unlock();
-@@ -441,9 +451,12 @@ namespace PluginHost
-                             TRACE(Trace::Error, (_T("Could not open the external connector for %s"), Callsign().c_str()));
+@@ -445,17 +451,24 @@ namespace PluginHost
                          }
                      }
-+                    std::cout << "akshay going for activated syslog" << std::endl;
+ 
++                    std::cout << "akshay going for activated syslog from service::activate" << std::endl;
                      SYSLOG(Logging::Startup, (_T("Activated plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
-+                    std::cout << "akshay back from activated syslog" << std::endl;
++                    std::cout << "akshay back from activated syslog from service::activate" << std::endl;
                      Lock();
                      State(ACTIVATED);
-+                    std::cout << "akshay going for activated method" << std::endl;
++                    std::cout << "akshay going for activated method from service::activate" << std::endl;
                      _administrator.Activated(callSign, this);
++                    std::cout << "akshay back from activated method from service::activate" << std::endl;
  
  #if THUNDER_RESTFULL_API
-@@ -466,6 +479,8 @@ namespace PluginHost
++                    std::cout << "akshay inside if_def going for notification method" << std::endl;
+                     _administrator.Notification(_T("{\"callsign\":\"") + callSign + _T("\",\"state\":\"deactivated\",\"reason\":\"") + textReason.Data() + _T("\"}"));
++                    std::cout << "akshay inside if_def came back from notification method" << std::endl;
+ #endif
+ 
++                    std::cout << "akshay outsidegoing for notification method" << std::endl;
+                     _administrator.Notification(PluginHost::Server::ForwardMessage(callSign, string(_T("{\"state\":\"activated\",\"reason\":\"")) + textReason.Data() + _T("\"}")));
+-
++                    std::cout << "akshay outside back from notification method" << std::endl;
+                     IStateControl* stateControl = nullptr;
+                     if ((Resumed() == true) && ((stateControl = _handler->QueryInterface<PluginHost::IStateControl>()) != nullptr)) {
+ 
+@@ -470,6 +483,8 @@ namespace PluginHost
              Unlock();
          }
  
@@ -64,19 +78,21 @@ index 11f19a49a..0a8bbdb46 100644
          return (result);
      }
  
-@@ -507,8 +522,11 @@ namespace PluginHost
+@@ -511,10 +526,11 @@ namespace PluginHost
  
      /* virtual */ Core::hresult Server::Service::Deactivate(const reason why)
      {
 +        std::cout << "akshay inside Server::Service::Deactivate" << std::endl;
          Core::hresult result = Core::ERROR_NONE;
-+        std::cout << "akshay going for lock" << std::endl;
+-
++        std::cout << "akshay going for lock Service::Deactivate" << std::endl;
          Lock();
-+        std::cout << "akshay lock acquired" << std::endl;
+-
++        std::cout << "akshay lock acquired Service::Deactivate" << std::endl;
          IShell::state currentState(State());
  
          if (currentState == IShell::state::DEACTIVATION) {
-@@ -525,10 +543,12 @@ namespace PluginHost
+@@ -531,11 +547,14 @@ namespace PluginHost
  
              if(currentState == IShell::state::HIBERNATED)
              {
@@ -87,27 +103,43 @@ index 11f19a49a..0a8bbdb46 100644
                      //Force Activated state
 +                    std::cout << "akshay wakeup failed, forcing activated state" << std::endl;
                      State(ACTIVATED);
++                    std::cout << "akshay forced activated state" << std::endl;
                  }
                  currentState = ACTIVATED;
-@@ -542,6 +562,7 @@ namespace PluginHost
+             }
+@@ -548,7 +567,9 @@ namespace PluginHost
  
                  if (currentState == IShell::ACTIVATED) {
                      TRACE(Activity, (_T("Deactivating plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
 +                    std::cout << "akshay Deactivating plugin [" << className.c_str() << "]:[" << callSign.c_str() << "]" << std::endl;
                      _administrator.Deactivated(callSign, this);
++                    std::cout << "akshay back from Deactivated call" << std::endl;
                  }
  
-@@ -568,7 +589,9 @@ namespace PluginHost
+                 // We might require PostMortem analyses if the reason is not really clear. Call the PostMortum installed so it can generate
+@@ -573,15 +594,19 @@ namespace PluginHost
+             }
  
              if (currentState != IShell::state::ACTIVATION) {
- 
-+                std::cout << "akshay going for deactivated syslog" << std::endl;
+-
++                std::cout << "akshay going for deactivated syslog" << std::endl; 
                  SYSLOG(Logging::Shutdown, (_T("Deactivated plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
 +                std::cout << "akshay back from deactivated syslog" << std::endl;
  
  
  #if THUNDER_RESTFULL_API
-@@ -590,6 +613,8 @@ namespace PluginHost
++                std::cout << "akshay inside if_def going for notification method" << std::endl;
+                 _administrator.Notification(_T("{\"callsign\":\"") + callSign + _T("\",\"state\":\"deactivated\",\"reason\":\"") + textReason.Data() + _T("\"}"));
++                std::cout << "akshay inside if_def came back from notification method" << std::endl;
+ #endif
+-
++                std::cout << "akshay outsidegoing for notification method" << std::endl;
+                 _administrator.Notification(PluginHost::Server::ForwardMessage(callSign, string(_T("{\"state\":\"deactivated\",\"reason\":\"")) + textReason.Data() + _T("\"}")));
++                std::cout << "akshay outside back from notification method" << std::endl;
+ 
+             }
+ 
+@@ -596,6 +621,8 @@ namespace PluginHost
  
          Unlock();
  
