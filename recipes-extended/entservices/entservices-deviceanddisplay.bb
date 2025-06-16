@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
           "
 
 # Release version - 3.0.0
-SRCREV = "d8b9ad4e30c93a95ac34f1027a3b7b6d18e991bb"
+SRCREV = "b720db20d6ab6689a20a87da825221ee67bfe397"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -43,7 +43,7 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-INCLUDE_DIRS = " \
+NCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/power-manager \
     -I=${includedir}/WPEFramework/powercontroller \
     "
