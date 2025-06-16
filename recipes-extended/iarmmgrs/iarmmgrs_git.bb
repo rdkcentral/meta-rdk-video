@@ -29,6 +29,7 @@ RDEPENDS:${PN}:append = " devicesettings rfc"
 RDEPENDS:${PN}_client_morty += " virtual/mfrlib"
 RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_mfrlib} devicesettings"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
+DEPENDS += "virtual/vendor-iarmmgrs-hal"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 
