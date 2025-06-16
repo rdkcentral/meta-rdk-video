@@ -56,6 +56,16 @@ index d834e8f5..e68e9e9e 100644
          if (id == Core::IUnknown::ID) {
              AddRef();
              result = static_cast<IUnknown*>(this);
+@@ -332,8 +340,8 @@ namespace PluginHost
+             Unlock();
+             result = Core::ERROR_ILLEGAL_STATE;
+         } else if (currentState == IShell::state::HIBERNATED) {
++            result = Wakeup();
+             Unlock();
+-            result = Wakeup(3000);
+         } else if ((currentState == IShell::state::DEACTIVATED) || (currentState == IShell::state::PRECONDITION)) {
+
+             // Load the interfaces, If we did not load them yet...
 @@ -519,9 +527,7 @@ namespace PluginHost
  
              if(currentState == IShell::state::HIBERNATED)
