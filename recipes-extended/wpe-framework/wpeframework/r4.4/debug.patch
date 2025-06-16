@@ -1,73 +1,118 @@
 diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
-index 04bae6775..96b0e5088 100644
+index 11f19a49a..0a8bbdb46 100644
 --- a/Source/WPEFramework/PluginServer.cpp
 +++ b/Source/WPEFramework/PluginServer.cpp
-@@ -318,22 +330,24 @@ namespace PluginHost
+@@ -330,20 +330,26 @@ namespace PluginHost
      // Methods to stop/start/update the service.
      /* virtual */ Core::hresult Server::Service::Activate(const PluginHost::IShell::reason why)
      {
-+        std::cout << "akshay inside Server::Service::Activate started" << std::endl;
++        std::cout << "akshay inside Server::Service::Activate" << std::endl;
          Core::hresult result = Core::ERROR_NONE;
--
-+        std::cout << "akshay Pluginserver locking" << std::endl;
++        std::cout << "akshay going for lock" << std::endl;
          Lock();
--
-+        std::cout << "akshay Pluginserver locked" << std::endl;
++        std::cout << "akshay lock acquired" << std::endl;
          IShell::state currentState(State());
-
+ 
          if (currentState == IShell::state::ACTIVATION) {
              Unlock();
-+            std::cout << "akshay Server::Service::Activate returning " << result << std::endl;
++            std::cout << "akshay unlock and error inprogress" << std::endl;
              result = Core::ERROR_INPROGRESS;
          }
          else if ((currentState == IShell::state::UNAVAILABLE) || (currentState == IShell::state::DEACTIVATION) || (currentState == IShell::state::DESTROYED) ) {
              Unlock();
++            std::cout << "akshay unlock and error illegal" << std::endl;
              result = Core::ERROR_ILLEGAL_STATE;
          } else if (currentState == IShell::state::HIBERNATED) {
-+            result = Wakeup();
+             result = Wakeup();
              Unlock();
--            result = Wakeup(3000);
++            std::cout << "akshay unlock and wake up" << std::endl;
          } else if ((currentState == IShell::state::DEACTIVATED) || (currentState == IShell::state::PRECONDITION)) {
-
+ 
              // Load the interfaces, If we did not load them yet...
-@@ -383,6 +397,7 @@ namespace PluginHost
-
-             } else {
-
-+                std::cout << "akshay Pluginserver else " << std::endl;
-                 // Before we dive into the "new" initialize lets see if this has a pending OOP running, if so forcefully kill it now, no time to wait !
-                 if (_lastId != 0) {
-                     _administrator.Destroy(_lastId);
-@@ -390,7 +405,7 @@ namespace PluginHost
+@@ -400,8 +406,12 @@ namespace PluginHost
                  }
-
+ 
                  TRACE(Activity, (_T("Activation plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
--
-+                std::cout << "akshay calling Initialize" << std::endl;
++                std::cout << "akshay Activation plugin [" << className.c_str() << "]:[" << callSign.c_str() << "]" << std::endl;
++                std::cout << "akshay going for Initialize call from service::activate" << std::endl;
                  _administrator.Initialize(callSign, this);
+                 
++                std::cout << "akshay back from Initialize to service::activate function" << std::endl;
++
                  State(ACTIVATION);
-@@ -432,7 +447,7 @@ namespace PluginHost
+ 
+                 Unlock();
+@@ -441,9 +451,12 @@ namespace PluginHost
                              TRACE(Trace::Error, (_T("Could not open the external connector for %s"), Callsign().c_str()));
                          }
                      }
--
-+                    std::cout << "akshay plugin activated " << std::endl;
++                    std::cout << "akshay going for activated syslog" << std::endl;
                      SYSLOG(Logging::Startup, (_T("Activated plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
++                    std::cout << "akshay back from activated syslog" << std::endl;
                      Lock();
                      State(ACTIVATED);
-@@ -499,10 +514,11 @@ namespace PluginHost
-
++                    std::cout << "akshay going for activated method" << std::endl;
+                     _administrator.Activated(callSign, this);
+ 
+ #if THUNDER_RESTFULL_API
+@@ -466,6 +479,8 @@ namespace PluginHost
+             Unlock();
+         }
+ 
++        std::cout << "akshay returning from service::activate" << std::endl;
++        std::cout << "akshay service::activate result is " << result << std::endl;
+         return (result);
+     }
+ 
+@@ -507,8 +522,11 @@ namespace PluginHost
+ 
      /* virtual */ Core::hresult Server::Service::Deactivate(const reason why)
      {
-+        std::cout << "akshay inside Server::Service::Deactivate started" << std::endl;
++        std::cout << "akshay inside Server::Service::Deactivate" << std::endl;
          Core::hresult result = Core::ERROR_NONE;
--
-+        std::cout << "akshay Pluginserver going lock" << std::endl;
++        std::cout << "akshay going for lock" << std::endl;
          Lock();
--
-+        std::cout << "akshay Pluginserver locked" << std::endl;
++        std::cout << "akshay lock acquired" << std::endl;
          IShell::state currentState(State());
-
+ 
          if (currentState == IShell::state::DEACTIVATION) {
-
-
+@@ -525,10 +543,12 @@ namespace PluginHost
+ 
+             if(currentState == IShell::state::HIBERNATED)
+             {
++                std::cout << "akshay inside hibernated state" << std::endl;
+                 uint32_t wakeupResult = Wakeup(3000);
+                 if(wakeupResult != Core::ERROR_NONE)
+                 {
+                     //Force Activated state
++                    std::cout << "akshay wakeup failed, forcing activated state" << std::endl;
+                     State(ACTIVATED);
+                 }
+                 currentState = ACTIVATED;
+@@ -542,6 +562,7 @@ namespace PluginHost
+ 
+                 if (currentState == IShell::ACTIVATED) {
+                     TRACE(Activity, (_T("Deactivating plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
++                    std::cout << "akshay Deactivating plugin [" << className.c_str() << "]:[" << callSign.c_str() << "]" << std::endl;
+                     _administrator.Deactivated(callSign, this);
+                 }
+ 
+@@ -568,7 +589,9 @@ namespace PluginHost
+ 
+             if (currentState != IShell::state::ACTIVATION) {
+ 
++                std::cout << "akshay going for deactivated syslog" << std::endl;
+                 SYSLOG(Logging::Shutdown, (_T("Deactivated plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
++                std::cout << "akshay back from deactivated syslog" << std::endl;
+ 
+ 
+ #if THUNDER_RESTFULL_API
+@@ -590,6 +613,8 @@ namespace PluginHost
+ 
+         Unlock();
+ 
++        std::cout << "akshay returning from service::deactivate" << std::endl;
++        std::cout << "akshay service::deactivate result is " << result << std::endl;
+         return (result);
+     }
+ 
