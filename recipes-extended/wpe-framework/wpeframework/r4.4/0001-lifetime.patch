@@ -1,0 +1,38 @@
+Index: git/Source/WPEFramework/PluginServer.h
+===================================================================
+--- git.orig/Source/WPEFramework/PluginServer.h
++++ git/Source/WPEFramework/PluginServer.h
+@@ -2958,22 +2958,30 @@ POP_WARNING()
+             {
+                 return (reinterpret_cast<ISubSystem*>(_subSystems.QueryInterface(ISubSystem::ID)));
+             }
+-            void Initialize(const string& callsign, PluginHost::IShell* entry)
++           void Initialize(const string& callsign, PluginHost::IShell* entry)
+             {
++                std::cout << "akshay at start ServiceMap::Initialize: " << callsign << std::endl;
+                 _notificationLock.Lock();
+ 
+                 Notifiers::iterator index(_notifiers.begin());
+ 
++                std::cout << "akshay before entering while loop ServiceMap::Initialize: " << callsign << std::endl;
+                 while (index != _notifiers.end()) {
++                    std::cout << "akshay inside while loop and before QueryInterface call ServiceMap::Initialize: " << callsign << std::endl;
+                     PluginHost::IPlugin::ILifeTime* lifetime = (*index)->QueryInterface<PluginHost::IPlugin::ILifeTime>();
++                    std::cout << "akshay after QueryInterface call ServiceMap::Initialize: " << callsign << std::endl;
+                     if (lifetime != nullptr) {
++                        std::cout << "akshay inside if loop and before Initialize call ServiceMap::Initialize: " << callsign << std::endl;
+                         lifetime->Initialize(callsign, entry);
++                        std::cout << "akshay after Initialize call ServiceMap::Initialize: if condition" << callsign << std::endl;
+                         lifetime->Release();
++                        std::cout << "akshay after release call ServiceMap::Initialize: if condition" << callsign << std::endl;
+                     }
+                     index++;
+                 }
+-
++                std::cout << "akshay after while loop ServiceMap::Initialize: " << callsign << std::endl;
+                 _notificationLock.Unlock();
++                std::cout << "akshay at end of ServiceMap::Initialize: " << callsign << std::endl;
+             }
+             void Activated(const string& callsign, PluginHost::IShell* entry)
+             {
+

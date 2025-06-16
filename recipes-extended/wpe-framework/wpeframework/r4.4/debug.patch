@@ -30,7 +30,7 @@ Index: git/Source/WPEFramework/PluginServer.cpp
              Unlock();
          } else if ((currentState == IShell::state::DEACTIVATED) || (currentState == IShell::state::PRECONDITION)) {
  
-@@ -402,9 +406,11 @@ namespace PluginHost
+@@ -402,15 +406,17 @@ namespace PluginHost
                  }
  
                  TRACE(Activity, (_T("Activation plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
@@ -43,6 +43,14 @@ Index: git/Source/WPEFramework/PluginServer.cpp
                  State(ACTIVATION);
  
                  Unlock();
+-
++                std::cout << "akshay actual calling plugin initialize" << std::endl;
+                 REPORT_DURATION_WARNING( { ErrorMessage(_handler->Initialize(this)); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::ACTIVATION, callSign.c_str());
+-
++                std::cout << "akshay back from actual plugin initialize call" << std::endl;
+                 if (HasError() == true) {
+                     result = Core::ERROR_GENERAL;
+ 
 @@ -445,17 +451,24 @@ namespace PluginHost
                          }
                      }
@@ -147,4 +155,3 @@ Index: git/Source/WPEFramework/PluginServer.cpp
 +        std::cout << "akshay service::deactivate result is " << result << std::endl;
          return (result);
      }
- 
