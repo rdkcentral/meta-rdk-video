@@ -254,13 +254,14 @@ do_compile:append() {
 do_install:append(){
     if ${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', 'true', 'false', d)}; then
         install -m 0755 ${S}/mfr/test_mfr/test_mfr_client ${D}${bindir}
+        install -m 0755 ${S}/mfr/test_mfr/mfr_wifiSetCredentials ${D}${bindir}
+        install -m 0755 ${S}/mfr/test_mfr/mfr_wifiGetCredentials ${D}${bindir}
     fi
         install -m 0755 ${S}/test/test_pwrMgr ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_scrubAllBanks ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_deletePDRI ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiEraseAllData ${D}${bindir}
-        install -m 0755 ${S}/mfr/test_mfr/mfr_wifiSetCredentials ${D}${bindir}
-        install -m 0755 ${S}/mfr/test_mfr/mfr_wifiGetCredentials ${D}${bindir}
+        
 
        sed -i "/Type=notify/aEnvironment="RDK_DEEPSLEEP_WAKEUP_ON_POWER_BUTTON=1"" ${D}${systemd_unitdir}/system/pwrmgr.service
        sed -i "/ExecStart=.*/aExecStop=/bin/touch /tmp/pwrmgr_restarted" ${D}${systemd_unitdir}/system/pwrmgr.service
