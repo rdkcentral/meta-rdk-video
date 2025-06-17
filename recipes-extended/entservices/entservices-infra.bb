@@ -59,7 +59,6 @@ PACKAGECONFIG ?= " monitor \
     usbdevice \
     usbmass_storage \
     usersettings \
-    analytics \
     ocicontainer \
     runtimemanager \
     messagecontrol \
@@ -119,7 +118,7 @@ PACKAGECONFIG[usbaccess]            = "-DPLUGIN_USBACCESS=ON,-DPLUGIN_USBACCESS=
 PACKAGECONFIG[usbdevice]         = "-DPLUGIN_USBDEVICE=ON,-DPLUGIN_USBDEVICE=OFF,libusb1"
 PACKAGECONFIG[usbmass_storage]         = "-DPLUGIN_USB_MASS_STORAGE=ON,-DPLUGIN_USB_MASS_STORAGE=OFF,"
 PACKAGECONFIG[usersettings]         = "-DPLUGIN_USERSETTINGS=ON,-DPLUGIN_USERSETTINGS=OFF,"
-PACKAGECONFIG[analytics]            = "-DPLUGIN_ANALYTICS=ON -DPLUGIN_ANALYTICS_SIFT_BACKEND=ON,-DPLUGIN_ANALYTICS=OFF,curl entservices-apis,curl entservices-apis"
+PACKAGECONFIG[analytics]            = "-DPLUGIN_ANALYTICS=ON,-DPLUGIN_ANALYTICS=OFF, entservices-apis, entservices-apis"
 PACKAGECONFIG[rdkshell]             = "-DPLUGIN_RDKSHELL=ON,-DPLUGIN_RDKSHELL=OFF,rdkshell entservices-apis,rdkshell entservices-apis"
 PACKAGECONFIG[rdkshellrialto]       = "-DRIALTO_FEATURE=ON,-DRIALTO_FEATURE=OFF,rialto,rialto-servermanager-lib"
 PACKAGECONFIG[rustadapter]          = "-DPLUGIN_RUSTADAPTER=ON,,,"
