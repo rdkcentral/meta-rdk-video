@@ -8,10 +8,10 @@ include recipes-extended/wpe-framework/include/wpeframework-plugins.inc
 DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native rdkservices-apis"
 DEPENDS += "  gst-svp-ext gstreamer1.0"
 
-#platform specific dependency
-DEPENDS += " ${@bb.utils.contains_any('DISTRO_FEATURES', 'amlogic-va amlogic-tv-va', " aml-secmem optee-userspace playready", '', d)}"
-DEPENDS += " ${@bb.utils.contains('DISTRO_FEATURES', 'broadcom-va', ' broadcom-refsw', '', d)}"
-DEPENDS += " ${@bb.utils.contains('DISTRO_FEATURES', 'realtek-va', ' openssl playready', '', d)}"
+# Platform configurations
+DEPENDS += " ${platform-playready-depends}"
+EXTRA_OECMAKE += " ${platform-playready-flags}"
+RDEPENDS:${PN} += " ${platform-playready-rdepends}"
 
 RDEPENDS_${PN} += " gst-svp-ext"
 
@@ -30,14 +30,6 @@ SRC_URI = "git://github.com/rdkcentral/playready-rdk.git;${CMF_GITHUB_SRC_URI_SU
 WPEFRAMEWORK_PERSISTENT_PATH := "${@bb.utils.contains('DISTRO_FEATURES', 'DOBBY_CONTAINERS', '/opt/persistent/rdkservices/', '/data/persistent/', d)}"
 EXTRA_OECMAKE += " -DPERSISTENT_PATH=${WPEFRAMEWORK_PERSISTENT_PATH} "
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', ' -DCMAKE_SYSTEMD_JOURNAL=1', '', d)}"
-EXTRA_OECMAKE += "-DNO_PERSISTENT_LICENSE_CHECK=ON"
-
-#platform specific flags
-EXTRA_OECMAKE += " ${@bb.utils.contains_any('DISTRO_FEATURES', 'amlogic-va amlogic-tv-va', '-DPLAYREADY_AMLOGIC=ENABLED', '', d)}"
-EXTRA_OECMAKE += " ${@bb.utils.contains('DISTRO_FEATURES', 'realtek-va', '-DPLAYREADY_REALTEK=ENABLED', '', d)}"
-EXTRA_OECMAKE += " ${@bb.utils.contains('DISTRO_FEATURES', 'broadcom-va', '-DNEXUS_PLAYREADY_SVP_ENABLE=ON -DEXPORT_SYMBOLS=ON -DPLAYREADY_BROADCOM=ENABLED -DDRM_ANTI_ROLLBACK_CLOCK_SUPPORT=ON', '', d)}"
-EXTRA_OECMAKE += " ${@bb.utils.contains_any('DISTRO_FEATURES', 'amlogic-va amlogic-tv-va', '-DUSE_PLAYREADY_CMAKE=1 -DTEE_CONFIG_NEED=ON -DDRM_ERROR_NAME_SUPPORT=ON', '', d)}"
-
 
 do_install:append() {
     install --mode=0755 -d ${D}/usr/include/playready
