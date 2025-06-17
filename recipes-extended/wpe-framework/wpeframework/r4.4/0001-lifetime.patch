@@ -2,7 +2,7 @@ Index: git/Source/WPEFramework/PluginServer.h
 ===================================================================
 --- git.orig/Source/WPEFramework/PluginServer.h
 +++ git/Source/WPEFramework/PluginServer.h
-@@ -2958,22 +2958,30 @@ POP_WARNING()
+@@ -2958,35 +2958,47 @@ POP_WARNING()
              {
                  return (reinterpret_cast<ISubSystem*>(_subSystems.QueryInterface(ISubSystem::ID)));
              }
@@ -35,4 +35,23 @@ Index: git/Source/WPEFramework/PluginServer.h
              }
              void Activated(const string& callsign, PluginHost::IShell* entry)
              {
-
++                std::cout << "akshay at start ServiceMap::Activated: " << callsign << std::endl;
+                 _notificationLock.Lock();
+-
++                std::cout << "akshay after lock ServiceMap::Activated: " << callsign << std::endl;
+                 Notifiers::iterator index(_notifiers.begin());
+-
++                std::cout << "akshay before entering while loop ServiceMap::Activated: " << callsign << std::endl;
+                 while (index != _notifiers.end()) {
++                    std::cout << "akshay inside while loop and before Activated call ServiceMap::Activated: " << callsign << std::endl;
+                     (*index)->Activated(callsign, entry);
+                     index++;
++                    std::cout << "akshay after Activated call ServiceMap::Activated: " << callsign << std::endl;
+                 }
+-
++                std::cout << "akshay exited while loop ServiceMap::Activated: " << callsign << std::endl;
+                 _notificationLock.Unlock();
++                std::cout << "akshay at end of ServiceMap::Activated: " << callsign << std::endl;
+             }
+             void Deactivated(const string& callsign, PluginHost::IShell* entry)
+             {
