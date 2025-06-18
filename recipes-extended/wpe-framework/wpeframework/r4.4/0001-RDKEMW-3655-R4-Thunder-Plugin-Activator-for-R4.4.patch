@@ -60,7 +60,7 @@ index 00000000..5f88d771
 +    RUNTIME DESTINATION bin
 +)
 diff --git a/Utils/PluginActivator/source/COMRPCStarter.cpp b/Utils/PluginActivator/source/COMRPCStarter.cpp
-index f2d27ed4..d2cebf67 100644
+index f2d27ed4..21f7f74a 100644
 --- a/Utils/PluginActivator/source/COMRPCStarter.cpp
 +++ b/Utils/PluginActivator/source/COMRPCStarter.cpp
 @@ -49,6 +49,8 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
@@ -72,7 +72,7 @@ index f2d27ed4..d2cebf67 100644
  
      while (!success && currentRetry <= maxRetries) {
          LOG_INF(_pluginName.c_str(), "Attempting to activate plugin - attempt %d/%d", currentRetry, maxRetries);
-@@ -73,9 +75,16 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -73,9 +75,19 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
              // Sleep, then try again
              std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
          } else {
@@ -85,13 +85,16 @@ index f2d27ed4..d2cebf67 100644
 +            } else{
 +	            LOG_INF(_pluginName.c_str(), "Register to state change activate plugin Failed result_changestate_notify=%u",result_changestate_notify);
 +            }
++	    
++	    LOG_INF(_pluginName.c_str(), "HRB Before PluginActivator Calling lifetime->Activate plugin");
 +    	    uint32_t result = lifetime->Activate(_pluginName.c_str());
++	    LOG_INF(_pluginName.c_str(), "HRB After Plugin Activator Calling lifetime->Activate plugin");
  
 +            LOG_INF(_pluginName.c_str(), "After activate plugin");
              auto duration = Core::Time::Now().Sub(start.MilliSeconds());
  
              if (result != Core::ERROR_NONE) {
-@@ -91,7 +100,13 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
+@@ -91,7 +103,13 @@ bool COMRPCStarter::activatePlugin(const uint8_t maxRetries, const uint16_t retr
                  std::this_thread::sleep_for(std::chrono::milliseconds(retryDelayMs));
              } else {
                  // Our work here is done!
@@ -286,4 +289,32 @@ index 00000000..8d20570c
 +{
 +    void *temp;
 +    return temp;
++}
+diff --git a/Utils/PluginActivator/source/main.cpp b/Utils/PluginActivator/source/main.cpp
+index fa1ac9dd..379762fd 100644
+--- a/Utils/PluginActivator/source/main.cpp
++++ b/Utils/PluginActivator/source/main.cpp
+@@ -19,6 +19,7 @@
+ 
+ #include "COMRPCStarter.h"
+ #include "Module.h"
++#include "Log.h"
+ 
+ #include <memory>
+ 
+@@ -122,11 +123,13 @@ int main(int argc, char* argv[])
+     // in the future
+     bool success;
+     std::unique_ptr<IPluginStarter> starter(new COMRPCStarter(gPluginName));
++    LOG_INF(gPluginName.c_str(), "HRB Main - Starting Plugin Activator");
+     success = starter->activatePlugin(gRetryCount, gRetryDelayMs);
++    LOG_INF(gPluginName.c_str(), "HRB Main - Exit");
+ 
+     // Destruct the COM-RPC starter so it cleans up after itself before we dispose WPEFramework singletons
+     starter.reset();
+     Core::Singleton::Dispose();
+ 
+     return success ? EXIT_SUCCESS : EXIT_FAILURE;
+-}
+\ No newline at end of file
 +}
