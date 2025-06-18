@@ -4,8 +4,8 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS += " gstreamer1.0 gstreamer1.0-plugins-base virtual/vendor-audio-service "
-DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform"
-RDEPENDS:${PN}:append = " gstreamer1.0 virtual/vendor-rdk-gstreamer-utils-platform"
+DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform playready-cdm-rdk "
+RDEPENDS:${PN}:append = " gstreamer1.0 virtual/vendor-rdk-gstreamer-utils-platform playready-cdm-rdk "
 AUDIOMIXER_NOT_SUPPORTED = "${@bb.utils.contains('DISTRO_FEATURES', 'disable_audio_mixer', "true", "", d)}"
 EXTRA_OECMAKE += " \
     -DAUDIOMIXER_NOT_SUPPORTED=${AUDIOMIXER_NOT_SUPPORTED} \
