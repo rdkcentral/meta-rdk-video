@@ -1,0 +1,165 @@
+From c85d7a6c4883c9f413961fbd1a04a941daa8ed4d Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Wed, 4 Jun 2025 12:21:28 +0200
+Subject: [PATCH] comcast - Add cencparse element before thunder decrypt
+
+Signed-off-by: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+---
+ .../mse/WebKitMediaSourceGStreamer.cpp        | 73 +++++++++++++++----
+ 1 file changed, 60 insertions(+), 13 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+index fcb35486d0c2..187b94d9c987 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+@@ -364,13 +364,54 @@ struct _DecryptorProbeData
+     WebKitMediaSrc* parent;
+     GRefPtr<GstElement> decryptor;
+     GRefPtr<GstElement> payloader;
++    GRefPtr<GstElement> secureParser;
+     bool decryptorAttached { false };
+     bool didTryCreatePayloader { false };
+     bool payloaderAttached { false };
++    bool didTryCreateSecureParser { false };
+     bool didFail { false };
+     WTF_MAKE_NONCOPYABLE(_DecryptorProbeData);
+ };
+ 
++void tryAttachingSecureParser(GstPad* pad, GstCaps* caps, DecryptorProbeData* probData)
++{
++    ASSERT(pad);
++    ASSERT(caps);
++
++    // Secure parser is required only for h264 and h265 video streams.
++    if (!WebCore::doCapsHaveType(caps, "video/x-h264") && !WebCore::doCapsHaveType(caps, "video/x-h265"))
++        return;
++
++    const char* secureParserElementName = "cencparser";
++    GRefPtr<GstElementFactory> secureParserFactory = adoptGRef(gst_element_factory_find(secureParserElementName));
++    if (!secureParserFactory) {
++        return;
++    }
++    GST_DEBUG("Found secure parser element '%s'", secureParserElementName);
++    probData->secureParser = gst_element_factory_create(secureParserFactory.get(), nullptr);
++    if (!probData->secureParser) {
++        GST_DEBUG("Failed to create secure parser element '%s'", secureParserElementName);
++        return;
++    }
++    GRefPtr<GstBin> parent_bin = adoptGRef(GST_BIN(gst_element_get_parent(probData->parent)));
++    gst_bin_add(parent_bin.get(), probData->secureParser.get());
++    gst_element_sync_state_with_parent(probData->secureParser.get());
++    GRefPtr<GstPad> secureParserSinkPad = adoptGRef(gst_element_get_static_pad(probData->secureParser.get(), "sink"));
++    GRefPtr<GstPad> secureParserSrcPad = adoptGRef(gst_element_get_static_pad(probData->secureParser.get(), "src"));
++    GstPadLinkReturn rc;
++    GRefPtr<GstPad> peerPad = adoptGRef(gst_pad_get_peer(pad));
++    if (!gst_pad_unlink(pad, peerPad.get()))
++        GST_ERROR("Failed to unlink '%s' src pad", GST_PAD_NAME(pad));
++    else if (GST_PAD_LINK_OK != (rc = gst_pad_link_full(pad, secureParserSinkPad.get(), GST_PAD_LINK_CHECK_NOTHING)))
++        GST_ERROR("Failed to link pad to secureParserSinkPad, rc = %d", rc);
++    else if (GST_PAD_LINK_OK != (rc = gst_pad_link_full(secureParserSrcPad.get(), peerPad.get(), GST_PAD_LINK_CHECK_NOTHING)))
++        GST_ERROR("Failed to link secureParserSrcPad to app sink, rc = %d", rc);
++
++    GST_INFO("element %s added to %s for pad %s",
++             GST_ELEMENT_NAME(probData->secureParser.get()),
++             GST_ELEMENT_NAME(parent_bin.get()), GST_PAD_NAME(pad));
++}
++
+ GstPadProbeReturn onWebKitMediaSourcePadEvent(GstPad* pad, GstPadProbeInfo* info, gpointer data)
+ {
+     if (!(GST_PAD_PROBE_INFO_TYPE (info) & GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM))
+@@ -390,6 +431,11 @@ GstPadProbeReturn onWebKitMediaSourcePadEvent(GstPad* pad, GstPadProbeInfo* info
+     if (!caps)
+         return GST_PAD_PROBE_OK;
+ 
++    if (!probData->didTryCreateSecureParser) {
++        probData->didTryCreateSecureParser = true;
++        tryAttachingSecureParser(pad, caps, probData);
++    }
++
+     // urisourcebin > webkitmediasrc > pad
+     GRefPtr<GstBin> parent_bin = adoptGRef(GST_BIN(gst_element_get_parent(probData->parent)));
+ 
+@@ -397,6 +443,10 @@ GstPadProbeReturn onWebKitMediaSourcePadEvent(GstPad* pad, GstPadProbeInfo* info
+     bool decryptorAttached = decryptor && probData->decryptorAttached;
+     GstElement* payloader = probData->payloader.get();
+     bool payloaderAttached = payloader && probData->payloaderAttached;
++    GRefPtr<GstPad> srcPad = pad;
++    if (probData->secureParser) {
++        srcPad = adoptGRef(gst_element_get_static_pad(probData->secureParser.get(), "src"));
++    }
+ 
+     if (probData->didTryCreatePayloader == false)
+     {
+@@ -445,10 +495,9 @@ GstPadProbeReturn onWebKitMediaSourcePadEvent(GstPad* pad, GstPadProbeInfo* info
+ 
+         GRefPtr<GstPad> decryptorSinkPad = adoptGRef(gst_element_get_static_pad(decryptor, "sink"));
+         GRefPtr<GstPad> decryptorSrcPad = adoptGRef(gst_element_get_static_pad(decryptor, "src"));
+-        GstPad *srcPad = pad;
+         GstPadLinkReturn rc;
+ 
+-        GRefPtr<GstPad> peerPad = adoptGRef(gst_pad_get_peer(srcPad));
++        GRefPtr<GstPad> peerPad = adoptGRef(gst_pad_get_peer(srcPad.get()));
+ 
+         if(payloader && !payloaderAttached){
+             GRefPtr<GstPad> payloaderSinkPad = adoptGRef(gst_element_get_static_pad(payloader, "sink"));
+@@ -457,9 +506,9 @@ GstPadProbeReturn onWebKitMediaSourcePadEvent(GstPad* pad, GstPadProbeInfo* info
+             // Insert decryptor and payloader between mediasrc and the decodebin
+             gst_element_sync_state_with_parent(payloader);
+ 
+-            if (!gst_pad_unlink(srcPad, peerPad.get()))
++            if (!gst_pad_unlink(srcPad.get(), peerPad.get()))
+                 GST_ERROR("Failed to unlink '%s' src pad", GST_PAD_NAME(pad));
+-            else if (GST_PAD_LINK_OK != (rc = gst_pad_link_full(srcPad, decryptorSinkPad.get(), GST_PAD_LINK_CHECK_NOTHING)))
++            else if (GST_PAD_LINK_OK != (rc = gst_pad_link_full(srcPad.get(), decryptorSinkPad.get(), GST_PAD_LINK_CHECK_NOTHING)))
+                 GST_ERROR("Failed to link pad to decryptorSinkPad, rc = %d", rc);
+             else if (GST_PAD_LINK_OK != (rc = gst_pad_link(decryptorSrcPad.get(), payloaderSinkPad.get())))
+                 GST_ERROR("Failed to link decryptorSrcPad to payloader sinkpad, rc = %d", rc);
+@@ -469,9 +518,9 @@ GstPadProbeReturn onWebKitMediaSourcePadEvent(GstPad* pad, GstPadProbeInfo* info
+             probData->payloaderAttached = true;
+         } else {
+             // Insert decryptor between mediasrc and the decodebin or the payloader
+-            if (!gst_pad_unlink(srcPad, peerPad.get()))
++            if (!gst_pad_unlink(srcPad.get(), peerPad.get()))
+                 GST_ERROR("Failed to unlink '%s' src pad", GST_PAD_NAME(pad));
+-            else if (GST_PAD_LINK_OK != (rc = gst_pad_link_full(srcPad, decryptorSinkPad.get(), GST_PAD_LINK_CHECK_NOTHING)))
++            else if (GST_PAD_LINK_OK != (rc = gst_pad_link_full(srcPad.get(), decryptorSinkPad.get(), GST_PAD_LINK_CHECK_NOTHING)))
+                 GST_ERROR("Failed to link pad to decryptorSinkPad, rc = %d", rc);
+             else if (GST_PAD_LINK_OK != (rc = gst_pad_link(decryptorSrcPad.get(), peerPad.get())))
+                 GST_ERROR("Failed to link decryptorSrcPad to app sink, rc = %d", rc);
+@@ -484,14 +533,13 @@ GstPadProbeReturn onWebKitMediaSourcePadEvent(GstPad* pad, GstPadProbeInfo* info
+         GRefPtr<GstPad> decryptorSinkPad = adoptGRef(gst_element_get_static_pad(decryptor, "sink"));
+         GRefPtr<GstPad> decryptorSrcPad = adoptGRef(gst_element_get_static_pad(decryptor, "src"));
+         GRefPtr<GstPad> peerPad = adoptGRef(gst_pad_get_peer(decryptorSrcPad.get()));
+-        GstPad *srcPad = pad;
+         GstPadLinkReturn rc;
+ 
+         if (!gst_pad_unlink(decryptorSrcPad.get(), peerPad.get()))
+             GST_ERROR("Failed to unlink decryptorSrcPad");
+-        else if (!gst_pad_unlink(srcPad, decryptorSinkPad.get()))
++        else if (!gst_pad_unlink(srcPad.get(), decryptorSinkPad.get()))
+             GST_ERROR("Failed to unlink decryptorSinkPad");
+-        else if (GST_PAD_LINK_OK != (rc = gst_pad_link(srcPad, peerPad.get())))
++        else if (GST_PAD_LINK_OK != (rc = gst_pad_link(srcPad.get(), peerPad.get())))
+             GST_ERROR("Failed to link '%s' to peer pad, rc = %d", GST_PAD_NAME(pad), rc);
+ 
+         probData->decryptorAttached = false;
+@@ -502,13 +550,12 @@ GstPadProbeReturn onWebKitMediaSourcePadEvent(GstPad* pad, GstPadProbeInfo* info
+ 
+         GRefPtr<GstPad> payloaderSinkPad = adoptGRef(gst_element_get_static_pad(payloader, "sink"));
+         GRefPtr<GstPad> payloaderSrcPad = adoptGRef(gst_element_get_static_pad(payloader, "src"));
+-        GstPad *srcPad = pad;
+-        GRefPtr<GstPad> peerPad = adoptGRef(gst_pad_get_peer(srcPad));
++        GRefPtr<GstPad> peerPad = adoptGRef(gst_pad_get_peer(srcPad.get()));
+         GstPadLinkReturn rc;
+ 
+-        if (!gst_pad_unlink(srcPad, peerPad.get()))
++        if (!gst_pad_unlink(srcPad.get(), peerPad.get()))
+             GST_ERROR("Failed to unlink '%s' src pad", GST_PAD_NAME(pad));
+-        else if (GST_PAD_LINK_OK != (rc = gst_pad_link(srcPad, payloaderSinkPad.get())))
++        else if (GST_PAD_LINK_OK != (rc = gst_pad_link(srcPad.get(), payloaderSinkPad.get())))
+             GST_ERROR("Failed to link pad to payloaderSinkPad, rc = %d", rc);
+         else if (GST_PAD_LINK_OK != (rc = gst_pad_link(payloaderSrcPad.get(), peerPad.get())))
+             GST_ERROR("Failed to link payloaderSrcPad to app sink, rc = %d", rc);
+-- 
+2.48.1
+
