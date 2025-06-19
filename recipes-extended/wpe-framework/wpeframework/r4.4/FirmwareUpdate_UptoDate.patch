@@ -1,0 +1,63 @@
+From 8532d3be8eb9a7261dfb90b72c2ee41a1acf1637 Mon Sep 17 00:00:00 2001
+From: ramkumarpraba <Ramkumar_Prabaharan@comcast.com>
+Date: Fri, 30 May 2025 10:10:54 +0000
+Subject: [PATCH] RDKEMW-4719 Return an error message for firmware upto date
+ validation
+
+Reason for change: Return an error message for firmware upto date validation
+Test Procedure: verify build success and basic test
+Risks: Low
+Priority: P1
+Signed-off-by: ramkumar_prabaharan@comcast.com
+---
+ Source/WPEFramework/PluginServer.h | 4 ++++
+ Source/core/JSONRPC.h              | 3 +++
+ Source/core/Portability.h          | 3 ++-
+ 3 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index bc236e75e..0c22b254a 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -1561,6 +1561,10 @@ namespace PluginHost {
+                                 response->Error.SetError(Core::ERROR_FIRMWAREUPDATE_INPROGRESS);
+                                 response->Error.Text = _T("Firmware update already in progress");
+                                 break;
++                            case Core::ERROR_FIRMWAREUPDATE_UPTODATE:
++                                response->Error.SetError(Core::ERROR_FIRMWAREUPDATE_UPTODATE);
++                                response->Error.Text = _T("Firmware is already upto date");
++                                break;
+                             case static_cast<uint32_t>(~0):
+                                 response.Release();
+                                 break;
+diff --git a/Source/core/JSONRPC.h b/Source/core/JSONRPC.h
+index 5fcef161d..dc9f21521 100644
+--- a/Source/core/JSONRPC.h
++++ b/Source/core/JSONRPC.h
+@@ -107,6 +107,9 @@ namespace Core {
+                     case Core::ERROR_FIRMWAREUPDATE_INPROGRESS:
+                         Code = -32003; // Firmware update inprogress
+                         break;
++                    case Core::ERROR_FIRMWAREUPDATE_UPTODATE:
++                        Code = -32004; // Firmware upto date
++                        break;
+                     default:
+                         Code = static_cast<int32_t>(frameworkError);
+                         break;
+diff --git a/Source/core/Portability.h b/Source/core/Portability.h
+index aa50b4fb7..1bc3f987d 100644
+--- a/Source/core/Portability.h
++++ b/Source/core/Portability.h
+@@ -879,7 +879,8 @@ namespace Core {
+         ERROR_CODE(ERROR_INVALID_PARAMETER, 54) \
+         ERROR_CODE(ERROR_INVALID_DEVICENAME, 59) \
+         ERROR_CODE(ERROR_INVALID_MOUNTPOINT, 60) \
+-        ERROR_CODE(ERROR_FIRMWAREUPDATE_INPROGRESS,61)
++        ERROR_CODE(ERROR_FIRMWAREUPDATE_INPROGRESS,61) \
++        ERROR_CODE(ERROR_FIRMWAREUPDATE_UPTODATE,62)
+ 
+     #define ERROR_CODE(CODE, VALUE) CODE = VALUE,
+ 
+-- 
+2.25.1
+
