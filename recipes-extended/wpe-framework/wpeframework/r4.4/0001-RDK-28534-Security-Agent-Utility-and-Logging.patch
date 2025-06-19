@@ -5,7 +5,6 @@ Upstream-Status: Pending
 Signed-off-by: Anand Kandasamy <Anand_Kandasamy@comcast.com>
 ---
  Source/WPEFramework/CMakeLists.txt   |  5 +++
- Source/WPEFramework/Controller.cpp   |  3 ++
  Source/WPEFramework/PluginServer.cpp | 19 +++++++++
  Source/WPEFramework/PluginServer.h   | 60 ++++++++++++++++++++++++----
  cmake/modules/FindRFC.cmake          | 23 +++++++++++
@@ -41,21 +40,7 @@ index 3ad0321f..fdef8c3c 100644
 +          ${RFC_LIBRARIES}
            Threads::Threads
          )
-         
-diff --git a/Source/WPEFramework/Controller.cpp b/Source/WPEFramework/Controller.cpp
-index 15cc523c..6d7d9a93 100644
---- a/Source/WPEFramework/Controller.cpp
-+++ b/Source/WPEFramework/Controller.cpp
-@@ -550,6 +550,9 @@ namespace Plugin {
-                     if (callSign == _service->Callsign()) {
-                         result->ErrorCode = Web::STATUS_FORBIDDEN;
-                         result->Message = _T("The PluginHost Controller can not be deactivated.");
-+                    } else if (callSign == _T("SecurityAgent")) {
-+                        result->ErrorCode = Web::STATUS_FORBIDDEN;
-+                        result->Message = _T("SecurityAgent plugin can not be deactivated.");
-                     } else {
-                         Core::ProxyType<PluginHost::Server::Service> pluginInfo(FromIdentifier(callSign));
- 
+          
 diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
 index 04bae677..d834e8f5 100644
 --- a/Source/WPEFramework/PluginServer.cpp
