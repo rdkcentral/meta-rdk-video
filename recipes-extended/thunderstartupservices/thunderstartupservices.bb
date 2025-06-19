@@ -23,7 +23,6 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-frontpanel.service \
     wpeframework-hdcpprofile.service \
     wpeframework-maintenancemanager.service \
-    wpeframework-monitor.service \
     wpeframework-network.service \
     wpeframework-ocdm.service \
     wpeframework-persistentstore.service \
