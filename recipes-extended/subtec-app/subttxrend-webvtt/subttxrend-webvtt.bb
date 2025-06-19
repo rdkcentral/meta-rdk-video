@@ -10,7 +10,7 @@ DEPENDS = "subttxrend-common subttxrend-gfx"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
-SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX};branch=RDKEMW-4206"
+SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX};branch=RDKEMW-4206_kv"
 S = "${WORKDIR}/git/subttxrend-webvtt"
 
 #
