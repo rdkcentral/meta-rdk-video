@@ -1,0 +1,121 @@
+diff --git a/Source/WPEFramework/Controller.cpp b/Source/WPEFramework/Controller.cpp
+index 15cc523cd..9e17c01aa 100644
+--- a/Source/WPEFramework/Controller.cpp
++++ b/Source/WPEFramework/Controller.cpp
+@@ -29,6 +29,7 @@
+ #include "JSystemManagement.h"
+ #include "JLifeTime.h"
+ #include "JMetadata.h"
++#include <iostream>
+ 
+ namespace WPEFramework {
+ 
+@@ -73,6 +74,7 @@ namespace Plugin {
+    // Access to this interface will be through the BackOffice Plugin, if external exposure is required !!!
+     /* virtual */ const string Controller::Initialize(PluginHost::IShell* service)
+     {
++        std::cout << "akshay inside Controller::Initialize " << std::endl;
+         ASSERT(_service == nullptr);
+         ASSERT(_probe == nullptr);
+ 
+@@ -136,11 +138,13 @@ namespace Plugin {
+         Exchange::Controller::JMetadata::Register(*this, this);
+ 
+         // On succes return a name as a Callsign to be used in the URL, after the "service"prefix
++        std::cout << "akshay Controller::Initialize completed returning" << std::endl;
+         return (_T(""));
+     }
+ 
+     /* virtual */ void Controller::Deinitialize(PluginHost::IShell* service)
+     {
++        std::cout << "akshay inside Controller::Deinitialize " << std::endl;
+         ASSERT(_service == service);
+ 
+         Exchange::Controller::JConfiguration::Unregister(*this);
+@@ -170,6 +174,7 @@ namespace Plugin {
+         service->DisableWebServer();
+ 
+         RPC::ConnectorController::Instance().Revoke(service);
++        std::cout << "akshay Controller::Deinitialize completed" << std::endl;
+ 
+     }
+ 
+@@ -550,6 +555,9 @@ namespace Plugin {
+                     if (callSign == _service->Callsign()) {
+                         result->ErrorCode = Web::STATUS_FORBIDDEN;
+                         result->Message = _T("The PluginHost Controller can not be deactivated.");
++                    } else if (callSign == _T("SecurityAgent")) {
++                        result->ErrorCode = Web::STATUS_FORBIDDEN;
++                        result->Message = _T("SecurityAgent plugin can not be deactivated.");
+                     } else {
+                         Core::ProxyType<PluginHost::Server::Service> pluginInfo(FromIdentifier(callSign));
+ 
+@@ -869,6 +877,7 @@ namespace Plugin {
+ 
+     Core::hresult Controller::Activate(const string& callsign)
+     {
++        std::cout << "akshay inside Controller::Activate " << std::endl;
+         Core::hresult result = Core::ERROR_NONE;
+         ASSERT(_pluginServer != nullptr);
+ 
+@@ -877,25 +886,33 @@ namespace Plugin {
+ 
+             if (_pluginServer->Services().FromIdentifier(callsign, service) == Core::ERROR_NONE) {
+                 ASSERT(service.IsValid());
++                SYSLOG(Logging::Startup, (_T("Activating plugin [%s] Requested"),callsign.c_str()));
+                 result = service->Activate(PluginHost::IShell::REQUESTED);
++                std::cout << "akshay inside if condition Controller::Activate completed returning " << result << std::endl;
+ 
+                 // Normalise return code
+                 if ((result != Core::ERROR_NONE) && (result != Core::ERROR_ILLEGAL_STATE) && (result !=  Core::ERROR_INPROGRESS) && (result != Core::ERROR_PENDING_CONDITIONS)) {
++                    std::cout << "akshay iside 2nd if condition Controller::Activate completed returning " << result << std::endl;
+                     result = Core::ERROR_OPENING_FAILED;
+                 }
+             }
+             else {
++                std::cout << "akshay Controller::Activate completed returning " << result << std::endl;
+                 result = Core::ERROR_UNKNOWN_KEY;
+             }
+         }
+         else {
++            std::cout << "akshay Controller::Activate completed returning " << result << std::endl;
+             result = Core::ERROR_PRIVILIGED_REQUEST;
+         }
++        SYSLOG(Logging::Startup, (_T("Activating plugin [%s] returned %u"),callsign.c_str(), result));
++        std::cout << "akshay before returing Controller::Activate completed returning " << result << std::endl;
+         return result;
+     }
+ 
+     Core::hresult Controller::Deactivate(const string& callsign)
+     {
++        std::cout << "akshay inside Controller::Deactivate " << std::endl;
+         Core::hresult result = Core::ERROR_NONE;
+ 
+         ASSERT(_pluginServer != nullptr);
+@@ -905,21 +922,25 @@ namespace Plugin {
+ 
+             if (_pluginServer->Services().FromIdentifier(callsign, service) == Core::ERROR_NONE) {
+                 ASSERT(service.IsValid());
++                std::cout << "akshay Controller::Deactivate completed returning " << result << std::endl;
+                 result = service->Deactivate(PluginHost::IShell::REQUESTED);
+ 
+                 // Normalise return code
+                 if ((result != Core::ERROR_NONE) && (result != Core::ERROR_ILLEGAL_STATE) && (result !=  Core::ERROR_INPROGRESS)) {
++                    std::cout << "akshay Controller::Deactivate completed returning " << result << std::endl;
+                     result = Core::ERROR_CLOSING_FAILED;
+                 }
+             }
+             else {
++                std::cout << "akshay Controller::Deactivate completed returning " << result << std::endl;
+                 result = Core::ERROR_UNKNOWN_KEY;
+             }
+         }
+         else {
++            std::cout << "akshay Controller::Deactivate completed returning " << result << std::endl;
+             result = Core::ERROR_PRIVILIGED_REQUEST;
+         }
+-
++        std::cout << "akshay before returing Controller::Deactivate completed returning " << result << std::endl;
+         return result;
+     }
+ 
