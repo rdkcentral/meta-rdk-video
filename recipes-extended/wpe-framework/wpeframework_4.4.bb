@@ -17,7 +17,7 @@ PV = "4.4.1"
 
 SRC_URI = "git://github.com/bvanav/Thunder.git;protocol=https;branch=bvanav-RDKEMW-5114;name=thunder"
 
-SRCREV_thunder = "2da19523c95cff2e39ba9e9eb89069b5741252a2"
+SRCREV_thunder = "af60559cb81ce8122bb64ff5888c955bd20c9832"
 
 #default patches for compiling thunder
 SRC_URI += "file://wpeframework-init \
