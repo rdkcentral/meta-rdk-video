@@ -4,7 +4,7 @@ HOMEPAGE = ""
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${THISDIR}/files/Apache-2.0;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-DEPENDS = "westeros essos rapidjson rtcore libuv gstreamer1.0 uwebsockets javascriptcore aamp websocketpp"
+DEPENDS = "westeros essos rapidjson rtcore libuv gstreamer1.0 uwebsockets javascriptcore websocketpp cjson boost"
 DEPENDS:append = " virtual/egl"
 RDEPENDS:${PN}:append = " essos gstreamer1.0 uwebsockets"
 
@@ -18,7 +18,7 @@ PR ?= "r1"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 #Release 1.0.1
-SRCREV = "7a0abb8de4db6c29f595c8ab746bb7501416f786"
+SRCREV = "3222c4c16a4d6b0f75172cbf2faeae26ca523d5f"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -28,8 +28,8 @@ EXTRA_OECMAKE += " -DJSRUNTIME_ENGINE_NAME=jsc"
 EXTRA_OECMAKE += " -DBUILD_JSRUNTIME_DESKTOP=OFF"
 EXTRA_OECMAKE += " -DENABLE_JSRUNTIME_ESSOS=ON"
 EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS=ON"
-EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS_STATIC=ON"
-EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS_DYNAMIC=OFF"
+EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS_STATIC=OFF"
+EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS_DYNAMIC=ON"
 EXTRA_OECMAKE += " -DENABLE_JSRUNTIME_PLAYER=ON"
 EXTRA_OECMAKE += " \
     -G Ninja \
@@ -76,8 +76,10 @@ do_install() {
    install -d ${D}/${libdir}
    install -d ${D}${includedir}
    mkdir -p ${D}${includedir}/jsruntime
+   mkdir -p ${D}${includedir}/jsruntime/modules
 
    install -m 0644 ${S}/include/*.h ${D}${includedir}/jsruntime
+   cp -a ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
 }
 
 FILES:${PN} += "${libdir}/*.so"
