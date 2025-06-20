@@ -15,7 +15,7 @@ DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '
 PR = "r46"
 PV = "4.4.1"
 
-SRC_URI = "git://github.com/bvanav/Thunder.git;protocol=https;branch=R4_4;name=thunder"
+SRC_URI = "git://github.com/bvanav/Thunder.git;protocol=https;branch=bvanav-RDKEMW-5114;name=thunder"
 
 SRCREV_thunder = "23d838ab994dca5d0f8dc77458672b016a05601d"
 
