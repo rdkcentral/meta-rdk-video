@@ -51,6 +51,11 @@ CONFIG_URL ?= ""
 LISA_DAC_CONFIG_PLATFORM ?= "${@get_lisa_dac_config(d)[0]}"
 LISA_DAC_CONFIG_FIRMWARE ?= "${@get_lisa_dac_config(d)[1]}"
 
+LISA_DEFAULT_IMAGE_STORAGE_PATH ?= "/opt/dac_apps"
+LISA_DEFAULT_APPDATA_STORAGE_PATH ?= "/opt/dac_apps/data"
+LISA_IMAGE_PATH ?= "${@d.getVar('PRODUCT_CONF_LISA_IMAGE_STORAGE_PATH') or d.getVar('LISA_DEFAULT_IMAGE_STORAGE_PATH') }"
+LISA_APPDATA_PATH ?= "${@d.getVar('PRODUCT_CONF_LISA_APPDATA_STORAGE_PATH') or d.getVar('LISA_DEFAULT_APPDATA_STORAGE_PATH') }"
+
 python do_inject_dac_config() {
     import json
 
