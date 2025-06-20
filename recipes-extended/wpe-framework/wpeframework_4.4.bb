@@ -15,9 +15,9 @@ DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '
 PR = "r46"
 PV = "4.4.1"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
+SRC_URI = "git://github.com/bvanav/Thunder.git;protocol=https;branch=R4_4;name=thunder"
 
-SRCREV_thunder = "b81d0f079345739cc2d8ee142b3499be7e4e6b15"
+SRCREV_thunder = "23d838ab994dca5d0f8dc77458672b016a05601d"
 
 #default patches for compiling thunder
 SRC_URI += "file://wpeframework-init \
