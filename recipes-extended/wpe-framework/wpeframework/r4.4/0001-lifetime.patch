@@ -2,7 +2,7 @@ Index: git/Source/WPEFramework/PluginServer.h
 ===================================================================
 --- git.orig/Source/WPEFramework/PluginServer.h
 +++ git/Source/WPEFramework/PluginServer.h
-@@ -2958,65 +2958,89 @@ POP_WARNING()
+@@ -2958,65 +2958,90 @@ POP_WARNING()
              {
                  return (reinterpret_cast<ISubSystem*>(_subSystems.QueryInterface(ISubSystem::ID)));
              }
@@ -14,6 +14,7 @@ Index: git/Source/WPEFramework/PluginServer.h
  
                  Notifiers::iterator index(_notifiers.begin());
  
++                std::cout << "akshay size of notifers: " << _notifiers.size() << pthread_self() << std::endl;
 +                std::cout << "akshay before entering while loop ServiceMap::Initialize: " << callsign << std::endl;
                  while (index != _notifiers.end()) {
 +                    std::cout << "akshay inside while loop and before QueryInterface call ServiceMap::Initialize: " << callsign << std::endl;
@@ -66,7 +67,7 @@ Index: git/Source/WPEFramework/PluginServer.h
 +                    std::cout << "akshay inside while loop and before Deactivated call ServiceMap::Deactivated: " << callsign << std::endl;
                      (*index)->Deactivated(callsign, entry);
                      index++;
-+                    std::cout << "akshay after ServiceMap::Deactivated inside while loop" << std::endl;
++                    _administrator.Activated(callSign, this);
                  }
 +                std::cout << "akshay exited while loop ServiceMap::Deactivated: " << callsign << std::endl;
  
@@ -102,32 +103,32 @@ Index: git/Source/WPEFramework/PluginServer.h
              }
              void Unavailable(const string& callsign, PluginHost::IShell* entry)
              {
-@@ -3033,18 +3057,22 @@ POP_WARNING()
+@@ -3033,18 +3058,22 @@ POP_WARNING()
              }
              void Register(PluginHost::IPlugin::INotification* sink)
              {
-+                std::cout << "akshay at start ServiceMap::Register: " << std::endl;
++                std::cout << "akshay at start ServiceMap::Register: " <<  std::endl;
                  _notificationLock.Lock();
 -
 +                std::cout << "akshay after lock ServiceMap::Register: " << std::endl;
                  ASSERT(std::find(_notifiers.begin(), _notifiers.end(), sink) == _notifiers.end());
  
                  sink->AddRef();
-+                std::cout << "akshay after AddRef ServiceMap::Register: " << std::endl;
++                std::cout << "akshay after AddRef ServiceMap::Register: "  << std::endl;
                  _notifiers.push_back(sink);
 +                std::cout << "akshay after push_back ServiceMap::Register: " << std::endl;
  
                  // Tell this "new" sink all our actived plugins..
                  ServiceContainer::iterator index(_services.begin());
 -
-+                std::cout << "akshay before entering while loop ServiceMap::Register: " << std::endl;
++                std::cout << "akshay before entering while loop ServiceMap::Register: " <<  std::endl;
                  // Notifty all plugins that we have sofar..
                  while (index != _services.end()) {
 +                    std::cout << "akshay inside while loop first ServiceMap::Register: " << std::endl;
                      ASSERT(index->second.IsValid());
  
                      Core::ProxyType<Service> service(index->second);
-@@ -3052,18 +3080,23 @@ POP_WARNING()
+@@ -3052,22 +3081,29 @@ POP_WARNING()
                      ASSERT(service.IsValid());
  
                      if ( (service.IsValid() == true) && (service->State() == IShell::ACTIVATED) ) {
@@ -153,4 +154,19 @@ Index: git/Source/WPEFramework/PluginServer.h
              }
              void Unregister(const PluginHost::IPlugin::INotification* sink)
              {
-
++                std::cout << "akshay at start and locking ServiceMap::Unregister: " << std::endl;
+                 _notificationLock.Lock();
++                std::cout << "akshay after lock ServiceMap::Unregister: " << std::endl;
+ 
+                 Notifiers::iterator index(std::find(_notifiers.begin(), _notifiers.end(), sink));
+ 
+@@ -3076,7 +3112,9 @@ POP_WARNING()
+                     _notifiers.erase(index);
+                 }
+ 
++                std::cout << "akshay before unlocking ServiceMap::Unregister: " << std::endl;
+                 _notificationLock.Unlock();
++                std::cout << "akshay at end of ServiceMap::Unregister: and after unlock" << std::endl;
+             }
+             inline void* QueryInterfaceByCallsign(const uint32_t id, const string& name)
+             {
