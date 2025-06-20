@@ -58,7 +58,6 @@ SRC_URI += "file://2.38/comcast-DELIA-60055-Analyze-higher-CPU-usage-of-Web-Netw
 SRC_URI += "file://2.38/comcast-DELIA-60613-WebRTC-streaming-fails-with-test.patch"
 SRC_URI += "file://2.38/comcast-RDK-40567-Speech-Synthesis.patch"
 SRC_URI += "file://2.38.5/comcast-RDK-40689-Add-RDKAT-support.patch"
-SRC_URI += "file://2.38.5/comcast-XRE-13505-Dynamic-insertion-of-decryptor-element.patch"
 SRC_URI += "file://2.38/comcast-RDK-41913-Don-t-fail-playback-with-closed-caption-ce.patch"
 SRC_URI += "file://2.38/comcast-RDK-40634-Only-support-decoders-with-hw-support-for-webrtc.patch"
 SRC_URI += "file://2.38.2/comcast-AMLOGIC-3262-Initial-support-for-instant-rat.patch"
@@ -72,7 +71,7 @@ SRC_URI += "file://2.38.8/comcast-DELIA-57933-Increase-minor-version-or-WPE-lib.
 SRC_URI += "file://2.38.8/comcast-LLAMA-15112-sleep-150-microsecs-instead-of-s.patch"
 SRC_URI += "file://2.38.8/comcast-DELIA-67128-GCHeap-snapshot.patch"
 SRC_URI += "file://2.38.8/comcast-LLAMA-16805-Include-HW-secure-decrypt-decode-in-robu.patch"
-SRC_URI += "file://2.38.8/comcast-Add-cencparse-element-before-thunder-decrypt.patch"
+SRC_URI += "file://2.38.8/comcast-dynamic-insertion-of-decryptor.patch"
 
 PACKAGECONFIG[wpeqtapi]          = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[westeros]          = "-DUSE_WPEWEBKIT_PLATFORM_WESTEROS=ON -DUSE_GSTREAMER_HOLEPUNCH=ON -DUSE_EXTERNAL_HOLEPUNCH=ON -DUSE_WESTEROS_SINK=ON,,westeros virtual/vendor-westeros-sink"
