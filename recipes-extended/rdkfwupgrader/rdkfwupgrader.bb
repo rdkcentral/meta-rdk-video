@@ -8,6 +8,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/rdkfwupdater;${CMF_GITHUB_SRC_URI_SUFFIX};name=rdk
 DEPENDS +=" cjson curl rdk-logger"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 DEPENDS:append = " safec-common-wrapper rfc telemetry iarmbus iarmmgrs dbus glib-2.0 commonutilities libsyswrapper "
+EXTRA_OECONF += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prod-variant prodlog-variant', 'INSTALL_TEST_FWUPGRADER=no', 'INSTALL_TEST_FWUPGRADER=yes', d)}"
 
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 CXXFLAGS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
