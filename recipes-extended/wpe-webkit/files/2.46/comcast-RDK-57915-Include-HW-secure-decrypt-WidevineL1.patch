@@ -1,0 +1,115 @@
+From ff826cd127cdf84eba68b471151c7d464cbf3da1 Mon Sep 17 00:00:00 2001
+From: Filipe Norte <filipe_norte@comcast.com>
+Date: Thu, 20 Feb 2025 10:17:11 +0000
+Subject: [PATCH] comcast - RDK-57915 - Include HW secure decrypt/decode in
+ robustness
+
+Widevine uses 3 robustness levels with increasing security.
+Highest security level (L1) corresponding to HW decryption
+and decoding while supported, was not being indicated to
+upper layers as such.
+
+Original report:
+It has been reported that EME media key is npot returning expected values:
+
+Test any webapp and set location.href to https://qtools.skyq.sky.com/htmltestapps/mediakeysupport/index.html - snippets below:
+
+var configL1 = [
+  {
+    initDataTypes: ["cenc"],
+    audioCapabilities: [
+      {
+        contentType: 'audio/mp4; codecs="mp4a.40.2"',
+      },
+    ],
+    videoCapabilities: [
+      {
+        contentType: 'video/mp4; codecs="avc1.4d4020"',
+        robustness: "HW_SECURE_ALL",
+      },
+    ],
+  },
+];
+var configL2 = [
+  {
+    initDataTypes: ["cenc"],
+    audioCapabilities: [
+      {
+        contentType: 'audio/mp4; codecs="mp4a.40.2"',
+      },
+    ],
+    videoCapabilities: [
+      {
+        contentType: 'video/mp4; codecs="avc1.4d4020"',
+        robustness: "HW_SECURE_CRYPTO",
+      },
+    ],
+  },
+];
+var configL3 = [
+  {
+    initDataTypes: ["cenc"],
+    audioCapabilities: [
+      {
+        contentType: 'audio/mp4; codecs="mp4a.40.2"',
+      },
+    ],
+    videoCapabilities: [
+      {
+        contentType: 'video/mp4; codecs="avc1.4d4020"',
+        robustness: "SW_SECURE_CRYPTO",
+      },
+    ],
+  },
+];
+
+ function checkCdmSupport(id, config, name) {
+  try {
+    document.getElementById('test').textContent += JSON.stringify(config,null,2);
+    navigator
+      .requestMediaKeySystemAccess(id, config)
+      .then(function (mediaKeySystemAccess) {
+        document.getElementById('output').textContent += "CDM " + name + " is supported\n";
+      })
+      .catch(function (e) {
+        document.getElementById('output').textContent += "CDM " + name + " is NOT supported\n";
+      });
+  } catch (e) {
+    document.getElementById('output').textContent += "CDM " + name + " is NOT supported\n";
+  }
+}
+checkCdmSupport("com.widevine.alpha", configL3, "Widevine L3");
+checkCdmSupport("com.widevine.alpha", configL2, "Widevine L2");
+checkCdmSupport("com.widevine.alpha", configL1, "Widevine L1");
+
+RESULTS:
+
+CDM Widevine L3 is supported
+CDM Playready is supported
+CDM Widevine L2 is NOT supported
+CDM Widevine L1 is NOT supported
+CDM Playready Recommendation (SL3000) is NOT supported
+CDM Playready Recommendation is NOT supported
+CDM Playready Hardware is NOT supported
+CDM Playready Hardware (SL3000) is NOT supported
+CDM Fairplay is NOT supported
+---
+ Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
+index fbfd424fc87f..2b8acf5cf52a 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
+@@ -170,7 +170,7 @@ bool CDMPrivateThunder::supportsConfiguration(const CDMKeySystemConfiguration& c
+ 
+ Vector<AtomString> CDMPrivateThunder::supportedRobustnesses() const
+ {
+-    return { emptyAtom(), "SW_SECURE_DECODE"_s, "SW_SECURE_CRYPTO"_s };
++    return { emptyAtom(), "SW_SECURE_DECODE"_s, "SW_SECURE_CRYPTO"_s, "HW_SECURE_DECODE"_s, "HW_SECURE_CRYPTO"_s, "HW_SECURE_ALL"_s };
+ }
+ 
+ CDMRequirement CDMPrivateThunder::distinctiveIdentifiersRequirement(const CDMKeySystemConfiguration&, const CDMRestrictions&) const
+-- 
+2.48.1
+
