@@ -17,7 +17,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
 # Release version - 1.4.0
-SRCREV = "415369d9a783e90ffb0f1dfb8c9a344ffbdd8c4f"
+SRCREV = "21bc2ec7d6f1c0425b3bf13a0669e73ae00ed8a5"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -130,7 +130,7 @@ PACKAGECONFIG[packagemanager]       = "-DPLUGIN_PACKAGE_MANAGER=ON -DLIB_PACKAGE
 PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LIFECYCLE_MANAGER=OFF,websocketpp entservices-apis,entservices-apis"
 PACKAGECONFIG[storagemanager]       = "-DPLUGIN_STORAGE_MANAGER=ON,-DPLUGIN_STORAGE_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[appmanager]           = "-DPLUGIN_APPMANAGER=ON,-DPLUGIN_APPMANAGER=OFF,entservices-apis,entservices-apis"
-PACKAGECONFIG[migrationrestorer]    = "-DPLUGIN_MIGRATIONRESTORER=ON,-DPLUGIN_MIGRATIONRESTORER=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[migrationrestorer]    = "-DPLUGIN_MIGRATIONRESTORER=ON,-DPLUGIN_MIGRATIONRESTORER=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc devicesettings"
 # ----------------------------------------------------------------------------
 
 MONITOR_PLUGIN_ARGS                ?= " \
