@@ -1,0 +1,25 @@
+From b41ed4385bf50031403794671c48bf4b57faab4c Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Wed, 4 Jun 2025 13:43:52 +0200
+Subject: [PATCH] comcast - RDK-57915 - Support for external sink for x-dvb
+
+Add video/x-dvb mimetype for MSE. It is supported by external video sink
+---
+ .../platform/graphics/gstreamer/GStreamerRegistryScanner.cpp     | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index b75cf6ff3a8b..07ca9bd52270 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -551,6 +551,7 @@ void GStreamerRegistryScanner::initializeDecoders(const GStreamerRegistryScanner
+         { ElementFactories::Type::VideoDecoder, "video/x-flash-video"_s, { "video/flv"_s, "video/x-flv"_s }, { } },
+         { ElementFactories::Type::VideoDecoder, "video/x-h263"_s, { }, { } },
+         { ElementFactories::Type::VideoDecoder, "video/x-msvideocodec"_s, { "video/x-msvideo"_s }, { } },
++        { ElementFactories::Type::VideoDecoder, "video/x-ext-dvb"_s, { "video/x-dvb"_s }, { } },
+         { ElementFactories::Type::Demuxer, "application/vnd.rn-realmedia"_s, { }, { } },
+         { ElementFactories::Type::Demuxer, "application/x-3gp"_s, { }, { } },
+         { ElementFactories::Type::Demuxer, "application/x-pn-realaudio"_s, { }, { } },
+-- 
+2.48.1
+
