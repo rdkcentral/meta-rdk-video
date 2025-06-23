@@ -1,0 +1,27 @@
+From a7db3490909141ed844666b000b834e2fe2bd2bf Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Mon, 6 Jan 2025 13:13:27 +0000
+Subject: [PATCH] comcast RDK-57741 sleep 150 microsecs instead of
+ sched_yield
+
+see https://github.com/WebPlatformForEmbedded/WPEWebKit/pull/1408 for explanation.
+---
+ Source/bmalloc/bmalloc/Mutex.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/bmalloc/bmalloc/Mutex.cpp b/Source/bmalloc/bmalloc/Mutex.cpp
+index 82d4ac9e4d16..409e7a68b35f 100644
+--- a/Source/bmalloc/bmalloc/Mutex.cpp
++++ b/Source/bmalloc/bmalloc/Mutex.cpp
+@@ -42,7 +42,7 @@ static inline void yield()
+     constexpr mach_msg_timeout_t timeoutInMS = 1;
+     thread_switch(MACH_PORT_NULL, SWITCH_OPTION_DEPRESS, timeoutInMS);
+ #else
+-    static size_t bmallocMicrosecondsSleep;
++    static size_t bmallocMicrosecondsSleep = 150;
+     static std::once_flag onceFlag;
+     std::call_once(onceFlag, [] {
+         const char* env = getenv("WEBKIT_WPE_BMALLOC_MICROSECONDS_SLEEP");
+-- 
+2.25.1
+
