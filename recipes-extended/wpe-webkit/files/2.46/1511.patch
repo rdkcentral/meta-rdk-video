@@ -1,0 +1,241 @@
+From 490f08259f386e7181ccdc999910a339b1d5ea06 Mon Sep 17 00:00:00 2001
+From: Filipe Norte <filipe_norte@comcast.com>
+Date: Thu, 22 May 2025 14:16:46 +0000
+Subject: [PATCH] Support whitelisting urls for local universal access
+
+---
+ .../WebKit/Shared/WebPageCreationParameters.h |  1 +
+ ...WebPageCreationParameters.serialization.in |  1 +
+ .../UIProcess/API/APIPageConfiguration.h      |  1 +
+ .../UIProcess/API/glib/WebKitWebView.cpp      | 27 ++++++++
+ .../UIProcess/API/glib/WebKitWebView.h.in     |  4 ++
+ Source/WebKit/UIProcess/WebPageProxy.cpp      |  7 +++
+ Source/WebKit/UIProcess/WebPageProxy.h        |  4 ++
+ .../InjectedBundle/API/glib/WebKitWebPage.cpp |  5 ++
+ Source/WebKit/WebProcess/WebPage/WebPage.cpp  |  7 +++
+ Source/WebKit/WebProcess/WebPage/WebPage.h    |  4 ++
+ .../WebProcess/WebPage/WebPage.messages.in    |  2 +
+ 15 files changed, 63 insertions(+), 81 deletions(-)
+
+diff --git a/Source/WebKit/Shared/WebPageCreationParameters.h b/Source/WebKit/Shared/WebPageCreationParameters.h
+index 27b202b90127..e6a09ab4d1c6 100644
+--- a/Source/WebKit/Shared/WebPageCreationParameters.h
++++ b/Source/WebKit/Shared/WebPageCreationParameters.h
+@@ -273,6 +273,7 @@ struct WebPageCreationParameters {
+ 
+     String overriddenMediaType;
+     Vector<String> corsDisablingPatterns;
++    Vector<String> localUniversalAccessAllowList;
+     HashSet<String> maskedURLSchemes;
+     bool userScriptsShouldWaitUntilNotification { true };
+     bool loadsSubresources { true };
+diff --git a/Source/WebKit/Shared/WebPageCreationParameters.serialization.in b/Source/WebKit/Shared/WebPageCreationParameters.serialization.in
+index fb2c63d83bda..6cbcb3d19a44 100644
+--- a/Source/WebKit/Shared/WebPageCreationParameters.serialization.in
++++ b/Source/WebKit/Shared/WebPageCreationParameters.serialization.in
+@@ -197,6 +197,7 @@ enum class WebCore::UserInterfaceLayoutDirection : bool;
+ 
+     String overriddenMediaType;
+     Vector<String> corsDisablingPatterns;
++    Vector<String> localUniversalAccessAllowList;
+     HashSet<String> maskedURLSchemes;
+     bool userScriptsShouldWaitUntilNotification;
+     bool loadsSubresources;
+diff --git a/Source/WebKit/UIProcess/API/APIPageConfiguration.h b/Source/WebKit/UIProcess/API/APIPageConfiguration.h
+index 46580e40a9a3..f22280209fae 100644
+--- a/Source/WebKit/UIProcess/API/APIPageConfiguration.h
++++ b/Source/WebKit/UIProcess/API/APIPageConfiguration.h
+@@ -533,6 +533,7 @@ private:
+ 
+         HashMap<WTF::String, Ref<WebKit::WebURLSchemeHandler>> urlSchemeHandlers;
+         Vector<WTF::String> corsDisablingPatterns;
++        Vector<WTF::String> localUniversalAccessAllowList;
+         HashSet<WTF::String> maskedURLSchemes;
+         bool maskedURLSchemesWasSet { false };
+         bool userScriptsShouldWaitUntilNotification { true };
+diff --git a/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp b/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp
+index 12e5b4869922..a58f34509621 100644
+--- a/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp
++++ b/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp
+@@ -5495,6 +5495,33 @@ void webkit_web_view_set_cors_allowlist(WebKitWebView* webView, const gchar* con
+     getPage(webView).setCORSDisablingPatterns(WTFMove(allowListVector));
+ }
+ 
++
++/**
++ * webkit_web_view_set_local_universal_access_allowlist:
++ * @web_view: a #WebKitWebView
++ * @allowlist: (array zero-terminated=1) (element-type utf8) (transfer none) (nullable): an allowlist of URIs, or %NULL
++ *
++ * Sets the @allowlist for which local universal access is granted.
++ *
++ * If this function is called multiple times, only the allowlist set by
++ * the most recent call will be effective.
++ *
++ * Since: 2.46
++ */
++void webkit_web_view_set_local_universal_access_allowlist(WebKitWebView* webView, const gchar* const* allowList)
++{
++    g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
++
++    Vector<String> allowListVector;
++    if (allowList) {
++        for (auto str = allowList; *str; ++str)
++            allowListVector.append(String::fromUTF8(*str));
++    }
++
++    getPage(webView).setLocalUniversalAccessAllowList(WTFMove(allowListVector));
++}
++
++
+ static void webkitWebViewConfigureMediaCapture(WebKitWebView* webView, WebCore::MediaProducerMediaCaptureKind captureKind, WebKitMediaCaptureState captureState)
+ {
+     Ref page = getPage(webView);
+diff --git a/Source/WebKit/UIProcess/API/glib/WebKitWebView.h.in b/Source/WebKit/UIProcess/API/glib/WebKitWebView.h.in
+index b11d8af59da6..8a95b0f0460b 100644
+--- a/Source/WebKit/UIProcess/API/glib/WebKitWebView.h.in
++++ b/Source/WebKit/UIProcess/API/glib/WebKitWebView.h.in
+@@ -872,6 +872,10 @@ WEBKIT_API void
+ webkit_web_view_set_cors_allowlist                   (WebKitWebView             *web_view,
+                                                       const gchar * const       *allowlist);
+ 
++WEBKIT_API void
++webkit_web_view_set_local_universal_access_allowlist (WebKitWebView             *web_view,
++                                                      const gchar * const       *allowlist);
++
+ WEBKIT_API WebKitWebsitePolicies *
+ webkit_web_view_get_website_policies                 (WebKitWebView             *web_view);
+ 
+diff --git a/Source/WebKit/UIProcess/WebPageProxy.cpp b/Source/WebKit/UIProcess/WebPageProxy.cpp
+index 603a3111b7a8..3afaf856181f 100644
+--- a/Source/WebKit/UIProcess/WebPageProxy.cpp
++++ b/Source/WebKit/UIProcess/WebPageProxy.cpp
+@@ -10636,6 +10636,7 @@ WebPageCreationParameters WebPageProxy::creationParameters(WebProcessProxy& proc
+ 
+     parameters.overriddenMediaType = m_overriddenMediaType;
+     parameters.corsDisablingPatterns = corsDisablingPatterns();
++    parameters.localUniversalAccessAllowList = localUniversalAccessAllowList();
+     parameters.maskedURLSchemes = m_configuration->maskedURLSchemes();
+     parameters.userScriptsShouldWaitUntilNotification = m_configuration->userScriptsShouldWaitUntilNotification();
+     parameters.allowedNetworkHosts = m_configuration->allowedNetworkHosts();
+@@ -13452,6 +13453,12 @@ void WebPageProxy::setCORSDisablingPatterns(Vector<String>&& patterns)
+     send(Messages::WebPage::UpdateCORSDisablingPatterns(m_corsDisablingPatterns));
+ }
+ 
++void WebPageProxy::setLocalUniversalAccessAllowList(Vector<String>&& allowList)
++{
++    m_localUniversalAccessAllowList = WTFMove(allowList);
++    send(Messages::WebPage::SetLocalUniversalAccessAllowList(m_localUniversalAccessAllowList));
++}
++
+ void WebPageProxy::setOverriddenMediaType(const String& mediaType)
+ {
+     m_overriddenMediaType = mediaType;
+diff --git a/Source/WebKit/UIProcess/WebPageProxy.h b/Source/WebKit/UIProcess/WebPageProxy.h
+index 6d100e417e1f..185c7c952330 100644
+--- a/Source/WebKit/UIProcess/WebPageProxy.h
++++ b/Source/WebKit/UIProcess/WebPageProxy.h
+@@ -2104,6 +2104,9 @@ public:
+     void setCORSDisablingPatterns(Vector<String>&&);
+     const Vector<String>& corsDisablingPatterns() const { return m_corsDisablingPatterns; }
+ 
++    void setLocalUniversalAccessAllowList(Vector<String>&&);
++    const Vector<String>& localUniversalAccessAllowList() const { return m_localUniversalAccessAllowList; }
++
+     void getProcessDisplayName(CompletionHandler<void(String&&)>&&);
+ 
+     void setOrientationForMediaCapture(WebCore::IntDegrees);
+@@ -3545,6 +3548,7 @@ private:
+     String m_overriddenMediaType;
+ 
+     Vector<String> m_corsDisablingPatterns;
++    Vector<String> m_localUniversalAccessAllowList;
+ 
+     struct InjectedBundleMessage {
+         String messageName;
+diff --git a/Source/WebKit/WebProcess/InjectedBundle/API/glib/WebKitWebPage.cpp b/Source/WebKit/WebProcess/InjectedBundle/API/glib/WebKitWebPage.cpp
+index cfe577b74a58..cd3a75684ece 100644
+--- a/Source/WebKit/WebProcess/InjectedBundle/API/glib/WebKitWebPage.cpp
++++ b/Source/WebKit/WebProcess/InjectedBundle/API/glib/WebKitWebPage.cpp
+@@ -283,6 +283,11 @@ private:
+     {
+     }
+ 
++    bool shouldForceUniversalAccessFromLocalURL(WebKit::WebPage& webPage, const WTF::String& url) override
++    {
++        return webPage.localUniversalAccessAllowList().contains(url);
++    }
++
+     WebKitWebPage* m_webPage;
+ };
+ 
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.cpp b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+index 93ab51c110cd..7dbda14cd8eb 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.cpp
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+@@ -772,6 +772,8 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
+     pageConfiguration.httpsUpgradeEnabled = parameters.httpsUpgradeEnabled;
+     pageConfiguration.portsForUpgradingInsecureSchemeForTesting = parameters.portsForUpgradingInsecureSchemeForTesting;
+ 
++    m_localUniversalAccessAllowList = WTFMove(parameters.localUniversalAccessAllowList);
++
+     if (!parameters.crossOriginAccessControlCheckEnabled)
+         CrossOriginAccessControlCheckDisabler::singleton().setCrossOriginAccessControlCheckEnabled(false);
+ 
+@@ -8920,6 +8922,11 @@ void WebPage::updateCORSDisablingPatterns(Vector<String>&& patterns)
+     m_page->setCORSDisablingPatterns(parseAndAllowAccessToCORSDisablingPatterns(m_corsDisablingPatterns));
+ }
+ 
++void WebPage::setLocalUniversalAccessAllowList(Vector<String>&& allowList)
++{
++    m_localUniversalAccessAllowList = WTFMove(allowList);
++}
++
+ void WebPage::synchronizeCORSDisablingPatternsWithNetworkProcess()
+ {
+     // FIXME: We should probably have this mechanism done between UIProcess and NetworkProcess directly.
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.h b/Source/WebKit/WebProcess/WebPage/WebPage.h
+index 00b4746b6481..61c565530de1 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.h
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.h
+@@ -1592,6 +1592,7 @@ public:
+     void setOverriddenMediaType(const String&);
+ 
+     void updateCORSDisablingPatterns(Vector<String>&&);
++    void setLocalUniversalAccessAllowList(Vector<String>&&);
+ 
+ #if ENABLE(IPC_TESTING_API)
+     bool ipcTestingAPIEnabled() const { return m_ipcTestingAPIEnabled; }
+@@ -1814,6 +1815,8 @@ public:
+ 
+     void setTopContentInset(float);
+ 
++    const Vector<String>& localUniversalAccessAllowList() const { return m_localUniversalAccessAllowList; };
++
+ private:
+     WebPage(WebCore::PageIdentifier, WebPageCreationParameters&&);
+ 
+@@ -2829,6 +2832,7 @@ private:
+     std::optional<Vector<WebCore::TextManipulationController::ExclusionRule>> m_textManipulationExclusionRules;
+ 
+     Vector<String> m_corsDisablingPatterns;
++    Vector<String> m_localUniversalAccessAllowList;
+ 
+     std::unique_ptr<WebCore::CachedPage> m_cachedPage;
+ 
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.messages.in b/Source/WebKit/WebProcess/WebPage/WebPage.messages.in
+index 4989001e273a..50f3be1007e9 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.messages.in
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.messages.in
+@@ -703,6 +703,8 @@ GenerateSyntheticEditingCommand(enum:uint8_t WebKit::SyntheticEditingCommandType
+ 
+     UpdateCORSDisablingPatterns(Vector<String> patterns)
+ 
++    SetLocalUniversalAccessAllowList(Vector<String> patterns)
++
+     SetIsTakingSnapshotsForApplicationSuspension(bool isTakingSnapshotsForApplicationSuspension)
+     SetNeedsDOMWindowResizeEvent()
+ 
+-- 
+2.43.0
+

@@ -1,0 +1,49 @@
+From 4a3b1525660a05a8d9801459ab7ad00fb322a4ba Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Tue, 3 Jun 2025 11:11:35 +0200
+Subject: [PATCH] comcast - RDK-57915 - Secure minidump path
+
+Add secure dump location for non container case
+
+Inside a container webkit will use BREAKPAD_FD file descriptor
+provided by Dobby plugin
+https://github.com/rdkcentral/Dobby/blob/master/rdkPlugins/Minidump/source/Minidump.cpp#L89
+
+Test:
+Ensure minidumps are correctly generated from both WebProcess and NetworkProcess,
+especially running inside Dobby container
+
+NOTE:
+There are two ways of Google Breakpad initialization:
+1) Link wpe-webkit with breakpad wrapper lib that will setup signals
+   handlers in lib contructor.
+2) Directly initialize breakpad from C++ code.
+
+WebKit wants to use the second approach, manually initializing
+breakpad from C++ sources. But some webkit dependencies (e.g. AAMP) still use
+breakpad wrapper lib that is indirectly linked to all Webkit processes.
+This causes kind of conflict of which one to use. That depends on init order.
+We enforce certain initialization order by directly linking webkit with
+breakpad wrapper library, even though it is not used.
+
+Signed-off-by: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+---
+ Source/WebKit/Shared/unix/BreakpadExceptionHandler.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Source/WebKit/Shared/unix/BreakpadExceptionHandler.cpp b/Source/WebKit/Shared/unix/BreakpadExceptionHandler.cpp
+index 5bedd9871053..2926c030b42d 100644
+--- a/Source/WebKit/Shared/unix/BreakpadExceptionHandler.cpp
++++ b/Source/WebKit/Shared/unix/BreakpadExceptionHandler.cpp
+@@ -56,6 +56,8 @@ void installBreakpadExceptionHandler()
+     }
+ 
+     static String breakpadMinidumpDir = String::fromUTF8(getenv("BREAKPAD_MINIDUMP_DIR"));
++    if (breakpadMinidumpDir.isEmpty() && FileSystem::fileExists("/tmp/.SecureDumpEnable"_s))
++        breakpadMinidumpDir = "/opt/secure/minidumps"_s;
+ 
+ #ifdef BREAKPAD_MINIDUMP_DIR
+     if (breakpadMinidumpDir.isEmpty())
+-- 
+2.48.1
+

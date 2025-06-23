@@ -9,7 +9,7 @@ CMAKE_VERBOSE = ""
 DEPENDS += " \
      libwpe \
      bison-native ccache-native glib-2.0-native gperf-native libxml2-native ninja-native ruby-native chrpath-replacement-native \
-     cairo pixman freetype glib-2.0 gnutls harfbuzz icu jpeg pcre sqlite3 zlib \
+     freetype glib-2.0 gnutls harfbuzz icu jpeg pcre sqlite3 zlib \
      libepoxy libpng libwebp libxml2 libxslt \
      virtual/egl virtual/libgles2 \
      libinput libepoxy libgcrypt \
@@ -78,7 +78,7 @@ PACKAGES =+ "${PN}-web-inspector-plugin"
 
 FILES:${PN}-web-driver += "${bindir}/WPEWebDriver"
 FILES:${PN}-web-inspector-plugin += "${libdir}/libWPEWebInspectorResources.so"
-INSANE_SKIP:${PN}-wpe-webdriver += "file-rdeps"
+INSANE_SKIP:${PN}-web-driver += "file-rdeps"
 INSANE_SKIP:${PN}-web-inspector-plugin = "dev-so"
 INSANE_SKIP:${PN}:append = " rpaths"
 
