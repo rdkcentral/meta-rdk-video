@@ -2,7 +2,7 @@ Index: git/Source/WPEFramework/PluginServer.h
 ===================================================================
 --- git.orig/Source/WPEFramework/PluginServer.h
 +++ git/Source/WPEFramework/PluginServer.h
-@@ -2958,65 +2958,90 @@ POP_WARNING()
+@@ -2958,65 +2958,94 @@ POP_WARNING()
              {
                  return (reinterpret_cast<ISubSystem*>(_subSystems.QueryInterface(ISubSystem::ID)));
              }
@@ -13,7 +13,9 @@ Index: git/Source/WPEFramework/PluginServer.h
                  _notificationLock.Lock();
  
                  Notifiers::iterator index(_notifiers.begin());
++                std::cout << "akshay of index Type in ServiceMap::Initialize: " << typeid(*index).name() << std::endl;
  
++
 +                std::cout << "akshay size of notifers ServiceMap::Initialize: " << _notifiers.size() << " thread value " << pthread_self() << std::endl;
 +                std::cout << "akshay before entering while loop ServiceMap::Initialize: " << callsign << std::endl;
                  while (index != _notifiers.end()) {
@@ -41,7 +43,8 @@ Index: git/Source/WPEFramework/PluginServer.h
 -
 +                std::cout << "akshay after lock ServiceMap::Activated: " << callsign << std::endl;
                  Notifiers::iterator index(_notifiers.begin());
--
++                std::cout << "akshay Type in servicemap::Activated: " << typeid(*index).name() << std::endl;
+ 
 +                std::cout << "akshay size of notifers in servicemap::Activated: " << _notifiers.size() << " thread value " << pthread_self() << std::endl;
                  while (index != _notifiers.end()) {
 +                    std::cout << "akshay inside while loop and before Activated call ServiceMap::Activated: " << callsign << std::endl;
@@ -103,7 +106,7 @@ Index: git/Source/WPEFramework/PluginServer.h
              }
              void Unavailable(const string& callsign, PluginHost::IShell* entry)
              {
-@@ -3033,18 +3058,22 @@ POP_WARNING()
+@@ -3033,18 +3062,22 @@ POP_WARNING()
              }
              void Register(PluginHost::IPlugin::INotification* sink)
              {
@@ -128,7 +131,7 @@ Index: git/Source/WPEFramework/PluginServer.h
                      ASSERT(index->second.IsValid());
  
                      Core::ProxyType<Service> service(index->second);
-@@ -3052,22 +3081,29 @@ POP_WARNING()
+@@ -3052,22 +3085,29 @@ POP_WARNING()
                      ASSERT(service.IsValid());
  
                      if ( (service.IsValid() == true) && (service->State() == IShell::ACTIVATED) ) {
@@ -160,7 +163,7 @@ Index: git/Source/WPEFramework/PluginServer.h
  
                  Notifiers::iterator index(std::find(_notifiers.begin(), _notifiers.end(), sink));
  
-@@ -3076,7 +3112,9 @@ POP_WARNING()
+@@ -3076,7 +3116,9 @@ POP_WARNING()
                      _notifiers.erase(index);
                  }
  
