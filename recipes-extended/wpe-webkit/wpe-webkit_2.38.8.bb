@@ -7,7 +7,7 @@ PR  = "r11"
 
 # Temporary build fix
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
-DEPENDS:append = " fontconfig"
+DEPENDS:append = " cairo pixman fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 # Tip of the branch on Dec 19, 2024

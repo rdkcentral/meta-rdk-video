@@ -1,0 +1,134 @@
+From bcf291c3af1df9f4621ce7d443e3f747963a181f Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Fri, 13 Jun 2025 11:47:24 +0200
+Subject: [PATCH] comcast - RDK-57915: Fix init data filtering
+
+Reason for change: Asset with multiple protection systems
+may not resume playback after ads, as init data may contain
+pssh boxes for multiple key systems, but with wrong system
+id associated with the init data structure compared to
+current active key system
+Test Procedure: Verify assets play normally, after seek and
+after ads
+Risks: Medium
+
+Signed-off-by: Filipe Norte <filipe.norte@sky.uk>
+
+The problem was seen in All4 app where DRM error message was observed
+and the playback didn't continue after seek operataion.
+
+Issue is cause because we receive 2 protection events, one for widevine and one for playready.
+The protection related init data is constructed in "MediaPlayerPrivateGStreamer::parseInitDataFromProtectionMessage()"
+and will contain the init data for both widevine and playready (concatenated).
+However, the init data structure contains only one key system as the init data identifier.
+Depending which protection event is processed first,
+the key system associated with the init data structure will be either widevine or playready.
+
+To fix this, we must look into the init data itself in "MediaPlayerPrivateGStreamer::initializationDataEncountered()" and make the decision depending on having the init data content.
+
+We did try to upstream the change but was rejected:
+https://github.com/WebPlatformForEmbedded/WPEWebKit/pull/929
+
+It is the JavaScrip responsibility to filter unwanted init data,
+WebKit should just report what was found inside media data.
+
+Signed-off-by: Filipe Norte <filipe.norte@sky.uk>
+---
+ .../gstreamer/MediaPlayerPrivateGStreamer.cpp |  5 +++
+ .../gstreamer/eme/GStreamerEMEUtilities.cpp   | 43 +++++++++++++++++++
+ .../gstreamer/eme/GStreamerEMEUtilities.h     |  2 +
+ 3 files changed, 50 insertions(+)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index 0b94ccfe27f2..35c06d6c2848 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -4620,6 +4620,11 @@ void MediaPlayerPrivateGStreamer::initializationDataEncountered(InitData&& initD
+             return;
+         RefPtr player = self->m_player.get();
+ 
++        if (self->m_cdmInstance && equalIgnoringASCIICase(initData.payloadContainerType(), "cenc"_s) && !GStreamerEMEUtilities::cencHasInitDataForKeySystem(initData, self->m_cdmInstance->keySystem())) {
++            GST_TRACE_OBJECT(self->pipeline(), "skipping initialization data for a different key system");
++            return;
++        }
++
+         GST_DEBUG("scheduling initializationDataEncountered %s event of size %zu", initData.payloadContainerType().utf8().data(),
+             initData.payload()->size());
+         GST_MEMDUMP("init datas", initData.payload()->makeContiguous()->span().data(), initData.payload()->size());
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.cpp
+index a3134e46b5b4..cd48f2f3a9d6 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.cpp
+@@ -23,6 +23,8 @@
+ 
+ #include <wtf/StdLibExtras.h>
+ #include <wtf/text/Base64.h>
++#include "InitDataRegistry.h"
++#include "ISOProtectionSystemSpecificHeaderBox.h"
+ 
+ #if ENABLE(ENCRYPTED_MEDIA) && USE(GSTREAMER)
+ 
+@@ -92,6 +94,47 @@ RefPtr<SharedBuffer> InitData::extractCencIfNeeded(RefPtr<SharedBuffer>&& unpars
+     return payload;
+ }
+ 
++bool GStreamerEMEUtilities::cencHasInitDataForKeySystem(const InitData& initData, const String& keySystem)
++{
++    auto psshBoxes = InitDataRegistry::extractPsshBoxesFromCenc(*(initData.payload()));
++
++    if (!psshBoxes) {
++        return false;
++    }
++
++    auto keySystemToUuidRaw = [&keySystem]() -> auto& {
++        static const Vector<uint8_t> s_ClearKeyUUIDRaw ({ 0x10,0x77,0xef,0xec,0xc0,0xb2,0x4d,0x02,0xac,0xe3,0x3c,0x1e,0x52,0xe2,0xfb,0x4b });
++#if ENABLE(THUNDER)
++        static const Vector<uint8_t> s_WidevineUUIDRaw ({ 0xed,0xef,0x8b,0xa9,0x79,0xd6,0x4a,0xce,0xa3,0xc8,0x27,0xdc,0xd5,0x1d,0x21,0xed });
++        static const Vector<uint8_t> s_PlayReadyUUIDRaw({ 0x9a,0x04,0xf0,0x79,0x98,0x40,0x42,0x86,0xab,0x92,0xe6,0x5b,0xe0,0x88,0x5f,0x95 });
++#endif
++        static const Vector<uint8_t> s_InvalidUUIDRaw;
++
++        if (isClearKeyKeySystem(keySystem))
++            return s_ClearKeyUUIDRaw;
++
++#if ENABLE(THUNDER)
++        if (isWidevineKeySystem(keySystem))
++            return s_WidevineUUIDRaw;
++
++        if (isPlayReadyKeySystem(keySystem))
++            return s_PlayReadyUUIDRaw;
++#endif
++
++        ASSERT_NOT_REACHED();
++        return s_InvalidUUIDRaw;
++    };
++
++    auto& keySystemUuidRaw = keySystemToUuidRaw();
++
++    for (auto& box : psshBoxes.value()) {
++        if (box->systemID() == keySystemUuidRaw) {
++            return true;
++        }
++    }
++    return false;
++}
++
+ #undef GST_CAT_DEFAULT
+ 
+ } // namespace WebCore
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.h b/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.h
+index 64fc0a29837b..3fc8d113039f 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.h
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.h
+@@ -189,6 +189,8 @@ public:
+         ASSERT_NOT_REACHED();
+         return ""_s;
+     }
++
++    static bool cencHasInitDataForKeySystem(const InitData& initData, const String& keySystem);
+ };
+ 
+ }
+-- 
+2.48.1
+
