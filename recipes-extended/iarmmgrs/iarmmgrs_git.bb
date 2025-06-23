@@ -34,7 +34,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit pkgconfig breakpad-logmapper syslog-ng-config-gen
 SYSLOG-NG_FILTER = "uimgr"
-SYSLOG-NG_SERVICE_uimgr += "dsmgr.service pwrmgr.service mfrmgr.service sysmgr.service"
+SYSLOG-NG_SERVICE_uimgr += "dsmgr.service mfrmgr.service sysmgr.service"
 #The log rate and destination are mentioned at iarmbus_git.bb, to avoid duplication of variables set we have commented the below variables.
 #SYSLOG-NG_DESTINATION_uimgr = "uimgr_log.txt"
 #SYSLOG-NG_LOGRATE_uimgr = "very-high"
@@ -58,7 +58,6 @@ EXTRA_OECONF = " --enable-yocto"
 ASNEEDED = ""
 
 INCLUDE_DIRS = " \
-    -I${S}/power/include \
     -I${S}/mfr/include \
     -I${S}/sysmgr/include \
     -I${S}/dsmgr \
@@ -135,10 +134,6 @@ do_compile() {
     #LDFLAGS="-lsystemd ${LDFLAGS}" CFLAGS="-DENABLE_SD_NOTIFY ${CFLAGS}" oe_runmake -B -C ${S}/sysmgr/
     LDFLAGS="${LDFLAGS}" CFLAGS="-DENABLE_SD_NOTIFY ${CFLAGS}" oe_runmake -B -C ${S}/sysmgr/
     CFLAGS=" ${CFLAGS}" LDFLAGS="-lds -lds-hal -ldshalsrv -ldl -L${S}/utils -liarmUtils ${LDFLAGS}" oe_runmake -B -C ${S}/dsmgr/
-    LDFLAGS="-ldshalcli -lds -liarmmgrs-power-hal -L${S}/utils -liarmUtils ${LDFLAGS}" oe_runmake -B -C ${S}/power/
-
-
-    LDFLAGS="-ldshalcli -lds -liarmmgrs-power-hal ${LDFLAGS}" oe_runmake -B -C ${S}/pwrstate/
 
     if [ "${@bb.utils.contains('PACKAGECONFIG', 'mfr', 'mfr', '', d)}" != "" ]; then
         export COMCAST_PLATFORM=XI4
@@ -159,13 +154,13 @@ do_install() {
 
 
 
-    for i in sysmgr power rdmmgr receiver; do
+    for i in sysmgr rdmmgr receiver; do
         install -d ${D}${includedir}/rdk/iarmmgrs/$i
         install -m 0644 ${S}/$i/include/*.h ${D}${includedir}/rdk/iarmmgrs/$i
     done
 
     install -d ${D}${bindir}
-    for i in dsmgr/*Main sysmgr/*Main power/*Main pwrstate/pwrstate_notifier; do
+    for i in dsmgr/*Main sysmgr/*Main; do
         install -m 0755 ${S}/$i ${D}${bindir}
     done
 
@@ -173,7 +168,6 @@ do_install() {
     install -m 0755 ${S}/utils/libiarmUtils.so ${D}${libdir}/libiarmUtils.so.0.0.0
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/conf/dsmgr.service ${D}${systemd_unitdir}/system
-    install -m 0644 ${S}/conf/pwrmgr.service ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/conf/sysmgr.service ${D}${systemd_unitdir}/system
     ln -rsf ${D}${libdir}/libiarmUtils.so.0.0.0  ${D}${base_libdir}/libiarmUtils.so
 
@@ -194,18 +188,16 @@ PACKAGECONFIG ??= ""
 PACKAGECONFIG[mfr] = "-DUSE_MFR,,,"
 
 SYSTEMD_SERVICE:${PN} += "dsmgr.service"
-SYSTEMD_SERVICE:${PN} += "pwrmgr.service"
 SYSTEMD_SERVICE:${PN} += "sysmgr.service"
 
 SYSTEMD_SERVICE:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'mfr', 'mfrmgr.service', '', d)}"
 FILES:${PN} += "${systemd_unitdir}/system/*.service"
 FILES:${PN} += "${libdir}/*"
-FILES_${PN} += "${bindir}/test_pwrMgr"
 FILES_SOLIBSDEV = ""
 SOLIBS = ".so"
 INSANE_SKIP:${PN} += "dev-so"
 # Breakpad processname and logfile mapping
-BREAKPAD_LOGMAPPER_PROCLIST = "dsMgrMain,IARMDaemonMain,pwrMgrMain,mfrMgrMain,sysMgrMain"
+BREAKPAD_LOGMAPPER_PROCLIST = "dsMgrMain,IARMDaemonMain,mfrMgrMain,sysMgrMain"
 BREAKPAD_LOGMAPPER_LOGLIST = "uimgr_log.txt"
 
 DEPENDS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' sqlite3  ', '',d)}"
@@ -255,17 +247,13 @@ do_install:append(){
     if ${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', 'true', 'false', d)}; then
         install -m 0755 ${S}/mfr/test_mfr/test_mfr_client ${D}${bindir}
     fi
-        install -m 0755 ${S}/test/test_pwrMgr ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_scrubAllBanks ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_deletePDRI ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiEraseAllData ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiSetCredentials ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiGetCredentials ${D}${bindir}
-        
-        
 
-       sed -i "/Type=notify/aEnvironment="RDK_DEEPSLEEP_WAKEUP_ON_POWER_BUTTON=1"" ${D}${systemd_unitdir}/system/pwrmgr.service
-       sed -i "/ExecStart=.*/aExecStop=/bin/touch /tmp/pwrmgr_restarted" ${D}${systemd_unitdir}/system/pwrmgr.service
+       #sed -i "/ExecStart=.*/aExecStop=/bin/touch /tmp/pwrmgr_restarted" ${D}${systemd_unitdir}/system/pwrmgr.service
 }
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'ctrlm-headers', '', d)}"
