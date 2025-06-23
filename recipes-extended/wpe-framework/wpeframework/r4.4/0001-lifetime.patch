@@ -14,7 +14,7 @@ Index: git/Source/WPEFramework/PluginServer.h
  
                  Notifiers::iterator index(_notifiers.begin());
  
-+                std::cout << "akshay size of notifers ServiceMap::Initialize: " << _notifiers.size() << pthread_self() << std::endl;
++                std::cout << "akshay size of notifers ServiceMap::Initialize: " << _notifiers.size() << " thread value " << pthread_self() << std::endl;
 +                std::cout << "akshay before entering while loop ServiceMap::Initialize: " << callsign << std::endl;
                  while (index != _notifiers.end()) {
 +                    std::cout << "akshay inside while loop and before QueryInterface call ServiceMap::Initialize: " << callsign << std::endl;
@@ -42,7 +42,7 @@ Index: git/Source/WPEFramework/PluginServer.h
 +                std::cout << "akshay after lock ServiceMap::Activated: " << callsign << std::endl;
                  Notifiers::iterator index(_notifiers.begin());
 -
-+                std::cout << "akshay size of notifers in servicemap::Activated: " << _notifiers.size() << pthread_self() << std::endl;
++                std::cout << "akshay size of notifers in servicemap::Activated: " << _notifiers.size() << " thread value " << pthread_self() << std::endl;
                  while (index != _notifiers.end()) {
 +                    std::cout << "akshay inside while loop and before Activated call ServiceMap::Activated: " << callsign << std::endl;
                      (*index)->Activated(callsign, entry);
@@ -62,7 +62,7 @@ Index: git/Source/WPEFramework/PluginServer.h
 +                std::cout << "akshay after lock ServiceMap::Deactivated: " << callsign << std::endl;
                  Notifiers::iterator index(_notifiers.begin());
 -
-+                std::cout << "akshay size of notifers ServiceMap::Deactivated: " << _notifiers.size() << pthread_self() << std::endl;
++                std::cout << "akshay size of notifers ServiceMap::Deactivated: " << _notifiers.size() << " thread value " << pthread_self() << std::endl;
                  while (index != _notifiers.end()) {
 +                    std::cout << "akshay inside while loop and before Deactivated call ServiceMap::Deactivated: " << callsign << std::endl;
                      (*index)->Deactivated(callsign, entry);
@@ -82,7 +82,7 @@ Index: git/Source/WPEFramework/PluginServer.h
 +                std::cout << "akshay after lock ServiceMap::Deinitialized: " << callsign << std::endl;
                  Notifiers::iterator index(_notifiers.begin());
 -
-+                std::cout << "akshay size of notifers ServiceMap::Deinitialized " << _notifiers.size() << pthread_self() << std::endl;
++                std::cout << "akshay size of notifers ServiceMap::Deinitialized " << _notifiers.size() << " thread value " << pthread_self() << std::endl;
                  while (index != _notifiers.end()) {
 +                    std::cout << "akshay inside while loop and before QueryInterface call: " << callsign << std::endl;
                      PluginHost::IPlugin::ILifeTime* lifetime = (*index)->QueryInterface<PluginHost::IPlugin::ILifeTime>();
