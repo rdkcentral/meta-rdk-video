@@ -35,6 +35,14 @@ inherit autotools pkgconfig coverity systemd
 
 SYSTEMD_SERVICE:${PN}:remove = " rdkfwupgrader.service rdkfwupgrader.path"
 
+do_install:append() {
+    # Only install testrdkvfwupgrader if neither 'prod' nor 'prodlog' is in DISTRO_FEATURES
+    if ! echo "${DISTRO_FEATURES}" | grep -qw 'prod' && ! echo "${DISTRO_FEATURES}" | grep -qw 'prodlog'; then
+        install -d ${D}${bindir}
+        install -m 0755 ${B}/testrdkvfwupgrader ${D}${bindir}/
+    fi
+}
+
 FILES:${PN}:remove = " ${bindir}/rdkfwupgrader \
                  ${base_libdir}/rdk/rdkfwupgrader_start.sh \
                  ${base_libdir}/rdk/rdkfwupgrader_check_now.sh \
