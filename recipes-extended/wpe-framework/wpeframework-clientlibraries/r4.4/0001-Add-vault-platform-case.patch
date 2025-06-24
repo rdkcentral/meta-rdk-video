@@ -1,0 +1,25 @@
+From 9208a900eb06c8cbd06b664698dae49545a15288 Mon Sep 17 00:00:00 2001
+From: Lekshmi Mohan <Mohan_Lekshmi@comcast.com>
+Date: Mon, 13 Jan 2025 07:15:18 +0000
+Subject: [PATCH] Add vault platform case
+
+---
+ Source/cryptography/implementation/SecApi/Vault.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Source/cryptography/implementation/SecApi/Vault.cpp b/Source/cryptography/implementation/SecApi/Vault.cpp
+index 2900f4c..96910a7 100644
+--- a/Source/cryptography/implementation/SecApi/Vault.cpp
++++ b/Source/cryptography/implementation/SecApi/Vault.cpp
+@@ -567,6 +567,7 @@ extern "C" {
+             Implementation::vaultId = CRYPTOGRAPHY_VAULT_NETFLIX;
+             break;
+         case CRYPTOGRAPHY_VAULT_DEFAULT:
++        case CRYPTOGRAPHY_VAULT_PLATFORM:
+            {
+                 static Implementation::Vault instance;
+                 vault = &(instance);
+-- 
+2.25.1
+
+
