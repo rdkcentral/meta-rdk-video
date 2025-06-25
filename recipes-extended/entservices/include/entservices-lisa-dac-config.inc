@@ -29,8 +29,8 @@ def get_lisa_dac_config(d):
         'at301': ('ah212', '1.0.0-15cd0290c4412eb17d1888767806b69d25d66eb8-dbg'),
         'hp44h': ('ah212', '1.0.0-15cd0290c4412eb17d1888767806b69d25d66eb8-dbg'),
         'ap222': ('ap222', ''),
-        'mediabox': ('rtd1319', '1.0.0-f9dbb0a5f4b6814f298740ddd148b3b56e3eafed-dbg'),
-        'blade': ('rtd1319', '1.0.0-f9dbb0a5f4b6814f298740ddd148b3b56e3eafed-dbg'),
+        'mediabox': ('rtd1319', '1.0.0-3c34f1bd496bff1894423372d35316c4c9ea7224-dbg'),
+        'blade': ('rtd1319', '1.0.0-3c34f1bd496bff1894423372d35316c4c9ea7224-dbg'),
         'm393': ('m393', '')
     }
 
