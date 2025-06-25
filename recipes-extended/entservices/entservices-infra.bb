@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Infra plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "1.4.3"
+PV ?= "1.4.5"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -16,10 +16,10 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDK-41681-PR4013.patch \
           "
 
-# Release version - 1.4.4
-SRCREV = "5ebed2e5cbcf4dbc2603243a9bd231f057101dcf"
+# Release version - 1.4.5
+SRCREV = "d5aa1db578b5129ea2ad7ef7b5cad0e08483ad4f"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
@@ -52,14 +52,13 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " monitor \
-    persistent_store \    
+    persistent_store \
     resourcemanager \
     sharedstorage \
     telemetrysupport \
     usbdevice \
     usbmass_storage \
     usersettings \
-    analytics \
     ocicontainer \
     runtimemanager \
     messagecontrol \
@@ -119,7 +118,7 @@ PACKAGECONFIG[usbaccess]            = "-DPLUGIN_USBACCESS=ON,-DPLUGIN_USBACCESS=
 PACKAGECONFIG[usbdevice]         = "-DPLUGIN_USBDEVICE=ON,-DPLUGIN_USBDEVICE=OFF,libusb1"
 PACKAGECONFIG[usbmass_storage]         = "-DPLUGIN_USB_MASS_STORAGE=ON,-DPLUGIN_USB_MASS_STORAGE=OFF,"
 PACKAGECONFIG[usersettings]         = "-DPLUGIN_USERSETTINGS=ON,-DPLUGIN_USERSETTINGS=OFF,"
-PACKAGECONFIG[analytics]            = "-DPLUGIN_ANALYTICS=ON -DPLUGIN_ANALYTICS_SIFT_BACKEND=ON,-DPLUGIN_ANALYTICS=OFF,curl entservices-apis,curl entservices-apis"
+PACKAGECONFIG[analytics]            = "-DPLUGIN_ANALYTICS=ON,-DPLUGIN_ANALYTICS=OFF, entservices-apis, entservices-apis"
 PACKAGECONFIG[rdkshell]             = "-DPLUGIN_RDKSHELL=ON,-DPLUGIN_RDKSHELL=OFF,rdkshell entservices-apis,rdkshell entservices-apis"
 PACKAGECONFIG[rdkshellrialto]       = "-DRIALTO_FEATURE=ON,-DRIALTO_FEATURE=OFF,rialto,rialto-servermanager-lib"
 PACKAGECONFIG[rustadapter]          = "-DPLUGIN_RUSTADAPTER=ON,,,"
