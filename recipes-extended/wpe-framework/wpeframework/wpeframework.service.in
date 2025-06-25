@@ -15,6 +15,7 @@ Environment="ENABLE_WEBKITBROWSER_PLUGIN_ACCESSIBILITY=1"
 Environment="TTS_USE_THUNDER_CLIENT=1"
 Environment="XDG_DATA_HOME=/opt/QT/home"
 Environment="FORCE_SVP=TRUE"
+Environment="JSRUNTIME_MODULES_PATH=/home/root/modules/"
 Environment="FORCE_SAP=TRUE"
 ExecStart=-/usr/bin/WPEFramework -b
 # Manually adding PID file support. This is used by Thunder clients to know if
