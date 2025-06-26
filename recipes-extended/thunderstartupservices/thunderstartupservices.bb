@@ -17,6 +17,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-avinput.service \
     wpeframework-bluetooth.service \
     wpeframework-cloudstore.service \
+    wpeframework-cryptography.service \
     wpeframework-deviceinfo.service \
     wpeframework-displayinfo.service \
     wpeframework-displaysettings.service \
