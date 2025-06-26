@@ -37,7 +37,7 @@ SYSTEMD_SERVICE:${PN}:remove = " rdkfwupgrader.service rdkfwupgrader.path"
 
 do_install:append() {
     # Remove testrdkvfwupgrader if 'prod-variant' or 'prodlog-variant' is in DISTRO_FEATURES
-    if echo "${DISTRO_FEATURES}" | grep -qw 'prod-variant' || echo "${DISTRO_FEATURES}" | grep -qw 'prodlog-variant'; then
+    if ${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', 'true', 'false', d)}; then
         rm -rf ${D}${bindir}/testrdkvfwupgrader
     fi
 }
