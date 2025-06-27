@@ -49,9 +49,3 @@ SYSTEMD_SERVICE:${PN} = "audiocapturemgr.service"
 BREAKPAD_LOGMAPPER_PROCLIST = "audiocapturemgr"
 BREAKPAD_LOGMAPPER_LOGLIST = "audiocapturemgr.log"
 
-# On TV devices, audiocapturemgr requires root priveledges in order to run
-DEPENDS:remove = "${@bb.utils.contains("DISTRO_FEATURES", 'RDKE_PLATFORM_TV', ' libunpriv', '', d)}"
-
-CXXFLAGS:remove = "${@bb.utils.contains("DISTRO_FEATURES", 'RDKE_PLATFORM_TV', ' -DDROP_ROOT_PRIV', '', d)}"
-
-LDFLAGS:remove = "${@bb.utils.contains("DISTRO_FEATURES", 'RDKE_PLATFORM_TV', ' -lprivilege', '', d)}"
