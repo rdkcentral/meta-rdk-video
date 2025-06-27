@@ -15,10 +15,10 @@ S = "${WORKDIR}/git"
 PV ?= "2.0.0"
 PR ?= "r1"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKE-3106"
+SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};branch=plugintest"
 
 #Release 1.0.1
-SRCREV = "7edfb919334cb31d27d5ded9db4c6fbd1bcb8c1f"
+SRCREV = "3f2543af7096d989ea58a14dc07483ad9adeb0e7"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
