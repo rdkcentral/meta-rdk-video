@@ -18,9 +18,9 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
 
 
 # Release version - 1.4.7
-SRCREV = "e438c9e6497ceec4b7e73e5d1f0d2e3645fdfd5f"
+SRCREV = "41b8116a0070b90227cc3ec3b8da0496bf378bad"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
@@ -53,7 +53,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " monitor \
-    persistent_store \    
+    persistent_store \
     resourcemanager \
     sharedstorage \
     telemetrysupport \
