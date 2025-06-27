@@ -50,6 +50,10 @@ do_install:append() {
     install -m 0644 ${OPEN_RIPPLE_S}/examples/reference-manifest/IpStb/firebolt-device-manifest.json ${D}${sysconfdir}/firebolt-device-manifest.json
     install -m 0644 ${OPEN_RIPPLE_S}/examples/reference-manifest/IpStb/firebolt-extn-manifest.json ${D}${sysconfdir}/firebolt-extn-manifest.json
     install -m 0644 ${OPEN_RIPPLE_S}/examples/reference-manifest/IpStb/firebolt-app-library.json ${D}${sysconfdir}/firebolt-app-library.json
+
+    # Copy ripple.common.rules.json
+    install -m 0644 ${OPEN_RIPPLE_S}/examples/rules/ripple.common.rules.json ${D}${sysconfdir}/ripple.common.rules.json
+
     #TODO We need a proper 1.4.2 version of firebolt-open-rpc.json for community.
     install -m 0644 ${OPEN_RIPPLE_S}/openrpc_validator/src/test/firebolt-open-rpc.json ${D}${sysconfdir}/ripple/openrpc/firebolt-open-rpc.json
     #TODO This should be a packageoption instead.
