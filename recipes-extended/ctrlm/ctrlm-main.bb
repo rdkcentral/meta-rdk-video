@@ -19,7 +19,7 @@ BREAKPAD_LOGMAPPER_PROCLIST = "controlMgr"
 BREAKPAD_LOGMAPPER_LOGLIST = "ctrlm_log.txt"
 
 SYSLOG-NG_FILTER = "ctrlm"
-SYSLOG-NG_SERVICE_ctrlm = "ctrlm-hal-rf4ce.service ctrlm-main.service"
+SYSLOG-NG_SERVICE_ctrlm = "ctrlm-main.service"
 SYSLOG-NG_DESTINATION_ctrlm = "ctrlm_log.txt"
 SYSLOG-NG_LOGRATE_ctrlm = "medium"
 
@@ -38,8 +38,6 @@ LOGROTATE_SIZE_ctrlm_log="20971520"
 LOGROTATE_ROTATION_ctrlm_log="25"
 
 SRC_URI:append = " file://ctrlm-main.service"
-SRC_URI:append = " file://1_rf4ce.conf"
-SRC_URI:append = " file://ctrlm-hal-rf4ce.service"
 
 VERSION_TEST_TONES = "20220616"
 SRC_URI:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' ${RDK_ARTIFACTS_BASE_URL}/generic/components/yocto/ctrlm_factory/test_tones/test_tones_${VERSION_TEST_TONES}/2.1/test_tones_${VERSION_TEST_TONES}-2.1.tar.bz2;name=test_tones', '', d)}"
@@ -53,11 +51,9 @@ S = "${WORKDIR}/git"
 
 FILES:${PN} += "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', '${datadir}/tone_1khz.wav', '', d)}"
 FILES:${PN} += "${systemd_unitdir}/system/ctrlm-main.service "
-FILES:${PN} += "${@bb.utils.contains('MACHINE_FEATURES', 'rf4ce', '${systemd_unitdir}/system/ctrlm-main.service.d/1_rf4ce.conf', '', d)}"
 
 SYSTEMD_PACKAGES += " ctrlm-main"
 SYSTEMD_SERVICE:ctrlm-main  = "ctrlm-main.service"
-SYSTEMD_SERVICE:ctrlm-main += "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm_generic', 'ctrlm-hal-rf4ce.service', '', d)}"
 
 ENABLE_GPERFTOOLS_HEAPCHECK_WP_DISTRO = "1"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES_RDK', 'comcast-gperftools-heapcheck-wp', ' -DFDC_ENABLED=ON', '', d)}"
@@ -177,8 +173,6 @@ EXTRA_OECMAKE:append = " -DCMAKE_SYSROOT=${RECIPE_SYSROOT}"
 EXTRA_OECMAKE:append = " -DGIT_BRANCH=${CMF_GIT_BRANCH}"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm_mic_tap', ' -DMIC_TAP=ON', '', d)}"
 
-RF4CE_ENABLED = "${@bb.utils.contains('MACHINE_FEATURES', 'rf4ce' ,'true', 'false', d)}"
-
 addtask ctrlm_config after do_configure before do_compile
 do_ctrlm_config() {
 }
@@ -196,18 +190,9 @@ do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
 
-    if [ "${RF4CE_ENABLED}" = "true" ]; then
-       install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
-       install -m 0644 ${WORKDIR}/1_rf4ce.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
-    fi
-
     if ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'true', 'false', d)}; then
        install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
        install -m 0644 ${WORKDIR}/2_bluetooth.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
-    fi
-
-    if [ "${CTRLM_GENERIC}" = "true" ]; then
-       install -m 0644 ${WORKDIR}/ctrlm-hal-rf4ce.service ${D}${systemd_unitdir}/system/
     fi
 }
 
