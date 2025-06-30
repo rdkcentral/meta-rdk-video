@@ -1,0 +1,9 @@
+diff -upr a/getDeviceId.sh b/getDeviceId.sh
+--- a/getDeviceId.sh	2025-03-24 18:25:12.200816109 +0200
++++ b/getDeviceId.sh	2025-06-30 22:34:28.867846102 +0300
+@@ -70,3 +70,5 @@ else
+ fi
+ 
+ echo "{ \"deviceId\" : \"${deviceId}\", \"partnerId\" : \"${partnerId}\" }"
++date > /dev/stderr
++time t2ValNotify "SYST_INFO_PartnerId" "$partnerId"
