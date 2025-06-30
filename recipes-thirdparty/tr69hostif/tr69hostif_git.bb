@@ -10,7 +10,7 @@ S = "${WORKDIR}/git"
 
 DEPENDS = "iarmbus iarmmgrs e2fsprogs libsoup libsyswrapper yajl \
            devicesettings procps glib-2.0 \
-           cjson libtinyxml2\
+           cjson telemetry libtinyxml2\
 	  "
 DEPENDS:append = " rdk-logger libparodus parodus virtual/vendor-devicesettings-hal ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
 
@@ -131,7 +131,7 @@ CPPFLAGS:append = " -DMEDIA_CLIENT "
 CXXFLAGS += "-std=c++11"
 CXXFLAGS += " -DYAJL_V2"
 
-EXTRA_OECONF:append = " --enable-morty"
+EXTRA_OECONF:append = " --enable-morty --enable-t2api=yes"
 
 inherit autotools systemd pkgconfig
 
