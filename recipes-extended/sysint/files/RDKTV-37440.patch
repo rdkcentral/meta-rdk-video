@@ -1,9 +1,10 @@
 diff -upr a/lib/rdk/getDeviceId.sh b/lib/rdk/getDeviceId.sh
---- a/lib/rdk/getDeviceId.sh	2025-03-24 18:25:12.200816109 +0200
-+++ b/lib/rdk/getDeviceId.sh	2025-06-30 22:34:28.867846102 +0300
-@@ -70,3 +70,5 @@ else
+--- a/lib/rdk/getDeviceId.sh	2025-07-01 01:25:23.865443317 +0300
++++ b/lib/rdk/getDeviceId.sh	2025-07-01 01:29:32.397412506 +0300
+@@ -74,4 +74,5 @@ else
  fi
  
  echo "{ \"deviceId\" : \"${deviceId}\", \"partnerId\" : \"${partnerId}\" }"
+-t2ValNotify "SYST_INFO_PartnerId" "$partnerId"
 +date > /dev/stderr
 +time t2ValNotify "SYST_INFO_PartnerId" "$partnerId"
