@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Infra plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "1.2.1"
+PV ?= "1.4.3"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -16,13 +16,15 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDK-41681-PR4013.patch \
           "
 
-# Release version - 1.4.0
-SRCREV = "0e09e26cb28f69854eef12aa3294547fe5756291"
+# Release version - 1.4.4
+SRCREV = "00cbb54e6cd66a5d4ac9d262bed6b49a2d318fe1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
+
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
 EXTRA_OECMAKE += " -DPLUGIN_ANALYTICS_SIFT_STORE_PATH=/opt/persistent/AnalyticsSiftStore"
 
