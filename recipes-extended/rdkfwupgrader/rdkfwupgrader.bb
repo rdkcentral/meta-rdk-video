@@ -9,8 +9,7 @@ DEPENDS +=" cjson curl rdk-logger"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 DEPENDS:append = " safec-common-wrapper rfc telemetry iarmbus iarmmgrs dbus glib-2.0 commonutilities libsyswrapper "
 
-EXTRA_OECONF += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prod-variant prodlog-variant', '--disable-test-fwupgrader', '--enable-test-fwupgrader', d)}"
-
+EXTRA_OECONF += "${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', '--enable-test-fwupgrader', '', d)}"
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 CXXFLAGS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 CFLAGS += "-I=${includedir}/wdmp-c -I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs/sysmgr -I${STAGING_INCDIR}/glib-2.0"
