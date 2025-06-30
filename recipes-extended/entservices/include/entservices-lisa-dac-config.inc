@@ -29,8 +29,8 @@ def get_lisa_dac_config(d):
         'at301': ('ah212', '1.0.0-15cd0290c4412eb17d1888767806b69d25d66eb8-dbg'),
         'hp44h': ('ah212', '1.0.0-15cd0290c4412eb17d1888767806b69d25d66eb8-dbg'),
         'ap222': ('ap222', ''),
-        'mediabox': ('rtd1319', '1.0.0-f9dbb0a5f4b6814f298740ddd148b3b56e3eafed-dbg'),
-        'blade': ('rtd1319', '1.0.0-f9dbb0a5f4b6814f298740ddd148b3b56e3eafed-dbg'),
+        'mediabox': ('rtd1319', '1.0.0-3c34f1bd496bff1894423372d35316c4c9ea7224-dbg'),
+        'blade': ('rtd1319', '1.0.0-3c34f1bd496bff1894423372d35316c4c9ea7224-dbg'),
         'm393': ('m393', '')
     }
 
@@ -50,6 +50,11 @@ def get_lisa_dac_config(d):
 CONFIG_URL ?= "https://280222515084-rdkm-apps-resources.s3.eu-central-1.amazonaws.com/configuration/cpe.json"
 LISA_DAC_CONFIG_PLATFORM ?= "${@get_lisa_dac_config(d)[0]}"
 LISA_DAC_CONFIG_FIRMWARE ?= "${@get_lisa_dac_config(d)[1]}"
+
+LISA_DEFAULT_IMAGE_STORAGE_PATH ?= "/opt/dac_apps"
+LISA_DEFAULT_APPDATA_STORAGE_PATH ?= "/opt/dac_apps/data"
+LISA_IMAGE_PATH ?= "${@d.getVar('PRODUCT_CONF_LISA_IMAGE_STORAGE_PATH') or d.getVar('LISA_DEFAULT_IMAGE_STORAGE_PATH') }"
+LISA_APPDATA_PATH ?= "${@d.getVar('PRODUCT_CONF_LISA_APPDATA_STORAGE_PATH') or d.getVar('LISA_DEFAULT_APPDATA_STORAGE_PATH') }"
 
 python do_inject_dac_config() {
     import json
