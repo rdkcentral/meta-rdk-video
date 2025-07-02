@@ -77,20 +77,6 @@ if [ -e "$RA_Web_Store" ]; then
      do_ftue_check
 fi
 
-# phase -I/II
-
-if [ ! -e "$file_check_dev" ]; then
-
-    boottypeLog "Phase-I/II logic is running now !!!!"
-    if [ "$ftue_key_available" == "ftue" ]; then
-        boottypeLog "Migrating RDK-V image to RDK-E on first time and FTUE key is present in RA localStorage. Hense the FSR is triggered"
-        do_FSR
-    fi
-
-    boottypeLog "Nothing has done here, since the BootType is $current_bootType"
-    exit 0
-fi
-
 # phase - III
 boottypeLog "Phase-III logic is running now !!!!"
 if [ "$ftue_key_available" != "ftue" ]; then
