@@ -15,10 +15,10 @@ S = "${WORKDIR}/git"
 PV ?= "2.0.0"
 PR ?= "r1"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};branch=WebAssembly"
 
 #Release 1.0.1
-SRCREV = "bbe641cd29d8f90384c7df735fd75c8e2c827ed8"
+SRCREV = "a814ae53ceb2d8c050d57c03d14660d0afed1fe0"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -44,6 +44,7 @@ EXTRA_OECMAKE += "${@' -DENABLE_JSRUNTIME_SERVER=ON' if d.getVar('ENABLE_SERVER'
 do_install() {
    install -d ${D}/home/root/modules
    install -d ${D}/home/root
+   install -d ${D}/home/root/webAssembly
 
    if [ "${BUILD_CLIENT}" = "1" ]; then
       cp -a ${B}/JSRuntimeClient ${D}/home/root/JSRuntimeClient
@@ -67,6 +68,10 @@ do_install() {
    cp -a ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
+   cp -a ${S}/src/jsc/examples/hello.js ${D}/home/root/webAssembly/.
+   cp -a ${S}/src/jsc/examples/test.js ${D}/home/root/webAssembly/.
+   cp -a ${S}/src/jsc/examples/hello.wasm ${D}/home/root/webAssembly/.
+   cp -a ${S}/src/jsc/examples/test.wasm ${D}/home/root/webAssembly/.
 
    install -d ${D}/${libdir}
    cp -a ${B}/libJSRuntimeJSC.so ${D}/${libdir}
@@ -92,4 +97,5 @@ BBCLASSEXTEND = "native"
 FILES:${PN} += "${@'/home/root/JSRuntimeClient' if d.getVar('BUILD_CLIENT') == '1' else ''}"
 FILES:${PN} += "/home/root/JSRuntimeJSC"
 FILES:${PN} += "/home/root/modules"
+FILES:${PN} += "/home/root/webAssembly"
 FILES:${PN} += "${libdir}/libJSRuntimeJSC.so"
