@@ -8,14 +8,23 @@ inherit systemd
 
 SRC_URI += "file://bootversion-loader.sh"
 SRC_URI += "file://bootversion-loader.service"
+SRC_URI += "file://boot_FSR.sh"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
+python __anonymous() {
+    if d.getVar("XUMOTV_MIGRATION") == "yes":
+        d.appendVar("FILES:${PN}", " /lib/rdk/boot_FSR.sh")
+}
 
 do_install:append () {
     install -d ${D}/lib/systemd/system
     install -m 0644 ${WORKDIR}/bootversion-loader.service ${D}/lib/systemd/system/bootversion-loader.service
     install -d ${D}/lib/rdk
     install -m 0755 ${WORKDIR}/bootversion-loader.sh ${D}/lib/rdk/bootversion-loader.sh
+    if [ "${XUMOTV_MIGRATION}" = "yes" ]; then
+        install -m 0755 ${WORKDIR}/boot_FSR.sh ${D}/lib/rdk/boot_FSR.sh
+    fi
 }
 
 SYSTEMD_SERVICE:${PN} = "bootversion-loader.service"

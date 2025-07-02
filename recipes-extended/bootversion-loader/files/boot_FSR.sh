@@ -1,0 +1,124 @@
+#!/bin/sh
+##########################################################################
+# If not stated otherwise in this file or this component's LICENSE
+# file the following copyright and licenses apply:
+#
+# Copyright 2016 RDK Management
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
+ #* @file      boot_FSR.sh
+ #* @brief     Orchestrates Xumo-specific migration and factory-reset flows on PLATCO devices.
+ #* @details   - Verifies DEVICE_NAME == “PLATCO” before proceeding.  
+ #*            - Reads current boot type and FTUE key from local storage.  
+ #*            - Implements EntOS Phases I/II (FTUE-driven RDK-V→RDK-E migration)  
+ #*              and Phase III (post-migration checks) for OTA9, OTA10+, etc.  
+ #*            - Full System Reset (FSR) is triggered after setting the flag and calling /rebootNow.sh 
+ #*            - EPIC links are:
+ #*            - https://ccp.sys.comcast.net/browse/CPESP-6598 & https://ccp.sys.comcast.net/browse/CPESP-7199
+ #*            - Followed the HLA provided below:
+ #*            - https://www.stb.bskyb.com/confluence/pages/viewpage.action?pageId=283439569#XumoSpecific:MigrationusecasesStates&Flowcharts-EntOSflow
+ ###########################################################################
+
+. /etc/device.properties
+
+if [ "$DEVICE_NAME" == "PLATCO" ]; then
+     echo -e "Running the script for PLATCO devices"
+else
+     echo -e "Exiting since this script is not intended for this Device"
+     exit 0
+fi
+
+RA_Web_Store="/opt/persistent/rdkservices/ResidentApp/wpe/local-storage/http_platco.thor.local_50050.localstorage"
+file_bootType="/tmp/bootType"
+file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
+file_DataStore="/opt/secure/migration/migration_data_store.json"
+file_check_dev="/opt/secure/migration/iui_not_fully_ready_for_migration"
+
+ftue_key_available="null"
+current_bootType=$(<"$file_bootType")
+current_bootType=${current_bootType:10}
+
+
+if [ -z $LOG_PATH ]; then
+    LOG_PATH="/opt/logs/"
+fi
+
+
+BOOTTYPE_LOG_FILE="$LOG_PATH/boottypescript.log"
+
+boottypeLog() {
+    echo "`/bin/timestamp`: $0: $*" >> $BOOTTYPE_LOG_FILE
+}
+
+do_ftue_check () {
+    Output=$(sqlite3 $RA_Web_Store "select * from ItemTable where key = 'ftue';" 2>&1)
+    ftue_key_available=${Output:0:4}
+}
+
+do_FSR () {
+    touch /tmp/data/.trigger_reformat
+    sh /rebootNow.sh -s boot_FSR -o "Rebooting the box for triggering FSR..."
+}
+
+if [ -e "$RA_Web_Store" ]; then
+     boottypeLog "calling ftue_check"
+     do_ftue_check
+fi
+
+# phase -I/II
+
+if [ ! -e "$file_check_dev" ]; then
+
+    boottypeLog "Phase-I/II logic is running now !!!!"
+    if [ "$ftue_key_available" == "ftue" ]; then
+        boottypeLog "Migrating RDK-V image to RDK-E on first time and FTUE key is present in RA localStorage. Hense the FSR is triggered"
+        do_FSR
+    fi
+
+    boottypeLog "Nothing has done here, since the BootType is $current_bootType"
+    exit 0
+fi
+
+# phase - III
+boottypeLog "Phase-III logic is running now !!!!"
+if [ "$ftue_key_available" != "ftue" ]; then
+    if [ "$current_bootType" == "BOOT_INIT" ] || [ "$current_bootType" == "BOOT_NORMAL" ]; then
+        boottypeLog "current BootType is $current_bootType and ftue key is not present"
+    elif [ "$current_bootType" == "BOOT_MIGRATION" ]; then 
+        if [ -e "$file_DataStore" ]; then
+            boottypeLog "current BootType is $current_bootType ftue key is not present"
+        else
+            #DataStore file is not present 
+            boottypeLog "Triggering FSR since DataStore is not present"
+            do_FSR
+        fi 
+    fi
+elif [ "$ftue_key_available" == "ftue" ]; then
+    if [ "$current_bootType" == "BOOT_NORMAL" ]; then
+        boottypeLog "current BootType is $current_bootType and ftue key is present"
+    elif [ "$current_bootType" == "BOOT_INIT" ]; then
+        boottypeLog "Triggering FSR since ftue is present and current BootType is $current_bootType"
+        do_FSR
+    elif [ "$current_bootType" == "BOOT_MIGRATION" ]; then
+        boottypeLog "current BootType is $current_bootType and ftue key is present"
+        if [ -e "$file_DataStore" ]; then
+            boottypeLog "DataStore file is present"
+        else
+            #DataStore file is not present 
+            boottypeLog "Triggering FSR since DataStore is not present"
+            do_FSR
+        fi
+    fi    
+fi
