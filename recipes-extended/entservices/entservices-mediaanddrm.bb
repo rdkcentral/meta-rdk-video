@@ -24,8 +24,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-set-OCDM-process-thread-name.patch \
           "
 
-# Release version - 1.1.2
-SRCREV = "0a13b154f317914656c99296c7f25ed7884947e9"
+# Release version - 1.1.2.1
+SRCREV = "35f2247aa6f3fc45a81e1b35fb1f11b454faca88"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
