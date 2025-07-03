@@ -22,7 +22,6 @@ LDFLAGS:append = "-lprivilege"
 CXXFLAGS += " -DDROP_ROOT_PRIV"
 
 S = "${WORKDIR}/git"
-EXTRA_OECONF = " --enable-testapp "
 export RDK_FSROOT_PATH = '${STAGING_DIR_TARGET}'
 
 inherit autotools pkgconfig systemd breakpad-logmapper syslog-ng-config-gen
