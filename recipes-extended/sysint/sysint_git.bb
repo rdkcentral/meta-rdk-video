@@ -261,6 +261,14 @@ do_install() {
 	install -m 0755 ${S}/lib/rdk/NM_Dispatcher.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d
 	install -m 0755 ${S}/lib/rdk/NM_preDown.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
+        install -m 0755 ${S}/etc/NetworkManager.conf ${D}${sysconfdir}/NetworkManager/NetworkManager.conf
+        install -m 0755 ${S}/etc/95-logging.conf ${D}${sysconfdir}/NetworkManager/conf.d/95-logging.conf
+        
+        rm -rf ${D}/etc/95-logging.conf
+        rm -rf ${D}/etc/NetworkManager.conf
+        rm -rf ${D}/etc/10-unmanaged-devices
+        rm -rf ${D}${base_libdir}/rdk/NM_preDown.sh
+        rm -rf ${D}${base_libdir}/rdk/NM_Dispatcher.sh
 }
 
 do_install:append:rdkstb() {
@@ -328,3 +336,6 @@ FILES:${PN} += "${sbindir}/*"
 FILES:${PN} += " /HrvInitScripts/*"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/NM_Dispatcher.sh"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d/NM_preDown.sh"
+FILES:${PN} += "${sysconfdir}/NetworkManager/NetworkManager.conf"
+FILES:${PN} += "${sysconfdir}/NetworkManager/conf.d/95-logging.conf"
+                                                          
