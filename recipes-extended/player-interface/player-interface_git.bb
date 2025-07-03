@@ -9,6 +9,7 @@ PR ?= "r0"
 inherit pkgconfig
 
 DEPENDS += "iarmmgrs wpeframework"
+DEPENDS += "wpeframework-com wpeframework-websocket"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0  gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)}"
 DEPENDS += " wpeframework-clientlibraries"
 DEPENDS:append = " virtual/vendor-gst-drm-plugins essos "
