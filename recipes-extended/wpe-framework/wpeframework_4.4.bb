@@ -28,7 +28,6 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/Remove_versioning_for_executables.patch \
            file://r4.4/wpeframework_version_r4.4.1.patch \
            file://r4.4/0001_Remove_DEBUG_Macro_Definition.patch \
-           file://r4.4/0001-RDK-28534-Security-Agent-Utility-and-Logging.patch \
            file://r4.4/0003-OCDM-increase-RPC-comm-timeout.patch \
            file://r4.4/wpeframework_added_optimization_flag_improvement.patch \
            file://r4.4/LLAMA-2254_fix_netlink_buffer_size_error.patch \
@@ -52,6 +51,7 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/RDKEMW-733-Add-ENTOS-IDS.patch \
            file://r4.4/Update-Trace-Level-Logging-Logic.patch \
            file://r4.4/Activating_plugins_Logs_COMRPC.patch \
+           file://r4.4/FirmwareUpdate_UptoDate.patch \
            "
 
 SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
@@ -70,6 +70,7 @@ SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
             file://r4.4/PR-1797-SocketPort-Closed.patch \
             file://r4.4/PR1832-Thunder-ABBA-Deadlock-Fix.patch \
             file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
+            file://r4.4/0001-SmarkLink-Crash-Fix.patch \
            "
 
 S = "${WORKDIR}/git"
