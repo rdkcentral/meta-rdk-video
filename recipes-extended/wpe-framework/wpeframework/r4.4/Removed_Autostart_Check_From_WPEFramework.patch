@@ -1,0 +1,22 @@
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index 13fe9d59d..17ba9459f 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -1148,6 +1148,9 @@ POP_WARNING()
+           });
+
+         for (auto service : configured_services)
++            SYSLOG(Logging::Startup, (_T("Activation of plugin [%s]:[%s] handled by systemd"),
++                service->ClassName().c_str(), service->Callsign().c_str()));
++#if 0
+         {
+             if (service->State() != PluginHost::Service::state::UNAVAILABLE) {
+                 if (service->Startup() == PluginHost::IShell::startup::ACTIVATED) {
+@@ -1161,6 +1164,7 @@ POP_WARNING()
+                 }
+             }
+         }
++#endif
+ #ifdef SYSTEMD_FOUND
+         SYSLOG(Logging::Startup, (_T("Notify that WPEFramework Systemd Service is Ready")));
+         sd_notify(0, "READY=1");
