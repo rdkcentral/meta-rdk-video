@@ -1,0 +1,12 @@
+diff --git a/tr69hostif.service b/tr69hostif.service
+index 3a256e0..4750ed9 100644
+--- a/tr69hostif.service
++++ b/tr69hostif.service
+@@ -30,7 +30,6 @@ ExecStart=/usr/bin/tr69hostif -c /etc/mgrlist.conf -p 10999 -s 11999 -d $DEBUGIN
+ ExecStop=/bin/kill -15 $MAINPID
+ RestartSec=10s
+ Restart=always
+-TimeoutStopSec=5
+ 
+ [Install]
+ WantedBy=multi-user.target
