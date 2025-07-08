@@ -1,0 +1,808 @@
+From 719b674f8dce7d5196615fc07921ae4489a201f7 Mon Sep 17 00:00:00 2001
+From: kkanag314 <krishnapriya_kanagaraj@comcast.com>
+Date: Wed, 25 Jun 2025 10:55:49 +0000
+Subject: [PATCH] error handling if invalid external input
+
+---
+ Source/ocdm/open_cdm.cpp      |  89 ++++++++++++++++------
+ Source/ocdm/open_cdm_ext.cpp  | 119 +++++++++++++++++++++++------
+ Source/ocdm/open_cdm_impl.cpp |   4 +-
+ Source/ocdm/open_cdm_impl.h   | 138 +++++++++++++++++++++++++---------
+ 4 files changed, 264 insertions(+), 86 deletions(-)
+
+diff --git a/Source/ocdm/open_cdm.cpp b/Source/ocdm/open_cdm.cpp
+index c9a0eb6..5d189ae 100644
+--- a/Source/ocdm/open_cdm.cpp
++++ b/Source/ocdm/open_cdm.cpp
+@@ -132,12 +132,16 @@ KeyStatus CDMState(const Exchange::ISession::KeyStatus state)
+  */
+ OpenCDMError opencdm_destruct_system(struct OpenCDMSystem* system)
+ {
+-    OpenCDMAccessor::Instance()->SystemBeingDestructed(system);
+     assert(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
+     if (system != nullptr) {
++       OpenCDMAccessor::Instance()->SystemBeingDestructed(system);
+        delete system;
++       result = OpenCDMError::ERROR_NONE;
+     }
+-    return (OpenCDMError::ERROR_NONE);
++ 
++    return (result);
+ }
+ 
+ /**
+@@ -180,9 +184,11 @@ OpenCDMError opencdm_system_get_metadata(struct OpenCDMSystem* system,
+     char metadata[], 
+     uint16_t* metadataSize)
+ {
+-    OpenCDMError result(ERROR_INVALID_ACCESSOR);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++    ASSERT(system != nullptr);
++    ASSERT(metadataSize != nullptr);
+ 
+-    if(system != nullptr) {
++    if((system != nullptr) && (metadataSize != nullptr)) {
+         result = StringToAllocatedBuffer(system->Metadata(), metadata, *metadataSize);
+     }
+     return result;
+@@ -204,11 +210,16 @@ OpenCDMError opencdm_system_get_metadata(struct OpenCDMSystem* system,
+ EXTERNAL OpenCDMError opencdm_get_metric_system_data(struct OpenCDMSystem* system,
+     uint32_t* bufferLength,
+     uint8_t* buffer) {
+-    OpenCDMError result(ERROR_INVALID_ACCESSOR);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
+     OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
+ 
+     if (accessor != nullptr) {
+-	result = static_cast<OpenCDMError>(accessor->Metricdata(system->keySystem(), *bufferLength, buffer));
++
++    ASSERT(system != nullptr);
++    ASSERT(bufferLength != nullptr);
++        if ((system != nullptr) && (bufferLength != nullptr)) {
++	        result = static_cast<OpenCDMError>(accessor->Metricdata(system->keySystem(), *bufferLength, buffer));
++        }
+     }
+ 
+     return (result);
+@@ -277,7 +288,8 @@ OpenCDMError opencdm_system_set_server_certificate(struct OpenCDMSystem* system,
+     const uint8_t serverCertificate[], const uint16_t serverCertificateLength)
+ {
+     OpenCDMAccessor * accessor = OpenCDMAccessor::Instance();
+-    OpenCDMError result(ERROR_INVALID_ACCESSOR);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++    ASSERT(system != nullptr);
+ 
+     if (system != nullptr) {
+         result = static_cast<OpenCDMError>(accessor->SetServerCertificate(
+@@ -311,11 +323,13 @@ opencdm_construct_session(struct OpenCDMSystem* system,
+     struct OpenCDMSession** session)
+ {
+     ASSERT(system != nullptr);
++    ASSERT(session != nullptr);
+     OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
+ 
+-    TRACE_L1("Creating a Session for %s", system->keySystem().c_str());
++    if ((system != nullptr) && (session != nullptr)) {
++        TRACE_L1("Creating a Session for %s", system->keySystem().c_str());
+ 
+-    result = OpenCDMSession::CreateSession(system,
++        result = OpenCDMSession::CreateSession(system,
+                                             licenseType,
+                                             initDataType,
+                                             initData, initDataLength,
+@@ -323,8 +337,9 @@ opencdm_construct_session(struct OpenCDMSystem* system,
+                                             callbacks, userData,
+                                             session
+     );
++        TRACE_L1("Created a Session, result %p, %d", *session, result);
++    }
+ 
+-    TRACE_L1("Created a Session, result %p, %d", *session, result);
+     return result;
+ }
+ /**
+@@ -336,6 +351,7 @@ opencdm_construct_session(struct OpenCDMSystem* system,
+ OpenCDMError opencdm_destruct_session(struct OpenCDMSession* session)
+ {
+     OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++    ASSERT(session != nullptr);
+ 
+     if (session != nullptr) {
+         result = OpenCDMError::ERROR_NONE;
+@@ -352,7 +368,8 @@ OpenCDMError opencdm_destruct_session(struct OpenCDMSession* session)
+  */
+ OpenCDMError opencdm_session_load(struct OpenCDMSession* session)
+ {
+-    OpenCDMError result(ERROR_INVALID_SESSION);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++    ASSERT(session != nullptr);
+ 
+     if (session != nullptr) {
+         result = static_cast<OpenCDMError>(session->Load());
+@@ -378,10 +395,17 @@ OpenCDMError opencdm_session_metadata(const struct OpenCDMSession* session,
+     char metadata[], 
+     uint16_t* metadataSize)
+ {
+-    OpenCDMError result(ERROR_INVALID_SESSION);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++    ASSERT(session != nullptr);
+ 
+     if(session != nullptr) {
+-        result = StringToAllocatedBuffer(session->Metadata(), metadata, *metadataSize);
++        ASSERT(metadataSize != nullptr);
++
++        if (metadataSize != nullptr) {
++            result = StringToAllocatedBuffer(session->Metadata(), metadata, *metadataSize);
++        } else {
++            result = OpenCDMError::ERROR_INVALID_ARG;
++        }
+     }
+     return result;
+ }
+@@ -394,6 +418,8 @@ OpenCDMError opencdm_session_metadata(const struct OpenCDMSession* session,
+ const char* opencdm_session_id(const struct OpenCDMSession* session)
+ {
+     const char* result = EmptyString;
++    ASSERT(session != nullptr);
++
+     if (session != nullptr) {
+         result = session->SessionId().c_str();
+     }
+@@ -408,6 +434,8 @@ const char* opencdm_session_id(const struct OpenCDMSession* session)
+ const char* opencdm_session_buffer_id(const struct OpenCDMSession* session)
+ {
+     const char* result = EmptyString;
++    ASSERT(session != nullptr);
++
+     if (session != nullptr) {
+         result = session->BufferId().c_str();
+     }
+@@ -425,6 +453,8 @@ uint32_t opencdm_session_has_key_id(struct OpenCDMSession* session,
+     const uint8_t length, const uint8_t keyId[])
+ {
+     bool result = false;
++    ASSERT(session != nullptr);
++
+     if (session != nullptr) {
+         result = session->HasKeyId(length, keyId);
+     }
+@@ -443,6 +473,7 @@ KeyStatus opencdm_session_status(const struct OpenCDMSession* session,
+     const uint8_t keyId[], uint8_t length)
+ {
+     KeyStatus result(KeyStatus::InternalError);
++    ASSERT(session != nullptr);
+ 
+     if (session != nullptr) {
+         result = CDMState(session->Status(length, keyId));
+@@ -462,6 +493,7 @@ uint32_t opencdm_session_error(const struct OpenCDMSession* session,
+     const uint8_t keyId[], uint8_t length)
+ {
+     uint32_t result(~0);
++    ASSERT(session != nullptr);
+ 
+     if (session != nullptr) {
+         result = session->Error(keyId, length);
+@@ -478,7 +510,8 @@ uint32_t opencdm_session_error(const struct OpenCDMSession* session,
+ OpenCDMError
+ opencdm_session_system_error(const struct OpenCDMSession* session)
+ {
+-    OpenCDMError result(ERROR_INVALID_SESSION);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++    ASSERT(session != nullptr);
+ 
+     if (session != nullptr) {
+         result = static_cast<OpenCDMError>(session->Error());
+@@ -498,7 +531,8 @@ OpenCDMError opencdm_session_update(struct OpenCDMSession* session,
+     const uint8_t keyMessage[],
+     uint16_t keyLength)
+ {
+-    OpenCDMError result(ERROR_INVALID_SESSION);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++    ASSERT(session != nullptr);
+ 
+     if (session != nullptr) {
+         session->Update(keyMessage, keyLength);
+@@ -515,7 +549,8 @@ OpenCDMError opencdm_session_update(struct OpenCDMSession* session,
+  */
+ OpenCDMError opencdm_session_remove(struct OpenCDMSession* session)
+ {
+-    OpenCDMError result(ERROR_INVALID_SESSION);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++    ASSERT(session != nullptr);
+ 
+     if (session != nullptr) {
+         result = static_cast<OpenCDMError>(session->Remove());
+@@ -550,7 +585,8 @@ OpenCDMError opencdm_session_set_parameter(struct OpenCDMSession* session,
+  */
+ OpenCDMError opencdm_session_resetoutputprotection(struct OpenCDMSession* session)
+ {
+-    OpenCDMError result(ERROR_INVALID_SESSION);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++    ASSERT(session != nullptr);
+ 
+     if (session != nullptr) {
+         session->ResetOutputProtection();
+@@ -568,7 +604,8 @@ OpenCDMError opencdm_session_resetoutputprotection(struct OpenCDMSession* sessio
+ OpenCDMError opencdm_session_close(struct OpenCDMSession* session)
+ {
+ 
+-    OpenCDMError result(ERROR_INVALID_SESSION);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++    ASSERT(session != nullptr);
+ 
+     if (session != nullptr) {
+         session->Close();
+@@ -605,7 +642,9 @@ OpenCDMError opencdm_session_decrypt(struct OpenCDMSession* session,
+     const uint8_t* keyId, const uint16_t keyIdLength,
+     uint32_t initWithLast15 /* = 0 */)
+ {
+-    OpenCDMError result(ERROR_INVALID_SESSION);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++    ASSERT(session != nullptr);
++
+     if (session != nullptr) {
+         SampleInfo sampleInfo;
+         sampleInfo.subSample = nullptr;
+@@ -618,7 +657,7 @@ OpenCDMError opencdm_session_decrypt(struct OpenCDMSession* session,
+         sampleInfo.keyId = const_cast<uint8_t*>(keyId);
+         sampleInfo.keyIdLength = static_cast<uint8_t>(keyIdLength);
+         result = encryptedLength > 0 ? static_cast<OpenCDMError>(session->Decrypt(
+-            encrypted, encryptedLength, const_cast<const SampleInfo*>(&sampleInfo), initWithLast15, nullptr)) : ERROR_NONE;
++            encrypted, encryptedLength, const_cast<const SampleInfo*>(&sampleInfo), initWithLast15, nullptr)) : OpenCDMError::ERROR_NONE;
+     }
+ 
+     return (result);
+@@ -631,11 +670,13 @@ OpenCDMError opencdm_session_decrypt_v2(struct OpenCDMSession* session,
+     const SampleInfo* sampleInfo,
+     const MediaProperties* properties) {
+ 
+-    OpenCDMError result(ERROR_INVALID_SESSION);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++    ASSERT(session != nullptr);
++
+     if (session != nullptr) {
+         uint32_t initWithLast15 = 0;
+         result = encryptedLength > 0 ? static_cast<OpenCDMError>(session->Decrypt(
+-            encrypted, encryptedLength, sampleInfo, initWithLast15, properties)) : ERROR_NONE;
++            encrypted, encryptedLength, sampleInfo, initWithLast15, properties)) : OpenCDMError::ERROR_NONE;
+     }
+ 
+     return (result);
+@@ -657,7 +698,9 @@ OpenCDMError opencdm_session_decrypt_v2(struct OpenCDMSession* session,
+ OpenCDMError opencdm_get_metric_session_data(struct OpenCDMSession* session,
+     uint32_t* bufferLength,
+     uint8_t* buffer) {
+-    OpenCDMError result(ERROR_INVALID_SESSION);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++    ASSERT(session != nullptr);
++    
+     if (session != nullptr) {
+         result = static_cast<OpenCDMError>(session->Metricdata(
+             *bufferLength, buffer));
+diff --git a/Source/ocdm/open_cdm_ext.cpp b/Source/ocdm/open_cdm_ext.cpp
+index e7f0b4b..a730528 100644
+--- a/Source/ocdm/open_cdm_ext.cpp
++++ b/Source/ocdm/open_cdm_ext.cpp
+@@ -113,13 +113,19 @@ OpenCDMError opencdm_system_ext_get_ldl_session_limit(OpenCDMSystem* system,
+     uint32_t* ldlLimit)
+ {
+     ASSERT(system != nullptr);
++    ASSERT(ldlLimit != nullptr);
+     OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
+     if(!accessor)
+         return ERROR_INVALID_ACCESSOR;
+ 
+-    std::string keySystem = system->keySystem();
+-    *ldlLimit = accessor->GetLdlSessionLimit(keySystem);
+-    return OpenCDMError::ERROR_NONE;
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++    if ((system != nullptr) && (ldlLimit != nullptr)) {
++        std::string keySystem = system->keySystem();
++        *ldlLimit = accessor->GetLdlSessionLimit(keySystem);
++        result = OpenCDMError::ERROR_NONE;
++    }
++
++    return (result);
+ }
+ 
+ uint32_t opencdm_system_ext_is_secure_stop_enabled(
+@@ -130,7 +136,12 @@ uint32_t opencdm_system_ext_is_secure_stop_enabled(
+     if(!accessor)
+         return ERROR_INVALID_ACCESSOR;
+ 
+-    return (OpenCDMError)accessor->IsSecureStopEnabled(system->keySystem());
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++    if (system != nullptr) {
++        result = (OpenCDMError)accessor->IsSecureStopEnabled(system->keySystem());
++    }
++
++    return (result);
+ }
+ 
+ OpenCDMError
+@@ -142,8 +153,13 @@ opencdm_system_ext_enable_secure_stop(struct OpenCDMSystem* system,
+     if(!accessor)
+         return ERROR_INVALID_ACCESSOR;
+ 
+-    return (OpenCDMError)accessor->EnableSecureStop(system->keySystem(),
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++    if (system != nullptr) {
++        result = (OpenCDMError)accessor->EnableSecureStop(system->keySystem(),
+         use != 0);
++    }
++
++    return (result);
+ }
+ 
+ uint32_t opencdm_system_ext_reset_secure_stop(struct OpenCDMSystem* system)
+@@ -153,7 +169,12 @@ uint32_t opencdm_system_ext_reset_secure_stop(struct OpenCDMSystem* system)
+     if(!accessor)
+         return ERROR_INVALID_ACCESSOR;
+ 
+-    return (OpenCDMError)accessor->ResetSecureStops(system->keySystem());
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++    if (system != nullptr) {
++        result = (OpenCDMError)accessor->ResetSecureStops(system->keySystem());
++    }
++
++    return (result);
+ }
+ 
+ OpenCDMError opencdm_system_ext_get_secure_stop_ids(OpenCDMSystem* system,
+@@ -166,8 +187,13 @@ OpenCDMError opencdm_system_ext_get_secure_stop_ids(OpenCDMSystem* system,
+     if(!accessor)
+         return ERROR_INVALID_ACCESSOR;
+ 
+-    return (OpenCDMError)accessor->GetSecureStopIds(system->keySystem(), ids,
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++    if (system != nullptr) {
++        result = (OpenCDMError)accessor->GetSecureStopIds(system->keySystem(), ids,
+         idsLength, *count);
++    }
++
++    return (result);
+ }
+ 
+ OpenCDMError opencdm_system_ext_get_secure_stop(OpenCDMSystem* system,
+@@ -181,8 +207,13 @@ OpenCDMError opencdm_system_ext_get_secure_stop(OpenCDMSystem* system,
+     if(!accessor)
+         return ERROR_INVALID_ACCESSOR;
+ 
+-    return (OpenCDMError)accessor->GetSecureStop(
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++    if (system != nullptr) {
++        result = (OpenCDMError)accessor->GetSecureStop(
+         system->keySystem(), sessionID, sessionIDLength, rawData, *rawSize);
++    }
++
++    return (result);
+ }
+ 
+ OpenCDMError opencdm_system_ext_commit_secure_stop(
+@@ -195,22 +226,28 @@ OpenCDMError opencdm_system_ext_commit_secure_stop(
+     if(!accessor)
+         return ERROR_INVALID_ACCESSOR;
+ 
+-    return (OpenCDMError)accessor->CommitSecureStop(
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++    if (system != nullptr) {
++        result = (OpenCDMError)accessor->CommitSecureStop(
+         system->keySystem(), sessionID, sessionIDLength, serverResponse,
+         serverResponseLength);
++    }
++
++    return (result);
+ }
+ 
+ OpenCDMError opencdm_system_get_drm_time(struct OpenCDMSystem* system,
+     uint64_t* time)
+ {
+     ASSERT(system != nullptr);
++    ASSERT(time != nullptr);
+     OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
+     if(!accessor)
+         return ERROR_INVALID_ACCESSOR;
+ 
+-    OpenCDMError result(ERROR_INVALID_ACCESSOR);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
+ 
+-    if (system != nullptr) {
++    if ((system != nullptr) && (time != nullptr)) {
+         *time = accessor->GetDrmSystemTime(system->keySystem());
+         result = OpenCDMError::ERROR_NONE;
+     }
+@@ -220,7 +257,7 @@ OpenCDMError opencdm_system_get_drm_time(struct OpenCDMSystem* system,
+ uint32_t
+ opencdm_session_get_session_id_ext(struct OpenCDMSession* opencdmSession)
+ {
+-    uint32_t result = OpenCDMError::ERROR_INVALID_SESSION;
++    uint32_t result(OpenCDMError::ERROR_INVALID_SESSION);
+     ASSERT(opencdmSession != nullptr);
+ 
+     if (opencdmSession != nullptr) {
+@@ -248,8 +285,14 @@ opencdm_session_set_drm_header(struct OpenCDMSession* opencdmSession,
+     const uint8_t drmHeader[],
+     uint32_t drmHeaderSize)
+ {
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
+     ASSERT(opencdmSession != nullptr);
+-    return (OpenCDMError)opencdmSession->SetDrmHeader(drmHeader, drmHeaderSize);
++
++    if (opencdmSession != nullptr) {
++        result = (OpenCDMError)opencdmSession->SetDrmHeader(drmHeader, drmHeaderSize);
++    }
++
++    return (result);
+ }
+ 
+ OpenCDMError
+@@ -258,12 +301,16 @@ opencdm_session_get_challenge_data(struct OpenCDMSession* mOpenCDMSession,
+     uint32_t isLDL)
+ {
+     ASSERT(mOpenCDMSession != nullptr);
+-    ASSERT((*challengeSize) < 0xFFFF);
+-    uint16_t realLength = static_cast<uint16_t>(*challengeSize);
++    ASSERT(challengeSize != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
+ 
+-    OpenCDMError result = static_cast<OpenCDMError>(mOpenCDMSession->GetChallengeDataExt(challenge, realLength, isLDL));
++    if ((mOpenCDMSession != nullptr) && (challengeSize != nullptr)) {
++        ASSERT((*challengeSize) < 0xFFFF);
++        uint16_t realLength = static_cast<uint16_t>(*challengeSize);
+ 
+-    *challengeSize = realLength;
++        result = static_cast<OpenCDMError>(mOpenCDMSession->GetChallengeDataExt(challenge, realLength, isLDL));
++        *challengeSize = realLength;
++    }
+ 
+     return (result);
+ }
+@@ -272,7 +319,13 @@ OpenCDMError
+ opencdm_session_cancel_challenge_data(struct OpenCDMSession* mOpenCDMSession)
+ {
+     ASSERT(mOpenCDMSession != nullptr);
+-    return (OpenCDMError)mOpenCDMSession->CancelChallengeDataExt();
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++
++    if (mOpenCDMSession != nullptr) {
++        return (OpenCDMError)mOpenCDMSession->CancelChallengeDataExt();
++    }
++
++    return (result);
+ }
+ 
+ OpenCDMError opencdm_session_store_license_data(
+@@ -280,22 +333,38 @@ OpenCDMError opencdm_session_store_license_data(
+     uint32_t licenseDataSize, uint8_t* secureStopId)
+ {
+     ASSERT(mOpenCDMSession != nullptr);
+-    return (OpenCDMError)mOpenCDMSession->StoreLicenseData(
+-        licenseData, licenseDataSize, secureStopId);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++
++    if (mOpenCDMSession != nullptr) {
++        return (OpenCDMError)mOpenCDMSession->StoreLicenseData(licenseData, licenseDataSize, secureStopId);
++    }
++
++    return (result);
+ }
+ 
+ OpenCDMError opencdm_session_select_key_id(
+     struct OpenCDMSession* mOpenCDMSession, uint8_t keyLenght, const uint8_t keyId[])
+ {
+     ASSERT(mOpenCDMSession != nullptr);
+-    OpenCDMError output = (OpenCDMError)mOpenCDMSession->SelectKeyId(keyLenght, keyId);
+-    return output;
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++
++    if (mOpenCDMSession != nullptr) {
++        result = (OpenCDMError)mOpenCDMSession->SelectKeyId(keyLenght, keyId);
++    }
++
++    return (result);
+ }
+ 
+ OpenCDMError opencdm_session_clean_decrypt_context(struct OpenCDMSession* mOpenCDMSession)
+ {
+     ASSERT(mOpenCDMSession != nullptr);
+-    return (OpenCDMError)mOpenCDMSession->CleanDecryptContext();
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (mOpenCDMSession != nullptr) {
++        return (OpenCDMError)mOpenCDMSession->CleanDecryptContext();
++    }
++
++    return (result);
+ }
+ 
+ 
+@@ -337,7 +406,7 @@ OpenCDMError opencdm_get_key_store_hash_ext(struct OpenCDMSystem* system,
+     uint32_t keyStoreHashLength)
+ {
+     ASSERT(system != nullptr);
+-    OpenCDMError result(ERROR_INVALID_ACCESSOR);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
+ 
+     if (system != nullptr) {
+         OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
+@@ -356,7 +425,7 @@ OpenCDMError opencdm_get_secure_store_hash_ext(struct OpenCDMSystem* system,
+     uint32_t secureStoreHashLength)
+ {
+     ASSERT(system != nullptr);
+-    OpenCDMError result(ERROR_INVALID_ACCESSOR);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
+ 
+     if (system != nullptr) {
+         OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
+diff --git a/Source/ocdm/open_cdm_impl.cpp b/Source/ocdm/open_cdm_impl.cpp
+index 3a228de..c57f073 100644
+--- a/Source/ocdm/open_cdm_impl.cpp
++++ b/Source/ocdm/open_cdm_impl.cpp
+@@ -83,7 +83,9 @@ static SessionPrivate SessionPvt;
+ {
+     OpenCDMError result(ERROR_INVALID_ACCESSOR);
+ 
+-    if (system != nullptr) {
++    ASSERT(system != nullptr);
++    ASSERT(session != nullptr);
++    if ((system != nullptr) && (session != nullptr)) {
+         *session = new OpenCDMSession(system, std::string(initDataType),
+                             initData, initDataLength, CDMData,
+                             CDMDataLength, licenseType, callbacks, userData);
+diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
+index fef8b61..b9edf24 100644
+--- a/Source/ocdm/open_cdm_impl.h
++++ b/Source/ocdm/open_cdm_impl.h
+@@ -81,6 +81,7 @@ protected:
+             ASSERT(_remote != nullptr);
+ 
+             if (_remote == nullptr) {
++                TRACE_L1("Failed to open a channel to OCDM implementation");
+                 if (_client.IsValid()) {
+                   _client.Release();
+                 }
+@@ -163,7 +164,12 @@ public:
+     }
+ 
+     virtual Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& length, uint8_t buffer[]) const override {
+-        return(_remote->Metricdata(keySystem, length, buffer));
++        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
++ 
++        if (_remote != nullptr) {
++            return(_remote->Metricdata(keySystem, length, buffer));
++        }
++        return (result);
+     }
+ 
+     // Create a MediaKeySession using the supplied init data and CDM data.
+@@ -175,9 +181,13 @@ public:
+         Exchange::ISession::ICallback* callback, std::string& sessionId, 
+         Exchange::ISession*& session) override
+     {
+-        return (_remote->CreateSession(
+-            keySystem, licenseType, initDataType, initData, initDataLength, CDMData,
+-            CDMDataLength, callback, sessionId, session));
++        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
++
++        if (_remote != nullptr) {
++            result = _remote->CreateSession(keySystem, licenseType, initDataType, initData, initDataLength, CDMData,
++                        CDMDataLength, callback, sessionId, session);
++        }
++        return (result);
+     }
+ 
+     // Set Server Certificate
+@@ -185,8 +195,12 @@ public:
+     SetServerCertificate(const string& keySystem, const uint8_t* serverCertificate,
+         const uint16_t serverCertificateLength) override
+     {
+-        return (_remote->SetServerCertificate(keySystem, serverCertificate,
+-            serverCertificateLength));
++        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
++
++        if (_remote != nullptr) {
++            result = _remote->SetServerCertificate(keySystem, serverCertificate, serverCertificateLength);
++        }
++        return (result);
+     }
+ 
+     OpenCDMSession* Session(const std::string& sessionId);
+@@ -212,46 +226,74 @@ public:
+ 
+     uint64_t GetDrmSystemTime(const std::string& keySystem) const override
+     {
+-        ASSERT(_remote && "This method only works on IAccessorOCDM implementations.");
+-        return _remote->GetDrmSystemTime(keySystem);
++        uint64_t result = 0;
++
++        if (_remote != nullptr) {
++            result = _remote->GetDrmSystemTime(keySystem);
++        }
++        return (result);
+     }
+ 
+     std::string GetVersionExt(const std::string& keySystem) const override
+     {
+-        ASSERT(_remote && "This method only works on IAccessorOCDM implementations.");
+-        return _remote->GetVersionExt(keySystem);
++        std::string result;
++
++        if (_remote != nullptr) {
++            result = _remote->GetVersionExt(keySystem);
++        }
++        return (result);
+     }
+ 
+     uint32_t GetLdlSessionLimit(const std::string& keySystem) const override
+     {
+-        ASSERT(_remote && "This method only works on IAccessorOCDM implementations.");
+-        return _remote->GetLdlSessionLimit(keySystem);
++        uint32_t result = 0;
++
++        if (_remote != nullptr) {
++            result = _remote->GetLdlSessionLimit(keySystem);
++        }
++        return (result);
+     }
+ 
+     bool IsSecureStopEnabled(const std::string& keySystem) override
+     {
+-        ASSERT(_remote && "This method only works on IAccessorOCDM implementations.");
+-        return _remote->IsSecureStopEnabled(keySystem);
++        bool result = false;
++
++        if (_remote != nullptr) {
++            result = _remote->IsSecureStopEnabled(keySystem);
++        }
++        return (result);
+     }
+ 
+     Exchange::OCDM_RESULT EnableSecureStop(const std::string& keySystem, bool enable) override
+     {
+-        ASSERT(_remote && "This method only works on IAccessorOCDM implementations.");
+-        return _remote->EnableSecureStop(keySystem, enable);
+-    }
++        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
++
++        if (_remote != nullptr) {
++            result = _remote->EnableSecureStop(keySystem, enable);
++        }
++        return (result);
++   	}
+ 
+     uint32_t ResetSecureStops(const std::string& keySystem) override
+     {
+-        ASSERT(_remote && "This method only works on IAccessorOCDM implementations.");
+-        return _remote->ResetSecureStops(keySystem);
++        uint32_t result = 0;
++
++        if (_remote != nullptr) {
++            result = _remote->ResetSecureStops(keySystem);
++        }
++        return (result);
+     }
+ 
+     Exchange::OCDM_RESULT GetSecureStopIds(const std::string& keySystem,
+         uint8_t ids[], uint16_t idsLength,
+         uint32_t& count) override
+     {
+-        ASSERT(_remote && "This method only works on IAccessorOCDM implementations.");
+-        return _remote->GetSecureStopIds(keySystem, ids, idsLength, count);
++        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
++
++        if (_remote != nullptr) {
++            result = _remote->GetSecureStopIds(keySystem, ids, idsLength, count);
++        }
++        return (result);
+     }
+ 
+     Exchange::OCDM_RESULT GetSecureStop(const std::string& keySystem,
+@@ -260,9 +302,12 @@ public:
+         uint8_t rawData[],
+         uint16_t& rawSize) override
+     {
+-        ASSERT(_remote && "This method only works on IAccessorOCDM implementations.");
+-        return _remote->GetSecureStop(keySystem, sessionID, sessionIDLength,
+-            rawData, rawSize);
++        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
++
++        if (_remote != nullptr) {
++            result = _remote->GetSecureStop(keySystem, sessionID, sessionIDLength, rawData, rawSize);
++        }
++        return (result); 
+     }
+ 
+     Exchange::OCDM_RESULT
+@@ -270,41 +315,58 @@ public:
+         uint16_t sessionIDLength, const uint8_t serverResponse[],
+         uint16_t serverResponseLength) override
+     {
+-        ASSERT(_remote && "This method only works on IAccessorOCDM implementations.");
+-        return _remote->CommitSecureStop(keySystem, sessionID, sessionIDLength,
+-            serverResponse, serverResponseLength);
++        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
++
++        if (_remote != nullptr) {
++            result = _remote->CommitSecureStop(keySystem, sessionID, sessionIDLength, serverResponse, serverResponseLength);
++        }
++        return (result);    
+     }
+ 
+     Exchange::OCDM_RESULT
+     DeleteKeyStore(const std::string& keySystem) override
+     {
+-        ASSERT(_remote && "This method only works on IAccessorOCDM implementations.");
+-        return _remote->DeleteKeyStore(keySystem);
++        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
++
++        if (_remote != nullptr) {
++            result = _remote->DeleteKeyStore(keySystem);
++        }
++        return (result);    
+     }
+ 
+     Exchange::OCDM_RESULT
+     DeleteSecureStore(const std::string& keySystem) override
+     {
+-        ASSERT(_remote && "This method only works on IAccessorOCDM implementations.");
+-        return _remote->DeleteSecureStore(keySystem);
++        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
++
++        if (_remote != nullptr) {
++            result = _remote->DeleteSecureStore(keySystem);
++        }
++        return (result);    
+     }
+ 
+     Exchange::OCDM_RESULT
+     GetKeyStoreHash(const std::string& keySystem, uint8_t keyStoreHash[],
+         uint16_t keyStoreHashLength) override
+     {
+-        ASSERT(_remote && "This method only works on IAccessorOCDM implementations.");
+-        return _remote->GetKeyStoreHash(keySystem, keyStoreHash,
+-            keyStoreHashLength);
++        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
++
++        if (_remote != nullptr) {
++            result = _remote->GetKeyStoreHash(keySystem, keyStoreHash, keyStoreHashLength);
++        }
++        return (result);
+     }
+ 
+     Exchange::OCDM_RESULT
+     GetSecureStoreHash(const std::string& keySystem, uint8_t secureStoreHash[],
+         uint16_t secureStoreHashLength) override
+     {
+-        ASSERT(_remote && "This method only works on IAccessorOCDM implementations.");
+-        return _remote->GetSecureStoreHash(keySystem, secureStoreHash,
+-            secureStoreHashLength);
++        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
++
++        if (_remote != nullptr) {
++            result = _remote->GetSecureStoreHash(keySystem, secureStoreHash, secureStoreHashLength);
++        }
++        return (result);    
+     }
+ 
+     void SystemBeingDestructed(OpenCDMSystem* system);
+@@ -516,6 +578,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+         std::string bufferId;
+         Exchange::ISession* realSession = nullptr;
+ 
++        ASSERT(system != nullptr);
+         accessor->CreateSession(system->keySystem(), licenseType, initDataType, pbInitData,
+             cbInitData, pbCustomData, cbCustomData, &_sink,
+             _sessionId, realSession);
+@@ -764,6 +827,7 @@ protected:
+             _decryptSession = nullptr;
+         } else {
+             std::string bufferid;
++            ASSERT(_session != nullptr);
+             uint32_t result = _session->CreateSessionBuffer(bufferid);
+ 
+             if( result == 0 ) {
+-- 
+2.25.1
+
