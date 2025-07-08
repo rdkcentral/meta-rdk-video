@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Infra plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "1.5.3"
+PV ?= "1.5.5"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -17,8 +17,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
 
-# Release version - 1.5.3
-SRCREV = "fae72b5b593b894a7e2663f0006cf70163339700"
+# Release version - 1.5.5
+SRCREV = "aacebd312417c6198166ec4492181015556d26f9"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
