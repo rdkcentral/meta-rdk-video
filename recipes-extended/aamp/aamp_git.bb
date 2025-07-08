@@ -11,10 +11,7 @@ SRCREV_FORMAT = "aamp"
 inherit pkgconfig
 
 DEPENDS += "curl libdash libxml2 cjson readline player-interface"
-RDEPENDS_${PN} +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
-DEPENDS += " wpe-webkit"
 RDEPENDS:${PN} += "devicesettings player-interface"
-DEPENDS:append = " virtual/vendor-gst-drm-plugins essos "
 NO_RECOMMENDATIONS = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -27,12 +24,7 @@ S = "${WORKDIR}/git"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)}"
 
-DEPENDS:append = " virtual/vendor-secapi2-adapter "
-
 require aamp-common.inc
-
-
-DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 
 EXTRA_OECMAKE += " -DCMAKE_WPEWEBKIT_WATERMARK_JSBINDINGS=1 "
 
@@ -51,7 +43,6 @@ FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
 
-CXXFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '', ' -lWPEFrameworkSecurityUtil ', d)}"
 EXTRA_OECMAKE += " -DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 "
 
 CXXFLAGS += " -DAAMP_BUILD_INFO=${AAMP_RELEASE_TAG_NAME}" 
