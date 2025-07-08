@@ -1,0 +1,151 @@
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index 04bae67..768205b 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -320,6 +320,7 @@ namespace PluginHost
+     {
+         Core::hresult result = Core::ERROR_NONE;
+ 
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
+         Lock();
+ 
+         IShell::state currentState(State());
+@@ -458,12 +459,14 @@ namespace PluginHost
+             Unlock();
+         }
+ 
++        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
+         return (result);
+     }
+ 
+     uint32_t Server::Service::Resume(const reason why) {
+         uint32_t result = Core::ERROR_NONE;
+ 
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
+         Lock();
+ 
+         IShell::state currentState(State());
+@@ -494,6 +497,7 @@ namespace PluginHost
+ 
+         Unlock();
+ 
++        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
+         return (result);
+     }
+ 
+@@ -501,7 +505,10 @@ namespace PluginHost
+     {
+         Core::hresult result = Core::ERROR_NONE;
+ 
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++
+         Lock();
++        TRACE_L1("## %s Lock", Callsign().c_str());
+ 
+         IShell::state currentState(State());
+ 
+@@ -520,8 +527,10 @@ namespace PluginHost
+             if(currentState == IShell::state::HIBERNATED)
+             {
+                 Unlock();
++                TRACE_L1("## %s Unlock", Callsign().c_str());
+                 uint32_t wakeupResult = Wakeup(3000);
+                 Lock();
++                TRACE_L1("## %s Lock", Callsign().c_str());
+                 if(wakeupResult != Core::ERROR_NONE)
+                 {
+                     //Force Activated state
+@@ -535,6 +544,7 @@ namespace PluginHost
+ 
+                 State(DEACTIVATION);
+                 Unlock();
++                TRACE_L1("## %s Unlock", Callsign().c_str());
+ 
+                 if (currentState == IShell::ACTIVATED) {
+                     TRACE(Activity, (_T("Deactivating plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
+@@ -550,9 +560,12 @@ namespace PluginHost
+                     DisableWebServer();
+                 }
+ 
++                TRACE_L1(">> %s Deinitialize", Callsign().c_str());
+                 REPORT_DURATION_WARNING( { _handler->Deinitialize(this); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::DEACTIVATION, callSign.c_str());
++                TRACE_L1("<< %s Deinitialize", Callsign().c_str());
+ 
+                 Lock();
++                TRACE_L1("## %s Lock", Callsign().c_str());
+ 
+                 if (_jsonrpc != nullptr) {
+                     _jsonrpc->Deactivate();
+@@ -585,12 +598,17 @@ namespace PluginHost
+ 
+ 
+         Unlock();
++        TRACE_L1("## %s Unlock", Callsign().c_str());
++
++        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
+ 
+         return (result);
+     }
+ 
+     uint32_t Server::Service::Suspend(const reason why) {
+ 
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++
+         uint32_t result = Core::ERROR_NONE;
+ 
+         if (Startup() == PluginHost::IShell::startup::DEACTIVATED) {
+@@ -624,12 +642,14 @@ namespace PluginHost
+             Unlock();
+         }
+ 
++        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
+         return (result);
+     }
+ 
+     /* virtual */ Core::hresult Server::Service::Unavailable(const reason why) {
+         Core::hresult result = Core::ERROR_NONE;
+ 
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
+         Lock();
+ 
+         IShell::state currentState(State());
+@@ -667,6 +687,7 @@ namespace PluginHost
+ 
+         Unlock();
+ 
++        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
+         return (result);
+ 
+     }
+@@ -674,6 +695,7 @@ namespace PluginHost
+     Core::hresult Server::Service::Hibernate(const uint32_t timeout VARIABLE_IS_NOT_USED) /* override */ {
+         Core::hresult result = Core::ERROR_NONE;
+ 
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
+         Lock();
+ 
+         IShell::state currentState(State());
+@@ -719,6 +741,7 @@ namespace PluginHost
+         }
+         Unlock();
+ 
++        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
+         return (result);
+ 
+     }
+@@ -726,6 +749,7 @@ namespace PluginHost
+     uint32_t Server::Service::Wakeup(const uint32_t timeout VARIABLE_IS_NOT_USED) {
+         Core::hresult result = Core::ERROR_NONE;
+ 
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
+         Lock();
+ 
+         IShell::state currentState(State());
+@@ -763,6 +787,7 @@ namespace PluginHost
+         }
+         Unlock();
+ 
++        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
+         return (result);
+     }
+ 
