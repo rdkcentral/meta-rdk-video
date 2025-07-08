@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Infra plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "1.4.8"
+PV ?= "1.5.7"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -16,8 +16,9 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDK-41681-PR4013.patch \
           "
 
-# Release version - 1.4.8
-SRCREV = "0b8492fadc5d98cc71467589d0fb31a4b54ffaa7"
+
+# Release version - 1.5.7
+SRCREV = "47a96ae4a36588d21b2fca59bd840b2ff508e6be"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
