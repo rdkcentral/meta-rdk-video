@@ -1,12 +1,12 @@
 diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
-index 3ad91a91..314a57ae 100644
+index 3ad91a91..7d7cc5b1 100644
 --- a/Source/WPEFramework/PluginServer.cpp
 +++ b/Source/WPEFramework/PluginServer.cpp
 @@ -332,6 +332,7 @@ namespace PluginHost
      {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
  
          IShell::state currentState(State());
@@ -14,14 +14,14 @@ index 3ad91a91..314a57ae 100644
              Unlock();
          }
  
-+        SYSLOG(Logging::Notification, (_T("<< ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T("<< ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          return (result);
      }
  
      uint32_t Server::Service::Resume(const reason why) {
          uint32_t result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
  
          IShell::state currentState(State());
@@ -29,7 +29,7 @@ index 3ad91a91..314a57ae 100644
  
          Unlock();
  
-+        SYSLOG(Logging::Notification, (_T("<< ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T("<< ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          return (result);
      }
  
@@ -37,9 +37,9 @@ index 3ad91a91..314a57ae 100644
      {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
-+        SYSLOG(Logging::Notification, (_T("## %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T("## %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
  
          IShell::state currentState(State());
  
@@ -47,7 +47,7 @@ index 3ad91a91..314a57ae 100644
  
                  State(DEACTIVATION);
                  Unlock();
-+        SYSLOG(Logging::Notification, (_T("unlock ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T("unlock ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
  
                  if (currentState == IShell::ACTIVATED) {
                      TRACE(Activity, (_T("Deactivating plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
@@ -55,12 +55,12 @@ index 3ad91a91..314a57ae 100644
                      DisableWebServer();
                  }
  
-+        SYSLOG(Logging::Notification, (_T("Deinitialize >> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T("Deinitialize >> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
                  REPORT_DURATION_WARNING( { _handler->Deinitialize(this); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::DEACTIVATION, callSign.c_str());
-+        SYSLOG(Logging::Notification, (_T("Deinitialize << ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T("Deinitialize << ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
  
                  Lock();
-+        SYSLOG(Logging::Notification, (_T("Lock ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T("Lock ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
  
                  if (_jsonrpc != nullptr) {
                      _jsonrpc->Deactivate();
@@ -68,7 +68,7 @@ index 3ad91a91..314a57ae 100644
  
  
          Unlock();
-+        SYSLOG(Logging::Notification, (_T("Unlock << ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T("Unlock << ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
  
          return (result);
      }
@@ -76,7 +76,7 @@ index 3ad91a91..314a57ae 100644
  
          uint32_t result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          if (Startup() == PluginHost::IShell::startup::DEACTIVATED) {
              // We need to shutdown completely
              result = Deactivate(why);
@@ -84,14 +84,14 @@ index 3ad91a91..314a57ae 100644
              Unlock();
          }
  
-+        SYSLOG(Logging::Notification, (_T("<< ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T("<< ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          return (result);
      }
  
      /* virtual */ Core::hresult Server::Service::Unavailable(const reason why) {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
  
          IShell::state currentState(State());
@@ -99,7 +99,7 @@ index 3ad91a91..314a57ae 100644
          }
  
          Unlock();
-+        SYSLOG(Logging::Notification, (_T("<< ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T("<< ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
  
          return (result);
  
@@ -107,7 +107,7 @@ index 3ad91a91..314a57ae 100644
      Core::hresult Server::Service::Hibernate(const uint32_t timeout VARIABLE_IS_NOT_USED) /* override */ {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
  
          IShell::state currentState(State());
@@ -115,7 +115,7 @@ index 3ad91a91..314a57ae 100644
              }
          }
          Unlock();
-+        SYSLOG(Logging::Notification, (_T("<< ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T("<< ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
  
          return (result);
  
@@ -123,7 +123,7 @@ index 3ad91a91..314a57ae 100644
      uint32_t Server::Service::Wakeup(const uint32_t timeout VARIABLE_IS_NOT_USED) {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T(">> ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          IShell::state currentState(State());
  
          if (currentState != IShell::state::HIBERNATED) {
@@ -131,7 +131,7 @@ index 3ad91a91..314a57ae 100644
                  local->Release();
              }
          }
-+        SYSLOG(Logging::Notification, (_T("<< ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification, (_T("<< ThunderTraces %d %s for %s"), __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
  
          return (result);
      }
