@@ -6,23 +6,23 @@ index 028994b4..a37b228e 100644
      {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
          Lock();
  
          IShell::state currentState(State());
  
          if (currentState == IShell::state::ACTIVATION) {
-+            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++            TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
              Unlock();
              result = Core::ERROR_INPROGRESS;
          }
          else if ((currentState == IShell::state::UNAVAILABLE) || (currentState == IShell::state::DEACTIVATION) || (currentState == IShell::state::DESTROYED) ) {
-+            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++            TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
              Unlock();
              result = Core::ERROR_ILLEGAL_STATE;
          } else if (currentState == IShell::state::HIBERNATED) {
              result = Wakeup(3000);
-+            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++            TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
              Unlock();
          } else if ((currentState == IShell::state::DEACTIVATED) || (currentState == IShell::state::PRECONDITION)) {
  
@@ -30,7 +30,7 @@ index 028994b4..a37b228e 100644
                  SYSLOG(Logging::Startup, (_T("Loading of plugin [%s]:[%s], failed. Error [%s]"), className.c_str(), callSign.c_str(), ErrorMessage().c_str()));
                  result = Core::ERROR_UNAVAILABLE;
  
-+            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++            TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
                  Unlock();
  
                  // See if the preconditions have been met..
@@ -38,7 +38,7 @@ index 028994b4..a37b228e 100644
                      TRACE(Activity, (_T("Delta preconditions: %s"), feedback.c_str()));
                  }
  
-+            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++            TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
                  Unlock();
  
              } else {
@@ -46,7 +46,7 @@ index 028994b4..a37b228e 100644
                  
                  State(ACTIVATION);
  
-+            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++            TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
                  Unlock();
  
                  REPORT_DURATION_WARNING( { ErrorMessage(_handler->Initialize(this)); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::ACTIVATION, callSign.c_str());
@@ -54,7 +54,7 @@ index 028994b4..a37b228e 100644
                  }
              }
          } else {
-+            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++            TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
              Unlock();
          }
  
@@ -62,7 +62,7 @@ index 028994b4..a37b228e 100644
      uint32_t Server::Service::Resume(const reason why) {
          uint32_t result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
          Lock();
  
          IShell::state currentState(State());
@@ -70,7 +70,7 @@ index 028994b4..a37b228e 100644
              }
          }
  
-+            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++            TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
          Unlock();
  
          return (result);
@@ -78,7 +78,7 @@ index 028994b4..a37b228e 100644
      {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
          Lock();
  
          IShell::state currentState(State());
@@ -86,7 +86,7 @@ index 028994b4..a37b228e 100644
                  ASSERT(_handler != nullptr);
  
                  State(DEACTIVATION);
-+            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++            TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
                  Unlock();
  
                  if (currentState == IShell::ACTIVATED) {
@@ -98,12 +98,12 @@ index 028994b4..a37b228e 100644
                      DisableWebServer();
                  }
  
-+                SYSLOG(Logging::Notification,(_T("%d >> %s Deinitialize"), Callsign().c_str()));
++                TRACE_L1(">> %s Deinitialize", Callsign().c_str());
                  REPORT_DURATION_WARNING( { _handler->Deinitialize(this); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::DEACTIVATION, callSign.c_str());
-+                SYSLOG(Logging::Notification,(_T("%d << %s Deinitialize"), Callsign().c_str()));
++                TRACE_L1("<< %s Deinitialize", Callsign().c_str());
  
                  Lock();
-+                SYSLOG(Logging::Notification,(_T("%d ## %s Lock"), Callsign().c_str()));
++                TRACE_L1("## %s Lock", Callsign().c_str());
  
                  if (_jsonrpc != nullptr) {
                      _jsonrpc->Deactivate();
@@ -111,11 +111,11 @@ index 028994b4..a37b228e 100644
          }
  
  
-+        SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
          Unlock();
-+        SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
++        TRACE_L1("## %s Unlock", Callsign().c_str());
 +
-+        SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
  
          return (result);
      }
@@ -123,13 +123,13 @@ index 028994b4..a37b228e 100644
  
          uint32_t result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
          if (Startup() == PluginHost::IShell::startup::DEACTIVATED) {
              // We need to shutdown completely
              result = Deactivate(why);
          }
          else {
-+        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
              Lock();
  
              IShell::state currentState(State());
@@ -137,9 +137,9 @@ index 028994b4..a37b228e 100644
                  }
              }
  
-+            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++            TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
              Unlock();
-+            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++            TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
          }
  
          return (result);
@@ -147,7 +147,7 @@ index 028994b4..a37b228e 100644
      /* virtual */ Core::hresult Server::Service::Unavailable(const reason why) {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
          Lock();
  
          IShell::state currentState(State());
@@ -155,7 +155,7 @@ index 028994b4..a37b228e 100644
              _administrator.Notification(PluginHost::Server::ForwardMessage(callSign, string(_T("{\"state\":\"unavailable\",\"reason\":\"")) + textReason.Data() + _T("\"}")));
          }
  
-+            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++            TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
          Unlock();
  
          return (result);
@@ -163,7 +163,7 @@ index 028994b4..a37b228e 100644
      Core::hresult Server::Service::Hibernate(const uint32_t timeout VARIABLE_IS_NOT_USED) /* override */ {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification,(_T("%d ## %s Lock"), Callsign().c_str()));
++        TRACE_L1("## %s Lock", Callsign().c_str());
          Lock();
  
          IShell::state currentState(State());
@@ -171,7 +171,7 @@ index 028994b4..a37b228e 100644
  #ifdef HIBERNATE_SUPPORT_ENABLED
                  Core::process_t parentPID = local->ParentPID();
                  local->Release();
-+            SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
++            TRACE_L1("## %s Unlock", Callsign().c_str());
                  Unlock();
  
                  TRACE(Activity, (_T("Hibernation of plugin [%s] process [%u]"), Callsign().c_str(), parentPID));
@@ -179,7 +179,7 @@ index 028994b4..a37b228e 100644
                      SYSLOG(Logging::Startup, (_T("Hibernation aborted of plugin [%s] process [%u]"), Callsign().c_str(), parentPID));
                      result = Core::ERROR_ABORTED;
                  }
-+                SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
++                TRACE_L1("## %s Unlock", Callsign().c_str());
                  Unlock();
  
                  if (result == HIBERNATE_ERROR_NONE) {
@@ -187,9 +187,9 @@ index 028994b4..a37b228e 100644
                  }
              }
          }
-+        SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
++        TRACE_L1("## %s Unlock", Callsign().c_str());
          Unlock();
-+        SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
++        TRACE_L1("## %s Unlock", Callsign().c_str());
  
          return (result);
  
@@ -197,7 +197,7 @@ index 028994b4..a37b228e 100644
      uint32_t Server::Service::Wakeup(const uint32_t timeout VARIABLE_IS_NOT_USED) {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
          IShell::state currentState(State());
  
          if (currentState != IShell::state::HIBERNATED) {
@@ -206,7 +206,7 @@ index 028994b4..a37b228e 100644
              }
          }
 -
-+        SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
++        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
          return (result);
      }
  
@@ -214,11 +214,11 @@ index 028994b4..a37b228e 100644
                  if (State() != IShell::HIBERNATED) {
                      SYSLOG(Logging::Startup, (_T("Hibernation aborted of plugin [%s] child process [%u]"), Callsign().c_str(), *iter));
                      result = Core::ERROR_ABORTED;
-+                SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
++                TRACE_L1("## %s Unlock", Callsign().c_str());
                      Unlock();
                      break;
                  }
-+                SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
++                TRACE_L1("## %s Unlock", Callsign().c_str());
                  Unlock();
                  result = HibernateProcess(timeout, *iter, _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
                  if (result == HIBERNATE_ERROR_NONE) {
