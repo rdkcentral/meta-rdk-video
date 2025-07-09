@@ -1,0 +1,59 @@
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -1563,7 +1563,19 @@ namespace PluginHost {
+                                 response->Error.SetError(Core::ERROR_FIRMWAREUPDATE_UPTODATE);
+                                 response->Error.Text = _T("Firmware is already upto date");
+                                 break;
+-                            case static_cast<uint32_t>(~0):
++                            case Core::ERROR_FILE_CREATE:
++                                response->Error.SetError(Core::ERROR_FILE_CREATE);
++                                response->Error.Text = _T("File create failed");
++                                break;
++                           case Core::ERROR_INVALID_MIGRATION_PARAM:
++                                response->Error.SetError(Core::ERROR_INVALID_MIGRATION_PARAM);
++                                response->Error.Text = _T("Migration Parameter not valid");
++                                break;
++                           case Core::ERROR_GETVALUE_FAILED:
++                                response->Error.SetError(Core::ERROR_GETVALUE_FAILED);
++                                response->Error.Text = _T("Value retrieval failed");
++                                break;
++                           case static_cast<uint32_t>(~0):
+                                 response.Release();
+                                 break;
+                             default:
+diff --git a/Source/core/JSONRPC.h b/Source/core/JSONRPC.h
+index dc9f21521..af612d62a 100644
+--- a/Source/core/JSONRPC.h
++++ b/Source/core/JSONRPC.h
+@@ -110,6 +110,15 @@ namespace Core {
+                     case Core::ERROR_FIRMWAREUPDATE_UPTODATE:
+                         Code = -32004; // Firmware upto date
+                         break;
++                   case Core::ERROR_FILE_CREATE:
++                        Code = -32005; // File create failed
++                        break;
++                   case Core::ERROR_INVALID_MIGRATION_PARAM:
++                        Code = -32006; // Migration Parameter not valid
++                        break;
++                   case Core::ERROR_GETVALUE_FAILED:
++                        Code = -32007; // Value retrieval failed
++                        break;
+                     default:
+                         Code = static_cast<int32_t>(frameworkError);
+                         break;
+diff --git a/Source/core/Portability.h b/Source/core/Portability.h
+index 1bc3f987d..bbc8f1b7d 100644
+--- a/Source/core/Portability.h
++++ b/Source/core/Portability.h
+@@ -880,7 +880,10 @@ namespace Core {
+         ERROR_CODE(ERROR_INVALID_DEVICENAME, 59) \
+         ERROR_CODE(ERROR_INVALID_MOUNTPOINT, 60) \
+         ERROR_CODE(ERROR_FIRMWAREUPDATE_INPROGRESS,61) \
+-        ERROR_CODE(ERROR_FIRMWAREUPDATE_UPTODATE,62)
++        ERROR_CODE(ERROR_FIRMWAREUPDATE_UPTODATE,62) \
++        ERROR_CODE(ERROR_FILE_CREATE, 63) \
++       ERROR_CODE(ERROR_INVALID_MIGRATION_PARAM, 64) \
++       ERROR_CODE(ERROR_GETVALUE_FAILED, 65)
+
+     #define ERROR_CODE(CODE, VALUE) CODE = VALUE,
+     
