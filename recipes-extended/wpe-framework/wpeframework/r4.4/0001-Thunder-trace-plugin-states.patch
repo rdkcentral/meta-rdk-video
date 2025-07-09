@@ -6,7 +6,7 @@ index 04bae67..768205b 100644
      {
          Core::hresult result = Core::ERROR_NONE;
  
-+        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d>> %s for %s",__LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
  
          IShell::state currentState(State());
@@ -14,14 +14,14 @@ index 04bae67..768205b 100644
              Unlock();
          }
  
-+        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          return (result);
      }
  
      uint32_t Server::Service::Resume(const reason why) {
          uint32_t result = Core::ERROR_NONE;
  
-+        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d>> %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
  
          IShell::state currentState(State());
@@ -29,7 +29,7 @@ index 04bae67..768205b 100644
  
          Unlock();
  
-+        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          return (result);
      }
  
@@ -37,10 +37,10 @@ index 04bae67..768205b 100644
      {
          Core::hresult result = Core::ERROR_NONE;
  
-+        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d>> %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
 +
          Lock();
-+        TRACE_L1("## %s Lock", Callsign().c_str());
++        SYSLOG(Logging::Notification("%d## %s Lock", __LINE__, Callsign().c_str()));
  
          IShell::state currentState(State());
  
@@ -48,10 +48,10 @@ index 04bae67..768205b 100644
              if(currentState == IShell::state::HIBERNATED)
              {
                  Unlock();
-+                TRACE_L1("## %s Unlock", Callsign().c_str());
++                SYSLOG(Logging::Notification("%d## %s Unlock", __LINE__, Callsign().c_str()));
                  uint32_t wakeupResult = Wakeup(3000);
                  Lock();
-+                TRACE_L1("## %s Lock", Callsign().c_str());
++                SYSLOG(Logging::Notification("%d## %s Lock", __LINE__, Callsign().c_str()));
                  if(wakeupResult != Core::ERROR_NONE)
                  {
                      //Force Activated state
@@ -59,7 +59,7 @@ index 04bae67..768205b 100644
  
                  State(DEACTIVATION);
                  Unlock();
-+                TRACE_L1("## %s Unlock", Callsign().c_str());
++                SYSLOG(Logging::Notification("%d## %s Unlock", __LINE__, Callsign().c_str()));
  
                  if (currentState == IShell::ACTIVATED) {
                      TRACE(Activity, (_T("Deactivating plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
@@ -67,12 +67,12 @@ index 04bae67..768205b 100644
                      DisableWebServer();
                  }
  
-+                TRACE_L1(">> %s Deinitialize", Callsign().c_str());
++                SYSLOG(Logging::Notification("%d>> %s Deinitialize", __LINE__, Callsign().c_str()));
                  REPORT_DURATION_WARNING( { _handler->Deinitialize(this); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::DEACTIVATION, callSign.c_str());
-+                TRACE_L1("<< %s Deinitialize", Callsign().c_str());
++                SYSLOG(Logging::Notification("%d<< %s Deinitialize", __LINE__, Callsign().c_str()));
  
                  Lock();
-+                TRACE_L1("## %s Lock", Callsign().c_str());
++                SYSLOG(Logging::Notification("%d## %s Lock", __LINE__, Callsign().c_str()));
  
                  if (_jsonrpc != nullptr) {
                      _jsonrpc->Deactivate();
@@ -80,16 +80,16 @@ index 04bae67..768205b 100644
  
  
          Unlock();
-+        TRACE_L1("## %s Unlock", Callsign().c_str());
++        SYSLOG(Logging::Notification("%d## %s Unlock", __LINE__, Callsign().c_str()));
 +
-+        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
  
          return (result);
      }
  
      uint32_t Server::Service::Suspend(const reason why) {
  
-+        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d>> %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
 +
          uint32_t result = Core::ERROR_NONE;
  
@@ -98,14 +98,14 @@ index 04bae67..768205b 100644
              Unlock();
          }
  
-+        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          return (result);
      }
  
      /* virtual */ Core::hresult Server::Service::Unavailable(const reason why) {
          Core::hresult result = Core::ERROR_NONE;
  
-+        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d>> %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
  
          IShell::state currentState(State());
@@ -113,7 +113,7 @@ index 04bae67..768205b 100644
  
          Unlock();
  
-+        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          return (result);
  
      }
@@ -121,7 +121,7 @@ index 04bae67..768205b 100644
      Core::hresult Server::Service::Hibernate(const uint32_t timeout VARIABLE_IS_NOT_USED) /* override */ {
          Core::hresult result = Core::ERROR_NONE;
  
-+        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d>> %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
  
          IShell::state currentState(State());
@@ -129,7 +129,7 @@ index 04bae67..768205b 100644
          }
          Unlock();
  
-+        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          return (result);
  
      }
@@ -137,7 +137,7 @@ index 04bae67..768205b 100644
      uint32_t Server::Service::Wakeup(const uint32_t timeout VARIABLE_IS_NOT_USED) {
          Core::hresult result = Core::ERROR_NONE;
  
-+        TRACE_L1(">> %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d>> %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
  
          IShell::state currentState(State());
@@ -145,7 +145,7 @@ index 04bae67..768205b 100644
          }
          Unlock();
  
-+        TRACE_L1("<< %s for %s", __PRETTY_FUNCTION__, Callsign().c_str());
++        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          return (result);
      }
  
