@@ -12,7 +12,7 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r46"
+PR = "r48"
 PV = "4.4.1"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
@@ -23,7 +23,6 @@ SRCREV_thunder = "b81d0f079345739cc2d8ee142b3499be7e4e6b15"
 SRC_URI += "file://wpeframework-init \
            file://wpeframework.service.in \
            file://network_manager_migration.conf \
-           file://wpeframework_config_path.conf \
            file://r4.4/Library_version_matched_with_release_tag.patch \
            file://r4.4/Remove_versioning_for_executables.patch \
            file://r4.4/wpeframework_version_r4.4.1.patch \
