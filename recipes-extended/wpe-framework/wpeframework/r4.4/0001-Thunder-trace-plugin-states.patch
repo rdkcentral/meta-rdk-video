@@ -1,151 +1,224 @@
 diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
-index 04bae67..768205b 100644
+index 028994b4..a37b228e 100644
 --- a/Source/WPEFramework/PluginServer.cpp
 +++ b/Source/WPEFramework/PluginServer.cpp
-@@ -320,6 +320,7 @@ namespace PluginHost
+@@ -324,19 +324,23 @@ namespace PluginHost
      {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification("%d>> %s for %s",__LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
++        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
  
          IShell::state currentState(State());
-@@ -458,12 +459,14 @@ namespace PluginHost
+ 
+         if (currentState == IShell::state::ACTIVATION) {
++            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
+             Unlock();
+             result = Core::ERROR_INPROGRESS;
+         }
+         else if ((currentState == IShell::state::UNAVAILABLE) || (currentState == IShell::state::DEACTIVATION) || (currentState == IShell::state::DESTROYED) ) {
++            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
+             Unlock();
+             result = Core::ERROR_ILLEGAL_STATE;
+         } else if (currentState == IShell::state::HIBERNATED) {
+             result = Wakeup(3000);
++            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
+             Unlock();
+         } else if ((currentState == IShell::state::DEACTIVATED) || (currentState == IShell::state::PRECONDITION)) {
+ 
+@@ -352,6 +356,7 @@ namespace PluginHost
+                 SYSLOG(Logging::Startup, (_T("Loading of plugin [%s]:[%s], failed. Error [%s]"), className.c_str(), callSign.c_str(), ErrorMessage().c_str()));
+                 result = Core::ERROR_UNAVAILABLE;
+ 
++            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
+                 Unlock();
+ 
+                 // See if the preconditions have been met..
+@@ -383,6 +388,7 @@ namespace PluginHost
+                     TRACE(Activity, (_T("Delta preconditions: %s"), feedback.c_str()));
+                 }
+ 
++            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
+                 Unlock();
+ 
+             } else {
+@@ -399,6 +405,7 @@ namespace PluginHost
+                 
+                 State(ACTIVATION);
+ 
++            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
+                 Unlock();
+ 
+                 REPORT_DURATION_WARNING( { ErrorMessage(_handler->Initialize(this)); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::ACTIVATION, callSign.c_str());
+@@ -459,6 +466,7 @@ namespace PluginHost
+                 }
+             }
+         } else {
++            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
              Unlock();
          }
  
-+        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
-         return (result);
-     }
- 
+@@ -468,6 +476,7 @@ namespace PluginHost
      uint32_t Server::Service::Resume(const reason why) {
          uint32_t result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification("%d>> %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
++        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
  
          IShell::state currentState(State());
-@@ -494,6 +497,7 @@ namespace PluginHost
+@@ -496,6 +505,7 @@ namespace PluginHost
+             }
+         }
  
++            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
          Unlock();
  
-+        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          return (result);
-     }
- 
-@@ -501,7 +505,10 @@ namespace PluginHost
+@@ -505,6 +515,7 @@ namespace PluginHost
      {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification("%d>> %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
-+
++        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
-+        SYSLOG(Logging::Notification("%d## %s Lock", __LINE__, Callsign().c_str()));
  
          IShell::state currentState(State());
- 
-@@ -520,8 +527,10 @@ namespace PluginHost
-             if(currentState == IShell::state::HIBERNATED)
-             {
-                 Unlock();
-+                SYSLOG(Logging::Notification("%d## %s Unlock", __LINE__, Callsign().c_str()));
-                 uint32_t wakeupResult = Wakeup(3000);
-                 Lock();
-+                SYSLOG(Logging::Notification("%d## %s Lock", __LINE__, Callsign().c_str()));
-                 if(wakeupResult != Core::ERROR_NONE)
-                 {
-                     //Force Activated state
-@@ -535,6 +544,7 @@ namespace PluginHost
+@@ -536,6 +547,7 @@ namespace PluginHost
+                 ASSERT(_handler != nullptr);
  
                  State(DEACTIVATION);
++            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
                  Unlock();
-+                SYSLOG(Logging::Notification("%d## %s Unlock", __LINE__, Callsign().c_str()));
  
                  if (currentState == IShell::ACTIVATED) {
-                     TRACE(Activity, (_T("Deactivating plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
-@@ -550,9 +560,12 @@ namespace PluginHost
+@@ -549,12 +561,16 @@ namespace PluginHost
+ 
+                 // If we enabled the webserver, we should also disable it.
+                 if ((PluginHost::Service::Configuration().WebUI.IsSet()) || (PluginHost::Service::Configuration().WebUI.Value().empty() == false)) {
++                    TRACE(Activity, (_T("Deactivating plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
                      DisableWebServer();
                  }
  
-+                SYSLOG(Logging::Notification("%d>> %s Deinitialize", __LINE__, Callsign().c_str()));
++                SYSLOG(Logging::Notification,(_T("%d >> %s Deinitialize"), Callsign().c_str()));
                  REPORT_DURATION_WARNING( { _handler->Deinitialize(this); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::DEACTIVATION, callSign.c_str());
-+                SYSLOG(Logging::Notification("%d<< %s Deinitialize", __LINE__, Callsign().c_str()));
++                SYSLOG(Logging::Notification,(_T("%d << %s Deinitialize"), Callsign().c_str()));
  
                  Lock();
-+                SYSLOG(Logging::Notification("%d## %s Lock", __LINE__, Callsign().c_str()));
++                SYSLOG(Logging::Notification,(_T("%d ## %s Lock"), Callsign().c_str()));
  
                  if (_jsonrpc != nullptr) {
                      _jsonrpc->Deactivate();
-@@ -585,12 +598,17 @@ namespace PluginHost
- 
- 
-         Unlock();
-+        SYSLOG(Logging::Notification("%d## %s Unlock", __LINE__, Callsign().c_str()));
-+
-+        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
- 
-         return (result);
-     }
- 
-     uint32_t Server::Service::Suspend(const reason why) {
- 
-+        SYSLOG(Logging::Notification("%d>> %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
-+
-         uint32_t result = Core::ERROR_NONE;
- 
-         if (Startup() == PluginHost::IShell::startup::DEACTIVATED) {
-@@ -624,12 +642,14 @@ namespace PluginHost
-             Unlock();
+@@ -586,7 +602,11 @@ namespace PluginHost
          }
  
-+        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
+ 
++        SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
+         Unlock();
++        SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
++
++        SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
+ 
          return (result);
      }
+@@ -595,11 +615,13 @@ namespace PluginHost
  
+         uint32_t result = Core::ERROR_NONE;
+ 
++        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
+         if (Startup() == PluginHost::IShell::startup::DEACTIVATED) {
+             // We need to shutdown completely
+             result = Deactivate(why);
+         }
+         else {
++        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
+             Lock();
+ 
+             IShell::state currentState(State());
+@@ -623,7 +645,9 @@ namespace PluginHost
+                 }
+             }
+ 
++            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
+             Unlock();
++            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
+         }
+ 
+         return (result);
+@@ -632,6 +656,7 @@ namespace PluginHost
      /* virtual */ Core::hresult Server::Service::Unavailable(const reason why) {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification("%d>> %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
++        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
          Lock();
  
          IShell::state currentState(State());
-@@ -667,6 +687,7 @@ namespace PluginHost
+@@ -667,6 +692,7 @@ namespace PluginHost
+             _administrator.Notification(PluginHost::Server::ForwardMessage(callSign, string(_T("{\"state\":\"unavailable\",\"reason\":\"")) + textReason.Data() + _T("\"}")));
+         }
  
++            SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
          Unlock();
  
-+        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
          return (result);
- 
-     }
-@@ -674,6 +695,7 @@ namespace PluginHost
+@@ -676,6 +702,7 @@ namespace PluginHost
      Core::hresult Server::Service::Hibernate(const uint32_t timeout VARIABLE_IS_NOT_USED) /* override */ {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification("%d>> %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
++        SYSLOG(Logging::Notification,(_T("%d ## %s Lock"), Callsign().c_str()));
          Lock();
  
          IShell::state currentState(State());
-@@ -719,6 +741,7 @@ namespace PluginHost
-         }
-         Unlock();
+@@ -698,6 +725,7 @@ namespace PluginHost
+ #ifdef HIBERNATE_SUPPORT_ENABLED
+                 Core::process_t parentPID = local->ParentPID();
+                 local->Release();
++            SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
+                 Unlock();
  
-+        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
+                 TRACE(Activity, (_T("Hibernation of plugin [%s] process [%u]"), Callsign().c_str(), parentPID));
+@@ -707,6 +735,7 @@ namespace PluginHost
+                     SYSLOG(Logging::Startup, (_T("Hibernation aborted of plugin [%s] process [%u]"), Callsign().c_str(), parentPID));
+                     result = Core::ERROR_ABORTED;
+                 }
++                SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
+                 Unlock();
+ 
+                 if (result == HIBERNATE_ERROR_NONE) {
+@@ -739,7 +768,9 @@ namespace PluginHost
+                 }
+             }
+         }
++        SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
+         Unlock();
++        SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
+ 
          return (result);
  
-     }
-@@ -726,6 +749,7 @@ namespace PluginHost
+@@ -748,6 +779,7 @@ namespace PluginHost
      uint32_t Server::Service::Wakeup(const uint32_t timeout VARIABLE_IS_NOT_USED) {
          Core::hresult result = Core::ERROR_NONE;
  
-+        SYSLOG(Logging::Notification("%d>> %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
-         Lock();
- 
++        SYSLOG(Logging::Notification,(_T("%d >> %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
          IShell::state currentState(State());
-@@ -763,6 +787,7 @@ namespace PluginHost
-         }
-         Unlock();
  
-+        SYSLOG(Logging::Notification("%d<< %s for %s", __LINE__, __PRETTY_FUNCTION__, Callsign().c_str()));
+         if (currentState != IShell::state::HIBERNATED) {
+@@ -781,7 +813,7 @@ namespace PluginHost
+                 local->Release();
+             }
+         }
+-
++        SYSLOG(Logging::Notification,(_T("%d << %s for %s"), __PRETTY_FUNCTION__, Callsign().c_str()));
          return (result);
      }
  
+@@ -804,9 +836,11 @@ namespace PluginHost
+                 if (State() != IShell::HIBERNATED) {
+                     SYSLOG(Logging::Startup, (_T("Hibernation aborted of plugin [%s] child process [%u]"), Callsign().c_str(), *iter));
+                     result = Core::ERROR_ABORTED;
++                SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
+                     Unlock();
+                     break;
+                 }
++                SYSLOG(Logging::Notification,(_T("%d ## %s Unlock"), Callsign().c_str()));
+                 Unlock();
+                 result = HibernateProcess(timeout, *iter, _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
+                 if (result == HIBERNATE_ERROR_NONE) {
