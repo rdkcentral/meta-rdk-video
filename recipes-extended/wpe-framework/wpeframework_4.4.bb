@@ -171,7 +171,6 @@ do_install:append() {
 
     install -d ${D}${systemd_unitdir}/system/wpeframework.service.d
     install -m 0644 ${WORKDIR}/network_manager_migration.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
-    install -m 0644 ${WORKDIR}/wpeframework_config_path.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
@@ -186,7 +185,6 @@ FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/*.so ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN} += "${includedir}/cdmi.h"
 FILES:${PN} += "${systemd_unitdir}/system/wpeframework.service.d/network_manager_migration.conf"
-FILES:${PN} += "${systemd_unitdir}/system/wpeframework.service.d/wpeframework_config_path.conf"
 FILES:${PN}-dev += "${libdir}/cmake/*"
 FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/"
 
