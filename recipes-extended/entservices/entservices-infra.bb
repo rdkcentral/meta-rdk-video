@@ -8,7 +8,7 @@ PR ?= "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/test-000 \
            file://rdkshell_post_startup.conf \
            file://0001-Add-monitoring-of-cloned-callsigns.patch \
            file://rdkservices.ini \
@@ -18,7 +18,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
 
 
 # Release version - 1.5.7
-SRCREV = "e75f839d7c6df015f61fcf55e0965a97909058c8"
+SRCREV = "efb941be6939320ee18ebb17dd6aef7c656a2498"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
