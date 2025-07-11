@@ -2,7 +2,7 @@ SUMMARY = "ENTServices inputoutput plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV ?= "1.0.11"
+PV ?= "None"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-inputoutput;${CMF_GITHUB_SRC_URI_SUFFI
           "
 
 # Release version - 1.3.2
-SRCREV = "c8d5cfd654857554b4ea67a989e5f0b07f4a2831"
+SRCREV = "a189b2638e17a3eaa4ef4b4043a8cef75439e287"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
