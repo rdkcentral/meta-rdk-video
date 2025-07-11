@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Casting plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV ?= "1.1.0"
+PV ?= "None"
 PR ?= "r1"
 
 S = "${WORKDIR}/git"
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-casting;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
 # Release version - 1.1.0
-SRCREV = "943947500c914ce6724b64f93a04d8164ce2f822"
+SRCREV = "f65b374c27165f8ba6ad9f18efee385f6e351b3e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
