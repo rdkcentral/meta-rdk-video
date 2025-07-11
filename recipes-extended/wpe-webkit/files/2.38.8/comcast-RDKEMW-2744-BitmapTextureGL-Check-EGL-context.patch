@@ -1,0 +1,45 @@
+From ca14c1b4648f8a85df074bd28dc2d2da0eaf3b1a Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Tue, 6 May 2025 15:58:56 +0200
+Subject: [PATCH] comcast - RDKEMW-2744 - BitmapTextureGL - Check EGL context
+ before destruction
+
+For iPlayer application, when the app gets closed beeing autostarted
+in suspend mode or the closure happens just after startup (on splashscreen)
+we run into a case where GL resources of BitmapTextureGL (texture, framebuffers)
+are destroyed on the main thread, after EGL context destruction
+that is not safe and may crash.
+As a workaround check if GL context is set before cleaning up GL resources
+---
+ .../WebCore/platform/graphics/texmap/BitmapTextureGL.cpp  | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/Source/WebCore/platform/graphics/texmap/BitmapTextureGL.cpp b/Source/WebCore/platform/graphics/texmap/BitmapTextureGL.cpp
+index 7b69f8ad93f1..ee27b2f6398a 100644
+--- a/Source/WebCore/platform/graphics/texmap/BitmapTextureGL.cpp
++++ b/Source/WebCore/platform/graphics/texmap/BitmapTextureGL.cpp
+@@ -41,6 +41,8 @@
+ #include <wtf/text/CString.h>
+ #endif
+ 
++#include "GLContext.h"
++
+ #if OS(DARWIN)
+ #define GL_UNSIGNED_INT_8_8_8_8_REV 0x8367
+ #endif
+@@ -304,6 +306,12 @@ void BitmapTextureGL::bindAsSurface()
+ 
+ BitmapTextureGL::~BitmapTextureGL()
+ {
++    GLContext* currentContext = GLContext::current();
++    if (!currentContext || !currentContext->platformContext()) {
++        // The context has been destroyed already, so we can't clean up.
++        return;
++    }
++
+     if (m_id)
+         glDeleteTextures(1, &m_id);
+ 
+-- 
+2.45.2
+
