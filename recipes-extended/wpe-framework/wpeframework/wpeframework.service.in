@@ -1,7 +1,6 @@
 [Unit]
 Description=wpeframework
-Wants=network-online.target local-fs.target
-After= network-online.target local-fs.target securemount.service
+After= securemount.service
 RequiresMountsFor=/opt/secure
 
 [Service]
