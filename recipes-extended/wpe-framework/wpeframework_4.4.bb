@@ -53,6 +53,7 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/Activating_plugins_Logs_COMRPC.patch \
            file://r4.4/FirmwareUpdate_UptoDate.patch \
            file://r4.4/Removed_Autostart_Check_From_WPEFramework.patch \
+           file://r4.4/WPEFramework-LogJsonRpcCommunication.patch \
            "
 
 SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
