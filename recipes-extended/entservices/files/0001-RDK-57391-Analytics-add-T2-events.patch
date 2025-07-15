@@ -1,0 +1,581 @@
+From 2275dc53269d235d1f1f9a5b71547ddcb8805a83 Mon Sep 17 00:00:00 2001
+From: Adrian Muzyka <adrian.muzyka.it@gmail.com>
+Date: Mon, 14 Jul 2025 13:47:15 +0200
+Subject: [PATCH] RDK-57391: Analytics: add T2 events
+
+---
+ Analytics/CHANGELOG.md                        |  3 ++
+ Analytics/CMakeLists.txt                      |  7 +++-
+ .../AnalyticsImplementation.cpp               | 19 +++++++++++
+ .../Backend/AnalyticsBackendLoader.cpp        |  6 +++-
+ .../Implementation/Backend/CMakeLists.txt     |  5 +++
+ .../Implementation/LocalStore/CMakeLists.txt  |  5 +++
+ .../LocalStore/DatabaseConnection.cpp         | 34 ++++++++++++++++++-
+ .../Implementation/LocalStore/LocalStore.cpp  | 19 ++++++++++-
+ .../Implementation/SystemTime/CMakeLists.txt  |  5 +++
+ .../Implementation/SystemTime/SystemTime.cpp  |  7 ++++
+ 10 files changed, 106 insertions(+), 4 deletions(-)
+
+diff --git a/Analytics/CHANGELOG.md b/Analytics/CHANGELOG.md
+index 2a9de8f..623c93e 100644
+--- a/Analytics/CHANGELOG.md
++++ b/Analytics/CHANGELOG.md
+@@ -14,6 +14,9 @@ All notable changes to this RDK Service will be documented in this file.
+ 
+     For more details, refer to versioning section under Main README.
+ 
++## [1.0.5] - 2025-07-14
++- Support T2 events logging
++
+ ## [1.0.4] - 2025-06-12
+ - Backend as an external dynamic library
+ 
+diff --git a/Analytics/CMakeLists.txt b/Analytics/CMakeLists.txt
+index cb6cca2..04f878c 100644
+--- a/Analytics/CMakeLists.txt
++++ b/Analytics/CMakeLists.txt
+@@ -20,7 +20,7 @@ set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
+ 
+ set(VERSION_MAJOR 1)
+ set(VERSION_MINOR 0)
+-set(VERSION_PATCH 4)
++set(VERSION_PATCH 5)
+ 
+ add_compile_definitions(ANALYTICS_MAJOR_VERSION=${VERSION_MAJOR})
+ add_compile_definitions(ANALYTICS_MINOR_VERSION=${VERSION_MINOR})
+@@ -82,6 +82,11 @@ target_link_libraries(${MODULE_NAME}
+         ${MODULE_NAME}SystemTime
+         ${MODULE_NAME}LocalStore)
+ 
++if(BUILD_ENABLE_TELEMETRY_LOGGING)
++    add_definitions(-DENABLE_TELEMETRY_LOGGING)
++    target_link_libraries(${MODULE_NAME} PRIVATE -ltelemetry_msgsender)
++endif (BUILD_ENABLE_TELEMETRY_LOGGING)
++
+ if (RDK_SERVICE_L2_TEST)
+     target_compile_definitions(${MODULE_NAME} PRIVATE MODULE_NAME=Plugin_${PLUGIN_NAME})
+     target_compile_options(${MODULE_NAME} PRIVATE -Wno-error)
+diff --git a/Analytics/Implementation/AnalyticsImplementation.cpp b/Analytics/Implementation/AnalyticsImplementation.cpp
+index 0186073..4766218 100644
+--- a/Analytics/Implementation/AnalyticsImplementation.cpp
++++ b/Analytics/Implementation/AnalyticsImplementation.cpp
+@@ -18,6 +18,7 @@
+  */
+ #include "AnalyticsImplementation.h"
+ #include "UtilsLogging.h"
++#include "UtilsTelemetry.h"
+ #include "LocalStore.h"
+ 
+ #include <fstream>
+@@ -64,12 +65,16 @@ namespace Plugin {
+         mSysTimeValid(false),
+         mShell(nullptr)
+     {
++        LOGINFO("AnalyticsImplementation::AnalyticsImplementation()");
++        Utils::Telemetry::init();
++        Utils::Telemetry::sendMessage("AnalyticsImplementation::Init");
+         mThread = std::thread(&AnalyticsImplementation::ActionLoop, this);
+     }
+ 
+     AnalyticsImplementation::~AnalyticsImplementation()
+     {
+         LOGINFO("AnalyticsImplementation::~AnalyticsImplementation()");
++        Utils::Telemetry::sendMessage("AnalyticsImplementation::Shutdown");
+         std::unique_lock<std::mutex> lock(mQueueMutex);
+         mActionQueue.push({ACTION_TYPE_SHUTDOWN, nullptr});
+         lock.unlock();
+@@ -136,6 +141,8 @@ namespace Plugin {
+ 
+         if (valid == false)
+         {
++            Utils::Telemetry::sendError("AnalyticsImplementation::SendEvent: Invalid event parameters for event '%s' from source '%s' with version '%s'",
++                                        eventName.c_str(), eventSource.c_str(), eventSourceVersion.c_str());
+             return Core::ERROR_GENERAL;
+         }
+ 
+@@ -163,6 +170,7 @@ namespace Plugin {
+         if(mSysTime == nullptr)
+         {
+             LOGERR("Failed to create SystemTime instance");
++            Utils::Telemetry::sendError("AnalyticsImplementation::Configure - Failed to create SystemTime instance");
+         }
+ 
+ 
+@@ -176,6 +184,8 @@ namespace Plugin {
+                    (_T("Failed to parse config line, error: '%s', config line: '%s'."),
+                     (error.IsSet() ? error.Value().Message().c_str() : "Unknown"),
+                     configLine.c_str()));
++            Utils::Telemetry::sendError("AnalyticsImplementation::Configure - Failed to parse config line, error: '%s', config line: '%s'.",
++                                        (error.IsSet() ? error.Value().Message().c_str() : "Unknown"), configLine.c_str());
+         }
+ 
+         LOGINFO("EventsMap: %s", config.EventsMap.Value().c_str());
+@@ -187,6 +197,8 @@ namespace Plugin {
+         {
+             LOGERR("Failed to load backend library: %s, error code: %u",
+                    config.BackendLib.Value().c_str(), ret);
++            Utils::Telemetry::sendError("AnalyticsImplementation::Configure - Failed to load backend library: %s, error code: %u",
++                                        config.BackendLib.Value().c_str(), ret);
+         }
+         else
+         {
+@@ -200,11 +212,14 @@ namespace Plugin {
+                 if (localStore == nullptr)
+                 {
+                     LOGERR("Failed to create LocalStore instance");
++                    Utils::Telemetry::sendError("AnalyticsImplementation::Configure - Failed to create LocalStore instance");
+                     result = Core::ERROR_GENERAL;
+                 }
+                 if (backend->Configure(mShell, mSysTime, std::move(localStore)) != Core::ERROR_NONE)
+                 {
+                     LOGERR("Failed to configure backend: %s", backend->Name().c_str());
++                    Utils::Telemetry::sendError("AnalyticsImplementation::Configure - Failed to configure backend: %s",
++                                                backend->Name().c_str());
+                     result = Core::ERROR_GENERAL;
+                 }
+                 else
+@@ -215,6 +230,7 @@ namespace Plugin {
+             else
+             {
+                 LOGERR("Failed to get backend from loader");
++                Utils::Telemetry::sendError("AnalyticsImplementation::Configure - Failed to get backend from loader");
+                 result = Core::ERROR_GENERAL;
+             }
+         }
+@@ -422,6 +438,7 @@ namespace Plugin {
+         if (jsonArrayStr.empty())
+         {
+             LOGERR("Empty events map json array string");
++            Utils::Telemetry::sendError("AnalyticsImplementation::EventMapper::FromString - Empty events map json array string");
+             return;
+         }
+ 
+@@ -431,6 +448,7 @@ namespace Plugin {
+         if (array.Length() == 0)
+         {
+             LOGERR("Empty or corrupted events map json array");
++            Utils::Telemetry::sendError("AnalyticsImplementation::EventMapper::FromString - Empty or corrupted events map json array");
+             return;
+         }
+ 
+@@ -452,6 +470,7 @@ namespace Plugin {
+             else
+             {
+                 LOGERR("Invalid entry in events map file at index %d", i);
++                Utils::Telemetry::sendError("AnalyticsImplementation::EventMapper::FromString - Invalid entry in events map file at index %d", i);
+             }
+         }
+     }
+diff --git a/Analytics/Implementation/Backend/AnalyticsBackendLoader.cpp b/Analytics/Implementation/Backend/AnalyticsBackendLoader.cpp
+index cbd4dc1..c351e93 100644
+--- a/Analytics/Implementation/Backend/AnalyticsBackendLoader.cpp
++++ b/Analytics/Implementation/Backend/AnalyticsBackendLoader.cpp
+@@ -17,6 +17,7 @@
+ * limitations under the License.
+ **/
+ #include "AnalyticsBackendLoader.h"
++#include "UtilsTelemetry.h"
+ #include "UtilsLogging.h"
+ 
+ namespace WPEFramework {
+@@ -26,6 +27,7 @@ uint32_t AnalyticsBackendLoader::Load(std::string path)
+ {
+     if (path.empty()) {
+         LOGERR("Analytics backend path is empty");
++        Utils::Telemetry::sendError("AnalyticsBackendLoader::Load - Analytics backend path is empty");
+         return Core::ERROR_GENERAL;
+     }
+ 
+@@ -34,6 +36,7 @@ uint32_t AnalyticsBackendLoader::Load(std::string path)
+     if (ret != Utils::LibraryLoader::ErrorCode::NO_ERROR)
+     {
+         LOGERR("Failed to load analytics backend library (%s): %s", path.c_str(), error.c_str());
++        Utils::Telemetry::sendError("AnalyticsBackendLoader::Load - Failed to load analytics backend library (%s): %s", path.c_str(), error.c_str());
+         return Core::ERROR_GENERAL;
+     }
+ 
+@@ -41,6 +44,7 @@ uint32_t AnalyticsBackendLoader::Load(std::string path)
+     if (mAnalyticsBackend == nullptr)
+     {
+         LOGERR("Failed to create analytics backend object for library (%s): %s", path.c_str(), error.c_str());
++        Utils::Telemetry::sendError("AnalyticsBackendLoader::Load - Failed to create analytics backend object for library (%s): %s", path.c_str(), error.c_str());
+         return Core::ERROR_GENERAL;
+     }
+     return Core::ERROR_NONE;
+@@ -48,4 +52,4 @@ uint32_t AnalyticsBackendLoader::Load(std::string path)
+ }
+ 
+ }
+-}
+\ No newline at end of file
++}
+diff --git a/Analytics/Implementation/Backend/CMakeLists.txt b/Analytics/Implementation/Backend/CMakeLists.txt
+index 0e50ad8..3542016 100644
+--- a/Analytics/Implementation/Backend/CMakeLists.txt
++++ b/Analytics/Implementation/Backend/CMakeLists.txt
+@@ -27,6 +27,11 @@ target_include_directories(${TARGET_LIB} PRIVATE "${CMAKE_SOURCE_DIR}/helpers")
+ 
+ target_compile_definitions(${TARGET_LIB} PRIVATE LIBLOADER_DFL_DIR="${PLUGIN_ANALYTICS_LIBLOADER_DFL_DIR}")
+ 
++if(BUILD_ENABLE_TELEMETRY_LOGGING)
++    add_definitions(-DENABLE_TELEMETRY_LOGGING)
++    target_link_libraries(${TARGET_LIB} PRIVATE -ltelemetry_msgsender)
++endif (BUILD_ENABLE_TELEMETRY_LOGGING)
++
+ set_property(TARGET ${TARGET_LIB} PROPERTY POSITION_INDEPENDENT_CODE ON)
+ set_target_properties(${TARGET_LIB} PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+ target_link_libraries(${TARGET_LIB} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
+diff --git a/Analytics/Implementation/LocalStore/CMakeLists.txt b/Analytics/Implementation/LocalStore/CMakeLists.txt
+index 23966bf..a3697d6 100644
+--- a/Analytics/Implementation/LocalStore/CMakeLists.txt
++++ b/Analytics/Implementation/LocalStore/CMakeLists.txt
+@@ -29,6 +29,11 @@ else (SQLITE_FOUND)
+     message ("Sqlite3 required.")
+ endif (SQLITE_FOUND)
+ 
++if(BUILD_ENABLE_TELEMETRY_LOGGING)
++    add_definitions(-DENABLE_TELEMETRY_LOGGING)
++    target_link_libraries(${TARGET_LIB} PRIVATE -ltelemetry_msgsender)
++endif (BUILD_ENABLE_TELEMETRY_LOGGING)
++
+ target_include_directories(${TARGET_LIB} PUBLIC "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+ target_include_directories(${TARGET_LIB} PRIVATE "${CMAKE_SOURCE_DIR}/Analytics")
+ target_include_directories(${TARGET_LIB} PRIVATE "${CMAKE_SOURCE_DIR}/Analytics/Implementation/Interfaces")
+diff --git a/Analytics/Implementation/LocalStore/DatabaseConnection.cpp b/Analytics/Implementation/LocalStore/DatabaseConnection.cpp
+index 1dc7ad9..dd9fc9a 100644
+--- a/Analytics/Implementation/LocalStore/DatabaseConnection.cpp
++++ b/Analytics/Implementation/LocalStore/DatabaseConnection.cpp
+@@ -18,6 +18,7 @@
+  */
+ #include "DatabaseConnection.h"
+ #include "UtilsLogging.h"
++#include "UtilsTelemetry.h"
+ 
+ namespace WPEFramework {
+     namespace Plugin {
+@@ -38,6 +39,8 @@ namespace WPEFramework {
+                     LOGERR("Database %s open failed: could not close existing "
+                         "connection",
+                         databaseName.c_str());
++                    Utils::Telemetry::sendError("DatabaseConnection::Connect - Database %s open failed: could not close existing connection",
++                                                databaseName.c_str());
+                 } else {
+                     // Assign database name
+                     mDatabaseName = databaseName;
+@@ -54,10 +57,15 @@ namespace WPEFramework {
+                             databaseName.c_str(),
+                             DB_ERRMSG(mDataBaseHandle),
+                             queryRet);
++                        Utils::Telemetry::sendError("DatabaseConnection::Connect - Database %s open failed: %s db err code %d",
++                                                    databaseName.c_str(),
++                                                    DB_ERRMSG(mDataBaseHandle),
++                                                    queryRet);
+                     }
+                 }
+             } else {
+                 LOGERR("Database open failed: invalid db name %s", databaseName.c_str());
++                Utils::Telemetry::sendError("DatabaseConnection::Connect - Database open failed: invalid db name %s", databaseName.c_str());
+             }
+ 
+             return ret;
+@@ -82,6 +90,10 @@ namespace WPEFramework {
+                         mDatabaseName.c_str(),
+                         DB_ERRMSG(mDataBaseHandle),
+                         queryRet);
++                    Utils::Telemetry::sendError("DatabaseConnection::DisConnect - Database %s close failed: %s db err code %d",
++                                                mDatabaseName.c_str(),
++                                                DB_ERRMSG(mDataBaseHandle),
++                                                queryRet);
+                 }
+             }
+ 
+@@ -114,6 +126,10 @@ namespace WPEFramework {
+                         mDatabaseName.c_str(),
+                         errmsg,
+                         queryRet);
++                    Utils::Telemetry::sendError("DatabaseConnection::Exec - Database %s query failed errmsg: %s db err code %d",
++                                                mDatabaseName.c_str(),
++                                                errmsg,
++                                                queryRet);
+ 
+                     // If error, database malloc's the message so it needs to be free'd
+                     DB_FREE(errmsg);
+@@ -122,6 +138,8 @@ namespace WPEFramework {
+                 LOGERR("Database connection not established for %s. "
+                     "Query failed.",
+                     mDatabaseName.c_str());
++                Utils::Telemetry::sendError("DatabaseConnection::Exec - Database connection not established for %s. Query failed.",
++                                            mDatabaseName.c_str());
+             }
+ 
+             return ret;
+@@ -156,6 +174,10 @@ namespace WPEFramework {
+                         mDatabaseName.c_str(),
+                         errmsg,
+                         queryRet);
++                    Utils::Telemetry::sendError("DatabaseConnection::ExecAndGetModified - Database %s query failed errmsg: %s db err code %d",
++                                                mDatabaseName.c_str(),
++                                                errmsg,
++                                                queryRet);
+ 
+                     // If error, database malloc's the message so it needs to be free'd
+                     DB_FREE(errmsg);
+@@ -164,6 +186,8 @@ namespace WPEFramework {
+                 LOGERR("Database connection not established for %s. "
+                     "Query failed.",
+                     mDatabaseName.c_str());
++                Utils::Telemetry::sendError("DatabaseConnection::ExecAndGetModified - Database connection not established for %s. Query failed.",
++                                            mDatabaseName.c_str());
+             }
+ 
+             return ret;
+@@ -196,11 +220,17 @@ namespace WPEFramework {
+                         mDatabaseName.c_str(),
+                         errmsg,
+                         queryRet);
++                    Utils::Telemetry::sendError("DatabaseConnection::ExecAndGetResults - Database %s query failed with error: %s db err code %d",
++                                                mDatabaseName.c_str(),
++                                                errmsg,
++                                                queryRet);
+                     DB_FREE(errmsg);
+                 }
+             } else {
+                 LOGERR("Database connection not established for %s. Query failed.",
+                     mDatabaseName.c_str());
++                Utils::Telemetry::sendError("DatabaseConnection::ExecAndGetResults - Database connection not established for %s. Query failed.",
++                                            mDatabaseName.c_str());
+             }
+ 
+             return ret;
+@@ -217,6 +247,7 @@ namespace WPEFramework {
+                 ret = DB_OK;
+             } else {
+                 LOGERR("Database query executed with no data");
++                Utils::Telemetry::sendError("DatabaseConnection::DbCallbackOnly - Database query executed with no data");
+             }
+ 
+             return ret;
+@@ -249,10 +280,11 @@ namespace WPEFramework {
+ 
+             } else {
+                 LOGERR("Database invalid query, cannot get results");
++                Utils::Telemetry::sendError("DatabaseConnection::DbCallbackGetResults - Database invalid query, cannot get results");
+             }
+ 
+             return ret;
+         }
+ 
+     } // namespace Plugin
+-} // namespace WPEFramework
+\ No newline at end of file
++} // namespace WPEFramework
+diff --git a/Analytics/Implementation/LocalStore/LocalStore.cpp b/Analytics/Implementation/LocalStore/LocalStore.cpp
+index 0c4586f..130bed9 100644
+--- a/Analytics/Implementation/LocalStore/LocalStore.cpp
++++ b/Analytics/Implementation/LocalStore/LocalStore.cpp
+@@ -19,6 +19,7 @@
+ 
+ #include "LocalStore.h"
+ #include "UtilsLogging.h"
++#include "UtilsTelemetry.h"
+ #include "DatabaseConnection.h"
+ 
+ #include <unistd.h>
+@@ -64,6 +65,7 @@ namespace WPEFramework
+             else
+             {
+                 LOGERR("AddDatabase failed to create a new database %s ", dbPath.c_str());
++                Utils::Telemetry::sendError("LocalStore::Open - Failed to create a new database %s", dbPath.c_str());
+             }
+ 
+             return status;
+@@ -84,11 +86,13 @@ namespace WPEFramework
+                 else
+                 {
+                     LOGERR("Failed to create table %s", table.c_str());
++                    Utils::Telemetry::sendError("LocalStore::CreateTable - Failed to create table %s", table.c_str());
+                 }
+             }
+             else
+             {
+                 LOGERR("Failed to create table %s, no connection", table.c_str());
++                Utils::Telemetry::sendError("LocalStore::CreateTable - Failed to create table %s, no connection", table.c_str());
+             }
+ 
+             return status;
+@@ -108,11 +112,13 @@ namespace WPEFramework
+                 else
+                 {
+                     LOGERR("Failed to set limit %u", limit);
++                    Utils::Telemetry::sendError("LocalStore::SetLimit - Failed to set limit %u", limit);
+                 }
+             }
+             else
+             {
+                 LOGERR("Failed to set limit %u, no connection", limit);
++                Utils::Telemetry::sendError("LocalStore::SetLimit - Failed to set limit %u, no connection", limit);
+             }
+ 
+             return status;
+@@ -140,11 +146,13 @@ namespace WPEFramework
+                 else
+                 {
+                     LOGERR("Failed to build query with {%u, %u}", start, maxCount);
++                    Utils::Telemetry::sendError("LocalStore::GetEntriesCount - Failed to build query with {%u, %u}", start, maxCount);
+                 }
+             }
+             else
+             {
+                 LOGERR("Failed to get entries count, no connection");
++                Utils::Telemetry::sendError("LocalStore::GetEntriesCount - Failed to get entries count, no connection");
+             }
+ 
+             return count;
+@@ -167,6 +175,7 @@ namespace WPEFramework
+                             if (table[rowIdx].NumCols() < 2)
+                             {
+                                 LOGERR("Failed to get entries, invalid row");
++                                Utils::Telemetry::sendError("LocalStore::GetEntries - Failed to get entries, invalid row");
+                                 continue;
+                             }
+ 
+@@ -177,16 +186,19 @@ namespace WPEFramework
+                     else
+                     {
+                         LOGERR("Failed to get entries, query %s", query.c_str());
++                        Utils::Telemetry::sendError("LocalStore::GetEntries - Failed to get entries, query %s", query.c_str());
+                     }
+                 }
+                 else
+                 {
+                     LOGERR("Failed to build query with {%u, %u}", start, count);
++                    Utils::Telemetry::sendError("LocalStore::GetEntries - Failed to build query with {%u, %u}", start, count);
+                 }
+             }
+             else
+             {
+                 LOGERR("Failed to get entries, no connection");
++                Utils::Telemetry::sendError("LocalStore::GetEntries - Failed to get entries, no connection");
+             }
+ 
+             return entries;
+@@ -207,11 +219,13 @@ namespace WPEFramework
+                 else
+                 {
+                     LOGERR("Failed to remove entries, query %s", query.c_str());
++                    Utils::Telemetry::sendError("LocalStore::RemoveEntries - Failed to remove entries, query %s", query.c_str());
+                 }
+             }
+             else
+             {
+                 LOGERR("Failed to remove entries, no connection");
++                Utils::Telemetry::sendError("LocalStore::RemoveEntries - Failed to remove entries, no connection");
+             }
+ 
+             return status;
+@@ -231,11 +245,13 @@ namespace WPEFramework
+                 else
+                 {
+                     LOGERR("Failed to add entry, query %s", query.c_str());
++                    Utils::Telemetry::sendError("LocalStore::AddEntry - Failed to add entry, query %s", query.c_str());
+                 }
+             }
+             else
+             {
+                 LOGERR("Failed to add entry, no connection");
++                Utils::Telemetry::sendError("LocalStore::AddEntry - Failed to add entry, no connection");
+             }
+ 
+             return status;
+@@ -262,10 +278,11 @@ namespace WPEFramework
+             else
+             {
+                 LOGERR("Failed to build query with {%u, %u}", start, count);
++                Utils::Telemetry::sendError("LocalStore::buildGetEventsQuery - Failed to build query with {%u, %u}", start, count);
+             }
+ 
+             return query;
+         }
+ 
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/Analytics/Implementation/SystemTime/CMakeLists.txt b/Analytics/Implementation/SystemTime/CMakeLists.txt
+index 96811cb..62373a3 100644
+--- a/Analytics/Implementation/SystemTime/CMakeLists.txt
++++ b/Analytics/Implementation/SystemTime/CMakeLists.txt
+@@ -20,6 +20,11 @@ add_library(${TARGET_LIB} STATIC)
+ 
+ target_sources(${TARGET_LIB} PRIVATE SystemTime.cpp)
+ 
++if(BUILD_ENABLE_TELEMETRY_LOGGING)
++    add_definitions(-DENABLE_TELEMETRY_LOGGING)
++    target_link_libraries(${TARGET_LIB} PRIVATE -ltelemetry_msgsender)
++endif (BUILD_ENABLE_TELEMETRY_LOGGING)
++
+ target_include_directories(${TARGET_LIB} PUBLIC "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+ target_include_directories(${TARGET_LIB} PRIVATE "${CMAKE_SOURCE_DIR}/Analytics")
+ target_include_directories(${TARGET_LIB} PRIVATE "${CMAKE_SOURCE_DIR}/Analytics/Implementation/Interfaces")
+diff --git a/Analytics/Implementation/SystemTime/SystemTime.cpp b/Analytics/Implementation/SystemTime/SystemTime.cpp
+index a8ee03d..037a171 100644
+--- a/Analytics/Implementation/SystemTime/SystemTime.cpp
++++ b/Analytics/Implementation/SystemTime/SystemTime.cpp
+@@ -18,6 +18,7 @@
+  **/
+ #include "SystemTime.h"
+ #include "UtilsLogging.h"
++#include "UtilsTelemetry.h"
+ #include "secure_wrapper.h"
+ 
+ #define JSONRPC_THUNDER_TIMEOUT 2000
+@@ -162,12 +163,14 @@ namespace WPEFramework
+                 if (ret != Core::ERROR_NONE)
+                 {
+                     LOGERR("Failed to subscribe to onTimeStatusChanged");
++                    Utils::Telemetry::sendError("SystemTime::SubscribeForEvents - Failed to subscribe to onTimeStatusChanged");
+                 }
+ 
+                 ret = mSystemLink->Subscribe<JsonObject>(JSONRPC_THUNDER_TIMEOUT, _T("onTimeZoneDSTChanged"), &SystemTime::onTimeZoneDSTChanged, this);
+                 if (ret != Core::ERROR_NONE)
+                 {
+                     LOGERR("Failed to subscribe to onTimeZoneDSTChanged");
++                    Utils::Telemetry::sendError("SystemTime::SubscribeForEvents - Failed to subscribe to onTimeZoneDSTChanged");
+                 }
+             }
+         }
+@@ -194,6 +197,7 @@ namespace WPEFramework
+             else
+             {
+                 LOGERR("getTimeStatus not available, assuming time is OK");
++                Utils::Telemetry::sendError("SystemTime::UpdateTimeStatus - getTimeStatus not available, assuming time is OK");
+                 std::lock_guard<std::mutex> guard(mLock);
+                 mIsSystemTimeAvailable = true;
+             }
+@@ -279,6 +283,7 @@ namespace WPEFramework
+             else
+             {
+                 LOGERR( "There is no time transition information for this timezone: %s", mTimeZone.c_str());
++                Utils::Telemetry::sendError("SystemTime::ParseTimeZone - There is no time transition information for this timezone: %s", mTimeZone.c_str());
+                 result.second = 0;
+                 result.first = ACC_UNDEFINED;
+             }
+@@ -376,6 +381,7 @@ namespace WPEFramework
+                 else
+                 {
+                     LOGERR("popen of zdump -v %s failed", mTimeZone.c_str());
++                    Utils::Telemetry::sendError("SystemTime::PopulateTimeZoneTransitionMap - popen of zdump -v %s failed", mTimeZone.c_str());
+                 }
+             }
+         }
+@@ -410,6 +416,7 @@ namespace WPEFramework
+                         else
+                         {
+                             LOGERR("Failed to create JSONRPC link with %s", SYSTEM_CALLSIGN);
++                            Utils::Telemetry::sendError("SystemTime::EventLoop - Failed to create JSONRPC link with %s", SYSTEM_CALLSIGN);
+                         }
+                     }
+                 }
+-- 
+2.43.0
+
