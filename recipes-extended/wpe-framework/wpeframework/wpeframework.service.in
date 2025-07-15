@@ -2,6 +2,7 @@
 Description=wpeframework
 Wants= local-fs.target
 After= local-fs.target
+DefaultDependencies=no
 
 [Service]
 Type=notify
