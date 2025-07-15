@@ -9,7 +9,6 @@ PV = "4.4.1"
 inherit python3native cmake pkgconfig
 
 SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https;branch=R4_4;name=wpeframework-clientlibraries \
-           file://r4.4/0001-RDK-28534-Security-Agent-Utility-and-Logging-ClientLibs.patch \
            file://r4.4/Library-version-Matched-With-Release-ClientLibs.patch \
            file://r4.4/0004-R4-Security-Agent-Library-NameChange.patch \
            file://r4.4/0001-Add-functionality-to-construct-Session-private-data.patch \
@@ -25,8 +24,9 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-check-_session-has-a-valid-pointer.patch \
            file://r4.4/0001-PowerManagerClient-library-implementation.patch \
            file://r4.4/0001-add-svp-header-to-data-before-decryption.patch \
-           file://r4.4/0001-error-handling-if-session-is-not-valid.patch \
+           file://r4.4/RDK-55149.patch \
            file://r4.4/0001-Add-vault-platform-case.patch \
+           file://0001-error-handling-if-invalid-external-input.patch \
           "
 
 # Oct 17, 2023
