@@ -24,6 +24,7 @@ EXTRA_OECONF = "--enable-rfcapi --enable-t2api"
 
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
 LDFLAGS:append = " -lRDKMfrLib"
+RDEPENDS:${PN} += "virtual/mfrlib"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
