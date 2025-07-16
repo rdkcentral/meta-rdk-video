@@ -30,6 +30,7 @@ S = "${WORKDIR}/git"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)}"
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter "
+DEPENDS += "barton"
 
 require aamp-common.inc
 
