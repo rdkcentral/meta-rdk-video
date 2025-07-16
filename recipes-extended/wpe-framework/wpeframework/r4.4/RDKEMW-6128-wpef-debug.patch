@@ -1,0 +1,168 @@
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index 650a2e1d9..57fde5e3e 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -512,9 +512,9 @@ namespace PluginHost
+     /* virtual */ Core::hresult Server::Service::Deactivate(const reason why)
+     {
+         Core::hresult result = Core::ERROR_NONE;
+-
++        char* callsign;
+         Lock();
+-
++        
+         IShell::state currentState(State());
+ 
+         if (currentState == IShell::state::DEACTIVATION) {
+@@ -526,7 +526,8 @@ namespace PluginHost
+ 
+             const string className(PluginHost::Service::Configuration().ClassName.Value());
+             const string callSign(PluginHost::Service::Configuration().Callsign.Value());
+-
++            callsign = const_cast<char*>(callSign.c_str());
++            fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate Enter Acquired lock callsign: %s\n", callsign);
+             _reason = why;
+ 
+             if(currentState == IShell::state::HIBERNATED)
+@@ -548,6 +549,7 @@ namespace PluginHost
+ 
+                 if (currentState == IShell::ACTIVATED) {
+                     TRACE(Activity, (_T("Deactivating plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
++                    fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling _administrator.Deactivated callsign: %s\n", callsign);
+                     _administrator.Deactivated(callSign, this);
+                 }
+ 
+@@ -559,12 +561,13 @@ namespace PluginHost
+                 if ((PluginHost::Service::Configuration().WebUI.IsSet()) || (PluginHost::Service::Configuration().WebUI.Value().empty() == false)) {
+                     DisableWebServer();
+                 }
+-
++                fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling plugin's Deinitialize callsign: %s\n", callsign);
+                 REPORT_DURATION_WARNING( { _handler->Deinitialize(this); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::DEACTIVATION, callSign.c_str());
+ 
+                 Lock();
+ 
+                 if (_jsonrpc != nullptr) {
++                    fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling _jsonrpc->Deactivate callsign: %s\n", callsign);
+                     _jsonrpc->Deactivate();
+                 }
+                 if (_external.Connector().empty() == false) {
+@@ -580,22 +583,23 @@ namespace PluginHost
+ #if THUNDER_RESTFULL_API
+                 _administrator.Notification(_T("{\"callsign\":\"") + callSign + _T("\",\"state\":\"deactivated\",\"reason\":\"") + textReason.Data() + _T("\"}"));
+ #endif
+-
++                fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling _administrator.Notification callsign: %s\n", callsign);
+                 _administrator.Notification(PluginHost::Server::ForwardMessage(callSign, string(_T("{\"state\":\"deactivated\",\"reason\":\"")) + textReason.Data() + _T("\"}")));
+ 
+             }
+ 
+             State(why == CONDITIONS ? PRECONDITION : DEACTIVATED);
+-
++            fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling _administrator.Deinitialized callsign: %s\n", callsign);
+             _administrator.Deinitialized(callSign, this);
+ 
+             // We have no need for his module anymore..
++            fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling ReleaseInterfaces callsign: %s\n", callsign);
+             ReleaseInterfaces();
+         }
+ 
+ 
+         Unlock();
+-
++        fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate Return Release lock callsign: %s\n", callsign);
+         return (result);
+     }
+ 
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index cef643f91..e61b03d0c 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -26,6 +26,8 @@
+ #include "IRemoteInstantiation.h"
+ #include "WarningReportingCategories.h"
+ #include "PostMortem.h"
++#include <typeinfo>
++#include <unistd.h>
+ 
+ #ifdef PROCESSCONTAINERS_ENABLED
+ #include "../processcontainers/ProcessContainer.h"
+@@ -2960,31 +2962,37 @@ POP_WARNING()
+             void Deactivated(const string& callsign, PluginHost::IShell* entry)
+             {
+                 _notificationLock.Lock();
+-
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated Enter callsign: %s\n", callsign.c_str());
+                 Notifiers::iterator index(_notifiers.begin());
+-
++                int count = 1;
+                 while (index != _notifiers.end()) {
++                    fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated count: %d callsign: %s typeid(*(*index)): <addr: %p> %s->Deactivated()\n", count, callsign.c_str(), *index, typeid(*(*index)).name());
+                     (*index)->Deactivated(callsign, entry);
+                     index++;
++                    count++;
+                 }
+-
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated Return callsign: %s\n", callsign.c_str());
+                 _notificationLock.Unlock();
+             }
+             void Deinitialized(const string& callsign, PluginHost::IShell* entry)
+             {
+                 _notificationLock.Lock();
+-
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized Enter callsign: %s\n", callsign.c_str());
+                 Notifiers::iterator index(_notifiers.begin());
+-
++                int count = 1;
+                 while (index != _notifiers.end()) {
++                    fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized count: %d typeid(*(*index)): <addr: %p> %s callsign: %s calling index->QueryInterfacecallsign\n", count, *index, typeid(*(*index)).name(), callsign.c_str());
+                     PluginHost::IPlugin::ILifeTime* lifetime = (*index)->QueryInterface<PluginHost::IPlugin::ILifeTime>();
+                     if (lifetime != nullptr) {
++                        fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized count: %d callsign: %s typeid(*(*index)): %s calling lifetime->Deinitialized()\n", count, callsign.c_str(), typeid(*(*index)).name());
+                         lifetime->Deinitialized(callsign, entry);
++                        fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized count: %d callsign: %s typeid(*(*index)): %s calling lifetime->Release()\n", count, callsign.c_str(), typeid(*(*index)).name());
+                         lifetime->Release();
+                     }
+                     index++;
++                    count++;
+                 }
+-
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized Return callsign: %s\n", callsign.c_str());
+                 _notificationLock.Unlock();
+             }
+             void Unavailable(const string& callsign, PluginHost::IShell* entry)
+@@ -3003,10 +3011,12 @@ POP_WARNING()
+             void Register(PluginHost::IPlugin::INotification* sink)
+             {
+                 _notificationLock.Lock();
+-
+                 ASSERT(std::find(_notifiers.begin(), _notifiers.end(), sink) == _notifiers.end());
+ 
+                 sink->AddRef();
++                static int count = 1;
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Register calling _notifiers.push_back count: %d typeid(*this): %s typeid(*sink): <addr: %p> %s pid: %d\n", count, typeid(*this).name(), sink, typeid(*sink).name(), getpid());
++                count++;
+                 _notifiers.push_back(sink);
+ 
+                 // Tell this "new" sink all our actived plugins..
+diff --git a/Source/plugins/Types.h b/Source/plugins/Types.h
+index 109484bba..46188a1df 100644
+--- a/Source/plugins/Types.h
++++ b/Source/plugins/Types.h
+@@ -22,6 +22,8 @@
+ 
+ #include "IPlugin.h"
+ #include "IShell.h"
++#include <pthread.h>
++#include <unistd.h>
+ 
+ namespace WPEFramework {
+ namespace PluginHost {
+@@ -251,6 +253,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+             , _monitor(*this)
+             , _connectionId(~0)
+         {
++            fprintf(stderr, "bvanav-dbg: Types.h RPC::SmartInterfaceType ctor pid: %d tid: %lu\n", getpid(), pthread_self());
+         }
+ POP_WARNING()
+         virtual ~SmartInterfaceType()
