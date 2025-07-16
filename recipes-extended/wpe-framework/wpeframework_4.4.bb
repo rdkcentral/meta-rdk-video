@@ -62,7 +62,6 @@ SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
             file://r4.4/PR-1390-1467-Controls_Init_Shutdown_Singleton_Fixes.patch \
             file://r4.4/PR-1586-Use-Monotonic-Clocks.patch\
             file://r4.4/PR-1630-JSON-Parsing-Escape-Sequence.patch \
-            file://r4.4/PR-1533-Refernce-counted-Library-COMRPC-objects.patch  \
             file://r4.4/PR-1376-1386-1441-1650-ProcessContainerCompilationFix.patch \
             file://r4.4/PR-1619-Update-SocketServer.h.patch \
             file://r4.4/PR-1751-Load-Library-ThunderR4.patch \
