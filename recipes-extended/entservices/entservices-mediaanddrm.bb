@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Media and DRM plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=16cf2209d4e903e4d5dcd75089d7dfe2"
 
-PV ?= "1.0.1"
+PV ?= "None"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -25,7 +25,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
           "
 
 # Release version - 1.2.0
-SRCREV = "05daf99e0e564b911bb248b990c290a7dbe0f2cf"
+SRCREV = "22f7c7c03e2774115b7291cc2e6dac0d51494cd8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
