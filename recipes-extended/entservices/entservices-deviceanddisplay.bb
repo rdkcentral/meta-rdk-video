@@ -2,7 +2,7 @@ SUMMARY = "ENTServices deviceanddisplay plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV ?= "1.1.12"
+PV ?= "None"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
           "
 
 # Release version - 3.1.0
-SRCREV = "414733ef0209534558bf40161a98d9a0d2c1c463"
+SRCREV = "fe245ccdae0b711dbfbbb447ed0971aa87943a1d"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
