@@ -30,7 +30,6 @@ S = "${WORKDIR}/git"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)}"
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter "
-DEPENDS += "barton"
 
 require aamp-common.inc
 
@@ -82,7 +81,7 @@ CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_AU', ' -
 INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/ds-hal \
     "
-
+DEPENDS += "barton"
 do_install:append() {
     echo "Installing aamp-cli..."
     install -m755 ${B}/aamp-cli ${D}${libdir}
