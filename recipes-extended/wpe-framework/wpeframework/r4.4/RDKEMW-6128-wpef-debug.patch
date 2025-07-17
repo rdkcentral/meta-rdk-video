@@ -146,7 +146,7 @@ index cef643f91..e61b03d0c 100644
  
                  // Tell this "new" sink all our actived plugins..
 diff --git a/Source/plugins/Types.h b/Source/plugins/Types.h
-index 109484bba..46188a1df 100644
+index 109484bba..2fdbd9c26 100644
 --- a/Source/plugins/Types.h
 +++ b/Source/plugins/Types.h
 @@ -22,6 +22,8 @@
@@ -158,6 +158,15 @@ index 109484bba..46188a1df 100644
  
  namespace WPEFramework {
  namespace PluginHost {
+@@ -63,7 +65,7 @@ namespace PluginHost {
+                 _callsign = callsign;
+                 _state = state::REGISTRING;
+                 _adminLock.Unlock();
+-
++                fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Register pid: %d tid: %lu\n", getpid(), pthread_self());
+                 controller->Register(this);
+ 
+                 _adminLock.Lock();
 @@ -251,6 +253,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
              , _monitor(*this)
              , _connectionId(~0)
