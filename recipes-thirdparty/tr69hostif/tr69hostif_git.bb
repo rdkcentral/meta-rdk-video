@@ -34,6 +34,7 @@ RDEPENDS:${PN}:append  = " ${@bb.utils.contains('DISTRO_FEATURES', 'rrd',' remot
 CXXFLAGS:append     = "${@bb.utils.contains('DISTRO_FEATURES', 'rrd', ' -DUSE_REMOTE_DEBUGGER', '', d)}"
 CXXFLAGS:append     = "${@bb.utils.contains('DISTRO_FEATURES', 'rrd', ' -I=${includedir}/rrd/ -I=${includedir}/rdk/iarmmgrs/rdmmgr/', '', d)}"
 
+
 inherit pkgconfig breakpad-logmapper syslog-ng-config-gen useradd logrotate_config
 
 SYSLOG-NG_FILTER = "parodus tr69hostif"
@@ -57,6 +58,16 @@ LOGROTATE_SIZE_MEM_parodus="128000"
 LOGROTATE_ROTATION_MEM_parodus="3"
 LOGROTATE_SIZE_MEM_tr69hostif="1572864"
 LOGROTATE_ROTATION_MEM_tr69hostif="3"
+
+#Add support for sanitizers
+DEPENDS += "gcc-sanitizers leakcheck-msgq"
+RDEPENDS_${PN} += "libasan leakcheck-msgq"
+LDFLAGS += "-Wl,--no-as-needed -Wl,--as-needed -lpthread -lrt -llsan -lmsgq"
+CFLAGS += "-fsanitize=leak  -I${STAGING_EXECPREFIXDIR}/lib/gcc/${TARGET_SYS}/9.3.0/include"
+LDFLAGS += " -fsanitize=leak -llsan "
+LDFLAGS += "-Wl,--no-as-needed -Wl,--as-needed -lmsgq"
+CXXFLAGS += "-fsanitize=leak -I${STAGING_EXECPREFIXDIR}/lib/gcc/${TARGET_SYS}/9.3.0/include"
+INHIBIT_PACKAGE_STRIP = "1"
 
 NONROOT_USER_DIR ?= "/home/non-root/"
 NONROOT_USER ?= "non-root"
@@ -170,6 +181,7 @@ do_install:append() {
         install -m 0644 ${S}/src/hostif/parodusClient/conf/webpa_cfg.json ${D}${sysconfdir}
         install -d ${D}${sysconfdir} ${D}${sysconfdir}/rfcdefaults
         install -m 0644 ${S}/conf/rfcdefaults/tr69hostif.ini ${D}${sysconfdir}/rfcdefaults
+        sed -i  "s/^ExecStart=.*/ExecStart=\/bin\/sh -c \'LSAN_OPTIONS=report_objects=1:malloc_context_size=8:halt_on_error=false:fast_unwind_on_malloc=0:new_delete_type_mismatch=0 \/usr\/bin\/tr69hostif\'/" ${D}/lib/systemd/system/tr69hostif.service
 
         # Below header files are installed by another recipe tr69hostif-headers
         rm -r ${D}${includedir}/hostIf_msgHandler.h
