@@ -1,0 +1,13 @@
+diff --git a/include/Debug.h b/include/Debug.h
+index aa3589f..8e424c0 100644
+--- a/include/Debug.h
++++ b/include/Debug.h
+@@ -19,6 +19,8 @@
+ 
+ #pragma once
+ #include <iostream>
++
++#define DEBUG_ENABLED
+ namespace packagemanager
+ {
+     enum LOG_LEVEL

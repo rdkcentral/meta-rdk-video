@@ -1,0 +1,38 @@
+diff --git a/RuntimeManager/RuntimeManagerImplementation.cpp b/RuntimeManager/RuntimeManagerImplementation.cpp
+index f6073f8..6d8675f 100755
+--- a/RuntimeManager/RuntimeManagerImplementation.cpp
++++ b/RuntimeManager/RuntimeManagerImplementation.cpp
+@@ -558,6 +558,11 @@ err_ret:
+                 config.mWesterosSocketPath = westerosSocket;
+             }
+ 
++            // DAC applications will have dacbundle environment variable set.
++            bool legacyContainer = (runtimeConfigObject.envVariables.find("dacbundle") == std::string::npos);
++            legacyContainer = false;
++            LOGINFO("legacyContainer: %s", legacyContainer ? "true" : "false");
++
+             if (xdgRuntimeDir.empty() || waylandDisplay.empty())
+             {
+                 LOGERR("Missing required environment variables: XDG_RUNTIME_DIR=%s, WAYLAND_DISPLAY=%s",
+@@ -566,7 +571,7 @@ err_ret:
+                 status = Core::ERROR_GENERAL;
+             }
+             /* Generate dobbySpec */
+-            else if (false == RuntimeManagerImplementation::generate(config, runtimeConfigObject, dobbySpec))
++            else if (legacyContainer && false == RuntimeManagerImplementation::generate(config, runtimeConfigObject, dobbySpec))
+             {
+                 LOGERR("Failed to generate dobbySpec");
+                 status = Core::ERROR_GENERAL;
+@@ -584,7 +589,11 @@ err_ret:
+                     string containerId = getContainerId(appInstanceId);
+                     if (!containerId.empty())
+                     {
+-                        status =  mOciContainerObject->StartContainerFromDobbySpec(containerId, dobbySpec, command, westerosSocket, descriptor, success, errorReason);
++                        if(legacyContainer)
++                            status =  mOciContainerObject->StartContainerFromDobbySpec(containerId, dobbySpec, command, westerosSocket, descriptor, success, errorReason);
++                        else
++                            status = mOciContainerObject->StartContainer(containerId, appPath, command, westerosSocket, descriptor, success, errorReason);
++
+                         if ((success == false) || (status != Core::ERROR_NONE))
+                         {
+                             LOGERR("Failed to Run Container %s",errorReason.c_str());

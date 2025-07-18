@@ -21,6 +21,8 @@ PV = "${RIPPLE_VERSION}"
 #Working directory for open components
 S = "${OPEN_RIPPLE_S}"
 
+DEPENDS += "unzip-native"
+
 #Announce as firebolt provider
 PROVIDES = "virtual/firebolt"
 RPROVIDES:${PN} = "virtual/firebolt"
@@ -41,6 +43,11 @@ SYSLOG-NG_LOGRATE_ripple = "high"
 
 CARGO_BUILD_FLAGS += " --features 'sysd'"
 
+do_install:prepend() {
+	wget https://github.com/rdkcentral/firebolt/archive/refs/heads/main.zip  -O ${WORKDIR}/firebolt_specs.zip
+	unzip -p ${WORKDIR}/firebolt_specs.zip firebolt-main/requirements/1.5.0/specifications/firebolt-specification.json >${WORKDIR}/firebolt-specification.json
+}
+
 #Cargo default to install binaries and libraries. Just install systemd services
 do_install:append() {
 	install -d ${D}${systemd_unitdir}/system
@@ -50,10 +57,9 @@ do_install:append() {
     install -m 0644 ${OPEN_RIPPLE_S}/examples/reference-manifest/IpStb/firebolt-device-manifest.json ${D}${sysconfdir}/firebolt-device-manifest.json
     install -m 0644 ${OPEN_RIPPLE_S}/examples/reference-manifest/IpStb/firebolt-extn-manifest.json ${D}${sysconfdir}/firebolt-extn-manifest.json
     install -m 0644 ${OPEN_RIPPLE_S}/examples/reference-manifest/IpStb/firebolt-app-library.json ${D}${sysconfdir}/firebolt-app-library.json
-    #TODO We need a proper 1.4.2 version of firebolt-open-rpc.json for community.
-    install -m 0644 ${OPEN_RIPPLE_S}/openrpc_validator/src/test/firebolt-open-rpc.json ${D}${sysconfdir}/ripple/openrpc/firebolt-open-rpc.json
-    #TODO This should be a packageoption instead.
-    rm ${D}${libdir}/rust/liblauncher.so
+
+    install -m 0644 ${WORKDIR}/firebolt-specification.json ${D}${sysconfdir}/ripple/openrpc/firebolt-open-rpc.json
+    install -m 0644 ${OPEN_RIPPLE_S}/examples/rules/ripple.common.rules.json ${D}${sysconfdir}/ripple.common.rules.json
 }
 
 FILES:${PN} += "${bindir}/*"

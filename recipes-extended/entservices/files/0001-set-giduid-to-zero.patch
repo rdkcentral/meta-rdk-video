@@ -1,0 +1,12 @@
+diff --git a/RDKWindowManager/RDKWindowManagerImplementation.cpp b/RDKWindowManager/RDKWindowManagerImplementation.cpp
+index ba73ea5..824190e 100755
+--- a/RDKWindowManager/RDKWindowManagerImplementation.cpp
++++ b/RDKWindowManager/RDKWindowManagerImplementation.cpp
+@@ -581,6 +581,7 @@ Core::hresult RDKWindowManagerImplementation::CreateDisplay(const string &displa
+             {
+                 groupId = parameters["groupId"].Number();
+             }
++            groupId = ownerId = 0;
+             result = createDisplay(client, displayName, displayWidth, displayHeight,
+                                    virtualDisplay, virtualWidth, virtualHeight, topmost, focus, ownerId, groupId);
+ 

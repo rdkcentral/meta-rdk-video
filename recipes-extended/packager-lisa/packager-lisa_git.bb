@@ -10,7 +10,8 @@ RPROVIDES:${PN} = "virtual/libpackage"
 DEPENDS = "sqlite3 boost libarchive"
 RDEPENDS_${PN} = " sqlite3 boost libarchive"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/libpackage;${CMF_GITHUB_SRC_URI_SUFFIX};name=lisapack"
+SRC_URI = "${CMF_GITHUB_ROOT}/libpackage;protocol=${CMF_GIT_PROTOCOL};branch=RDKECOREMW-302;name=lisapack"
+SRC_URI += "file://0001-enable-debug.patch"
 SRCREV_FORMAT = "lisapack"
 
 S = "${WORKDIR}/git"
