@@ -146,7 +146,7 @@ index cef643f91..e61b03d0c 100644
  
                  // Tell this "new" sink all our actived plugins..
 diff --git a/Source/plugins/Types.h b/Source/plugins/Types.h
-index 109484bba..2fdbd9c26 100644
+index 109484bba..ca6a939de 100644
 --- a/Source/plugins/Types.h
 +++ b/Source/plugins/Types.h
 @@ -22,6 +22,8 @@
@@ -167,6 +167,16 @@ index 109484bba..2fdbd9c26 100644
                  controller->Register(this);
  
                  _adminLock.Lock();
+@@ -83,8 +85,8 @@ namespace PluginHost {
+             }
+             void Unregister(IShell* controller)
+             {
++                fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Unregister(removed from critical section) pid: %d tid: %lu\n", getpid(), pthread_self());
+                 _adminLock.Lock();
+-
+                 controller->Unregister(this);
+                 _callsign.clear();
+ 
 @@ -251,6 +253,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
              , _monitor(*this)
              , _connectionId(~0)
