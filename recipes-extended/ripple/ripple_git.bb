@@ -14,6 +14,11 @@ SRC_URI += " \
     file://ripple-start.sh \
     file://ripple.service \
     "
+SRC_URI += "${CMF_GITHUB_ROOT}/firebolt;${CMF_GITHUB_SRC_URI_SUFFIX};name=firebolt;branch=main;subpath=requirements/1.5.0/specifications;destsuffix=firebolt_specs"
+SRCREV_firebolt = "7b01285cd575cff11142e94796d5fb894ee0f441"
+
+SRCREV_FORMAT ="rmain_firebolt"
+
 
 SRCREV_FORMAT ="rmain"
 PV = "${RIPPLE_VERSION}"
@@ -43,9 +48,11 @@ SYSLOG-NG_LOGRATE_ripple = "high"
 
 CARGO_BUILD_FLAGS += " --features 'sysd'"
 
-do_install:prepend() {
-	wget https://github.com/rdkcentral/firebolt/archive/refs/heads/main.zip  -O ${WORKDIR}/firebolt_specs.zip
-	unzip -p ${WORKDIR}/firebolt_specs.zip firebolt-main/requirements/1.5.0/specifications/firebolt-specification.json >${WORKDIR}/firebolt-specification.json
+do_compile:prepend(){
+  #Remove the patch config. It is breaking virtual manifest options.
+  sed -i '/^\[patch/d' ${WORKDIR}/cargo_home/config.toml
+  sed -i '/^rmain/d' ${WORKDIR}/cargo_home/config.toml
+  sed -i '/^firebolt/d' ${WORKDIR}/cargo_home/config.toml
 }
 
 #Cargo default to install binaries and libraries. Just install systemd services
@@ -58,7 +65,7 @@ do_install:append() {
     install -m 0644 ${OPEN_RIPPLE_S}/examples/reference-manifest/IpStb/firebolt-extn-manifest.json ${D}${sysconfdir}/firebolt-extn-manifest.json
     install -m 0644 ${OPEN_RIPPLE_S}/examples/reference-manifest/IpStb/firebolt-app-library.json ${D}${sysconfdir}/firebolt-app-library.json
 
-    install -m 0644 ${WORKDIR}/firebolt-specification.json ${D}${sysconfdir}/ripple/openrpc/firebolt-open-rpc.json
+    install -m 0644 ${WORKDIR}/firebolt_specs/firebolt-specification.json ${D}${sysconfdir}/ripple/openrpc/firebolt-open-rpc.json
     install -m 0644 ${OPEN_RIPPLE_S}/examples/rules/ripple.common.rules.json ${D}${sysconfdir}/ripple.common.rules.json
 }
 
