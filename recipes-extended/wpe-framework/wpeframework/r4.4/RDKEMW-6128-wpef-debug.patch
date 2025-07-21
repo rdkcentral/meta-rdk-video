@@ -1,5 +1,5 @@
 diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
-index 650a2e1d9..57fde5e3e 100644
+index 650a2e1d9..9a7f9a8bd 100644
 --- a/Source/WPEFramework/PluginServer.cpp
 +++ b/Source/WPEFramework/PluginServer.cpp
 @@ -512,9 +512,9 @@ namespace PluginHost
@@ -20,7 +20,7 @@ index 650a2e1d9..57fde5e3e 100644
              const string callSign(PluginHost::Service::Configuration().Callsign.Value());
 -
 +            callsign = const_cast<char*>(callSign.c_str());
-+            fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate Enter Acquired lock callsign: %s\n", callsign);
++            fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate Enter Acquired lock callsign: %s tid: %d\n", callsign, gettid());
              _reason = why;
  
              if(currentState == IShell::state::HIBERNATED)
@@ -28,7 +28,7 @@ index 650a2e1d9..57fde5e3e 100644
  
                  if (currentState == IShell::ACTIVATED) {
                      TRACE(Activity, (_T("Deactivating plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
-+                    fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling _administrator.Deactivated callsign: %s\n", callsign);
++                    fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling _administrator.Deactivated callsign: %s tid: %d\n", callsign, gettid());
                      _administrator.Deactivated(callSign, this);
                  }
  
@@ -37,13 +37,13 @@ index 650a2e1d9..57fde5e3e 100644
                      DisableWebServer();
                  }
 -
-+                fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling plugin's Deinitialize callsign: %s\n", callsign);
++                fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling plugin's Deinitialize callsign: %s tid: %d\n", callsign, gettid());
                  REPORT_DURATION_WARNING( { _handler->Deinitialize(this); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::DEACTIVATION, callSign.c_str());
  
                  Lock();
  
                  if (_jsonrpc != nullptr) {
-+                    fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling _jsonrpc->Deactivate callsign: %s\n", callsign);
++                    fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling _jsonrpc->Deactivate callsign: %s tid: %d\n", callsign, gettid());
                      _jsonrpc->Deactivate();
                  }
                  if (_external.Connector().empty() == false) {
@@ -52,30 +52,30 @@ index 650a2e1d9..57fde5e3e 100644
                  _administrator.Notification(_T("{\"callsign\":\"") + callSign + _T("\",\"state\":\"deactivated\",\"reason\":\"") + textReason.Data() + _T("\"}"));
  #endif
 -
-+                fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling _administrator.Notification callsign: %s\n", callsign);
++                fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling _administrator.Notification callsign: %s tid: %d\n", callsign, gettid());
                  _administrator.Notification(PluginHost::Server::ForwardMessage(callSign, string(_T("{\"state\":\"deactivated\",\"reason\":\"")) + textReason.Data() + _T("\"}")));
  
              }
  
              State(why == CONDITIONS ? PRECONDITION : DEACTIVATED);
 -
-+            fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling _administrator.Deinitialized callsign: %s\n", callsign);
++            fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling _administrator.Deinitialized callsign: %s tid: %d\n", callsign, gettid());
              _administrator.Deinitialized(callSign, this);
  
              // We have no need for his module anymore..
-+            fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling ReleaseInterfaces callsign: %s\n", callsign);
++            fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate calling ReleaseInterfaces callsign: %s tid: %d\n", callsign, gettid());
              ReleaseInterfaces();
          }
  
  
          Unlock();
 -
-+        fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate Return Release lock callsign: %s\n", callsign);
++        fprintf(stderr, "bvanav-dbg: PluginServer.cpp Server::Service::Deactivate Return Release lock callsign: %s tid: %d\n", callsign, gettid());
          return (result);
      }
  
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index cef643f91..6324feb0b 100644
+index cef643f91..d7ab5d733 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
 @@ -26,6 +26,8 @@
@@ -87,12 +87,14 @@ index cef643f91..6324feb0b 100644
  
  #ifdef PROCESSCONTAINERS_ENABLED
  #include "../processcontainers/ProcessContainer.h"
-@@ -2960,31 +2962,37 @@ POP_WARNING()
+@@ -2959,33 +2961,41 @@ POP_WARNING()
+             }
              void Deactivated(const string& callsign, PluginHost::IShell* entry)
              {
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated Enter before notf. lock callsign: %s tid: %d\n", callsign.c_str(), gettid());
                  _notificationLock.Lock();
 -
-+                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated Enter callsign: %s tid: %d\n", callsign.c_str(), gettid());
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated Enter acquired notf. lock callsign: %s tid: %d\n", callsign.c_str(), gettid());
                  Notifiers::iterator index(_notifiers.begin());
 -
 +                int count = 1;
@@ -103,14 +105,15 @@ index cef643f91..6324feb0b 100644
 +                    count++;
                  }
 -
-+                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated Return callsign: %s tid: %d\n", callsign.c_str(), gettid());
                  _notificationLock.Unlock();
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated Return release notf. lock callsign: %s tid: %d\n", callsign.c_str(), gettid());
              }
              void Deinitialized(const string& callsign, PluginHost::IShell* entry)
              {
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized Enter before notf. lock callsign: %s tid: %d\n", callsign.c_str(), gettid());
                  _notificationLock.Lock();
 -
-+                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized Enter callsign: %s tid: %d\n", callsign.c_str(), gettid());
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized Enter acquired notf. lock callsign: %s tid: %d\n", callsign.c_str(), gettid());
                  Notifiers::iterator index(_notifiers.begin());
 -
 +                int count = 1;
@@ -127,11 +130,12 @@ index cef643f91..6324feb0b 100644
 +                    count++;
                  }
 -
-+                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized Return callsign: %s tid: %d\n", callsign.c_str(), gettid());
                  _notificationLock.Unlock();
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized Return release notf. lock callsign: %s tid: %d\n", callsign.c_str(), gettid());
              }
              void Unavailable(const string& callsign, PluginHost::IShell* entry)
-@@ -3003,10 +3011,12 @@ POP_WARNING()
+             {
+@@ -3003,10 +3013,12 @@ POP_WARNING()
              void Register(PluginHost::IPlugin::INotification* sink)
              {
                  _notificationLock.Lock();
@@ -145,29 +149,32 @@ index cef643f91..6324feb0b 100644
                  _notifiers.push_back(sink);
  
                  // Tell this "new" sink all our actived plugins..
-@@ -3037,15 +3047,19 @@ POP_WARNING()
+@@ -3036,16 +3048,21 @@ POP_WARNING()
+             }
              void Unregister(const PluginHost::IPlugin::INotification* sink)
              {
++                static int count = 1;
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Unregister Enter before notf. lock count: %d typeid(*sink): <addr: %p> %s tid: %d\n", count, sink, typeid(*sink).name(), gettid());
                  _notificationLock.Lock();
 -
-+                static int count = 1;
-+                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Unregister Enter acquired lock count: %d typeid(*sink): <addr: %p> %s pid: %d\n", count, sink, typeid(*sink).name(), getpid());
-+                count++;
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Unregister Enter acquired notf. lock count: %d typeid(*sink): <addr: %p> %s tid: %d\n", count, sink, typeid(*sink).name(), gettid());
++                
                  Notifiers::iterator index(std::find(_notifiers.begin(), _notifiers.end(), sink));
  
                  if (index != _notifiers.end()) {
                      (*index)->Release();
-+                    fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Unregister Removing from list count: %d typeid(*sink): <addr: %p> %s pid: %d\n", count, sink, typeid(*sink).name(), getpid());
++                    fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Unregister Removing from list count: %d typeid(*sink): <addr: %p> %s tid: %d\n", count, sink, typeid(*sink).name(), gettid());
                      _notifiers.erase(index);
                  }
- 
+-
++                count++;
                  _notificationLock.Unlock();
-+                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Unregister Return release lock count: %d typeid(*sink): <addr: %p> %s pid: %d\n", count, sink, typeid(*sink).name(), getpid());
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Unregister Return release notf. lock count: %d typeid(*sink): <addr: %p> %s tid: %d\n", count, sink, typeid(*sink).name(), gettid());
              }
              inline void* QueryInterfaceByCallsign(const uint32_t id, const string& name)
              {
 diff --git a/Source/plugins/Types.h b/Source/plugins/Types.h
-index 109484bba..4a4a061c8 100644
+index 109484bba..5d36f2d2a 100644
 --- a/Source/plugins/Types.h
 +++ b/Source/plugins/Types.h
 @@ -22,6 +22,8 @@
@@ -205,16 +212,17 @@ index 109484bba..4a4a061c8 100644
                  }
  
                  _adminLock.Unlock();
-+                fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Return release admin lock pid: %d tid: %lu\n", getpid(), pthread_self());
++                fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Unregister Return release admin lock pid: %d tid: %lu\n", getpid(), pthread_self());
              }
              INTERFACE* Interface()
              {
-@@ -154,8 +158,9 @@ namespace PluginHost {
+@@ -153,9 +157,10 @@ namespace PluginHost {
+             }
              void Deactivated(const string& name, PluginHost::IShell* plugin) override
              {
++                fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Deactivated Enter before admin lock pid: %d tid: %lu name: %s callsign: %s\n", getpid(), pthread_self(), name.c_str(), _callsign.c_str());
                  if (_callsign == name) {
 -
-+                    fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Deactivated Enter before admin lock pid: %d tid: %lu\n", getpid(), pthread_self());
                      _adminLock.Lock();
 +                    fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Deactivated Enter after admin lock pid: %d tid: %lu\n", getpid(), pthread_self());
                      if (_designated != nullptr) {
