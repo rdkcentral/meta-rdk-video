@@ -75,7 +75,7 @@ index 650a2e1d9..57fde5e3e 100644
      }
  
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index cef643f91..e61b03d0c 100644
+index cef643f91..6324feb0b 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
 @@ -26,6 +26,8 @@
@@ -92,30 +92,30 @@ index cef643f91..e61b03d0c 100644
              {
                  _notificationLock.Lock();
 -
-+                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated Enter callsign: %s\n", callsign.c_str());
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated Enter callsign: %s tid: %d\n", callsign.c_str(), gettid());
                  Notifiers::iterator index(_notifiers.begin());
 -
 +                int count = 1;
                  while (index != _notifiers.end()) {
-+                    fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated count: %d callsign: %s typeid(*(*index)): <addr: %p> %s->Deactivated()\n", count, callsign.c_str(), *index, typeid(*(*index)).name());
++                    fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated count: %d callsign: %s typeid(*(*index)): <addr: %p> %s->Deactivated() tid: %d\n", count, callsign.c_str(), *index, typeid(*(*index)).name(), gettid());
                      (*index)->Deactivated(callsign, entry);
                      index++;
 +                    count++;
                  }
 -
-+                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated Return callsign: %s\n", callsign.c_str());
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deactivated Return callsign: %s tid: %d\n", callsign.c_str(), gettid());
                  _notificationLock.Unlock();
              }
              void Deinitialized(const string& callsign, PluginHost::IShell* entry)
              {
                  _notificationLock.Lock();
 -
-+                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized Enter callsign: %s\n", callsign.c_str());
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized Enter callsign: %s tid: %d\n", callsign.c_str(), gettid());
                  Notifiers::iterator index(_notifiers.begin());
 -
 +                int count = 1;
                  while (index != _notifiers.end()) {
-+                    fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized count: %d typeid(*(*index)): <addr: %p> %s callsign: %s calling index->QueryInterfacecallsign\n", count, *index, typeid(*(*index)).name(), callsign.c_str());
++                    fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized count: %d typeid(*(*index)): <addr: %p> %s callsign: %s calling index->QueryInterfacecallsign tid: %d\n", count, *index, typeid(*(*index)).name(), callsign.c_str(), gettid());
                      PluginHost::IPlugin::ILifeTime* lifetime = (*index)->QueryInterface<PluginHost::IPlugin::ILifeTime>();
                      if (lifetime != nullptr) {
 +                        fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized count: %d callsign: %s typeid(*(*index)): %s calling lifetime->Deinitialized()\n", count, callsign.c_str(), typeid(*(*index)).name());
@@ -127,7 +127,7 @@ index cef643f91..e61b03d0c 100644
 +                    count++;
                  }
 -
-+                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized Return callsign: %s\n", callsign.c_str());
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Deinitialized Return callsign: %s tid: %d\n", callsign.c_str(), gettid());
                  _notificationLock.Unlock();
              }
              void Unavailable(const string& callsign, PluginHost::IShell* entry)
@@ -140,13 +140,34 @@ index cef643f91..e61b03d0c 100644
  
                  sink->AddRef();
 +                static int count = 1;
-+                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Register calling _notifiers.push_back count: %d typeid(*this): %s typeid(*sink): <addr: %p> %s pid: %d\n", count, typeid(*this).name(), sink, typeid(*sink).name(), getpid());
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Register calling _notifiers.push_back count: %d typeid(*sink): <addr: %p> %s pid: %d\n", count, sink, typeid(*sink).name(), getpid());
 +                count++;
                  _notifiers.push_back(sink);
  
                  // Tell this "new" sink all our actived plugins..
+@@ -3037,15 +3047,19 @@ POP_WARNING()
+             void Unregister(const PluginHost::IPlugin::INotification* sink)
+             {
+                 _notificationLock.Lock();
+-
++                static int count = 1;
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Unregister Enter acquired lock count: %d typeid(*sink): <addr: %p> %s pid: %d\n", count, sink, typeid(*sink).name(), getpid());
++                count++;
+                 Notifiers::iterator index(std::find(_notifiers.begin(), _notifiers.end(), sink));
+ 
+                 if (index != _notifiers.end()) {
+                     (*index)->Release();
++                    fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Unregister Removing from list count: %d typeid(*sink): <addr: %p> %s pid: %d\n", count, sink, typeid(*sink).name(), getpid());
+                     _notifiers.erase(index);
+                 }
+ 
+                 _notificationLock.Unlock();
++                fprintf(stderr, "bvanav-dbg: PluginServer.h PluginHost::Server::ServiceMap::Unregister Return release lock count: %d typeid(*sink): <addr: %p> %s pid: %d\n", count, sink, typeid(*sink).name(), getpid());
+             }
+             inline void* QueryInterfaceByCallsign(const uint32_t id, const string& name)
+             {
 diff --git a/Source/plugins/Types.h b/Source/plugins/Types.h
-index 109484bba..d2b3c22a3 100644
+index 109484bba..8be41f972 100644
 --- a/Source/plugins/Types.h
 +++ b/Source/plugins/Types.h
 @@ -22,6 +22,8 @@
@@ -167,19 +188,28 @@ index 109484bba..d2b3c22a3 100644
                  controller->Register(this);
  
                  _adminLock.Lock();
-@@ -83,9 +85,9 @@ namespace PluginHost {
+@@ -83,9 +85,10 @@ namespace PluginHost {
              }
              void Unregister(IShell* controller)
              {
 -                _adminLock.Lock();
 -
-+                fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Unregister(removed controller->Unregister from critical section) pid: %d tid: %lu\n", getpid(), pthread_self());
++                fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Unregister(removed controller->Unregister from critical section) calling controller->Unregister pid: %d tid: %lu\n", getpid(), pthread_self());
                  controller->Unregister(this);
 +                _adminLock.Lock();
++                fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Unregister after controller->Unregister acquired admin lock pid: %d tid: %lu\n", getpid(), pthread_self());
                  _callsign.clear();
  
                  if (_designated != nullptr) {
-@@ -251,6 +253,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+@@ -97,6 +100,7 @@ namespace PluginHost {
+                 }
+ 
+                 _adminLock.Unlock();
++                fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Return release admin lock pid: %d tid: %lu\n", getpid(), pthread_self());
+             }
+             INTERFACE* Interface()
+             {
+@@ -251,6 +255,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
              , _monitor(*this)
              , _connectionId(~0)
          {
