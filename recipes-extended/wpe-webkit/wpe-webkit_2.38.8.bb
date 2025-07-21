@@ -1,4 +1,4 @@
-   PATCHTOOL = "git"
+PATCHTOOL = "git"
 
 require wpe-webkit.inc
 
