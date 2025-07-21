@@ -3,7 +3,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r6"
+PR  = "r7"
 
 # Temporary build fix
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
@@ -72,6 +72,7 @@ SRC_URI += "file://2.38.8/comcast-LLAMA-15112-sleep-150-microsecs-instead-of-s.p
 SRC_URI += "file://2.38.8/comcast-DELIA-67128-GCHeap-snapshot.patch"
 SRC_URI += "file://2.38.8/comcast-LLAMA-16805-Include-HW-secure-decrypt-decode-in-robu.patch"
 SRC_URI += "file://2.38.8/comcast-dynamic-insertion-of-decryptor.patch"
+SRC_URI += "file://2.38.8/comcast-RDKEMW-2744-BitmapTextureGL-Check-EGL-context.patch"
 
 PACKAGECONFIG[wpeqtapi]          = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[westeros]          = "-DUSE_WPEWEBKIT_PLATFORM_WESTEROS=ON -DUSE_GSTREAMER_HOLEPUNCH=ON -DUSE_EXTERNAL_HOLEPUNCH=ON -DUSE_WESTEROS_SINK=ON,,westeros virtual/vendor-westeros-sink"
