@@ -76,8 +76,10 @@ do_install() {
    install -d ${D}/${libdir}
    install -d ${D}${includedir}
    mkdir -p ${D}${includedir}/jsruntime
+   mkdir -p ${D}${includedir}/jsruntime/modules
 
    install -m 0644 ${S}/include/*.h ${D}${includedir}/jsruntime
+   cp -a ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
 }
 
 FILES:${PN} += "${libdir}/*.so"
