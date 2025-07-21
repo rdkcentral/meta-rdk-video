@@ -167,7 +167,7 @@ index cef643f91..6324feb0b 100644
              inline void* QueryInterfaceByCallsign(const uint32_t id, const string& name)
              {
 diff --git a/Source/plugins/Types.h b/Source/plugins/Types.h
-index 109484bba..8be41f972 100644
+index 109484bba..4a4a061c8 100644
 --- a/Source/plugins/Types.h
 +++ b/Source/plugins/Types.h
 @@ -22,6 +22,8 @@
@@ -209,7 +209,31 @@ index 109484bba..8be41f972 100644
              }
              INTERFACE* Interface()
              {
-@@ -251,6 +255,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+@@ -154,8 +158,9 @@ namespace PluginHost {
+             void Deactivated(const string& name, PluginHost::IShell* plugin) override
+             {
+                 if (_callsign == name) {
+-
++                    fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Deactivated Enter before admin lock pid: %d tid: %lu\n", getpid(), pthread_self());
+                     _adminLock.Lock();
++                    fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Deactivated Enter after admin lock pid: %d tid: %lu\n", getpid(), pthread_self());
+                     if (_designated != nullptr) {
+ 
+                         _designated->Release();
+@@ -164,10 +169,12 @@ namespace PluginHost {
+                         if (_state != state::RUNNING) {
+                             _state = state::REGISTRING;
+                         } else {
++                            fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Deactivated calling _parent.Deactivated pid: %d tid: %lu\n", getpid(), pthread_self());
+                             _parent.Deactivated();
+                         }
+                     }
+                     _adminLock.Unlock();
++                    fprintf(stderr, "bvanav-dbg: Types.h PluginMonitorType::Sink Deactivated Return release admin lock pid: %d tid: %lu\n", getpid(), pthread_self());
+                 }
+             }
+             void Unavailable(const string& name, PluginHost::IShell* plugin) override
+@@ -251,6 +258,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
              , _monitor(*this)
              , _connectionId(~0)
          {
