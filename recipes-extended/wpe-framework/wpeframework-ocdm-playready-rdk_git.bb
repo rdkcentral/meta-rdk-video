@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=19a2b3c39737289f92c7991b16599360"
 
 include recipes-extended/wpe-framework/include/wpeframework-plugins.inc
 
-DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native rdkservices-apis"
+DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native entservices-apis"
 DEPENDS += "  gst-svp-ext gstreamer1.0"
 
 # Platform configurations
