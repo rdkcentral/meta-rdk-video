@@ -56,7 +56,8 @@ def get_cobalt_platform(d):
         bb.fatal("Unsupported target architecture: {}".format(target_arch))
 
 COBALT_PLATFORM ?= "${@get_cobalt_platform(d)}"
-COBALT_BUILD_TYPE ?= "${@bb.utils.contains('DISTRO_FEATURES', 'cobalt-qa', 'qa', 'gold', d)}"
+#COBALT_BUILD_TYPE ?= "${@bb.utils.contains('DISTRO_FEATURES', 'cobalt-qa', 'qa', 'gold', d)}"
+COBALT_BUILD_TYPE = "devel"
 COBALT_OUT_DIR = "${B}/${COBALT_PLATFORM}_${COBALT_BUILD_TYPE}"
 COBALT_OUT_DEV_DIR = "${B}/${COBALT_PLATFORM}_devel"
 
