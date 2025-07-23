@@ -3,7 +3,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r7"
+PR  = "r8"
 
 # Temporary build fix
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
@@ -26,6 +26,7 @@ SRC_URI += "file://2.38.8/1456-RDKTV-35082-Workaround-premature-finishSeek.patch
 
 # Drop after tip of branch has been revised
 SRC_URI += "file://2.38.8/1423-revert.patch"
+SRC_URI += "file://2.38.8/1531.patch"
 
 # Drop after libwpe upgrade
 SRC_URI += "file://2.38.8/RDK-54304-Fix-build-with-an-older-libpwe.patch"
