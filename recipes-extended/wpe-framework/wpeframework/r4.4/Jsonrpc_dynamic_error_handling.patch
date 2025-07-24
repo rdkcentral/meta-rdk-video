@@ -1,25 +1,26 @@
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index cef643f91..794ed45b7 100644
+index cef643f91..50dfbcb5d 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
-@@ -1567,9 +1567,14 @@ namespace PluginHost {
-                                 response.Release();
-                                 break;
-                             default:
--                                response->Error.Code = result;
--                                response->Error.Text = Core::ErrorToString(result);
--                                break;
-+                                response->Error.SetError(result);
-+                                if (output.empty() == true) {
-+                                    response->Error.Text = Core::ErrorToString(result);
-+                                }
-+                                else {
-+                                    response->Error.Text = _T(output);
-+                                }
-+				break;
-                             }
-                         }
-                     }
+@@ -1567,11 +1567,14 @@ namespace PluginHost {
+                                 response.Release();
+                                 break;
+                             default:
+-                                response->Error.Code = result;
+-                                response->Error.Text = Core::ErrorToString(result);
+-                                break;
++                                response->Error.SetError(result);
++                               break;
+                             }
+-                        }
++
++                           if (output.empty() == false) {
++                               response->Error.Text = output;
++                           }
++                       }
+                     }
+                     Core::InterlockedDecrement(_activity);
+                 }
 diff --git a/Source/core/JSONRPC.h b/Source/core/JSONRPC.h
 index dc9f21521..76d4bb131 100644
 --- a/Source/core/JSONRPC.h
