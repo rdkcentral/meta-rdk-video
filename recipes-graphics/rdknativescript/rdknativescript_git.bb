@@ -17,8 +17,8 @@ PR ?= "r1"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-#Release 1.0.1
-SRCREV = "7a0abb8de4db6c29f595c8ab746bb7501416f786"
+#Release 1.0.2
+SRCREV = "f62ed9592d9ec176970f4d080d8704ae74c2147d"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -76,8 +76,10 @@ do_install() {
    install -d ${D}/${libdir}
    install -d ${D}${includedir}
    mkdir -p ${D}${includedir}/jsruntime
+   mkdir -p ${D}${includedir}/jsruntime/modules
 
    install -m 0644 ${S}/include/*.h ${D}${includedir}/jsruntime
+   cp -a ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
 }
 
 FILES:${PN} += "${libdir}/*.so"

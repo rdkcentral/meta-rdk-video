@@ -23,6 +23,7 @@ DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor
          ermgr iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
          deepsleep-manager-headers power-manager-headers wpeframework-clientlibraries"
 DEPENDS:append:client = " virtual/mfrlib"
+DEPENDS:append = " virtual/mfrlib"
 DEPENDS:append = " virtual/vendor-devicesettings-hal "
 DEPENDS:append = " virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal "
 RDEPENDS:${PN}:append = " devicesettings rfc"
@@ -141,8 +142,20 @@ do_compile() {
     LDFLAGS="-ldshalcli -lds -liarmmgrs-power-hal ${LDFLAGS}" oe_runmake -B -C ${S}/pwrstate/
 
     if [ "${@bb.utils.contains('PACKAGECONFIG', 'mfr', 'mfr', '', d)}" != "" ]; then
+
+        #Pass the mfr versioned lib
+        libfile=$(echo ${MFR_LIB} | sed 's/^"//' | sed 's/"$//')
+        mfr_build_dep_chain="${RECIPE_SYSROOT}${libdir}/${libfile}"
+        echo "mfr mfr_build_dep_chain: ${mfr_build_dep_chain}"
+        if [ -L "${mfr_build_dep_chain}" ]; then
+            versioned_lib=$(readlink -f "${mfr_build_dep_chain}")
+            echo "mfr resolved versioned_lib: ${versioned_lib}"
+            MFR_VERSIONED_LIB="\"$(basename ${versioned_lib})\""
+        fi
+        echo "mfr versioned lib: ${MFR_VERSIONED_LIB}"
+
         export COMCAST_PLATFORM=XI4
-        export CFLAGS="${CFLAGS} -DENABLE_SD_NOTIFY -DRDK_MFRLIB_NAME='${MFR_LIB}'"
+        export CFLAGS="${CFLAGS} -DENABLE_SD_NOTIFY -DRDK_MFRLIB_NAME='${MFR_VERSIONED_LIB}'"
         export LDFLAGS="${LDFLAGS} ${MFR_LIB_NAME} -L${S}/utils -liarmUtils -lsystemd -ldl"
         oe_runmake -B -C ${S}/mfr
     fi
@@ -252,19 +265,21 @@ do_compile:append() {
 }
 
 do_install:append(){
-        install -m 0755 ${S}/mfr/test_mfr/mfr_wifiGetCredentials ${D}${bindir}
-        install -m 0755 ${S}/mfr/test_mfr/mfr_wifiSetCredentials ${D}${bindir}
-        install -m 0755 ${S}/mfr/test_mfr/mfr_wifiEraseAllData ${D}${bindir}
-        install -m 0755 ${S}/mfr/test_mfr/mfr_deletePDRI ${D}${bindir}
-        install -m 0755 ${S}/mfr/test_mfr/mfr_scrubAllBanks ${D}${bindir}
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', 'true', 'false', d)}; then
         install -m 0755 ${S}/mfr/test_mfr/test_mfr_client ${D}${bindir}
+    fi
         install -m 0755 ${S}/test/test_pwrMgr ${D}${bindir}
+        install -m 0755 ${S}/mfr/test_mfr/mfr_scrubAllBanks ${D}${bindir}
+        install -m 0755 ${S}/mfr/test_mfr/mfr_deletePDRI ${D}${bindir}
+        install -m 0755 ${S}/mfr/test_mfr/mfr_wifiEraseAllData ${D}${bindir}
+        install -m 0755 ${S}/mfr/test_mfr/mfr_wifiSetCredentials ${D}${bindir}
+        install -m 0755 ${S}/mfr/test_mfr/mfr_wifiGetCredentials ${D}${bindir}
+        
+        
 
-        sed -i "/Type=notify/aEnvironment="RDK_DEEPSLEEP_WAKEUP_ON_POWER_BUTTON=1"" ${D}${systemd_unitdir}/system/pwrmgr.service
-        sed -i "/ExecStart=.*/aExecStop=/bin/touch /tmp/pwrmgr_restarted" ${D}${systemd_unitdir}/system/pwrmgr.service
+       sed -i "/Type=notify/aEnvironment="RDK_DEEPSLEEP_WAKEUP_ON_POWER_BUTTON=1"" ${D}${systemd_unitdir}/system/pwrmgr.service
+       sed -i "/ExecStart=.*/aExecStop=/bin/touch /tmp/pwrmgr_restarted" ${D}${systemd_unitdir}/system/pwrmgr.service
 }
-
-
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'ctrlm-headers', '', d)}"
 

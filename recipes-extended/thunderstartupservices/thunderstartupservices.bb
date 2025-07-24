@@ -17,6 +17,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-avinput.service \
     wpeframework-bluetooth.service \
     wpeframework-cloudstore.service \
+    wpeframework-cryptography.service \
     wpeframework-deviceinfo.service \
     wpeframework-displayinfo.service \
     wpeframework-displaysettings.service \
@@ -56,14 +57,45 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-appmanager.service \
     "
 
+CONTROL_FILES = "\
+    wpeframework-services.path \
+    wpeframework-services.target \
+    "
+
 do_install() {
     install -d ${D}${systemd_system_unitdir}
+
+    for y in ${CONTROL_FILES}; do
+        install -m 0644 ${S}/${y} ${D}${systemd_system_unitdir}
+        install -d ${D}${sysconfdir}/systemd/system/multi-user.target.wants
+        ln -sf ${systemd_system_unitdir}/${y} ${D}${sysconfdir}/systemd/system/multi-user.target.wants/${y}
+    done
 
     for x in ${THUNDER_STARTUP_SERVICES}; do
         install -m 0644 ${S}/${x} ${D}${systemd_system_unitdir}
         install -d ${D}${sysconfdir}/systemd/system/${x}.requires
         ln -sf ${systemd_system_unitdir}/wpeframework.service ${D}${sysconfdir}/systemd/system/${x}.requires/wpeframework.service
     done
+
+    # Adding final THUNDER_STARTUP_SERVICES into the Requires= line of the target
+    FINAL_SERVICES="$(echo "${THUNDER_STARTUP_SERVICES}" | tr '\n' ' ')"
+    TARGET_FILE="${D}${systemd_system_unitdir}/wpeframework-services.target"
+
+    if grep -q "^Requires=" "$TARGET_FILE"; then
+        # Append to existing Requires= line
+        sed -i "/^Requires=/ s|$| ${FINAL_SERVICES}|" "$TARGET_FILE"
+    fi
+}
+
+do_install:append() {
+    SERVICE="${D}${systemd_system_unitdir}/wpeframework-displaysettings.service"
+
+    if [ -f "$SERVICE" ]; then
+        # Insert the line before [Service], only if not already present
+        if ! grep -q "^ConditionPathExists=/tmp/wpeframeworkstarted" "$SERVICE"; then
+            sed -i '/^\[Service\]/i ConditionPathExists=/tmp/wpeframeworkstarted' "$SERVICE"
+        fi
+    fi
 }
 
 FILES:${PN} += "${systemd_system_unitdir} ${sysconfdir}/systemd/system"
