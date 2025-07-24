@@ -15,17 +15,16 @@ RDEPENDS:${PN} += " ${platform-playready-rdepends}"
 
 RDEPENDS_${PN} += " gst-svp-ext"
 
-S = "${WORKDIR}/git"
-
 inherit cmake pkgconfig
 
 TOOLCHAIN = "gcc"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "1.0.0"
-SRCREV_FORMAT = "pr-source pr-header"
 SRC_URI = "git://github.com/rdkcentral/playready-rdk.git;${CMF_GITHUB_SRC_URI_SUFFIX};name=pr-source"
+SRCREV = "1694f5072654a22f3d9872aa67ec479f1bf85418"
+SRCREV_FORMAT = "pr-source pr-header"
+S = "${WORKDIR}/git"
 
 WPEFRAMEWORK_PERSISTENT_PATH := "${@bb.utils.contains('DISTRO_FEATURES', 'DOBBY_CONTAINERS', '/opt/persistent/rdkservices/', '/data/persistent/', d)}"
 EXTRA_OECMAKE += " -DPERSISTENT_PATH=${WPEFRAMEWORK_PERSISTENT_PATH} "
