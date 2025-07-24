@@ -1,0 +1,12 @@
+diff --git a/Source/WPEFramework/CMakeLists.txt b/Source/WPEFramework/CMakeLists.txt 
+index 13fe9d59d..17ba9459f 100644
+--- a/Source/WPEFramework/CMakeLists.txt 
++++ b/Source/WPEFramework/CMakeLists.txt 
+@@ -73,6 +73,7 @@
+           ${NAMESPACE}COMProcess::${NAMESPACE}COMProcess  # For COM executable define
+           ${RFC_LIBRARIES}
+           Threads::Threads
++          breakpadwrapper
+         )
+
+ if (PROCESSCONTAINERS)
