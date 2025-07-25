@@ -15,8 +15,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://0001-RDK-41681-PR4013.patch \
           "
-# From feature/RDK7RM-113
-SRCREV = "e246e9d0ad9773de2addee0135b569774cffd249"
+
+SRCREV = "fffa0c2f283d22df5f9a7e0e235dcfe4a5210d4c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
