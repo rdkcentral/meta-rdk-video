@@ -94,7 +94,7 @@ PACKAGECONFIG ?= " \
     virtualinput \
     websocket \
     "
-
+LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com pluginactivator', '', d)}"
 
 # Buildtype
