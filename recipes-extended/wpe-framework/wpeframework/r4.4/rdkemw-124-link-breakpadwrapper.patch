@@ -6,7 +6,7 @@ index 13fe9d59d..17ba9459f 100644
          PostMortem.cpp
          )
 
-+target_link_options(WPEFramework PRIVATE "${CMAKE_EXE_LINKER_FLAGS}")
++target_link_options(${TARGET} PRIVATE "${BREAKPAD_LDFLAGS}")
 +
  target_compile_definitions(${TARGET}
          PRIVATE
