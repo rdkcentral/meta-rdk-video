@@ -7,7 +7,7 @@ index 13fe9d59d..17ba9459f 100644
          )
 
 +separate_arguments(BREAKPAD_LDFLAGS)
-+target_link_options(WPEFramework PRIVATE "${BREAKPAD_LDFLAGS}")
++target_link_libraries(WPEFramework PRIVATE "${BREAKPAD_LDFLAGS}")
 +
  target_compile_definitions(${TARGET}
          PRIVATE
