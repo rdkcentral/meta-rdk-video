@@ -94,7 +94,7 @@ PACKAGECONFIG ?= " \
     websocket \
     "
 BREAKPAD_LDFLAGS:pn-wpeframework = "${BACKTRACE_LDFLAGS}"
-EXTRA_OECMAKE:append = " -DBREAKPAD_LDFLAGS=${BREAKPAD_LDFLAGS}"
+EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
 LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com pluginactivator', '', d)}"
 
