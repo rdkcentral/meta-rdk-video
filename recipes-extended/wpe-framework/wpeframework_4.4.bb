@@ -22,7 +22,6 @@ SRCREV_thunder = "19100433e5517c743738bb2a9ed8ce2f79c10eaf"
 SRC_URI += "file://wpeframework-init \
            file://wpeframework.service.in \
            file://network_manager_migration.conf \
-           file://wpeframework_config_path.conf \
            file://r4.4/Library_version_matched_with_release_tag.patch \
            file://r4.4/Remove_versioning_for_executables.patch \
            file://r4.4/wpeframework_version.patch \
@@ -162,7 +161,6 @@ do_install:append() {
 
     install -d ${D}${systemd_unitdir}/system/wpeframework.service.d
     install -m 0644 ${WORKDIR}/network_manager_migration.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
-    install -m 0644 ${WORKDIR}/wpeframework_config_path.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
@@ -177,7 +175,6 @@ FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/*.so ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN} += "${includedir}/cdmi.h"
 FILES:${PN} += "${systemd_unitdir}/system/wpeframework.service.d/network_manager_migration.conf"
-FILES:${PN} += "${systemd_unitdir}/system/wpeframework.service.d/wpeframework_config_path.conf"
 FILES:${PN}-dev += "${libdir}/cmake/*"
 FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/"
 
