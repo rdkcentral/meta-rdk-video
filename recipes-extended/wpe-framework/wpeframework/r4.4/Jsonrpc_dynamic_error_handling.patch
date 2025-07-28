@@ -1,26 +1,141 @@
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index cef643f91..50dfbcb5d 100644
+index cef643f91..d59870ab9 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
-@@ -1567,11 +1567,14 @@ namespace PluginHost {
-                                 response.Release();
-                                 break;
-                             default:
--                                response->Error.Code = result;
--                                response->Error.Text = Core::ErrorToString(result);
--                                break;
-+                                response->Error.SetError(result);
-+                               break;
-                             }
--                        }
+@@ -1506,70 +1506,75 @@ namespace PluginHost {
+                         result = _jsonrpc->Invoke(channelId, message.Id.Value(), token, method, message.Parameters.Value(), output);
+ 
+                         if (response.IsValid() == true) {
+-                            switch (result) {
+-                            case Core::ERROR_NONE:
++			    if (result == static_cast<uint32_t>(~0)) {
++                                response.Release();
 +
-+                           if (output.empty() == false) {
-+                               response->Error.Text = output;
-+                           }
-+                       }
-                     }
-                     Core::InterlockedDecrement(_activity);
-                 }
++                            } else if (result == Core::ERROR_NONE) {
+                                 if (output.empty() == true) {
+                                     response->Result.Null(true);
+                                 }
+                                 else {
+                                     response->Result = output;
+                                 }
+-                                break;
+-                            case Core::ERROR_INVALID_RANGE:
+-                                response->Error.SetError(Core::ERROR_INVALID_RANGE);
+-                                response->Error.Text = _T("Requested version is not supported.");
+-                                break;
+-                            case Core::ERROR_INCORRECT_URL:
+-                                response->Error.SetError(Core::ERROR_INVALID_DESIGNATOR);
+-                                response->Error.Text = _T("Dessignator is invalid.");
+-                                break;
+-                            case Core::ERROR_BAD_REQUEST:
+-                                response->Error.SetError(Core::ERROR_UNKNOWN_KEY);
+-                                response->Error.Text = _T("Unknown method.");
+-                                break;
+-                            case Core::ERROR_FAILED_REGISTERED:
+-                                response->Error.SetError(Core::ERROR_UNKNOWN_KEY);
+-                                response->Error.Text = _T("Registration already done!!!.");
+-                                break;
+-                            case Core::ERROR_FAILED_UNREGISTERED:
+-                                response->Error.SetError(Core::ERROR_UNKNOWN_KEY);
+-                                response->Error.Text = _T("Unregister was already done!!!.");
+-                                break;
+-                            case Core::ERROR_HIBERNATED:
+-                                response->Error.SetError(Core::ERROR_HIBERNATED);
+-                                response->Error.Text = _T("The service is in an Hibernated state!!!.");
+-                                break;
+-                            case Core::ERROR_ILLEGAL_STATE:
+-                                response->Error.SetError(Core::ERROR_ILLEGAL_STATE);
+-                                response->Error.Text = _T("The service is in an illegal state!!!.");
+-                                break;
+-                            case Core::ERROR_INVALID_PARAMETER:
+-                                response->Error.SetError(Core::ERROR_INVALID_SIGNATURE);
+-                                response->Error.Text = _T("Invalid Parameter");
+-                                break;
+-                            case Core::ERROR_INVALID_DEVICENAME:
+-                                response->Error.SetError(Core::ERROR_INVALID_DEVICENAME);
+-                                response->Error.Text = _T("Invalid device name");
+-                                break;
+-                            case Core::ERROR_INVALID_MOUNTPOINT:
+-                                response->Error.SetError(Core::ERROR_INVALID_MOUNTPOINT);
+-                                response->Error.Text = _T("Invalid mount path");
+-                                break;
+-                            case Core::ERROR_FIRMWAREUPDATE_INPROGRESS:
+-                                response->Error.SetError(Core::ERROR_FIRMWAREUPDATE_INPROGRESS);
+-                                response->Error.Text = _T("Firmware update already in progress");
+-                                break;
+-                            case Core::ERROR_FIRMWAREUPDATE_UPTODATE:
+-                                response->Error.SetError(Core::ERROR_FIRMWAREUPDATE_UPTODATE);
+-                                response->Error.Text = _T("Firmware is already upto date");
+-                                break;
+-                            case static_cast<uint32_t>(~0):
+-                                response.Release();
+-                                break;
+-                            default:
+-                                response->Error.Code = result;
+-                                response->Error.Text = Core::ErrorToString(result);
+-                                break;
++
++                            } else {
++                            	switch (result) {
++                            	case Core::ERROR_INVALID_RANGE:
++                                	response->Error.SetError(Core::ERROR_INVALID_RANGE);
++                                	response->Error.Text = _T("Requested version is not supported.");
++                                	break;
++                            	case Core::ERROR_INCORRECT_URL:
++                                	response->Error.SetError(Core::ERROR_INVALID_DESIGNATOR);
++                                	response->Error.Text = _T("Dessignator is invalid.");
++	                                break;
++        	                case Core::ERROR_BAD_REQUEST:
++                	                response->Error.SetError(Core::ERROR_UNKNOWN_KEY);
++                        	        response->Error.Text = _T("Unknown method.");
++                                	break;
++	                        case Core::ERROR_FAILED_REGISTERED:
++        	                        response->Error.SetError(Core::ERROR_UNKNOWN_KEY);
++                	                response->Error.Text = _T("Registration already done!!!.");
++                        	        break;
++                            	case Core::ERROR_FAILED_UNREGISTERED:
++                                	response->Error.SetError(Core::ERROR_UNKNOWN_KEY);
++	                                response->Error.Text = _T("Unregister was already done!!!.");
++        	                        break;
++                                case Core::ERROR_HIBERNATED:
++                                	response->Error.SetError(Core::ERROR_HIBERNATED);
++	                                response->Error.Text = _T("The service is in an Hibernated state!!!.");
++        	                        break;
++                                case Core::ERROR_ILLEGAL_STATE:
++                    	            	response->Error.SetError(Core::ERROR_ILLEGAL_STATE);
++                        	        response->Error.Text = _T("The service is in an illegal state!!!.");
++                                	break;
++                                case Core::ERROR_INVALID_PARAMETER:
++    	                                response->Error.SetError(Core::ERROR_INVALID_SIGNATURE);
++            	                        response->Error.Text = _T("Invalid Parameter");
++                    	                break;
++                            	case Core::ERROR_INVALID_DEVICENAME:
++                                	response->Error.SetError(Core::ERROR_INVALID_DEVICENAME);
++                                	response->Error.Text = _T("Invalid device name");
++                                	break;
++                            	case Core::ERROR_INVALID_MOUNTPOINT:
++                                	response->Error.SetError(Core::ERROR_INVALID_MOUNTPOINT);
++                                	response->Error.Text = _T("Invalid mount path");
++                                	break;
++                                case Core::ERROR_FIRMWAREUPDATE_INPROGRESS:
++                                	response->Error.SetError(Core::ERROR_FIRMWAREUPDATE_INPROGRESS);
++                                	response->Error.Text = _T("Firmware update already in progress");
++                                	break;
++                            	case Core::ERROR_FIRMWAREUPDATE_UPTODATE:
++                                	response->Error.SetError(Core::ERROR_FIRMWAREUPDATE_UPTODATE);
++                                	response->Error.Text = _T("Firmware is already upto date");
++                                	break;
++                            	default:
++                                	response->Error.SetError(result);
++                                	break;
++				}
++
++				if (output.empty() == false) {
++                                    response->Error.Text = output;
++                                }
+                             }
+                         }
+                     }
 diff --git a/Source/core/JSONRPC.h b/Source/core/JSONRPC.h
 index dc9f21521..76d4bb131 100644
 --- a/Source/core/JSONRPC.h
