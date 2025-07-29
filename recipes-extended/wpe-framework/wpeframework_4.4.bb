@@ -61,6 +61,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/PR1832-Thunder-ABBA-Deadlock-Fix.patch \
             file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
             file://r4.4/0001-SmarkLink-Crash-Fix.patch \
+	    file://r4.4/Jsonrpc_dynamic_error_handling.patch \
            "
 
 S = "${WORKDIR}/git"
