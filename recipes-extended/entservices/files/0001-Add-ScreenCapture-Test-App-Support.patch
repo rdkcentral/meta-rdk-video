@@ -1,0 +1,280 @@
+From b59feacb3ec6713c2e45e6fa99c95df2f457edfe Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Tue, 29 Jul 2025 15:30:48 -0400
+Subject: [PATCH] Add ScreenCapture Test App Support
+
+---
+ ScreenCapture/CMakeLists.txt                  |   2 +
+ ScreenCapture/Tests/CMakeLists.txt            |  77 +++++++++
+ .../entServicesCOMRPC-ScreenCaptureTest.cpp   | 162 ++++++++++++++++++
+ 3 files changed, 241 insertions(+)
+ create mode 100644 ScreenCapture/Tests/CMakeLists.txt
+ create mode 100644 ScreenCapture/Tests/entServicesCOMRPC-ScreenCaptureTest.cpp
+
+diff --git a/ScreenCapture/CMakeLists.txt b/ScreenCapture/CMakeLists.txt
+index da85777..5af2f85 100644
+--- a/ScreenCapture/CMakeLists.txt
++++ b/ScreenCapture/CMakeLists.txt
+@@ -76,6 +76,8 @@ else()
+     endif()
+ endif()
+ 
++add_subdirectory(Tests)
++
+ if (RDK_SERVICE_L2_TEST)
+     message ("L2 test Enabled")
+     find_library(TESTMOCKLIB_LIBRARIES NAMES TestMocklib)
+diff --git a/ScreenCapture/Tests/CMakeLists.txt b/ScreenCapture/Tests/CMakeLists.txt
+new file mode 100644
+index 0000000..a6220a0
+--- /dev/null
++++ b/ScreenCapture/Tests/CMakeLists.txt
+@@ -0,0 +1,77 @@
++# If not stated otherwise in this file or this component's LICENSE file the
++# following copyright and licenses apply:
++#
++# Copyright 2025 RDK Management
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++# http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++cmake_minimum_required(VERSION 3.3)
++
++set(PROJECT_NAME "ENTSRVICECOMRPCTestClients")
++set(DESCRIPTION "EntServices COMRPC Client to test the COMRPC implementation.")
++set(DEFAULT_BUILD_TYPE "Release")
++
++project(${PROJECT_NAME} VERSION 1.0.0 LANGUAGES CXX)
++set(CMAKE_CXX_STANDARD 17)
++set(CMAKE_CXX_STANDARD_REQUIRED YES)
++
++set(TESTBINPREFIX "ComRPCPlugin")
++set(MODULE_NAME ${TESTBINPREFIX})
++
++# Include common directories and libraries
++find_package(PkgConfig REQUIRED)
++pkg_check_modules(WPEFRAMEWORKCORE REQUIRED WPEFrameworkCore)
++pkg_check_modules(WPEFRAMEWORKPLUGINS REQUIRED WPEFrameworkPlugins)
++pkg_check_modules(WPEFRAMEWORKWEBSOCKET REQUIRED WPEFrameworkWebSocket)
++pkg_check_modules(WPEFRAMEWORKDEFINITIONS REQUIRED WPEFrameworkDefinitions)
++pkg_check_modules(WPEFRAMEWORKPLUGINS REQUIRED WPEFrameworkPlugins)
++
++set(COMMON_INCLUDE_DIRS
++    ${CMAKE_CURRENT_SOURCE_DIR}
++    ${WPEFRAMEWORKCORE_INCLUDE_DIRS}
++    ${WPEFRAMEWORKPLUGINS_INCLUDE_DIRS}
++    ${WPEFRAMEWORKWEBSOCKET_INCLUDE_DIRS}
++    ${WPEFRAMEWORKDEFINITIONS_INCLUDE_DIRS}
++    ${WPEFRAMEWORKPLUGINS_INCLUDE_DIRS}
++    )
++
++set(COMMON_LIBRARIES
++    ${WPEFRAMEWORKCORE_LIBRARIES}
++    ${WPEFRAMEWORKPLUGINS_LIBRARIES}
++    ${WPEFRAMEWORKWEBSOCKET_LIBRARIES}
++    ${WPEFRAMEWORKDEFINITIONS_LIBRARIES}
++    ${WPEFRAMEWORKPLUGINS_LIBRARIES}
++    )
++
++message(STATUS "Common include directories: ${COMMON_INCLUDE_DIRS}")
++message(STATUS "Common libraries: ${COMMON_LIBRARIES}")
++
++include(GNUInstallDirs)
++
++# List to hold dynamically added targets
++set(TEST_TARGETS)
++
++message(STATUS "ScreenCapture test application is enabled.")
++set(SCREENCAPTURE_EXECUTABLE_NAME "${TESTBINPREFIX}ScreenCaptureTest")
++add_executable(${SCREENCAPTURE_EXECUTABLE_NAME} entServicesCOMRPC-ScreenCaptureTest.cpp)
++target_compile_definitions(${SCREENCAPTURE_EXECUTABLE_NAME} PUBLIC MODULE_NAME=${SCREENCAPTURE_EXECUTABLE_NAME})
++target_include_directories(${SCREENCAPTURE_EXECUTABLE_NAME} PRIVATE ${COMMON_INCLUDE_DIRS})
++target_link_libraries(${SCREENCAPTURE_EXECUTABLE_NAME} PRIVATE ${COMMON_LIBRARIES})
++list(APPEND TEST_TARGETS ${SCREENCAPTURE_EXECUTABLE_NAME})
++
++# Install dynamically added targets
++if (TEST_TARGETS)
++    install(TARGETS ${TEST_TARGETS} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
++else()
++    message(STATUS "No test applications enabled for installation.")
++endif()
+diff --git a/ScreenCapture/Tests/entServicesCOMRPC-ScreenCaptureTest.cpp b/ScreenCapture/Tests/entServicesCOMRPC-ScreenCaptureTest.cpp
+new file mode 100644
+index 0000000..54150fc
+--- /dev/null
++++ b/ScreenCapture/Tests/entServicesCOMRPC-ScreenCaptureTest.cpp
+@@ -0,0 +1,162 @@
++/**
++ * If not stated otherwise in this file or this component's LICENSE
++ * file the following copyright and licenses apply:
++ *
++ * Copyright 2025 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ **/
++
++#ifndef MODULE_NAME
++#define MODULE_NAME ScreenCaptureCOMRPCTestApp
++#endif
++
++#include <iostream>
++#include <WPEFramework/com/com.h>
++#include <WPEFramework/core/core.h>
++#include "WPEFramework/interfaces/IScreenCapture.h"
++
++#include <chrono>
++#include <iomanip>
++#include <sstream>
++
++using namespace WPEFramework;
++
++// RAII Wrapper for IScreenCapture
++class ScreenCaptureProxy {
++    public:
++        explicit ScreenCaptureProxy(Exchange::IScreenCapture* screenCapture) : _screenCapture(screenCapture) {}
++        ~ScreenCaptureProxy() {
++            if (_screenCapture != nullptr) {
++                std::cout << "Releasing ScreenCapture proxy..." << std::endl;
++                _screenCapture->Release();
++            }
++        }
++
++        Exchange::IScreenCapture* operator->() const { return _screenCapture; }
++        Exchange::IScreenCapture* Get() const { return _screenCapture; }
++
++    private:
++        Exchange::IScreenCapture* _screenCapture;
++};
++
++/********************************* Test All IScreenCapture Events **********************************/
++class ScreenCaptureEventHandler : public Exchange::IScreenCapture::INotification {
++    private:
++        static std::string CurrentTimestamp() {
++            using namespace std::chrono;
++            auto now = system_clock::now();
++            auto ms = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
++            std::time_t t = system_clock::to_time_t(now);
++            std::tm tm;
++#ifdef _WIN32
++            localtime_s(&tm, &t);
++#else
++            localtime_r(&t, &tm);
++#endif
++            std::ostringstream oss;
++            oss << std::put_time(&tm, "[%Y-%m-%d %H:%M:%S")
++                << '.' << std::setfill('0') << std::setw(3) << ms.count() << "]";
++            return oss.str();
++        }
++
++        template<typename... Args>
++            void LogEvent(const std::string& eventName, Args&&... args) const {
++                std::cout << CurrentTimestamp() << " " << eventName;
++                ((std::cout << (sizeof...(Args) > 1 ? " " : "") << args), ...);
++                std::cout << std::endl;
++            }
++
++    public:
++        ScreenCaptureEventHandler() : _refCount(1) {}
++        void AddRef() const override {
++            _refCount.fetch_add(1, std::memory_order_relaxed);
++        }
++        uint32_t Release() const override {
++            uint32_t count = _refCount.fetch_sub(1, std::memory_order_acq_rel) - 1;
++            if (count == 0) {
++                delete this;
++            }
++            return count;
++        }
++
++		void UploadComplete(const bool& status, const std::string& message, const std::string& call_guid) override{
++			LogEvent("UploadComplete -", "Status:", status, ", Message:", message, ", Call GUID:", call_guid);
++		}
++
++        BEGIN_INTERFACE_MAP(ScreenCaptureEventHandler)
++            INTERFACE_ENTRY(Exchange::IScreenCapture::INotification)
++        END_INTERFACE_MAP
++
++    private:
++        mutable std::atomic<uint32_t> _refCount;
++};
++
++int main(int argc, char* argv[])
++{
++    std::string callsign = (argc > 1) ? argv[1] : "org.rdk.ScreenCapture";
++    /******************************************* Init *******************************************/
++    // Get environment variables
++    const char* thunderAccess = std::getenv("THUNDER_ACCESS");
++    std::string envThunderAccess = (thunderAccess != nullptr) ? thunderAccess : "/tmp/communicator";
++    std::cout << "Using THUNDER_ACCESS: " << envThunderAccess << std::endl;
++    std::cout << "Using callsign: " << callsign << std::endl;
++
++    // Initialize COMRPC
++    Core::SystemInfo::SetEnvironment(_T("THUNDER_ACCESS"), envThunderAccess.c_str());
++    Core::ProxyType<RPC::CommunicatorClient> client = Core::ProxyType<RPC::CommunicatorClient>::Create(
++            Core::NodeId(envThunderAccess.c_str()));
++
++    if (client.IsValid() == false) {
++        std::cerr << "Failed to create COMRPC client." << std::endl;
++        return 1;
++    }
++
++    /************************************* Plugin Connector **************************************/
++    // Create a proxy for the ScreenCapture plugin
++    Exchange::IScreenCapture* rawScreenCapture = client->Open<Exchange::IScreenCapture>(_T(callsign.c_str()));
++    if (rawScreenCapture == nullptr) {
++        std::cerr << "Failed to connect to ScreenCapture plugin." << std::endl;
++        return 1;
++    }
++    std::cout << "Connected to FrameRate plugin." << std::endl;
++
++    // Use RAII wrapper for ScreenCapture proxy
++    ScreenCaptureProxy screenCapture(rawScreenCapture);
++
++    /************************************ Subscribe to Events ************************************/
++    ScreenCaptureEventHandler eventHandler;
++    screenCapture->Register(&eventHandler);
++    std::cout << "Event handler registered." << std::endl;
++
++    /************************************* Test All Methods **************************************/
++	// virtual Core::hresult UploadScreenCapture(const string& url /* @in */, const string& callGUID /* @in */, Result &result /* @out  */ ) = 0;
++
++	Exchange::IScreenCapture::Result result;
++	if (screenCapture->UploadScreenCapture("http://localhost:8000/cgi-bin/upload.cgi", "test-call-guid-12345", result) == Core::ERROR_NONE) {
++		std::cout << "UploadScreenCapture succeeded." << std::endl;
++	} else {
++		std::cerr << "UploadScreenCapture failed." << std::endl;
++	}
++
++    std::cout << "Waiting for events... Press Ctrl+C to exit." << std::endl;
++    while (true) {
++        std::this_thread::sleep_for(std::chrono::seconds(60));
++    }
++
++    /******************************************* Clean-Up *****************************************/
++    // ScreenCaptureProxy destructor will automatically release the proxy
++    std::cout << "Exiting..." << std::endl;
++    screenCapture->Unregister(&eventHandler);
++    return 0;
++}
+-- 
+2.34.1.windows.1
+
