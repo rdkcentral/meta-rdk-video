@@ -28,7 +28,7 @@ LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-confi
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-# SRCREV_rdkfw = "${AUTOREV}"
+# SRCREV_rdkfw = "8c748ba68bc246c22025a4c253fba0b816a5e675"
 SRCREV_FORMAT = "rdkfw"
 
 S = "${WORKDIR}/git"
