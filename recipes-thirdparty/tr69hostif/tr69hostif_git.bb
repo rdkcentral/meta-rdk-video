@@ -123,6 +123,7 @@ INCLUDE_DIRS += "\
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs-hal \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include \
 	-I${PKG_CONFIG_SYSROOT_DIR}${includedir}/WPEFramework/powercontroller \
+        -I$(PKG_CONFIG_SYSROOT_DIR)${includedir}/rdm \
 	"
 
 CPPFLAGS += "${INCLUDE_DIRS}"
