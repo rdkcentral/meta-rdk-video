@@ -32,7 +32,7 @@ LDFLAGS += "-lWPEFrameworkPowerController"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'rrd', ' remotedebugger', " ", d)}"
 RDEPENDS:${PN}:append  = " ${@bb.utils.contains('DISTRO_FEATURES', 'rrd',' remotedebugger', '',d)}"
 CXXFLAGS:append     = "${@bb.utils.contains('DISTRO_FEATURES', 'rrd', ' -DUSE_REMOTE_DEBUGGER', '', d)}"
-CXXFLAGS:append     = "${@bb.utils.contains('DISTRO_FEATURES', 'rrd', ' -I=${includedir}/rrd/ -I=$(PKG_CONFIG_SYSROOT_DIR)${includedir}/rdm/ -I=${includedir}/rdk/iarmmgrs/rdmmgr/', '', d)}"
+CXXFLAGS:append     = "${@bb.utils.contains('DISTRO_FEATURES', 'rrd', ' -I=${includedir}/rrd/ -I=${includedir}/rdm/ -I=$(PKG_CONFIG_SYSROOT_DIR)${includedir}/rdm/ -I=${includedir}/rdk/iarmmgrs/rdmmgr/', '', d)}"
 
 inherit pkgconfig breakpad-logmapper syslog-ng-config-gen useradd logrotate_config
 
