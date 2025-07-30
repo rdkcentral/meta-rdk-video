@@ -12,7 +12,7 @@ DEPENDS = "iarmbus iarmmgrs e2fsprogs libsoup libsyswrapper yajl \
            devicesettings procps glib-2.0 \
            cjson telemetry libtinyxml2\
 	  "
-DEPENDS:append = " rdk-logger libparodus parodus virtual/vendor-devicesettings-hal ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
+DEPENDS:append = " rdk-logger libparodus parodus virtual/vendor-devicesettings-hal rdmagent ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
 
 DEPENDS += " python-lxml-native"
 DEPENDS:append = " python3-lxml-native"
