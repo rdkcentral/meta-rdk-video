@@ -1,0 +1,12 @@
+diff --git a/helpers/PluginInterfaceBuilder.h b/helpers/PluginInterfaceBuilder.h
+index a10ad6a..fdfc5ed 100755
+--- a/helpers/PluginInterfaceBuilder.h
++++ b/helpers/PluginInterfaceBuilder.h
+@@ -113,7 +113,6 @@ namespace Plugin {
+             auto pluginInterface = controller->QueryInterfaceByCallsign<INTERFACE>(callsign.c_str());
+ 
+             if (pluginInterface) {
+-                pluginInterface->AddRef();
+                 LOGINFO("plugin interface succeed and retry count: %d",count);
+                 return pluginInterface;
+             }

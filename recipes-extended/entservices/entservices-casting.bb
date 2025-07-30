@@ -10,10 +10,11 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-casting;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+           file://pwrmgrInterface.patch \
           "
 
 # Release version - 1.2.0
-SRCREV = "d4f96d64a057fd252f042bde9e1748cbf241d5fb"
+SRCREV = "7c6b789b3734cffa3145dd4aef768cba14a7bddb"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
