@@ -30,13 +30,13 @@
 
 #define NUM_ELEMENTS                  3
 #define PROCESS_NAME                  "WPEFramework"
-#define CONFIG_FILE                   "/opt/thunderHangDetector/thunderHangDetector.json"
+#define CONFIG_FILE                   "/opt/thunderHangRecovery/thunderHangRecovery.json"
 #define THUNDER_START_WAIT_TIME       180 /* 3 minutes wait time for thunder to start before monitoring it */
 
 const char* HANG_DETECTOR_ENABLE = "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Thunder.HangDetector.Enable";
 const char* HANG_DETECTOR_COREFILE_ENABLE = "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Thunder.HangDetector.CoreFile.Enable";
 const char* HANG_DETECTOR_POLLING_COUNT = "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Thunder.HangDetector.Polling.Count";
-std::atomic<bool> hangDetetectorEnable{true};
+std::atomic<bool> hangDetetectorEnable{false};
 std::atomic<bool> coreFileEnable{false};
 std::atomic<unsigned int> pollingCount{5};
 cJSON* json = nullptr;
@@ -105,8 +105,10 @@ static void writeJsonToFile()
 {
     if (json == nullptr)
     {
-        LOG_MSG("JSON object is null");
-        return;
+        json = cJSON_CreateObject();
+        cJSON_AddBoolToObject(json, "hangDetectorEnable", hangDetetectorEnable);
+        cJSON_AddBoolToObject(json, "coreFileEnable", coreFileEnable);
+        cJSON_AddNumberToObject(json, "pollingCount", pollingCount);
     }
 
     char* jsonString = cJSON_Print(json);
@@ -460,7 +462,6 @@ int main() {
     std::string jsonData;
 
     struct curl_slist *headers = nullptr;
-    headers = curl_slist_append(headers, "Content-Type: application/json");
 
     unsigned int failureCount = 0;
     unsigned int successCount = 0;
@@ -471,28 +472,9 @@ int main() {
 
     int ret = RBUS_ERROR_SUCCESS;
 
-    // Open and read the JSON file
     std::ifstream file(CONFIG_FILE);
-    if (!file.is_open())
+    if (!file.fail())
     {
-        LOG_MSG("Unable to open file: %s", CONFIG_FILE);
-        json = cJSON_CreateObject();
-        cJSON_AddBoolToObject(json, "hangDetectorEnable", hangDetetectorEnable);
-        cJSON_AddBoolToObject(json, "coreFileEnable", coreFileEnable);
-        cJSON_AddNumberToObject(json, "pollingCount", pollingCount);
-
-        char *jsonString = cJSON_Print(json);
-        if (jsonString == nullptr) {
-            LOG_MSG("Failed to print JSON string");
-            cJSON_Delete(json);
-            json = nullptr;
-        }
-        cJSON_free(jsonString);
-        writeJsonToFile();
-    }
-    else
-    {
-        // Read entire file content into a string
         std::string jsonContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         file.close();
 
@@ -517,7 +499,6 @@ int main() {
                 pollingCount = pollingCountValue->valueint;
         }
     }
-
     ret = rbus_open(&rbus_handle, "thunderHangDetector");
     if(ret != RBUS_ERROR_SUCCESS)
         LOG_MSG("rbus open failed with error code %d", ret);
@@ -532,52 +513,60 @@ int main() {
     ret = rbus_regDataElements(rbus_handle, NUM_ELEMENTS, dataElements);
 
     sleep(THUNDER_START_WAIT_TIME);
-    pid = getPID();
-    while (true) {
-        std::ostringstream jsonStream;
-        jsonStream << R"json({"jsonrpc": "2.0", "id": )json" << iterationCount << R"json(, "method": "Controller.1.status"})json";
-        jsonData = jsonStream.str();
-        if(isRunning(pid))
+    while (true)
+    {
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        pid = getPID();
+        if(hangDetetectorEnable)
         {
-            CurlObject curlObj(url, jsonData, headers);
-            long httpCode = curlObj.gethttpcode();
+            std::ostringstream jsonStream;
+            jsonStream << R"json({"jsonrpc": "2.0", "id": )json" << iterationCount << R"json(, "method": "Controller.1.version"})json";
+            jsonData = jsonStream.str();
+            if(isRunning(pid))
+            {
+                CurlObject curlObj(url, jsonData, headers);
+                long httpCode = curlObj.gethttpcode();
 
-            if (httpCode != 200) {
-                failureCount++;
-                LOG_MSG("External JSONRPC failed for %d retry", failureCount);
-                timer = 5;
-                if (failureCount >= pollingCount) {
-                    LOG_MSG("Number of external JSONRPC request successfully executed before thunder hang: %d ", successCount);
-                    LOG_MSG("Thunder is not responding to the %d consecutive external JSONRPC request", pollingCount.load());
-                    if(hangDetetectorEnable)
-                    {
-                        killPID(pid);
+                if (httpCode != 200) {
+                    failureCount++;
+                    LOG_MSG("External JSONRPC failed for %d retry", failureCount);
+                    timer = 5;
+                    if (failureCount >= pollingCount) {
+                        LOG_MSG("Number of external JSONRPC request successfully executed before thunder hang: %d ", successCount);
+                        LOG_MSG("Thunder is not responding to the %d consecutive external JSONRPC request", pollingCount.load());
+                        if(hangDetetectorEnable)
+                        {
+                            killPID(pid);
+                        }
+                        else
+                        {
+                            LOG_MSG("THUNDER_HANG_DETECTED state: MONITORING");
+                        }
+                        failureCount = 0;
+                        successCount = 0;
                     }
-                    else
-                    {
-                        LOG_MSG("THUNDER_HANG_DETECTED state: MONITORING");
-                    }
+                } else {
+                    if(failureCount < pollingCount && failureCount != 0)
+                        LOG_MSG("External JSONRPC recovered after %d retry", failureCount);
+                    timer = 30;
                     failureCount = 0;
-                    successCount = 0;
+                    successCount++;
                 }
-            } else {
-                if(failureCount < pollingCount && failureCount != 0)
-                    LOG_MSG("External JSONRPC recovered after %d retry", failureCount);
-                timer = 30;
-                failureCount = 0;
-                successCount++;
             }
+            else
+            {
+                LOG_MSG("%s is not running", PROCESS_NAME);
+                sleep(THUNDER_START_WAIT_TIME);
+                pid = getPID();
+            }
+            iterationCount++;
+            sleep(timer);
         }
-        else
+        if(headers)
         {
-            LOG_MSG("%s is not running", PROCESS_NAME);
-            sleep(THUNDER_START_WAIT_TIME);
-            pid = getPID();
+            curl_slist_free_all(headers);
         }
-        iterationCount++;
-        sleep(timer);
     }
-    curl_slist_free_all(headers);
 
     return 0;
 }
