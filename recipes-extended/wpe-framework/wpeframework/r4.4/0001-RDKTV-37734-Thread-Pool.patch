@@ -1,0 +1,12 @@
+diff --git a/Source/core/ThreadPool.h b/Source/core/ThreadPool.h
+index 1287ae98..d51a62e9 100644
+--- a/Source/core/ThreadPool.h
++++ b/Source/core/ThreadPool.h
+@@ -618,6 +618,7 @@ POP_WARNING()
+                 _queue.Insert(job, waitTime);
+             }
+ 
++            std::cout << "WPEDEBUG: ThreadPool::Submit: queue length: \n" << _queue.Length() << std::endl << std::flush;
+         }
+         uint32_t Revoke(const ProxyType<IDispatch>& job, const uint32_t waitTime)
+         {
