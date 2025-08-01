@@ -7,7 +7,7 @@ index 13fe9d59d..17ba9459f 100644
          )
 
 +separate_arguments(BREAKPAD_LDFLAGS)
-+target_link_libraries(WPEFramework PRIVATE "${BREAKPAD_LDFLAGS}")
++target_link_libraries(${TARGET} PRIVATE "${BREAKPAD_LDFLAGS}")
 +
  target_compile_definitions(${TARGET}
          PRIVATE
@@ -22,3 +22,17 @@ index 13fe9d59d..17ba9459f 100644
  if (PROCESSCONTAINERS)
      target_link_libraries(${TARGET}
 
+diff --git a/Source/WPEProcess/CMakeLists.txt b/Source/WPEProcess/CMakeLists.txt 
+index 13fe9d59d..17ba9459f 100644
+--- a/Source/WPEProcess/CMakeLists.txt 
++++ b/Source/WPEProcess/CMakeLists.txt 
+@@ -23,6 +23,9 @@
+     set_source_files_properties( Process.cpp PROPERTIES COMPILE_FLAGS "-fexceptions" )
+ endif()
+
++separate_arguments(BREAKPAD_LDFLAGS)
++target_link_libraries(${TARGET} PRIVATE "${BREAKPAD_LDFLAGS}")
++
+ add_executable(${TARGET}
+         Process.cpp
+         )
