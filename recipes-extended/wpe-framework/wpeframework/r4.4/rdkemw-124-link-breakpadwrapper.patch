@@ -26,13 +26,12 @@ diff --git a/Source/WPEProcess/CMakeLists.txt b/Source/WPEProcess/CMakeLists.txt
 index 13fe9d59d..17ba9459f 100644
 --- a/Source/WPEProcess/CMakeLists.txt 
 +++ b/Source/WPEProcess/CMakeLists.txt 
-@@ -23,6 +23,9 @@
-     set_source_files_properties( Process.cpp PROPERTIES COMPILE_FLAGS "-fexceptions" )
- endif()
+@@ -27,6 +27,8 @@
+         Process.cpp
+         )
 
 +separate_arguments(BREAKPAD_LDFLAGS)
 +target_link_libraries(${TARGET} PRIVATE "${BREAKPAD_LDFLAGS}")
-+
- add_executable(${TARGET}
-         Process.cpp
-         )
+ # Non-buildable interface target to carry the definitions for users
+ add_library(COMProcess INTERFACE)
+ add_library(${NAMESPACE}COMProcess::${NAMESPACE}COMProcess ALIAS COMProcess)
