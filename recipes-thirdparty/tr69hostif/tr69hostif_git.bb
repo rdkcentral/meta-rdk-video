@@ -117,6 +117,7 @@ INCLUDE_DIRS += "\
     -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/halif/ds-hal \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds-rpc \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmbus \
+        -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdm \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/tr69Bus \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/mfr \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/power \
