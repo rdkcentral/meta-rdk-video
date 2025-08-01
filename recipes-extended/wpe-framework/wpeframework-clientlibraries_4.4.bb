@@ -28,6 +28,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://0001-error-handling-if-invalid-external-input.patch \
            file://r4.4/0001-Implement-IPersistent-interface-for-RPC-Vault.patch \
            file://r4.4/0001-SecAPI-Re-acquire-sec-handle-after-flush.patch \
+           file://r4.4/0001-DELIA-64727-Prealloc-secure-memory-before-decrypt.patch \
           "
 
 # Oct 17, 2023
