@@ -12,12 +12,11 @@ diff --git a/Source/core/Portability.h b/Source/core/Portability.h
 index d6d6b028..f9548dc1 100644
 --- a/Source/core/Portability.h
 +++ b/Source/core/Portability.h
-@@ -952,5 +952,8 @@ namespace std {
+@@ -952,5 +952,7 @@ namespace std {
  #endif
  
  #define THUNDER_VERSION 4
 +#define THUNDER_VERSION_MAJOR 4
 +#define THUNDER_VERSION_MINOR 4
-+#define THUNDER_VERSION_PATCH 3
  
  #endif // __PORTABILITY_H
