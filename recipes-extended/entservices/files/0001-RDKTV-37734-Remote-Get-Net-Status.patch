@@ -1,0 +1,100 @@
+diff --git a/RemoteControl/RemoteControl.cpp b/RemoteControl/RemoteControl.cpp
+index 40a0734..f66ac04 100644
+--- a/RemoteControl/RemoteControl.cpp
++++ b/RemoteControl/RemoteControl.cpp
+@@ -240,49 +240,55 @@ namespace WPEFramework {
+         uint32_t RemoteControl::getNetStatus(const JsonObject& parameters, JsonObject& response)
+         {
+             LOGINFOMETHOD();
+-
+-            ctrlm_main_iarm_call_json_t *call = NULL;
+-            IARM_Result_t                res;
+-            string                       jsonParams;
++            printf("RMDEBUG: Inside getNetStatus function \n");
++            printf("RMDEBUG: Returning false response by default\n");
+             bool                         bSuccess = false;
+-            size_t                       totalsize = 0;
+-
+-            parameters.ToString(jsonParams);
+-            totalsize = sizeof(ctrlm_main_iarm_call_json_t) + jsonParams.size() + 1;
+-            call      = (ctrlm_main_iarm_call_json_t*)calloc(1, totalsize);
+-
+-            if (call == NULL)
+-            {
+-                LOGERR("ERROR - Cannot allocate IARM structure - size: %u.", (unsigned)totalsize);
+-                bSuccess = false;
+-                returnResponse(bSuccess);
+-            }
+-
+-            call->api_revision = CTRLM_MAIN_IARM_BUS_API_REVISION;
+-            size_t len = jsonParams.copy(call->payload, jsonParams.size());
+-            call->payload[len] = '\0';
+-
+-            res = IARM_Bus_Call(CTRLM_MAIN_IARM_BUS_NAME, CTRLM_MAIN_IARM_CALL_GET_RCU_STATUS, (void *)call, totalsize);
+-            if (res != IARM_RESULT_SUCCESS)
+-            {
+-                LOGERR("ERROR - CTRLM_MAIN_IARM_CALL_GET_RCU_STATUS Bus Call FAILED, res: %d.", (int)res);
+-                bSuccess = false;
+-                free(call);
+-                returnResponse(bSuccess);
+-            }
+-
+-            JsonObject result;
+-            result.FromString(call->result);
+-            bSuccess = result["success"].Boolean();
+-            response = result;
+-            free(call);
++            bSuccess = false;
++            returnResponse(bSuccess);
+ 
+-            if (bSuccess)
+-                LOGINFO("GET RCU STATUS call SUCCESS!");
+-            else
+-                LOGERR("ERROR - CTRLM_MAIN_IARM_CALL_GET_RCU_STATUS returned FAILURE!");
+ 
+-            returnResponse(bSuccess);
++            // ctrlm_main_iarm_call_json_t *call = NULL;
++            // IARM_Result_t                res;
++            // string                       jsonParams;
++            // bool                         bSuccess = false;
++            // size_t                       totalsize = 0;
++
++            // parameters.ToString(jsonParams);
++            // totalsize = sizeof(ctrlm_main_iarm_call_json_t) + jsonParams.size() + 1;
++            // call      = (ctrlm_main_iarm_call_json_t*)calloc(1, totalsize);
++
++            // if (call == NULL)
++            // {
++            //     LOGERR("ERROR - Cannot allocate IARM structure - size: %u.", (unsigned)totalsize);
++            //     bSuccess = false;
++            //     returnResponse(bSuccess);
++            // }
++
++            // call->api_revision = CTRLM_MAIN_IARM_BUS_API_REVISION;
++            // size_t len = jsonParams.copy(call->payload, jsonParams.size());
++            // call->payload[len] = '\0';
++
++            // res = IARM_Bus_Call(CTRLM_MAIN_IARM_BUS_NAME, CTRLM_MAIN_IARM_CALL_GET_RCU_STATUS, (void *)call, totalsize);
++            // if (res != IARM_RESULT_SUCCESS)
++            // {
++            //     LOGERR("ERROR - CTRLM_MAIN_IARM_CALL_GET_RCU_STATUS Bus Call FAILED, res: %d.", (int)res);
++            //     bSuccess = false;
++            //     free(call);
++            //     returnResponse(bSuccess);
++            // }
++
++            // JsonObject result;
++            // result.FromString(call->result);
++            // bSuccess = result["success"].Boolean();
++            // response = result;
++            // free(call);
++
++            // if (bSuccess)
++            //     LOGINFO("GET RCU STATUS call SUCCESS!");
++            // else
++            //     LOGERR("ERROR - CTRLM_MAIN_IARM_CALL_GET_RCU_STATUS returned FAILURE!");
++
++            // returnResponse(bSuccess);
+         }
+ 
+         uint32_t RemoteControl::getIRDBManufacturers(const JsonObject& parameters, JsonObject& response)
