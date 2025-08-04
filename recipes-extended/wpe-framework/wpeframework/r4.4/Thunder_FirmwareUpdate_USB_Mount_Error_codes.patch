@@ -9,7 +9,7 @@ diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServ
 index e4aa76e96..68083d4ef 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
-@@ -1520,6 +1520,22 @@ namespace PluginHost {
+@@ -1520,6 +1520,26 @@ namespace PluginHost {
                                      response->Error.SetError(Core::ERROR_UNKNOWN_KEY);
                                      response->Error.Text = _T("Unregister was already done!!!.");
                                      break;
@@ -29,6 +29,10 @@ index e4aa76e96..68083d4ef 100644
 +                                    response->Error.SetError(Core::ERROR_FIRMWAREUPDATE_INPROGRESS);
 +                                    response->Error.Text = _T("Firmware update already in progress");
 +                                    break;
++                                case Core::ERROR_FIRMWAREUPDATE_UPTODATE:
++                                    response->Error.SetError(Core::ERROR_FIRMWAREUPDATE_UPTODATE);
++                                    response->Error.Text = _T("Firmware is already upto date");
++                                    break;
                                  default:
                                      response->Error.SetError(result);
                                      break;
@@ -36,7 +40,7 @@ diff --git a/Source/core/JSONRPC.h b/Source/core/JSONRPC.h
 index bfa4cb53f..359b99c6e 100644
 --- a/Source/core/JSONRPC.h
 +++ b/Source/core/JSONRPC.h
-@@ -124,6 +124,15 @@ namespace Core {
+@@ -124,6 +124,18 @@ namespace Core {
                          Code = Core::ERROR_HIBERNATED;
                          Text = _T("The service is in an Hibernated state!!!.");
                          break;
@@ -49,6 +53,9 @@ index bfa4cb53f..359b99c6e 100644
 +                    case Core::ERROR_FIRMWAREUPDATE_INPROGRESS:
 +                        Code = -32003; // Firmware update inprogress
 +                        break;
++                    case Core::ERROR_FIRMWAREUPDATE_UPTODATE:
++                        Code = -32004; // Firmware upto date
++                        break;
                      default:
                          Code = static_cast<int32_t>(frameworkError);
                          Text = Core::ErrorToString(frameworkError);
@@ -56,7 +63,7 @@ diff --git a/Source/core/Portability.h b/Source/core/Portability.h
 index 9e48c1184..3a0ad5eb1 100644
 --- a/Source/core/Portability.h
 +++ b/Source/core/Portability.h
-@@ -877,8 +877,14 @@ namespace Core {
+@@ -877,8 +877,15 @@ namespace Core {
          ERROR_CODE(ERROR_FAILED_UNREGISTERED, 49) \
          ERROR_CODE(ERROR_PRIVILIGED_DEFERRED, 51) \
          ERROR_CODE(ERROR_UNKNOWN_METHOD, 53) \
@@ -66,7 +73,8 @@ index 9e48c1184..3a0ad5eb1 100644
 +        ERROR_CODE(ERROR_ABORTED, 58) \
 +        ERROR_CODE(ERROR_INVALID_DEVICENAME, 59) \
 +        ERROR_CODE(ERROR_INVALID_MOUNTPOINT, 60) \
-+        ERROR_CODE(ERROR_FIRMWAREUPDATE_INPROGRESS,61)
++        ERROR_CODE(ERROR_FIRMWAREUPDATE_INPROGRESS,61) \
++        ERROR_CODE(ERROR_FIRMWAREUPDATE_UPTODATE,62)
 +
 +
 

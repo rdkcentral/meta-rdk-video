@@ -12,7 +12,7 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r36"
+PR = "r39"
 PV = "4.4.3"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
@@ -35,7 +35,6 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/RDKTV-15803-WPEFramework-crash-malloc-printerr.patch \
            file://r4.4/DELIA-54331-Do-not-set-the-receive-buffer.patch \
            file://r4.4/RDKTV-16992-Added_timeout-and-synchronisation-when-stopping-containers.patch \
-           file://r4.4/WorkerPool_Increase.patch \
            file://r4.4/0001-WPEFramework-Regex-Removal-r4.4.1.patch \
            file://r4.4/crash_debug_callstack_R4_4.patch \
            file://r4.4/wpeframework_persistentpathchanges.patch \
@@ -46,7 +45,6 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/RDKEMW-733-Add-ENTOS-IDS.patch \
            file://r4.4/Update-Trace-Level-Logging-Logic.patch \
            file://r4.4/Activating_plugins_Logs_COMRPC.patch \
-           file://r4.4/FirmwareUpdate_UptoDate.patch \
            file://r4.4/Removed_Autostart_Check_From_WPEFramework.patch \
            "
 
@@ -61,7 +59,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/PR1832-Thunder-ABBA-Deadlock-Fix.patch \
             file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
             file://r4.4/0001-SmarkLink-Crash-Fix.patch \
-	    file://r4.4/Jsonrpc_dynamic_error_handling.patch \
+            file://r4.4/Jsonrpc_dynamic_error_handling.patch \
            "
 
 S = "${WORKDIR}/git"
