@@ -220,7 +220,7 @@ LOGROTATE_SIZE_MEM_wpeframework="1572864"
 LOGROTATE_ROTATION_MEM_wpeframework="3"
 
 # Breakpad processname and logfile mapping
-BREAKPAD_LOGMAPPER_PROCLIST = "WPEFramework,WorkerPool::Thr,WPEProcess,WPEWebProcess,startWPE,WPENetworkProcess,WideVine.drm,PlayReady.drm,NetworkManager,Monitor::IResou,TextTrack,XCast"
+BREAKPAD_LOGMAPPER_PROCLIST = "WPEFramework,WorkerPool::Thr,WPEProcess,WPEWebProcess,startWPE,WPENetworkProcess,WideVine.drm,PlayReady.drm,NetworkManager,Monitor::IResou"
 BREAKPAD_LOGMAPPER_LOGLIST = "wpeframework.log"
 
 # Ensure we'll get the Thunder version  into the versions.txt file part of the build image
