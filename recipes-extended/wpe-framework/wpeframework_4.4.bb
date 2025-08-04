@@ -71,6 +71,7 @@ SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
             file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
             file://r4.4/0001-SmarkLink-Crash-Fix.patch \
             file://r4.4/rdkemw-124-link-breakpadwrapper.patch \
+            file://r4.4/rdkemw-124-use-sa-siginfo.patch \
 	    file://r4.4/Jsonrpc_dynamic_error_handling.patch \
            "
 
