@@ -197,12 +197,41 @@ index cef643f91..f1459eb6e 100644
                  }
              }
 diff --git a/Source/com/IUnknown.h b/Source/com/IUnknown.h
-index 8f66284f1..3f791df5b 100644
+index 8f66284f1..16ea6ecfa 100644
 --- a/Source/com/IUnknown.h
 +++ b/Source/com/IUnknown.h
-@@ -147,6 +147,19 @@ namespace ProxyStub {
+@@ -130,6 +130,26 @@ namespace ProxyStub {
+             CACHING_RELEASE  = 0x02,
+             INVALID          = 0x04
+         };
++    
++    public:
++        class WatchDog {    
++            public:
++            uint64_t Timed(const uint64_t /* scheduledTime */) {
++                fprintf(stderr, "bvanav-dbg: Watch Dog Timed Out for COM-RPC Proxy Invoke, Crashing Thunder...\n");
++                abort();
++            }
++
++            bool operator==(const WatchDog& rhs) const
++            {
++                return true;
++            }
++
++            bool operator!=(const WatchDog& rhs) const
++            {
++                return (!operator==(rhs));
++            }
++
++        };
+ 
+     public:
+         UnknownProxy() = delete;
+@@ -146,7 +166,21 @@ namespace ProxyStub {
+             , _parent(parent)
              , _channel(channel)
              , _remoteReferences(1)
++            , _watchDogTimer(Core::Thread::DefaultStackSize(), _T("WatchDogTimer"))
          {
 +            char path[40], process_name[256]; FILE *fp;
 +            char self_name[] = "WPEFramework";
@@ -220,29 +249,40 @@ index 8f66284f1..3f791df5b 100644
          }
          virtual ~UnknownProxy() = default;
  
-@@ -292,11 +305,15 @@ namespace ProxyStub {
+@@ -291,12 +325,23 @@ namespace ProxyStub {
+         inline uint32_t Invoke(Core::ProxyType<RPC::InvokeMessage>& message, const uint32_t waitTime = RPC::CommunicationTimeOut) const
          {
              ASSERT(_channel.IsValid() == true);
++            WatchDog _callback = WatchDog();
++            if(isThunder && 0x0022 == message->Parameters().InterfaceId() && 4 == message->Parameters().MethodId()) {
++                fprintf(stderr, "bvanav-dbg: IUnknown.h ProxyStub::UnknownProxy::Invoke before channel invoke of IPlugin::INotification impl: 0x%x methodId: %d tid: %d and Scheduling watch dog...\n", message->Parameters().Implementation(), message->Parameters().MethodId(), gettid());
++                Core::Time cutOffTime = Core::Time::Now();
++                cutOffTime.Add(18000);
++                _watchDogTimer.Schedule(cutOffTime, _callback);
++            }
++                uint32_t result = _channel->Invoke(message, waitTime);
  
-+            if(isThunder && message->Parameters().InterfaceId() == 0x0022 && message->Parameters().MethodId() == 4)
-+                fprintf(stderr, "bvanav-dbg: IUnknown.h ProxyStub::UnknownProxy::Invoke before channel invoke of IPlugin::INotification impl: 0x%x methodId: %d tid: %d\n", message->Parameters().Implementation(), message->Parameters().MethodId(), gettid());
-             uint32_t result = _channel->Invoke(message, waitTime);
+-            uint32_t result = _channel->Invoke(message, waitTime);
 -
-+            if(isThunder && message->Parameters().InterfaceId() == 0x0022 && message->Parameters().MethodId() == 4)
-+                fprintf(stderr, "bvanav-dbg: IUnknown.h ProxyStub::UnknownProxy::Invoke after channel invoke of IPlugin::INotification impl: 0x%x methodId: %d result: %d tid: %d\n", message->Parameters().Implementation(), message->Parameters().MethodId(), result, gettid());
++            if(isThunder && 0x0022 == message->Parameters().InterfaceId() && 4 == message->Parameters().MethodId()) {
++                fprintf(stderr, "bvanav-dbg: IUnknown.h ProxyStub::UnknownProxy::Invoke after channel invoke of IPlugin::INotification impl: 0x%x methodId: %d result: %d tid: %d and Revoking watch dog...\n", message->Parameters().Implementation(), message->Parameters().MethodId(), result, gettid());
++                _watchDogTimer.Revoke(_callback);
++            }
              if (result != Core::ERROR_NONE) {
                  result |= COM_ERROR;
 -
-+                if(isThunder && message->Parameters().InterfaceId() == 0x0022 && message->Parameters().MethodId() == 4)
++                if(isThunder && 0x0022 == message->Parameters().InterfaceId() && 4 == message->Parameters().MethodId())
 +                    fprintf(stderr, "bvanav-dbg: IUnknown.h ProxyStub::UnknownProxy::Invoke Error IPlugin::INotification impl: 0x%x methodId: %d result: %d tid: %d\n", message->Parameters().Implementation(), message->Parameters().MethodId(), result, gettid());
                  // Oops something failed on the communication. Report it.
                  TRACE_L1("IPC method invocation failed for 0x%X, error: %d", message->Parameters().InterfaceId(), result);
              }
-@@ -410,6 +427,7 @@ namespace ProxyStub {
+@@ -410,6 +455,9 @@ namespace ProxyStub {
          Core::IUnknown& _parent;
          mutable Core::ProxyType<Core::IPCChannel> _channel;
          uint32_t _remoteReferences;
 +        bool isThunder;
++        Core::Time cutOffTime;
++        mutable Core::TimerType<WatchDog> _watchDogTimer;
      };
  
      template <typename INTERFACE>
