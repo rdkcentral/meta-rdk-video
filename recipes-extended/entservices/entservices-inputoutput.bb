@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-inputoutput;${CMF_GITHUB_SRC_URI_SUFFI
           "
 
 # Release version - 1.4.1
-SRCREV = "1964cc2a48078e7d57164f28206e319fa806e5bb"
+SRCREV = "60fff57c599bf360a2e3c0c177718e689d9301d7"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
