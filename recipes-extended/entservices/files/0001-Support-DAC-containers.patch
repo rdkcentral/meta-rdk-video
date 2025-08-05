@@ -1,7 +1,7 @@
-diff --git a/RuntimeManager/RuntimeManagerImplementation.cpp b/RuntimeManager/RuntimeManagerImplementation.cpp
-index f6073f8..6d8675f 100755
---- a/RuntimeManager/RuntimeManagerImplementation.cpp
-+++ b/RuntimeManager/RuntimeManagerImplementation.cpp
+Index: git/RuntimeManager/RuntimeManagerImplementation.cpp
+===================================================================
+--- git.orig/RuntimeManager/RuntimeManagerImplementation.cpp
++++ git/RuntimeManager/RuntimeManagerImplementation.cpp
 @@ -558,6 +558,11 @@ err_ret:
                  config.mWesterosSocketPath = westerosSocket;
              }
@@ -23,7 +23,14 @@ index f6073f8..6d8675f 100755
              {
                  LOGERR("Failed to generate dobbySpec");
                  status = Core::ERROR_GENERAL;
-@@ -584,7 +589,11 @@ err_ret:
+@@ -579,12 +584,18 @@ err_ret:
+                 LOGINFO("Environment Variables: XDG_RUNTIME_DIR=%s, WAYLAND_DISPLAY=%s",
+                      xdgRuntimeDir.c_str(), waylandDisplay.c_str());
+                 std::string command = "";
++                LOGINFO("[Jose] app path : %s ", runtimeConfigObject.unpackedPath.c_str());
++                std::string appPath = runtimeConfigObject.unpackedPath;
+                 if(isOCIPluginObjectValid())
+                 {
                      string containerId = getContainerId(appInstanceId);
                      if (!containerId.empty())
                      {
