@@ -12,20 +12,19 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r48"
-PV = "4.4.1"
+PR = "r39"
+PV = "4.4.3"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
 
-SRCREV_thunder = "b81d0f079345739cc2d8ee142b3499be7e4e6b15"
+SRCREV_thunder = "19100433e5517c743738bb2a9ed8ce2f79c10eaf"
 
-#default patches for compiling thunder
 SRC_URI += "file://wpeframework-init \
            file://wpeframework.service.in \
            file://network_manager_migration.conf \
            file://r4.4/Library_version_matched_with_release_tag.patch \
            file://r4.4/Remove_versioning_for_executables.patch \
-           file://r4.4/wpeframework_version_r4.4.1.patch \
+           file://r4.4/wpeframework_version.patch \
            file://r4.4/0001_Remove_DEBUG_Macro_Definition.patch \
            file://r4.4/0003-OCDM-increase-RPC-comm-timeout.patch \
            file://r4.4/wpeframework_added_optimization_flag_improvement.patch \
@@ -36,13 +35,9 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/RDKTV-15803-WPEFramework-crash-malloc-printerr.patch \
            file://r4.4/DELIA-54331-Do-not-set-the-receive-buffer.patch \
            file://r4.4/RDKTV-16992-Added_timeout-and-synchronisation-when-stopping-containers.patch \
-           file://r4.4/Fix_DeadLock_In_PluginServer_Closed.patch \
-           file://r4.4/WorkerPool_Increase.patch \
            file://r4.4/0001-WPEFramework-Regex-Removal-r4.4.1.patch \
-           file://r4.4/0002_Add_INSTALLATION_as_Subsystem.patch \
-	   file://r4.4/crash_debug_callstack_R4_4.patch \
+           file://r4.4/crash_debug_callstack_R4_4.patch \
            file://r4.4/wpeframework_persistentpathchanges.patch \
-           file://r4.4/Use_Legact_Alt_Based_On_ThunderTools_R4.4.3.patch \
            file://r4.4/1004-Add-support-for-project-dir.patch \
            file://r4.4/Enable_Thunder_Logging_R4.4.1.patch \
            file://r4.4/Thunder_FirmwareUpdate_USB_Mount_Error_codes.patch \
@@ -50,20 +45,13 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/RDKEMW-733-Add-ENTOS-IDS.patch \
            file://r4.4/Update-Trace-Level-Logging-Logic.patch \
            file://r4.4/Activating_plugins_Logs_COMRPC.patch \
-           file://r4.4/FirmwareUpdate_UptoDate.patch \
            file://r4.4/Removed_Autostart_Check_From_WPEFramework.patch \
            "
 
-SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
-            file://r4.4/PR-1632-WebSocket-CornerCase.patch \
-            file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
+SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/PR-1756-Remove-Recursive-Function-From-SmartLinkType.patch \
-            file://r4.4/PR-1390-1467-Controls_Init_Shutdown_Singleton_Fixes.patch \
             file://r4.4/PR-1586-Use-Monotonic-Clocks.patch\
-            file://r4.4/PR-1630-JSON-Parsing-Escape-Sequence.patch \
             file://r4.4/PR-1533-Refernce-counted-Library-COMRPC-objects.patch  \
-            file://r4.4/PR-1376-1386-1441-1650-ProcessContainerCompilationFix.patch \
-            file://r4.4/PR-1619-Update-SocketServer.h.patch \
             file://r4.4/PR-1751-Load-Library-ThunderR4.patch \
             file://r4.4/PR-1785-Reduce_scope_of_adminlock.patch \
             file://r4.4/PR-1791-Thunder-hung-SocketPort-close-Delete-channel.patch \
