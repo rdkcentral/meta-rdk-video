@@ -1,0 +1,24 @@
+From 9e94931fd05bae74cd5f3d48a59d4aed2754235a Mon Sep 17 00:00:00 2001
+From: Pawel Lampe <pawel.lampe@sky.uk>
+Date: Tue, 21 Feb 2023 13:27:04 +0000
+Subject: [PATCH] lower webkit version requirement for meson
+
+---
+ meson.build | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/meson.build b/meson.build
+index 564c2d2..3673ca2 100644
+--- a/meson.build
++++ b/meson.build
+@@ -83,6 +83,7 @@ with_programs = get_option('programs')
+ wpewebkit_soup3_dep_info = [
+     ['wpe-webkit-2.0', '>=2.39.0'],
+     ['wpe-webkit-1.1', '>=2.33.1'],
++    ['wpe-webkit-1.0', '>=2.28.0'],
+ ]
+ 
+ with_soup2 = get_option('soup2').enabled()
+-- 
+2.39.1
+

@@ -1,0 +1,24 @@
+From 22b5b3abd14cb7e702969326208bfa8fbc3ea81a Mon Sep 17 00:00:00 2001
+From: Pawel Lampe <pawel.lampe@sky.uk>
+Date: Fri, 17 Feb 2023 13:53:22 +0000
+Subject: [PATCH] lower webkit version requirement
+
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6726954..c45bd60 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -133,7 +133,7 @@ if (USE_SOUP2)
+ else()
+     set(REQUIRED_GIO_VERSION "gio-2.0>=2.67.4")
+     set(REQUIRED_SOUP_VERSION "libsoup-3.0>=2.99.7")
+-    set(REQUIRED_WEBKIT_VERSION "wpe-webkit-1.1>=2.33.1")
++    set(REQUIRED_WEBKIT_VERSION "wpe-webkit-1.0>=2.28.0")
+     add_definitions("-DCOG_USE_SOUP2=0")
+ endif()
+ 
+-- 
+2.39.1

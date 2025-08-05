@@ -1,0 +1,97 @@
+commit f46d840a2ab1aa7e292c96d2dbbfea36b539be22
+Author: Manoj Bhatta <manojkumar_bhatta@comcast.com>
+Date:   Mon Aug 4 17:35:33 2025 +0000
+
+    Enable firebolt for cog browser
+
+diff --git a/core/cog-webkit-utils.c b/core/cog-webkit-utils.c
+index 839b633..d3e76cb 100644
+--- a/core/cog-webkit-utils.c
++++ b/core/cog-webkit-utils.c
+@@ -408,6 +408,60 @@ cog_web_view_connect_default_error_handlers (WebKitWebView *web_view)
+     }
+ }
+ 
++// Get firebolt end point & add window string also 
++ char * cog_get_firebolt_end_point()
++{
++   g_autofree char  *firebolt_endpoint = getenv("FIREBOLT_ENDPOINT");
++   g_debug("cog:firebolt End Point %s",getenv("FIREBOLT_ENDPOINT"));
++    
++   g_autofree char *firebolt_script = g_strconcat( "window.__firebolt = { endpoint: '", firebolt_endpoint, "' };\n", NULL);
++   g_warning("cog:firebolt firebolt  script  [%s]", firebolt_script);
++   //return getenv("FIREBOLT_ENDPOINT");
++   //TODO get SESSION_ID has sesion id 
++  return g_steal_pointer (&firebolt_script);
++}
++
++void
++cog_configure_user_content(WebKitWebView *web_view)
++{
++   g_debug("cog:firebolt attempting to add user scripts for firebolt");
++
++    // get the user content manager object
++     WebKitUserContentManager *userContentManager = webkit_web_view_get_user_content_manager(web_view);
++    if (!userContentManager)
++    {
++        g_warning("cog::firebolt failed to get user content manager object");
++        return;
++    }
++
++    // get all the user scripts, there is typically at least one that is used
++    // to set some globals in the DOM, and firebolt apps tend to also inject
++    // the FTL.js file
++    {
++       
++    //    g_warning( "cog:firebolt  adding userscript to WPEWebKit instance  FB SCRIPT []%s",cog_get_firebolt_end_point());
++       g_debug( "cog:firebolt  adding userscript");
++
++        //WebKitUserScript* user_script  = webkit_user_script_new( cog_get_firebolt_end_point(),
++        WebKitUserScript* user_script  = webkit_user_script_new(" window.__firebolt = { endpoint: ' wss:://127.0.0.1:3474 ' };",
++                                                WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
++                                                WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START,
++                                                NULL,
++                                                NULL);
++
++        webkit_user_content_manager_add_script(userContentManager, user_script);
++        webkit_user_script_unref(user_script);
++    }
++#if 0
++    // enable message handlers for firebolt type stuff
++    g_signal_connect(userContentManager, "script-message-received::firebolt",
++                     G_CALLBACK(fireboltMessageReceivedCallback), this);
++
++    webkit_user_content_manager_register_script_message_handler(userContentManager,
++                                                                "firebolt");
++#endif
++}
++
+ /**
+  * cog_handle_web_view_load_changed:
+  * @web_view: A [class@WebKit.WebView].
+diff --git a/core/cog-webkit-utils.h b/core/cog-webkit-utils.h
+index 825eed6..aaaf3c1 100644
+--- a/core/cog-webkit-utils.h
++++ b/core/cog-webkit-utils.h
+@@ -37,6 +37,7 @@ gboolean cog_handle_web_view_web_process_terminated (WebKitWebView
+ gboolean cog_handle_web_view_web_process_terminated_exit (WebKitWebView                     *web_view,
+                                                           WebKitWebProcessTerminationReason  reason,
+                                                           void                              *userdata);
++void cog_configure_user_content(WebKitWebView *web_view);
+ 
+ static inline gulong
+ cog_web_view_connect_web_process_terminated_exit_handler (WebKitWebView* web_view,
+diff --git a/launcher/cog-launcher.c b/launcher/cog-launcher.c
+index e586c68..ed0d2cd 100644
+--- a/launcher/cog-launcher.c
++++ b/launcher/cog-launcher.c
+@@ -331,6 +331,9 @@ cog_launcher_create_view(CogLauncher *self, CogShell *shell)
+     cog_web_view_connect_default_progress_handlers(web_view);
+     cog_web_view_connect_default_error_handlers(web_view);
+ 
++   //only for firebolt now
++   cog_configure_user_content(web_view);
++
+     webkit_web_view_load_uri(web_view, s_options.home_uri);
+     g_clear_pointer(&s_options.home_uri, g_free);
+ 
