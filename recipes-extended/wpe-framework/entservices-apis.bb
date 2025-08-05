@@ -6,6 +6,7 @@ PR ?= "r0"
 
 inherit python3native cmake pkgconfig
 
+#--------
 
 DEPENDS = "wpeframework wpeframework-tools-native"
 
