@@ -22,7 +22,6 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/DELIA-64604-RialtoServer-crash-clientlibraries.patch \
            file://r4.4/0001-reconnect-if-connection-establishment-is-failed.patch \
            file://r4.4/0001-check-_session-has-a-valid-pointer.patch \
-           file://r4.4/0001-PowerManagerClient-library-implementation.patch \
            file://r4.4/0001-add-svp-header-to-data-before-decryption.patch \
            file://r4.4/RDK-55149.patch \
            file://r4.4/0001-Add-vault-platform-case.patch \
@@ -30,6 +29,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-Implement-IPersistent-interface-for-RPC-Vault.patch \
            file://r4.4/0001-SecAPI-Re-acquire-sec-handle-after-flush.patch \
            file://r4.4/0001-DELIA-64727-Prealloc-secure-memory-before-decrypt.patch \
+           file://r4.4/0001-PowerManagerClient-library-implementation.patch \
           "
 
 # Oct 17, 2023
