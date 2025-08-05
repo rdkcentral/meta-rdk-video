@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Connectivity plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV ?= "1.0.1"
+PV ?= "1.1.0"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFF
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.0.1
-SRCREV = "8a2a94391191093b52c893630a96032f9a24d331"
+# Release version - 1.1.0
+SRCREV = "d3bffbf0fa14380fbf2d73e6b24dc23f1e730a7c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
