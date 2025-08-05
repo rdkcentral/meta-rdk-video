@@ -40,6 +40,7 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/WorkerPool_Increase.patch \
            file://r4.4/0001-WPEFramework-Regex-Removal-r4.4.1.patch \
            file://r4.4/0002_Add_INSTALLATION_as_Subsystem.patch \
+	   file://r4.4/crash_debug_callstack_R4_4.patch \
            file://r4.4/wpeframework_persistentpathchanges.patch \
            file://r4.4/Use_Legact_Alt_Based_On_ThunderTools_R4.4.3.patch \
            file://r4.4/1004-Add-support-for-project-dir.patch \
