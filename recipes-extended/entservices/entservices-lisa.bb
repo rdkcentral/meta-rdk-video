@@ -12,7 +12,7 @@ inherit cmake pkgconfig coverity
 DEPENDS += "wpeframework boost curl libarchive wpeframework-tools-native entservices-apis"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
-SRC_URI = "${CMF_GITHUB_ROOT}/LISA;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI = "git://github.com/AkshayKumar2794/LISA.git;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 TOOLCHAIN = "gcc"
 EXTRA_OECMAKE += "-DCMAKE_SYSROOT=${STAGING_DIR_HOST}"
@@ -21,7 +21,7 @@ EXTRA_OECMAKE += "-DPLUGIN_LISA_IMAGE_PATH=${LISA_IMAGE_PATH}"
 EXTRA_OECMAKE += "-DPLUGIN_LISA_APPDATA_PATH=${LISA_APPDATA_PATH}"
 
 # 17 Jun 2025 or head
-SRCREV = "ced76740507d39e5078e9e1e30936cb7addff438"
+SRCREV = "9d10b4335492b371f7623d4859c8d2622b0de5e6"
 
 OECMAKE_TARGET_COMPILE = "WPEFrameworkLISA"
 OECMAKE_TARGET_INSTALL = "LISA/install"
