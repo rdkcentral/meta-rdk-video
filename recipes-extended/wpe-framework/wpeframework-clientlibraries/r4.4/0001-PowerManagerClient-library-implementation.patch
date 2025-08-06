@@ -1,6 +1,6 @@
-From 4cd3b5f4d2c55a004dc3202baea93b81709ea1d8 Mon Sep 17 00:00:00 2001
+From 8af1da7acbc0e1874c500f2f69e4cd94e2663623 Mon Sep 17 00:00:00 2001
 From: Shrinivas Kamath <skamath@synamedia.com>
-Date: Wed, 22 Jan 2025 15:52:21 +0000
+Date: Wed, 6 Aug 2025 05:25:12 +0000
 Subject: [PATCH] PowerController (PowerManager plugin client) implementation
 
 update copyright in cmake file
@@ -14,18 +14,19 @@ interface changes for enhanced instance management and add operational state tra
 - Introduced isOperational and it's state change callback
 - PowerModePreChange & Thunder restart handling
 - Adapt to IPowerManager interface changes
+- Remove client instance counting in powercontroller
 
 %% original patch: 0001-PowerManagerClient-library-implementation.patch
 ---
  .gitignore                                  |    2 +
  NOTICE                                      |    3 +-
- Source/CMakeLists.txt                       |    6 +
+ Source/CMakeLists.txt                       |    4 +
  Source/powercontroller/CMakeLists.txt       |   79 +
  Source/powercontroller/Module.cpp           |   22 +
  Source/powercontroller/Module.h             |   33 +
- Source/powercontroller/power_controller.cpp | 1834 +++++++++++++++++++
- Source/powercontroller/power_controller.h   |  415 +++++
- 8 files changed, 2393 insertions(+), 1 deletion(-)
+ Source/powercontroller/power_controller.cpp | 1982 +++++++++++++++++++
+ Source/powercontroller/power_controller.h   |  436 ++++
+ 8 files changed, 2560 insertions(+), 1 deletion(-)
  create mode 100644 Source/powercontroller/CMakeLists.txt
  create mode 100644 Source/powercontroller/Module.cpp
  create mode 100644 Source/powercontroller/Module.h
@@ -54,19 +55,10 @@ index fd4f8ed..f0bbef9 100644
 +Copyright 2025 RDK Management
 +Licensed under the Apache License, Version 2.0
 diff --git a/Source/CMakeLists.txt b/Source/CMakeLists.txt
-index afdc4f8..0787f1f 100644
+index af7578a..4cc4cb1 100644
 --- a/Source/CMakeLists.txt
 +++ b/Source/CMakeLists.txt
-@@ -39,6 +39,8 @@ option(SECURITYUTILITY
-         "Application to generate Localhost Security Token" ON)
- option(LOCALTRACER
-         "Header only library to locally print traces coming from Messaging without the need of running Thunder/WPEFramework." OFF)
-+option(POWERCONTROLLER
-+        "Include the powermanager COMRPC abstraction library." OFF)
- 
- if(BLUETOOTHAUDIOSINK)
-     add_subdirectory(bluetoothaudiosink)
-@@ -87,3 +89,7 @@ endif()
+@@ -58,3 +58,7 @@ endif()
  if(LOCALTRACER)
      add_subdirectory(localtracer)
  endif()
@@ -228,10 +220,10 @@ index 0000000..c9c1321
 +#endif
 diff --git a/Source/powercontroller/power_controller.cpp b/Source/powercontroller/power_controller.cpp
 new file mode 100644
-index 0000000..eb23c38
+index 0000000..6772e8e
 --- /dev/null
 +++ b/Source/powercontroller/power_controller.cpp
-@@ -0,0 +1,1834 @@
+@@ -0,0 +1,1982 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -256,7 +248,6 @@ index 0000000..eb23c38
 +#include <functional>
 +#include <iostream>
 +#include <list>
-+#include <memory>
 +#include <thread>
 +#include <type_traits>
 +
@@ -1024,7 +1015,7 @@ index 0000000..eb23c38
 +        std::cout << "Thunder OLD PID: " << _pid << ", NEW PID: " << pid << "\n";
 +
 +        if (_pid != pid) {
-+            disconnect();
++            Disconnect();
 +            Connect();
 +            _pid = pid;
 +        }
@@ -1102,29 +1093,6 @@ index 0000000..eb23c38
 +        return _connected;
 +    }
 +
-+    uint32_t disconnect()
-+    {
-+        uint32_t status = Core::ERROR_GENERAL;
-+        bool close = false;
-+
-+        _apiLock.Lock();
-+
-+        if (isConnected()) {
-+            close = true;
-+            _connected = false;
-+        }
-+
-+        _apiLock.Unlock();
-+
-+        if (close) {
-+            status = BaseClass::Close(Core::infinite);
-+        }
-+
-+        std::cout << "PowerController::disconnect\n";
-+
-+        return status;
-+    }
-+
 +public:
 +    // Locked method expected to be called from locked context
 +    inline bool IsActivatedLocked() const
@@ -1171,6 +1139,29 @@ index 0000000..eb23c38
 +        return status;
 +    }
 +
++    uint32_t Disconnect()
++    {
++        uint32_t status = Core::ERROR_GENERAL;
++        bool close = false;
++
++        _apiLock.Lock();
++
++        if (isConnected()) {
++            close = true;
++            _connected = false;
++        }
++
++        _apiLock.Unlock();
++
++        if (close) {
++            status = BaseClass::Close(Core::infinite);
++        }
++
++        std::cout << "PowerController::disconnect\n";
++
++        return status;
++    }
++
 +    // Locked method expected to be called from locked context (take care in specializations too)
 +    template <typename CallbackType>
 +    bool RegisterNotificationLocked()
@@ -1191,30 +1182,24 @@ index 0000000..eb23c38
 +    {
 +        _apiLock.Lock();
 +        if (nullptr == _instance) {
-+            ASSERT(0 == _nClients);
 +            _instance = new PowerController();
 +        }
-+        _nClients++;
 +        _apiLock.Unlock();
 +    }
 +
 +    static void Term()
 +    {
 +        _apiLock.Lock();
-+        if (_nClients > 0) {
-+            _nClients--;
-+        }
-+        if (0 == _nClients && nullptr != _instance) {
++        if (nullptr != _instance) {
 +            delete _instance;
 +            _instance = nullptr;
 +        }
 +        _apiLock.Unlock();
 +    }
 +
-+    static PowerController& Instance()
++    static PowerController* Instance()
 +    {
-+        ASSERT(nullptr != _instance);
-+        return *_instance;
++        return _instance;
 +    }
 +
 +    Core::hresult GetPowerState(PowerController_PowerState_t* currentState, PowerController_PowerState_t* previousState)
@@ -1735,7 +1720,6 @@ index 0000000..eb23c38
 +    }
 +
 +private:
-+    static int _nClients; // Init() count
 +    static PowerController* _instance;
 +    static Core::CriticalSection _apiLock;
 +    static Core::CriticalSection _callbackLock;
@@ -1846,7 +1830,6 @@ index 0000000..eb23c38
 +} // nameless namespace
 +
 +/* static */ PowerController* PowerController::_instance = nullptr;
-+/* static */ int PowerController::_nClients = 0;
 +/* static */ Core::CriticalSection PowerController::_apiLock;
 +/* static */ Core::CriticalSection PowerController::_callbackLock;
 +
@@ -1864,70 +1847,127 @@ index 0000000..eb23c38
 +
 +uint32_t PowerController_Connect()
 +{
-+    return PowerController::Instance().Connect();
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->Connect();
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_Disconnect()
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->Disconnect();
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +bool PowerController_IsOperational()
 +{
-+    return PowerController::Instance().IsOperational();
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->IsOperational();
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_GetPowerState(PowerController_PowerState_t* currentState, PowerController_PowerState_t* previousState)
 +{
 +    ASSERT(nullptr != currentState);
 +    ASSERT(nullptr != previousState);
-+    return PowerController::Instance().GetPowerState(currentState, previousState);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetPowerState(currentState, previousState);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_SetPowerState(const int keyCode, const PowerController_PowerState_t powerstate, const char* reason)
 +{
-+    return PowerController::Instance().SetPowerState(keyCode, powerstate, reason);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->SetPowerState(keyCode, powerstate, reason);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_GetThermalState(float* currentTemperature)
 +{
 +    ASSERT(nullptr != currentTemperature);
-+    return PowerController::Instance().GetThermalState(currentTemperature);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetThermalState(currentTemperature);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_SetTemperatureThresholds(float high, float critical)
 +{
-+    return PowerController::Instance().SetTemperatureThresholds(high, critical);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->SetTemperatureThresholds(high, critical);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_GetTemperatureThresholds(float* high, float* critical)
 +{
 +    ASSERT(nullptr != high);
 +    ASSERT(nullptr != critical);
-+    return PowerController::Instance().GetTemperatureThresholds(high, critical);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetTemperatureThresholds(high, critical);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_SetOvertempGraceInterval(const int graceInterval)
 +{
-+    return PowerController::Instance().SetOvertempGraceInterval(graceInterval);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->SetOvertempGraceInterval(graceInterval);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_GetOvertempGraceInterval(int* graceInterval /* @out */)
 +{
 +    ASSERT(nullptr != graceInterval);
-+    return PowerController::Instance().GetOvertempGraceInterval(graceInterval);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetOvertempGraceInterval(graceInterval);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_SetDeepSleepTimer(const int timeOut)
 +{
-+    return PowerController::Instance().SetDeepSleepTimer(timeOut);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->SetDeepSleepTimer(timeOut);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_GetLastWakeupReason(PowerController_WakeupReason_t* wakeupReason)
 +{
 +    ASSERT(nullptr != wakeupReason);
-+    return PowerController::Instance().GetLastWakeupReason(wakeupReason);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetLastWakeupReason(wakeupReason);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_GetLastWakeupKeyCode(int* keycode)
 +{
 +    ASSERT(nullptr != keycode);
-+    return PowerController::Instance().GetLastWakeupKeyCode(keycode);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetLastWakeupKeyCode(keycode);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_Reboot(const char* rebootRequestor, const char* rebootReasonCustom, const char* rebootReasonOther)
@@ -1935,23 +1975,39 @@ index 0000000..eb23c38
 +    ASSERT(nullptr != rebootRequestor);
 +    ASSERT(nullptr != rebootReasonCustom);
 +    ASSERT(nullptr != rebootReasonOther);
-+    return PowerController::Instance().Reboot(rebootRequestor, rebootReasonCustom, rebootReasonOther);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->Reboot(rebootRequestor, rebootReasonCustom, rebootReasonOther);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_SetNetworkStandbyMode(const bool standbyMode)
 +{
-+    return PowerController::Instance().SetNetworkStandbyMode(standbyMode);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->SetNetworkStandbyMode(standbyMode);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_GetNetworkStandbyMode(bool* standbyMode)
 +{
 +    ASSERT(standbyMode != nullptr);
-+    return PowerController::Instance().GetNetworkStandbyMode(standbyMode);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetNetworkStandbyMode(standbyMode);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_SetWakeupSrcConfig(const int powerMode, const int wakeSrcType, int config)
 +{
-+    return PowerController::Instance().SetWakeupSrcConfig(powerMode, wakeSrcType, config);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->SetWakeupSrcConfig(powerMode, wakeSrcType, config);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_GetWakeupSrcConfig(int* powerMode, int* srcType, int* config)
@@ -1959,119 +2015,203 @@ index 0000000..eb23c38
 +    ASSERT(nullptr != powerMode);
 +    ASSERT(nullptr != srcType);
 +    ASSERT(nullptr != config);
-+    return PowerController::Instance().GetWakeupSrcConfig(*powerMode, *srcType, *config);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetWakeupSrcConfig(*powerMode, *srcType, *config);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_SetSystemMode(const PowerController_SystemMode_t currentMode, const PowerController_SystemMode_t newMode)
 +{
-+    return PowerController::Instance().SetSystemMode(currentMode, newMode);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->SetSystemMode(currentMode, newMode);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_GetPowerStateBeforeReboot(PowerController_PowerState_t* powerStateBeforeReboot)
 +{
 +    ASSERT(nullptr != powerStateBeforeReboot);
-+    return PowerController::Instance().GetPowerStateBeforeReboot(powerStateBeforeReboot);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetPowerStateBeforeReboot(powerStateBeforeReboot);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_AddPowerModePreChangeClient(const char* clientName, uint32_t* clientId)
 +{
 +    ASSERT(nullptr != clientName);
 +    ASSERT(nullptr != clientId);
-+    return PowerController::Instance().AddPowerModePreChangeClient(clientName, *clientId);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->AddPowerModePreChangeClient(clientName, *clientId);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_RemovePowerModePreChangeClient(const uint32_t clientId)
 +{
-+    return PowerController::Instance().RemovePowerModePreChangeClient(clientId);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RemovePowerModePreChangeClient(clientId);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_DelayPowerModeChangeBy(const uint32_t clientId, const int transactionId, const int delayPeriod)
 +{
-+    return PowerController::Instance().DelayPowerModeChangeBy(clientId, transactionId, delayPeriod);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->DelayPowerModeChangeBy(clientId, transactionId, delayPeriod);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_PowerModePreChangeComplete(const uint32_t clientId, const int transactionId)
 +{
-+    return PowerController::Instance().PowerModePreChangeComplete(clientId, transactionId);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->PowerModePreChangeComplete(clientId, transactionId);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_RegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback, void* userdata)
 +{
-+    return PowerController::Instance().RegisterOperationalStateChangedCallback(callback, userdata);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterOperationalStateChangedCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_UnRegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback)
 +{
-+    return PowerController::Instance().UnRegisterOperationalStateChangedCallback(callback);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterOperationalStateChangedCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_RegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback, void* userdata)
 +{
-+    return PowerController::Instance().RegisterPowerModeChangedCallback(callback, userdata);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterPowerModeChangedCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_UnRegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback)
 +{
-+    return PowerController::Instance().UnRegisterPowerModeChangedCallback(callback);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterPowerModeChangedCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_RegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback, void* userdata)
 +{
-+    return PowerController::Instance().RegisterPowerModePreChangeCallback(callback, userdata);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterPowerModePreChangeCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_UnRegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback)
 +{
-+    return PowerController::Instance().UnRegisterPowerModePreChangeCallback(callback);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterPowerModePreChangeCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_RegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback, void* userdata)
 +{
-+    return PowerController::Instance().RegisterDeepSleepTimeoutCallback(callback, userdata);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterDeepSleepTimeoutCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_UnRegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback)
 +{
-+    return PowerController::Instance().UnRegisterDeepSleepTimeoutCallback(callback);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterDeepSleepTimeoutCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_RegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback, void* userdata)
 +{
-+    return PowerController::Instance().RegisterNetworkStandbyModeChangedCallback(callback, userdata);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterNetworkStandbyModeChangedCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_UnRegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback)
 +{
-+    return PowerController::Instance().UnRegisterNetworkStandbyModeChangedCallback(callback);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterNetworkStandbyModeChangedCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_RegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback, void* userdata)
 +{
-+    return PowerController::Instance().RegisterThermalModeChangedCallback(callback, userdata);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterThermalModeChangedCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_UnRegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback)
 +{
-+    return PowerController::Instance().UnRegisterThermalModeChangedCallback(callback);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterThermalModeChangedCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_RegisterRebootBeginCallback(PowerController_RebootBeginCb callback, void* userdata)
 +{
-+    return PowerController::Instance().RegisterRebootBeginCallback(callback, userdata);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterRebootBeginCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +uint32_t PowerController_UnRegisterRebootBeginCallback(PowerController_RebootBeginCb callback)
 +{
-+    return PowerController::Instance().UnRegisterRebootBeginCallback(callback);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterRebootBeginCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
 +} // extern "C"
 diff --git a/Source/powercontroller/power_controller.h b/Source/powercontroller/power_controller.h
 new file mode 100644
-index 0000000..8739760
+index 0000000..52979fb
 --- /dev/null
 +++ b/Source/powercontroller/power_controller.h
-@@ -0,0 +1,415 @@
+@@ -0,0 +1,436 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -2129,17 +2269,18 @@ index 0000000..8739760
 +} PowerController_ThermalTemperature_t;
 +
 +typedef enum PowerController_WakeupSrcType {
-+    WAKEUP_SRC_UNKNOWN = 0 /* UNKNOWN */,
-+    WAKEUP_SRC_VOICE = 1 /* VOICE */,
-+    WAKEUP_SRC_PRESENCEDETECTED = 2 /* PRESENCEDETECTED */,
-+    WAKEUP_SRC_BLUETOOTH = 3 /* BLUETOOTH */,
-+    WAKEUP_SRC_WIFI = 4 /* WIFI */,
-+    WAKEUP_SRC_IR = 5 /* IR */,
-+    WAKEUP_SRC_POWERKEY = 6 /* POWERKEY */,
-+    WAKEUP_SRC_TIMER = 7 /* TIMER */,
-+    WAKEUP_SRC_CEC = 8 /* CEC */,
-+    WAKEUP_SRC_LAN = 9 /* LAN */,
-+    WAKEUP_SRC_RF4CE = 10 /* RF4CE */
++    WAKEUP_SRC_UNKNOWN          = 0         /* UNKNOWN */,
++    WAKEUP_SRC_VOICE            = 1         /* VOICE */,
++    WAKEUP_SRC_PRESENCEDETECTED = 1 << 1    /* PRESENCEDETECTED */,
++    WAKEUP_SRC_BLUETOOTH        = 1 << 2    /* BLUETOOTH */,
++    WAKEUP_SRC_WIFI             = 1 << 3    /* WIFI */,
++    WAKEUP_SRC_IR               = 1 << 4    /* IR */,
++    WAKEUP_SRC_POWERKEY         = 1 << 5    /* POWERKEY */,
++    WAKEUP_SRC_TIMER            = 1 << 6    /* TIMER */,
++    WAKEUP_SRC_CEC              = 1 << 7    /* CEC */,
++    WAKEUP_SRC_LAN              = 1 << 8    /* LAN */,
++    WAKEUP_SRC_RF4CE            = 1 << 9    /* RF4CE */,
++    WAKEUP_SRC_MAX              = 1 << 10
 +} PowerController_WakeupSrcType_t;
 +
 +typedef enum PowerController_WakeupReason {
@@ -2182,7 +2323,6 @@ index 0000000..8739760
 + *
 + * @details
 + * - If the Power Controller instance does not already exist, it will be created.
-+ * - The instance count is incremented each time this function is called.
 + * - After Init, & before making any PowerController request client needs to ensure
 + *   - Power Manager plugin is activated and operational via `PowerController_IsOperational`.
 + *   - If not operational, clients can use this Connect API to establish COM-RPC connection with the Power Manager plugin.
@@ -2212,13 +2352,34 @@ index 0000000..8739760
 +EXTERNAL uint32_t PowerController_Connect();
 +
 +/**
++ * @brief Disconnects from the Power Manager plugin via COMRPC.
++ *
++ * This function terminates the RPC connection to the Power Manager plugin
++ * using the Thunder COMRPC mechanism. It should be called when the client
++ * no longer needs to communicate with the Power Manager, or as part of
++ * cleanup during shutdown.
++ *
++ * @note After calling this function, any subsequent attempt to send requests
++ *       to the Power Manager plugin will fail until a new connection is established
++ *       using `PowerController_Connect`.
++ *
++ * @return POWER_CONTROLLER_ERROR_NONE
++ *         Successfully disconnected from the Power Manager plugin.
++ * @return POWER_CONTROLLER_ERROR_UNAVAILABLE
++ *         Failed to disconnect because the Thunder RPC server is not running,
++ *         or there was an error in the underlying RPC communication channel.
++ * @return POWER_CONTROLLER_ERROR_NOT_EXIST
++ *         The Power Manager plugin is not active or was never connected.
++ */
++EXTERNAL uint32_t PowerController_Disconnect();
++
++/**
 + * @brief Terminates the Power Controller.
 + *
 + * This function decrements client instance count attempts to delete Power Controller instance
 + *
 + * @details
-+ * - If the controller reference count is greater than one, this function only decrements the count.
-+ * - When the reference count reaches zero, the controller instance is destroyed, and all associated resources are released (PowerManager plugin client instance).
++ * - The controller instance is destroyed, and all associated resources are released (PowerManager plugin client instance).
 + * - Ensure that this function is called once for every call to `PowerController_Init`.
 + *
 + * @see PowerController_Init
@@ -2488,5 +2649,5 @@ index 0000000..8739760
 +
 +#endif // POWERMANAGER_CLIENT_H
 -- 
-2.43.5
+2.37.7
 
