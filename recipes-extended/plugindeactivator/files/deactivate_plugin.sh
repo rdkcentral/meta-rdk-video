@@ -19,7 +19,7 @@ curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:9998/jsonrpc'
 
 echo
 
-# Wait for 2 seconds before exiting
+# Wait for 1 seconds before exiting
 sleep 1
 
 
