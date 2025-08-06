@@ -1,7 +1,7 @@
 SUMMARY = "entservices-apis"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
-PV ?= "1.14.1"
+PV ?= "1.14.2"
 PR ?= "r0"
 
 inherit python3native cmake pkgconfig
@@ -15,8 +15,8 @@ SRC_URI += "file://RDKEMW-1007.patch"
 
 
 
-# Tag 1.14.1
-SRCREV_entservices-apis = "c3313c184a365f8d59c8ac72b3787522d7c9f892"
+# Tag 1.14.2
+SRCREV_entservices-apis = "53708b0f2c4e99a1ab0f252511e107c72b4be075"
 
 
 S = "${WORKDIR}/git"
