@@ -1,0 +1,18 @@
+diff --git a/Source/WPEProcess/CMakeLists.txt b/Source/WPEProcess/CMakeLists.txt 
+index 13fe9d59d..17ba9459f 100644
+--- a/Source/WPEProcess/CMakeLists.txt 
++++ b/Source/WPEProcess/CMakeLists.txt 
+@@ -53,11 +53,11 @@
+             )
+ endif()
+
+-if(BREAKPAD_FOUND)
++#if(BREAKPAD_FOUND)
+     add_definitions(-DUSE_BREAKPAD=1 -D__STDC_FORMAT_MACROS)
+     target_link_libraries(${TARGET} PUBLIC ${BREAKPAD_LIBRARIES} pthread)
+     target_include_directories(${TARGET} PUBLIC ${BREAKPAD_INCLUDE_DIRS})
+-endif(BREAKPAD_FOUND)
++#endif(BREAKPAD_FOUND)
+
+ set_target_properties(${TARGET} PROPERTIES
+         CXX_STANDARD 11
