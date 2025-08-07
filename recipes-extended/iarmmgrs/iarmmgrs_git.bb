@@ -40,6 +40,10 @@ SYSLOG-NG_SERVICE_uimgr += "dsmgr.service mfrmgr.service sysmgr.service"
 #SYSLOG-NG_DESTINATION_uimgr = "uimgr_log.txt"
 #SYSLOG-NG_LOGRATE_uimgr = "very-high"
 
+# Y2K38_SAFETY Coverity Fix
+CFLAGS:append   = " -D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64"
+CXXLAGS:append  = " -D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64"
+
 #key-simulator
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_eu_remote', ' -D_SKQ_KEY_MAP_1_', '', d)}"
 
