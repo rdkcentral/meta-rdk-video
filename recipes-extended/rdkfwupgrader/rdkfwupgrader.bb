@@ -35,9 +35,9 @@ S = "${WORKDIR}/git"
 
 inherit autotools pkgconfig coverity systemd
 
-SYSTEMD_SERVICE:${PN}:remove = " rdkfwupgrader.service rdkfwupgrader.path"
+SYSTEMD_SERVICE:${PN} = " rdkfwupgrader.service"
 
-FILES:${PN}:remove = " ${bindir}/rdkfwupgrader \
+FILES:${PN} += " ${bindir}/rdkfwupgrader \
                  ${base_libdir}/rdk/rdkfwupgrader_start.sh \
                  ${base_libdir}/rdk/rdkfwupgrader_check_now.sh \
                  ${base_libdir}/rdk/rdkfwupgrader_abort_reboot.sh "
