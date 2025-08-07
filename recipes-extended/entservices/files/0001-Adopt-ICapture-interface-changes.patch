@@ -1,0 +1,28 @@
+From 704831fc613c0ed03f08cf4ad6f982db1c3bf05b Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Thu, 7 Aug 2025 10:20:02 -0400
+Subject: [PATCH] Adopt ICapture interface changes
+
+---
+ RDKShell/RDKShell.h | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/RDKShell/RDKShell.h b/RDKShell/RDKShell.h
+index 019c422..e5b82a4 100755
+--- a/RDKShell/RDKShell.h
++++ b/RDKShell/RDKShell.h
+@@ -453,8 +453,9 @@ namespace WPEFramework {
+                 INTERFACE_ENTRY(Exchange::ICapture)
+                 END_INTERFACE_MAP
+ 
+-                virtual void AddRef() const {}
+-                virtual uint32_t Release() const { return 0; }
++                virtual uint32_t AddRef() const override { return 0; }
++                virtual uint32_t Release() const override { return 0; }
++
+                 virtual const TCHAR* Name() const override { return "ScreenCapture"; }
+ 
+                 virtual bool Capture(ICapture::IStore& storer) override;
+-- 
+2.34.1.windows.1
+
