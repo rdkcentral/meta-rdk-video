@@ -12,7 +12,7 @@ DEPENDS:append = " safec-common-wrapper rfc telemetry iarmbus iarmmgrs dbus glib
 
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 CXXFLAGS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
-CFLAGS += "-I=${includedir}/wdmp-c -I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs/sysmgr -I${STAGING_INCDIR}/glib-2.0 -I${STAGING_INCDIR}/rdm -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdm"
+CFLAGS += "-I=${includedir}/wdmp-c -I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs/sysmgr -I${STAGING_INCDIR}/glib-2.0 -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdm"
 CFLAGS += "-I${STAGING_LIBDIR}/glib-2.0/include"
 CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_maintenance_manager', '-DEN_MAINTENANCE_MANAGER -I${STAGING_INCDIR}/rdk/iarmmgrs-hal ', '', d)}"
 CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'debug_codebig_cdl', ' -DDEBUG_CODEBIG_CDL', '', d)}"
@@ -25,6 +25,7 @@ EXTRA_OECONF = "--enable-rfcapi --enable-t2api"
 EXTRA_OECONF += "${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', '--enable-test-fwupgrader', '', d)}"
 
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
+LDFLAGS += "-lrdmagent"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
