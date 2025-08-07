@@ -12,8 +12,9 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-casting;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.2.0
-SRCREV = "cef9be1a9df6c234bd3a5f9f76c717e69f4254e8"
+# Release version - 1.2.1
+SRCREV = "05f5f7f6c5e04be2ba48835fc53e695854bbb723"
+//SRCREV = "cef9be1a9df6c234bd3a5f9f76c717e69f4254e8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
