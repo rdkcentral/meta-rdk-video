@@ -60,7 +60,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
             file://r4.4/0001-SmarkLink-Crash-Fix.patch \
             file://r4.4/Jsonrpc_dynamic_error_handling.patch \
-            file://r4.4/Enable_USE_BREAKPAD \
+            file://r4.4/Enable_USE_BREAKPAD.patch \
            "
 
 S = "${WORKDIR}/git"
