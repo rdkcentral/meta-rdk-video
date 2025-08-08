@@ -1,4 +1,4 @@
-From 4272d63671f56c828a6d3ce0d780134caf42d714 Mon Sep 17 00:00:00 2001
+From 3ff0f276dee0a2a58af4865897a3bc498bf13128 Mon Sep 17 00:00:00 2001
 From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
 Date: Tue, 10 Jun 2025 14:40:10 +0200
 Subject: [PATCH] comcast - RDK-58053 - MSE skip seek to duration if player not
@@ -14,11 +14,13 @@ as the end of video, triggering 'ended' event.
 See RDK-58053 for more details.
 
 Signed-off-by: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+
+%% original patch: comcast-RDK-58053-MSE-skip-seek-to-duration-if-player-not-loaded.patch
 ---
  Source/WebCore/html/HTMLMediaElement.cpp |  3 ++-
  Source/WebCore/page/Quirks.cpp           | 18 ++++++++++++++++++
- Source/WebCore/page/Quirks.h             |  3 +++
- 3 files changed, 23 insertions(+), 1 deletion(-)
+ Source/WebCore/page/Quirks.h             |  2 ++
+ 3 files changed, 22 insertions(+), 1 deletion(-)
 
 diff --git a/Source/WebCore/html/HTMLMediaElement.cpp b/Source/WebCore/html/HTMLMediaElement.cpp
 index b92980c16f35..b8063111d2bc 100644
@@ -35,12 +37,12 @@ index b92980c16f35..b8063111d2bc 100644
      }
  
 diff --git a/Source/WebCore/page/Quirks.cpp b/Source/WebCore/page/Quirks.cpp
-index 61d94a7cb71e..4f17dd6d24ca 100644
+index 3ac002b60c3f..a01f2ce81d80 100644
 --- a/Source/WebCore/page/Quirks.cpp
 +++ b/Source/WebCore/page/Quirks.cpp
-@@ -1963,4 +1963,22 @@ std::optional<TargetedElementSelectors> Quirks::defaultVisibilityAdjustmentSelec
- #endif
+@@ -1981,4 +1981,22 @@ bool Quirks::shouldBypassAudioFlushOnSampleReplacement() const
  }
+ #endif
  
 +bool Quirks::shouldNotChangePlaybackPositionOnPlayerStartup() const
 +{
@@ -62,26 +64,25 @@ index 61d94a7cb71e..4f17dd6d24ca 100644
 +
  }
 diff --git a/Source/WebCore/page/Quirks.h b/Source/WebCore/page/Quirks.h
-index faca9cbaff62..e3bffd112177 100644
+index 41b8c0474caf..eb537fa056fe 100644
 --- a/Source/WebCore/page/Quirks.h
 +++ b/Source/WebCore/page/Quirks.h
-@@ -207,6 +207,8 @@ public:
-     bool needsRelaxedCorsMixedContentCheckQuirk() const;
-     bool needsLaxSameSiteCookieQuirk(const URL&) const;
- 
+@@ -210,6 +210,7 @@ public:
+ #if ENABLE(MEDIA_SOURCE)
+     bool shouldBypassAudioFlushOnSampleReplacement() const;
+ #endif
 +    bool shouldNotChangePlaybackPositionOnPlayerStartup() const;
-+
+ 
  private:
      bool needsQuirks() const;
-     bool isDomain(const String&) const;
-@@ -281,6 +283,7 @@ private:
-     mutable std::optional<bool> m_shouldIgnorePlaysInlineRequirementQuirk;
-     mutable std::optional<bool> m_needsRelaxedCorsMixedContentCheckQuirk;
-     mutable std::optional<bool> m_needsYouTubeDarkModeQuirk;
+@@ -290,6 +291,7 @@ private:
+ #if ENABLE(MEDIA_SOURCE)
+     mutable std::optional<bool> m_shouldBypassAudioFlushOnSampleReplacementQuirk;
+ #endif
 +    mutable std::optional<bool> m_shouldNotChangePlaybackPositionOnPlayerStartupQuirk;
- 
-     Vector<RegistrableDomain> m_subFrameDomainsForStorageAccessQuirk;
  };
+ 
+ } // namespace WebCore
 -- 
 2.48.1
 
