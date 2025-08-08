@@ -9,7 +9,7 @@ diff --git a/Source/com/Ids.h b/Source/com/Ids.h
 index cf2060333..75d235bbd 100644
 --- a/Source/com/Ids.h
 +++ b/Source/com/Ids.h
-@@ -74,7 +74,8 @@ namespace RPC {
+@@ -74,7 +74,8 @@
          ID_COMREQUEST_NOTIFICATION      = (ID_OFFSET_INTERNAL + 0x003D),
          ID_SYSTEM_METADATA              = (ID_OFFSET_INTERNAL + 0x003E),
 
