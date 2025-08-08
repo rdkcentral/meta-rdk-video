@@ -1,0 +1,104 @@
+From 3c35241ee8c0a93ae2bad1ccbcfe9a1050cbec9d Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Thu, 7 Aug 2025 14:05:34 +0200
+Subject: [PATCH] [GStreamer] Fix thunderparser autoplugging for Westeros VP9
+ and AV1
+
+Disconnect autoplug-continue signal that decodebin3 sets on a parsebin
+to make parsebin continue autoplugging proces even if caps already matches
+sink capabilities.
+---
+ .../gstreamer/MediaPlayerPrivateGStreamer.cpp     |  2 ++
+ .../platform/gstreamer/GStreamerQuirkRialto.cpp   |  9 ++++++++-
+ .../platform/gstreamer/GStreamerQuirkWesteros.cpp | 15 +++++++++++++++
+ .../WebCore/platform/gstreamer/GStreamerQuirks.h  |  1 +
+ 4 files changed, 26 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index 1522ed79c0b5..876afcb3ea0a 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -2656,6 +2656,8 @@ void MediaPlayerPrivateGStreamer::configureElementPlatformQuirks(GstElement* ele
+         characteristics.add({ ElementRuntimeCharacteristics::HasAudio });
+     if (m_isLiveStream.value_or(false))
+         characteristics.add({ ElementRuntimeCharacteristics::IsLiveStream });
++    if (isMediaSource())
++        characteristics.add({ ElementRuntimeCharacteristics::IsMediaSource });
+ 
+     GStreamerQuirksManager::singleton().configureElement(element, WTFMove(characteristics));
+ }
+diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirkRialto.cpp b/Source/WebCore/platform/gstreamer/GStreamerQuirkRialto.cpp
+index 7ee10b553d0e..cd39677c31dc 100644
+--- a/Source/WebCore/platform/gstreamer/GStreamerQuirkRialto.cpp
++++ b/Source/WebCore/platform/gstreamer/GStreamerQuirkRialto.cpp
+@@ -76,7 +76,7 @@ bool GStreamerQuirkRialto::isPlatformSupported() const
+     return gst_plugin_feature_get_rank(GST_PLUGIN_FEATURE(sinkFactory.get())) > GST_RANK_MARGINAL;
+ }
+ 
+-void GStreamerQuirkRialto::configureElement(GstElement* element, const OptionSet<ElementRuntimeCharacteristics>&)
++void GStreamerQuirkRialto::configureElement(GstElement* element, const OptionSet<ElementRuntimeCharacteristics>& characteristics)
+ {
+     if (!g_strcmp0(G_OBJECT_TYPE_NAME(G_OBJECT(element)), "GstURIDecodeBin3")) {
+         GRefPtr<GstCaps> defaultCaps;
+@@ -85,6 +85,13 @@ void GStreamerQuirkRialto::configureElement(GstElement* element, const OptionSet
+         GST_INFO("Setting stop caps to %" GST_PTR_FORMAT, defaultCaps.get());
+         g_object_set(element, "caps", defaultCaps.get(), nullptr);
+     }
++    if (characteristics.contains(ElementRuntimeCharacteristics::IsMediaSource) &&
++        !g_strcmp0(G_OBJECT_TYPE_NAME(G_OBJECT(element)), "GstParseBin")) {
++        auto autoplugId = g_signal_lookup("autoplug-continue", G_OBJECT_TYPE (element));
++        g_signal_handlers_disconnect_matched(
++            element, static_cast<GSignalMatchType>(G_SIGNAL_MATCH_ID | G_SIGNAL_MATCH_DATA),
++            autoplugId, 0, nullptr, nullptr, GST_OBJECT_PARENT(element));
++    }
+ }
+ 
+ GstElement* GStreamerQuirkRialto::createAudioSink()
+diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp b/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
+index 47a8fc1280eb..d8dc499cae11 100644
+--- a/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
++++ b/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
+@@ -59,6 +59,14 @@ bool GStreamerQuirkWesteros::isPlatformSupported() const
+ 
+ void GStreamerQuirkWesteros::configureElement(GstElement* element, const OptionSet<ElementRuntimeCharacteristics>& characteristics)
+ {
++    // Decodebin3 will try to autoplug available elements until it reaches a raw video format.
++    // Set stop caps on decodebin3 to prevent it from decoding the stream.
++    // Instead, it should expose a pad with encoded caps that platform sink can handle directly as a sink element.
++    // That brings unwanted side effects for parsebin element.
++    // Decodebin3 installs "autoplug-continue" signal handler on parsebin to stop its autoplugging process
++    // when it reaches decodebin stop caps. We still may want to use some parsers elements,
++    // like webkithunderparser, so we need to disconnect the "autoplug-continue" signal handler
++    // and let parsebin to control the autoplugging process. (Default handler will stop on decoder element)
+     if (equalIgnoringASCIICase(G_OBJECT_TYPE_NAME(G_OBJECT(element)), "GstURIDecodeBin3")) {
+         GRefPtr<GstCaps> defaultCaps;
+         g_object_get(element, "caps", &defaultCaps.outPtr(), nullptr);
+@@ -67,6 +75,13 @@ void GStreamerQuirkWesteros::configureElement(GstElement* element, const OptionS
+         g_object_set(element, "caps", defaultCaps.get(), nullptr);
+         return;
+     }
++    if (characteristics.contains(ElementRuntimeCharacteristics::IsMediaSource) &&
++        equalIgnoringASCIICase(G_OBJECT_TYPE_NAME(G_OBJECT(element)), "GstParseBin")) {
++        auto autoplugId = g_signal_lookup("autoplug-continue", G_OBJECT_TYPE (element));
++        g_signal_handlers_disconnect_matched(
++            element, static_cast<GSignalMatchType>(G_SIGNAL_MATCH_ID | G_SIGNAL_MATCH_DATA),
++            autoplugId, 0, nullptr, nullptr, GST_OBJECT_PARENT(element));
++    }
+ 
+     if (!characteristics.contains(ElementRuntimeCharacteristics::IsMediaStream))
+         return;
+diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirks.h b/Source/WebCore/platform/gstreamer/GStreamerQuirks.h
+index c59a51081371..cdb656faa8ae 100644
+--- a/Source/WebCore/platform/gstreamer/GStreamerQuirks.h
++++ b/Source/WebCore/platform/gstreamer/GStreamerQuirks.h
+@@ -39,6 +39,7 @@ enum class ElementRuntimeCharacteristics : uint8_t {
+     HasVideo = 1 << 1,
+     HasAudio = 1 << 2,
+     IsLiveStream = 1 << 3,
++    IsMediaSource = 1 << 4,
+ };
+ 
+ class GStreamerQuirkBase {
+-- 
+2.25.1
+
