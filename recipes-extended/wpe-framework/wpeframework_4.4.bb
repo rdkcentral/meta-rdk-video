@@ -12,12 +12,12 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r39"
+PR = "r40"
 PV = "4.4.3"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=fix/improve-dangling-removal;name=thunder"
 
-SRCREV_thunder = "19100433e5517c743738bb2a9ed8ce2f79c10eaf"
+SRCREV_thunder = "1415626f4cabedd0f2946a57404cd88249a4d085"
 
 SRC_URI += "file://wpeframework-init \
            file://wpeframework.service.in \
@@ -151,6 +151,7 @@ EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
 do_install:append() {
     if ${@bb.utils.contains("DISTRO_FEATURES", "systemd", "true", "false", d)}
     then
+        sed -i '/ExecStart=-\/usr\/bin\/WPEFramework -b/i ExecStartPre=\/bin\/bash -c "\/opt\/wpe-pre.sh"' ${D}${systemd_system_unitdir}/wpeframework.service
         install -d ${D}${systemd_unitdir}/system
         cp ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
     else
