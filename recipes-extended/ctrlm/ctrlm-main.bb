@@ -113,10 +113,6 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('BLE_SERVICES', 'true', ' -DBLE_SER
 
 DEPENDS:append = " libevdev"
 
-# Advanced Secure Binding Support
-ASB ??= "false"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('ASB', 'true', ' -DASB=ON', '', d)}"
-
 # Authorization Support
 AUTH                ?= "true"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('AUTH', 'true', ' -DAUTH_ENABLED=ON', '', d)}"
