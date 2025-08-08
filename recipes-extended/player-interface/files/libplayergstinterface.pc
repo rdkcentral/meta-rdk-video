@@ -1,0 +1,10 @@
+prefix=/home/nhclpt070/AAMP/github/aamp/.libs/lib 
+exec_prefix=/home/nhclpt070/AAMP/github/aamp/.libs 
+libdir=/home/nhclpt070/AAMP/github/aamp/.libs/lib 
+includedir=/home/nhclpt070/AAMP/github/aamp/.libs/include 
+ 
+Name: playergstinterface 
+Description: player gstreamer interfaces library 
+Version: 1.0 
+Libs: -L${libdir} -lplayergstinterface 
+Cflags: -I${includedir}
