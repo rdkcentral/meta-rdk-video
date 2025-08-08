@@ -1,4 +1,4 @@
-From 539824266032d07ab97ed9d24b59ec8502589915 Mon Sep 17 00:00:00 2001
+From 95d575acd63f782279617f9ccd1508d1f4d40e7d Mon Sep 17 00:00:00 2001
 From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
 Date: Thu, 26 Jun 2025 15:38:13 +0200
 Subject: [PATCH] comcast - RDK-57915 - Track encrypted playback
@@ -24,6 +24,7 @@ Test Procedure:
     Launch Amazon and play "TV with Free Ads" video and observe the playback
     time logging, here note that any Ad playback inbetween will be excluded
 
+%% original patch: comcast-RDK-57915-Track-encrypted-playback.patch
 ---
  Source/WebCore/platform/SourcesGStreamer.txt  |  1 +
  .../gstreamer/MediaPlayerPrivateGStreamer.cpp | 15 +++++
@@ -36,22 +37,22 @@ Test Procedure:
  create mode 100644 Source/WebCore/platform/graphics/gstreamer/eme/MediaPlayerGStreamerEncryptedPlayTracker.h
 
 diff --git a/Source/WebCore/platform/SourcesGStreamer.txt b/Source/WebCore/platform/SourcesGStreamer.txt
-index 5c3e05e2679a..1cb61e4d5782 100644
+index 8157f5ff670d..a4c6aa823691 100644
 --- a/Source/WebCore/platform/SourcesGStreamer.txt
 +++ b/Source/WebCore/platform/SourcesGStreamer.txt
-@@ -87,6 +87,7 @@ platform/graphics/gstreamer/eme/CDMThunder.cpp
- platform/graphics/gstreamer/eme/GStreamerEMEUtilities.cpp
+@@ -88,6 +88,7 @@ platform/graphics/gstreamer/eme/GStreamerEMEUtilities.cpp
  platform/graphics/gstreamer/eme/WebKitCommonEncryptionDecryptorGStreamer.cpp
  platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp @no-unify
+ platform/graphics/gstreamer/eme/WebKitThunderParser.cpp @no-unify
 +platform/graphics/gstreamer/eme/MediaPlayerGStreamerEncryptedPlayTracker.cpp
  
  platform/graphics/gstreamer/mse/AppendPipeline.cpp
  platform/graphics/gstreamer/mse/GStreamerMediaDescription.cpp
 diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
-index 04e6549c3b7a..f23bdf4a3248 100644
+index 0d7a928c80a1..fba4bf6d08b9 100644
 --- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
 +++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
-@@ -224,6 +224,10 @@ MediaPlayerPrivateGStreamer::MediaPlayerPrivateGStreamer(MediaPlayer* player)
+@@ -227,6 +227,10 @@ MediaPlayerPrivateGStreamer::MediaPlayerPrivateGStreamer(MediaPlayer* player)
      ensureSeekFlags();
  
      fprintf(stderr, "HTML5 video: Player constructed [%p]\n", this);
@@ -62,7 +63,7 @@ index 04e6549c3b7a..f23bdf4a3248 100644
  }
  
  MediaPlayerPrivateGStreamer::~MediaPlayerPrivateGStreamer()
-@@ -1162,6 +1166,10 @@ void MediaPlayerPrivateGStreamer::setPlaybinURL(const URL& url)
+@@ -1164,6 +1168,10 @@ void MediaPlayerPrivateGStreamer::setPlaybinURL(const URL& url)
      m_url = URL { cleanURLString };
      GST_INFO_OBJECT(pipeline(), "Load %s", m_url.string().utf8().data());
      g_object_set(m_pipeline.get(), "uri", m_url.string().utf8().data(), nullptr);
@@ -73,7 +74,7 @@ index 04e6549c3b7a..f23bdf4a3248 100644
  }
  
  static void setSyncOnClock(GstElement* element, bool sync)
-@@ -2191,6 +2199,9 @@ void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
+@@ -2193,6 +2201,9 @@ void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
          updateStates();
          checkPlayingConsistency();
  
@@ -83,7 +84,7 @@ index 04e6549c3b7a..f23bdf4a3248 100644
          break;
      }
      case GST_MESSAGE_BUFFERING:
-@@ -2292,6 +2303,10 @@ void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
+@@ -2294,6 +2305,10 @@ void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
          } else if (gst_structure_has_name(structure, "webkit-web-src-has-eos")) {
              GST_DEBUG_OBJECT(pipeline(), "WebKitWebSrc has EOS");
              m_hasWebKitWebSrcSentEOS = true;
@@ -95,7 +96,7 @@ index 04e6549c3b7a..f23bdf4a3248 100644
              GST_DEBUG_OBJECT(pipeline(), "Unhandled element message: %" GST_PTR_FORMAT, structure);
          break;
 diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
-index 708fed7dd933..8ae38668a467 100644
+index 5f248726a164..edf9e7b8353d 100644
 --- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
 +++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
 @@ -73,6 +73,7 @@ typedef struct _GstMpegtsSection GstMpegtsSection;
@@ -106,7 +107,7 @@ index 708fed7dd933..8ae38668a467 100644
  #endif
  
  #if ENABLE(MEDIA_TELEMETRY)
-@@ -660,6 +661,10 @@ private:
+@@ -662,6 +663,10 @@ private:
      bool m_visible { false };
      bool m_suspended { false };
  
@@ -237,7 +238,7 @@ index 000000000000..4ebc9ec65624
 +
 +#endif // ENABLE(ENCRYPTED_MEDIA) && USE(GSTREAMER)
 diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp
-index 9c793e4f4171..e8a204133214 100644
+index 0c53197153be..4cb4003dcfb7 100644
 --- a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp
 +++ b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp
 @@ -37,6 +37,7 @@ using namespace WebCore;
@@ -248,7 +249,7 @@ index 9c793e4f4171..e8a204133214 100644
  };
  
  static const char* protectionSystemId(WebKitMediaCommonEncryptionDecrypt*);
-@@ -181,6 +182,14 @@ static bool decrypt(WebKitMediaCommonEncryptionDecrypt* decryptor, GstBuffer* iv
+@@ -177,6 +178,14 @@ static bool decrypt(WebKitMediaCommonEncryptionDecrypt* decryptor, GstBuffer* iv
      context.cdmProxyDecryptionClient = webKitMediaCommonEncryptionDecryptGetCDMProxyDecryptionClient(decryptor);
      bool result = priv->cdmProxy->decrypt(context, priv->inputCaps);
  
