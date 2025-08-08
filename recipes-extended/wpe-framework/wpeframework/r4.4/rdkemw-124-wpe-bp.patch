@@ -1,0 +1,12 @@
+diff --git a/Source/WPEProcess/Process.cpp b/Source/WPEProcess/Process.cpp
+index 213da58d..cc1c7ee4 100644
+--- a/Source/WPEProcess/Process.cpp
++++ b/Source/WPEProcess/Process.cpp
+@@ -598,6 +598,7 @@
+         WARNING_REPORTING_THREAD_SETCALLSIGN_GUARD(callsign.c_str());
+
+         #ifdef USE_BREAKPAD
++       printf("BREAKPAD ENABLED for WPEPROCESS\n");
+         google_breakpad::MinidumpDescriptor descriptor(options.PostMortemPath);
+         google_breakpad::ExceptionHandler eh(descriptor, NULL,
+             [](const google_breakpad::MinidumpDescriptor&, void*, bool succeeded)
