@@ -6,26 +6,26 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r9"
+PR  = "r15"
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
 DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-# Tip of the branch on June 27, 2025
-SRCREV = "700a86aab737b5224d8444bc085748c85c97da85"
+# Tip of the branch on Aug 07, 2025
+SRCREV = "a710083012198719609db9c917afe6c03db24f87"
 
 BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.46"
 SRC_URI = "${BASE_URI}"
 
 # Drop after PR is accepted
-SRC_URI += "file://2.46/1490_RDK-57261-Dynamic_insertion_of_decryptor.patch"
+SRC_URI += "file://2.46/1528.patch"
+SRC_URI += "file://2.46/1557.patch"
 
 # Comcast specific changes
 SRC_URI += "file://2.46/comcast-RDKTV-380-disable-privileges-loss.patch"
 SRC_URI += "file://2.46/comcast-WKIT-553-add-video-ave-mimetype-for-holepunc.patch"
 SRC_URI += "file://2.46/comcast-AMLOGIC-628-always-initialze-volume.patch"
-SRC_URI += "file://2.46/comcast-RDK-57261-Disable-optional-parser.patch"
 SRC_URI += "file://2.46/comcast-RDK-57741-sleep-150-microsecs-instead-of-s.patch"
 SRC_URI += "file://2.46/comcast-RDK-56287-rdkat-atspi2.patch"
 SRC_URI += "file://2.46/comcast-RDK-57771-Flush-AppendPipeline-resetParserState.patch"
@@ -49,6 +49,7 @@ SRC_URI += "file://2.46/comcast-WebRTC-keep-render-time-interpolation.patch"
 #SRC_URI += "file://2.46/comcast-RDKTV-28214-Quick-_exit.patch"
 #SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
 
+
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"
 PACKAGECONFIG[asan]                  = "-DENABLE_SANITIZERS=address,,gcc-sanitizers"
@@ -59,7 +60,7 @@ PACKAGECONFIG[documentation]         = "-DENABLE_DOCUMENTATION=ON,-DENABLE_DOCUM
 PACKAGECONFIG[dolbyvision]           = "-DENABLE_DV=ON,-DENABLE_DV=OFF,,"
 PACKAGECONFIG[encryptedmedia]        = "-DENABLE_ENCRYPTED_MEDIA=ON,-DENABLE_ENCRYPTED_MEDIA=OFF,"
 PACKAGECONFIG[experimental]          = "-DENABLE_EXPERIMENTAL_FEATURES=ON,-DENABLE_EXPERIMENTAL_FEATURES=OFF,"
-PACKAGECONFIG[fhd]                   = "-DVIDEO_DECODING_LIMIT=1920x1080@60,,"
+PACKAGECONFIG[fhd]                   = "-DVIDEO_DECODING_LIMIT=1920x1080@60,-DVIDEO_DECODING_LIMIT=3840x2160@60,"
 PACKAGECONFIG[gstreamergl]           = "-DUSE_GSTREAMER_GL=ON,-DUSE_GSTREAMER_GL=OFF,"
 PACKAGECONFIG[gstwebrtc]             = "-DUSE_GSTREAMER_WEBRTC=ON,-DUSE_GSTREAMER_WEBRTC=OFF, "
 PACKAGECONFIG[introspection]         = "-DENABLE_INTROSPECTION=ON,-DENABLE_INTROSPECTION=OFF, gobject-introspection-native"
@@ -88,6 +89,7 @@ PACKAGECONFIG[wpeplatform]           = "-DENABLE_WPE_PLATFORM=ON,-DENABLE_WPE_PL
 PACKAGECONFIG[wpeqtapi]              = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[cairo]                 = "-DUSE_CAIRO=ON -DUSE_SKIA=OFF,-DUSE_CAIRO=OFF,cairo"
 PACKAGECONFIG[externalholepunch]     = "-DUSE_EXTERNAL_HOLEPUNCH=ON,-DUSE_EXTERNAL_HOLEPUNCH=OFF,"
+PACKAGECONFIG[ftrace]                = "-DUSE_LINUX_FTRACE=ON,-DUSE_LINUX_FTRACE=OFF,"
 
 # Config options are no longer available in 2.46
 PACKAGECONFIG[2dcanvas]     = ""
