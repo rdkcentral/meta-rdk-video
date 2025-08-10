@@ -16,6 +16,7 @@ DEPENDS:append = " rdk-logger libparodus parodus virtual/vendor-devicesettings-h
 
 DEPENDS += " python-lxml-native"
 DEPENDS:append = " python3-lxml-native"
+DEPENDS += "rdmagent"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetooth-mgr', '',d)}"
 RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetooth-mgr', '',d)}"
@@ -117,6 +118,7 @@ INCLUDE_DIRS += "\
     -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/halif/ds-hal \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds-rpc \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmbus \
+        -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdm \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/tr69Bus \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/mfr \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/power \
