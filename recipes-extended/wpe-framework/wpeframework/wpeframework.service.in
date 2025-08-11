@@ -24,7 +24,7 @@ ExecStart=/bin/bash -c 'if [ -f /opt/WPEFramework/config.json ]; then exec /usr/
 # it will need corresponding code change in ThunderClientLibraries (power_controller) too.
 ExecStartPost=-/bin/sh -c '/bin/echo ${MAINPID} > /tmp/wpeframework.pid'
 ExecStartPost=/bin/touch /tmp/wpeframeworkstarted
-KillSignal=SIGTERM
+KillSignal=SIGKILL
 Restart=always
 
 [Install]
