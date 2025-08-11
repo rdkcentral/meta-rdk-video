@@ -33,7 +33,7 @@ THIS_SCRIPT=`basename "$0"`
 
 log ()
 {
-    echo "`/bin/timestamp` [$THIS_SCRIPT]: $*" >> /opt/logs/netsrvmgr.log
+    echo "`/bin/timestamp` [$THIS_SCRIPT]: $*" >> /opt/logs/wpa_supplicant.log
 }
 
 do_configure_p2p_wpa_args ()
