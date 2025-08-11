@@ -20,7 +20,7 @@ S = "${WORKDIR}/git"
 SRC_URI = "git://github.com/jincysam87/networkmanager.git;protocol=https;branch=feature/DELIA-68639"
 
 # Jul 30, 2025
-SRCREV = "521d834db0e138d0d0f331f9e1604ebd55e24a36"
+SRCREV = "5af19319526e3ac3c0bbd25c2219977bc483bfdc"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
