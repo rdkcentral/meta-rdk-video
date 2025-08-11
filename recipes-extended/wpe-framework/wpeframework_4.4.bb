@@ -53,7 +53,7 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/Update-Trace-Level-Logging-Logic.patch \
            file://r4.4/Activating_plugins_Logs_COMRPC.patch \
            file://r4.4/FirmwareUpdate_UptoDate.patch \
-           file://r4.4/RDKEMW-6261-improve-offloading-dangling-proxy-notification.patch \
+           file://r4.4/RDKEMW-6261-support-2-16-improve-offloading-dangling-proxy-notification.patch \
            "
 
 SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
