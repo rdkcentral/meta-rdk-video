@@ -35,7 +35,7 @@ S = "${WORKDIR}/git"
 
 inherit autotools pkgconfig coverity systemd
 
-SYSTEMD_SERVICE:${PN} = " rdkfwupgrader.service"
+SYSTEMD_SERVICE:${PN} += " rdkfwupgrader.service"
 
 FILES:${PN} += " ${bindir}/rdkfwupgrader \
                  ${base_libdir}/rdk/rdkfwupgrader_start.sh \
