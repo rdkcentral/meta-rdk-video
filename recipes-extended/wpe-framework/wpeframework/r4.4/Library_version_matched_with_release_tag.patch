@@ -14,7 +14,7 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 3959f484..42f2a687 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -19,9 +19,9 @@ cmake_minimum_required(VERSION 3.3)
+@@ -19,9 +19,10 @@ cmake_minimum_required(VERSION 3.3)
  
  project(WPEFramework)
  
@@ -24,6 +24,7 @@ index 3959f484..42f2a687 100644
 +set(VERSION_MAJOR 4)
 +set(VERSION_MINOR 4)
 +set(VERSION_PATCH 1)
++set(VERSION_REVISION 3)
  
  set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
  
