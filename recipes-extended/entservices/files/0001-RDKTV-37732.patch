@@ -1,13 +1,21 @@
 diff --git a/RemoteControl/RemoteControl.cpp b/RemoteControl/RemoteControl.cpp
-index 40a0734..b9de11d 100644
+index 40a0734..3f79044 100644
 --- a/RemoteControl/RemoteControl.cpp
 +++ b/RemoteControl/RemoteControl.cpp
-@@ -90,6 +90,9 @@ namespace WPEFramework {
+@@ -24,6 +24,7 @@
+ #include "UtilsJsonRpc.h"
+ #include "UtilsIarm.h"
+ #include "UtilsString.h"
++#include <cstdlib.h>
+ 
+ #include <exception>
+ 
+@@ -90,6 +91,9 @@ namespace WPEFramework {
  
          const string RemoteControl::Initialize(PluginHost::IShell* /* service */)
          {
 +            printf("RMDEBUG: Remote control initiliazed\n");
-+            int result = v_secure_system("/opt/Dp_reboot.sh");
++            int result = system("/opt/Dp_reboot.sh");
 +
              InitializeIARM();
              // On success return empty, to indicate there is no error text.
