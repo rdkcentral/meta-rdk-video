@@ -1,0 +1,32 @@
+diff --git a/Source/plugins/JSONRPC.h b/Source/plugins/JSONRPC.h
+index 63329bb2..4167adca 100644
+--- a/Source/plugins/JSONRPC.h
++++ b/Source/plugins/JSONRPC.h
+@@ -354,7 +354,17 @@ namespace PluginHost {
+             _versions.emplace_back(name, major, minor, patch);
+         }
+
+-        //
++        // Methods to Count the JSONRPC Communication
++        // ------------------------------------------------------------------------------------------------------------------------------
++        void LogJsonRpcCommunication(const string& method, const string& parameters)
++        {
++            static std::atomic<uint32_t> Count{0};
++            Registration info;  info.FromString(parameters);
++            Count++;
++            SYSLOG(Logging::Startup, (_T("Total JSON-RPC requests : %u, call sign: %s, method: %s"), Count.load(), info.Callsign.Value().c_str(),method.c_str()));
++        }
++
++       //
+         // Methods to send outbound event messages
+         // ------------------------------------------------------------------------------------------------------------------------------
+         uint32_t Notify(const string& event) const
+@@ -496,7 +506,7 @@ namespace PluginHost {
+             else {
+                 result = Invoke(this, channelId, id, token, method, parameters, response);
+             }
+-
++            LogJsonRpcCommunication(method,parameters);
+             return (result);
+         }
+         void Activate(IShell* service) override
