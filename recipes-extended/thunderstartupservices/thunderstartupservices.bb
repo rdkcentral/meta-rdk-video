@@ -10,6 +10,7 @@ DEPENDS = "systemd"
 
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
+    file://deactivate_plugin.sh \
 "
 S = "${WORKDIR}/git/systemd/system"
 
@@ -120,6 +121,11 @@ do_install:append() {
             fi
         fi
     done
+
+    install -d ${D}/lib/rdk
+    install -m 0755 ${WORKDIR}/deactivate_plugin.sh ${D}/lib/rdk/deactivate_plugin.sh
+
 }
 
 FILES:${PN} += "${systemd_system_unitdir} ${sysconfdir}/systemd/system"
+FILES:${PN} += "/lib/rdk/deactivate_plugin.sh"
