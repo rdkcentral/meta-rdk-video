@@ -228,8 +228,8 @@ index debde5808..a40721d4f 100644
  	            if (result != Core::ERROR_NONE) {
  	                result |= COM_ERROR;
 -	
-+                    if(isThunder && 0x0022 == message->Parameters().InterfaceId() && 4 == message->Parameters().MethodId())
-+                        fprintf(stderr, "bvanav-dbg: IUnknown.h ProxyStub::UnknownProxy::Invoke Error IPlugin::INotification impl: 0x%x methodId: %d result: %d tid: %d\n", message->Parameters().Implementation(), message->Parameters().MethodId(), result, gettid());
++                    if(isThunder && 0x0022 == message->Parameters().InterfaceId() && 4 == message->Parameters().MethodId()) {
++                        fprintf(stderr, "bvanav-dbg: IUnknown.h ProxyStub::UnknownProxy::Invoke Error IPlugin::INotification impl: 0x%x methodId: %d result: %d tid: %d\n", message->Parameters().Implementation(), message->Parameters().MethodId(), result, gettid()); }
  	                // Oops something failed on the communication. Report it.
  	                TRACE_L1("IPC method invocation failed for 0x%X, error: %d", message->Parameters().InterfaceId(), result);
  	            }
