@@ -15,7 +15,7 @@ SRC_URI += "file://RDKEMW-1007.patch"
 
 
 
-# Tag 1.14.2
+# Tag 1.15.0
 SRCREV_entservices-apis = "d2efd9505449e6e5e0b56a886eb4e3d4a82e9990"
 
 
