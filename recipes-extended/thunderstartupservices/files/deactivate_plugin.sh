@@ -1,4 +1,3 @@
-#!/bin/bash
 ##########################################################################
 # If not stated otherwise in this file or this component's LICENSE
 # file the following copyright and licenses apply:
@@ -18,7 +17,7 @@
 # limitations under the License.
 ##########################################################################
 
-
+#!/bin/bash
 # Check if callsign argument is provided
 if [ -z "$1" ]; then
   echo "Usage: $0 <callsign>"
