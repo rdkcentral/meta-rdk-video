@@ -51,7 +51,7 @@ CFLAGS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
-+# Y2K38_SAFETY Coverity Fix
+# Y2K38_SAFETY Coverity Fix
 CFLAGS:append   = " -D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64"
 CXXLAGS:append  = " -D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64"
 
