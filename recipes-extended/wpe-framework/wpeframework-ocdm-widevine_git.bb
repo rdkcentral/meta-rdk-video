@@ -5,14 +5,14 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=19a2b3c39737289f92c7991b16599360"
 include recipes-extended/wpe-framework/include/wpeframework-plugins.inc
 
 SRC_URI = "git://github.com/rdkcentral/widevine-rdk.git;${CMF_GITHUB_SRC_URI_SUFFIX}"
-SRCREV = "1.0.1"
+SRCREV = "5bf9018d7fddf9407540ccebcd45a6adeb3b6903"
 
 # Platform configurations
 DEPENDS += " ${platform-widevine-depends}"
 EXTRA_OECMAKE += " ${platform-widevine-flags}"
 RDEPENDS:${PN} += " ${platform-widevine-rdepends}"
 
-DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native rdkservices-apis"
+DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native entservices-apis"
 DEPENDS += "  gst-svp-ext gstreamer1.0"
 
 RDEPENDS:${PN} += " gst-svp-ext"
