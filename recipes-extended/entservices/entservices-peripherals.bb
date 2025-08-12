@@ -47,7 +47,7 @@ PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[motiondetection]      = "-DPLUGIN_MOTION_DETECTION=ON,,virtual/vendor-motiondetector-hal virtual/vendor-fpdriverlib,virtual/vendor-motiondetector-hal virtual/vendor-fpdriverlib"
+PACKAGECONFIG[motiondetection]      = "-DPLUGIN_MOTION_DETECTION=ON,,virtual/vendor-motiondetector-hal ,virtual/vendor-motiondetector-hal "
 PACKAGECONFIG[voicecontrol]         = "-DPLUGIN_VOICECONTROL=ON,-DPLUGIN_VOICECONTROL=OFF,iarmbus iarmmgrs ctrlm-headers,iarmbus ctrlm"
 PACKAGECONFIG[remotecontrol]        = "-DPLUGIN_REMOTECONTROL=ON,-DPLUGIN_REMOTECONTROL=OFF,iarmbus iarmmgrs ctrlm-headers,iarmbus ctrlm"
 PACKAGECONFIG[frontpanel]           = "-DPLUGIN_FRONTPANEL=ON,,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal,iarmbus devicesettings"
