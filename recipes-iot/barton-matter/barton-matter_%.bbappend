@@ -6,12 +6,11 @@ SRC_URI += " \
 "
 
 MATTER_ZAP_FILE = "${WORKDIR}/barton.zap"
+
 # Adding the zzz_generated tarball to the SRC_URI will unpack it into WORKDIR
 MATTER_ZZZ_GENERATED = "${WORKDIR}/zzz_generated"
 
-# Set persistent storage location for production use
-EXTRA_OECMAKE:remove = "-DMATTER_CONF_DIR=/tmp"
-EXTRA_OECMAKE += "-DMATTER_CONF_DIR=/var/lib/my-product"
+MATTER_CONF_DIR = "/var/lib/my-product"
 
 do_install:append() {
     cp -r "${S}/third_party/jsoncpp/repo/include/"* "${D}${includedir}/matter/"
