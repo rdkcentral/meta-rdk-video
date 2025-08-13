@@ -6,7 +6,7 @@ index 213da58d..cc1c7ee4 100644
          WARNING_REPORTING_THREAD_SETCALLSIGN_GUARD(callsign.c_str());
 
          #ifdef USE_BREAKPAD
-+       printf("USE_BREAKPAD_ENABLED:[PID-%d][TID-%ld]PostMortemPath-%s", getpid(),(long)syscall(SYS_gettid),options.PostMortemPath);
++       printf("USE_BREAKPAD_ENABLED:[PID-%d][TID-%ld]PostMortemPath-%s", getpid(),(long)syscall(SYS_gettid),options.PostMortemPath.c_str());
          google_breakpad::MinidumpDescriptor descriptor(options.PostMortemPath);
          google_breakpad::ExceptionHandler eh(descriptor, NULL,
              [](const google_breakpad::MinidumpDescriptor&, void*, bool succeeded)
