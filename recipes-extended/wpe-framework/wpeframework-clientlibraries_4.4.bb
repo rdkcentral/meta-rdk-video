@@ -28,7 +28,8 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-error-handling-if-session-is-not-valid.patch \
            file://r4.4/0001-Add-vault-platform-case.patch \
            file://r4.4/0001-DELIA-64727-Prealloc-secure-memory-before-decrypt.patch \
-          "
+           file://r4.4/0001-RDKEMW-7064-Dont-decrypt-fake-buffer-is-revoke-has-b.patch \
+           "
 
 # Oct 17, 2023
 SRCREV_wpeframework-clientlibraries = "699f6c5f83aaffafdfdb75c01b281f292287f6ce"
