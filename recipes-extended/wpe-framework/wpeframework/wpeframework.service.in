@@ -1,5 +1,5 @@
 [Unit]
-Description=wpeframework
+Description=wpeframework-Thunder RPC version-R4.4.3
 Wants= local-fs.target
 After= local-fs.target
 
@@ -23,8 +23,6 @@ ExecStart=/bin/bash -c 'if [ -f /opt/WPEFramework/config.json ]; then exec /usr/
 # it will need corresponding code change in ThunderClientLibraries (power_controller) too.
 ExecStartPost=-/bin/sh -c '/bin/echo ${MAINPID} > /tmp/wpeframework.pid'
 ExecStartPost=/bin/touch /tmp/wpeframeworkstarted
-ExecStop=/usr/bin/killall -9 WPEFramework
-ExecStopPost=/usr/bin/killall -9 WPEProcess
 KillSignal=SIGKILL
 Restart=always
 
