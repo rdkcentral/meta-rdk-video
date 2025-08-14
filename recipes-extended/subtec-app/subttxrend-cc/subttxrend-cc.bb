@@ -9,7 +9,7 @@ DEPENDS = "subttxrend-common subttxrend-gfx subttxrend-protocol"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-4206"
+SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-cc"
 
 #
