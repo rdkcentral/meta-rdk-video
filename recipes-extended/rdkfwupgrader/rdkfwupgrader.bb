@@ -38,8 +38,6 @@ inherit autotools pkgconfig coverity systemd
 do_install:append () {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/rdkfwupgrader.service ${D}${systemd_unitdir}/system
-    install -d ${D}${sysconfdir}/systemd/system/ntp-time-sync.target.wants
-    ln -sf ${systemd_system_unitdir}/rdkfwupgrader.service ${D}${sysconfdir}/systemd/system/ntp-time-sync.target.wants/rdkfwupgrader.service
 }
 SYSTEMD_SERVICE:${PN} += "rdkfwupgrader.service"
 SYSTEMD_AUTO_ENABLE:${PN} = "enable"
