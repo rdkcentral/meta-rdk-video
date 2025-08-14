@@ -35,11 +35,17 @@ S = "${WORKDIR}/git"
 
 inherit autotools pkgconfig coverity systemd
 
-SYSTEMD_SERVICE:${PN}:remove = " rdkfwupgrader.service rdkfwupgrader.path"
+do_install:append () {
+    install -d ${D}${systemd_unitdir}/system
+    install -m 0644 ${S}/rdkfwupgrader.service ${D}${systemd_unitdir}/system
+}
+SYSTEMD_SERVICE:${PN} += "rdkfwupgrader.service"
+SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 
-FILES:${PN}:remove = " ${bindir}/rdkfwupgrader \
+FILES:${PN} += " ${bindir}/rdkfwupgrader \
                  ${base_libdir}/rdk/rdkfwupgrader_start.sh \
                  ${base_libdir}/rdk/rdkfwupgrader_check_now.sh \
+		 ${systemd_unitdir}/system \
                  ${base_libdir}/rdk/rdkfwupgrader_abort_reboot.sh "
 
 INSANE_SKIP:${PN}:append = " installed-vs-shipped"
