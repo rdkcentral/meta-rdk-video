@@ -1,0 +1,14 @@
+diff -upr a/Source/cryptography/Cryptography.cpp b/Source/cryptography/Cryptography.cpp
+--- a/Source/cryptography/Cryptography.cpp	2025-04-18 03:39:14.047491329 +0300
++++ b/Source/cryptography/Cryptography.cpp	2025-05-02 01:46:12.219180519 +0300
+@@ -34,8 +34,8 @@ namespace WPEFramework {
+ namespace Implementation {
+     static constexpr uint16_t TimeOut = 3000;
+     static constexpr const TCHAR* PluginConnector = "/tmp/communicator";
+-    static constexpr const TCHAR* Callsign = "Svalbard";
+-    static constexpr const TCHAR* CryptographyConnector = "/tmp/svalbard";
++    static constexpr const TCHAR* Callsign = "org.rdk.Cryptography";
++    static constexpr const TCHAR* CryptographyConnector = "/tmp/icryptography";
+ 
+     class CryptographyLink : public RPC::SmartInterfaceType<PluginHost::IPlugin> {
+     private:
