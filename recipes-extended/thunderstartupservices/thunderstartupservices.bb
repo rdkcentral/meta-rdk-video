@@ -96,6 +96,30 @@ do_install:append() {
             sed -i '/^\[Service\]/i ConditionPathExists=/tmp/wpeframeworkstarted' "$SERVICE"
         fi
     fi
+
+    SERVICE_DIR="${D}${systemd_system_unitdir}"
+
+    for x in ${THUNDER_STARTUP_SERVICES}; do
+        SERVICE_FILE="${SERVICE_DIR}/${x}"
+
+        if [ -f "$SERVICE_FILE" ] && grep -q '^ExecStart=.*PluginActivator' "$SERVICE_FILE"; then
+            CALLSIGN=$(sed -n -E 's/.*PluginActivator\s+([^ ]+).*/\1/p' "$SERVICE_FILE")
+
+            if [ -n "$CALLSIGN" ]; then
+                # Check if ExecStop with PluginActivator is already present
+                if ! grep -q "^ExecStop=/lib/rdk/deactivate_plugin.sh $CALLSIGN" "$SERVICE_FILE"; then
+                    # If ExecStop with the PluginActivator is not present, add it
+                    if grep -q '^ExecStartPost=' "$SERVICE_FILE"; then
+                        # If ExecStartPost exists, add ExecStop after it
+                        sed -i "/^ExecStartPost=/a ExecStop=/usr/bin/PluginActivator -x $CALLSIGN" "$SERVICE_FILE"
+                    else
+                        # Else insert ExecStop after ExecStart
+                        sed -i "/^ExecStart=.*PluginActivator/a ExecStop=/usr/bin/PluginActivator -x $CALLSIGN" "$SERVICE_FILE"
+                    fi
+                fi
+            fi
+        fi
+    done
 }
 
 FILES:${PN} += "${systemd_system_unitdir} ${sysconfdir}/systemd/system"
