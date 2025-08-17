@@ -39,7 +39,7 @@ do_install:append () {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/rdkfwupgrader.service ${D}${systemd_unitdir}/system
 }
-SYSTEMD_SERVICE:${PN} += "rdkfwupgrader.service"
+SYSTEMD_SERVICE:${PN} += " rdkfwupgrader.service"
 SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 
 FILES:${PN} += " ${bindir}/rdkfwupgrader \
