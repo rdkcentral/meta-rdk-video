@@ -27,7 +27,7 @@ index 213da58d..cc1c7ee4 100644
                  Add(_T("volatilepath"), &VolatilePath);
                  Add(_T("proxystubpath"), &ProxyStubPath);
                  Add(_T("postmortempath"), &PostMortemPath);
-+               printf("constructor:PostMortemPath:%s",config.PostMortemPath.Value().c_str());
++               printf("constructor:PostMortemPath:%s",PostMortemPath.Value().c_str());
                  Add(_T("communicator"), &Communicator);
                  Add(_T("signature"), &Signature);
                  Add(_T("idletime"), &IdleTime);
