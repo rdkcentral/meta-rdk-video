@@ -126,6 +126,15 @@ Index: git/Utils/PluginActivator/source/main.cpp
          { nullptr, 0, nullptr, 0 }
      };
 
+@@ -65,7 +69,7 @@ static void parseArgs(const int argc, char** argv)
+     int option;
+     int longindex;
+
+-    while ((option = getopt_long(argc, argv, "hr:d:", longopts, &longindex)) != -1) {
++    while ((option = getopt_long(argc, argv, "hr:d:x", longopts, &longindex)) != -1) {
+         switch (option) {
+         case 'h':
+             displayUsage();
 @@ -85,6 +89,9 @@ static void parseArgs(const int argc, char** argv)
                  exit(EXIT_FAILURE);
              }
