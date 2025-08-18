@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=94800ec97dc80e9d6e0c228c2100adc2"
 
 PV = "${RDK_RELEASE}"
 SRC_URI = "${CMF_GIT_ROOT}/rdkv/tools/tdkv;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GIT_BRANCH};name=tdk"
-SRCREV_tdk = "${AUTOREV}"
+SRCREV_tdk = "b684b5a76f8520ebac8cd228c10c77d4581a2ba8"
 SRCREV_FORMAT = "tdk"
 
 S = "${WORKDIR}/git"
