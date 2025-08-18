@@ -19,7 +19,7 @@ index 213da58d..cc1c7ee4 100644
  #endif
                  , ProxyStubPath()
 -                , PostMortemPath(_T("/opt/minidumps"))
-+                , PostMortemPath(_T("/opt/secure/minidumps"))
++                , PostMortemPath(_T("/opt/minidumps")) 
  #ifdef __WINDOWS__
                  , Communicator(_T("127.0.0.1:7889"))
  #else
@@ -51,3 +51,16 @@ index 213da58d..cc1c7ee4 100644
                      _options.Add(_T("-P")).Add('"' + config.PostMortemPath() + '"');
                  }
                  if (instance.SystemRootPath().empty() == false) {
+diff --git a/Source/WPEFramework/GenericConfig.cmake b/Source/WPEFramework/GenericConfig.cmake
+index 213da58d..cc1c7ee4 100644
+--- a/Source/WPEFramework/GenericConfig.cmake
++++ b/Source/WPEFramework/GenericConfig.cmake
+@@ -29,7 +29,7 @@
+ set(WEBSERVER_PATH "/boot/www" CACHE STRING "Root path for the HTTP server")
+ set(WEBSERVER_PORT 8080 CACHE STRING "Port for the HTTP server")
+ set(PROXYSTUB_PATH "${CMAKE_INSTALL_PREFIX}/lib/${NAMESPACE_LIB}/proxystubs" CACHE STRING "Proxy stub path")
+-set(POSTMORTEM_PATH "/opt/minidumps" CACHE STRING "Core file path to do the postmortem of the crash")
++set(POSTMORTEM_PATH "/opt/secure/minidumps" CACHE STRING "Core file path to do the postmortem of the crash")
+ set(MESSAGECONTROL_PATH "MessageDispatcher" CACHE STRING "MessageControl base path to create message files")
+ set(MESSAGING_PORT 0 CACHE STRING "The port for the messaging")
+ set(CONFIG_INSTALL_PATH "/etc/${NAMESPACE}" CACHE STRING "Install location of the configuration")
