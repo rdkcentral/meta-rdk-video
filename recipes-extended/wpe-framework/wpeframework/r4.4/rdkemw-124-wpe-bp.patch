@@ -10,6 +10,7 @@ index 213da58d..cc1c7ee4 100644
          google_breakpad::MinidumpDescriptor descriptor(options.PostMortemPath);
          google_breakpad::ExceptionHandler eh(descriptor, NULL,
              [](const google_breakpad::MinidumpDescriptor&, void*, bool succeeded)
+diff --git a/Source/WPEFramework/Config.h b/Source/WPEFramework/Config.h
 index 213da58d..cc1c7ee4 100644
 --- a/Source/WPEFramework/Config.h
 +++ b/Source/WPEFramework/Config.h
@@ -22,3 +23,31 @@ index 213da58d..cc1c7ee4 100644
  #ifdef __WINDOWS__
                  , Communicator(_T("127.0.0.1:7889"))
  #else
+@@ -405,6 +405,7 @@
+                 Add(_T("volatilepath"), &VolatilePath);
+                 Add(_T("proxystubpath"), &ProxyStubPath);
+                 Add(_T("postmortempath"), &PostMortemPath);
++               printf("constructor:PostMortemPath:%s",config.PostMortemPath.Value());
+                 Add(_T("communicator"), &Communicator);
+                 Add(_T("signature"), &Signature);
+                 Add(_T("idletime"), &IdleTime);
+@@ -659,6 +660,7 @@
+                     _pluginConfigPath = Core::Directory::Normalize(config.Observe.PluginConfigPath.Value());
+                 }
+                 _postMortemPath = Core::Directory::Normalize(config.PostMortemPath.Value());
++               printf("PostMortem_Path:%s\n",config.PostMortemPath.Value());
+                 _appPath = Core::File::PathName(Core::ProcessInfo().Executable());
+                 _hashKey = config.Signature.Value();
+                 _communicator = Core::NodeId(config.Communicator.Value().c_str());
+diff --git a/Source/com/Communicator.h b/Source/com/Communicator.h
+index 213da58d..cc1c7ee4 100644
+--- a/Source/com/Communicator.h
++++ b/Source/com/Communicator.h
+@@ -545,6 +545,7 @@
+                     _options.Add(_T("-m")).Add('"' + config.ProxyStubPath() + '"');
+                 }
+                 if (config.PostMortemPath().empty() == false) {
++                   printf("Communicator-PostmortemPath-%s\n",config.PostMortemPath().Value());
+                     _options.Add(_T("-P")).Add('"' + config.PostMortemPath() + '"');
+                 }
+                 if (instance.SystemRootPath().empty() == false) {
