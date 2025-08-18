@@ -107,7 +107,7 @@ do_install:append() {
 
             if [ -n "$CALLSIGN" ]; then
                 # Check if ExecStop with PluginActivator is already present
-                if ! grep -q "^ExecStop=/lib/rdk/deactivate_plugin.sh $CALLSIGN" "$SERVICE_FILE"; then
+                if ! grep -q "^ExecStop=/usr/bin/PluginActivator -x $CALLSIGN" "$SERVICE_FILE"; then
                     # If ExecStop with the PluginActivator is not present, add it
                     if grep -q '^ExecStartPost=' "$SERVICE_FILE"; then
                         # If ExecStartPost exists, add ExecStop after it
