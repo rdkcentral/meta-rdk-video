@@ -47,7 +47,7 @@ index 213da58d..cc1c7ee4 100644
                      _options.Add(_T("-m")).Add('"' + config.ProxyStubPath() + '"');
                  }
                  if (config.PostMortemPath().empty() == false) {
-+                   printf("Communicator-PostmortemPath-%s\n",config.PostMortemPath().Value());
++                   printf("Communicator-PostmortemPath-%s\n",config.PostMortemPath());
                      _options.Add(_T("-P")).Add('"' + config.PostMortemPath() + '"');
                  }
                  if (instance.SystemRootPath().empty() == false) {
