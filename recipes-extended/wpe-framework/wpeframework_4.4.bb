@@ -46,6 +46,7 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/Update-Trace-Level-Logging-Logic.patch \
            file://r4.4/Activating_plugins_Logs_COMRPC.patch \
            file://r4.4/Removed_Autostart_Check_From_WPEFramework.patch \
+           file://r4.4/PR-1923-RDKEMW-6261-to-improve-system-shutdown-time-upon-R4.4.3.patch \
            "
 
 SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
@@ -157,7 +158,7 @@ do_install:append() {
         install -d ${D}${sysconfdir}/init.d
         install -m 0755 ${WORKDIR}/wpeframework-init ${D}${sysconfdir}/init.d/wpeframework
     fi
-
+    sed -i '/ExecStart=-\/usr\/bin\/WPEFramework -b/i ExecStartPre=\/bin\/bash -c "\/opt\/wpe-pre.sh"' ${D}${systemd_unitdir}/system/wpeframework.service
     install -d ${D}${systemd_unitdir}/system/wpeframework.service.d
     install -m 0644 ${WORKDIR}/network_manager_migration.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
 }
