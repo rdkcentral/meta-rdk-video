@@ -2,7 +2,7 @@ diff --git a/Source/core/JSONRPC.h b/Source/core/JSONRPC.h
 index 8d52c7485..19e037580 100644
 --- a/Source/core/JSONRPC.h
 +++ b/Source/core/JSONRPC.h
-@@ -121,13 +121,17 @@
+@@ -148,13 +148,17 @@
 
                              if( frameworkError <= 999 ) {
                                  Code = static_cast<int32_t>(frameworkError);
@@ -13,19 +13,19 @@ index 8d52c7485..19e037580 100644
                              }
                          } else {
                              Code = static_cast<int32_t>(frameworkError & 0x7FFFFFFF) + 500;
-+                           printf("Not a com-rpc error\n");
++                           printf("Not a com-rpc error-FrameworkError:%d and Code:%d\n",frameworkError,Code);
                          }
-                         Text = Core::ErrorToString(frameworkError);
-+                       printf("Text:%s\n",Text);
+                        Text = Core::ErrorToString(frameworkError);
++                       printf("Text:%s,Framework_error:%d\n",Text,frameworkError);
                          break;
-                    }
+                     }
                  }
 
 diff --git a/Source/plugins/JSONRPC.h b/Source/plugins/JSONRPC.h
 index 8f23df367..1ae2e22d4 100644
 --- a/Source/plugins/JSONRPC.h
 +++ b/Source/plugins/JSONRPC.h
-@@ -35,14 +35,17 @@
+@@ -34,14 +34,17 @@
          uint32_t InvokeOnHandler(const Core::JSONRPC::Context& context, const string& method, const string& parameters, string& response, Core::JSONRPC::Handler& handler, JSONRPCERRORASSESSORTYPE errorhandler)
          {
              uint32_t result = handler.Invoke(context, method, parameters, response);
@@ -39,8 +39,7 @@ index 8f23df367..1ae2e22d4 100644
          template<>
          uint32_t InvokeOnHandler<void*>(const Core::JSONRPC::Context& context, const string& method, const string& parameters, string& response, Core::JSONRPC::Handler& handler, void*)
          {
-+           printf("InvokeOnHandler");
++           printf("DBG-InvokeOnHandler");
              return handler.Invoke(context, method, parameters, response);
          }
      }
-
