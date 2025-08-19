@@ -1,0 +1,41 @@
+From d2fd7efe48b01623aa6f54d3ae197e8529d2469e Mon Sep 17 00:00:00 2001
+From: Adam Stolcenburg <adam_stolcenburg@comcast.com>
+Date: Tue, 29 Oct 2024 05:28:29 +0100
+Subject: [PATCH] PREMIUMAPP-2985 Add rdk_enable_rialto option
+
+The rdk_enable_rialto option allows to enable Rialto support.
+At the moment when this option is active the implementation
+links to the libocdmRialto library instead of libocdm.
+
+---
+ src/third_party/starboard/rdk/shared/BUILD.gn | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/third_party/starboard/rdk/shared/BUILD.gn b/src/third_party/starboard/rdk/shared/BUILD.gn
+index 93500a70..b6d9cfd3 100644
+--- a/src/third_party/starboard/rdk/shared/BUILD.gn
++++ b/src/third_party/starboard/rdk/shared/BUILD.gn
+@@ -34,6 +34,7 @@ declare_args() {
+   rdk_enable_securityagent = true
+   rdk_enable_ocdm = true
+   rdk_enable_rfc_api = false
++  rdk_enable_rialto = false
+ }
+ 
+ pkg_config("glib") {
+@@ -77,7 +78,11 @@ if (rdk_enable_securityagent) {
+ 
+ if (rdk_enable_ocdm) {
+   pkg_config("ocdm") {
+-    packages = [ "ocdm" ]
++    if (rdk_enable_rialto) {
++      packages = [ "ocdmRialto" ]
++    } else {
++      packages = [ "ocdm" ]
++    }
+     defines = [ "HAS_OCDM=1" ]
+   }
+ }
+-- 
+2.34.1
+
