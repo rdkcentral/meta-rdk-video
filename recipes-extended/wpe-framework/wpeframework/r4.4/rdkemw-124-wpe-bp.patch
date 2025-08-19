@@ -11,3 +11,30 @@ index 213da58d..cc1c7ee4 100644
  set(MESSAGECONTROL_PATH "MessageDispatcher" CACHE STRING "MessageControl base path to create message files")
  set(MESSAGING_PORT 0 CACHE STRING "The port for the messaging")
  set(CONFIG_INSTALL_PATH "/etc/${NAMESPACE}" CACHE STRING "Install location of the configuration")
+diff --git a/Source/WPEFramework/CMakeLists.txt b/Source/WPEFramework/CMakeLists.txt 
+index 13fe9d59d..17ba9459f 100644
+--- a/Source/WPEFramework/CMakeLists.txt 
++++ b/Source/WPEFramework/CMakeLists.txt 
+@@ -30,7 +30,8 @@
+         SystemInfo.cpp
+         PostMortem.cpp
+         )
+-
++separate_arguments(BREAKPAD_LDFLAGS)
++target_link_libraries(${TARGET} PRIVATE "${BREAKPAD_LDFLAGS}")
+ target_compile_definitions(${TARGET}
+         PRIVATE
+           NAMESPACE=${NAMESPACE}
+diff --git a/Source/WPEFramework/PluginHost.cpp b/Source/WPEFramework/PluginHost.cpp
+index 8b7ac4a44..ba2de715f 100644
+--- a/Source/WPEFramework/PluginHost.cpp
++++ b/Source/WPEFramework/PluginHost.cpp
+@@ -513,7 +513,7 @@
+             memset(&sa, 0, sizeof(struct sigaction));
+             sigemptyset(&sa.sa_mask);
+             sa.sa_handler = ExitDaemonHandler;
+-            sa.sa_flags = 0; // not SA_RESTART!;
++            sa.sa_flags = SA_SIGINFO; // not SA_RESTART!;
+
+             sigaction(SIGINT, &sa, nullptr);
+             sigaction(SIGTERM, &sa, nullptr);
