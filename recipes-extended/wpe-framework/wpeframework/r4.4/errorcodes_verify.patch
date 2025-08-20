@@ -6,17 +6,17 @@ index 8d52c7485..19e037580 100644
 
                              if( frameworkError <= 999 ) {
                                  Code = static_cast<int32_t>(frameworkError);
-+                               printf("If-FrameworkError:%d and Code:%d\n",frameworkError,Code);
++                               printf("If-FrameworkError:%d and Code:%d\n",frameworkError,Code.Value());
                              } else {
                                  Code = -31000 - static_cast<int32_t>(frameworkError);
-+                               printf("Else-FrameworkError:%d and Code:%d\n",frameworkError,Code);
++                               printf("Else-FrameworkError:%d and Code:%d\n",frameworkError,Code.Value());
                              }
                          } else {
                              Code = static_cast<int32_t>(frameworkError & 0x7FFFFFFF) + 500;
-+                           printf("Not a com-rpc error-FrameworkError:%d and Code:%d\n",frameworkError,Code);
++                           printf("Not a com-rpc error-FrameworkError:%d and Code:%d\n",frameworkError,Code.Value());
                          }
                         Text = Core::ErrorToString(frameworkError);
-+                       printf("Text:%s,Framework_error:%d\n",Text,frameworkError);
++                       printf("Text:%s,Framework_error:%d\n",Text.c_str(),frameworkError);
                          break;
                      }
                  }
