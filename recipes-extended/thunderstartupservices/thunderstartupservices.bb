@@ -120,8 +120,6 @@ do_install:append() {
             fi
         fi
 
-        sed -i '/^\[Service\]/a # Reduce stop timeout from default 90s to 30s between SIGTERM and SIGKILL\nTimeoutStopSec=30s' "$SERVICE_FILE"
-
     done
 }
 
