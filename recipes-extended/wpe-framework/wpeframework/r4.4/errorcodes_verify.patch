@@ -16,7 +16,7 @@ index 8d52c7485..19e037580 100644
 +                           printf("Not a com-rpc error-FrameworkError:%d and Code:%d\n",frameworkError,Code.Value());
                          }
                         Text = Core::ErrorToString(frameworkError);
-+                       printf("Text:%s,Framework_error:%d\n",Text.c_str(),frameworkError);
++                       printf("Text:%s,Framework_error:%d\n",Text.Value().c_str(),frameworkError);
                          break;
                      }
                  }
