@@ -88,7 +88,9 @@ do_install() {
 }
 
 do_install:append() {
-    SERVICE="${D}${systemd_system_unitdir}/wpeframework-displaysettings.service"
+    SERVICE_DIR="${D}${systemd_system_unitdir}"
+
+    SERVICE="${SERVICE_DIR}/wpeframework-displaysettings.service"
 
     if [ -f "$SERVICE" ]; then
         # Insert the line before [Service], only if not already present
@@ -97,24 +99,32 @@ do_install:append() {
         fi
     fi
 
-    SERVICE_DIR="${D}${systemd_system_unitdir}"
+    # IPControl service to add securemount dependencies
+    IP_SERVICE="${SERVICE_DIR}/wpeframework-ipcontrol.service"
+    if [ -f "$IP_SERVICE" ]; then
+        # Append securemount.service to the existing After= line
+        sed -i '/^After=/ s/$/ securemount.service/' "$IP_SERVICE"
+
+        # Add RequiresMountsFor=/opt/secure immediately after the After= line
+        sed -i '/^After=/a RequiresMountsFor=/opt/secure' "$IP_SERVICE"
+    fi
+
+
+    # Ensure all services are in proper Unix LF format
+    find "$SERVICE_DIR" -type f -name "*.service" -exec sed -i 's/\r$//' {} +
 
     for x in ${THUNDER_STARTUP_SERVICES}; do
         SERVICE_FILE="${SERVICE_DIR}/${x}"
 
-        if [ -f "$SERVICE_FILE" ] && grep -q '^ExecStart=.*PluginActivator' "$SERVICE_FILE"; then
-            CALLSIGN=$(sed -n -E 's/.*PluginActivator\s+([^ ]+).*/\1/p' "$SERVICE_FILE")
+        if grep -q '^ExecStart=.*PluginActivator' "$SERVICE_FILE"; then
+            CALLSIGN=$(sed -n -E 's/.*PluginActivator.*[[:space:]]+([A-Za-z0-9_.-]+)$/\1/p' "$SERVICE_FILE")
 
             if [ -n "$CALLSIGN" ]; then
-                # Check if ExecStop with PluginActivator is already present
-                if ! grep -q "^ExecStop=/usr/bin/PluginActivator -x $CALLSIGN" "$SERVICE_FILE"; then
-                    # If ExecStop with the PluginActivator is not present, add it
+                if ! grep -q "^ExecStop=/usr/bin/PluginActivator.*$CALLSIGN" "$SERVICE_FILE"; then
                     if grep -q '^ExecStartPost=' "$SERVICE_FILE"; then
-                        # If ExecStartPost exists, add ExecStop after it
-                        sed -i "/^ExecStartPost=/a ExecStop=/usr/bin/PluginActivator -x $CALLSIGN" "$SERVICE_FILE"
+                        sed -i "/^ExecStartPost=/a ExecStop=/usr/bin/PluginActivator -r 5 -x $CALLSIGN" "$SERVICE_FILE"
                     else
-                        # Else insert ExecStop after ExecStart
-                        sed -i "/^ExecStart=.*PluginActivator/a ExecStop=/usr/bin/PluginActivator -x $CALLSIGN" "$SERVICE_FILE"
+                        sed -i "/^ExecStart=.*PluginActivator/a ExecStop=/usr/bin/PluginActivator -r 5 -x $CALLSIGN" "$SERVICE_FILE"
                     fi
                 fi
             fi
