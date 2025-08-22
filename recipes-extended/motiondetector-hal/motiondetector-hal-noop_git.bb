@@ -2,7 +2,7 @@ SUMMARY = "Motion Detector HAL llama"
 SECTION = "console/utils"
 
 LICENSE = "APACHE-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
+LIC_FILES_CHKSUM = "file://${LAYERDIR}/licenses/Apache2.0;md5=d273d63619c9aeaf15cdaf76422c4f87"
 
 PROVIDES += "virtual/vendor-motiondetector-hal"
 RPROVIDES:${PN} = "virtual/vendor-motiondetector-hal"
