@@ -1,0 +1,59 @@
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index 0c22b254a..f2267882d 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -2595,17 +2595,17 @@ namespace PluginHost {
+ 
+                 void Dangling(const Core::IUnknown* source, const uint32_t interfaceId) override
+                 {
+-                    _adminLock.Lock();
++                    // _adminLock.Lock();
+ 
+-                    _parent.Dangling(source, interfaceId);
++                    // _parent.Dangling(source, interfaceId);
+ 
+-                    for (auto& observer : _requestObservers) {
+-                        observer->Dangling(source, interfaceId);
+-                    }
++                    // for (auto& observer : _requestObservers) {
++                    //     observer->Dangling(source, interfaceId);
++                    // }
+ 
+-                    _adminLock.Unlock();
++                    // _adminLock.Unlock();
+ 
+-                    TRACE(Activity, (_T("Dangling resource cleanup of interface: 0x%X"), interfaceId));
++                    // TRACE(Activity, (_T("Dangling resource cleanup of interface: 0x%X"), interfaceId));
+                 }
+ 
+                 void Revoke(const Core::IUnknown* remote, const uint32_t interfaceId) override
+diff --git a/Source/com/IUnknown.h b/Source/com/IUnknown.h
+index 8f66284f1..e8cfa3e43 100644
+--- a/Source/com/IUnknown.h
++++ b/Source/com/IUnknown.h
+@@ -290,15 +290,18 @@ namespace ProxyStub {
+         }
+         inline uint32_t Invoke(Core::ProxyType<RPC::InvokeMessage>& message, const uint32_t waitTime = RPC::CommunicationTimeOut) const
+         {
+-            ASSERT(_channel.IsValid() == true);
+-
+-            uint32_t result = _channel->Invoke(message, waitTime);
++            // ASSERT(_channel.IsValid() == true);
++            uint32_t result = Core::ERROR_UNAVAILABLE | COM_ERROR;
+ 
+-            if (result != Core::ERROR_NONE) {
+-                result |= COM_ERROR;
++            if (_channel.IsValid() == true) {
++                result = _channel->Invoke(message, waitTime);
+ 
+-                // Oops something failed on the communication. Report it.
+-                TRACE_L1("IPC method invocation failed for 0x%X, error: %d", message->Parameters().InterfaceId(), result);
++                if (result != Core::ERROR_NONE) {
++                    result |= COM_ERROR;
++                
++                    // Oops something failed on the communication. Report it.
++                    TRACE_L1("IPC method invocation failed for 0x%X, error: %d", message->Parameters().InterfaceId(), result);
++                }
+             }
+ 
+             return (result);
