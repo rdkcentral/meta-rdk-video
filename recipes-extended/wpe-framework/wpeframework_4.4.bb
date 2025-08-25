@@ -107,7 +107,7 @@ PACKAGECONFIG[webkitbrowser]   = "-DPLUGIN_WEBKITBROWSER=ON,,"
 PACKAGECONFIG[websocket]       = "-DWEBSOCKET=ON,,"
 
 PACKAGECONFIG[com] = "-DCOM=ON,,,"
-PACKAGECONFIG[pluginactivator] = "-DBUILD_PLUGIN_ACTIVATOR=ON,,,"
+PACKAGECONFIG[pluginactivator] = "-DBUILD_PLUGIN_ACTIVATOR=OFF,,,"
 
 # FIXME, determine this a little smarter
 # Provision event is required for libprovision and provision plugin
