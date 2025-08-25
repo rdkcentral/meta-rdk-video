@@ -120,7 +120,7 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('ASB', 'true', ' -DASB=ON', '', d)}
 # Authorization Support
 AUTH                ?= "true"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('AUTH', 'true', ' -DAUTH_ENABLED=ON', '', d)}"
-DEPENDS_append       = "${@bb.utils.contains('AUTH', 'true', ' openssl rdkcertconfig', '', d)}"
+DEPENDS:append       = "${@bb.utils.contains('AUTH', 'true', ' openssl rdkcertconfig', '', d)}"
 # Auth Activation Status Support
 AUTH_ACTIVATION_STATUS ?= "false"
 EXTRA_OECONF:append = "${@bb.utils.contains('AUTH_ACTIVATION_STATUS', 'true', ' -DAUTH_ACTIVACTION_STATUS', '', d)}"
