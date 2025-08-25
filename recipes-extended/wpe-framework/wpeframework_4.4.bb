@@ -82,7 +82,7 @@ PACKAGECONFIG ?= " \
     websocket \
     "
 
-PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com pluginactivator', '', d)}"
+PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com', '', d)}"
 
 # Buildtype
 # Maybe we need to couple this to a Yocto feature
@@ -107,7 +107,6 @@ PACKAGECONFIG[webkitbrowser]   = "-DPLUGIN_WEBKITBROWSER=ON,,"
 PACKAGECONFIG[websocket]       = "-DWEBSOCKET=ON,,"
 
 PACKAGECONFIG[com] = "-DCOM=ON,,,"
-PACKAGECONFIG[pluginactivator] = "-DBUILD_PLUGIN_ACTIVATOR=OFF,,,"
 
 # FIXME, determine this a little smarter
 # Provision event is required for libprovision and provision plugin
