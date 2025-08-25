@@ -1,0 +1,15 @@
+diff --git a/core/CMakeLists.txt b/core/CMakeLists.txt
+index 45f1ec2..8bb9d14 100644
+--- a/core/CMakeLists.txt
++++ b/core/CMakeLists.txt
+@@ -212,6 +212,10 @@ target_include_directories(BartonCoreStatic PRIVATE
+                             )
+ 
+ add_library(BartonCore SHARED $<TARGET_OBJECTS:bCoreObject>)
++set_target_properties(BartonCore PROPERTIES
++    VERSION 1.0
++    SOVERSION 1
++)
+ target_link_libraries(BartonCore ${bCoreLinkLibraries})
+ target_include_directories(BartonCore PRIVATE
+                             ${BARTON_PRIVATE_INCLUDES}
