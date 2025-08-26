@@ -61,6 +61,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/0001-SmarkLink-Crash-Fix.patch \
             file://r4.4/Jsonrpc_dynamic_error_handling.patch \
             file://r4.4/PR-1923-RDKEMW-6261-to-improve-system-shutdown-time-upon-R4.4.3.patch \
+            file://r4.4/rdkemw-124-wpe-bp.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -152,6 +153,8 @@ EXTRA_OECMAKE += " \
 "
 
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
+
+EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 
 do_install:append() {
     if ${@bb.utils.contains("DISTRO_FEATURES", "systemd", "true", "false", d)}
