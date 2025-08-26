@@ -1,1 +1,49 @@
-new
+diff --git a/Telemetry/TelemetryImplementation.cpp b/Telemetry/TelemetryImplementation.cpp
+index ff5e228..c6d923c 100644
+--- a/Telemetry/TelemetryImplementation.cpp
++++ b/Telemetry/TelemetryImplementation.cpp
+@@ -153,10 +153,15 @@ namespace Plugin {
+ #ifdef HAS_RBUS
+     void TelemetryImplementation::activateUserSettingsandGetPrivacyMode()
+     {
++        LOGINFO("Entering TelemetryImplementation::activateUserSettingsandGetPrivacyMode\n");
+         PluginHost::IShell::state state;
+ 
+-        if ((Utils::getServiceState(_service, USERSETTINGS_CALLSIGN, state) == Core::ERROR_NONE) && (state != PluginHost::IShell::state::ACTIVATED))
+-            Utils::activatePlugin(_service, USERSETTINGS_CALLSIGN);
++        if ((Utils::getServiceState(_service, USERSETTINGS_CALLSIGN, state) == Core::ERROR_NONE) && (state != PluginHost::IShell::state::ACTIVATED)){
++        
++            LOGINFO("Not calling Utils::activatePlugin\n");
++           //LOGINFO("Calling Utils::activatePlugin\n");
++           // Utils::activatePlugin(_service, USERSETTINGS_CALLSIGN);
++            }
+             
+         if ((Utils::getServiceState(_service, USERSETTINGS_CALLSIGN, state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
+         {
+@@ -182,6 +187,7 @@ namespace Plugin {
+         {
+             LOGERR("Failed to activate %s", USERSETTINGS_CALLSIGN);
+         }
++        LOGINFO("Exiting TelemetryImplementation::activateUserSettingsandGetPrivacyMode\n");
+     }
+     
+     static void t2EventHandler(rbusHandle_t handle, char const* methodName, rbusError_t error, rbusObject_t param)
+@@ -340,10 +346,14 @@ namespace Plugin {
+         _service = service;
+         _service->AddRef();
+         InitializePowerManager();
+-
+-#ifdef HAS_RBUS        
++        LOGINFO("TelemetryImplementation::Configure : Called InitializePowerManager\n");
++        
++#ifdef HAS_RBUS    
++        LOGINFO("TelemetryImplementation::Configure : Calling activateUserSettingsandGetPrivacyMode\n");    
+         activateUserSettingsandGetPrivacyMode();
+-#endif        
++        LOGINFO("TelemetryImplementation::Configure : Called activateUserSettingsandGetPrivacyMode\n");
++#endif   
++        LOGINFO("TelemetryImplementation::Configure : Calling setRFCReportProfiles\n");     
+         setRFCReportProfiles();
+         
+         return result;
+
