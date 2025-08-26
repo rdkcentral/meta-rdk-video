@@ -1,0 +1,37 @@
+diff --git a/Telemetry/TelemetryImplementation.cpp b/Telemetry/TelemetryImplementation.cpp
+index ff5e228..ed1c235 100644
+--- a/Telemetry/TelemetryImplementation.cpp
++++ b/Telemetry/TelemetryImplementation.cpp
+@@ -155,8 +155,11 @@ namespace Plugin {
+     {
+         PluginHost::IShell::state state;
+ 
+-        if ((Utils::getServiceState(_service, USERSETTINGS_CALLSIGN, state) == Core::ERROR_NONE) && (state != PluginHost::IShell::state::ACTIVATED))
++	LOGINFO("TelemetryImplementation::activateUserSettingsandGetPrivacyMode()-> entry");
++        if ((Utils::getServiceState(_service, USERSETTINGS_CALLSIGN, state) == Core::ERROR_NONE) && (state != PluginHost::IShell::state::ACTIVATED)){
++	    LOGINFO("TelemetryImplementation::activateUserSettingsandGetPrivacyMode()-> Utils::activatePlugin(_service, USERSETTINGS_CALLSIGN)");
+             Utils::activatePlugin(_service, USERSETTINGS_CALLSIGN);
++	}
+             
+         if ((Utils::getServiceState(_service, USERSETTINGS_CALLSIGN, state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
+         {
+@@ -182,6 +185,7 @@ namespace Plugin {
+         {
+             LOGERR("Failed to activate %s", USERSETTINGS_CALLSIGN);
+         }
++	LOGINFO("TelemetryImplementation::activateUserSettingsandGetPrivacyMode()-> exit");
+     }
+     
+     static void t2EventHandler(rbusHandle_t handle, char const* methodName, rbusError_t error, rbusObject_t param)
+@@ -340,8 +344,9 @@ namespace Plugin {
+         _service = service;
+         _service->AddRef();
+         InitializePowerManager();
+-
+-#ifdef HAS_RBUS        
++        LOGINFO("TelemetryImplementation::Configure()-> calling activateUserSettingsandGetPrivacyMode under HAS_RBUS");
++#ifdef HAS_RBUS
++        LOGINFO("TelemetryImplementation::Configure(inside HAS_RBUS)-> calling activateUserSettingsandGetPrivacyMode");	
+         activateUserSettingsandGetPrivacyMode();
+ #endif        
+         setRFCReportProfiles();
