@@ -141,7 +141,6 @@ do_install() {
 
 	install -m 0644 ${S}/systemd_units/network-up.target ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/network-up.timer ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/ntp-time-sync.path ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-time-sync.target ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-time-sync-event.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-time-sync.timer ${D}${systemd_unitdir}/system
@@ -304,7 +303,6 @@ SYSTEMD_SERVICE:${PN} += "NM_Bootstrap.service"
 SYSTEMD_SERVICE:${PN} += "zram.service"
 
 SYSTEMD_SERVICE:${PN} += "network-up.timer"
-SYSTEMD_SERVICE:${PN} += "ntp-time-sync.path"
 SYSTEMD_SERVICE:${PN} += "ntp-time-sync-event.service"
 SYSTEMD_SERVICE:${PN} += "ntp-time-sync.timer"
 SYSTEMD_SERVICE:${PN} += "system-time-set.path"
