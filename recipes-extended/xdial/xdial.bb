@@ -10,7 +10,7 @@ S = "${WORKDIR}/git"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;protocol=${CMF_GIT_PROTOCOL};branch=develop"
+SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;protocol=${CMF_GIT_PROTOCOL};branch=topic/RDKEMW_6891_coverity"
 
 # Aug 21, 2025
 SRCREV = "fd6f79c31c9ce675837e7bea0d05893d97120835"
