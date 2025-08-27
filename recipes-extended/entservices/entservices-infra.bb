@@ -17,7 +17,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
 # Release version - 1.4.4.3
-SRCREV = "b72e3f98cbeaa1d7a8b319e7a749d2d570ba0869"
+SRCREV = "de7970b00af58758bce8556da67b6bc151bddb63"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
