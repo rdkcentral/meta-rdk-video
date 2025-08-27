@@ -116,6 +116,11 @@ do_install:append() {
     for x in ${THUNDER_STARTUP_SERVICES}; do
         SERVICE_FILE="${SERVICE_DIR}/${x}"
 
+        # --- Normalize Description ---
+        # Converts: "Description=WPEFramework SystemMode Initialiser"
+        # To:      "Description=WPE SystemMode"
+        sed -i 's/^Description=WPEFramework \(.*\) Initialiser$/Description=WPE \1/' "$SERVICE_FILE"
+
         if grep -q '^ExecStart=.*PluginActivator' "$SERVICE_FILE"; then
             CALLSIGN=$(sed -n -E 's/.*PluginActivator.*[[:space:]]+([A-Za-z0-9_.-]+)$/\1/p' "$SERVICE_FILE")
 
