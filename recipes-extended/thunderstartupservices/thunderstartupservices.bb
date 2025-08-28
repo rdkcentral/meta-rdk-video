@@ -59,6 +59,7 @@ THUNDER_STARTUP_SERVICES:append = "\
 CONTROL_FILES = "\
     wpeframework-services.path \
     wpeframework-services.target \
+    wpeframework-provisioning-ready.path \
     "
 
 do_install() {
