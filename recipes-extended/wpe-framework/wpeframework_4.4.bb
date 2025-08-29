@@ -75,7 +75,7 @@ WPEFRAMEWORK_SYSTEM_PREFIX = "OE"
 WPEFRAMEWORK_PORT = "9998"
 WPEFRAMEWORK_BINDING = "127.0.0.1"
 WPEFRAMEWORK_IDLE_TIME = "0"
-WPEFRAMEWORK_THREADPOOL_COUNT ?= "8"
+WPEFRAMEWORK_THREADPOOL_COUNT ?= "16"
 WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
 
 
@@ -89,7 +89,7 @@ PACKAGECONFIG ?= " \
     websocket \
     "
 
-PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com pluginactivator', '', d)}"
+PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com', '', d)}"
 
 # Buildtype
 # Maybe we need to couple this to a Yocto feature
@@ -114,7 +114,6 @@ PACKAGECONFIG[webkitbrowser]   = "-DPLUGIN_WEBKITBROWSER=ON,,"
 PACKAGECONFIG[websocket]       = "-DWEBSOCKET=ON,,"
 
 PACKAGECONFIG[com] = "-DCOM=ON,,,"
-PACKAGECONFIG[pluginactivator] = "-DBUILD_PLUGIN_ACTIVATOR=ON,,,"
 
 # FIXME, determine this a little smarter
 # Provision event is required for libprovision and provision plugin
