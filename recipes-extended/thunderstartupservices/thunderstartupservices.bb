@@ -60,6 +60,7 @@ CONTROL_FILES = "\
     wpeframework-services.path \
     wpeframework-services.target \
     wpeframework-provisioning-ready.path \
+    wpeframework-provisioning-ready.target \
     "
 
 do_install() {
