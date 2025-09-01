@@ -14,6 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://0001-RDK-41681-PR4013.patch \
+           file://extra-logging.diff \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
