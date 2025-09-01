@@ -1,0 +1,14 @@
+diff --git a/Source/WPEFramework/CMakeLists.txt b/Source/WPEFramework/CMakeLists.txt 
+index 13fe9d59d..17ba9459f 100644
+--- a/Source/WPEFramework/CMakeLists.txt 
++++ b/Source/WPEFramework/CMakeLists.txt 
+@@ -30,7 +30,8 @@
+         SystemInfo.cpp
+         PostMortem.cpp
+         )
+-
++separate_arguments(BREAKPAD_LDFLAGS)
++target_link_libraries(${TARGET} PRIVATE "${BREAKPAD_LDFLAGS}")
+ target_compile_definitions(${TARGET}
+         PRIVATE
+           NAMESPACE=${NAMESPACE}
