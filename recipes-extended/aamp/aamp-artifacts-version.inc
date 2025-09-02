@@ -9,7 +9,7 @@ PLATFORM_PATH_xione-sercomm="dhruv"
 # Disable for xione US variants and other platforms for now
 PLATFORM_PATH_skyxione-xoe="unknown"
 PLATFORM_PATH_skyxione-flex2="unknown"
-PLATFORM_PATH ?= "unknown"
+PLATFORM_PATH ?= "stream"
 
 # Try to find the yocto version
 def get_yocto_code(d):
@@ -49,7 +49,7 @@ def deduce_aamp_artifacts_version_code(d):
                X = branch  # fallback to full branch name if no underscore
            return '{}.{}'.format(X, '${DATETIME}')
         elif 'stable2' == branch or 'default' == branch:
-           return '{}.{}'.format('stable', '${DATETIME}')
+           return '{}.{}'.format('develop', '${DATETIME}')
         return '{}.{}'.format(branch, '${DATETIME}') # most likely a patch branch
     return try_sky_release() or try_sprint_or_stable()
 
