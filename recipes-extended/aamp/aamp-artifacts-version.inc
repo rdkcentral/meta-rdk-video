@@ -1,5 +1,5 @@
 
-OS_TYPE = "rdkv"
+OS_TYPE = "rdke"
 
 PLATFORM_PATH_skyxione="stream"
 PLATFORM_PATH_sky-llama-panel="glass"
