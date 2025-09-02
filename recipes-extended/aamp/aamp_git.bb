@@ -90,7 +90,6 @@ do_create_artifacts() {
 
     # Create all required directories
     mkdir -p ${ARTIFACT_FILES_DIR}/${libdir}
-    mkdir -p ${ARTIFACT_FILES_DIR}/${libdir}/gstreamer-1.0
 
     # List what's in the install directory to help with debugging
     echo "Listing files installed by this recipe:"
