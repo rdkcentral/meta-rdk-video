@@ -14,7 +14,7 @@ index 63329bb2..4167adca 100644
 +            static std::atomic<uint32_t> Count{0};
 +            Registration info;  info.FromString(parameters);
 +            Count++;
-+            SYSLOG(Logging::Startup, (_T("Total JSON-RPC requests : %u, call sign: %s, method: %s"), Count.load(), info.Callsign.Value().c_str(),method.c_str()));
++            TRACE(Trace::Information, (_T("Total JSON-RPC requests : %u, call sign: '%s' method: '%s'"), Count.load(), info.Callsign.Value().c_str(),method.c_str()));
 +        }
 +
 +       //
