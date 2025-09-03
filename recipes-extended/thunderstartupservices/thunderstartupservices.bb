@@ -10,6 +10,7 @@ DEPENDS = "systemd"
 
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
+    file://0001-RDKEMW-3659-Get-model-implemenatation-change.patch \
 "
 S = "${WORKDIR}/git/systemd/system"
 

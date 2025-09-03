@@ -1,0 +1,32 @@
+From d81a38fffb81227f5b07fd5694c4cc7b40bd2e2d Mon Sep 17 00:00:00 2001
+From: dponna534 <Deepak_Ponnath2@comcast.com>
+Date: Wed, 3 Sep 2025 10:25:36 +0530
+Subject: [PATCH] RDKEMW-3659: Get model implemenatation change.
+
+Reason for change: Activate device info plugin before system plugin
+activation.
+Test Procedure: Manual
+Risks: Low
+
+Signed-off-by: Deepak_Ponnath2@comcast.com
+---
+ systemd/system/wpeframework-system.service | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/systemd/system/wpeframework-system.service b/systemd/system/wpeframework-system.service
+index f5aea8c..356818e 100644
+--- a/systemd/system/wpeframework-system.service
++++ b/systemd/system/wpeframework-system.service
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=WPEFramework System Initialiser
+-Requires=wpeframework-powermanager.service sysmgr.service mfrmgr.service
+-After=wpeframework-powermanager.service sysmgr.service mfrmgr.service
++Requires=wpeframework-powermanager.service sysmgr.service mfrmgr.service wpeframework-deviceinfo.service
++After=wpeframework-powermanager.service sysmgr.service mfrmgr.service wpeframework-deviceinfo.service
+ ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+-- 
+2.47.1.windows.2
+
