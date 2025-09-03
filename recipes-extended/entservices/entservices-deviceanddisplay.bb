@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
            file://0001-RDKEMW-3659-Fix-WPE_ERROR_ResourceUnavail-message-on.patch \
           "
 
-# Release version - 3.1.6
-SRCREV = "5ce952510d4cbd3e051b9f63417c93cd8b91ce93"
+# Release version - 3.1.9
+SRCREV = "c69edbca36ecf10a6dc18452e9f3655f9ed3a5b4"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 

@@ -60,6 +60,8 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
             file://r4.4/0001-SmarkLink-Crash-Fix.patch \
             file://r4.4/Jsonrpc_dynamic_error_handling.patch \
+            file://r4.4/PR-1923-RDKEMW-6261-to-improve-system-shutdown-time-upon-R4.4.3.patch \
+            file://r4.4/rdkemw-124-Link-Breakpad-wrapper.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -75,6 +77,11 @@ WPEFRAMEWORK_BINDING = "127.0.0.1"
 WPEFRAMEWORK_IDLE_TIME = "0"
 WPEFRAMEWORK_THREADPOOL_COUNT ?= "8"
 WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
+
+
+BREAKPAD_LDFLAGS:pn-wpeframework = "${BACKTRACE_LDFLAGS}"
+EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
+LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
 
 PACKAGECONFIG ?= " \
     release \
@@ -147,6 +154,8 @@ EXTRA_OECMAKE += " \
 "
 
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
+
+EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 
 do_install:append() {
     if ${@bb.utils.contains("DISTRO_FEATURES", "systemd", "true", "false", d)}
