@@ -48,7 +48,6 @@ do_install() {
 
     # Authorization Support
     install -m 644 ${S}/src/auth/ctrlm_auth.h ${D}${includedir}/ctrlm_private
-    install -m 644 ${S}/src/auth/ctrlm_hal_certificate.h ${D}${includedir}/ctrlm_private
     install -m 644 ${S}/src/factory/ctrlm_fta_platform.h ${D}${includedir}/ctrlm_private
 
     # Advanced Secure Binding
