@@ -1,7 +1,7 @@
 From 2132d1dab6c55fd18d7d3ba673d04dbe85a7f73a Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Thu, 28 Aug 2025 14:20:44 -0400
-Subject: [PATCH 1/4] RDKEMW-3789: refactor ILEDControl.h to add enum states
+Subject: [PATCH 1/5] RDKEMW-3789: refactor ILEDControl.h to add enum states
 
 ---
  apis/LEDControl/ILEDControl.h | 60 +++++++++++++++++++++++++++++------
@@ -96,7 +96,7 @@ index 1043808b..1b297c7c 100644
 From 995545c8f962a40ecf57f26b84324cf9a70a9abb Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Fri, 29 Aug 2025 12:01:00 -0400
-Subject: [PATCH 2/4] RDKEMW-3789: clean up the ILEDControl header
+Subject: [PATCH 2/5] RDKEMW-3789: clean up the ILEDControl header
 
 ---
  apis/LEDControl/ILEDControl.h | 71 +++++++++++------------------------
@@ -201,7 +201,7 @@ index 1b297c7c..07b330b5 100644
 From 7389e6969d1c4f743c3dd96b8a667c31b9dec2a2 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Sun, 31 Aug 2025 01:03:17 -0400
-Subject: [PATCH 3/4] RDKEMW-3789: update ILEDControl with documentation tags
+Subject: [PATCH 3/5] RDKEMW-3789: update ILEDControl with documentation tags
 
 ---
  apis/LEDControl/ILEDControl.h | 8 ++++----
@@ -238,7 +238,7 @@ index 07b330b5..f7dcad73 100644
 From 779375bf984b7fc83d0371be3e18a8d8b3297bbc Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Tue, 2 Sep 2025 10:03:46 -0400
-Subject: [PATCH 4/4] RDKEMW-3789: update the LEDControlPlugin.md
+Subject: [PATCH 4/5] RDKEMW-3789: update the LEDControlPlugin.md
 
 ---
  docs/apis/LEDControlPlugin.md | 365 ++++++++++++++++------------------
@@ -614,3 +614,45 @@ index d5f85a67..e21a0fc0 100644
 +    }
 +}
 +```
+
+From 473abde54be1d23bd4ab0625b3f6b41bb31f078a Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Wed, 3 Sep 2025 21:00:45 -0400
+Subject: [PATCH 5/5] RDKEMW-3789: remove unnecessary TAGs from ILEDControl
+ header
+
+---
+ apis/LEDControl/ILEDControl.h | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/apis/LEDControl/ILEDControl.h b/apis/LEDControl/ILEDControl.h
+index f7dcad73..77752bd5 100644
+--- a/apis/LEDControl/ILEDControl.h
++++ b/apis/LEDControl/ILEDControl.h
+@@ -36,16 +36,16 @@ namespace WPEFramework
+             virtual ~ILEDControl() = default;
+ 
+             enum LEDControlState : uint8_t {
+-                LEDSTATE_NONE = 0,       /* @text NONE @brief TRISTATE or not in a defined state */
+-                LEDSTATE_ACTIVE,         /* @text ACTIVE @brief Indicates Active power state */
+-                LEDSTATE_STANDBY,        /* @text STANDBY @brief Indicates Standby power state */
+-                LEDSTATE_WPS_CONNECTING, /* @text WPS_CONNECTING @brief Indicates WPS Connecting */
+-                LEDSTATE_WPS_CONNECTED,  /* @text WPS_CONNECTED @brief Indicates WPS Connected */
+-                LEDSTATE_WPS_ERROR,      /* @text WPS_ERROR @brief Indicates WPS Error */
+-                LEDSTATE_FACTORY_RESET,  /* @text FACTORY_RESET @brief Indicates Factory Reset */
+-                LEDSTATE_USB_UPGRADE,    /* @text USB_UPGRADE @brief Indicates USB Upgrade */
+-                LEDSTATE_DOWNLOAD_ERROR, /* @text DOWNLOAD_ERROR @brief Indicates Software Download Error */
+-                LEDSTATE_MAX             /* @text MAX @brief Indicates Maximum State */
++                LEDSTATE_NONE = 0       /* @text NONE */,
++                LEDSTATE_ACTIVE         /* @text ACTIVE */,
++                LEDSTATE_STANDBY        /* @text STANDBY */,
++                LEDSTATE_WPS_CONNECTING /* @text WPS_CONNECTING */,
++                LEDSTATE_WPS_CONNECTED  /* @text WPS_CONNECTED */,
++                LEDSTATE_WPS_ERROR      /* @text WPS_ERROR */,
++                LEDSTATE_FACTORY_RESET  /* @text FACTORY_RESET */,
++                LEDSTATE_USB_UPGRADE    /* @text USB_UPGRADE */,
++                LEDSTATE_DOWNLOAD_ERROR /* @text DOWNLOAD_ERROR */,
++                LEDSTATE_MAX            /* @text MAX */
+             };
+ 
+             // @text getSupportedLEDStates
