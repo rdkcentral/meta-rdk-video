@@ -1,7 +1,7 @@
 From 9fd700f4086e4bd5e0f5b195cd29d95015f445f0 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Thu, 28 Aug 2025 14:26:45 -0400
-Subject: [PATCH 1/7] RDKEMW-3789: align to ILEDControl changes
+Subject: [PATCH 1/8] RDKEMW-3789: align to ILEDControl changes
 
 ---
  LEDControl/LEDControlImplementation.cpp | 280 +++++++++++-------------
@@ -368,7 +368,7 @@ index 7257a71..946a5e2 100644
 From 85e5e4920167cb98e2c4308e156e64c6690c7893 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Thu, 28 Aug 2025 15:39:39 -0400
-Subject: [PATCH 2/7] RDKEMW-3789: LEDControl resolve the build errors
+Subject: [PATCH 2/8] RDKEMW-3789: LEDControl resolve the build errors
 
 ---
  LEDControl/LEDControl.cpp               |  4 ++--
@@ -482,7 +482,7 @@ index 946a5e2..05e08af 100644
 From 626ab4515bc808254659ec38a878fbebbfeae536 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Thu, 28 Aug 2025 15:52:06 -0400
-Subject: [PATCH 3/7] RDKEMW-3789: fix the build error
+Subject: [PATCH 3/8] RDKEMW-3789: fix the build error
 
 ---
  LEDControl/LEDControlImplementation.cpp | 15 +++++----------
@@ -526,7 +526,7 @@ index 475fd77..36591aa 100644
 From 0d5ab84e8749ed882bdde442bc9a80d8a09ac937 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Fri, 29 Aug 2025 09:46:02 -0400
-Subject: [PATCH 4/7] RDKEMW-3789: optimize the code and update proper return
+Subject: [PATCH 4/8] RDKEMW-3789: optimize the code and update proper return
  values
 
 ---
@@ -683,7 +683,7 @@ index 36591aa..35aa00d 100644
 From 5aa79924a99c1a45c201afd7326eb07acd42e082 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Fri, 29 Aug 2025 09:49:57 -0400
-Subject: [PATCH 5/7] RDKEMW-3789: change error to proper value
+Subject: [PATCH 5/8] RDKEMW-3789: change error to proper value
 
 ---
  LEDControl/LEDControlImplementation.cpp | 2 +-
@@ -706,7 +706,7 @@ index 35aa00d..fef884a 100644
 From 30edb433bba42f176aa5be7bb8cd9fc794fe337a Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Fri, 29 Aug 2025 10:33:51 -0400
-Subject: [PATCH 6/7] RDKEMW-3789: add debug logs to clarify mismatching state
+Subject: [PATCH 6/8] RDKEMW-3789: add debug logs to clarify mismatching state
 
 ---
  LEDControl/LEDControlImplementation.cpp | 261 ++++++++++++++++--------
@@ -1100,7 +1100,7 @@ index 05e08af..2202b9b 100644
 From 5f0cf56f60e88122710d7f83cd6e351ca6946574 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Sat, 30 Aug 2025 23:18:46 -0400
-Subject: [PATCH 7/7] RDKEMW-3789: clean-up test logic and make the plugin
+Subject: [PATCH 7/8] RDKEMW-3789: clean-up test logic and make the plugin
  singleton and inhibit copying or multiple instantiations
 
 ---
@@ -1331,6 +1331,136 @@ index 2202b9b..a406bf0 100644
 +            private:
 +                mutable Core::CriticalSection _adminLock;
 +                bool m_isPlatInitialized;
+         };
+     } // namespace Plugin
+ } // namespace WPEFramework
+
+From 5ad65b1031088007c5d3a156d0e2a38a4332027b Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Wed, 3 Sep 2025 13:17:09 -0400
+Subject: [PATCH 8/8] RDKEMW-3789: enhance LEDControl implementation with cache
+ for supported state
+
+---
+ LEDControl/LEDControlImplementation.cpp | 61 +++++++++++++++++++++----
+ LEDControl/LEDControlImplementation.h   |  1 +
+ 2 files changed, 54 insertions(+), 8 deletions(-)
+
+diff --git a/LEDControl/LEDControlImplementation.cpp b/LEDControl/LEDControlImplementation.cpp
+index 70ab21f..55d873f 100644
+--- a/LEDControl/LEDControlImplementation.cpp
++++ b/LEDControl/LEDControlImplementation.cpp
+@@ -33,15 +33,45 @@ namespace WPEFramework
+     {
+         SERVICE_REGISTRATION(LEDControlImplementation, 1, 0);
+ 
+-        LEDControlImplementation::LEDControlImplementation(): m_isPlatInitialized (false)
++        LEDControlImplementation::LEDControlImplementation()
++        : m_isPlatInitialized(false)
++        , m_SupportedLEDStates((unsigned int)dsFPD_LED_DEVICE_NONE)
+         {
+             LOGINFO("LEDControlImplementation Constructor called\n");
+             if (!m_isPlatInitialized) {
+                 LOGINFO("Doing plat init; dsFPInit\n");
+-                if (dsERR_NONE != dsFPInit()){
+-                    LOGERR("dsFPInit failed\n");
++                try {
++                    dsError_t err = dsERR_NONE;
++                    if ((err = dsFPInit()) != dsERR_NONE) {
++                        LOGERR("dsFPInit failed: %d\n", err);
++                    } else {
++                        m_isPlatInitialized = true;
++                        // Start a worker JOB to update the m_SupportedLEDStates using WPEFramework's worker pool
++                        class UpdateSupportedLEDStatesJob : public Core::IDispatch {
++                        public:
++                            UpdateSupportedLEDStatesJob(LEDControlImplementation* parent) : _parent(parent) {}
++                            void Dispatch() override {
++                                try {
++                                    unsigned int supported = (unsigned int)dsFPD_LED_DEVICE_NONE;
++                                    dsError_t err = dsFPGetSupportedLEDStates(&supported);
++                                    if (err == dsERR_NONE) {
++                                        _parent->m_SupportedLEDStates = supported;
++                                        LOGINFO("Worker m_SupportedLEDStates updated: 0x%X\n", supported);
++                                    } else {
++                                        LOGERR("Worker dsFPGetSupportedLEDStates failed: %d\n", err);
++                                    }
++                                } catch (...) {
++                                    LOGERR("Worker got exception updating m_SupportedLEDStates\n");
++                                }
++                            }
++                        private:
++                            LEDControlImplementation* _parent;
++                        };
++                        Core::IWorkerPool::Instance().Submit(Core::ProxyType<Core::IDispatch>(Core::ProxyType<UpdateSupportedLEDStatesJob>::Create(this)));
++                    }
++                } catch (...) {
++                    LOGERR("Exception caught during dsFPInit");
+                 }
+-                m_isPlatInitialized = true;
+             }
+         }
+ 
+@@ -50,10 +80,15 @@ namespace WPEFramework
+             LOGINFO("LEDControlImplementation Destructor called\n");
+             if (m_isPlatInitialized) {
+                 LOGINFO("Doing plat uninit; dsFPTerm\n");
+-                if (dsERR_NONE != dsFPTerm()) {
+-                    LOGERR("dsFPTerm failed\n");
++                try {
++                    dsError_t err = dsFPTerm();
++                    if (dsERR_NONE != err) {
++                        LOGERR("dsFPTerm failed\n");
++                    }
++                    m_isPlatInitialized = false;
++                } catch (...) {
++                    LOGERR("Exception caught during dsFPTerm");
+                 }
+-                m_isPlatInitialized = false;
+             }
+         }
+ 
+@@ -171,6 +206,9 @@ namespace WPEFramework
+                     if (dsERR_NONE != err) {
+                         LOGERR("dsFPGetSupportedLEDStates error %d\n", err);
+                         return getCoreErrorFromDSError(err);
++                    } else {
++                        // Refresh the cached supported LED states
++                        m_SupportedLEDStates = halSupportedLEDStates;
+                     }
+                 } catch (...) {
+                     LOGERR("Exception in dsFPGetSupportedLEDStates.\n");
+@@ -233,6 +271,12 @@ namespace WPEFramework
+                 LOGERR("Invalid dsFPDLedState_t value: %s\n", e.what());
+                 return Core::ERROR_READ_ERROR;
+             }
++            // return error if requested state is unsupported
++            if (!(m_SupportedLEDStates & (1 << static_cast<int>(dsLEDState)))) {
++                LOGERR("Requested LED state 0x%X(dsLEDState 0x%x) is unsupported, supported states: 0x%X\n",
++                        (1 << static_cast<int>(state)), static_cast<int>(dsLEDState), m_SupportedLEDStates);
++                return Core::ERROR_NOT_SUPPORTED;
++            }
+ 
+             dsError_t err = dsERR_NONE;
+             {
+@@ -246,7 +290,8 @@ namespace WPEFramework
+             }
+             if (err != dsERR_NONE) {
+                 Core::hresult rc = getCoreErrorFromDSError(err);
+-                LOGERR("Failed to set LED state to %d,dsFPGetLEDState returned error: %d\n", static_cast<int>(state),err);
++                LOGERR("Failed to set LED state to 0x%X (dsLEDState 0x%x), dsFPGetLEDState returned error: %d\n",
++                        (1 << static_cast<int>(state)), static_cast<int>(dsLEDState), err);
+                 return rc;
+             }
+             success = true;
+diff --git a/LEDControl/LEDControlImplementation.h b/LEDControl/LEDControlImplementation.h
+index a406bf0..f2a26e7 100644
+--- a/LEDControl/LEDControlImplementation.h
++++ b/LEDControl/LEDControlImplementation.h
+@@ -58,6 +58,7 @@ namespace WPEFramework
+             private:
+                 mutable Core::CriticalSection _adminLock;
+                 bool m_isPlatInitialized;
++                unsigned int m_SupportedLEDStates;
          };
      } // namespace Plugin
  } // namespace WPEFramework
