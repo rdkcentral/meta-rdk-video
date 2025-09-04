@@ -1,7 +1,7 @@
 From 2132d1dab6c55fd18d7d3ba673d04dbe85a7f73a Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Thu, 28 Aug 2025 14:20:44 -0400
-Subject: [PATCH 1/6] RDKEMW-3789: refactor ILEDControl.h to add enum states
+Subject: [PATCH 1/7] RDKEMW-3789: refactor ILEDControl.h to add enum states
 
 ---
  apis/LEDControl/ILEDControl.h | 60 +++++++++++++++++++++++++++++------
@@ -96,7 +96,7 @@ index 1043808b..1b297c7c 100644
 From 995545c8f962a40ecf57f26b84324cf9a70a9abb Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Fri, 29 Aug 2025 12:01:00 -0400
-Subject: [PATCH 2/6] RDKEMW-3789: clean up the ILEDControl header
+Subject: [PATCH 2/7] RDKEMW-3789: clean up the ILEDControl header
 
 ---
  apis/LEDControl/ILEDControl.h | 71 +++++++++++------------------------
@@ -201,7 +201,7 @@ index 1b297c7c..07b330b5 100644
 From 7389e6969d1c4f743c3dd96b8a667c31b9dec2a2 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Sun, 31 Aug 2025 01:03:17 -0400
-Subject: [PATCH 3/6] RDKEMW-3789: update ILEDControl with documentation tags
+Subject: [PATCH 3/7] RDKEMW-3789: update ILEDControl with documentation tags
 
 ---
  apis/LEDControl/ILEDControl.h | 8 ++++----
@@ -238,7 +238,7 @@ index 07b330b5..f7dcad73 100644
 From 779375bf984b7fc83d0371be3e18a8d8b3297bbc Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Tue, 2 Sep 2025 10:03:46 -0400
-Subject: [PATCH 4/6] RDKEMW-3789: update the LEDControlPlugin.md
+Subject: [PATCH 4/7] RDKEMW-3789: update the LEDControlPlugin.md
 
 ---
  docs/apis/LEDControlPlugin.md | 365 ++++++++++++++++------------------
@@ -618,7 +618,7 @@ index d5f85a67..e21a0fc0 100644
 From 473abde54be1d23bd4ab0625b3f6b41bb31f078a Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Wed, 3 Sep 2025 21:00:45 -0400
-Subject: [PATCH 5/6] RDKEMW-3789: remove unnecessary TAGs from ILEDControl
+Subject: [PATCH 5/7] RDKEMW-3789: remove unnecessary TAGs from ILEDControl
  header
 
 ---
@@ -660,7 +660,7 @@ index f7dcad73..77752bd5 100644
 From 42a43bfbb08c5e932d5b46bfd7426f80a66c0225 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Thu, 4 Sep 2025 10:36:16 -0400
-Subject: [PATCH 6/6] RDKEMW-3789: correct LEDControl API doc
+Subject: [PATCH 6/7] RDKEMW-3789: correct LEDControl API doc
 
 ---
  docs/apis/LEDControlPlugin.md | 12 ++++++------
@@ -723,3 +723,40 @@ index e21a0fc0..acbf0d32 100644
      "params": {
          "state": "FACTORY_RESET"
      }
+
+From e7064328462292fd1b8304d9d9c8ba150ab6d7aa Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Thu, 4 Sep 2025 11:41:58 -0400
+Subject: [PATCH 7/7] RDKEMW-3789: optimize LEDControl plugin doc
+
+---
+ apis/LEDControl/ILEDControl.h | 2 +-
+ docs/apis/LEDControlPlugin.md | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/apis/LEDControl/ILEDControl.h b/apis/LEDControl/ILEDControl.h
+index 77752bd5..c4a9bcbf 100644
+--- a/apis/LEDControl/ILEDControl.h
++++ b/apis/LEDControl/ILEDControl.h
+@@ -60,7 +60,7 @@ namespace WPEFramework
+             virtual Core::hresult GetLEDState(LEDControlState& state /* @out */) = 0;
+ 
+             // @text setLEDState
+-            // @brief Changes the device LED state to mentioned input state.
++            // @brief Sets the device LED to a requested state from those available in `GetSupportedLEDStates`.
+             // @param state: LEDControlState. e.g. "FACTORY_RESET"
+             // @param success: boolean
+             virtual Core::hresult SetLEDState(const LEDControlState& state, bool& success /* @out */) = 0;
+diff --git a/docs/apis/LEDControlPlugin.md b/docs/apis/LEDControlPlugin.md
+index acbf0d32..86cb66dc 100644
+--- a/docs/apis/LEDControlPlugin.md
++++ b/docs/apis/LEDControlPlugin.md
+@@ -132,7 +132,7 @@ This method takes no parameters.
+ <a id="method.SetLEDState"></a>
+ ## *SetLEDState [<sup>method</sup>](#head.Methods)*
+ 
+-Changes the device LED state to mentioned input state.
++Sets the device LED to a requested state from those available in `GetSupportedLEDStates`.
+ 
+ ### Events
+ No events are associated with this method.

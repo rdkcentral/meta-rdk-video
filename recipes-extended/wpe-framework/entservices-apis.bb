@@ -12,7 +12,7 @@ DEPENDS = "wpeframework wpeframework-tools-native"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis"
 
 SRC_URI += "file://RDKEMW-1007.patch"
-SRC_URI += " file://RDKEMW-3789-LEDPluginIssue.patch"
+SRC_URI += " file://RDKEMW-3789-LEDPluginIface-PR486.patch"
 
 
 # Tag 1.15.2
