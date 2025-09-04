@@ -71,6 +71,33 @@ do_unpack_extra() {
 }
 addtask unpack_extra after do_patch before do_configure
 
+do_download_testdata() {
+    #Define paths
+    sha1_dir="${S}/starboard/shared/starboard/player/testdata"
+    nplb_output_dir="${S}/out/${COBALT_PLATFORM}_devel/content/test/starboard/shared/starboard/player/testdata"
+    output_dir="${DL_DIR}/nplb-test-data"
+
+    # Run the GCS download script
+    python3 ${S}/tools/download_from_gcs.py \
+        --bucket cobalt-static-storage-public \
+        --sha1 "${sha1_dir}" \
+        --output "${output_dir}"
+    mkdir -p "${nplb_output_dir}"
+
+    # Copy only files that have corresponding .sha1 files
+    for sha1_file in "${sha1_dir}"/*.sha1; do
+        base_name=$(basename "${sha1_file}" .sha1)
+        src_file="${output_dir}/${base_name}"
+        if [ -f "${src_file}" ]; then
+            cp "${src_file}" "${nplb_output_dir}/"
+        fi
+    done
+}
+addtask download_testdata after do_patch before do_configure
+do_download_testdata[depends] = "${PN}:do_fetch"
+do_download_testdata[network] = "1"
+
+
 do_configure() {
     ${PYTHON} cobalt/build/gn.py -c devel  -p ${COBALT_PLATFORM} --overwrite_args
     echo "${GN_ARGS_EXTRA}" | tr ' ' '\n' >> out/${COBALT_PLATFORM}_devel/args.gn
