@@ -46,6 +46,7 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/Update-Trace-Level-Logging-Logic.patch \
            file://r4.4/Activating_plugins_Logs_COMRPC.patch \
            file://r4.4/Removed_Autostart_Check_From_WPEFramework.patch \
+           file://r4.4/WPEFramework-LogJsonRpcCommunication.patch \
            file://r4.4/Integrate_deactivate_function_PluginActivator.patch \
            "
 
