@@ -7,41 +7,25 @@ Subject: [PATCH] DELIA-65784: Hibernation fixes for R4.4
  Source/WPEFramework/CMakeLists.txt            |  5 +
  Source/WPEFramework/PluginServer.cpp          | 93 +++++++++++++------
  Source/WPEFramework/PluginServer.h            | 18 +++-
- Source/WPEFramework/params.config             |  1 +
- Source/core/Portability.h                     |  3 +-
- Source/core/ProcessInfo.h                     | 22 ++++-
- .../checkpointserver/CheckpointServer.c       | 11 ++-
- Source/extensions/hibernate/hibernate.h       |  1 +
- Tests/unit/core/test_processinfo.cpp          | 15 ++-
- Source/WPEFramework/GenericConfig.cmake       | 6 +
- Source/WPEFramework/WPEFramework.conf.in      | 3 +
  9 files changed, 126 insertions(+), 43 deletions(-)
 
 diff --git a/Source/WPEFramework/CMakeLists.txt b/Source/WPEFramework/CMakeLists.txt
-index fdef8c3c..61f9ef98 100644
+index 1e439148c..0d681cf04 100644
 --- a/Source/WPEFramework/CMakeLists.txt
 +++ b/Source/WPEFramework/CMakeLists.txt
-@@ -85,10 +85,15 @@ if (PROCESSCONTAINERS)
+@@ -84,6 +84,7 @@ if (PROCESSCONTAINERS)
  endif(PROCESSCONTAINERS)
- 
+
  if(HIBERNATESUPPORT)
 +    option(HIBERNATESUPPORT_AUTOWAKEUP "Auto-wakeup for Hibernate" OFF)
      target_link_libraries(${TARGET} PRIVATE
          ${NAMESPACE}Hibernate::${NAMESPACE}Hibernate)
      target_compile_definitions(${TARGET} PUBLIC
-          HIBERNATE_SUPPORT_ENABLED=1)
-+    if(HIBERNATESUPPORT_AUTOWAKEUP)
-+         target_compile_definitions(${TARGET} PUBLIC
-+               HIBERNATE_SUPPORT_AUTOWAKEUP_ENABLED=1)
-+    endif()
- endif()
- 
- set_target_properties(${TARGET} PROPERTIES
 diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
-index d834e8f5..e68e9e9e 100644
+index 57a0f95a8..13fe9d59d 100644
 --- a/Source/WPEFramework/PluginServer.cpp
 +++ b/Source/WPEFramework/PluginServer.cpp
-@@ -277,6 +277,14 @@ namespace PluginHost
+@@ -281,6 +281,14 @@ namespace PluginHost
      /* virtual */ void* Server::Service::QueryInterface(const uint32_t id)
      {
          void* result = nullptr;
@@ -56,178 +40,15 @@ index d834e8f5..e68e9e9e 100644
          if (id == Core::IUnknown::ID) {
              AddRef();
              result = static_cast<IUnknown*>(this);
-@@ -332,8 +340,8 @@ namespace PluginHost
+@@ -336,7 +344,7 @@ namespace PluginHost
              Unlock();
              result = Core::ERROR_ILLEGAL_STATE;
          } else if (currentState == IShell::state::HIBERNATED) {
+-            result = Wakeup(3000);
 +            result = Wakeup();
              Unlock();
--            result = Wakeup(3000);
          } else if ((currentState == IShell::state::DEACTIVATED) || (currentState == IShell::state::PRECONDITION)) {
- 
-             // Load the interfaces, If we did not load them yet...
-@@ -519,9 +527,7 @@ namespace PluginHost
- 
-             if(currentState == IShell::state::HIBERNATED)
-             {
--                Unlock();
-                 uint32_t wakeupResult = Wakeup(3000);
--                Lock();
-                 if(wakeupResult != Core::ERROR_NONE)
-                 {
-                     //Force Activated state
-@@ -692,29 +698,49 @@ namespace PluginHost
-                 result = Core::ERROR_BAD_REQUEST;
-             }
-             else {
-+                State(IShell::HIBERNATED);
- #ifdef HIBERNATE_SUPPORT_ENABLED
-                 Core::process_t parentPID = local->ParentPID();
-+                local->Release();
-+                Unlock();
- 
--                SYSLOG(Logging::Notification, ("Hibernation of plugin [%s] process [%u]", Callsign().c_str(), parentPID));
-+                TRACE(Activity, (_T("Hibernation of plugin [%s] process [%u]"), Callsign().c_str(), parentPID));
-                 result = HibernateProcess(timeout, parentPID, _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
--                if(result == HIBERNATE_ERROR_NONE)
--                {
-+                Lock();
-+                if (State() != IShell::HIBERNATED) {
-+                    SYSLOG(Logging::Startup, (_T("Hibernation aborted of plugin [%s] process [%u]"), Callsign().c_str(), parentPID));
-+                    result = Core::ERROR_ABORTED;
-+                }
-+                Unlock();
-+
-+                if (result == HIBERNATE_ERROR_NONE) {
-                     result = HibernateChildren(parentPID, timeout);
--                    if(result != Core::ERROR_NONE)
--                    {
--                        //wakeup Parent process to revert Hibernation
--                        SYSLOG(Logging::Notification, ("Wakeup plugin [%s] process [%u] on Hibernate error [%d]", Callsign().c_str(), parentPID, result));
--                        WakeupProcess(timeout, parentPID, _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
--                    }
-                 }
-+
-+                if (result != Core::ERROR_NONE && result != Core::ERROR_ABORTED) {
-+                    // try to wakeup Parent process to revert Hibernation and recover
-+                    TRACE(Activity, (_T("Wakeup plugin [%s] process [%u] on Hibernate error [%d]"), Callsign().c_str(), parentPID, result));
-+                    WakeupProcess(timeout, parentPID, _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
-+                }
-+
-+                Lock();
- #else
-+                local->Release();
-                 result = Core::ERROR_NONE;
- #endif
-                 if (result == Core::ERROR_NONE) {
--                    State(IShell::state::HIBERNATED);
--                    SYSLOG(Logging::Notification, ("Hibernated plugin [%s]:[%s]", ClassName().c_str(), Callsign().c_str()));
-+                    if (State() == IShell::state::HIBERNATED) {
-+                        SYSLOG(Logging::Startup, ("Hibernated plugin [%s]:[%s]", ClassName().c_str(), Callsign().c_str()));
-+                    } else {
-+                        // wakeup occured right after hibernation finished
-+                        SYSLOG(Logging::Startup, ("Hibernation aborted of plugin [%s]:[%s]", ClassName().c_str(), Callsign().c_str()));
-+                        result = Core::ERROR_ABORTED;
-+                    }
-+                }
-+                else if (State() == IShell::state::HIBERNATED) {
-+                    State(IShell::ACTIVATED);
-+                    SYSLOG(Logging::Startup, (_T("Hibernation error [%d] of [%s]:[%s]"), result, ClassName().c_str(), Callsign().c_str()));
-                 }
--                local->Release();
-             }
-         }
-         Unlock();
-@@ -726,8 +752,6 @@ namespace PluginHost
-     uint32_t Server::Service::Wakeup(const uint32_t timeout VARIABLE_IS_NOT_USED) {
-         Core::hresult result = Core::ERROR_NONE;
- 
--        Lock();
--
-         IShell::state currentState(State());
- 
-         if (currentState != IShell::state::HIBERNATED) {
-@@ -749,19 +773,18 @@ namespace PluginHost
-                 // There is no recovery path while doing Wakeup, don't care about errors
-                 WakeupChildren(parentPID, timeout);
- 
--                SYSLOG(Logging::Notification, ("Wakeup of plugin [%s] process [%u]", Callsign().c_str(), parentPID));
-+                TRACE(Activity, (_T("Wakeup of plugin [%s] process [%u]"), Callsign().c_str(), parentPID));
-                 result = WakeupProcess(timeout, parentPID, _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
- #else
-                 result = Core::ERROR_NONE;
- #endif
-                 if (result == Core::ERROR_NONE) {
-                     State(ACTIVATED);
--                    SYSLOG(Logging::Notification, ("Activated plugin from hibernation [%s]:[%s]", ClassName().c_str(), Callsign().c_str()));
-+                    SYSLOG(Logging::Startup, (_T("Activated plugin from hibernation [%s]:[%s]"), ClassName().c_str(), Callsign().c_str()));
-                 }
-                 local->Release();
-             }
-         }
--        Unlock();
- 
-         return (result);
-     }
-@@ -780,24 +803,33 @@ namespace PluginHost
-             }
- 
-             for (auto iter = childrenPIDs.begin(); iter != childrenPIDs.end(); ++iter) {
--                SYSLOG(Logging::Notification, ("Hibernation of plugin [%s] child process [%u]", Callsign().c_str(), *iter));
-+                TRACE(Activity, (_T("Hibernation of plugin [%s] child process [%u]"), Callsign().c_str(), *iter));
-+                Lock();
-+                if (State() != IShell::HIBERNATED) {
-+                    SYSLOG(Logging::Startup, (_T("Hibernation aborted of plugin [%s] child process [%u]"), Callsign().c_str(), *iter));
-+                    result = Core::ERROR_ABORTED;
-+                    Unlock();
-+                    break;
-+                }
-+                Unlock();
-                 result = HibernateProcess(timeout, *iter, _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
-                 if (result == HIBERNATE_ERROR_NONE) {
-                     // Hibernate Children of this process
-                     result = HibernateChildren(*iter, timeout);
--                    if (result != HIBERNATE_ERROR_NONE) {
--                        // revert Hibernation of parent
--                        SYSLOG(Logging::Notification, ("Wakeup plugin [%s] process [%u] on Hibernate error [%d]", Callsign().c_str(), *iter, result));
--                        WakeupProcess(timeout, *iter, _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
-+                    if (result == Core::ERROR_ABORTED) {
-+                        break;
-                     }
-                 }
- 
-                 if (result != HIBERNATE_ERROR_NONE) {
-+                    // try to recover by reverting current Hibernations
-+                    TRACE(Activity, (_T("Wakeup plugin [%s] process [%u] on Hibernate error [%d]"), Callsign().c_str(), *iter, result));
-+                    WakeupProcess(timeout, *iter, _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
-                     // revert previous Hibernations and break
-                     while (iter != childrenPIDs.begin()) {
-                         --iter;
-                         WakeupChildren(*iter, timeout);
--                        SYSLOG(Logging::Notification, ("Wakeup plugin [%s] process [%u] on Hibernate error [%d]", Callsign().c_str(), *iter, result));
-+                        TRACE(Activity, (_T("Wakeup plugin [%s] process [%u] on Hibernate error [%d]"), Callsign().c_str(), *iter, result));
-                         WakeupProcess(timeout, *iter, _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
-                     }
-                     break;
-@@ -814,13 +846,14 @@ namespace PluginHost
-         Core::ProcessInfo::Iterator children(parentPID);
- 
-         if (children.Count() > 0) {
--
--            while (children.Next()) {
-+            // make sure to wakeup PIDs in opposite order to hibernation
-+            // to quickly go over not hibernated PIDs and abort currently processed
-+            children.Reset(false);
-+            while (children.Previous()) {
-                 // Wakeup children of this process
-                 // There is no recovery path while doing Wakeup, don't care about errors
-                 WakeupChildren(children.Current().Id(), timeout);
--
--                SYSLOG(Logging::Notification, ("Wakeup of plugin [%s] child process [%u]", Callsign().c_str(), children.Current().Id()));
-+                TRACE(Activity, (_T("Wakeup of plugin [%s] child process [%u]"), Callsign().c_str(), children.Current().Id()));
-                 result = WakeupProcess(timeout, children.Current().Id(), _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
-             }
-         }
+
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
 index a83a4967..e058f7ee 100644
 --- a/Source/WPEFramework/PluginServer.h
@@ -274,196 +95,3 @@ index a83a4967..e058f7ee 100644
  #ifdef HIBERNATE_SUPPORT_ENABLED
              uint32_t HibernateChildren(const Core::process_t parentPID, const uint32_t timeout);
              uint32_t WakeupChildren(const Core::process_t parentPID, const uint32_t timeout);
-diff --git a/Source/WPEFramework/params.config b/Source/WPEFramework/params.config
-index e00ddb22..9265b8de 100644
---- a/Source/WPEFramework/params.config
-+++ b/Source/WPEFramework/params.config
-@@ -15,6 +15,7 @@ postmortempath
- redirect
- ethernetcard
- communicator
-+hibernate
- exitreasons
- messaging
- plugins
-\ No newline at end of file
-diff --git a/Source/core/Portability.h b/Source/core/Portability.h
-index a5728eebf..aa50b4fb7 100644
---- a/Source/core/Portability.h
-+++ b/Source/core/Portability.h
-@@ -875,6 +875,7 @@ namespace Core {
-         ERROR_CODE(ERROR_INPROC, 47) \
-         ERROR_CODE(ERROR_FAILED_REGISTERED, 48) \
-         ERROR_CODE(ERROR_FAILED_UNREGISTERED, 49) \
-+        ERROR_CODE(ERROR_ABORTED, 50) \
-         ERROR_CODE(ERROR_INVALID_PARAMETER, 54) \
-         ERROR_CODE(ERROR_INVALID_DEVICENAME, 59) \
-         ERROR_CODE(ERROR_INVALID_MOUNTPOINT, 60) \
-diff --git a/Source/core/ProcessInfo.h b/Source/core/ProcessInfo.h
-index 4581bdd7..f23ffb00 100644
---- a/Source/core/ProcessInfo.h
-+++ b/Source/core/ProcessInfo.h
-@@ -136,10 +136,15 @@ namespace Core {
-             {
-                 return ((_index != 0) && (_index <= _pids.size()));
-             }
--            inline void Reset()
-+            inline void Reset(bool start = true)
-             {
--                _index = 0;
--                _current = _pids.begin();
-+                if (start) {
-+                    _index = 0;
-+                    _current = _pids.begin();
-+                } else {
-+                    _index = _pids.size() + 1;
-+                    _current = _pids.end();
-+                }
-             }
-             bool Next()
-             {
-@@ -152,6 +157,17 @@ namespace Core {
-                 }
-                 return (_index <= _pids.size());
-             }
-+            bool Previous()
-+            {
-+                if (_index > 0) {
-+                    _index--;
-+
-+                    if (_index > 0) {
-+                        _current--;
-+                    }
-+                }
-+                return (_index > 0);
-+            }
-             inline ProcessInfo Current() const
-             {
-                 ASSERT(IsValid() == true);
-diff --git a/Source/extensions/hibernate/checkpointserver/CheckpointServer.c b/Source/extensions/hibernate/checkpointserver/CheckpointServer.c
-index e33c5eb2..867ba228 100644
---- a/Source/extensions/hibernate/checkpointserver/CheckpointServer.c
-+++ b/Source/extensions/hibernate/checkpointserver/CheckpointServer.c
-@@ -37,7 +37,8 @@ typedef enum {
- typedef enum {
-     MEMCR_OK = 0,
-     MEMCR_ERROR = -1,
--    MEMCR_INVALID_PID = -2
-+    MEMCR_INVALID_PID = -2,
-+    MEMCR_SOCKET_READ_ERROR = -3
- } ServerResponseCode;
- 
- typedef struct {
-@@ -135,14 +136,15 @@ static bool SendRcvCmd(const ServerRequest* cmd, ServerResponse* resp, uint32_t
- 
-     ret = write(cd, cmd, sizeof(ServerRequest));
-     if (ret != sizeof(ServerRequest)) {
--        LOGERR("Socket write failed: ret %d", ret);
-+        LOGERR("Socket write failed: ret %d, %m", ret);
-         close(cd);
-         return false;
-     }
- 
-     ret = read(cd, resp, sizeof(ServerResponse));
-     if (ret != sizeof(ServerResponse)) {
--        LOGERR("Socket read failed: ret %d", ret);
-+        LOGERR("Socket read failed: ret %d, %m", ret);
-+        resp->respCode = MEMCR_SOCKET_READ_ERROR;
-         close(cd);
-         return false;
-     }
-@@ -163,6 +165,9 @@ uint32_t HibernateProcess(const uint32_t timeout, const pid_t pid, const char da
-     if (SendRcvCmd(&req, &resp, timeout, data_dir)) {
-         LOGINFO("Hibernate process PID %d success", pid);
-         return HIBERNATE_ERROR_NONE;
-+    } else if (resp.respCode == MEMCR_SOCKET_READ_ERROR) {
-+        LOGERR("Error Hibernate timeout process PID %d ret %d", pid, resp.respCode);
-+        return HIBERNATE_ERROR_TIMEOUT;
-     } else {
-         LOGERR("Error Hibernate process PID %d ret %d", pid, resp.respCode);
-         return HIBERNATE_ERROR_GENERAL;
-diff --git a/Source/extensions/hibernate/hibernate.h b/Source/extensions/hibernate/hibernate.h
-index 1f966657..88837141 100644
---- a/Source/extensions/hibernate/hibernate.h
-+++ b/Source/extensions/hibernate/hibernate.h
-@@ -28,6 +28,7 @@ extern "C" {
- 
- #define HIBERNATE_ERROR_NONE        0
- #define HIBERNATE_ERROR_GENERAL     1
-+#define HIBERNATE_ERROR_TIMEOUT     2
- 
- uint32_t HibernateProcess(const uint32_t timeout, const pid_t pid, const char data_dir[], const char volatile_dir[], void** storage);
- uint32_t WakeupProcess(const uint32_t timeout, const pid_t pid, const char data_dir[], const char volatile_dir[], void** storage);
-diff --git a/Tests/unit/core/test_processinfo.cpp b/Tests/unit/core/test_processinfo.cpp
-index 588e826f..b376d8b6 100644
---- a/Tests/unit/core/test_processinfo.cpp
-+++ b/Tests/unit/core/test_processinfo.cpp
-@@ -39,11 +39,22 @@ TEST(Core_ProcessInfo, simpleSet)
-     std::cout << "Size Resident  :" << (processInfo.Resident() >> 10) << " KB" << std::endl;
-     std::cout << "Size Shared    :" << (processInfo.Shared() >> 10) << " KB" << std::endl;
- 
--    Core::ProcessInfo::Iterator childIterator = processInfo.Children();
-+    Core::ProcessInfo::Iterator childIterator = Core::ProcessInfo(0).Children();
- 
--    std::cout << "Children (" << childIterator.Count() << ") " << std::endl;
-+    childIterator.Reset(false);
-+    std::list<uint32_t> pids;
-+    std::cout << "Children of PID 0 (" << childIterator.Count() << ") in revers order" << std::endl;
-+    while (childIterator.Previous()) {
-+        Core::ProcessInfo childProcessInfo = childIterator.Current();
-+        std::cout << "\tName        : " << childProcessInfo.Name() << " (" << childProcessInfo.Id() << "): " << childProcessInfo.Resident() << std::endl;
-+        pids.push_front(childProcessInfo.Id());
-+    }
-+
-+    std::cout << "Children of PID 0 (" << childIterator.Count() << ") " << std::endl;
-     while (childIterator.Next()) {
-         Core::ProcessInfo childProcessInfo = childIterator.Current();
-         std::cout << "\tName        : " << childProcessInfo.Name() << " (" << childProcessInfo.Id() << "): " << childProcessInfo.Resident() << std::endl;
-+        EXPECT_EQ(childProcessInfo.Id(),pids.front());
-+        pids.pop_front();
-     }
- }
-diff --git a/Source/WPEFramework/GenericConfig.cmake b/Source/WPEFramework/GenericConfig.cmake
-index f8b5c5df..536280bb 100644
---- a/Source/WPEFramework/GenericConfig.cmake
-+++ b/Source/WPEFramework/GenericConfig.cmake
-@@ -44,6 +44,7 @@ set(EXIT_REASONS "Failure;MemoryExceeded;WatchdogExpired" CACHE STRING "Process
- set(ETHERNETCARD_NAME "eth0" CACHE STRING "Ethernet Card name which has to be associated for the Raw Device Id creation")
- set(GROUP "" CACHE STRING "Define which system group will be used")
- set(UMASK "" CACHE STRING "Set the permission mask for the creation of new files. e.g. 0760")
-+set(LOCATOR "/tmp/memcrcom" CACHE STRING "Default Memecr Socket path")
-
- # Controller Plugin Settings.
- set(PLUGIN_CONTROLLER_UI_ENABLED "true" CACHE STRING "Enable the Controller's UI")
-@@ -86,6 +87,12 @@ if(COMMUNICATOR)
-     map_set(${CONFIG} communicator ${COMMUNICATOR})
- endif()
-
-+map()
-+kv(locator ${LOCATOR})
-+end()
-+ans(HIBERNATE_CONFIG)
-+map_append(${CONFIG} hibernate ${HIBERNATE_CONFIG})
-+
- map()
-     kv(priority ${PRIORITY})
-     kv(policy ${POLICY})
-diff --git a/Source/WPEFramework/WPEFramework.conf.in b/Source/WPEFramework/WPEFramework.conf.in
-index aa8645c0..dc5172bc 100644
---- a/Source/WPEFramework/WPEFramework.conf.in
-+++ b/Source/WPEFramework/WPEFramework.conf.in
-@@ -15,6 +15,9 @@ redirect = '/Service/Controller/UI'
- ethernetcard = '@ETHERNETCARD_NAME@'
- communicator = '@COMMUNICATOR@'
-
-+hibernate = JSON()
-+hibernate.add("locator", '@LOCATOR@')
-+
- process = JSON()
- process.add("priority", '@PRIORITY@')
- process.add("policy", '@POLICY@')
--- 
-2.43.0
-
-
-
