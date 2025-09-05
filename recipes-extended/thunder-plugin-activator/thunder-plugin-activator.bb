@@ -11,7 +11,7 @@ PR = "r0"
 
 SRC_URI = "git://github.com/tabbas651/ThunderPluginActivator;protocol=https;branch=main"
 
-SRCREV = "40d28ea5e202d9a5b6ff9fb9308e64591420144c"
+SRCREV = "36c80eb24a825d87ba5605d9d67a927e063a97e7"
 
 S = "${WORKDIR}/git"
 
