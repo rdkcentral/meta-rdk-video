@@ -52,6 +52,11 @@ CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAF
 CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
 
+CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'enable_hdmiin_support', ' -DHAS_HDMI_IN_SUPPORT ', '', d)}"
+CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'enable_compositein_support', ' -DHAS_COMPOSITE_IN_SUPPORT ', '', d)}"
+CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'enable_spdif_support', ' -DHAS_SPDIF_SUPPORT ', '', d)}"
+CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'enable_headphone_support', ' -DHAS_HEADPHONE_SUPPORT ', '', d)}"
+
 LDFLAGS += "-lrfcapi -lz"
 
 EXTRA_OECONF = " --enable-yocto"
