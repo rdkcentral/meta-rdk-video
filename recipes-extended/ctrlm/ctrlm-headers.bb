@@ -43,7 +43,6 @@ do_install() {
 
     install -d ${D}${includedir}/ctrlm_private
     install -m 644 ${S}/src/ctrlm_vendor_network_factory.h ${D}${includedir}/ctrlm_private
-    install -m 644 ${S}/src/ctrlm_voice_packet_analysis.h ${D}${includedir}/ctrlm_private
     install -m 644 ${S}/src/ctrlm_log.h ${D}${includedir}/ctrlm_private
 
     # Authorization Support
