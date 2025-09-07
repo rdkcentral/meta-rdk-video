@@ -17,8 +17,8 @@ PR ?= "r0"
 
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/pxCore;branch=rtcore"
-SRCREV = "bca187881a6d85c37c15115462376e1120d351ea"
+SRC_URI = "git://github.com/trupthi1403/pxCore;branch=topic/RDKEMW-7489"
+SRCREV = "77d13bc761499b7aa59391fb0cb3d229b72c7059"
 
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations -Wno-maybe-uninitialized -Wno-address"
 
