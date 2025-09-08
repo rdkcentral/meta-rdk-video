@@ -64,6 +64,7 @@ PACKAGECONFIG ?= " monitor \
     lifecyclemanager \
     storagemanager \
     appmanager \
+    texttospeech \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
@@ -126,6 +127,7 @@ PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LI
 PACKAGECONFIG[storagemanager]       = "-DPLUGIN_STORAGE_MANAGER=ON,-DPLUGIN_STORAGE_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[appmanager]           = "-DPLUGIN_APPMANAGER=ON,-DPLUGIN_APPMANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON"
+PACKAGECONFIG[texttospeech]         = "-DPLUGIN_MONITOR_TEXTTOSPEECH=ON"
 
 # ----------------------------------------------------------------------------
 
