@@ -6,7 +6,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=70514b59ff7b36bbbc30d093c6814d8e"
 
 #SRC_URI = "${CMF_GITHUB_ROOT}/meminsight;${CMF_GITHUB_SRC_URI_SUFFIX};name=meminsight"
-SRC_URI = "git://github.com/rdkcentral/meminsight.git;branch=sample;protocol=https"
+SRC_URI = "git://github.com/rdkcentral/meminsight.git;branch=develop;protocol=https"
 SRC_URI:append = " file://meminsight-runner.service "
 
 SRCREV = "${AUTOREV}"
