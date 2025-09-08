@@ -74,7 +74,7 @@ THUNDER             ??= "true"
 DEPENDS:append        = "${@bb.utils.contains('THUNDER', 'true', ' wpeframework', '', d)}"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE:append  = "${@bb.utils.contains('THUNDER', 'true', bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', " -DWPE_FRAMEWORK_COM_SOCKET=ON", " -DWPE_FRAMEWORK_PROTO_TRACING=ON", d), " ", d)}"
-EXTRA_OECMAKE:append  = "${@bb.utils.contains('THUNDER', 'true', ' -DTHUNDER=ON', '', d)}"
+EXTRA_OECMAKE:append  = "${@bb.utils.contains('THUNDER', 'true', ' -DTHUNDER=ON', ' -DTHUNDER=OFF', d)}"
 
 THUNDER_SECURITY  ??= "${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', 'false', 'true', d)}"
 DEPENDS:append      = "${@bb.utils.contains('THUNDER_SECURITY', 'true', ' wpeframework-clientlibraries', '', d)}"
@@ -116,6 +116,7 @@ DEPENDS:append = " libevdev"
 # Authorization Support
 AUTH                ?= "true"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('AUTH', 'true', ' -DAUTH_ENABLED=ON', '', d)}"
+DEPENDS:append       = "${@bb.utils.contains('AUTH', 'true', ' openssl rdkcertconfig', '', d)}"
 # Auth Activation Status Support
 AUTH_ACTIVATION_STATUS ?= "false"
 EXTRA_OECONF:append = "${@bb.utils.contains('AUTH_ACTIVATION_STATUS', 'true', ' -DAUTH_ACTIVACTION_STATUS', '', d)}"
