@@ -32,7 +32,7 @@ do_install() {
     install -d ${D}${systemd_unitdir}/system/meminsight-runner.path.d
 }
 
-do_install_append:client() {
+do_install:append:client() {
     install -m 0644 ${WORKDIR}/conf/client.conf ${D}${systemd_unitdir}/system/meminsight-runner.service.d/
     install -m 0644 ${WORKDIR}/conf/client-path.conf ${D}${systemd_unitdir}/system/meminsight-runner.path.d/
 }
@@ -40,9 +40,9 @@ do_install_append:client() {
 
 SYSTEMD_SERVICE_${PN} = "meminsight-runner.path"
 
-FILES_${PN} += "${bindir}/xmeminsight"
-FILES_${PN} += "${systemd_unitdir}/system/meminsight-runner.service"
-FILES_${PN} += "${systemd_unitdir}/system/meminsight-runner.path"
-FILES_${PN} += "${systemd_unitdir}/system/meminsight-runner.service.d/*.conf"
-FILES_${PN} += "${systemd_unitdir}/system/meminsight-runner.path.d/*.conf"
+FILES:${PN} += "${bindir}/xmeminsight"
+FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.service"
+FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.path"
+FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.service.d/*.conf"
+FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.path.d/*.conf"
 
