@@ -1,0 +1,9 @@
+[Unit]
+Description=MemInsight Memory Stats Runner
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/xMemInsight
+
+[Install]
+WantedBy=multi-user.target
