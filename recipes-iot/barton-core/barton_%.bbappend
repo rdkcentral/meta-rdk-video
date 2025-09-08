@@ -5,7 +5,7 @@ inherit features_check
 REQUIRED_DISTRO_FEATURES = "ENABLE_MATTER_BARTON"
 
 # Add libxml2 to DEPENDS
-DEPENDS:append = "libxml2 jsoncpp"
+DEPENDS:append = "libxml2 jsoncpp linenoise"
 
 # Remove otbr-agent from DEPENDS
 DEPENDS:remove = "otbr-agent"
