@@ -1,0 +1,25 @@
+From 62a26d2d219fcae4457189e73334c09493786d78 Mon Sep 17 00:00:00 2001
+From: tsharm493 <tanuj_sharma@comcast.com>
+Date: Wed, 3 Sep 2025 05:23:54 +0000
+Subject: [PATCH] changing storage to opt
+
+---
+ core/src/deviceServiceConfiguration.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/src/deviceServiceConfiguration.c b/core/src/deviceServiceConfiguration.c
+index 31d51b2..7484b74 100644
+--- a/core/src/deviceServiceConfiguration.c
++++ b/core/src/deviceServiceConfiguration.c
+@@ -36,7 +36,7 @@
+ #define LOG_TAG                   "deviceServiceConfiguration"
+ #define logFmt(fmt)               "%s: " fmt, __func__
+ 
+-#define DEFAULT_DS_DIR            "/tmp/barton/device_service"
++#define DEFAULT_DS_DIR            "/opt/barton/device_service"
+ #define DEFAULT_STORAGE_DIR       DEFAULT_DS_DIR "/storage"
+ #define DEFAULT_FIRMWARE_FILE_DIR DEFAULT_DS_DIR "/firmware"
+ 
+-- 
+2.25.1
+

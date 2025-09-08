@@ -1,0 +1,26 @@
+From db788057999df796d396b16f41321939ae66d41d Mon Sep 17 00:00:00 2001
+From: tsharm493 <tanuj_sharma@comcast.com>
+Date: Fri, 22 Aug 2025 06:04:49 +0000
+Subject: [PATCH] included path for providers
+
+---
+ core/CMakeLists.txt | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/core/CMakeLists.txt b/core/CMakeLists.txt
+index 8b89924..b0f7f83 100644
+--- a/core/CMakeLists.txt
++++ b/core/CMakeLists.txt
+@@ -46,7 +46,8 @@ file(GLOB eventSrc "src/event/*.c")
+ file(GLOB dbaseSrc "src/database/*.c")
+ file(GLOB deviceSrc "src/device/*.c")
+ file(GLOB serialSrc "src/serial/*.c")
+-set(SOURCES ${mainSrc} ${eventSrc} ${dbaseSrc} ${deviceSrc} ${serialSrc})
++file(GLOB matterSrc "src/subsystems/matter/providers/*")
++set(SOURCES ${mainSrc} ${eventSrc} ${dbaseSrc} ${deviceSrc} ${serialSrc} ${matterSrc})
+ 
+ # philips lights (if option set)
+ if (BCORE_PHILIPS_HUE)
+-- 
+2.25.1
+
