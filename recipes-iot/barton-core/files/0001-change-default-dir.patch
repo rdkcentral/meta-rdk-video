@@ -1,0 +1,35 @@
+From e1e86988015bccab8d02f9655054b5fe34371b8c Mon Sep 17 00:00:00 2001
+From: tsharm493 <tanuj_sharma@comcast.com>
+Date: Mon, 25 Aug 2025 07:47:10 +0000
+Subject: [PATCH] change default dir
+
+---
+ reference/src/barton-core-reference-app.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/reference/src/barton-core-reference-app.c b/reference/src/barton-core-reference-app.c
+index 35d5009..bf93ee7 100644
+--- a/reference/src/barton-core-reference-app.c
++++ b/reference/src/barton-core-reference-app.c
+@@ -177,7 +177,7 @@ static void completionCallback(const char *buf, linenoiseCompletions *lc)
+ static gchar *getDefaultConfigDirectory(void)
+ {
+     struct passwd *pw = getpwuid(getuid());
+-    gchar *confDir = stringBuilder("%s/.brtn-ds", pw->pw_dir);
++    gchar *confDir = stringBuilder("/opt/.brtn-ds");
+     g_mkdir_with_parents(confDir, DEFAULT_CONF_DIR_MODE);
+     return confDir;
+ }
+@@ -219,6 +219,9 @@ static void setDefaultParameters(BCoreInitializeParamsContainer *params)
+         b_core_property_provider_set_property_string(
+             propProvider, B_CORE_BARTON_MATTER_SERIAL_NUMBER, "SN-123456789");
+ 
++	b_core_property_provider_set_property_string(
++		       	propProvider, "device.matter.environment", "development");
++
+         // Set Manufacturing Date to "now"
+         time_t now = time(NULL);
+         struct tm *tm = localtime(&now);
+-- 
+2.25.1
+
