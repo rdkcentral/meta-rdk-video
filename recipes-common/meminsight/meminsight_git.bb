@@ -8,6 +8,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/${BPN}.git;nobranch=1;protocol=${CMF_GIT_PROTOCOL}
 
 SRC_URI:append = " file://meminsight-runner.service \
                    file://meminsight-runner.path \
+                   file://ntp-monitor.conf \
                    file://conf/client.conf \
                    file://conf/client-path.conf \
                    "
@@ -24,6 +25,8 @@ do_install() {
     install -d ${D}${bindir}
     install -m 0755 ${B}/xmeminsight ${D}${bindir}/xmeminsight
     install -d ${D}${systemd_unitdir}/system
+    install -d ${D}${sysconfdir}
+    install -m 0644 ${WORKDIR}/ntp-monitor.conf ${D}${sysconfdir}
     install -m 0644 ${WORKDIR}/meminsight-runner.service ${D}${systemd_unitdir}/system/
     install -m 0644 ${WORKDIR}/meminsight-runner.path ${D}${systemd_unitdir}/system/
     install -d ${D}${systemd_unitdir}/system/meminsight-runner.service.d
@@ -43,4 +46,5 @@ FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.service"
 FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.path"
 FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.service.d/*.conf"
 FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.path.d/*.conf"
+FILES:${PN} += "${sysconfdir}/ntp-monitor.conf"
 
