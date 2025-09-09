@@ -11,7 +11,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=
 S = "${WORKDIR}/git"
 
 inherit systemd syslog-ng-config-gen logrotate_config
-SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup update-device-details applications vitalprocess-info iptables mount_log reboot-reason messages rdnssd zram"
+SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup update-device-details applications vitalprocess-info iptables mount_log reboot-reason messages zram"
 SYSLOG-NG_FILTER:append = " ConnectionStats systemd_timesyncd"
 SYSLOG-NG_SERVICE_ConnectionStats = "network-connection-stats.service"
 SYSLOG-NG_DESTINATION_ConnectionStats = "ConnectionStats.txt"
@@ -52,10 +52,6 @@ SYSLOG-NG_LOGRATE_messages = "low"
 
 # Get kernel logs via journal
 SYSLOG-NG_PROGRAM_messages += " kernel"
-
-# Drop rdnssd logs
-SYSLOG-NG_SERVICE_rdnssd = "rdnssd.service"
-SYSLOG-NG_LOGRATE_rdnssd = "medium"
 
 do_compile[noexec] = "1"
 CLEANBROKEN = "1"
@@ -140,7 +136,6 @@ do_install() {
 	install -m 0644 ${S}/systemd_units/dropbear.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/network-connection-stats.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/network-connection-stats.timer ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/rdnssd.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/NM_Bootstrap.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/zram.service ${D}${systemd_unitdir}/system
 
@@ -302,7 +297,6 @@ SYSTEMD_SERVICE:${PN} += "update-reboot-info.service"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.path"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.service"
 SYSTEMD_SERVICE:${PN} += "gstreamer-cleanup.service"
-SYSTEMD_SERVICE:${PN} += "rdnssd.service"
 SYSTEMD_SERVICE:${PN} += "restart-timesyncd.path"
 SYSTEMD_SERVICE:${PN} += "ntp-event.service"
 SYSTEMD_SERVICE:${PN} += "ntp-event.path"
