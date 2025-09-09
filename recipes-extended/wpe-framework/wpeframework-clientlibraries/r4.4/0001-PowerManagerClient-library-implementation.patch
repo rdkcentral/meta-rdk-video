@@ -1615,7 +1615,7 @@ index 0000000..6772e8e
 +    template <typename CallbackType, typename PARENT>
 +    Core::hresult RegisterCallback(CallbackList<CallbackType, PARENT>& callbacklist, typename CallbackType::Type callback, void* userdata)
 +    {
-+        Core::hresult result = Core::ERROR_INVALID_PARAMETER;
++        Core::hresult result = ERROR_INVALID_PARAMETER;
 +
 +        ASSERT(nullptr != callback);
 +
@@ -1634,7 +1634,7 @@ index 0000000..6772e8e
 +    template <typename CallbackType, typename PARENT>
 +    Core::hresult UnRegisterCallback(CallbackList<CallbackType, PARENT>& callbacklist, typename CallbackType::Type callback)
 +    {
-+        Core::hresult result = Core::ERROR_INVALID_PARAMETER;
++        Core::hresult result = ERROR_INVALID_PARAMETER;
 +
 +        ASSERT(nullptr != callback);
 +
