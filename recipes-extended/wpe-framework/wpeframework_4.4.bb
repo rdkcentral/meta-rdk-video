@@ -40,7 +40,6 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/wpeframework_persistentpathchanges.patch \
            file://r4.4/1004-Add-support-for-project-dir.patch \
            file://r4.4/Enable_Thunder_Logging_R4.4.1.patch \
-           file://r4.4/Thunder_FirmwareUpdate_USB_Mount_Error_codes.patch \
            file://r4.4/R4-wpeframework-sd_notify.patch \
            file://r4.4/RDKEMW-733-Add-ENTOS-IDS.patch \
            file://r4.4/Update-Trace-Level-Logging-Logic.patch \
