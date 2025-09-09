@@ -9,9 +9,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/${BPN}.git;nobranch=1;protocol=${CMF_GIT_PROTOCOL}
 SRC_URI:append = " file://meminsight-runner.service \
                    file://meminsight-runner.path \
                    file://conf/client.conf \
-                   file://conf/broadband.conf \
                    file://conf/client-path.conf \
-                   file://conf/broadband-path.conf \
                    "
 
 SRCREV = "f83f1804827cca0550d525d971f4337998d6ac1d"
