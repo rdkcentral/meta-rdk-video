@@ -53,7 +53,7 @@ diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServ
 index a83a4967..e058f7ee 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
-@@ -1442,12 +1442,16 @@ namespace PluginHost {
+@@ -1440,12 +1440,16 @@
                  Core::ProxyType<Core::JSONRPC::Message> response;
  
                  Lock();
@@ -73,7 +73,7 @@ index a83a4967..e058f7ee 100644
                      {
                          response->Error.SetError(Core::ERROR_HIBERNATED);
                          response->Error.Text = _T("Service is hibernated");
-@@ -1460,6 +1464,12 @@ namespace PluginHost {
+@@ -1458,6 +1462,12 @@
                      response->Id = message.Id;
                  }
                  else {
@@ -86,7 +86,7 @@ index a83a4967..e058f7ee 100644
                      Unlock();
  
  #if THUNDER_RUNTIME_STATISTICS
-@@ -1801,7 +1811,7 @@ namespace PluginHost {
+@@ -1783,7 +1793,7 @@
              }
  
          private:
