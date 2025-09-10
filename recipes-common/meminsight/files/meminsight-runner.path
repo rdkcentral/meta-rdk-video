@@ -22,7 +22,7 @@ Description=MemInsight Enable Path Monitor
 OnFailure=path-fail-notifier@%n.service
 
 [Path]
-PathChanged=/tmp/.enable_meminsight
+PathExists=/opt/.enable_meminsight
 Unit=meminsight-runner.service
 
 [Install]
