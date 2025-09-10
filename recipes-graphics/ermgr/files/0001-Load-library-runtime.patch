@@ -1,0 +1,60 @@
+From aa7348ac3045f6f217b7a1cd241fb22dd4f6e258 Mon Sep 17 00:00:00 2001
+From: Lekshmi Mohan <Mohan_Lekshmi@comcast.com>
+Date: Mon, 2 Jun 2025 03:20:47 +0000
+Subject: [PATCH] Load library runtime
+
+---
+ ermgr.cpp | 22 +++++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
+
+diff --git a/ermgr.cpp b/ermgr.cpp
+index a3bff96..682c2f8 100644
+--- a/ermgr.cpp
++++ b/ermgr.cpp
+@@ -20,6 +20,7 @@
+ #include <signal.h>
+ #include <unistd.h>
+ #include "essos-resmgr.h"
++#include <dlfcn.h>
+ 
+ static bool gRunning;
+ 
+@@ -39,7 +40,25 @@ int main( int argc, const char *argv )
+    sigaction(SIGINT, &sigint, NULL);
+ 
+    fprintf(stderr,"ermgr: starting\n");
+-   bool rc= EssRMgrInit();
++
++
++   void *handle = dlopen("/opt/ERM/libessosrmgr.so.0.0.0", RTLD_LAZY);
++
++   if (!handle) {
++        fprintf(stderr, "Error opening library: %s\n", dlerror());
++        return 1;
++    }
++
++   bool (*ERMInit)();
++
++   ERMInit = (bool (*)())dlsym(handle, "EssRMgrInit");
++    if (!ERMInit) {
++        fprintf(stderr, "Error finding symbol: %s\n", dlerror());
++        dlclose(handle);
++        return 1;
++    }
++
++   bool rc= ERMInit();
+    if ( rc )
+    {
+       gRunning= true;
+@@ -54,6 +73,7 @@ int main( int argc, const char *argv )
+       }
+       EssRMgrTerm();
+    }
++   dlclose(handle);
+    fprintf(stderr,"ermgr: stopped\n");
+ }
+ 
+-- 
+2.25.1
+
+
