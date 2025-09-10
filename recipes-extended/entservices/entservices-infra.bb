@@ -65,7 +65,6 @@ PACKAGECONFIG ?= " monitor \
     lifecyclemanager \
     storagemanager \
     appmanager \
-    dacrialto \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
