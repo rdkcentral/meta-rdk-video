@@ -10,6 +10,8 @@ PV = "1.0"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
+SRC_URI += "file://ntp_metrics_poll.c"
+
 inherit systemd syslog-ng-config-gen logrotate_config
 SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup update-device-details applications vitalprocess-info iptables mount_log reboot-reason messages rdnssd zram"
 SYSLOG-NG_FILTER:append = " ConnectionStats systemd_timesyncd"
@@ -75,10 +77,16 @@ ENABLE_SOFTWARE_OPTOUT="${@bb.utils.contains('DISTRO_FEATURES', 'enable_software
 ENABLE_SYSLOGNG = "${@bb.utils.contains('DISTRO_FEATURES', 'syslog-ng', 'true', 'false', d)}"
 DUNFELL_BUILD = "${@bb.utils.contains('DISTRO_FEATURES', 'dunfell', 'true', 'false', d)}"
 
+do_compile:append() {
+  ${CC} ${CFLAGS} ${LDFLAGS} ${WORKDIR}/ntp_metrics_poll.c -o ${S}/ntpmetrics_poll
+}
+
 do_install() {
 	install -d ${D}${base_libdir}/rdk
 	install -m 0755 ${S}/lib/rdk/* ${D}${base_libdir}/rdk
 
+        install -d ${D}${bindir}
+    install -m 0755 ${S}/ntpmetrics_poll ${D}${bindir}/ntpmetrics_poll
 	install -d ${D}${sysconfdir}
         install -d ${D}${sysconfdir}/rfcdefaults
 	install -m 0644 ${S}/etc/*.properties ${D}${sysconfdir}
