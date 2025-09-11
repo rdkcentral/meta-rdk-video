@@ -22,8 +22,8 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 
 inherit autotools systemd
 
-do_compile() {
-  ${CC} ${CFLAGS} ${LDFLAGS} ${WORKDIR}/ntp_metrics_poll.c -o ${S}/ntpmetrics_poll
+do_compile:append() {
+  ${CC} ${CFLAGS} ${LDFLAGS} ${WORKDIR}/ntp_metrics_poll.c -o ${B}/ntpmetrics_poll
 }
 
 
@@ -32,7 +32,7 @@ do_install() {
     install -m 0755 ${B}/xmeminsight ${D}${bindir}/xmeminsight
     install -d ${D}${systemd_unitdir}/system
     install -d ${D}${sysconfdir}
-    install -m 0755 ${S}/ntpmetrics_poll ${D}${bindir}/ntpmetrics_poll
+    install -m 0755 ${B}/ntpmetrics_poll ${D}${bindir}/ntpmetrics_poll
     install -m 0644 ${WORKDIR}/ntp-monitor.conf ${D}${sysconfdir}
     install -m 0644 ${WORKDIR}/meminsight-runner.service ${D}${systemd_unitdir}/system/
     install -m 0644 ${WORKDIR}/meminsight-runner.path ${D}${systemd_unitdir}/system/
