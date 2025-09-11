@@ -59,7 +59,7 @@ SYSLOG-NG_PROGRAM_messages += " kernel"
 SYSLOG-NG_SERVICE_rdnssd = "rdnssd.service"
 SYSLOG-NG_LOGRATE_rdnssd = "medium"
 
-do_compile[noexec] = "1"
+#do_compile[noexec] = "1"
 CLEANBROKEN = "1"
 
 DEPENDS += "crashupload"
