@@ -11,6 +11,7 @@ SRC_URI:append = " file://meminsight-runner.service \
                    file://ntp-monitor.conf \
                    file://conf/client.conf \
                    file://conf/client-path.conf \
+                   file://ntp_metrics_poll.c \
                    "
 
 SRCREV = "f83f1804827cca0550d525d971f4337998d6ac1d"
@@ -21,11 +22,17 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 
 inherit autotools systemd
 
+do_compile() {
+  ${CC} ${CFLAGS} ${LDFLAGS} ${WORKDIR}/ntp_metrics_poll.c -o ${S}/ntpmetrics_poll
+}
+
+
 do_install() {
     install -d ${D}${bindir}
     install -m 0755 ${B}/xmeminsight ${D}${bindir}/xmeminsight
     install -d ${D}${systemd_unitdir}/system
     install -d ${D}${sysconfdir}
+    install -m 0755 ${S}/ntpmetrics_poll ${D}${bindir}/ntpmetrics_poll
     install -m 0644 ${WORKDIR}/ntp-monitor.conf ${D}${sysconfdir}
     install -m 0644 ${WORKDIR}/meminsight-runner.service ${D}${systemd_unitdir}/system/
     install -m 0644 ${WORKDIR}/meminsight-runner.path ${D}${systemd_unitdir}/system/
@@ -47,4 +54,6 @@ FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.path"
 FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.service.d/*.conf"
 FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.path.d/*.conf"
 FILES:${PN} += "${sysconfdir}/ntp-monitor.conf"
+
+FILES:${PN} += "${bindir}/ntpmetrics_poll"
 
