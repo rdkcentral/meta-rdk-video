@@ -10,10 +10,8 @@ PV = "1.0"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
-SRC_URI += "file://ntp_metrics_poll.c"
-
 inherit systemd syslog-ng-config-gen logrotate_config
-SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup update-device-details applications vitalprocess-info iptables mount_log reboot-reason messages rdnssd zram"
+SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup update-device-details applications vitalprocess-info iptables mount_log reboot-reason messages zram"
 SYSLOG-NG_FILTER:append = " ConnectionStats systemd_timesyncd"
 SYSLOG-NG_SERVICE_ConnectionStats = "network-connection-stats.service"
 SYSLOG-NG_DESTINATION_ConnectionStats = "ConnectionStats.txt"
@@ -55,11 +53,7 @@ SYSLOG-NG_LOGRATE_messages = "low"
 # Get kernel logs via journal
 SYSLOG-NG_PROGRAM_messages += " kernel"
 
-# Drop rdnssd logs
-SYSLOG-NG_SERVICE_rdnssd = "rdnssd.service"
-SYSLOG-NG_LOGRATE_rdnssd = "medium"
-
-#do_compile[noexec] = "1"
+do_compile[noexec] = "1"
 CLEANBROKEN = "1"
 
 DEPENDS += "crashupload"
@@ -77,16 +71,10 @@ ENABLE_SOFTWARE_OPTOUT="${@bb.utils.contains('DISTRO_FEATURES', 'enable_software
 ENABLE_SYSLOGNG = "${@bb.utils.contains('DISTRO_FEATURES', 'syslog-ng', 'true', 'false', d)}"
 DUNFELL_BUILD = "${@bb.utils.contains('DISTRO_FEATURES', 'dunfell', 'true', 'false', d)}"
 
-do_compile:append() {
-  ${CC} ${CFLAGS} ${LDFLAGS} ${WORKDIR}/ntp_metrics_poll.c -o ${S}/ntpmetrics_poll
-}
-
 do_install() {
 	install -d ${D}${base_libdir}/rdk
 	install -m 0755 ${S}/lib/rdk/* ${D}${base_libdir}/rdk
 
-        install -d ${D}${bindir}
-    install -m 0755 ${S}/ntpmetrics_poll ${D}${bindir}/ntpmetrics_poll
 	install -d ${D}${sysconfdir}
         install -d ${D}${sysconfdir}/rfcdefaults
 	install -m 0644 ${S}/etc/*.properties ${D}${sysconfdir}
@@ -141,15 +129,15 @@ do_install() {
         install -m 0644 ${S}/systemd_units/restart-parodus.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/oops-dump.service ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/restart-timesyncd.service ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/restart-timesyncd.path ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-event.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-event.path ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/dropbear.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/network-connection-stats.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/network-connection-stats.timer ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/rdnssd.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/NM_Bootstrap.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/zram.service ${D}${systemd_unitdir}/system
-         install -m 0644 ${S}/systemd_units/notify-network-ready.service ${D}${systemd_unitdir}/system
 
 
 	install -m 0644 ${S}/systemd_units/network-up.path ${D}${systemd_unitdir}/system
@@ -309,8 +297,7 @@ SYSTEMD_SERVICE:${PN} += "update-reboot-info.service"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.path"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.service"
 SYSTEMD_SERVICE:${PN} += "gstreamer-cleanup.service"
-SYSTEMD_SERVICE:${PN} += "rdnssd.service"
-
+SYSTEMD_SERVICE:${PN} += "restart-timesyncd.path"
 SYSTEMD_SERVICE:${PN} += "ntp-event.service"
 SYSTEMD_SERVICE:${PN} += "ntp-event.path"
 SYSTEMD_SERVICE:${PN} += "network-connection-stats.service"
@@ -324,7 +311,6 @@ SYSTEMD_SERVICE:${PN} += "ntp-time-sync-event.service"
 SYSTEMD_SERVICE:${PN} += "ntp-time-sync.timer"
 SYSTEMD_SERVICE:${PN} += "system-time-set.path"
 SYSTEMD_SERVICE:${PN} += "system-time-event.service"
-SYSTEMD_SERVICE:${PN} += "notify-network-ready.service"
 
 FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
