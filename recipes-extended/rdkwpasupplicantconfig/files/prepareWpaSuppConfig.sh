@@ -108,6 +108,9 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
         echo "pmf=$PMF_CONFIG" >> $WPA_SUPP_CONF_FILE
         echo "PMF is enabled and set to mode "optional"."
     fi
+    # Disable reusing cached session keys
+    echo "ap_scan=1" >> $WPA_SUPP_CONF_FILE
+    echo "fast_reauth=0" >> $WPA_SUPP_CONF_FILE
     #Delete roaming_enable and kvr_enable in wpa_supplicant.conf as RDKE doesn't support
     sed -i '/roaming_enable/d' $WPA_SUPP_CONF_FILE
     sed -i '/kvr_enable/d' $WPA_SUPP_CONF_FILE
@@ -127,6 +130,9 @@ else
     echo "update_config=1" >> $WPA_SUPP_CONF_FILE
     echo "country=$COUNTRY_CODE" >> $WPA_SUPP_CONF_FILE
     echo "pmf=$PMF_CONFIG" >> $WPA_SUPP_CONF_FILE
+    # Disable reusing cached session keys
+    echo "ap_scan=1" >> $WPA_SUPP_CONF_FILE
+    echo "fast_reauth=0" >> $WPA_SUPP_CONF_FILE
 fi
 # Configuring wpa_supplicant log levels
 # Get debug.ini file with opt-override support
