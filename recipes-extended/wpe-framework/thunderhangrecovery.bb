@@ -10,6 +10,9 @@ PV = "1.0.0"
 # The source file to compile
 SRC_URI = "file://thunderHangRecovery.cpp \
            file://thunderHangRecovery.service \
+           file://selfheal.timer \
+           file://selfheal.service \
+           file://selfheal.sh \
           "
 
 inherit systemd syslog-ng-config-gen
@@ -34,10 +37,20 @@ do_install:append() {
     install -m 0755 ${WORKDIR}/thunderHangRecovery ${D}${bindir}
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/thunderHangRecovery.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${WORKDIR}/selfheal.timer ${D}${systemd_unitdir}/system
+    install -m 0644 ${WORKDIR}/selfheal.service ${D}${systemd_unitdir}/system
+    install -m 0755 ${WORKDIR}/selfheal.sh ${D}${bindir}
 }
 
 SYSTEMD_SERVICE:${PN} += "thunderHangRecovery.service"
+SYSTEMD_SERVICE:${PN} += "selfheal.timer"
+SYSTEMD_SERVICE:${PN} += "selfheal.service"
 
 # Specify where to install the executable
 FILES:${PN} += "${bindir}/thunderHangRecovery"
 FILES:${PN} += "${systemd_unitdir}/system/thunderHangRecovery.service"
+
+# SelfHeal Specifics
+FILES:${PN} += "${systemd_unitdir}/system/selfheal.timer"
+FILES:${PN} += "${systemd_unitdir}/system/selfheal.service"
+FILES:${PN} += "${bindir}/selfheal.sh"

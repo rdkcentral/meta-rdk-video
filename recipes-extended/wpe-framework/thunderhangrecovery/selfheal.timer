@@ -1,0 +1,11 @@
+[Unit]
+Description=Selfheal to unblock 2.16.x release
+Requires=wpeframework.service
+After=wpeframework.service
+
+[Timer]
+OnActiveSec=15s
+Unit=selfheal.service
+
+[Install]
+WantedBy=multi-user.target
