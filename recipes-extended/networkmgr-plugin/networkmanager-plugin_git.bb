@@ -17,10 +17,10 @@ PR = "r0"
 PV = "1.0.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=main"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/DELIA-68961"
 
 # Aug 29, 2025
-SRCREV = "7abe7ab0484abda2d372bd24fbcc6df0b2c08708"
+SRCREV = "0380514e95e55ce9b7458af09b342250aa2ed0eb"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
