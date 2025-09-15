@@ -4,7 +4,7 @@ Description=NTP Metrics collector
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/ntpmetrics_poll
+ExecStart=/usr/bin/ntpmetrics_poll --csv > /opt/ntp-metrics
 
 [Install]
 WantedBy=multi-user.target
