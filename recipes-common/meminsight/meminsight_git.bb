@@ -46,7 +46,7 @@ do_install:append:client() {
 }
 
 
-SYSTEMD_SERVICE_${PN} = "meminsight-runner.path"
+SYSTEMD_SERVICE:${PN} = "meminsight-runner.path"
 
 FILES:${PN} += "${bindir}/xmeminsight"
 FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.service"
