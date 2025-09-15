@@ -12,6 +12,7 @@ SRC_URI:append = " file://meminsight-runner.service \
                    file://conf/client.conf \
                    file://conf/client-path.conf \
                    file://ntp_metrics_poll.c \
+                   file://ntp-metrics-collector.service \
                    "
 
 SRCREV = "f83f1804827cca0550d525d971f4337998d6ac1d"
@@ -36,6 +37,7 @@ do_install() {
     install -m 0644 ${WORKDIR}/ntp-monitor.conf ${D}${sysconfdir}
     install -m 0644 ${WORKDIR}/meminsight-runner.service ${D}${systemd_unitdir}/system/
     install -m 0644 ${WORKDIR}/meminsight-runner.path ${D}${systemd_unitdir}/system/
+    install -m 0644 ${WORKDIR}/ntp-metrics-collector.service ${D}${systemd_unitdir}/system/
     install -d ${D}${systemd_unitdir}/system/meminsight-runner.service.d
     install -d ${D}${systemd_unitdir}/system/meminsight-runner.path.d
 }
@@ -47,6 +49,7 @@ do_install:append:client() {
 
 
 SYSTEMD_SERVICE:${PN} = "meminsight-runner.path"
+SYSTEMD_SERVICE:${PN} += "ntp-metrics-collector.service"
 
 FILES:${PN} += "${bindir}/xmeminsight"
 FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.service"
@@ -54,6 +57,7 @@ FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.path"
 FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.service.d/*.conf"
 FILES:${PN} += "${systemd_unitdir}/system/meminsight-runner.path.d/*.conf"
 FILES:${PN} += "${sysconfdir}/ntp-monitor.conf"
+FILES:${PN} += "${systemd_unitdir}/system/ntp-metrics-collector.service"
 
 FILES:${PN} += "${bindir}/ntpmetrics_poll"
 
