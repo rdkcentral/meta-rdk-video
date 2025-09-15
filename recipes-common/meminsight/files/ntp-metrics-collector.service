@@ -1,0 +1,10 @@
+[Unit]
+Description=NTP Metrics collector
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/ntpmetrics_poll
+
+[Install]
+WantedBy=multi-user.target
