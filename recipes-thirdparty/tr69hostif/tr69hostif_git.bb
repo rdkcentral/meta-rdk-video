@@ -156,7 +156,7 @@ do_install:append() {
 	else
 		install -m 0644 ${S}/tr69hostif.service ${D}${systemd_unitdir}/system
 	fi
-    sed -i 's/@DSMGR_DEPENDENCY@//g' ${D}${systemd_unitdir}/system/tr69hostif.service
+    sed -i 's/@DSMGR_DEPENDENCY@/iarmbusd.service/g' ${D}${systemd_unitdir}/system/tr69hostif.service
         install -m 0644 ${S}/partners_defaults.json ${D}${sysconfdir}
 	install -m 0644 ${S}/ip-iface-monitor.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/src/hostif/include/*.h ${D}${includedir}/rdk/tr69hostif
