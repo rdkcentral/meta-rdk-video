@@ -1,5 +1,6 @@
 [Unit]
 Description=NTP Metrics collector
+Before=systemd-timesyncd.service
 
 [Service]
 Type=simple
