@@ -75,6 +75,9 @@ SRC_URI += "file://2.38.8/comcast-LLAMA-16805-Include-HW-secure-decrypt-decode-i
 SRC_URI += "file://2.38.8/comcast-dynamic-insertion-of-decryptor.patch"
 SRC_URI += "file://2.38.8/comcast-RDKEMW-2744-BitmapTextureGL-Check-EGL-context.patch"
 
+SRC_URI += "file://2.38.8/0001-Linux-ftrace-tracing-implementation-by-Andrzej-Surde.patch"
+SRC_URI += "file://2.38.8/0002-Additional-trace-point-instrumenation.patch"
+
 PACKAGECONFIG[wpeqtapi]          = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[westeros]          = "-DUSE_WPEWEBKIT_PLATFORM_WESTEROS=ON -DUSE_GSTREAMER_HOLEPUNCH=ON -DUSE_EXTERNAL_HOLEPUNCH=ON -DUSE_WESTEROS_SINK=ON,,westeros virtual/vendor-westeros-sink"
 PACKAGECONFIG[encryptedmedia]    = "-DENABLE_ENCRYPTED_MEDIA=ON,-DENABLE_ENCRYPTED_MEDIA=OFF,"
