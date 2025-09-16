@@ -2,9 +2,8 @@
 Description=NTP Metrics collector
 
 [Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=/usr/bin/ntpmetrics_poll --csv > /opt/ntp-metrics
+Type=simple
+ExecStart=/bin/sh -c '/usr/bin/ntpmetrics_poll --csv >> /tmp/ntp-metrics.csv'
 
 [Install]
 WantedBy=multi-user.target
