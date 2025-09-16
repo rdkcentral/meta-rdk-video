@@ -28,6 +28,7 @@ ExecStopPost=/usr/bin/killall -9 WPEProcess
 ExecStopPost=/bin/sh -c 'if [ -f /opt/restartEPG.sh ]; then /bin/sh /opt/restartEPG.sh; fi'
 KillSignal=SIGKILL
 Restart=always
+RestartSec=7
 
 [Install]
 WantedBy=multi-user.target
