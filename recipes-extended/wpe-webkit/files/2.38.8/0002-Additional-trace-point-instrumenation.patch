@@ -1,0 +1,1976 @@
+From 073e5af891a3d2f63dd843ae51bb71abecb5c2ae Mon Sep 17 00:00:00 2001
+From: Glib Novodran <glib_novodran@comcast.com>
+Date: Fri, 12 Sep 2025 11:16:46 +0000
+Subject: [PATCH 2/2] Additional trace point instrumenation.
+
+---
+ .../JavaScriptCore/runtime/JSGlobalObject.cpp |  2 +
+ .../WebCore/bindings/js/ScriptController.cpp  |  6 +++
+ Source/WebCore/css/CSSFontSelector.cpp        | 13 +++--
+ Source/WebCore/css/CSSSegmentedFontFace.cpp   |  9 ++--
+ Source/WebCore/dom/Document.cpp               | 48 +++++++++++--------
+ Source/WebCore/dom/DocumentFontLoader.cpp     |  2 +
+ Source/WebCore/dom/ScriptElement.cpp          |  4 ++
+ .../html/parser/HTMLDocumentParser.cpp        | 37 +++++++++++---
+ .../WebCore/html/parser/HTMLScriptRunner.cpp  | 15 ++++++
+ Source/WebCore/loader/DocumentLoader.cpp      | 48 +++++++++++++++----
+ Source/WebCore/loader/DocumentWriter.cpp      |  3 ++
+ Source/WebCore/loader/FrameLoader.cpp         | 10 +++-
+ Source/WebCore/loader/SubresourceLoader.cpp   |  6 +--
+ Source/WebCore/page/DOMWindow.cpp             |  2 +
+ .../WebCore/platform/graphics/FontCache.cpp   |  9 +++-
+ .../platform/graphics/FontCascadeFonts.cpp    | 25 +++++++---
+ .../graphics/freetype/FontCacheFreeType.cpp   |  3 ++
+ Source/WebCore/style/StyleResolver.cpp        |  4 ++
+ Source/WebCore/style/StyleScope.h             |  2 +
+ Source/WebCore/style/StyleTreeResolver.cpp    |  1 +
+ Source/WebCore/style/UserAgentStyle.cpp       |  5 ++
+ .../WebKit/Shared/mac/AuxiliaryProcessMac.mm  |  4 +-
+ .../UIProcess/API/glib/WebKitWebView.cpp      | 37 ++++++++++++++
+ Source/WebKit/UIProcess/WebPageProxy.cpp      |  9 ++++
+ .../WebCoreSupport/WebFrameLoaderClient.cpp   |  2 +
+ .../WebKit/WebProcess/WebPage/DrawingArea.cpp |  3 ++
+ .../WebProcess/WebPage/EventDispatcher.cpp    |  2 +-
+ Source/WebKit/WebProcess/WebPage/WebFrame.cpp |  2 +-
+ Source/WebKit/WebProcess/WebPage/WebPage.cpp  | 18 ++++---
+ Source/WebKit/WebProcess/WebProcess.cpp       |  2 +-
+ 30 files changed, 269 insertions(+), 64 deletions(-)
+
+diff --git a/Source/JavaScriptCore/runtime/JSGlobalObject.cpp b/Source/JavaScriptCore/runtime/JSGlobalObject.cpp
+index 81468c02d418..7d9fc0fb4d8a 100644
+--- a/Source/JavaScriptCore/runtime/JSGlobalObject.cpp
++++ b/Source/JavaScriptCore/runtime/JSGlobalObject.cpp
+@@ -653,10 +653,12 @@ JSGlobalObject::JSGlobalObject(VM& vm, Structure* structure, const GlobalObjectM
+     , m_customSetterFunctionSet(vm)
+     , m_globalObjectMethodTable(globalObjectMethodTable ? globalObjectMethodTable : &s_globalObjectMethodTable)
+ {
++    WTF::tracePoint("JSGlobalObject::JSGlobalObject");
+ }
+ 
+ JSGlobalObject::~JSGlobalObject()
+ {
++    WTF::tracePoint("JSGlobalObject::~JSGlobalObject");
+ #if ENABLE(REMOTE_INSPECTOR)
+     m_inspectorController->globalObjectDestroyed();
+ #endif
+diff --git a/Source/WebCore/bindings/js/ScriptController.cpp b/Source/WebCore/bindings/js/ScriptController.cpp
+index 1cd87f5f6749..343d66e7aaec 100644
+--- a/Source/WebCore/bindings/js/ScriptController.cpp
++++ b/Source/WebCore/bindings/js/ScriptController.cpp
+@@ -77,6 +77,7 @@
+ #include <wtf/SharedTask.h>
+ #include <wtf/Threading.h>
+ #include <wtf/text/TextPosition.h>
++#include <wtf/SystemTracing.h>
+ 
+ #define SCRIPTCONTROLLER_RELEASE_LOG_ERROR(channel, fmt, ...) RELEASE_LOG_ERROR(channel, "%p - ScriptController::" fmt, this, ##__VA_ARGS__)
+ 
+@@ -124,6 +125,7 @@ JSC::JSValue ScriptController::evaluateInWorldIgnoringException(const ScriptSour
+ 
+ ValueOrException ScriptController::evaluateInWorld(const ScriptSourceCode& sourceCode, DOMWrapperWorld& world)
+ {
++    TraceScope tracingScope("ScriptController::evaluateInWorld");
+     auto& vm = world.vm();
+     JSLockHolder lock(vm);
+ 
+@@ -565,6 +567,7 @@ JSC::JSValue ScriptController::executeScriptInWorldIgnoringException(DOMWrapperW
+ 
+ ValueOrException ScriptController::executeScriptInWorld(DOMWrapperWorld& world, RunJavaScriptParameters&& parameters)
+ {
++    TraceScope tracingScope("ScriptController::executeScriptInWorld");
+ #if ENABLE(APP_BOUND_DOMAINS)
+     if (m_frame.loader().client().shouldEnableInAppBrowserPrivacyProtections()) {
+         if (auto* document = m_frame.document())
+@@ -598,6 +601,7 @@ ValueOrException ScriptController::executeScriptInWorld(DOMWrapperWorld& world,
+ 
+ ValueOrException ScriptController::callInWorld(RunJavaScriptParameters&& parameters, DOMWrapperWorld& world)
+ {
++    TraceScope tracingScope("ScriptController::callInWorld");
+     ASSERT(parameters.runAsAsyncFunction == RunAsAsyncFunction::Yes);
+     ASSERT(parameters.arguments);
+ 
+@@ -692,6 +696,7 @@ ValueOrException ScriptController::executeUserAgentScriptInWorld(DOMWrapperWorld
+ 
+ void ScriptController::executeAsynchronousUserAgentScriptInWorld(DOMWrapperWorld& world, RunJavaScriptParameters&& parameters, ResolveFunction&& resolveCompletionHandler)
+ {
++    TraceScope tracingScope("ScriptController::executeAsynchronousUserAgentScriptInWorld");
+     auto result = executeScriptInWorld(world, WTFMove(parameters));
+     
+     if (parameters.runAsAsyncFunction == RunAsAsyncFunction::No || !result || !result.value().isObject()) {
+@@ -772,6 +777,7 @@ bool ScriptController::canExecuteScripts(ReasonForCallingCanExecuteScripts reaso
+ 
+ void ScriptController::executeJavaScriptURL(const URL& url, RefPtr<SecurityOrigin> requesterSecurityOrigin, ShouldReplaceDocumentIfJavaScriptURL shouldReplaceDocumentIfJavaScriptURL)
+ {
++    TraceScope tracingScope("ScriptController::executeJavaScriptURL");
+     ASSERT(url.protocolIsJavaScript());
+ 
+     if (requesterSecurityOrigin && !requesterSecurityOrigin->isSameOriginDomain(m_frame.document()->securityOrigin()))
+diff --git a/Source/WebCore/css/CSSFontSelector.cpp b/Source/WebCore/css/CSSFontSelector.cpp
+index 3afb610b3a6f..80c7aaf7ffd2 100644
+--- a/Source/WebCore/css/CSSFontSelector.cpp
++++ b/Source/WebCore/css/CSSFontSelector.cpp
+@@ -55,6 +55,7 @@
+ #include <wtf/Ref.h>
+ #include <wtf/SetForScope.h>
+ #include <wtf/text/AtomString.h>
++#include <wtf/SystemTracing.h>
+ 
+ namespace WebCore {
+ 
+@@ -302,20 +303,23 @@ void CSSFontSelector::fontCacheInvalidated()
+ 
+ std::optional<AtomString> CSSFontSelector::resolveGenericFamily(const FontDescription& fontDescription, const AtomString& familyName)
+ {
++    TraceScope tracingScope("CSSFontSelector::resolveGenericFamily");
++
+     auto platformResult = FontDescription::platformResolveGenericFamily(fontDescription.script(), fontDescription.computedLocale(), familyName);
+     if (!platformResult.isNull())
+         return platformResult;
+ 
+-    if (!m_context)
++    if (!m_context) {
+         return std::nullopt;
+-
++    }
+     const auto& settings = m_context->settingsValues();
+ 
+     UScriptCode script = fontDescription.script();
+     auto familyNameIndex = m_fontFamilyNames.find(familyName);
+     if (familyNameIndex != notFound) {
+-        if (auto familyString = settings.fontGenericFamilies.fontFamily(static_cast<FamilyNamesIndex>(familyNameIndex), script))
++        if (auto familyString = settings.fontGenericFamilies.fontFamily(static_cast<FamilyNamesIndex>(familyNameIndex), script)) {
+             return AtomString(*familyString);
++        }
+     }
+ 
+     return std::nullopt;
+@@ -337,6 +341,7 @@ const FontPaletteValues& CSSFontSelector::lookupFontPaletteValues(const AtomStri
+ 
+ FontRanges CSSFontSelector::fontRangesForFamily(const FontDescription& fontDescription, const AtomString& familyName)
+ {
++    TraceScope tracingScope("[Webkit]CSSFontSelector::fontRangesForFamily");
+     // If this ASSERT() fires, it usually means you forgot a document.updateStyleIfNeeded() somewhere.
+     ASSERT(!m_buildIsUnderway || m_computingRootStyleFontCount);
+ 
+@@ -360,6 +365,7 @@ FontRanges CSSFontSelector::fontRangesForFamily(const FontDescription& fontDescr
+     if (face) {
+         if (document && DeprecatedGlobalSettings::webAPIStatisticsEnabled())
+             ResourceLoadObserver::shared().logFontLoad(*document, familyForLookup.string(), true);
++
+         return face->fontRanges(*fontDescriptionForLookup, fontPaletteValues);
+     }
+ 
+@@ -368,6 +374,7 @@ FontRanges CSSFontSelector::fontRangesForFamily(const FontDescription& fontDescr
+     auto font = FontCache::forCurrentThread().fontForFamily(*fontDescriptionForLookup, familyForLookup, { { }, { }, fontPaletteValues });
+     if (document && DeprecatedGlobalSettings::webAPIStatisticsEnabled())
+         ResourceLoadObserver::shared().logFontLoad(*document, familyForLookup.string(), !!font);
++
+     return FontRanges { WTFMove(font) };
+ }
+ 
+diff --git a/Source/WebCore/css/CSSSegmentedFontFace.cpp b/Source/WebCore/css/CSSSegmentedFontFace.cpp
+index e6a6ec1a5cbe..b7faa959d850 100644
+--- a/Source/WebCore/css/CSSSegmentedFontFace.cpp
++++ b/Source/WebCore/css/CSSSegmentedFontFace.cpp
+@@ -34,6 +34,8 @@
+ #include "FontPaletteValues.h"
+ #include "FontSelector.h"
+ 
++#include <wtf/SystemTracing.h>
++
+ namespace WebCore {
+ 
+ CSSSegmentedFontFace::CSSSegmentedFontFace()
+@@ -112,14 +114,14 @@ static void appendFont(FontRanges& ranges, Ref<FontAccessor>&& fontAccessor, con
+ 
+ FontRanges CSSSegmentedFontFace::fontRanges(const FontDescription& fontDescription, const FontPaletteValues& fontPaletteValues)
+ {
++    TraceScope tracingScope("CSSSegmentedFontFace::fontRanges");
+     auto addResult = m_cache.add(std::make_tuple(FontDescriptionKey(fontDescription), fontPaletteValues), FontRanges());
+     auto& ranges = addResult.iterator->value;
+ 
+-    if (!addResult.isNewEntry)
++    if (!addResult.isNewEntry) {
+         return ranges;
+-
++    }
+     auto desiredRequest = fontDescription.fontSelectionRequest();
+-
+     for (auto& face : m_fontFaces) {
+         if (face->computeFailureState())
+             continue;
+@@ -138,6 +140,7 @@ FontRanges CSSSegmentedFontFace::fontRanges(const FontDescription& fontDescripti
+     }
+     
+     ranges.shrinkToFit();
++
+     return ranges;
+ }
+ 
+diff --git a/Source/WebCore/dom/Document.cpp b/Source/WebCore/dom/Document.cpp
+index 7c2531478be7..7bee10de75e0 100644
+--- a/Source/WebCore/dom/Document.cpp
++++ b/Source/WebCore/dom/Document.cpp
+@@ -2012,6 +2012,7 @@ bool Document::hasPendingFullStyleRebuild() const
+ 
+ void Document::updateRenderTree(std::unique_ptr<const Style::Update> styleUpdate)
+ {
++    TraceScope tracingScope("Document::updateRenderTree");
+     ASSERT(!inRenderTreeUpdate());
+ 
+     Style::PostResolutionCallbackDisabler callbackDisabler(*this);
+@@ -2052,7 +2053,6 @@ void Document::resolveStyle(ResolveStyleType type)
+     // FIXME: Do this user agent shadow tree update per tree scope.
+     for (auto& element : copyToVectorOf<Ref<Element>>(m_elementsWithPendingUserAgentShadowTreeUpdates))
+         element->updateUserAgentShadowTree();
+-
+     styleScope().flushPendingUpdate();
+     frameView.willRecalcStyle();
+ 
+@@ -2077,15 +2077,18 @@ void Document::resolveStyle(ResolveStyleType type)
+ 
+             // Inserting the pictograph font at the end of the font fallback list is done by the
+             // font selector, so set a font selector if needed.
+-            if (settings().fontFallbackPrefersPictographs())
++            if (settings().fontFallbackPrefersPictographs()) {
+                 documentStyle.fontCascade().update(&fontSelector());
++            }
+ 
+             auto documentChange = Style::determineChange(documentStyle, m_renderView->style());
+-            if (documentChange != Style::Change::None)
+-                renderView()->setStyle(WTFMove(documentStyle));
+ 
+-            if (RefPtr documentElement = this->documentElement())
++            if (documentChange != Style::Change::None) {
++                renderView()->setStyle(WTFMove(documentStyle));
++            }
++            if (RefPtr documentElement = this->documentElement()) {
+                 documentElement->invalidateStyleForSubtree();
++            }
+         }
+ 
+         Style::TreeResolver resolver(*this, WTFMove(m_pendingRenderTreeUpdate));
+@@ -2094,13 +2097,11 @@ void Document::resolveStyle(ResolveStyleType type)
+         while (resolver.hasUnresolvedQueryContainers()) {
+             if (styleUpdate) {
+                 SetForScope resolvingContainerQueriesScope(m_isResolvingContainerQueries, true);
+-                
+                 updateRenderTree(WTFMove(styleUpdate));
+ 
+                 if (frameView.layoutContext().needsLayout())
+                     frameView.layoutContext().layout();
+             }
+-
+             styleUpdate = resolver.resolve();
+         }
+ 
+@@ -2121,19 +2122,19 @@ void Document::resolveStyle(ResolveStyleType type)
+ 
+         updatedCompositingLayers = frameView.updateCompositingLayersAfterStyleChange();
+ 
+-        if (m_renderView->needsLayout())
++        if (m_renderView->needsLayout()) {
+             frameView.layoutContext().scheduleLayout();
+-
++        }
+         // Usually this is handled by post-layout.
+-        if (!frameView.needsLayout())
++        if (!frameView.needsLayout()) {
+             frameView.frame().selection().scheduleAppearanceUpdateAfterStyleChange();
+-
++        }
+         // As a result of the style recalculation, the currently hovered element might have been
+         // detached (for example, by setting display:none in the :hover style), schedule another mouseMove event
+         // to check if any other elements ended up under the mouse pointer due to re-layout.
+-        if (m_hoveredElement && !m_hoveredElement->renderer())
++        if (m_hoveredElement && !m_hoveredElement->renderer()) {
+             frameView.frame().mainFrame().eventHandler().dispatchFakeMouseMoveEventSoon();
+-
++        }
+         ++m_styleRecalcCount;
+         // FIXME: Assert ASSERT(!needsStyleRecalc()) here. Do we still have some cases where it's not true?
+     }
+@@ -2143,8 +2144,10 @@ void Document::resolveStyle(ResolveStyleType type)
+     // Some animated images may now be inside the viewport due to style recalc,
+     // resume them if necessary if there is no layout pending. Otherwise, we'll
+     // check if they need to be resumed after layout.
+-    if (updatedCompositingLayers && !frameView.needsLayout())
++    if (updatedCompositingLayers && !frameView.needsLayout()) {
+         frameView.viewportContentsChanged();
++    }
++
+ }
+ 
+ void Document::updateTextRenderer(Text& text, unsigned offsetOfReplacedText, unsigned lengthOfReplacedText)
+@@ -2205,22 +2208,25 @@ static bool isSafeToUpdateStyleOrLayout(const Document& document)
+ 
+ bool Document::updateStyleIfNeeded()
+ {
+-    if (isResolvingContainerQueriesForSelfOrAncestor())
++    TraceScope tracingScope("Document::updateStyleIfNeeded");
++    if (isResolvingContainerQueriesForSelfOrAncestor()) {
+         return false;
+-
++    }
+     RefPtr<FrameView> frameView = view();
+     {
+         ScriptDisallowedScope::InMainThread scriptDisallowedScope;
+         ASSERT(isMainThread());
+         ASSERT(!frameView || !frameView->isPainting());
+ 
+-        if (!frameView || frameView->layoutContext().isInRenderTreeLayout())
++        if (!frameView || frameView->layoutContext().isInRenderTreeLayout()) {
+             return false;
++        }
+ 
+         styleScope().flushPendingUpdate();
+ 
+-        if (!needsStyleRecalc())
++        if (!needsStyleRecalc()) {
+             return false;
++        }
+     }
+ 
+ #if ENABLE(CONTENT_CHANGE_OBSERVER)
+@@ -2229,6 +2235,7 @@ bool Document::updateStyleIfNeeded()
+     // The early exit above for !needsStyleRecalc() is needed when updateWidgetPositions() is called in runOrScheduleAsynchronousTasks().
+     RELEASE_ASSERT_WITH_SECURITY_IMPLICATION(isSafeToUpdateStyleOrLayout(*this));
+     resolveStyle();
++
+     return true;
+ }
+ 
+@@ -3073,6 +3080,7 @@ void Document::detachParser()
+ 
+ void Document::cancelParsing()
+ {
++    TraceScope tracingScope("Document::cancelParsing");
+     if (!m_parser)
+         return;
+ 
+@@ -3375,6 +3383,7 @@ void Document::enqueuePaintTimingEntryIfNeeded()
+ 
+ ExceptionOr<void> Document::write(Document* entryDocument, SegmentedString&& text)
+ {
++    TraceScope tracingScope("Document::write");
+     if (m_activeParserWasAborted)
+         return { };
+ 
+@@ -6218,6 +6227,7 @@ Ref<HTMLCollection> Document::documentNamedItems(const AtomString& name)
+ 
+ void Document::finishedParsing()
+ {
++    TraceScope tracingScope("Document::finishedParsing");
+     ASSERT(!scriptableDocumentParser() || !m_parser->isParsing());
+     ASSERT(!scriptableDocumentParser() || m_readyState != Loading);
+     setParsing(false);
+@@ -6238,6 +6248,7 @@ void Document::finishedParsing()
+     bool isInMiddleOfInitializingIframe = documentLoader && documentLoader->isInFinishedLoadingOfEmptyDocument();
+     if (!isInMiddleOfInitializingIframe)
+         eventLoop().performMicrotaskCheckpoint();
++
+     dispatchEvent(Event::create(eventNames().DOMContentLoadedEvent, Event::CanBubble::Yes, Event::IsCancelable::No));
+ 
+     if (!m_eventTiming.domContentLoadedEventEnd) {
+@@ -6260,7 +6271,6 @@ void Document::finishedParsing()
+         // we force the styles to be up to date before calling FrameLoader::finishedParsing().
+         // See https://bugs.webkit.org/show_bug.cgi?id=36864 starting around comment 35.
+         updateStyleIfNeeded();
+-
+         frame->loader().finishedParsing();
+         InspectorInstrumentation::domContentLoadedEventFired(*frame);
+     }
+diff --git a/Source/WebCore/dom/DocumentFontLoader.cpp b/Source/WebCore/dom/DocumentFontLoader.cpp
+index 4abd167b56db..9c13a0248ad2 100644
+--- a/Source/WebCore/dom/DocumentFontLoader.cpp
++++ b/Source/WebCore/dom/DocumentFontLoader.cpp
+@@ -36,6 +36,7 @@
+ #include "Frame.h"
+ #include "FrameDestructionObserverInlines.h"
+ #include "FrameLoader.h"
++#include <wtf/SystemTracing.h>
+ 
+ namespace WebCore {
+ 
+@@ -78,6 +79,7 @@ void DocumentFontLoader::beginLoadingFontSoon(CachedFont& font)
+ 
+ void DocumentFontLoader::loadPendingFonts()
+ {
++    TraceScope tracingScope("DocumentFontLoader::loadPendingFonts");
+     if (m_isFontLoadingSuspended)
+         return;
+ 
+diff --git a/Source/WebCore/dom/ScriptElement.cpp b/Source/WebCore/dom/ScriptElement.cpp
+index fd0121e3aad2..ad5f149bb2d3 100644
+--- a/Source/WebCore/dom/ScriptElement.cpp
++++ b/Source/WebCore/dom/ScriptElement.cpp
+@@ -372,6 +372,7 @@ bool ScriptElement::requestModuleScript(const TextPosition& scriptStartPosition)
+ 
+ void ScriptElement::executeClassicScript(const ScriptSourceCode& sourceCode)
+ {
++    TraceScope tracingScope("ScriptElement::executeClassicScript");
+     RELEASE_ASSERT_WITH_SECURITY_IMPLICATION(ScriptDisallowedScope::InMainThread::isScriptAllowed() || !isInWebProcess());
+     ASSERT(m_alreadyStarted);
+ 
+@@ -403,6 +404,7 @@ void ScriptElement::executeClassicScript(const ScriptSourceCode& sourceCode)
+ 
+ void ScriptElement::executeModuleScript(LoadableModuleScript& loadableModuleScript)
+ {
++    TraceScope tracingScope("ScriptElement::executeModuleScript");
+     // https://html.spec.whatwg.org/multipage/scripting.html#execute-the-script-block
+ 
+     ASSERT(!loadableModuleScript.error());
+@@ -433,6 +435,7 @@ void ScriptElement::dispatchLoadEventRespectingUserGestureIndicator()
+ 
+ void ScriptElement::executeScriptAndDispatchEvent(LoadableScript& loadableScript)
+ {
++    TraceScope tracingScope("ScriptElement::executeScriptAndDispatchEvent");
+     if (std::optional<LoadableScript::Error> error = loadableScript.error()) {
+         if (error->errorValue) {
+             // https://html.spec.whatwg.org/multipage/webappapis.html#report-the-exception
+@@ -458,6 +461,7 @@ void ScriptElement::executeScriptAndDispatchEvent(LoadableScript& loadableScript
+ 
+ void ScriptElement::executePendingScript(PendingScript& pendingScript)
+ {
++    TraceScope tracingScope("ScriptElement::executePendingScript");
+     if (m_element.document().identifier() != m_preparationTimeDocumentIdentifier) {
+         m_element.document().addConsoleMessage(MessageSource::Security, MessageLevel::Error, "Not executing script because it moved between documents during fetching"_s);
+         return;
+diff --git a/Source/WebCore/html/parser/HTMLDocumentParser.cpp b/Source/WebCore/html/parser/HTMLDocumentParser.cpp
+index 325592871e92..b1f5533c59be 100644
+--- a/Source/WebCore/html/parser/HTMLDocumentParser.cpp
++++ b/Source/WebCore/html/parser/HTMLDocumentParser.cpp
+@@ -68,6 +68,7 @@ HTMLDocumentParser::HTMLDocumentParser(HTMLDocument& document)
+     , m_preloader(makeUnique<HTMLResourcePreloader>(document))
+     , m_shouldEmitTracePoints(isMainDocumentLoadingFromHTTP(document))
+ {
++    TraceScope tracingScope("HTMLDocumentParser::HTMLDocumentParser(HTMLDocument& document)");
+ }
+ 
+ Ref<HTMLDocumentParser> HTMLDocumentParser::create(HTMLDocument& document)
+@@ -82,6 +83,7 @@ inline HTMLDocumentParser::HTMLDocumentParser(DocumentFragment& fragment, Elemen
+     , m_treeBuilder(makeUnique<HTMLTreeBuilder>(*this, fragment, contextElement, parserContentPolicy(), m_options))
+     , m_shouldEmitTracePoints(false) // Avoid emitting trace points when parsing fragments like outerHTML.
+ {
++    TraceScope tracingScope("HTMLDocumentParser::HTMLDocumentParser(DocumentFragment& fragment, ...");
+     // https://html.spec.whatwg.org/multipage/syntax.html#parsing-html-fragments
+     if (contextElement.isHTMLElement())
+         m_tokenizer.updateStateFor(contextElement.tagQName().localName());
+@@ -102,6 +104,7 @@ HTMLDocumentParser::~HTMLDocumentParser()
+ 
+ void HTMLDocumentParser::detach()
+ {
++    TraceScope tracingScope("HTMLDocumentParser::detach");
+     ScriptableDocumentParser::detach();
+ 
+     if (m_scriptRunner)
+@@ -115,6 +118,7 @@ void HTMLDocumentParser::detach()
+ 
+ void HTMLDocumentParser::stopParsing()
+ {
++    TraceScope tracingScope("HTMLDocumentParser::stopParsing");
+     DocumentParser::stopParsing();
+     m_parserScheduler = nullptr; // Deleting the scheduler will clear any timers.
+ }
+@@ -123,6 +127,7 @@ void HTMLDocumentParser::stopParsing()
+ // https://html.spec.whatwg.org/multipage/syntax.html#the-end
+ void HTMLDocumentParser::prepareToStopParsing()
+ {
++    TraceScope tracingScope("HTMLDocumentParser::prepareToStopParsing");
+     ASSERT(!hasInsertionPoint());
+ 
+     // pumpTokenizer can cause this parser to be detached from the Document,
+@@ -133,8 +138,9 @@ void HTMLDocumentParser::prepareToStopParsing()
+     // so ForceSynchronous vs. AllowYield should be meaningless.
+     pumpTokenizerIfPossible(ForceSynchronous);
+ 
+-    if (isStopped())
++    if (isStopped()) {
+         return;
++    }
+ 
+     DocumentParser::prepareToStopParsing();
+ 
+@@ -144,8 +150,9 @@ void HTMLDocumentParser::prepareToStopParsing()
+ 
+     // Setting the ready state above can fire mutation event and detach us
+     // from underneath. In that case, just bail out.
+-    if (isDetached())
++    if (isDetached()) {
+         return;
++    }
+ 
+     attemptToRunDeferredScriptsAndEnd();
+ }
+@@ -184,6 +191,7 @@ bool HTMLDocumentParser::processingData() const
+ 
+ void HTMLDocumentParser::pumpTokenizerIfPossible(SynchronousMode mode)
+ {
++    TraceScope tracingScope("HTMLDocumentParser::pumpTokenizerIfPossible");
+     if (isStopped() || isWaitingForScripts())
+         return;
+ 
+@@ -204,6 +212,7 @@ bool HTMLDocumentParser::isScheduledForResume() const
+ // Used by HTMLParserScheduler
+ void HTMLDocumentParser::resumeParsingAfterYield()
+ {
++    TraceScope tracingScope("HTMLDocumentParser::resumeParsingAfterYield");
+     // pumpTokenizer can cause this parser to be detached from the Document,
+     // but we need to ensure it isn't deleted yet.
+     Ref<HTMLDocumentParser> protectedThis(*this);
+@@ -216,6 +225,7 @@ void HTMLDocumentParser::resumeParsingAfterYield()
+ 
+ void HTMLDocumentParser::runScriptsForPausedTreeBuilder()
+ {
++    TraceScope tracingScope("HTMLDocumentParser::runScriptsForPausedTreeBuilder");
+     ASSERT(scriptingContentIsAllowed(parserContentPolicy()));
+ 
+     if (std::unique_ptr<CustomElementConstructionData> constructionData = m_treeBuilder->takeCustomElementConstructionData()) {
+@@ -257,6 +267,7 @@ Document* HTMLDocumentParser::contextForParsingSession()
+ 
+ bool HTMLDocumentParser::pumpTokenizerLoop(SynchronousMode mode, bool parsingFragment, PumpSession& session)
+ {
++    TraceScope tracingScope("HTMLDocumentParser::pumpTokenizerLoop");
+     do {
+         if (UNLIKELY(isWaitingForScripts())) {
+             if (mode == AllowYield && m_parserScheduler->shouldYieldBeforeExecutingScript(m_treeBuilder->scriptToProcess(), session))
+@@ -290,6 +301,7 @@ bool HTMLDocumentParser::pumpTokenizerLoop(SynchronousMode mode, bool parsingFra
+ 
+ void HTMLDocumentParser::pumpTokenizer(SynchronousMode mode)
+ {
++    TraceScope tracingScope("HTMLDocumentParser::pumpTokenizer");
+     ASSERT(!isStopped());
+     ASSERT(!isScheduledForResume());
+ 
+@@ -335,6 +347,7 @@ void HTMLDocumentParser::pumpTokenizer(SynchronousMode mode)
+ 
+ void HTMLDocumentParser::constructTreeFromHTMLToken(HTMLTokenizer::TokenPtr& rawToken)
+ {
++    TraceScope tracingScope("HTMLDocumentParser::constructTreeFromHTMLToken");
+     AtomHTMLToken token(*rawToken);
+ 
+     // We clear the rawToken in case constructTree
+@@ -367,6 +380,7 @@ bool HTMLDocumentParser::hasInsertionPoint()
+ 
+ void HTMLDocumentParser::insert(SegmentedString&& source)
+ {
++    TraceScope tracingScope("HTMLDocumentParser::insert");
+     if (isStopped())
+         return;
+ 
+@@ -402,6 +416,7 @@ void HTMLDocumentParser::appendSynchronously(RefPtr<StringImpl>&& inputSource)
+ 
+ void HTMLDocumentParser::append(RefPtr<StringImpl>&& inputSource, SynchronousMode synchronousMode)
+ {
++    TraceScope tracingScope("HTMLDocumentParser::append");
+     if (isStopped())
+         return;
+ 
+@@ -439,6 +454,7 @@ void HTMLDocumentParser::append(RefPtr<StringImpl>&& inputSource, SynchronousMod
+ 
+ void HTMLDocumentParser::end()
+ {
++    TraceScope tracingScope("HTMLDocumentParser::end");
+     ASSERT(!isDetached());
+     ASSERT(!isScheduledForResume());
+ 
+@@ -448,6 +464,7 @@ void HTMLDocumentParser::end()
+ 
+ void HTMLDocumentParser::attemptToRunDeferredScriptsAndEnd()
+ {
++    TraceScope tracingScope("HTMLDocumentParser::attemptToRunDeferredScriptsAndEnd");
+     ASSERT(isStopping());
+     ASSERT(!hasInsertionPoint());
+     if (m_scriptRunner && !m_scriptRunner->executeScriptsWaitingForParsing())
+@@ -457,6 +474,7 @@ void HTMLDocumentParser::attemptToRunDeferredScriptsAndEnd()
+ 
+ void HTMLDocumentParser::attemptToEnd()
+ {
++    TraceScope tracingScope("HTMLDocumentParser::attemptToEnd");
+     // finish() indicates we will not receive any more data. If we are waiting on
+     // an external script to load, we can't finish parsing quite yet.
+ 
+@@ -469,6 +487,7 @@ void HTMLDocumentParser::attemptToEnd()
+ 
+ void HTMLDocumentParser::endIfDelayed()
+ {
++    TraceScope tracingScope("HTMLDocumentParser::endIfDelayed");
+     // If we've already been detached, don't bother ending.
+     if (isDetached())
+         return;
+@@ -482,6 +501,7 @@ void HTMLDocumentParser::endIfDelayed()
+ 
+ void HTMLDocumentParser::finish()
+ {
++    TraceScope tracingScope("HTMLDocumentParser::finish");
+     // FIXME: We should ASSERT(!m_parserStopped) here, since it does not
+     // makes sense to call any methods on DocumentParser once it's been stopped.
+     // However, FrameLoader::stop calls DocumentParser::finish unconditionally.
+@@ -569,12 +589,13 @@ void HTMLDocumentParser::appendCurrentInputStreamToPreloadScannerAndScan()
+ 
+ void HTMLDocumentParser::notifyFinished(PendingScript& pendingScript)
+ {
++    TraceScope tracingScope("HTMLDocumentParser::notifyFinished");
+     // pumpTokenizer can cause this parser to be detached from the Document,
+     // but we need to ensure it isn't deleted yet.
+     Ref<HTMLDocumentParser> protectedThis(*this);
+ 
+-    // After Document parser is stopped or detached, the parser-inserted deferred script execution should be ignored.
+-    if (isStopped())
++    ASSERT(!isExecutingScript());
++    ASSERT(!isWaitingForScripts());
+         return;
+ 
+     ASSERT(m_scriptRunner);
+@@ -596,6 +617,7 @@ bool HTMLDocumentParser::hasScriptsWaitingForStylesheets() const
+ 
+ void HTMLDocumentParser::executeScriptsWaitingForStylesheets()
+ {
++    TraceScope tracingScope("HTMLDocumentParser::executeScriptsWaitingForStylesheets");
+     // Document only calls this when the Document owns the DocumentParser
+     // so this will not be called in the DocumentFragment case.
+     ASSERT(m_scriptRunner);
+@@ -605,9 +627,9 @@ void HTMLDocumentParser::executeScriptsWaitingForStylesheets()
+     if (!m_scriptRunner->hasScriptsWaitingForStylesheets())
+         return;
+ 
+-    // pumpTokenizer can cause this parser to be detached from the Document,
+-    // but we need to ensure it isn't deleted yet.
+-    Ref<HTMLDocumentParser> protectedThis(*this);
++    ASSERT(m_preloadScanner);
++    m_preloadScanner->appendToEnd(m_input.current());
++    m_preloadScanner->scan(*m_preloader, *document());
+     m_scriptRunner->executeScriptsWaitingForStylesheets();
+     if (!isWaitingForScripts())
+         resumeParsingAfterScriptExecution();
+@@ -615,6 +637,7 @@ void HTMLDocumentParser::executeScriptsWaitingForStylesheets()
+ 
+ void HTMLDocumentParser::parseDocumentFragment(const String& source, DocumentFragment& fragment, Element& contextElement, ParserContentPolicy parserContentPolicy)
+ {
++    TraceScope tracingScope("HTMLDocumentParser::parseDocumentFragment");
+     auto parser = create(fragment, contextElement, parserContentPolicy);
+     parser->insert(source); // Use insert() so that the parser will not yield.
+     parser->finish();
+diff --git a/Source/WebCore/html/parser/HTMLScriptRunner.cpp b/Source/WebCore/html/parser/HTMLScriptRunner.cpp
+index 4acb22c5beef..7e791cccf745 100644
+--- a/Source/WebCore/html/parser/HTMLScriptRunner.cpp
++++ b/Source/WebCore/html/parser/HTMLScriptRunner.cpp
+@@ -43,6 +43,8 @@
+ #include "ScriptElement.h"
+ #include "ScriptSourceCode.h"
+ 
++#include <wtf/SystemTracing.h>
++
+ namespace WebCore {
+ 
+ using namespace HTMLNames;
+@@ -53,10 +55,12 @@ HTMLScriptRunner::HTMLScriptRunner(Document& document, HTMLScriptRunnerHost& hos
+     , m_scriptNestingLevel(0)
+     , m_hasScriptsWaitingForStylesheets(false)
+ {
++    WTF::tracePoint("HTMLScriptRunner::HTMLScriptRunner");
+ }
+ 
+ HTMLScriptRunner::~HTMLScriptRunner()
+ {
++    TraceScope tracingScope("HTMLScriptRunner::~HTMLScriptRunner");
+     // FIXME: Should we be passed a "done loading/parsing" callback sooner than destruction?
+     if (m_parserBlockingScript) {
+         if (m_parserBlockingScript->watchingForLoad())
+@@ -72,6 +76,7 @@ HTMLScriptRunner::~HTMLScriptRunner()
+ 
+ void HTMLScriptRunner::detach()
+ {
++    WTF::tracePoint("HTMLScriptRunner::detach");
+     m_document = nullptr;
+ }
+ 
+@@ -91,6 +96,7 @@ inline Ref<Event> createScriptLoadEvent()
+ 
+ bool HTMLScriptRunner::isPendingScriptReady(const PendingScript& script)
+ {
++    TraceScope tracingScope("HTMLScriptRunner::isPendingScriptReady");
+     if (!m_document)
+         return false;
+     m_hasScriptsWaitingForStylesheets = !m_document->haveStylesheetsLoaded();
+@@ -103,6 +109,7 @@ bool HTMLScriptRunner::isPendingScriptReady(const PendingScript& script)
+ 
+ void HTMLScriptRunner::executePendingScriptAndDispatchEvent(PendingScript& pendingScript)
+ {
++    TraceScope tracingScope("HTMLScriptRunner::executePendingScriptAndDispatchEvent");
+     // Stop watching loads before executeScript to prevent recursion if the script reloads itself.
+     if (pendingScript.watchingForLoad())
+         stopWatchingForLoad(pendingScript);
+@@ -134,6 +141,7 @@ void HTMLScriptRunner::stopWatchingForLoad(PendingScript& pendingScript)
+ void HTMLScriptRunner::execute(Ref<ScriptElement>&& element, const TextPosition& scriptStartPosition)
+ {
+     // FIXME: If scripting is disabled, always just return.
++    TraceScope tracingScope("HTMLScriptRunner::execute");
+ 
+     bool hadPreloadScanner = m_host.hasPreloadScanner();
+ 
+@@ -157,6 +165,7 @@ bool HTMLScriptRunner::hasParserBlockingScript() const
+ 
+ void HTMLScriptRunner::executeParsingBlockingScripts()
+ {
++    TraceScope tracingScope("HTMLScriptRunner::executeParsingBlockingScripts");
+     while (hasParserBlockingScript() && isPendingScriptReady(*m_parserBlockingScript)) {
+         ASSERT(m_document);
+         ASSERT(!isExecutingScript());
+@@ -168,6 +177,7 @@ void HTMLScriptRunner::executeParsingBlockingScripts()
+ 
+ void HTMLScriptRunner::executeScriptsWaitingForLoad(PendingScript& pendingScript)
+ {
++    TraceScope tracingScope("HTMLScriptRunner::executeScriptsWaitingForLoad");
+     ASSERT(!isExecutingScript());
+     ASSERT(hasParserBlockingScript());
+     ASSERT_UNUSED(pendingScript, m_parserBlockingScript.get() == &pendingScript);
+@@ -177,6 +187,7 @@ void HTMLScriptRunner::executeScriptsWaitingForLoad(PendingScript& pendingScript
+ 
+ void HTMLScriptRunner::executeScriptsWaitingForStylesheets()
+ {
++    TraceScope tracingScope("HTMLScriptRunner::executeScriptsWaitingForStylesheets");
+     ASSERT(m_document);
+     // Callers should check hasScriptsWaitingForStylesheets() before calling
+     // to prevent parser or script re-entry during </style> parsing.
+@@ -188,6 +199,7 @@ void HTMLScriptRunner::executeScriptsWaitingForStylesheets()
+ 
+ bool HTMLScriptRunner::executeScriptsWaitingForParsing()
+ {
++    TraceScope tracingScope("HTMLScriptRunner::executeScriptsWaitingForParsing");
+     while (!m_scriptsToExecuteAfterParsing.isEmpty()) {
+         ASSERT(!isExecutingScript());
+         ASSERT(!hasParserBlockingScript());
+@@ -213,6 +225,7 @@ static Ref<PendingScript> requestPendingScript(ScriptElement& scriptElement)
+ 
+ void HTMLScriptRunner::requestParsingBlockingScript(ScriptElement& scriptElement)
+ {
++    TraceScope tracingScope("HTMLScriptRunner::requestParsingBlockingScript");
+     ASSERT(!m_parserBlockingScript);
+     m_parserBlockingScript = requestPendingScript(scriptElement);
+     ASSERT(m_parserBlockingScript->needsLoading());
+@@ -226,6 +239,7 @@ void HTMLScriptRunner::requestParsingBlockingScript(ScriptElement& scriptElement
+ 
+ void HTMLScriptRunner::requestDeferredScript(ScriptElement& scriptElement)
+ {
++    TraceScope tracingScope("HTMLScriptRunner::requestDeferredScript");
+     auto pendingScript = requestPendingScript(scriptElement);
+     ASSERT(pendingScript->needsLoading());
+     m_scriptsToExecuteAfterParsing.append(WTFMove(pendingScript));
+@@ -235,6 +249,7 @@ void HTMLScriptRunner::requestDeferredScript(ScriptElement& scriptElement)
+ // http://www.whatwg.org/specs/web-apps/current-work/multipage/scripting-1.html#running-a-script
+ void HTMLScriptRunner::runScript(ScriptElement& scriptElement, const TextPosition& scriptStartPosition)
+ {
++    TraceScope tracingScope("HTMLScriptRunner::runScript");
+     ASSERT(m_document);
+     ASSERT(!hasParserBlockingScript());
+ 
+diff --git a/Source/WebCore/loader/DocumentLoader.cpp b/Source/WebCore/loader/DocumentLoader.cpp
+index 8d39727bce64..67b6ad9eef6d 100644
+--- a/Source/WebCore/loader/DocumentLoader.cpp
++++ b/Source/WebCore/loader/DocumentLoader.cpp
+@@ -101,6 +101,8 @@
+ #include <wtf/text/CString.h>
+ #include <wtf/text/WTFString.h>
+ 
++#include <wtf/SystemTracing.h>
++
+ #if ENABLE(APPLICATION_MANIFEST)
+ #include "ApplicationManifestLoader.h"
+ #include "HTMLHeadElement.h"
+@@ -426,6 +428,7 @@ bool DocumentLoader::isLoading() const
+ 
+ void DocumentLoader::notifyFinished(CachedResource& resource, const NetworkLoadMetrics& metrics)
+ {
++    TraceScope tracingScope("DocumentLoader::notifyFinished");
+     ASSERT(isMainThread());
+ #if ENABLE(CONTENT_FILTERING)
+     if (m_contentFilter && !m_contentFilter->continueAfterNotifyFinished(resource))
+@@ -459,6 +462,7 @@ void DocumentLoader::notifyFinished(CachedResource& resource, const NetworkLoadM
+ 
+ void DocumentLoader::finishedLoading()
+ {
++    TraceScope tracingScope("DocumentLoader::finishedLoading");
+     // There is a bug in CFNetwork where callbacks can be dispatched even when loads are deferred.
+     // See <rdar://problem/6304600> for more details.
+ #if !USE(CF)
+@@ -479,25 +483,29 @@ void DocumentLoader::finishedLoading()
+     }
+ 
+     maybeFinishLoadingMultipartContent();
+-
+     timing().markEndTime();
+     
+     commitIfReady();
+-    if (!frameLoader())
++    if (!frameLoader()) {
+         return;
++    }
+ 
+     if (!maybeCreateArchive()) {
+         // If this is an empty document, it will not have actually been created yet. Commit dummy data so that
+         // DocumentWriter::begin() gets called and creates the Document.
+-        if (!m_gotFirstByte)
++        if (!m_gotFirstByte) {
+             commitData(SharedBuffer::create());
++        }
+ 
+-        if (!frameLoader())
++        if (!frameLoader()) {
+             return;
++        }
++
+         frameLoader()->client().finishedLoading(this);
+     }
+ 
+     m_writer.end();
++
+     if (!m_mainDocumentError.isNull())
+         return;
+     clearMainResourceLoader();
+@@ -512,6 +520,7 @@ void DocumentLoader::finishedLoading()
+         if (m_mainResource && m_frame->document()->hasManifest())
+             MemoryCache::singleton().remove(*m_mainResource);
+     }
++
+     m_applicationCacheHost->finishedLoadingMainResource();
+ }
+ 
+@@ -637,6 +646,7 @@ void DocumentLoader::redirectReceived(CachedResource& resource, ResourceRequest&
+ 
+ void DocumentLoader::willSendRequest(ResourceRequest&& newRequest, const ResourceResponse& redirectResponse, CompletionHandler<void(ResourceRequest&&)>&& completionHandler)
+ {
++    TraceScope tracingScope("DocumentLoader::willSendRequest");
+     // Note that there are no asserts here as there are for the other callbacks. This is due to the
+     // fact that this "callback" is sent when starting every load, and the state of callback
+     // deferrals plays less of a part in this function in preventing the bad behavior deferring 
+@@ -789,6 +799,7 @@ std::optional<CrossOriginOpenerPolicyEnforcementResult> DocumentLoader::doCrossO
+ 
+ bool DocumentLoader::tryLoadingRequestFromApplicationCache()
+ {
++    TraceScope tracingScope("DocumentLoader::tryLoadingRequestFromApplicationCache");
+     m_applicationCacheHost->maybeLoadMainResource(m_request, m_substituteData);
+     return tryLoadingSubstituteData();
+ }
+@@ -1084,10 +1095,12 @@ bool DocumentLoader::disallowDataRequest() const
+ 
+ void DocumentLoader::continueAfterContentPolicy(PolicyAction policy)
+ {
++    TraceScope tracingScope("DocumentLoader::continueAfterContentPolicy");
+     ASSERT(m_waitingForContentPolicy);
+     m_waitingForContentPolicy = false;
+-    if (isStopping())
++    if (isStopping()) {
+         return;
++    }
+ 
+     if (!m_frame) {
+         DOCUMENTLOADER_RELEASE_LOG("continueAfterContentPolicy: policyAction=%i received by DocumentLoader with null frame", (int)policy);
+@@ -1181,6 +1194,7 @@ void DocumentLoader::continueAfterContentPolicy(PolicyAction policy)
+ 
+ void DocumentLoader::commitLoad(const SharedBuffer& data)
+ {
++    TraceScope tracingScope("DocumentLoader::commitLoad");
+     // Both unloading the old page and parsing the new page may execute JavaScript which destroys the datasource
+     // by starting a new load, so retain temporarily.
+     RefPtr<Frame> protectedFrame(m_frame.get());
+@@ -1188,16 +1202,19 @@ void DocumentLoader::commitLoad(const SharedBuffer& data)
+ 
+     commitIfReady();
+     FrameLoader* frameLoader = DocumentLoader::frameLoader();
+-    if (!frameLoader)
++    if (!frameLoader) {
+         return;
++    }
+ #if ENABLE(WEB_ARCHIVE) || ENABLE(MHTML)
+-    if (ArchiveFactory::isArchiveMIMEType(response().mimeType()))
++    if (ArchiveFactory::isArchiveMIMEType(response().mimeType())) {
+         return;
++    }
+ #endif
+     frameLoader->client().committedLoad(this, data);
+ 
+-    if (isMultipartReplacingLoad())
++    if (isMultipartReplacingLoad()) {
+         frameLoader->client().didReplaceMultipartContent();
++    }
+ }
+ 
+ ResourceError DocumentLoader::interruptedForPolicyChangeError() const
+@@ -1239,6 +1256,7 @@ bool DocumentLoader::isLoadingRemoteArchive() const
+ 
+ void DocumentLoader::commitData(const SharedBuffer& data)
+ {
++    TraceScope tracingScope("DocumentLoader::commitData");
+ #if ENABLE(WEB_ARCHIVE)
+     URL documentOrEmptyURL = isLoadingRemoteArchive() ? URL() : documentURL();
+ #else
+@@ -1541,6 +1559,7 @@ void DocumentLoader::clearMainResourceLoader()
+ 
+     if (this == frameLoader->activeDocumentLoader())
+         checkLoadComplete();
++
+ }
+ 
+ #if ENABLE(APPLICATION_MANIFEST)
+@@ -2032,9 +2051,11 @@ bool DocumentLoader::isMultipartReplacingLoad() const
+ 
+ bool DocumentLoader::maybeLoadEmpty()
+ {
++    TraceScope tracingScope("DocumentLoader::maybeLoadEmpty");
+     bool shouldLoadEmpty = !m_substituteData.isValid() && (m_request.url().isEmpty() || LegacySchemeRegistry::shouldLoadURLSchemeAsEmptyDocument(m_request.url().protocol()));
+-    if (!shouldLoadEmpty && !frameLoader()->client().representationExistsForURLScheme(m_request.url().protocol()))
++    if (!shouldLoadEmpty && !frameLoader()->client().representationExistsForURLScheme(m_request.url().protocol())) {
+         return false;
++    }
+ 
+     if (m_request.url().isEmpty() && !frameLoader()->stateMachine().creatingInitialEmptyDocument()) {
+         m_request.setURL(aboutBlankURL());
+@@ -2043,6 +2064,7 @@ bool DocumentLoader::maybeLoadEmpty()
+     }
+ 
+     String mimeType = shouldLoadEmpty ? "text/html"_s : frameLoader()->client().generatedMIMETypeForURLScheme(m_request.url().protocol());
++
+     m_response = ResourceResponse(m_request.url(), mimeType, 0, "UTF-8"_s);
+ 
+     if (!frameLoader()->stateMachine().isDisplayingInitialEmptyDocument()) {
+@@ -2054,7 +2076,9 @@ bool DocumentLoader::maybeLoadEmpty()
+     }
+ 
+     SetForScope isInFinishedLoadingOfEmptyDocument { m_isInFinishedLoadingOfEmptyDocument, true };
++
+     finishedLoading();
++
+     return true;
+ }
+ 
+@@ -2070,6 +2094,7 @@ static bool canUseServiceWorkers(Frame* frame)
+ 
+ void DocumentLoader::startLoadingMainResource()
+ {
++    TraceScope tracingScope("DocumentLoader::startLoadingMainResource");
+ #if ENABLE(SERVICE_WORKER)
+     m_canUseServiceWorkers = canUseServiceWorkers(m_frame.get());
+ #endif
+@@ -2104,6 +2129,7 @@ void DocumentLoader::startLoadingMainResource()
+     ASSERT(timing().startTime());
+ 
+     willSendRequest(ResourceRequest(m_request), ResourceResponse(), [this, protectedThis = WTFMove(protectedThis)] (ResourceRequest&& request) mutable {
++        TraceScope tracingScope("DocumentLoader::startLoadingMainResource : callback");
+         m_request = request;
+         // FIXME: Implement local URL interception by getting the service worker of the parent.
+ 
+@@ -2145,6 +2171,7 @@ void DocumentLoader::startLoadingMainResource()
+                 }
+                 this->loadMainResource(WTFMove(request));
+             });
++
+             return;
+         }
+ #else
+@@ -2175,6 +2202,7 @@ static bool isSandboxingAllowingServiceWorkerFetchHandling(SandboxFlags flags)
+ 
+ void DocumentLoader::loadMainResource(ResourceRequest&& request)
+ {
++    TraceScope tracingScope("DocumentLoader::loadMainResource");
+     ResourceLoaderOptions mainResourceLoadOptions(
+         SendCallbackPolicy::SendCallbacks,
+         ContentSniffingPolicy::SniffContent,
+@@ -2322,6 +2350,7 @@ void DocumentLoader::clearMainResource()
+ 
+ void DocumentLoader::subresourceLoaderFinishedLoadingOnePart(ResourceLoader& loader)
+ {
++    TraceScope tracingScope("DocumentLoader::subresourceLoaderFinishedLoadingOnePart");
+     ResourceLoaderIdentifier identifier = loader.identifier();
+     ASSERT(identifier);
+ 
+@@ -2340,6 +2369,7 @@ void DocumentLoader::subresourceLoaderFinishedLoadingOnePart(ResourceLoader& loa
+ 
+ void DocumentLoader::maybeFinishLoadingMultipartContent()
+ {
++    TraceScope tracingScope("DocumentLoader::maybeFinishLoadingMultipartContent");
+     if (!isMultipartReplacingLoad())
+         return;
+ 
+diff --git a/Source/WebCore/loader/DocumentWriter.cpp b/Source/WebCore/loader/DocumentWriter.cpp
+index fe1c71cb6f97..73a1ec1f2b39 100644
+--- a/Source/WebCore/loader/DocumentWriter.cpp
++++ b/Source/WebCore/loader/DocumentWriter.cpp
+@@ -53,6 +53,7 @@
+ #include "SinkDocument.h"
+ #include "TextResourceDecoder.h"
+ #include <wtf/Ref.h>
++#include <wtf/SystemTracing.h>
+ 
+ namespace WebCore {
+ 
+@@ -127,6 +128,7 @@ Ref<Document> DocumentWriter::createDocument(const URL& url, ScriptExecutionCont
+ 
+ bool DocumentWriter::begin(const URL& urlReference, bool dispatch, Document* ownerDocument, ScriptExecutionContextIdentifier documentIdentifier)
+ {
++    TraceScope tracingScope("DocumentWriter::begin");
+     // We grab a local copy of the URL because it's easy for callers to supply
+     // a URL that will be deallocated during the execution of this function.
+     // For example, see <https://bugs.webkit.org/show_bug.cgi?id=66360>.
+@@ -286,6 +288,7 @@ void DocumentWriter::insertDataSynchronously(const String& markup)
+ 
+ void DocumentWriter::end()
+ {
++    TraceScope tracingScope("DocumentWriter::end");
+     ASSERT(m_frame->page());
+     ASSERT(m_frame->document());
+ 
+diff --git a/Source/WebCore/loader/FrameLoader.cpp b/Source/WebCore/loader/FrameLoader.cpp
+index 1323de47ece5..0ff972f805ce 100644
+--- a/Source/WebCore/loader/FrameLoader.cpp
++++ b/Source/WebCore/loader/FrameLoader.cpp
+@@ -326,10 +326,12 @@ FrameLoader::FrameLoader(Frame& frame, UniqueRef<FrameLoaderClient>&& client)
+     , m_loadsSynchronously(false)
+     , m_forcedSandboxFlags(SandboxNone)
+ {
++    WTF::tracePoint("FrameLoader::FrameLoader");
+ }
+ 
+ FrameLoader::~FrameLoader()
+ {
++    //TraceScope tracingScope("FrameLoader::~FrameLoader");
+     setOpener(nullptr);
+     detachFromAllOpenedFrames();
+ 
+@@ -346,6 +348,7 @@ void FrameLoader::detachFromAllOpenedFrames()
+ 
+ void FrameLoader::init()
+ {
++    TraceScope tracingScope("FrameLoader::init");
+     // This somewhat odd set of steps gives the frame an initial empty document.
+     setPolicyDocumentLoader(m_client->createDocumentLoader(ResourceRequest(URL({ }, emptyString())), SubstituteData()).ptr());
+     setProvisionalDocumentLoader(m_policyDocumentLoader.get());
+@@ -355,7 +358,6 @@ void FrameLoader::init()
+     Ref document { *m_frame.document() };
+     document->cancelParsing();
+     m_stateMachine.advanceTo(FrameLoaderStateMachine::DisplayingInitialEmptyDocument);
+-
+     m_networkingContext = m_client->createNetworkingContext();
+     m_progressTracker = makeUnique<FrameProgressTracker>(m_frame);
+ }
+@@ -784,6 +786,7 @@ void FrameLoader::didBeginDocument(bool dispatch)
+ 
+ void FrameLoader::finishedParsing()
+ {
++    TraceScope tracingScope("FrameLoader::finishedParsing");
+     LOG(Loading, "WebCoreLoading %s: Finished parsing", m_frame.tree().uniqueName().string().utf8().data());
+ 
+     m_frame.injectUserScripts(UserScriptInjectionTime::DocumentEnd);
+@@ -2050,6 +2053,7 @@ void FrameLoader::clearProvisionalLoad()
+ 
+ void FrameLoader::commitProvisionalLoad()
+ {
++    TraceScope tracingScope("FrameLoader::commitProvisionalLoad");
+     RefPtr<DocumentLoader> pdl = m_provisionalDocumentLoader;
+     Ref<Frame> protect(m_frame);
+ 
+@@ -2192,6 +2196,7 @@ void FrameLoader::commitProvisionalLoad()
+ 
+ void FrameLoader::transitionToCommitted(CachedPage* cachedPage)
+ {
++    TraceScope tracingScope("FrameLoader::transitionToCommitted");
+     ASSERT(m_client->hasWebView());
+     ASSERT(m_state == FrameState::Provisional);
+ 
+@@ -3509,6 +3514,7 @@ bool FrameLoader::dispatchBeforeUnloadEvent(Chrome& chrome, FrameLoader* frameLo
+ 
+ void FrameLoader::continueLoadAfterNavigationPolicy(const ResourceRequest& request, FormState* formState, NavigationPolicyDecision navigationPolicyDecision, AllowNavigationToInvalidURL allowNavigationToInvalidURL)
+ {
++    TraceScope tracingScope("FrameLoader::continueLoadAfterNavigationPolicy");
+     // If we loaded an alternate page to replace an unreachableURL, we'll get in here with a
+     // nil policyDataSource because loading the alternate page will have passed
+     // through this method already, nested; otherwise, policyDataSource should still be set.
+@@ -3554,6 +3560,7 @@ void FrameLoader::continueLoadAfterNavigationPolicy(const ResourceRequest& reque
+                     page->backForward().setCurrentItem(*resetItem);
+             }
+         }
++
+         return;
+     }
+ 
+@@ -3608,7 +3615,6 @@ void FrameLoader::continueLoadAfterNavigationPolicy(const ResourceRequest& reque
+         }
+         
+         m_loadingFromCachedPage = false;
+-
+         m_provisionalDocumentLoader->startLoadingMainResource();
+     };
+     
+diff --git a/Source/WebCore/loader/SubresourceLoader.cpp b/Source/WebCore/loader/SubresourceLoader.cpp
+index f2b677515fb9..d550e2037b8a 100644
+--- a/Source/WebCore/loader/SubresourceLoader.cpp
++++ b/Source/WebCore/loader/SubresourceLoader.cpp
+@@ -741,7 +741,7 @@ void SubresourceLoader::didFinishLoading(const NetworkLoadMetrics& networkLoadMe
+         reportResourceTiming(timing ? *timing : NetworkLoadMetrics::emptyMetrics());
+     }
+ 
+-    if (m_resource->type() != CachedResource::Type::MainResource)
++    //if (m_resource->type() != CachedResource::Type::MainResource)
+         tracePoint(SubresourceLoadDidEnd, identifier().toUInt64());
+ 
+     m_state = Finishing;
+@@ -787,7 +787,7 @@ void SubresourceLoader::didFail(const ResourceError& error)
+     CachedResourceHandle<CachedResource> protectResource(m_resource);
+     m_state = Finishing;
+ 
+-    if (m_resource->type() != CachedResource::Type::MainResource)
++    //if (m_resource->type() != CachedResource::Type::MainResource)
+         tracePoint(SubresourceLoadDidEnd, identifier().toUInt64());
+ 
+     if (m_resource->resourceToRevalidate())
+@@ -840,7 +840,7 @@ void SubresourceLoader::didCancel(const ResourceError&)
+ 
+     ASSERT(m_resource);
+ 
+-    if (m_resource->type() != CachedResource::Type::MainResource)
++    //if (m_resource->type() != CachedResource::Type::MainResource)
+         tracePoint(SubresourceLoadDidEnd, identifier().toUInt64());
+ 
+     m_resource->cancelLoad();
+diff --git a/Source/WebCore/page/DOMWindow.cpp b/Source/WebCore/page/DOMWindow.cpp
+index d228c7fe2a6d..004166dec025 100644
+--- a/Source/WebCore/page/DOMWindow.cpp
++++ b/Source/WebCore/page/DOMWindow.cpp
+@@ -133,6 +133,7 @@
+ #include <wtf/SetForScope.h>
+ #include <wtf/URL.h>
+ #include <wtf/text/WTFString.h>
++#include <wtf/SystemTracing.h>
+ 
+ #if ENABLE(OIPF_VK)
+ #include "VkConsts.h"
+@@ -2331,6 +2332,7 @@ void DOMWindow::dispatchEvent(Event& event, EventTarget* target)
+     // and this function, which does something nearly identical but subtly different if
+     // called with a target of null. Most callers pass the document as the target, though.
+     // Fixing this could allow us to remove the special case in DocumentEventQueue::dispatchEvent.
++    TraceScope tracingScope("DOMWindow::dispatchEvent");
+ 
+     Ref protectedThis { *this };
+ 
+diff --git a/Source/WebCore/platform/graphics/FontCache.cpp b/Source/WebCore/platform/graphics/FontCache.cpp
+index 520d7e7535f2..5f57616d3369 100644
+--- a/Source/WebCore/platform/graphics/FontCache.cpp
++++ b/Source/WebCore/platform/graphics/FontCache.cpp
+@@ -46,6 +46,7 @@
+ #include <wtf/StdLibExtras.h>
+ #include <wtf/text/AtomStringHash.h>
+ #include <wtf/text/StringHash.h>
++#include <wtf/SystemTracing.h>
+ 
+ #if ENABLE(OPENTYPE_VERTICAL)
+ #include "OpenTypeVerticalData.h"
+@@ -193,6 +194,7 @@ std::optional<ASCIILiteral> FontCache::alternateFamilyName(const String& familyN
+ 
+ FontPlatformData* FontCache::cachedFontPlatformData(const FontDescription& fontDescription, const String& passedFamilyName, const FontCreationContext& fontCreationContext, bool checkingAlternateName)
+ {
++    TraceScope tracingScope("FontCache::cachedFontPlatformData");
+ #if PLATFORM(IOS_FAMILY)
+     Locker locker { m_fontLock };
+ #endif
+@@ -208,6 +210,7 @@ FontPlatformData* FontCache::cachedFontPlatformData(const FontDescription& fontD
+ 
+     static std::once_flag onceFlag;
+     std::call_once(onceFlag, [&]() {
++        TraceScope scope0("FontCache::cachedFontPlatformData platformInit");
+         platformInit();
+     });
+ 
+@@ -216,7 +219,9 @@ FontPlatformData* FontCache::cachedFontPlatformData(const FontDescription& fontD
+     auto addResult = m_fontDataCaches->platformData.add(key, nullptr);
+     FontPlatformDataCache::iterator it = addResult.iterator;
+     if (addResult.isNewEntry) {
++
+         it->value = createFontPlatformData(fontDescription, familyName, fontCreationContext);
++
+         if (!it->value && !checkingAlternateName) {
+             // We were unable to find a font. We have a small set of fonts that we alias to other names,
+             // e.g., Arial/Helvetica, Courier/Courier New, etc. Try looking up the font under the aliased name.
+@@ -248,11 +253,13 @@ const unsigned cTargetUnderMemoryPressureInactiveFontData = 30;
+ 
+ RefPtr<Font> FontCache::fontForFamily(const FontDescription& fontDescription, const String& family, const FontCreationContext& fontCreationContext, bool checkingAlternateName)
+ {
++    TraceScope tracingScope("FontCache::fontForFamily");
+     if (!m_purgeTimer.isActive())
+         m_purgeTimer.startOneShot(0_s);
+ 
+-    if (auto* platformData = cachedFontPlatformData(fontDescription, family, fontCreationContext, checkingAlternateName))
++    if (auto* platformData = cachedFontPlatformData(fontDescription, family, fontCreationContext, checkingAlternateName)) {
+         return fontForPlatformData(*platformData);
++    }
+ 
+     return nullptr;
+ }
+diff --git a/Source/WebCore/platform/graphics/FontCascadeFonts.cpp b/Source/WebCore/platform/graphics/FontCascadeFonts.cpp
+index d362ffe2df7c..0e5548a352bc 100644
+--- a/Source/WebCore/platform/graphics/FontCascadeFonts.cpp
++++ b/Source/WebCore/platform/graphics/FontCascadeFonts.cpp
+@@ -33,6 +33,8 @@
+ #include "FontCascade.h"
+ #include "GlyphPage.h"
+ 
++#include <wtf/SystemTracing.h>
++
+ namespace WebCore {
+ 
+ class MixedFontGlyphPage {
+@@ -142,41 +144,50 @@ bool FontCascadeFonts::isLoadingCustomFonts() const
+ 
+ static FontRanges realizeNextFallback(const FontCascadeDescription& description, unsigned& index, FontSelector* fontSelector)
+ {
++    TraceScope tracingScope("realizeNextFallback");
+     ASSERT(index < description.effectiveFamilyCount());
+ 
+     auto& fontCache = FontCache::forCurrentThread();
+     while (index < description.effectiveFamilyCount()) {
+         auto visitor = WTF::makeVisitor([&](const AtomString& family) -> FontRanges {
+-            if (family.isEmpty())
++            if (family.isEmpty()) {
+                 return FontRanges();
++            }
+             if (fontSelector) {
+                 auto ranges = fontSelector->fontRangesForFamily(description, family);
+-                if (!ranges.isNull())
++                if (!ranges.isNull()) {
+                     return ranges;
++                }
+             }
+-            if (auto font = fontCache.fontForFamily(description, family))
++            if (auto font = fontCache.fontForFamily(description, family)) {
+                 return FontRanges(WTFMove(font));
++            }
+             return FontRanges();
+         }, [&](const FontFamilyPlatformSpecification& fontFamilySpecification) -> FontRanges {
+             return fontFamilySpecification.fontRanges(description);
+         });
+         const auto& currentFamily = description.effectiveFamilyAt(index++);
++
+         auto ranges = std::visit(visitor, currentFamily);
+-        if (!ranges.isNull())
++
++        if (!ranges.isNull()) {
+             return ranges;
++        }
+     }
+     // We didn't find a font. Try to find a similar font using our own specific knowledge about our platform.
+     // For example on OS X, we know to map any families containing the words Arabic, Pashto, or Urdu to the
+     // Geeza Pro font.
+     for (auto& family : description.families()) {
+-        if (auto font = fontCache.similarFont(description, family))
++        if (auto font = fontCache.similarFont(description, family)) {
+             return FontRanges(WTFMove(font));
++        }
+     }
+     return { };
+ }
+ 
+ const FontRanges& FontCascadeFonts::realizeFallbackRangesAt(const FontCascadeDescription& description, unsigned index)
+ {
++    TraceScope tracingScope("FontCascadeFonts::realizeFallbackRangesAt");
+     if (index < m_realizedFallbackRanges.size())
+         return m_realizedFallbackRanges[index];
+ 
+@@ -192,6 +203,7 @@ const FontRanges& FontCascadeFonts::realizeFallbackRangesAt(const FontCascadeDes
+             fontRanges = m_fontSelector->fontRangesForFamily(description, familyNamesData->at(FamilyNamesIndex::StandardFamily));
+         if (fontRanges.isNull())
+             fontRanges = FontRanges(FontCache::forCurrentThread().lastResortFallbackFont(description));
++
+         return fontRanges;
+     }
+ 
+@@ -202,8 +214,9 @@ const FontRanges& FontCascadeFonts::realizeFallbackRangesAt(const FontCascadeDes
+         ASSERT(m_lastRealizedFallbackIndex >= description.effectiveFamilyCount());
+ 
+         unsigned fontSelectorFallbackIndex = m_lastRealizedFallbackIndex - description.effectiveFamilyCount();
+-        if (fontSelectorFallbackIndex == m_fontSelector->fallbackFontCount())
++        if (fontSelectorFallbackIndex == m_fontSelector->fallbackFontCount()) {
+             return fontRanges;
++        }
+         ++m_lastRealizedFallbackIndex;
+         fontRanges = FontRanges(m_fontSelector->fallbackFontAt(description, fontSelectorFallbackIndex));
+     }
+diff --git a/Source/WebCore/platform/graphics/freetype/FontCacheFreeType.cpp b/Source/WebCore/platform/graphics/freetype/FontCacheFreeType.cpp
+index c3b5520ffc0b..24960ea90ce3 100644
+--- a/Source/WebCore/platform/graphics/freetype/FontCacheFreeType.cpp
++++ b/Source/WebCore/platform/graphics/freetype/FontCacheFreeType.cpp
+@@ -42,6 +42,7 @@
+ #include <wtf/HashFunctions.h>
+ #include <wtf/HashMap.h>
+ #include <wtf/text/CString.h>
++#include <wtf/SystemTracing.h>
+ 
+ #if PLATFORM(GTK)
+ #include "GtkUtilities.h"
+@@ -55,6 +56,7 @@ namespace WebCore {
+ 
+ void FontCache::platformInit()
+ {
++    TraceScope tracingScope("FontCache::platformInit");
+     // It's fine to call FcInit multiple times per the documentation.
+     if (!FcInit())
+         ASSERT_NOT_REACHED();
+@@ -363,6 +365,7 @@ static inline bool isCommonlyUsedGenericFamily(const String& familyNameString)
+ 
+ std::unique_ptr<FontPlatformData> FontCache::createFontPlatformData(const FontDescription& fontDescription, const AtomString& family, const FontCreationContext& fontCreationContext)
+ {
++    TraceScope tracingScope("FontCache::createFontPlatformData");
+     // The CSS font matching algorithm (http://www.w3.org/TR/css3-fonts/#font-matching-algorithm)
+     // says that we must find an exact match for font family, slant (italic or oblique can be used)
+     // and font weight (we only match bold/non-bold here).
+diff --git a/Source/WebCore/style/StyleResolver.cpp b/Source/WebCore/style/StyleResolver.cpp
+index 724b8ab37bcf..4c29c438733e 100644
+--- a/Source/WebCore/style/StyleResolver.cpp
++++ b/Source/WebCore/style/StyleResolver.cpp
+@@ -81,6 +81,9 @@
+ #include <wtf/Vector.h>
+ #include <wtf/text/AtomStringHash.h>
+ 
++#include <wtf/SystemTracing.h>
++
++
+ namespace WebCore {
+ namespace Style {
+ 
+@@ -144,6 +147,7 @@ Resolver::Resolver(Document& document)
+     , m_document(document)
+     , m_matchAuthorAndUserStyles(m_document.settings().authorAndUserStylesEnabled())
+ {
++    TraceScope tracingScope("Resolver::Resolver");
+     UserAgentStyle::initDefaultStyleSheet();
+ 
+     // construct document root element default style. this is needed
+diff --git a/Source/WebCore/style/StyleScope.h b/Source/WebCore/style/StyleScope.h
+index b74ebfd00c00..cd9c083abe4b 100644
+--- a/Source/WebCore/style/StyleScope.h
++++ b/Source/WebCore/style/StyleScope.h
+@@ -42,6 +42,7 @@
+ #include <wtf/WeakHashMap.h>
+ #include <wtf/WeakHashSet.h>
+ #include <wtf/text/WTFString.h>
++#include <wtf/SystemTracing.h>
+ 
+ namespace WebCore {
+ 
+@@ -228,6 +229,7 @@ Element* hostForScopeOrdinal(const Element&, ScopeOrdinal);
+ 
+ inline void Scope::flushPendingUpdate()
+ {
++    TraceScope tracingScope("Scope::flushPendingUpdate");
+     if (m_hasDescendantWithPendingUpdate)
+         flushPendingDescendantUpdates();
+     if (m_pendingUpdate)
+diff --git a/Source/WebCore/style/StyleTreeResolver.cpp b/Source/WebCore/style/StyleTreeResolver.cpp
+index c839313952f6..ce06a99a08a8 100644
+--- a/Source/WebCore/style/StyleTreeResolver.cpp
++++ b/Source/WebCore/style/StyleTreeResolver.cpp
+@@ -901,6 +901,7 @@ auto TreeResolver::determineQueryContainerAction(const Element& element, const R
+ 
+ std::unique_ptr<Update> TreeResolver::resolve()
+ {
++    TraceScope tracingScope("TreeResolver::resolve");
+     m_resolvedQueryContainers.add(m_unresolvedQueryContainers.begin(), m_unresolvedQueryContainers.end());
+     m_unresolvedQueryContainers.clear();
+ 
+diff --git a/Source/WebCore/style/UserAgentStyle.cpp b/Source/WebCore/style/UserAgentStyle.cpp
+index 503b09050b94..a479d7528a0c 100644
+--- a/Source/WebCore/style/UserAgentStyle.cpp
++++ b/Source/WebCore/style/UserAgentStyle.cpp
+@@ -56,6 +56,8 @@
+ #include "UserAgentStyleSheets.h"
+ #include <wtf/NeverDestroyed.h>
+ 
++#include <wtf/SystemTracing.h>
++
+ namespace WebCore {
+ namespace Style {
+ 
+@@ -108,6 +110,7 @@ static const MediaQueryEvaluator& printEval()
+ 
+ static StyleSheetContents* parseUASheet(const String& str)
+ {
++    TraceScope tracingScope("parseUASheet");
+     StyleSheetContents& sheet = StyleSheetContents::create(CSSParserContext(UASheetMode)).leakRef(); // leak the sheet on purpose
+     sheet.parseString(str);
+     return &sheet;
+@@ -115,6 +118,7 @@ static StyleSheetContents* parseUASheet(const String& str)
+ 
+ void UserAgentStyle::addToDefaultStyle(StyleSheetContents& sheet)
+ {
++    TraceScope tracingScope("UserAgentStyle::addToDefaultStyle");
+     RuleSetBuilder screenBuilder(*defaultStyle, screenEval());
+     screenBuilder.addRulesFromSheet(sheet);
+ 
+@@ -140,6 +144,7 @@ void UserAgentStyle::addToDefaultStyle(StyleSheetContents& sheet)
+ 
+ void UserAgentStyle::initDefaultStyleSheet()
+ {
++    TraceScope tracingScope("UserAgentStyle::initDefaultStyleSheet");
+     if (defaultStyle)
+         return;
+ 
+diff --git a/Source/WebKit/Shared/mac/AuxiliaryProcessMac.mm b/Source/WebKit/Shared/mac/AuxiliaryProcessMac.mm
+index fc84fda969d6..1719f26dd1e0 100644
+--- a/Source/WebKit/Shared/mac/AuxiliaryProcessMac.mm
++++ b/Source/WebKit/Shared/mac/AuxiliaryProcessMac.mm
+@@ -720,7 +720,7 @@ static void populateSandboxInitializationParameters(SandboxInitializationParamet
+ 
+ void AuxiliaryProcess::initializeSandbox(const AuxiliaryProcessInitializationParameters& parameters, SandboxInitializationParameters& sandboxParameters)
+ {
+-    TraceScope traceScope(InitializeSandboxStart, InitializeSandboxEnd);
++    TraceScope tracingScope(InitializeSandboxStart, InitializeSandboxEnd);
+ 
+ #if USE(CACHE_COMPILED_SANDBOX)
+     // This must be called before populateSandboxInitializationParameters so that the path does not include the user directory suffix.
+@@ -758,7 +758,7 @@ void AuxiliaryProcess::initializeSandbox(const AuxiliaryProcessInitializationPar
+ 
+ void AuxiliaryProcess::applySandboxProfileForDaemon(const String& profilePath, const String& userDirectorySuffix)
+ {
+-    TraceScope traceScope(InitializeSandboxStart, InitializeSandboxEnd);
++    TraceScope tracingScope(InitializeSandboxStart, InitializeSandboxEnd);
+ 
+     SandboxInitializationParameters parameters { };
+     parameters.setOverrideSandboxProfilePath(profilePath);
+diff --git a/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp b/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp
+index 8a6a11bf5ad2..2989236f9a75 100644
+--- a/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp
++++ b/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp
+@@ -76,6 +76,7 @@
+ #include <WebCore/CertificateInfo.h>
+ #include <WebCore/JSDOMExceptionHandling.h>
+ #include <WebCore/URLSoup.h>
++
+ #include <glib/gi18n-lib.h>
+ #include <jsc/JSCContextPrivate.h>
+ #include <libsoup/soup.h>
+@@ -719,6 +720,7 @@ static void webkitWebViewDisconnectFaviconDatabaseSignalHandlers(WebKitWebView*
+ 
+ static void webkitWebViewConstructed(GObject* object)
+ {
++    TraceScope tracingScope("webkitWebViewConstructed");
+     G_OBJECT_CLASS(webkit_web_view_parent_class)->constructed(object);
+ 
+     WebKitWebView* webView = WEBKIT_WEB_VIEW(object);
+@@ -954,6 +956,7 @@ static void webkitWebViewGetProperty(GObject* object, guint propId, GValue* valu
+ 
+ static void webkitWebViewDispose(GObject* object)
+ {
++    TraceScope tracingScope("webkitWebViewDispose");
+     WebKitWebView* webView = WEBKIT_WEB_VIEW(object);
+ 
+ #if PLATFORM(GTK)
+@@ -1063,6 +1066,7 @@ static void webkitWebViewContextMenuMarshalVa(GClosure* closure, GValue* returnV
+ 
+ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
+ {
++    TraceScope tracingScope("webkit_web_view_class_init");
+     GObjectClass* gObjectClass = G_OBJECT_CLASS(webViewClass);
+ 
+     gObjectClass->constructed = webkitWebViewConstructed;
+@@ -2441,6 +2445,7 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
+ 
+ static void webkitWebViewCompleteAuthenticationRequest(WebKitWebView* webView)
+ {
++    TraceScope tracingScope("webkitWebViewCompleteAuthenticationRequest");
+     WebKitWebViewPrivate* priv = webView->priv;
+     if (!priv->authenticationRequest)
+         return;
+@@ -2462,6 +2467,7 @@ static void webkitWebViewCompleteAuthenticationRequest(WebKitWebView* webView)
+ 
+ void webkitWebViewCreatePage(WebKitWebView* webView, Ref<API::PageConfiguration>&& configuration)
+ {
++    TraceScope tracingScope("webkitWebViewCreatePage");
+ #if PLATFORM(GTK)
+     webkitWebViewBaseCreateWebPage(WEBKIT_WEB_VIEW_BASE(webView), WTFMove(configuration));
+ #elif PLATFORM(WPE)
+@@ -2476,6 +2482,7 @@ WebPageProxy& webkitWebViewGetPage(WebKitWebView* webView)
+ 
+ void webkitWebViewWillStartLoad(WebKitWebView* webView)
+ {
++    TraceScope tracingScope("webkitWebViewWillStartLoad");
+     // Ignore the active URI changes happening before WEBKIT_LOAD_STARTED. If they are not user-initiated,
+     // they could be a malicious attempt to trick users by loading an invalid URI on a trusted host, with the load
+     // intended to stall, or perhaps be repeated. If we trust the URI here and display it to the user, then the user's
+@@ -2498,6 +2505,7 @@ void webkitWebViewWillStartLoad(WebKitWebView* webView)
+ 
+ void webkitWebViewLoadChanged(WebKitWebView* webView, WebKitLoadEvent loadEvent)
+ {
++    TraceScope tracingScope("webkitWebViewLoadChanged");
+     WebKitWebViewPrivate* priv = webView->priv;
+     switch (loadEvent) {
+     case WEBKIT_LOAD_STARTED:
+@@ -2543,6 +2551,7 @@ void webkitWebViewDocumentLoaded(WebKitWebView* webView)
+ 
+ void webkitWebViewLoadFailed(WebKitWebView* webView, WebKitLoadEvent loadEvent, const char* failingURI, GError *error)
+ {
++    TraceScope tracingScope("webkitWebViewLoadFailed");
+     webkitWebViewCompleteAuthenticationRequest(webView);
+ 
+     gboolean returnValue;
+@@ -2552,6 +2561,7 @@ void webkitWebViewLoadFailed(WebKitWebView* webView, WebKitLoadEvent loadEvent,
+ 
+ void webkitWebViewLoadFailedWithTLSErrors(WebKitWebView* webView, const char* failingURI, GError* error, GTlsCertificateFlags tlsErrors, GTlsCertificate* certificate)
+ {
++    TraceScope tracingScope("webkitWebViewLoadFailedWithTLSErrors");
+     webkitWebViewCompleteAuthenticationRequest(webView);
+ 
+     auto* websiteDataManager = webkit_web_view_get_website_data_manager(webView);
+@@ -2587,6 +2597,7 @@ void webkitWebViewSetIcon(WebKitWebView* webView, const LinkIcon& icon, API::Dat
+ 
+ RefPtr<WebPageProxy> webkitWebViewCreateNewPage(WebKitWebView* webView, const WindowFeatures& windowFeatures, WebKitNavigationAction* navigationAction)
+ {
++    TraceScope tracingScope("webkitWebViewCreateNewPage");
+     WebKitWebView* newWebView;
+     g_signal_emit(webView, signals[CREATE], 0, navigationAction, &newWebView);
+     if (!newWebView)
+@@ -2803,6 +2814,7 @@ void webkitWebViewPrintFrame(WebKitWebView* webView, WebFrameProxy* frame)
+ 
+ void webkitWebViewResourceLoadStarted(WebKitWebView* webView, WebFrameProxy& frame, uint64_t resourceIdentifier, WebKitURIRequest* request)
+ {
++    TraceScope tracingScope("webkitWebViewResourceLoadStarted");
+     WebKitWebViewPrivate* priv = webView->priv;
+     bool isMainResource = frame.isMainFrame() && !priv->mainResource;
+     WebKitWebResource* resource = webkitWebResourceCreate(frame, request, isMainResource);
+@@ -3195,6 +3207,7 @@ WebKitWebsiteDataManager* webkit_web_view_get_website_data_manager(WebKitWebView
+  */
+ void webkit_web_view_try_close(WebKitWebView *webView)
+ {
++    TraceScope tracingScope("webkit_web_view_try_close");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+     if (getPage(webView).tryClose())
+         webkitWebViewClosePage(webView);
+@@ -3212,6 +3225,7 @@ void webkit_web_view_try_close(WebKitWebView *webView)
+  */
+ void webkit_web_view_load_uri(WebKitWebView* webView, const gchar* uri)
+ {
++    TraceScope tracingScope("webkit_web_view_load_uri");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+     g_return_if_fail(uri);
+ 
+@@ -3237,6 +3251,7 @@ void webkit_web_view_load_uri(WebKitWebView* webView, const gchar* uri)
+  */
+ void webkit_web_view_load_html(WebKitWebView* webView, const gchar* content, const gchar* baseURI)
+ {
++    TraceScope tracingScope("webkit_web_view_load_html");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+     g_return_if_fail(content);
+ 
+@@ -3259,6 +3274,7 @@ void webkit_web_view_load_html(WebKitWebView* webView, const gchar* content, con
+  */
+ void webkit_web_view_load_alternate_html(WebKitWebView* webView, const gchar* content, const gchar* contentURI, const gchar* baseURI)
+ {
++    TraceScope tracingScope("webkit_web_view_load_alternate_html");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+     g_return_if_fail(content);
+     g_return_if_fail(contentURI);
+@@ -3278,6 +3294,7 @@ void webkit_web_view_load_alternate_html(WebKitWebView* webView, const gchar* co
+  */
+ void webkit_web_view_load_plain_text(WebKitWebView* webView, const gchar* plainText)
+ {
++    TraceScope tracingScope("webkit_web_view_load_plain_text");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+     g_return_if_fail(plainText);
+ 
+@@ -3303,6 +3320,7 @@ void webkit_web_view_load_plain_text(WebKitWebView* webView, const gchar* plainT
+  */
+ void webkit_web_view_load_bytes(WebKitWebView* webView, GBytes* bytes, const char* mimeType, const char* encoding, const char* baseURI)
+ {
++    TraceScope tracingScope("webkit_web_view_load_bytes");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+     g_return_if_fail(bytes);
+ 
+@@ -3326,6 +3344,7 @@ void webkit_web_view_load_bytes(WebKitWebView* webView, GBytes* bytes, const cha
+  */
+ void webkit_web_view_load_request(WebKitWebView* webView, WebKitURIRequest* request)
+ {
++    TraceScope tracingScope("webkit_web_view_load_request");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+     g_return_if_fail(WEBKIT_IS_URI_REQUEST(request));
+ 
+@@ -3378,6 +3397,7 @@ const gchar* webkit_web_view_get_title(WebKitWebView* webView)
+  */
+ void webkit_web_view_reload(WebKitWebView* webView)
+ {
++    TraceScope tracingScope("webkit_web_view_reload");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+ 
+     getPage(webView).reload({ });
+@@ -3392,6 +3412,7 @@ void webkit_web_view_reload(WebKitWebView* webView)
+  */
+ void webkit_web_view_reload_bypass_cache(WebKitWebView* webView)
+ {
++    TraceScope tracingScope("webkit_web_view_reload_bypass_cache");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+ 
+     getPage(webView).reload(ReloadOption::FromOrigin);
+@@ -3410,6 +3431,7 @@ void webkit_web_view_reload_bypass_cache(WebKitWebView* webView)
+  */
+ void webkit_web_view_stop_loading(WebKitWebView* webView)
+ {
++    TraceScope tracingScope("webkit_web_view_stop_loading");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+ 
+     getPage(webView).stopLoading();
+@@ -4001,6 +4023,7 @@ JSGlobalContextRef webkit_web_view_get_javascript_global_context(WebKitWebView*
+ 
+ static void webkitWebViewRunJavaScriptCallback(API::SerializedScriptValue* wkSerializedScriptValue, const ExceptionDetails& exceptionDetails, GTask* task)
+ {
++    TraceScope tracingScope("webkitWebViewRunJavaScriptCallback");
+     if (g_task_return_error_if_cancelled(task))
+         return;
+ 
+@@ -4026,6 +4049,7 @@ static void webkitWebViewRunJavaScriptCallback(API::SerializedScriptValue* wkSer
+ 
+ static void webkitWebViewRunJavaScriptWithParams(WebKitWebView* webView, const gchar* script, RunJavaScriptParameters&& params, GCancellable* cancellable, GAsyncReadyCallback callback, gpointer userData)
+ {
++    TraceScope tracingScope("webkitWebViewRunJavaScriptWithParams");
+     GRefPtr<GTask> task = adoptGRef(g_task_new(webView, cancellable, callback, userData));
+ 
+     getPage(webView).runJavaScriptInMainFrame(WTFMove(params), [task = WTFMove(task)] (auto&& result) {
+@@ -4041,6 +4065,7 @@ static void webkitWebViewRunJavaScriptWithParams(WebKitWebView* webView, const g
+ 
+ void webkitWebViewRunJavascriptWithoutForcedUserGestures(WebKitWebView* webView, const gchar* script, GCancellable* cancellable, GAsyncReadyCallback callback, gpointer userData)
+ {
++    TraceScope tracingScope("webkitWebViewRunJavascriptWithoutForcedUserGestures");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+     g_return_if_fail(script);
+ 
+@@ -4066,6 +4091,7 @@ void webkitWebViewRunJavascriptWithoutForcedUserGestures(WebKitWebView* webView,
+  */
+ void webkit_web_view_run_javascript(WebKitWebView* webView, const gchar* script, GCancellable* cancellable, GAsyncReadyCallback callback, gpointer userData)
+ {
++    TraceScope tracingScope("webkit_web_view_run_javascript");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+     g_return_if_fail(script);
+ 
+@@ -4131,6 +4157,7 @@ void webkit_web_view_run_javascript(WebKitWebView* webView, const gchar* script,
+  */
+ WebKitJavascriptResult* webkit_web_view_run_javascript_finish(WebKitWebView* webView, GAsyncResult* result, GError** error)
+ {
++    TraceScope tracingScope("webkit_web_view_run_javascript_finish");
+     g_return_val_if_fail(WEBKIT_IS_WEB_VIEW(webView), nullptr);
+     g_return_val_if_fail(g_task_is_valid(result, webView), nullptr);
+ 
+@@ -4158,6 +4185,7 @@ WebKitJavascriptResult* webkit_web_view_run_javascript_finish(WebKitWebView* web
+  */
+ void webkit_web_view_run_javascript_in_world(WebKitWebView* webView, const gchar* script, const char* worldName, GCancellable* cancellable, GAsyncReadyCallback callback, gpointer userData)
+ {
++    TraceScope tracingScope("webkit_web_view_run_javascript_in_world");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+     g_return_if_fail(script);
+     g_return_if_fail(worldName);
+@@ -4244,6 +4272,7 @@ void webkit_web_view_run_javascript_in_world(WebKitWebView* webView, const gchar
+  */
+ void webkit_web_view_run_async_javascript_function_in_world(WebKitWebView* webView, const gchar* body, GVariant* arguments, const char* worldName, GCancellable* cancellable, GAsyncReadyCallback callback, gpointer userData)
+ {
++    TraceScope tracingScope("webkit_web_view_run_async_javascript_function_in_world");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+     g_return_if_fail(body);
+ 
+@@ -4302,6 +4331,7 @@ void webkit_web_view_run_async_javascript_function_in_world(WebKitWebView* webVi
+  */
+ WebKitJavascriptResult* webkit_web_view_run_javascript_in_world_finish(WebKitWebView* webView, GAsyncResult* result, GError** error)
+ {
++    TraceScope tracingScope("webkit_web_view_run_javascript_in_world_finish");
+     g_return_val_if_fail(WEBKIT_IS_WEB_VIEW(webView), nullptr);
+     g_return_val_if_fail(g_task_is_valid(result, webView), nullptr);
+ 
+@@ -4352,6 +4382,7 @@ static void resourcesStreamReadCallback(GObject* object, GAsyncResult* result, g
+  */
+ void webkit_web_view_run_javascript_from_gresource(WebKitWebView* webView, const gchar* resource, GCancellable* cancellable, GAsyncReadyCallback callback, gpointer userData)
+ {
++    TraceScope tracingScope("webkit_web_view_run_javascript_from_gresource");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+     g_return_if_fail(resource);
+ 
+@@ -4384,6 +4415,7 @@ void webkit_web_view_run_javascript_from_gresource(WebKitWebView* webView, const
+  */
+ WebKitJavascriptResult* webkit_web_view_run_javascript_from_gresource_finish(WebKitWebView* webView, GAsyncResult* result, GError** error)
+ {
++    TraceScope tracingScope("webkit_web_view_run_javascript_from_gresource_finish");
+     g_return_val_if_fail(WEBKIT_IS_WEB_VIEW(webView), 0);
+     g_return_val_if_fail(g_task_is_valid(result, webView), 0);
+ 
+@@ -5134,6 +5166,7 @@ gboolean webkit_web_view_get_is_web_process_responsive(WebKitWebView* webView)
+  */
+ void webkit_web_view_terminate_web_process(WebKitWebView* webView)
+ {
++    TraceScope tracingScope("webkit_web_view_terminate_web_process");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+ 
+     auto& page = getPage(webView);
+@@ -5427,6 +5460,7 @@ webkit_web_view_get_default_content_security_policy(WebKitWebView* webView)
+ 
+ void webkit_web_view_suspend(WebKitWebView *webView)
+ {
++    WTF::tracePoint("webkit_web_view_suspend");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+ 
+     auto viewStateFlags = webView->priv->view->viewState();
+@@ -5436,6 +5470,7 @@ void webkit_web_view_suspend(WebKitWebView *webView)
+ 
+ void webkit_web_view_resume(WebKitWebView *webView)
+ {
++    WTF::tracePoint("webkit_web_view_resume");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+ 
+     auto viewStateFlags = webView->priv->view->viewState();
+@@ -5452,6 +5487,7 @@ gboolean webkit_web_view_is_suspended(WebKitWebView *webView)
+ 
+ void webkit_web_view_hide(WebKitWebView *webView)
+ {
++    WTF::tracePoint("webkit_web_view_hide");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+ 
+     auto viewStateFlags = webView->priv->view->viewState();
+@@ -5461,6 +5497,7 @@ void webkit_web_view_hide(WebKitWebView *webView)
+ 
+ void webkit_web_view_show(WebKitWebView *webView)
+ {
++    WTF::tracePoint("webkit_web_view_show");
+     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+ 
+     auto viewStateFlags = webView->priv->view->viewState();
+diff --git a/Source/WebKit/UIProcess/WebPageProxy.cpp b/Source/WebKit/UIProcess/WebPageProxy.cpp
+index 6d702426a23d..6e1837e92feb 100644
+--- a/Source/WebKit/UIProcess/WebPageProxy.cpp
++++ b/Source/WebKit/UIProcess/WebPageProxy.cpp
+@@ -191,6 +191,7 @@
+ #include <WebCore/ValidationBubble.h>
+ #include <WebCore/WindowFeatures.h>
+ #include <WebCore/WritingDirection.h>
++
+ #include <stdio.h>
+ #include <wtf/CallbackAggregator.h>
+ #include <wtf/NeverDestroyed.h>
+@@ -867,6 +868,7 @@ void WebPageProxy::handleSynchronousMessage(IPC::Connection& connection, const S
+ 
+ void WebPageProxy::launchProcess(const RegistrableDomain& registrableDomain, ProcessLaunchReason reason)
+ {
++    TraceScope tracingScope("WebPageProxy::launchProcess");
+     ASSERT(!m_isClosed);
+     ASSERT(!hasRunningProcess());
+ 
+@@ -905,6 +907,7 @@ void WebPageProxy::launchProcess(const RegistrableDomain& registrableDomain, Pro
+     auto pendingInjectedBundleMessage = WTFMove(m_pendingInjectedBundleMessages);
+     for (auto& message : pendingInjectedBundleMessage)
+         send(Messages::WebPage::PostInjectedBundleMessage(message.messageName, UserData(process().transformObjectsToHandles(message.messageBody.get()).get())));
++
+ }
+ 
+ bool WebPageProxy::suspendCurrentPageIfPossible(API::Navigation& navigation, std::optional<FrameIdentifier> mainFrameID, ProcessSwapRequestedByClient processSwapRequestedByClient, ShouldDelayClosingUntilFirstLayerFlush shouldDelayClosingUntilFirstLayerFlush)
+@@ -1160,6 +1163,7 @@ void WebPageProxy::setDrawingArea(std::unique_ptr<DrawingAreaProxy>&& drawingAre
+ 
+ void WebPageProxy::initializeWebPage()
+ {
++    TraceScope tracingScope("WebPageProxy::initializeWebPage");
+     if (!hasRunningProcess())
+         return;
+ 
+@@ -1183,6 +1187,7 @@ void WebPageProxy::initializeWebPage()
+ 
+ void WebPageProxy::close()
+ {
++    TraceScope tracingScope("WebPageProxy::close");
+     if (m_isClosed)
+         return;
+ 
+@@ -1262,6 +1267,7 @@ void WebPageProxy::close()
+ 
+ bool WebPageProxy::tryClose()
+ {
++    TraceScope tracingScope("WebPageProxy::tryClose");
+     if (!hasRunningProcess())
+         return true;
+ 
+@@ -1408,6 +1414,7 @@ WebProcessProxy& WebPageProxy::ensureRunningProcess()
+ 
+ RefPtr<API::Navigation> WebPageProxy::loadRequest(ResourceRequest&& request, ShouldOpenExternalURLsPolicy shouldOpenExternalURLsPolicy, API::Object* userData)
+ {
++    TraceScope tracingScope("WebPageProxy::loadRequest");
+     if (m_isClosed)
+         return nullptr;
+ 
+@@ -1426,6 +1433,7 @@ RefPtr<API::Navigation> WebPageProxy::loadRequest(ResourceRequest&& request, Sho
+ #endif
+ 
+     loadRequestWithNavigationShared(m_process.copyRef(), m_webPageID, navigation.get(), WTFMove(request), shouldOpenExternalURLsPolicy, userData, ShouldTreatAsContinuingLoad::No, isNavigatingToAppBoundDomain());
++
+     return navigation;
+ }
+ 
+@@ -6270,6 +6278,7 @@ void WebPageProxy::didExitFullscreen()
+ 
+ void WebPageProxy::closePage()
+ {
++    TraceScope tracingScope("WebPageProxy::closePage");
+     if (isClosed())
+         return;
+ 
+diff --git a/Source/WebKit/WebProcess/WebCoreSupport/WebFrameLoaderClient.cpp b/Source/WebKit/WebProcess/WebCoreSupport/WebFrameLoaderClient.cpp
+index b7d89bc53af1..85aadbb40380 100644
+--- a/Source/WebKit/WebProcess/WebCoreSupport/WebFrameLoaderClient.cpp
++++ b/Source/WebKit/WebProcess/WebCoreSupport/WebFrameLoaderClient.cpp
+@@ -97,6 +97,7 @@
+ #include <wtf/NeverDestroyed.h>
+ #include <wtf/ProcessID.h>
+ #include <wtf/ProcessPrivilege.h>
++#include <wtf/SystemTracing.h>
+ 
+ #define PREFIX_PARAMETERS "%p - [webFrame=%p, webFrameID=%" PRIu64 ", webPage=%p, webPageID=%" PRIu64 "] WebFrameLoaderClient::"
+ #define WEBFRAME (&webFrame())
+@@ -1164,6 +1165,7 @@ void WebFrameLoaderClient::didReplaceMultipartContent()
+ 
+ void WebFrameLoaderClient::committedLoad(DocumentLoader* loader, const SharedBuffer& data)
+ {
++    TraceScope tracingScope("WebFrameLoaderClient::committedLoad");
+     if (!hasPlugInView())
+         loader->commitData(data);
+ 
+diff --git a/Source/WebKit/WebProcess/WebPage/DrawingArea.cpp b/Source/WebKit/WebProcess/WebPage/DrawingArea.cpp
+index db2e5d686e6f..fca80c80d896 100644
+--- a/Source/WebKit/WebProcess/WebPage/DrawingArea.cpp
++++ b/Source/WebKit/WebProcess/WebPage/DrawingArea.cpp
+@@ -33,6 +33,8 @@
+ #include <WebCore/DisplayRefreshMonitor.h>
+ #include <WebCore/TransformationMatrix.h>
+ 
++#include <wtf/SystemTracing.h>
++
+ // Subclasses
+ #if PLATFORM(COCOA)
+ #include "RemoteLayerTreeDrawingArea.h"
+@@ -49,6 +51,7 @@ using namespace WebCore;
+ 
+ std::unique_ptr<DrawingArea> DrawingArea::create(WebPage& webPage, const WebPageCreationParameters& parameters)
+ {
++    TraceScope tracingScope("DrawingArea::create");
+     switch (parameters.drawingAreaType) {
+ #if PLATFORM(COCOA)
+ #if !PLATFORM(IOS_FAMILY)
+diff --git a/Source/WebKit/WebProcess/WebPage/EventDispatcher.cpp b/Source/WebKit/WebProcess/WebPage/EventDispatcher.cpp
+index b9a01aba0a0c..dcb4b86b23dc 100644
+--- a/Source/WebKit/WebProcess/WebPage/EventDispatcher.cpp
++++ b/Source/WebKit/WebProcess/WebPage/EventDispatcher.cpp
+@@ -241,7 +241,7 @@ void EventDispatcher::touchEvent(PageIdentifier pageID, const WebTouchEvent& tou
+ 
+ void EventDispatcher::dispatchTouchEvents()
+ {
+-    TraceScope traceScope(DispatchTouchEventsStart, DispatchTouchEventsEnd);
++    TraceScope tracingScope(DispatchTouchEventsStart, DispatchTouchEventsEnd);
+ 
+     HashMap<PageIdentifier, TouchEventQueue> localCopy;
+     {
+diff --git a/Source/WebKit/WebProcess/WebPage/WebFrame.cpp b/Source/WebKit/WebProcess/WebPage/WebFrame.cpp
+index 1a114d963001..21af62b1d1a3 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebFrame.cpp
++++ b/Source/WebKit/WebProcess/WebPage/WebFrame.cpp
+@@ -108,8 +108,8 @@ static uint64_t generateListenerID()
+ 
+ void WebFrame::initWithCoreMainFrame(WebPage& page, Frame& coreFrame)
+ {
++    TraceScope tracingScope("WebFrame::initWithCoreMainFrame");
+     page.send(Messages::WebPageProxy::DidCreateMainFrame(frameID()));
+-
+     m_coreFrame = coreFrame;
+     m_coreFrame->tree().setName(nullAtom());
+     m_coreFrame->init();
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.cpp b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+index f6937139abb6..9ef9245a2222 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.cpp
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+@@ -598,11 +598,15 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
+     , m_appHighlightsVisible(parameters.appHighlightsVisible)
+ #endif
+ {
++    TraceScope tracingScope("[!]WebPage::WebPage");
+     ASSERT(m_identifier);
+     WEBPAGE_RELEASE_LOG(Loading, "constructor:");
+ 
+ #if ENABLE(ACCESSIBILITY)
+-    RDK_AT::Initialize();
++    {
++        TraceScope tracingScope("RDK_AT::Initialize()");
++        RDK_AT::Initialize();
++    }
+ #endif
+ 
+     m_pageGroup = WebProcess::singleton().webPageGroup(parameters.pageGroupData);
+@@ -710,7 +714,6 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
+     if (parameters.fontMachExtensionHandle)
+         WebProcess::singleton().switchFromStaticFontRegistryToUserFontRegistry(WTFMove(*parameters.fontMachExtensionHandle));
+ #endif
+-
+     m_page = makeUnique<Page>(WTFMove(pageConfiguration));
+ 
+ #if PLATFORM(IOS)
+@@ -724,13 +727,12 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
+ #endif
+ 
+     m_backgroundColor = parameters.backgroundColor;
+-
+     m_drawingArea = DrawingArea::create(*this, parameters);
+     m_drawingArea->setShouldScaleViewToFitDocument(parameters.shouldScaleViewToFitDocument);
+ 
+-    if (parameters.isProcessSwap)
++    if (parameters.isProcessSwap) {
+         freezeLayerTree(LayerTreeFreezeReason::ProcessSwap);
+-
++    }
+ #if ENABLE(ASYNC_SCROLLING)
+     m_useAsyncScrolling = parameters.store.getBoolValueForKey(WebPreferencesKey::threadedScrollingEnabledKey());
+     if (!m_drawingArea->supportsAsyncScrolling())
+@@ -780,8 +782,9 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
+     m_page->setTextAutosizingWidth(parameters.textAutosizingWidth);
+     setOverrideViewportArguments(parameters.overrideViewportArguments);
+ #endif
+-
++    WTF::tracePoint("WebPage::WebPage platformInitialize PRE");
+     platformInitialize(parameters);
++    WTF::tracePoint("WebPage::WebPage platformInitialize POST");
+ 
+     setUseFixedLayout(parameters.useFixedLayout);
+ 
+@@ -1799,6 +1802,7 @@ NO_RETURN void WebPage::loadRequestWaitingForProcessLaunch(LoadParameters&&, URL
+ 
+ void WebPage::loadDataImpl(uint64_t navigationID, ShouldTreatAsContinuingLoad shouldTreatAsContinuingLoad, std::optional<WebsitePoliciesData>&& websitePolicies, Ref<FragmentedSharedBuffer>&& sharedBuffer, ResourceRequest&& request, ResourceResponse&& response, const URL& unreachableURL, const UserData& userData, std::optional<NavigatingToAppBoundDomain> isNavigatingToAppBoundDomain, SubstituteData::SessionHistoryVisibility sessionHistoryVisibility, ShouldOpenExternalURLsPolicy shouldOpenExternalURLsPolicy)
+ {
++    TraceScope tracingScope("WebPage::loadDataImpl");
+ #if ENABLE(APP_BOUND_DOMAINS)
+     setIsNavigatingToAppBoundDomain(isNavigatingToAppBoundDomain, &m_mainFrame.get());
+ #endif
+@@ -1824,6 +1828,7 @@ void WebPage::loadDataImpl(uint64_t navigationID, ShouldTreatAsContinuingLoad sh
+ 
+ void WebPage::loadData(LoadParameters&& loadParameters)
+ {
++    TraceScope tracingScope("WebPage::loadData");
+     WEBPAGE_RELEASE_LOG(Loading, "loadData: navigationID=%" PRIu64 ", shouldTreatAsContinuingLoad=%u", loadParameters.navigationID, static_cast<unsigned>(loadParameters.shouldTreatAsContinuingLoad));
+ 
+     platformDidReceiveLoadParameters(loadParameters);
+@@ -1927,6 +1932,7 @@ void WebPage::setDefersLoading(bool defersLoading)
+ 
+ void WebPage::reload(uint64_t navigationID, uint32_t reloadOptions, SandboxExtension::Handle&& sandboxExtensionHandle)
+ {
++    TraceScope tracingScope("WebPage::reload");
+     SendStopResponsivenessTimer stopper;
+ 
+     ASSERT(!m_mainFrame->coreFrame()->loader().frameHasLoaded() || !m_pendingNavigationID);
+diff --git a/Source/WebKit/WebProcess/WebProcess.cpp b/Source/WebKit/WebProcess/WebProcess.cpp
+index c045c461b479..4bf36f3fcae2 100644
+--- a/Source/WebKit/WebProcess/WebProcess.cpp
++++ b/Source/WebKit/WebProcess/WebProcess.cpp
+@@ -421,7 +421,7 @@ static void scheduleLogMemoryStatistics(LogMemoryStatisticsReason reason)
+ 
+ void WebProcess::initializeWebProcess(WebProcessCreationParameters&& parameters)
+ {    
+-    TraceScope traceScope(InitializeWebProcessStart, InitializeWebProcessEnd);
++    TraceScope tracingScope(InitializeWebProcessStart, InitializeWebProcessEnd);
+ 
+     ASSERT(m_pageMap.isEmpty());
+ 
+-- 
+2.25.1
+
