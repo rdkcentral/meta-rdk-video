@@ -55,11 +55,12 @@ int main(int argc, char *argv[]) {
     
     while (1) {
         struct timex tx = {0};
-        int status = adjtimex(&tx);
+        int state = adjtimex(&tx);
         
         double offset_ms = (double)tx.offset / 1000.0;
         double freq_ppm = (double)tx.freq / 65536.0;
         double maxerror_ms = (double)tx.maxerror / 1000.0;
+        int synced = ((tx.status & STA_UNSYNC) == 0) && (state == TIME_OK);
         
         // Get current times
         double current_wall = get_wall_time();
@@ -108,7 +109,7 @@ int main(int argc, char *argv[]) {
                    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
                    tm->tm_hour, tm->tm_min, tm->tm_sec,
                    offset_ms, freq_ppm, tx.constant, maxerror_ms, correction_rate,
-                   (status == 0) ? "SYNC" : "UNSYNC", rtp_status,
+                   synced ? "SYNC" : "UNSYNC", rtp_status,
                    drift_ms, drift_ppm, wall_elapsed, raw_elapsed);
         } else {
             // Human-readable format with monotonic drift info
