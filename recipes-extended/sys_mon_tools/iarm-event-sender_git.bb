@@ -15,7 +15,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git"
 
 CFLAGS:append = " -DYOCTO_BUILD"
-DEPENDS = "iarmbus iarmmgrs dbus glib-2.0 wpeframework-clientlibraries"
+DEPENDS = "iarmbus iarmmgrs dbus glib-2.0 wpeframework-clientlibraries devicesettings"
 RDEPENDS:${PN} += "iarmmgrs wpeframework-clientlibraries"
 DEPENDS += " ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d), '', d)}"
 
