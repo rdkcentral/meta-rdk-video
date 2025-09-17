@@ -1,12 +1,12 @@
 diff --git a/apis/LifecycleManager/ILifecycleManager.h b/apis/LifecycleManager/ILifecycleManager.h
-index 851e478..5e25bba 100755
+index c9b9488..5e25bba 100755
 --- a/apis/LifecycleManager/ILifecycleManager.h
 +++ b/apis/LifecycleManager/ILifecycleManager.h
 @@ -56,7 +56,7 @@ struct RuntimeConfig {
  #define RUNTIME_CONFIG
  #endif
  
--// @json @text:keep
+-// @text:keep
 +// @json 1.0.0 @text:keep
  struct EXTERNAL ILifecycleManager : virtual public Core::IUnknown {
  
