@@ -1,0 +1,806 @@
+From 2132d1dab6c55fd18d7d3ba673d04dbe85a7f73a Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Thu, 28 Aug 2025 14:20:44 -0400
+Subject: [PATCH 1/8] RDKEMW-3789: refactor ILEDControl.h to add enum states
+
+---
+ apis/LEDControl/ILEDControl.h | 60 +++++++++++++++++++++++++++++------
+ 1 file changed, 50 insertions(+), 10 deletions(-)
+
+diff --git a/apis/LEDControl/ILEDControl.h b/apis/LEDControl/ILEDControl.h
+index 1043808b..1b297c7c 100644
+--- a/apis/LEDControl/ILEDControl.h
++++ b/apis/LEDControl/ILEDControl.h
+@@ -29,30 +29,70 @@ namespace WPEFramework
+         /* @json 1.0.0 @text:keep */
+         struct EXTERNAL ILEDControl : virtual public Core::IUnknown
+         {
++            // Utility functions for enum-string conversion
++            enum class LEDControlState : uint8_t {
++                LEDSTATE_NONE = 0,                /* @text NONE */ /* @brief Indicates Uninitialized state */
++                LEDSTATE_ACTIVE,                  /* @text ACTIVE */ /* @brief Indicates Active power state */
++                LEDSTATE_STANDBY,                 /* @text STANDBY */ /* @brief Indicates Standby power state */
++                LEDSTATE_WPS_CONNECTING,          /* @text WPS_CONNECTING */ /* @brief Indicates WPS Connecting */
++                LEDSTATE_WPS_CONNECTED,           /* @text WPS_CONNECTED */ /* @brief Indicates WPS Connected */
++                LEDSTATE_WPS_ERROR,               /* @text WPS_ERROR */ /* @brief Indicates WPS Error */
++                LEDSTATE_FACTORY_RESET,           /* @text FACTORY_RESET */ /* @brief Indicates Factory Reset */
++                LEDSTATE_USB_UPGRADE,             /* @text USB_UPGRADE */ /* @brief Indicates USB Upgrade */
++                LEDSTATE_SOFTWARE_DOWNLOAD_ERROR, /* @text SOFTWARE_DOWNLOAD_ERROR */ /* @brief Indicates Software Download Error */
++                LEDSTATE_UNKNOWN
++            };
++
++            static const char* LEDControlStateToString(LEDControlState state)
++            {
++                switch (state) {
++                    case LEDControlState::LEDSTATE_NONE: return "NONE";
++                    case LEDControlState::LEDSTATE_ACTIVE: return "ACTIVE";
++                    case LEDControlState::LEDSTATE_STANDBY: return "STANDBY";
++                    case LEDControlState::LEDSTATE_WPS_CONNECTING: return "WPS_CONNECTING";
++                    case LEDControlState::LEDSTATE_WPS_CONNECTED: return "WPS_CONNECTED";
++                    case LEDControlState::LEDSTATE_WPS_ERROR: return "WPS_ERROR";
++                    case LEDControlState::LEDSTATE_FACTORY_RESET: return "FACTORY_RESET";
++                    case LEDControlState::LEDSTATE_USB_UPGRADE: return "USB_UPGRADE";
++                    case LEDControlState::LEDSTATE_SOFTWARE_DOWNLOAD_ERROR: return "DOWNLOAD_ERROR";
++                    default: return "UNKNOWN";
++                }
++            }
++
++            static LEDControlState StringToLEDControlState(const std::string& str)
++            {
++                if (str == "NONE") return LEDControlState::LEDSTATE_NONE;
++                if (str == "ACTIVE") return LEDControlState::LEDSTATE_ACTIVE;
++                if (str == "STANDBY") return LEDControlState::LEDSTATE_STANDBY;
++                if (str == "WPS_CONNECTING") return LEDControlState::LEDSTATE_WPS_CONNECTING;
++                if (str == "WPS_CONNECTED") return LEDControlState::LEDSTATE_WPS_CONNECTED;
++                if (str == "WPS_ERROR") return LEDControlState::LEDSTATE_WPS_ERROR;
++                if (str == "FACTORY_RESET") return LEDControlState::LEDSTATE_FACTORY_RESET;
++                if (str == "USB_UPGRADE") return LEDControlState::LEDSTATE_USB_UPGRADE;
++                if (str == "DOWNLOAD_ERROR") return LEDControlState::LEDSTATE_SOFTWARE_DOWNLOAD_ERROR;
++                return LEDControlState::LEDSTATE_UNKNOWN;
++            }
++
+             enum { ID = ID_LEDCONTROL };
+ 
+             using IStringIterator = RPC::IIteratorType<string, RPC::ID_STRINGITERATOR>;
+ 
+-            struct EXTERNAL LEDControlState {
+-                string state;
+-            };
+-
+             // @text getSupportedLEDStates
+             // @brief Returns all the LED states supported by the platform
+-            // @param supportedLEDStates - out - string [] of supported LED states
++            // @param supportedLEDStates - out - string [] of supported LED states. e.g. "['NONE', 'ACTIVE', 'STANDBY']"
+             // @param success - out - boolean
+             virtual Core::hresult GetSupportedLEDStates(IStringIterator*& supportedLEDStates /* @out */, bool& success /* @out */) = 0;
+ 
+             // @text getLEDState
+-            // @brief Returns current LED state.
+-            // @param LEDControlState - out  
+-            virtual Core::hresult GetLEDState(LEDControlState& ledState /* @out */) = 0;
++            // @brief Returns current LED state. e.g. "ACTIVE"
++            // @param state - out - LEDControlState
++            virtual Core::hresult GetLEDState(LEDControlState& state /* @out */) = 0;
+ 
+             // @text setLEDState
+             // @brief Change the device LED state to one mentioned in the input argument.
+-            // @param state - in - string
++            // @param state - in - LEDControlState. e.g. "FACTORY_RESET"
+             // @param success - out - boolean
+-            virtual Core::hresult SetLEDState(const string& state, bool& success /* @out */) = 0;
++            virtual Core::hresult SetLEDState(const LEDControlState& state, bool& success /* @out */) = 0;
+         };
+     } // namespace Exchange
+ } // namespace WPEFramework
+
+From 995545c8f962a40ecf57f26b84324cf9a70a9abb Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Fri, 29 Aug 2025 12:01:00 -0400
+Subject: [PATCH 2/8] RDKEMW-3789: clean up the ILEDControl header
+
+---
+ apis/LEDControl/ILEDControl.h | 71 +++++++++++------------------------
+ 1 file changed, 21 insertions(+), 50 deletions(-)
+
+diff --git a/apis/LEDControl/ILEDControl.h b/apis/LEDControl/ILEDControl.h
+index 1b297c7c..07b330b5 100644
+--- a/apis/LEDControl/ILEDControl.h
++++ b/apis/LEDControl/ILEDControl.h
+@@ -29,69 +29,40 @@ namespace WPEFramework
+         /* @json 1.0.0 @text:keep */
+         struct EXTERNAL ILEDControl : virtual public Core::IUnknown
+         {
+-            // Utility functions for enum-string conversion
+-            enum class LEDControlState : uint8_t {
+-                LEDSTATE_NONE = 0,                /* @text NONE */ /* @brief Indicates Uninitialized state */
+-                LEDSTATE_ACTIVE,                  /* @text ACTIVE */ /* @brief Indicates Active power state */
+-                LEDSTATE_STANDBY,                 /* @text STANDBY */ /* @brief Indicates Standby power state */
+-                LEDSTATE_WPS_CONNECTING,          /* @text WPS_CONNECTING */ /* @brief Indicates WPS Connecting */
+-                LEDSTATE_WPS_CONNECTED,           /* @text WPS_CONNECTED */ /* @brief Indicates WPS Connected */
+-                LEDSTATE_WPS_ERROR,               /* @text WPS_ERROR */ /* @brief Indicates WPS Error */
+-                LEDSTATE_FACTORY_RESET,           /* @text FACTORY_RESET */ /* @brief Indicates Factory Reset */
+-                LEDSTATE_USB_UPGRADE,             /* @text USB_UPGRADE */ /* @brief Indicates USB Upgrade */
+-                LEDSTATE_SOFTWARE_DOWNLOAD_ERROR, /* @text SOFTWARE_DOWNLOAD_ERROR */ /* @brief Indicates Software Download Error */
+-                LEDSTATE_UNKNOWN
+-            };
+-
+-            static const char* LEDControlStateToString(LEDControlState state)
+-            {
+-                switch (state) {
+-                    case LEDControlState::LEDSTATE_NONE: return "NONE";
+-                    case LEDControlState::LEDSTATE_ACTIVE: return "ACTIVE";
+-                    case LEDControlState::LEDSTATE_STANDBY: return "STANDBY";
+-                    case LEDControlState::LEDSTATE_WPS_CONNECTING: return "WPS_CONNECTING";
+-                    case LEDControlState::LEDSTATE_WPS_CONNECTED: return "WPS_CONNECTED";
+-                    case LEDControlState::LEDSTATE_WPS_ERROR: return "WPS_ERROR";
+-                    case LEDControlState::LEDSTATE_FACTORY_RESET: return "FACTORY_RESET";
+-                    case LEDControlState::LEDSTATE_USB_UPGRADE: return "USB_UPGRADE";
+-                    case LEDControlState::LEDSTATE_SOFTWARE_DOWNLOAD_ERROR: return "DOWNLOAD_ERROR";
+-                    default: return "UNKNOWN";
+-                }
+-            }
+-
+-            static LEDControlState StringToLEDControlState(const std::string& str)
+-            {
+-                if (str == "NONE") return LEDControlState::LEDSTATE_NONE;
+-                if (str == "ACTIVE") return LEDControlState::LEDSTATE_ACTIVE;
+-                if (str == "STANDBY") return LEDControlState::LEDSTATE_STANDBY;
+-                if (str == "WPS_CONNECTING") return LEDControlState::LEDSTATE_WPS_CONNECTING;
+-                if (str == "WPS_CONNECTED") return LEDControlState::LEDSTATE_WPS_CONNECTED;
+-                if (str == "WPS_ERROR") return LEDControlState::LEDSTATE_WPS_ERROR;
+-                if (str == "FACTORY_RESET") return LEDControlState::LEDSTATE_FACTORY_RESET;
+-                if (str == "USB_UPGRADE") return LEDControlState::LEDSTATE_USB_UPGRADE;
+-                if (str == "DOWNLOAD_ERROR") return LEDControlState::LEDSTATE_SOFTWARE_DOWNLOAD_ERROR;
+-                return LEDControlState::LEDSTATE_UNKNOWN;
+-            }
+-
+             enum { ID = ID_LEDCONTROL };
+ 
+             using IStringIterator = RPC::IIteratorType<string, RPC::ID_STRINGITERATOR>;
+ 
++            virtual ~ILEDControl() = default;
++
++            enum LEDControlState : uint8_t {
++                LEDSTATE_NONE = 0,       /* @text NONE @brief TRISTATE or not in a defined state */
++                LEDSTATE_ACTIVE,         /* @text ACTIVE @brief Indicates Active power state */
++                LEDSTATE_STANDBY,        /* @text STANDBY @brief Indicates Standby power state */
++                LEDSTATE_WPS_CONNECTING, /* @text WPS_CONNECTING @brief Indicates WPS Connecting */
++                LEDSTATE_WPS_CONNECTED,  /* @text WPS_CONNECTED @brief Indicates WPS Connected */
++                LEDSTATE_WPS_ERROR,      /* @text WPS_ERROR @brief Indicates WPS Error */
++                LEDSTATE_FACTORY_RESET,  /* @text FACTORY_RESET @brief Indicates Factory Reset */
++                LEDSTATE_USB_UPGRADE,    /* @text USB_UPGRADE @brief Indicates USB Upgrade */
++                LEDSTATE_DOWNLOAD_ERROR, /* @text DOWNLOAD_ERROR @brief Indicates Software Download Error */
++                LEDSTATE_MAX             /* @text MAX @brief Indicates Maximum State */
++            };
++
+             // @text getSupportedLEDStates
+-            // @brief Returns all the LED states supported by the platform
+-            // @param supportedLEDStates - out - string [] of supported LED states. e.g. "['NONE', 'ACTIVE', 'STANDBY']"
+-            // @param success - out - boolean
++            // @details Returns all the LED states supported by the platform
++            // @param supportedLEDStates: string [] of supported LED states. e.g. "['NONE', 'ACTIVE', 'STANDBY']"
++            // @param success: boolean
+             virtual Core::hresult GetSupportedLEDStates(IStringIterator*& supportedLEDStates /* @out */, bool& success /* @out */) = 0;
+ 
+             // @text getLEDState
+             // @brief Returns current LED state. e.g. "ACTIVE"
+-            // @param state - out - LEDControlState
++            // @param state: LEDControlState
+             virtual Core::hresult GetLEDState(LEDControlState& state /* @out */) = 0;
+ 
+             // @text setLEDState
+             // @brief Change the device LED state to one mentioned in the input argument.
+-            // @param state - in - LEDControlState. e.g. "FACTORY_RESET"
+-            // @param success - out - boolean
++            // @param state: LEDControlState. e.g. "FACTORY_RESET"
++            // @param success: boolean
+             virtual Core::hresult SetLEDState(const LEDControlState& state, bool& success /* @out */) = 0;
+         };
+     } // namespace Exchange
+
+From 7389e6969d1c4f743c3dd96b8a667c31b9dec2a2 Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Sun, 31 Aug 2025 01:03:17 -0400
+Subject: [PATCH 3/8] RDKEMW-3789: update ILEDControl with documentation tags
+
+---
+ apis/LEDControl/ILEDControl.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/apis/LEDControl/ILEDControl.h b/apis/LEDControl/ILEDControl.h
+index 07b330b5..f7dcad73 100644
+--- a/apis/LEDControl/ILEDControl.h
++++ b/apis/LEDControl/ILEDControl.h
+@@ -49,18 +49,18 @@ namespace WPEFramework
+             };
+ 
+             // @text getSupportedLEDStates
+-            // @details Returns all the LED states supported by the platform
+-            // @param supportedLEDStates: string [] of supported LED states. e.g. "['NONE', 'ACTIVE', 'STANDBY']"
++            // @details Returns the list of LED states that are actually supported by the platform at runtime. Possible values include `NONE`, `ACTIVE`, `STANDBY`, `WPS_CONNECTING`, `WPS_CONNECTED`, `WPS_ERROR`, `FACTORY_RESET`, `USB_UPGRADE` and `DOWNLOAD_ERROR`.
++            // @param supportedLEDStates: string [] of supported LED states. e.g. "['ACTIVE', 'STANDBY', 'WPS_CONNECTING', 'WPS_CONNECTED', 'WPS_ERROR', 'FACTORY_RESET', 'USB_UPGRADE', 'DOWNLOAD_ERROR']"
+             // @param success: boolean
+             virtual Core::hresult GetSupportedLEDStates(IStringIterator*& supportedLEDStates /* @out */, bool& success /* @out */) = 0;
+ 
+             // @text getLEDState
+-            // @brief Returns current LED state. e.g. "ACTIVE"
++            // @brief Retrieves current state of the LED. e.g. "WPS_CONNECTING"
+             // @param state: LEDControlState
+             virtual Core::hresult GetLEDState(LEDControlState& state /* @out */) = 0;
+ 
+             // @text setLEDState
+-            // @brief Change the device LED state to one mentioned in the input argument.
++            // @brief Changes the device LED state to mentioned input state.
+             // @param state: LEDControlState. e.g. "FACTORY_RESET"
+             // @param success: boolean
+             virtual Core::hresult SetLEDState(const LEDControlState& state, bool& success /* @out */) = 0;
+
+From 779375bf984b7fc83d0371be3e18a8d8b3297bbc Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Tue, 2 Sep 2025 10:03:46 -0400
+Subject: [PATCH 4/8] RDKEMW-3789: update the LEDControlPlugin.md
+
+---
+ docs/apis/LEDControlPlugin.md | 365 ++++++++++++++++------------------
+ 1 file changed, 174 insertions(+), 191 deletions(-)
+
+diff --git a/docs/apis/LEDControlPlugin.md b/docs/apis/LEDControlPlugin.md
+index d5f85a67..e21a0fc0 100644
+--- a/docs/apis/LEDControlPlugin.md
++++ b/docs/apis/LEDControlPlugin.md
+@@ -1,191 +1,174 @@
+-<!-- Generated automatically, DO NOT EDIT! -->
+-<a name="LEDControl_Plugin"></a>
+-# LEDControl Plugin
+-
+-A org.rdk.LEDControl plugin for Thunder framework.
+-
+-### Table of Contents
+-
+-- [Abbreviation, Acronyms and Terms](#Abbreviation,_Acronyms_and_Terms)
+-- [Description](#Description)
+-- [Configuration](#Configuration)
+-- [Methods](#Methods)
+-
+-<a name="Abbreviation,_Acronyms_and_Terms"></a>
+-# Abbreviation, Acronyms and Terms
+-
+-[[Refer to this link](overview/aat.md)]
+-
+-<a name="Description"></a>
+-# Description
+-
+-The `LEDControl` plugin allows you to control brightness and power state for LEDs on a device.
+-
+-The plugin is designed to be loaded and executed within the Thunder framework. For more information about the framework refer to [[Thunder](#Thunder)].
+-
+-<a name="Configuration"></a>
+-# Configuration
+-
+-The table below lists configuration options of the plugin.
+-
+-| Name | Type | Description |
+-| :-------- | :-------- | :-------- |
+-| callsign | string | Plugin instance name (default: *org.rdk.LEDControl*) |
+-| classname | string | Class name: *org.rdk.LEDControl* |
+-| locator | string | Library name: *libWPEFrameworkLEDControl.so* |
+-| autostart | boolean | Determines if the plugin shall be started automatically along with the framework |
+-
+-<a name="Methods"></a>
+-# Methods
+-
+-The following methods are provided by the org.rdk.LEDControl plugin:
+-
+-LEDControl interface methods:
+-
+-| Method | Description |
+-| :-------- | :-------- |
+-| [getSupportedLEDStates](#getSupportedLEDStates) | Returns all the LED states supported by the platform |
+-| [getLEDState](#getLEDState) | Returns current LED state |
+-| [setLEDState](#setLEDState) | Change the device LED state to one mentioned in the input argument |
+-
+-
+-<a name="getSupportedLEDStates"></a>
+-## *getSupportedLEDStates*
+-
+-Returns all the LED states supported by the platform.
+-
+-### Events
+-
+-No Events
+-
+-### Parameters
+-
+-This method takes no parameters.
+-
+-### Result
+-
+-| Name | Type | Description |
+-| :-------- | :-------- | :-------- |
+-| result | object |  |
+-| result.supportedLEDStates | array | Returns all the LED states available on the platform |
+-| result.supportedLEDStates[#] | string |  |
+-| result.success | boolean | Whether the request succeeded |
+-
+-### Example
+-
+-#### Request
+-
+-```json
+-{
+-    "jsonrpc": "2.0",
+-    "id": 42,
+-    "method": "org.rdk.LEDControl.getSupportedLEDStates"
+-}
+-```
+-
+-#### Response
+-
+-```json
+-{
+-    "jsonrpc": "2.0",
+-    "id": 42,
+-    "result": {
+-        "supportedLEDStates": [
+-            "`ACTIVE`, `STANDBY`, `WPS_CONNECTING`, `WPS_CONNECTED`, `WPS_ERROR`, `FACTORY_RESET', 'USB_UPGRADE', 'DOWNLOAD_ERROR'"
+-        ],
+-        "success": true
+-    }
+-}
+-```
+-
+-<a name="getLEDState"></a>
+-## *getLEDState*
+-
+-Returns current LED state.
+-
+-### Events
+-
+-No Events
+-
+-### Parameters
+-
+-This method takes no parameters.
+-
+-### Result
+-
+-| Name | Type | Description |
+-| :-------- | :-------- | :-------- |
+-| result | object |  |
+-| result.state | string | Indicates a platform supported LED state |
+-
+-### Example
+-
+-#### Request
+-
+-```json
+-{
+-    "jsonrpc": "2.0",
+-    "id": 42,
+-    "method": "org.rdk.LEDControl.getLEDState"
+-}
+-```
+-
+-#### Response
+-
+-```json
+-{
+-    "jsonrpc": "2.0",
+-    "id": 42,
+-    "result": {
+-        "state": "ACTIVE"
+-    }
+-}
+-```
+-
+-<a name="setLEDState"></a>
+-## *setLEDState*
+-
+-Change the device LED state to one mentioned in the input argument.
+-
+-### Events
+-
+-No Events
+-
+-### Parameters
+-
+-| Name | Type | Description |
+-| :-------- | :-------- | :-------- |
+-| params | object |  |
+-| params.state | string | Indicates a platform supported LED state |
+-
+-### Result
+-
+-| Name | Type | Description |
+-| :-------- | :-------- | :-------- |
+-| result | boolean | Whether the request succeeded |
+-
+-### Example
+-
+-#### Request
+-
+-```json
+-{
+-    "jsonrpc": "2.0",
+-    "id": 42,
+-    "method": "org.rdk.LEDControl.setLEDState",
+-    "params": {
+-        "state": "ACTIVE"
+-    }
+-}
+-```
+-
+-#### Response
+-
+-```json
+-{
+-    "jsonrpc": "2.0",
+-    "id": 42,
+-    "result": true
+-}
+-```
+-
++<!-- Generated automatically, DO NOT EDIT! -->
++<a id="head.ILEDControl_Plugin"></a>
++# LEDControl Plugin
++
++A org.rdk.LEDControl plugin for Thunder framework.
++
++### Table of Contents
++
++- [Abbreviation, Acronyms and Terms](#head.Abbreviation,_Acronyms_and_Terms)
++- [Description](#head.Description)
++- [Configuration](#head.Configuration)
++- [Methods](#head.Methods)
++
++<a id="head.Abbreviation,_Acronyms_and_Terms"></a>
++# Abbreviation, Acronyms and Terms
++
++[[Refer to this link](userguide/aat.md)]
++
++<a id="head.Description"></a>
++# Description
++
++The `LEDControl` plugin allows you to control brightness and power state for LEDs on a device.
++
++The plugin is designed to be loaded and executed within the Thunder framework. For more information about the framework refer to [[Thunder](#ref.Thunder)].
++
++<a id="head.Configuration"></a>
++# Configuration
++
++The table below lists configuration options of the plugin.
++
++| Name | Type | Description |
++| :-------- | :-------- | :-------- |
++| callsign | string | Plugin instance name (default: *org.rdk.LEDControl*) |
++| classname | string | Class name: *org.rdk.LEDControl* |
++| locator | string | Library name: *libWPEFrameworkLEDControl.so* |
++| autostart | boolean | Determines if the plugin shall be started automatically along with the framework |
++
++<a id="head.Methods"></a>
++# Methods
++
++The following methods are provided by the LEDControl plugin:
++
++LEDControl interface methods:
++
++| Method | Description |
++| :-------- | :-------- |
++| [GetLEDState](#method.GetLEDState) | Retrieves current state of the LED. e.g. "WPS_CONNECTING" |
++| [GetSupportedLEDStates](#method.GetSupportedLEDStates) | Returns the list of LED states that are actually supported by the platform at runtime. Possible values include `NONE`, `ACTIVE`, `STANDBY`, `WPS_CONNECTING`, `WPS_CONNECTED`, `WPS_ERROR`, `FACTORY_RESET`, `USB_UPGRADE` and `DOWNLOAD_ERROR`. |
++| [SetLEDState](#method.SetLEDState) | Changes the device LED state to mentioned input state. |
++
++<a id="method.GetLEDState"></a>
++## *GetLEDState [<sup>method</sup>](#head.Methods)*
++
++Retrieves current state of the LED. e.g. "WPS_CONNECTING"
++
++### Events
++No events are associated with this method.
++### Parameters
++This method takes no parameters.
++### Results
++| Name | Type | Description |
++| :-------- | :-------- | :-------- |
++| result.state | LEDControlState | LEDControlState |
++
++### Examples
++
++
++#### Request
++
++```json
++{
++    "jsonrpc": "2.0",
++    "id": 42,
++    "method": "org.rdk.ILEDControl.GetLEDState"
++}
++```
++
++#### Response
++
++```json
++{
++    "jsonrpc": "2.0",
++    "id": 42,
++    "result": {
++        "state": "FACTORY_RESET"
++    }
++}
++```
++<a id="method.GetSupportedLEDStates"></a>
++## *GetSupportedLEDStates [<sup>method</sup>](#head.Methods)*
++
++Returns the list of LED states that are actually supported by the platform at runtime. Possible values include `NONE`, `ACTIVE`, `STANDBY`, `WPS_CONNECTING`, `WPS_CONNECTED`, `WPS_ERROR`, `FACTORY_RESET`, `USB_UPGRADE` and `DOWNLOAD_ERROR`.
++
++### Events
++No events are associated with this method.
++### Parameters
++This method takes no parameters.
++### Results
++| Name | Type | Description |
++| :-------- | :-------- | :-------- |
++| result.supportedLEDStates | IStringIterator | string [] of supported LED states.  |
++| result.supportedLEDStates[#] | string |  |
++| result.success | bool | boolean |
++
++### Examples
++
++
++#### Request
++
++```json
++{
++    "jsonrpc": "2.0",
++    "id": 42,
++    "method": "org.rdk.ILEDControl.GetSupportedLEDStates"
++}
++```
++
++#### Response
++
++```json
++{
++    "jsonrpc": "2.0",
++    "id": 42,
++    "result": {
++        "supportedLEDStates": [
++            "ACTIVE", "STANDBY", "WPS_CONNECTING", "WPS_CONNECTED", "WPS_ERROR", "FACTORY_RESET", "USB_UPGRADE", "DOWNLOAD_ERROR"
++        ],
++        "success": "true"
++    }
++}
++```
++<a id="method.SetLEDState"></a>
++## *SetLEDState [<sup>method</sup>](#head.Methods)*
++
++Changes the device LED state to mentioned input state.
++
++### Events
++No events are associated with this method.
++### Parameters
++| Name | Type | Description |
++| :-------- | :-------- | :-------- |
++| params.state | LEDControlState | LEDControlState |
++### Results
++| Name | Type | Description |
++| :-------- | :-------- | :-------- |
++| result.success | bool | boolean |
++
++### Examples
++
++
++#### Request
++
++```json
++{
++    "jsonrpc": "2.0",
++    "id": 42,
++    "method": "org.rdk.ILEDControl.SetLEDState",
++    "params": {
++        "state": "FACTORY_RESET"
++    }
++}
++```
++
++#### Response
++
++```json
++{
++    "jsonrpc": "2.0",
++    "id": 42,
++    "result": {
++        "success": "true"
++    }
++}
++```
+
+From 473abde54be1d23bd4ab0625b3f6b41bb31f078a Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Wed, 3 Sep 2025 21:00:45 -0400
+Subject: [PATCH 5/8] RDKEMW-3789: remove unnecessary TAGs from ILEDControl
+ header
+
+---
+ apis/LEDControl/ILEDControl.h | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/apis/LEDControl/ILEDControl.h b/apis/LEDControl/ILEDControl.h
+index f7dcad73..77752bd5 100644
+--- a/apis/LEDControl/ILEDControl.h
++++ b/apis/LEDControl/ILEDControl.h
+@@ -36,16 +36,16 @@ namespace WPEFramework
+             virtual ~ILEDControl() = default;
+ 
+             enum LEDControlState : uint8_t {
+-                LEDSTATE_NONE = 0,       /* @text NONE @brief TRISTATE or not in a defined state */
+-                LEDSTATE_ACTIVE,         /* @text ACTIVE @brief Indicates Active power state */
+-                LEDSTATE_STANDBY,        /* @text STANDBY @brief Indicates Standby power state */
+-                LEDSTATE_WPS_CONNECTING, /* @text WPS_CONNECTING @brief Indicates WPS Connecting */
+-                LEDSTATE_WPS_CONNECTED,  /* @text WPS_CONNECTED @brief Indicates WPS Connected */
+-                LEDSTATE_WPS_ERROR,      /* @text WPS_ERROR @brief Indicates WPS Error */
+-                LEDSTATE_FACTORY_RESET,  /* @text FACTORY_RESET @brief Indicates Factory Reset */
+-                LEDSTATE_USB_UPGRADE,    /* @text USB_UPGRADE @brief Indicates USB Upgrade */
+-                LEDSTATE_DOWNLOAD_ERROR, /* @text DOWNLOAD_ERROR @brief Indicates Software Download Error */
+-                LEDSTATE_MAX             /* @text MAX @brief Indicates Maximum State */
++                LEDSTATE_NONE = 0       /* @text NONE */,
++                LEDSTATE_ACTIVE         /* @text ACTIVE */,
++                LEDSTATE_STANDBY        /* @text STANDBY */,
++                LEDSTATE_WPS_CONNECTING /* @text WPS_CONNECTING */,
++                LEDSTATE_WPS_CONNECTED  /* @text WPS_CONNECTED */,
++                LEDSTATE_WPS_ERROR      /* @text WPS_ERROR */,
++                LEDSTATE_FACTORY_RESET  /* @text FACTORY_RESET */,
++                LEDSTATE_USB_UPGRADE    /* @text USB_UPGRADE */,
++                LEDSTATE_DOWNLOAD_ERROR /* @text DOWNLOAD_ERROR */,
++                LEDSTATE_MAX            /* @text MAX */
+             };
+ 
+             // @text getSupportedLEDStates
+
+From 42a43bfbb08c5e932d5b46bfd7426f80a66c0225 Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Thu, 4 Sep 2025 10:36:16 -0400
+Subject: [PATCH 6/8] RDKEMW-3789: correct LEDControl API doc
+
+---
+ docs/apis/LEDControlPlugin.md | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/docs/apis/LEDControlPlugin.md b/docs/apis/LEDControlPlugin.md
+index e21a0fc0..acbf0d32 100644
+--- a/docs/apis/LEDControlPlugin.md
++++ b/docs/apis/LEDControlPlugin.md
+@@ -1,6 +1,6 @@
+ <!-- Generated automatically, DO NOT EDIT! -->
+ <a id="head.ILEDControl_Plugin"></a>
+-# LEDControl Plugin
++# ILEDControl Plugin
+ 
+ A org.rdk.LEDControl plugin for Thunder framework.
+ 
+@@ -32,7 +32,7 @@ The table below lists configuration options of the plugin.
+ | :-------- | :-------- | :-------- |
+ | callsign | string | Plugin instance name (default: *org.rdk.LEDControl*) |
+ | classname | string | Class name: *org.rdk.LEDControl* |
+-| locator | string | Library name: *libWPEFrameworkLEDControl.so* |
++| locator | string | Library name: *libWPEFrameworkILEDControl.so* |
+ | autostart | boolean | Determines if the plugin shall be started automatically along with the framework |
+ 
+ <a id="head.Methods"></a>
+@@ -40,7 +40,7 @@ The table below lists configuration options of the plugin.
+ 
+ The following methods are provided by the LEDControl plugin:
+ 
+-LEDControl interface methods:
++ILEDControl interface methods:
+ 
+ | Method | Description |
+ | :-------- | :-------- |
+@@ -71,7 +71,7 @@ This method takes no parameters.
+ {
+     "jsonrpc": "2.0",
+     "id": 42,
+-    "method": "org.rdk.ILEDControl.GetLEDState"
++    "method": "org.rdk.LEDControl.GetLEDState"
+ }
+ ```
+ 
+@@ -111,7 +111,7 @@ This method takes no parameters.
+ {
+     "jsonrpc": "2.0",
+     "id": 42,
+-    "method": "org.rdk.ILEDControl.GetSupportedLEDStates"
++    "method": "org.rdk.LEDControl.GetSupportedLEDStates"
+ }
+ ```
+ 
+@@ -154,7 +154,7 @@ No events are associated with this method.
+ {
+     "jsonrpc": "2.0",
+     "id": 42,
+-    "method": "org.rdk.ILEDControl.SetLEDState",
++    "method": "org.rdk.LEDControl.SetLEDState",
+     "params": {
+         "state": "FACTORY_RESET"
+     }
+
+From e7064328462292fd1b8304d9d9c8ba150ab6d7aa Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Thu, 4 Sep 2025 11:41:58 -0400
+Subject: [PATCH 7/8] RDKEMW-3789: optimize LEDControl plugin doc
+
+---
+ apis/LEDControl/ILEDControl.h | 2 +-
+ docs/apis/LEDControlPlugin.md | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/apis/LEDControl/ILEDControl.h b/apis/LEDControl/ILEDControl.h
+index 77752bd5..c4a9bcbf 100644
+--- a/apis/LEDControl/ILEDControl.h
++++ b/apis/LEDControl/ILEDControl.h
+@@ -60,7 +60,7 @@ namespace WPEFramework
+             virtual Core::hresult GetLEDState(LEDControlState& state /* @out */) = 0;
+ 
+             // @text setLEDState
+-            // @brief Changes the device LED state to mentioned input state.
++            // @brief Sets the device LED to a requested state from those available in `GetSupportedLEDStates`.
+             // @param state: LEDControlState. e.g. "FACTORY_RESET"
+             // @param success: boolean
+             virtual Core::hresult SetLEDState(const LEDControlState& state, bool& success /* @out */) = 0;
+diff --git a/docs/apis/LEDControlPlugin.md b/docs/apis/LEDControlPlugin.md
+index acbf0d32..86cb66dc 100644
+--- a/docs/apis/LEDControlPlugin.md
++++ b/docs/apis/LEDControlPlugin.md
+@@ -132,7 +132,7 @@ This method takes no parameters.
+ <a id="method.SetLEDState"></a>
+ ## *SetLEDState [<sup>method</sup>](#head.Methods)*
+ 
+-Changes the device LED state to mentioned input state.
++Sets the device LED to a requested state from those available in `GetSupportedLEDStates`.
+ 
+ ### Events
+ No events are associated with this method.
+
+From 3cc189c3519e1c74ac1e0ad461ecc2ebe5e60047 Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Tue, 16 Sep 2025 16:18:21 -0400
+Subject: [PATCH 8/8] RDKEMW-3789: add backward compatibility for GetLEDState
+
+---
+ apis/LEDControl/ILEDControl.h | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/apis/LEDControl/ILEDControl.h b/apis/LEDControl/ILEDControl.h
+index c4a9bcbf..4abd4431 100644
+--- a/apis/LEDControl/ILEDControl.h
++++ b/apis/LEDControl/ILEDControl.h
+@@ -48,16 +48,26 @@ namespace WPEFramework
+                 LEDSTATE_MAX            /* @text MAX */
+             };
+ 
++            // Struct to wrap LEDControlState for API compatibility
++            struct EXTERNAL LEDState {
++                LEDControlState state;
++            };
++
+             // @text getSupportedLEDStates
+             // @details Returns the list of LED states that are actually supported by the platform at runtime. Possible values include `NONE`, `ACTIVE`, `STANDBY`, `WPS_CONNECTING`, `WPS_CONNECTED`, `WPS_ERROR`, `FACTORY_RESET`, `USB_UPGRADE` and `DOWNLOAD_ERROR`.
+             // @param supportedLEDStates: string [] of supported LED states. e.g. "['ACTIVE', 'STANDBY', 'WPS_CONNECTING', 'WPS_CONNECTED', 'WPS_ERROR', 'FACTORY_RESET', 'USB_UPGRADE', 'DOWNLOAD_ERROR']"
+             // @param success: boolean
+             virtual Core::hresult GetSupportedLEDStates(IStringIterator*& supportedLEDStates /* @out */, bool& success /* @out */) = 0;
+ 
+-            // @text getLEDState
++            // @text getLEDState (new)
+             // @brief Retrieves current state of the LED. e.g. "WPS_CONNECTING"
+-            // @param state: LEDControlState
+-            virtual Core::hresult GetLEDState(LEDControlState& state /* @out */) = 0;
++            // @param ledState: LEDControlState
++            virtual Core::hresult GetLEDState(LEDControlState& ledState /* @out */) = 0;
++
++            // @text getLEDState (old)
++            // @brief Retrieves current state of the LED. e.g. {"state":"WPS_CONNECTING"}
++            // @param ledState: LEDState
++            virtual Core::hresult GetLEDState(LEDState& ledState /* @out */) = 0;
+ 
+             // @text setLEDState
+             // @brief Sets the device LED to a requested state from those available in `GetSupportedLEDStates`.
