@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-peripherals;${CMF_GITHUB_SRC_URI_SUFFI
 	   file://RDKEMW-3789-LEDControl-plugin-impl-changes.patch \
           "
 
-# Release version - 1.0.9
-SRCREV = "4266ac5cb657221fa799e0b9c9d634f2f360a626"
+# Release version - 1.0.12
+SRCREV = "4734afe4923a83d5b78f91231b804195689f69a9"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
