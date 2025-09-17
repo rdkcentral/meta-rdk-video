@@ -1,7 +1,7 @@
 From 9fd700f4086e4bd5e0f5b195cd29d95015f445f0 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Thu, 28 Aug 2025 14:26:45 -0400
-Subject: [PATCH 01/11] RDKEMW-3789: align to ILEDControl changes
+Subject: [PATCH 01/12] RDKEMW-3789: align to ILEDControl changes
 
 ---
  LEDControl/LEDControlImplementation.cpp | 280 +++++++++++-------------
@@ -368,7 +368,7 @@ index 7257a71..946a5e2 100644
 From 85e5e4920167cb98e2c4308e156e64c6690c7893 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Thu, 28 Aug 2025 15:39:39 -0400
-Subject: [PATCH 02/11] RDKEMW-3789: LEDControl resolve the build errors
+Subject: [PATCH 02/12] RDKEMW-3789: LEDControl resolve the build errors
 
 ---
  LEDControl/LEDControl.cpp               |  4 ++--
@@ -482,7 +482,7 @@ index 946a5e2..05e08af 100644
 From 626ab4515bc808254659ec38a878fbebbfeae536 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Thu, 28 Aug 2025 15:52:06 -0400
-Subject: [PATCH 03/11] RDKEMW-3789: fix the build error
+Subject: [PATCH 03/12] RDKEMW-3789: fix the build error
 
 ---
  LEDControl/LEDControlImplementation.cpp | 15 +++++----------
@@ -526,7 +526,7 @@ index 475fd77..36591aa 100644
 From 0d5ab84e8749ed882bdde442bc9a80d8a09ac937 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Fri, 29 Aug 2025 09:46:02 -0400
-Subject: [PATCH 04/11] RDKEMW-3789: optimize the code and update proper return
+Subject: [PATCH 04/12] RDKEMW-3789: optimize the code and update proper return
  values
 
 ---
@@ -683,7 +683,7 @@ index 36591aa..35aa00d 100644
 From 5aa79924a99c1a45c201afd7326eb07acd42e082 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Fri, 29 Aug 2025 09:49:57 -0400
-Subject: [PATCH 05/11] RDKEMW-3789: change error to proper value
+Subject: [PATCH 05/12] RDKEMW-3789: change error to proper value
 
 ---
  LEDControl/LEDControlImplementation.cpp | 2 +-
@@ -706,7 +706,7 @@ index 35aa00d..fef884a 100644
 From 30edb433bba42f176aa5be7bb8cd9fc794fe337a Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Fri, 29 Aug 2025 10:33:51 -0400
-Subject: [PATCH 06/11] RDKEMW-3789: add debug logs to clarify mismatching
+Subject: [PATCH 06/12] RDKEMW-3789: add debug logs to clarify mismatching
  state
 
 ---
@@ -1101,7 +1101,7 @@ index 05e08af..2202b9b 100644
 From 5f0cf56f60e88122710d7f83cd6e351ca6946574 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Sat, 30 Aug 2025 23:18:46 -0400
-Subject: [PATCH 07/11] RDKEMW-3789: clean-up test logic and make the plugin
+Subject: [PATCH 07/12] RDKEMW-3789: clean-up test logic and make the plugin
  singleton and inhibit copying or multiple instantiations
 
 ---
@@ -1339,7 +1339,7 @@ index 2202b9b..a406bf0 100644
 From 5ad65b1031088007c5d3a156d0e2a38a4332027b Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Wed, 3 Sep 2025 13:17:09 -0400
-Subject: [PATCH 08/11] RDKEMW-3789: enhance LEDControl implementation with
+Subject: [PATCH 08/12] RDKEMW-3789: enhance LEDControl implementation with
  cache for supported state
 
 ---
@@ -1469,7 +1469,7 @@ index a406bf0..f2a26e7 100644
 From 41e6a0f9cd27b6bb5579f56663ca57bec6dc4357 Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Thu, 4 Sep 2025 11:51:18 -0400
-Subject: [PATCH 09/11] RDKEMW-3789: LEDControl return unsupported if HAL init
+Subject: [PATCH 09/12] RDKEMW-3789: LEDControl return unsupported if HAL init
  fails
 
 ---
@@ -1522,7 +1522,7 @@ index 55d873f..d710aa8 100644
 From 8a5e8a2e9eba8d13b2a82f89f69434467bf8eb6d Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Tue, 16 Sep 2025 16:19:16 -0400
-Subject: [PATCH 10/11] RDKEMW-3789: add backward compatibility for GetLEDState
+Subject: [PATCH 10/12] RDKEMW-3789: add backward compatibility for GetLEDState
 
 ---
  LEDControl/LEDControlImplementation.cpp | 11 +++++++++++
@@ -1554,7 +1554,7 @@ index d710aa8..a6cf430 100644
 From 8f5b3691bd4a55ee3759871cb42754a2f7ead21e Mon Sep 17 00:00:00 2001
 From: Arun Madhavan <arun_madhavan@comcast.com>
 Date: Wed, 17 Sep 2025 10:32:55 -0400
-Subject: [PATCH 11/11] RDKEMW-3789: LEDControl align the ERROR response to
+Subject: [PATCH 11/12] RDKEMW-3789: LEDControl align the ERROR response to
  previous behavior
 
 ---
@@ -1574,3 +1574,26 @@ index a6cf430..75a64de 100644
              }
              // return error if requested state is unsupported
              if (!(m_SupportedLEDStates & (1 << static_cast<int>(dsLEDState)))) {
+
+From 66e0a7203bdff70af5741833c9cc8f59e54caf19 Mon Sep 17 00:00:00 2001
+From: Arun Madhavan <arun_madhavan@comcast.com>
+Date: Wed, 17 Sep 2025 11:15:43 -0400
+Subject: [PATCH 12/12] RDKEMW-3789: LEDControl add logging to confirm method
+ triggered
+
+---
+ LEDControl/LEDControlImplementation.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/LEDControl/LEDControlImplementation.cpp b/LEDControl/LEDControlImplementation.cpp
+index 75a64de..cb8c8ce 100644
+--- a/LEDControl/LEDControlImplementation.cpp
++++ b/LEDControl/LEDControlImplementation.cpp
+@@ -273,6 +273,7 @@ namespace WPEFramework
+         // New overload of GetLEDState to maintain backward compatibility
+         Core::hresult LEDControlImplementation::GetLEDState(WPEFramework::Exchange::ILEDControl::LEDState& ledState)
+         {
++            LOGINFO("");
+             WPEFramework::Exchange::ILEDControl::LEDControlState state = WPEFramework::Exchange::ILEDControl::LEDSTATE_MAX;
+             Core::hresult hr = GetLEDState(state);
+             if (hr == Core::ERROR_NONE) {
