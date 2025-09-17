@@ -55,6 +55,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-storagemanager.service \
     wpeframework-packagemanager.service \
     wpeframework-appmanager.service \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'sceneset',' wpeframework-sceneset.service', '', d)} \
     "
 
 CONTROL_FILES = "\
