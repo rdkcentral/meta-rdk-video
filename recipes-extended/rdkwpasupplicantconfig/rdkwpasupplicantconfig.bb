@@ -19,7 +19,7 @@ do_install() {
     install -d ${D}${base_libdir}/rdk/
     install -d ${D}${sysconfdir}
     install -m 0755 ${WORKDIR}/prepareWpaSuppConfig.sh ${D}${base_libdir}/rdk
-    install -m ${WORKDIR}/wpa_supplicant.logging ${D}${sysconfdir}
+    install -m 0644 ${WORKDIR}/wpa_supplicant.logging ${D}${sysconfdir}
     install -D -m 0644 ${WORKDIR}/00-wpa-supplicant.conf ${D}${systemd_unitdir}/system/wpa_supplicant.service.d/00-wpa-supplicant.conf
 }
 
