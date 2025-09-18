@@ -64,6 +64,7 @@ PACKAGECONFIG ?= " monitor \
     lifecyclemanager \
     storagemanager \
     appmanager \
+    downloadmanager \
     texttospeechmonitor \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
@@ -128,6 +129,7 @@ PACKAGECONFIG[storagemanager]       = "-DPLUGIN_STORAGE_MANAGER=ON,-DPLUGIN_STOR
 PACKAGECONFIG[appmanager]           = "-DPLUGIN_APPMANAGER=ON,-DPLUGIN_APPMANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON"
 PACKAGECONFIG[texttospeechmonitor]  = "-DPLUGIN_MONITOR_TEXTTOSPEECH=ON"
+PACKAGECONFIG[downloadmanager]      = "-DPLUGIN_DOWNLOADMANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_DOWNLOADMANAGER=OFF -DLIB_PACKAGE=OFF,entservices-apis curl virtual/libpackage,entservices-apis curl virtual/libpackage"
 # ----------------------------------------------------------------------------
 
 MONITOR_PLUGIN_ARGS                ?= " \
