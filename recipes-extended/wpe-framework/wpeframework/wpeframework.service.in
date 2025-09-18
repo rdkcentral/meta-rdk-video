@@ -16,10 +16,9 @@ Environment="TTS_USE_THUNDER_CLIENT=1"
 Environment="XDG_DATA_HOME=/opt/QT/home"
 Environment="FORCE_SVP=TRUE"
 Environment="FORCE_SAP=TRUE"
-Environment="WESTEROS_DEBUG=1"
+Environment="WESTEROS_DEBUG=4"
 Environment="WAYLAND_DEBUG=1"
-Environment="WESTEROS_GL_DEBUG=1"
-Environment="WESTEROS_LOG_LEVEL=debug"
+Environment="WESTEROS_GL_DEBUG=4"
 ExecStartPre=-/usr/bin/rdkLogMileStone WPE_FRAMEWORK_START
 SyslogIdentifier=WPEFramework
 ExecStart=/bin/bash -c 'if [ -f /opt/WPEFramework/config.json ]; then exec /usr/bin/WPEFramework -b -c /opt/WPEFramework/config.json; else exec /usr/bin/WPEFramework -b; fi'
