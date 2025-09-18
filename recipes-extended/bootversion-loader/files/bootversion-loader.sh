@@ -80,18 +80,21 @@ else
 fi
 
 #update the read permission to migration datastore files
-migrationDSFile="/opt/secure/migration/migration_data_store.json"
-migrationDir="/opt/secure/migration"
+current_bootType=$(<"$file_bootType")
+current_bootType=${current_bootType:10}
+if [ "$current_bootType" == "BOOT_MIGRATION" ]; then
+    migrationDSFile="/opt/secure/migration/migration_data_store.json"
+    migrationDir="/opt/secure/migration"
 
-# Check if the directory exists
-if [ -d "$migrationDir" ]; then
-    echo -e "changed the permission of $migrationDir by +x"
-    chmod +x "$migrationDir"
+    # Check if the directory exists
+    if [ -d "$migrationDir" ]; then
+        echo -e "changed the permission of $migrationDir by +x"
+        chmod +x "$migrationDir"
+    fi
+
+    # Check if the file exists
+    if [ -f "$migrationDSFile" ]; then
+        echo -e "changed the permission of $migrationDSFile by +r"
+        chmod +r "$migrationDSFile"
+    fi
 fi
-
-# Check if the file exists
-if [ -f "$migrationDSFile" ]; then
-     echo -e "changed the permission of $migrationDSFile by +r"
-    chmod +r "$migrationDSFile"
-fi
-
