@@ -25,6 +25,7 @@ do_install() {
 
 FILES:${PN} += " ${base_libdir}/rdk/prepareWpaSuppConfig.sh"
 FILES:${PN} += " ${systemd_unitdir}/system/wpa_supplicant.service.d/*"
+FILES:${PN} += " ${sysconfdir}/wpa_supplicant.logging"
 
 do_configure[noexec] = "1"
 do_compile[noexec] = "1"
