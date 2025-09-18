@@ -7,6 +7,7 @@ LIC_FILES_CHKSUM = "file://${THISDIR}/files/Apache-2.0;md5=3b83ef96387f14655fc85
 DEPENDS = "westeros essos rapidjson rtcore libuv gstreamer1.0 uwebsockets javascriptcore websocketpp cjson boost"
 DEPENDS:append = " virtual/egl"
 RDEPENDS:${PN}:append = " essos gstreamer1.0 uwebsockets"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'generate_jsruntime_widget', 'dobby', '', d)}"
 
 inherit cmake pkgconfig perlnative ${@bb.utils.contains("DISTRO_FEATURES", "kirkstone", "python3native", "pythonnative", d)} gettext
 
@@ -17,8 +18,8 @@ PR ?= "r1"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-#Release 1.0.4
-SRCREV = "4721129464fbbdb9dbbda15e4e58a6cfc33cb91f"
+#Release 1.0.6
+SRCREV = "9824e773153631519f818e1c2380b3719a32007d"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -31,6 +32,7 @@ EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS=ON"
 EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS_STATIC=OFF"
 EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS_DYNAMIC=ON"
 EXTRA_OECMAKE += " -DENABLE_JSRUNTIME_PLAYER=ON"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'generate_jsruntime_widget', '-DUSE_ETHANLOG=ON', '', d)}"
 EXTRA_OECMAKE += " \
     -G Ninja \
     -DENABLE_REMOTE_INSPECTOR=ON \
