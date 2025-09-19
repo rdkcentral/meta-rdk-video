@@ -17,7 +17,7 @@ DISTRO_FEATURES_CHECK = "RDKE_REGION_US RDKE_REGION_UK RDKE_REGION_IT RDKE_REGIO
 THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-avinput.service \
     wpeframework-bluetooth.service \
-    ${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' wpeframework-cloudstore.service', '', d)}" \
+    ${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' wpeframework-cloudstore.service', '', d)} \
     wpeframework-cryptography.service \
     wpeframework-deviceinfo.service \
     wpeframework-displayinfo.service \
