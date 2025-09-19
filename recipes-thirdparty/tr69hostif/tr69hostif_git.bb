@@ -91,7 +91,7 @@ RDEPENDS:${PN} += "${PN}-conf"
 RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
 EXTRA_OECONF += "--disable-silent-rules --enable-InterfaceStack --enable-IPv6 --enable-notification --enable-yocto --enable-SpeedTest"
 EXTRA_OECONF += " --enable-parodus"
-EXTRA_OECONF:append = " --enable-libsoup3=yes"
+EXTRA_OECONF:append = " --enable-powercontroller=yes"
 
 #Enable sd_notify
 EXTRA_OECONF:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', '--enable-systemd-notify', '', d)}"
