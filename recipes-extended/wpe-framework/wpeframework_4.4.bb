@@ -158,14 +158,8 @@ EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
 EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 
 do_install:append() {
-    if ${@bb.utils.contains("DISTRO_FEATURES", "systemd", "true", "false", d)}
-    then
-        install -d ${D}${systemd_unitdir}/system
-        cp ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
-    else
-        install -d ${D}${sysconfdir}/init.d
-        install -m 0755 ${WORKDIR}/wpeframework-init ${D}${sysconfdir}/init.d/wpeframework
-    fi
+    install -d ${D}${systemd_unitdir}/system
+    install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
 
     install -d ${D}${systemd_unitdir}/system/wpeframework.service.d
     install -m 0644 ${WORKDIR}/network_manager_migration.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
