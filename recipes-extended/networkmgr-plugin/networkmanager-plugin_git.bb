@@ -20,7 +20,7 @@ S = "${WORKDIR}/git"
 SRC_URI = "git://github.com/jincysam87/networkmanager.git;protocol=https;branch=feature/RDKEMW-8500"
 
 # Sep 17, 2025
-SRCREV = "50cee4d368d8ab4512b4fbd1f1f5569218d00513"
+SRCREV = "e81d6250a577ebb99f5aaca8161d3840a9e3c1a6"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
