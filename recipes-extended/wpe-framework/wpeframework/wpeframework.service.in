@@ -1,7 +1,8 @@
 [Unit]
 Description=wpeframework-Thunder RPC version-R4.4.3
 Wants= local-fs.target
-After= local-fs.target
+After= local-fs.target securemount.service
+RequiresMountsFor=/opt/secure
 
 [Service]
 Type=notify
@@ -25,6 +26,7 @@ ExecStartPost=-/bin/sh -c '/bin/echo ${MAINPID} > /tmp/wpeframework.pid'
 ExecStartPost=/bin/touch /tmp/wpeframeworkstarted
 KillSignal=SIGKILL
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
