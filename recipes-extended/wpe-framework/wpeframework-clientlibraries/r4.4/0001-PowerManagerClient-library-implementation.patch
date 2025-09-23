@@ -1,4 +1,4 @@
-From 8af1da7acbc0e1874c500f2f69e4cd94e2663623 Mon Sep 17 00:00:00 2001
+From 96cf5315ea63c5f4a26564492ae62d783434b49f Mon Sep 17 00:00:00 2001
 From: Shrinivas Kamath <skamath@synamedia.com>
 Date: Wed, 6 Aug 2025 05:25:12 +0000
 Subject: [PATCH] PowerController (PowerManager plugin client) implementation
@@ -15,6 +15,7 @@ interface changes for enhanced instance management and add operational state tra
 - PowerModePreChange & Thunder restart handling
 - Adapt to IPowerManager interface changes
 - Remove client instance counting in powercontroller
+- Align PowerManager WakeupSrcConfiguration API's with SystemService plugin
 
 %% original patch: 0001-PowerManagerClient-library-implementation.patch
 ---
@@ -24,9 +25,9 @@ interface changes for enhanced instance management and add operational state tra
  Source/powercontroller/CMakeLists.txt       |   79 +
  Source/powercontroller/Module.cpp           |   22 +
  Source/powercontroller/Module.h             |   33 +
- Source/powercontroller/power_controller.cpp | 1982 +++++++++++++++++++
- Source/powercontroller/power_controller.h   |  436 ++++
- 8 files changed, 2560 insertions(+), 1 deletion(-)
+ Source/powercontroller/power_controller.cpp | 1894 +++++++++++++++++++
+ Source/powercontroller/power_controller.h   |  405 ++++
+ 8 files changed, 2441 insertions(+), 1 deletion(-)
  create mode 100644 Source/powercontroller/CMakeLists.txt
  create mode 100644 Source/powercontroller/Module.cpp
  create mode 100644 Source/powercontroller/Module.h
@@ -220,10 +221,10 @@ index 0000000..c9c1321
 +#endif
 diff --git a/Source/powercontroller/power_controller.cpp b/Source/powercontroller/power_controller.cpp
 new file mode 100644
-index 0000000..6772e8e
+index 0000000..f2f3f19
 --- /dev/null
 +++ b/Source/powercontroller/power_controller.cpp
-@@ -0,0 +1,1982 @@
+@@ -0,0 +1,1894 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -324,43 +325,6 @@ index 0000000..6772e8e
 +        }
 +    }
 +    return PowerState::POWER_STATE_UNKNOWN;
-+}
-+
-+const std::unordered_map<WakeupSrcType, PowerController_WakeupSrcType_t>& wakeupSrcTypeMap()
-+{
-+    static const std::unordered_map<WakeupSrcType, PowerController_WakeupSrcType_t> map = {
-+        { WakeupSrcType::WAKEUP_SRC_UNKNOWN, WAKEUP_SRC_UNKNOWN },
-+        { WakeupSrcType::WAKEUP_SRC_VOICE, WAKEUP_SRC_VOICE },
-+        { WakeupSrcType::WAKEUP_SRC_PRESENCEDETECTED, WAKEUP_SRC_PRESENCEDETECTED },
-+        { WakeupSrcType::WAKEUP_SRC_BLUETOOTH, WAKEUP_SRC_BLUETOOTH },
-+        { WakeupSrcType::WAKEUP_SRC_RF4CE, WAKEUP_SRC_RF4CE },
-+        { WakeupSrcType::WAKEUP_SRC_WIFI, WAKEUP_SRC_WIFI },
-+        { WakeupSrcType::WAKEUP_SRC_IR, WAKEUP_SRC_IR },
-+        { WakeupSrcType::WAKEUP_SRC_POWERKEY, WAKEUP_SRC_POWERKEY },
-+        { WakeupSrcType::WAKEUP_SRC_TIMER, WAKEUP_SRC_TIMER },
-+        { WakeupSrcType::WAKEUP_SRC_CEC, WAKEUP_SRC_CEC },
-+        { WakeupSrcType::WAKEUP_SRC_LAN, WAKEUP_SRC_LAN },
-+    };
-+    return map;
-+}
-+
-+PowerController_WakeupSrcType_t convert(const WakeupSrcType from)
-+{
-+    auto& map = wakeupSrcTypeMap();
-+    auto it = map.find(from);
-+    return (it != map.end()) ? it->second : WAKEUP_SRC_UNKNOWN;
-+}
-+
-+WakeupSrcType convert(const PowerController_WakeupSrcType_t from)
-+{
-+    auto& map = wakeupSrcTypeMap();
-+
-+    for (const auto& kv : map) {
-+        if (kv.second == from) {
-+            return kv.first;
-+        }
-+    }
-+    return WakeupSrcType::WAKEUP_SRC_UNKNOWN;
 +}
 +
 +const std::unordered_map<WakeupReason, PowerController_WakeupReason_t>& wakeupReasonMap()
@@ -1411,36 +1375,6 @@ index 0000000..6772e8e
 +        return result;
 +    }
 +
-+    Core::hresult SetWakeupSrcConfig(const int powerMode, const int wakeSrcType, int config)
-+    {
-+        Core::hresult result = Core::ERROR_UNAVAILABLE;
-+
-+        _apiLock.Lock();
-+
-+        if (_powerManagerInterface) {
-+            result = _powerManagerInterface->SetWakeupSrcConfig(powerMode, wakeSrcType, config);
-+        }
-+
-+        _apiLock.Unlock();
-+
-+        return result;
-+    }
-+
-+    Core::hresult GetWakeupSrcConfig(int& powerMode, int& srcType, int& config)
-+    {
-+        Core::hresult result = Core::ERROR_UNAVAILABLE;
-+
-+        _apiLock.Lock();
-+
-+        if (_powerManagerInterface) {
-+            result = _powerManagerInterface->GetWakeupSrcConfig(powerMode, srcType, config);
-+        }
-+
-+        _apiLock.Unlock();
-+
-+        return result;
-+    }
-+
 +    Core::hresult SetSystemMode(const PowerController_SystemMode_t currentMode, const PowerController_SystemMode_t newMode)
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
@@ -2001,27 +1935,6 @@ index 0000000..6772e8e
 +    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
-+uint32_t PowerController_SetWakeupSrcConfig(const int powerMode, const int wakeSrcType, int config)
-+{
-+    PowerController *instance = PowerController::Instance();
-+    if (instance) {
-+        return instance->SetWakeupSrcConfig(powerMode, wakeSrcType, config);
-+    }
-+    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+}
-+
-+uint32_t PowerController_GetWakeupSrcConfig(int* powerMode, int* srcType, int* config)
-+{
-+    ASSERT(nullptr != powerMode);
-+    ASSERT(nullptr != srcType);
-+    ASSERT(nullptr != config);
-+    PowerController *instance = PowerController::Instance();
-+    if (instance) {
-+        return instance->GetWakeupSrcConfig(*powerMode, *srcType, *config);
-+    }
-+    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+}
-+
 +uint32_t PowerController_SetSystemMode(const PowerController_SystemMode_t currentMode, const PowerController_SystemMode_t newMode)
 +{
 +    PowerController *instance = PowerController::Instance();
@@ -2208,10 +2121,10 @@ index 0000000..6772e8e
 +} // extern "C"
 diff --git a/Source/powercontroller/power_controller.h b/Source/powercontroller/power_controller.h
 new file mode 100644
-index 0000000..52979fb
+index 0000000..8ee58e5
 --- /dev/null
 +++ b/Source/powercontroller/power_controller.h
-@@ -0,0 +1,436 @@
+@@ -0,0 +1,405 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -2267,21 +2180,6 @@ index 0000000..52979fb
 +    THERMAL_TEMPERATURE_HIGH = 2 /* High Thermal Temperature */,
 +    THERMAL_TEMPERATURE_CRITICAL = 4 /* Critial Thermal Temperature */
 +} PowerController_ThermalTemperature_t;
-+
-+typedef enum PowerController_WakeupSrcType {
-+    WAKEUP_SRC_UNKNOWN          = 0         /* UNKNOWN */,
-+    WAKEUP_SRC_VOICE            = 1         /* VOICE */,
-+    WAKEUP_SRC_PRESENCEDETECTED = 1 << 1    /* PRESENCEDETECTED */,
-+    WAKEUP_SRC_BLUETOOTH        = 1 << 2    /* BLUETOOTH */,
-+    WAKEUP_SRC_WIFI             = 1 << 3    /* WIFI */,
-+    WAKEUP_SRC_IR               = 1 << 4    /* IR */,
-+    WAKEUP_SRC_POWERKEY         = 1 << 5    /* POWERKEY */,
-+    WAKEUP_SRC_TIMER            = 1 << 6    /* TIMER */,
-+    WAKEUP_SRC_CEC              = 1 << 7    /* CEC */,
-+    WAKEUP_SRC_LAN              = 1 << 8    /* LAN */,
-+    WAKEUP_SRC_RF4CE            = 1 << 9    /* RF4CE */,
-+    WAKEUP_SRC_MAX              = 1 << 10
-+} PowerController_WakeupSrcType_t;
 +
 +typedef enum PowerController_WakeupReason {
 +    WAKEUP_REASON_UNKNOWN = 0 /* UNKNOWN */,
@@ -2496,22 +2394,6 @@ index 0000000..52979fb
 +// @brief Get the standby mode for Network
 +// @param standbyMode: Network standby mode
 +EXTERNAL uint32_t PowerController_GetNetworkStandbyMode(bool* standbyMode /* @out */);
-+
-+/** Set Wakeup source configuration */
-+// @text setWakeupSrcConfig
-+// @brief Set the source configuration for device wakeup
-+// @param powerMode: power mode
-+// @param wakeSrcType: source type
-+// @param config: config
-+EXTERNAL uint32_t PowerController_SetWakeupSrcConfig(const int powerMode /* @in */, const int wakeSrcType /* @in */, int config /* @in */);
-+
-+/** Get Wakeup source configuration */
-+// @text getWakeupSrcConfig
-+// @brief Get the source configuration for device wakeup
-+// @param powerMode: power mode
-+// @param srcType: source type
-+// @param config: config
-+EXTERNAL uint32_t PowerController_GetWakeupSrcConfig(int* powerMode /* @out */, int* srcType /* @out */, int* config /* @out */);
 +
 +/** Initiate System mode change */
 +// @text PowerController_SetSystemMode

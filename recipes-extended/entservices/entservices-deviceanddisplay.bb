@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 3.1.19
-SRCREV = "c5d534a96765a42660e33ec9e154ce9dd9e2abb7"
+# Release version - 3.1.19 (dirty)
+SRCREV = "3bd73b51ef30a00479d02cdfa69493639f823ec2"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
