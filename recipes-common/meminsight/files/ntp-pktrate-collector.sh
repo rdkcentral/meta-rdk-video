@@ -6,7 +6,7 @@ MAX_WAIT=${2:-180}      # Max seconds to wait
 #TAIL_AFTER_YES=${3:-2}  # Extra seconds to capture after sync
 
 PCAP_FILE="/tmp/ntp_$(date +%Y%m%dT%H%M%S).pcap"
-MARKER_FILE="/tmp/systiemmgr/ntp"
+MARKER_FILE="/tmp/systimemgr/ntp"
 
 echo "Interface   : $IFACE"
 echo "Max wait    : ${MAX_WAIT}s"
