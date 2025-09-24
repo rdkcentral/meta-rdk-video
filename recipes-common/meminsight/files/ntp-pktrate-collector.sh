@@ -2,15 +2,17 @@
 # ntp_until_sync.sh — Capture NTP packets until "NTP synchronized: yes"
 
 IFACE=${1:-any}         # Interface (default = any)
-MAX_WAIT=${2:-120}      # Max seconds to wait
-TAIL_AFTER_YES=${3:-2}  # Extra seconds to capture after sync
+MAX_WAIT=${2:-180}      # Max seconds to wait
+#TAIL_AFTER_YES=${3:-2}  # Extra seconds to capture after sync
 
 PCAP_FILE="/tmp/ntp_$(date +%Y%m%dT%H%M%S).pcap"
+MARKER_FILE="/tmp/systiemmgr/ntp"
 
 echo "Interface   : $IFACE"
 echo "Max wait    : ${MAX_WAIT}s"
 echo "PCAP output : $PCAP_FILE"
 echo "Filter      : udp port 123"
+echo "Marker file : $MARKER_FILE"
 echo
 
 # Monotonic start time (fractional seconds)
@@ -25,7 +27,7 @@ if ! kill -0 "$TCPDUMP_PID" 2>/dev/null; then
   exit 1
 fi
 
-echo "Capturing NTP packets... waiting for sync (timedatectl)..."
+echo "Capturing NTP packets... waiting for sync..."
 
 seen_no=0
 yes_count=0
@@ -33,21 +35,14 @@ elapsed=0
 SYNCED="no"
 
 while [ $elapsed -lt "$MAX_WAIT" ]; do
-  val=$(timedatectl status | awk -F': ' '/NTP synchronized:/ {print $2}' | tr -d ' ')
-echo "value:$val"
-  if [ "$val" = "yes" ]; then
-      yes_count=1
-      SYNCED="yes"
-      break
-fi
+  if [ -f "$MARKER_FILE" ]; then
+    SYNCED="yes"
+    break
+  fi
   sleep 1
   elapsed=$((elapsed+1))
 done
 
-# Extra grace period after sync
-if [ "$SYNCED" = "yes" ] && [ "$TAIL_AFTER_YES" -gt 0 ]; then
-  sleep "$TAIL_AFTER_YES"
-fi
 
 # Stop tcpdump
 kill -TERM "$TCPDUMP_PID" 2>/dev/null || true
