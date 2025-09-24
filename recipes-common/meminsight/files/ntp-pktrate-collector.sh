@@ -1,9 +1,9 @@
 #!/bin/sh
-# ntp_until_sync.sh — Capture NTP packets until "NTP synchronized: yes"
+# ntp_until_file.sh — Capture NTP packets until /tmp/systiemmgr/ntp is created
 
 IFACE=${1:-any}         # Interface (default = any)
-MAX_WAIT=${2:-180}      # Max seconds to wait
-#TAIL_AFTER_YES=${3:-2}  # Extra seconds to capture after sync
+MAX_WAIT=${2:-120}      # Max seconds to wait
+TAIL_AFTER_FILE=${3:-2} # Extra seconds to capture after file appears
 
 PCAP_FILE="/tmp/ntp_$(date +%Y%m%dT%H%M%S).pcap"
 MARKER_FILE="/tmp/systimemgr/ntp"
@@ -22,15 +22,32 @@ start_up=$(awk '{print $1}' /proc/uptime)
 tcpdump -i "$IFACE" udp port 123 -nn -U -w "$PCAP_FILE" 2>/dev/null &
 TCPDUMP_PID=$!
 
+
 if ! kill -0 "$TCPDUMP_PID" 2>/dev/null; then
   echo "Error: failed to start tcpdump." >&2
   exit 1
 fi
 
-echo "Capturing NTP packets... waiting for sync..."
+TOP_PID=""
+if [ -f /lib/systemd/systemd-timesyncd.service ]; then
+NTP_CLIENT_SERVICE="systemd-timesyncd.service"
+else
+NTP_CLIENT_SERVICE="chronyd.service"
+fi
 
-seen_no=0
-yes_count=0
+echo "service:$NTP_CLIENT_SERVICE"
+
+ntp_client_pid=$(systemctl show -p MainPID --value "$NTP_CLIENT_SERVICE")
+
+echo "pid:$ntp_client_pid"
+if [ -n $ntp_client_pid ]; then
+top -b -n1 -p "$ntp_client_pid" | awk -v pid="$ntp_client_pid" '$1==pid {print $9}' >> /tmp/ntp_top.log
+ TOP_PID=$!
+fi
+
+
+echo "Capturing NTP packets... waiting for $MARKER_FILE to appear..."
+
 elapsed=0
 SYNCED="no"
 
@@ -43,21 +60,23 @@ while [ $elapsed -lt "$MAX_WAIT" ]; do
   elapsed=$((elapsed+1))
 done
 
+# Extra grace period after marker detected
+if [ "$SYNCED" = "yes" ] && [ "$TAIL_AFTER_FILE" -gt 0 ]; then
+  sleep "$TAIL_AFTER_FILE"
+fi
 
 # Stop tcpdump
 kill -TERM "$TCPDUMP_PID" 2>/dev/null || true
 wait "$TCPDUMP_PID" 2>/dev/null || true
 
+[ -n "$TOP_PID" ] && kill -TERM "$TOP_PID" 2>/dev/null || true
+[ -n "$TOP_PID" ] && wait "$TOP_PID" 2>/dev/null || true
+
 # Monotonic end time
 end_up=$(awk '{print $1}' /proc/uptime)
 
 # Duration
-DUR=$(awk -v s="$start_up" -v e="$end_up" 'BEGIN{printf "%.2f", e-s}')
-
-# If negative, make positive
-DUR=$(awk -v d="$DUR" 'BEGIN { if (d<0) d=-d; print d }')
-# If zero, make 1
-[ "$(printf "%.0f" "$DUR")" -eq 0 ] && DUR=1
+DUR=$(awk -v s="$start_up" -v e="$end_up" 'BEGIN{d=e-s; if(d<0)d=-d; if(d==0)d=1; printf "%.2f", d}')
 
 # Count packets from pcap
 PACKETS=$(tcpdump -nn -q -r "$PCAP_FILE" 2>/dev/null | wc -l)
@@ -74,6 +93,6 @@ echo "Duration (s)  : $DUR"
 echo "Total packets : $PACKETS"
 echo "Packets/sec   : $RATE"
 
-# Exit non-zero if not synced
+# Exit non-zero if marker not seen
 [ "$SYNCED" = "yes" ] || exit 2
 
