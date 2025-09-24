@@ -1,4 +1,4 @@
-define _GNU_SOURCE
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -175,7 +175,7 @@ int main(int argc, char** argv) {
 
     // CSV header
     if (csv) {
-        printf("timestamp,ref_ip,stratum,leap_status,last_offset_ms,rms_offset_ms,system_time_ms,frequency_ppm,residual_freq_ppm,skew_ppm,root_delay_ms,root_dispersion_ms,update_interval_s,status,rtp_ready,hw_drift_ms,hw_drift_ppm,wall_elapsed_s,raw_elapsed_s\n");
+        printf("timestamp,last_offset_ms,frequency_ppm,root_delay_ms,update_interval_s,status,rtp_ready,hw_drift_ms,hw_drift_ppm,wall_elapsed_s,raw_elapsed_s\n");
         fflush(stdout);
     }
 
@@ -230,13 +230,12 @@ int main(int argc, char** argv) {
         time_t now = time(NULL); struct tm tm; localtime_r(&now, &tm);
 
         if (csv) {
-            printf("%04d-%02d-%02d %02d:%02d:%02d,%s,%d,%s,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.1f,%s,%s,%.3f,%.2f,%.1f,%.1f\n",
+            printf("%04d-%02d-%02d %02d:%02d:%02d,%.6f,%.6f,%.6f,%.1f,%s,%s,%.3f,%.2f,%.1f,%.1f\n",
                    tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday,
                    tm.tm_hour, tm.tm_min, tm.tm_sec,
-                   t.reference_ip, t.stratum, t.leap_status,
-                   last_offset_ms, rms_offset_ms, system_time_ms,
-                   t.frequency_ppm, t.residual_freq_ppm, t.skew_ppm,
-                   root_delay_ms, root_disp_ms, t.update_interval_s,
+                   last_offset_ms,
+                   t.frequency_ppm,
+                   root_delay_ms, t.update_interval_s,
                    status, rtp_ready,
                    drift_ms, drift_ppm,
                    wall_elapsed, raw_elapsed);
