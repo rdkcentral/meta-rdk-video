@@ -57,7 +57,8 @@ int main(int argc, char *argv[]) {
         struct timex tx = {0};
         int status = adjtimex(&tx);
         
-        double offset_ms = (double)tx.offset / 1000.0;
+        //double offset_ms = (double)tx.offset / 1000.0;
+        double offset_ms = (tx.status & STA_NANO) ? (tx.offset / 1e6) : (tx.offset / 1e3);
         double freq_ppm = (double)tx.freq / 65536.0;
         double maxerror_ms = (double)tx.maxerror / 1000.0;
         //int synced = ((tx.status & STA_UNSYNC) == 0) && (state == TIME_OK);
@@ -105,7 +106,7 @@ int main(int argc, char *argv[]) {
                 strcpy(rtp_status, "NOT_READY");
             }
             
-            printf("%04d-%02d-%02d %02d:%02d:%02d,%.3f,%.3f,%ld,%.3f,%.6f,%s,%s,%.3f,%.2f,%.1f,%.1f\n",
+            printf("%04d-%02d-%02d %02d:%02d:%02d,%.9f,%.6f,%ld,%.3f,%.6f,%s,%s,%+7.1f,%+6.1f,%.0f,%.0f\n",
                    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
                    tm->tm_hour, tm->tm_min, tm->tm_sec,
                    offset_ms, freq_ppm, tx.constant, maxerror_ms, correction_rate,
