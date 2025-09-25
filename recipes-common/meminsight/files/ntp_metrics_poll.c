@@ -103,13 +103,13 @@ int main(int argc, char *argv[]) {
             } else {
                 strcpy(rtp_status, "NOT_READY");
             }
-            
-            printf("%04d-%02d-%02d %02d:%02d:%02d,%.3f,%.3f,%ld,%.3f,%.6f,%s,%s,%.3f,%.2f,%.1f,%.1f\n",
-                   tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-                   tm->tm_hour, tm->tm_min, tm->tm_sec,
-                   offset_ms, freq_ppm, tx.constant, maxerror_ms, correction_rate,
-                   (status == 0) ? "SYNC" : "UNSYNC", rtp_status,
-                   drift_ms, drift_ppm, wall_elapsed, raw_elapsed);
+
+              printf("%04d-%02d-%02d %02d:%02d:%02d,%.9f,%.6f,%ld,%.3f,%.6f,%s,%s,%+7.1f,%+6.1f,%.0f,%.0f\n",                                             
+                   tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,                                                                                     
+                   tm->tm_hour, tm->tm_min, tm->tm_sec,                                                                                                 
+                   offset_ms, freq_ppm, tx.constant, maxerror_ms, correction_rate,                                                                      
+                   synced ? "SYNC" : "UNSYNC", rtp_status,                                                                                              
+                   drift_ms, drift_ppm, wall_elapsed, raw_elapsed); 
         } else {
             // Human-readable format with monotonic drift info
             printf("%02d:%02d:%02d | Offset: %+8.1f ms | Freq: %+6.1f ppm | TC: %ld | MaxErr: %6.1f ms | Rate: %+5.1f ms/s\n",
