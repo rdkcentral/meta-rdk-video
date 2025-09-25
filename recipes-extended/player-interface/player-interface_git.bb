@@ -12,13 +12,15 @@ DEPENDS += "iarmmgrs wpeframework"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0  gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)}"
 DEPENDS += " wpeframework-clientlibraries"
 DEPENDS:append = " virtual/vendor-gst-drm-plugins essos "
+DEPENDS:append = " virtual/player-soc-interface-platform "
+RDEPENDS:${PN}:append = " virtual/player-soc-interface-platform "
 RDEPENDS:${PN} += "devicesettings"
 NO_RECOMMENDATIONS = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 #SRC_URI = "${CMF_GITHUB_ROOT}/middleware-player-interface;${CMF_GITHUB_SRC_URI_SUFFIX};name=player-interface"
-SRC_URI = "${CMF_GITHUB_ROOT}/middleware-player-interface;${CMF_GITHUB_SRC_URI_SUFFIX};name=player-interface;branch=feature/RDK-58998"
+SRC_URI = "${CMF_GITHUB_ROOT}/middleware-player-interface;${CMF_GITHUB_SRC_URI_SUFFIX};name=player-interface;branch=feature/RDKEMW-6676"
 S = "${WORKDIR}/git"
 
 require player-interface-common.inc
