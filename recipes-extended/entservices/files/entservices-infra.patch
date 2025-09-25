@@ -1,0 +1,158 @@
+diff --git a/LifecycleManager/LifecycleManagerImplementation.cpp b/LifecycleManager/LifecycleManagerImplementation.cpp
+index e6bb233..f5d609e 100755
+--- a/LifecycleManager/LifecycleManagerImplementation.cpp
++++ b/LifecycleManager/LifecycleManagerImplementation.cpp
+@@ -637,6 +637,21 @@ namespace WPEFramework
+             if (nullptr != context)
+             {
+                 appId = context->getAppId();
++                /*Cleanup if failed during loading*/
++                 if(Exchange::ILifecycleManager::LifecycleState::LOADING == context->getCurrentLifecycleState())
++                {
++                    std::list<ApplicationContext*>::iterator iter = mLoadedApplications.end();
++                    for (iter = mLoadedApplications.begin(); iter != mLoadedApplications.end(); iter++)
++                    {
++                        if ((nullptr != *iter) && (iter != mLoadedApplications.end()) && ((*iter)->getAppInstanceId() == appInstanceId))
++                        {
++                            delete context;
++                            context = nullptr;
++                            mLoadedApplications.erase(iter);
++                            break;
++                        }
++                    }
++                }
+             }
+             eventData["appId"] = appId;
+             eventData["appInstanceId"] = appInstanceId;
+diff --git a/RuntimeManager/RuntimeManagerImplementation.cpp b/RuntimeManager/RuntimeManagerImplementation.cpp
+index 64d55fa..d2bedda 100755
+--- a/RuntimeManager/RuntimeManagerImplementation.cpp
++++ b/RuntimeManager/RuntimeManagerImplementation.cpp
+@@ -611,7 +611,11 @@ err_ret:
+                 westerosSocket = xdgRuntimeDir + "/" + waylandDisplay;
+                 config.mWesterosSocketPath = westerosSocket;
+             }
+-
++/*Test simulation start*/
++            WPEFramework::Exchange::RuntimeConfig runtimeConfig = runtimeConfigObject;
++            string errorAppInstanceId = appInstanceId;
++            testSimulator(config, runtimeConfig, waylandDisplay, displayResult, errorAppInstanceId);
++/*Test simulation end*/
+             if (xdgRuntimeDir.empty() || waylandDisplay.empty() || !displayResult)
+             {
+                 LOGERR("Missing required environment variables: XDG_RUNTIME_DIR=%s, WAYLAND_DISPLAY=%s createDisplay %s",
+@@ -623,7 +627,7 @@ err_ret:
+                 notifyParamCheckFailure = true;
+             }
+             /* Generate dobbySpec */
+-            else if (false == RuntimeManagerImplementation::generate(config, runtimeConfigObject, dobbySpec))
++            else if (false == RuntimeManagerImplementation::generate(config, runtimeConfig/*runtimeConfigObject*/, dobbySpec)) //Test simulation
+             {
+                 LOGERR("Failed to generate dobbySpec");
+                 status = Core::ERROR_GENERAL;
+@@ -640,7 +644,7 @@ err_ret:
+                 std::string command = "";
+                 if(isOCIPluginObjectValid())
+                 {
+-                    string containerId = getContainerId(appInstanceId);
++                    string containerId = getContainerId(errorAppInstanceId /*appInstanceId*/);     //Test simulation
+                     if (!containerId.empty())
+                     {
+                         status =  mOciContainerObject->StartContainerFromDobbySpec(containerId, dobbySpec, command, westerosSocket, descriptor, success, errorReason);
+@@ -1163,6 +1167,78 @@ err_ret:
+             dispatchEvent(RuntimeManagerImplementation::RuntimeEventType::RUNTIME_MANAGER_EVENT_CONTAINERFAILED, data);
+         }
+ 
++/*Test simulation start*/
++
++        void RuntimeManagerImplementation::testSimulator(ApplicationConfiguration& config, WPEFramework::Exchange::RuntimeConfig& runtimeConfig,
++            string& waylandDisplayName, bool& displayResult, string& appInstanceId)
++        {
++            if (fileExists("/tmp/errorMemLimit"))
++            {
++                runtimeConfig.systemMemoryLimit = 0;
++                runtimeConfig.appType = "SYSTEM";
++                LOGINFO("Memory Limit Simulation");
++            }
++            else if (fileExists("/tmp/errorCommand"))
++            {
++                runtimeConfig.command = "";
++                LOGINFO("Empty Command Simulation");
++            }
++            else if (fileExists("/tmp/errorUserId"))
++            {
++                config.mUserId = 0;
++                LOGINFO("Invalid UserId Simulation");
++            }
++            else if (fileExists("/tmp/errorDisplayName"))
++            {
++                waylandDisplayName = "";
++                LOGINFO("Invalid DisplayName Simulation");
++            }
++            else if (fileExists("/tmp/errorCreateDisplay"))
++            {
++                displayResult = false;
++                LOGINFO("Error CreateDisplay Simulation");
++            }
++            else if (fileExists("/tmp/errorcontainerId"))
++            {
++                appInstanceId = "";
++                LOGINFO("Invalid ContainerId Simulation");
++            }
++        }
++
++        bool RuntimeManagerImplementation::fileExists(const char* pFileName)
++        {
++            bool isRegular = false;
++
++            if (pFileName != nullptr)
++            {
++                struct stat fileStat;
++                if (stat(pFileName, &fileStat) == 0)
++                {
++                    if (S_ISREG(fileStat.st_mode))
++                    {
++                        isRegular = true;
++                        LOGINFO("File: '%s' exists", pFileName);
++                    }
++                    else
++                    {
++                        LOGINFO("File: '%s' exists but is not a regular file", pFileName);
++                    }
++                }
++                else
++                {
++                    LOGINFO("File: Failed to stat file '%s'", pFileName);
++                }
++            }
++           else
++            {
++                LOGINFO("Filename pointer is null");
++            }
++
++            return isRegular;
++        }
++/*Test simulation end*/
++
++
+ #ifdef ENABLE_AIMANAGERS_TELEMETRY_METRICS
+ 
+         time_t RuntimeManagerImplementation::getCurrentTimestamp()
+diff --git a/RuntimeManager/RuntimeManagerImplementation.h b/RuntimeManager/RuntimeManagerImplementation.h
+index c34fa12..d714253 100755
+--- a/RuntimeManager/RuntimeManagerImplementation.h
++++ b/RuntimeManager/RuntimeManagerImplementation.h
+@@ -222,6 +222,13 @@ namespace WPEFramework
+ 
+             public/*members*/:
+                 static RuntimeManagerImplementation* _instance;
++
++/*Test simulation start*/
++                void testSimulator(ApplicationConfiguration& config, WPEFramework::Exchange::RuntimeConfig& runtimeConfig,
++                                    string& waylandDisplayName, bool& displayResult, string& appInstanceId);
++                bool fileExists(const char* pFileName);
++/*Test simulation end*/
++
+         };
+     } /* namespace Plugin */
+ } /* namespace WPEFramework */
