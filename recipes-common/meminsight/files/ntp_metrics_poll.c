@@ -13,6 +13,11 @@ typedef struct {
     int initialized;
 } drift_tracker_t;
 
+static double prev_wall = 0.0, prev_raw = 0.0;
+static int have_prev_samples = 0;
+static int prev_synced_flag = -1;
+static double cum_drift_s = 0.0;
+
 static drift_tracker_t drift_tracker = {0};
 
 double get_monotonic_time() {
@@ -74,17 +79,63 @@ int main(int argc, char *argv[]) {
         }
         
         // Calculate elapsed times
-        double wall_elapsed = current_wall - drift_tracker.initial_wall_time;
-        double raw_elapsed = current_raw_monotonic - drift_tracker.initial_raw_monotonic_time;
+       // double wall_elapsed = current_wall - drift_tracker.initial_wall_time;
+       // double raw_elapsed = current_raw_monotonic - drift_tracker.initial_raw_monotonic_time;
         
         // Calculate hardware clock drift (raw vs NTP-corrected)
-        double time_diff = raw_elapsed - wall_elapsed;  // How much raw hardware clock has drifted
-        double drift_ms = time_diff * 1000.0;           // Convert to milliseconds
-        double drift_ppm = 0;
-        if (wall_elapsed > 0) {
-            drift_ppm = (time_diff / wall_elapsed) * 1e6;  // Parts per million
-        }
-        
+        //double time_diff = raw_elapsed - wall_elapsed;  // How much raw hardware clock has drifted
+        //double drift_ms = time_diff * 1000.0;           // Convert to milliseconds
+        //double drift_ppm = 0;
+        //if (wall_elapsed > 0) {
+          //  drift_ppm = (time_diff / wall_elapsed) * 1e6;  // Parts per million
+        //}
+
+double w = get_wall_time();
+double r = get_raw_monotonic_time();
+
+if (!drift_tracker.initialized) {
+    drift_tracker.initial_wall_time = w;
+    drift_tracker.initial_raw_monotonic_time  = r;
+    drift_tracker.initialized  = 1;
+
+    prev_wall = w;
+    prev_raw  = r;
+    prev_synced_flag = 1;   // now valid
+    have_prev_samples = 0;
+}
+
+double dw = 0.0, dr = 0.0;
+int time_step = 0;
+
+if (have_prev_samples) {
+    dw = w - prev_wall;
+    dr = r - prev_raw;
+
+    if (fabs((dr - dw)) > 0.5 || dw < 0.0) {
+        time_step = 1;
+    }
+}
+
+if (time_step || (prev_synced_flag != -1 && prev_synced_flag != 1)) {
+    drift_tracker.initial_wall_time = w;
+    drift_tracker.initial_raw_monotonic_time = r;
+    cum_drift_s = 0.0;
+    have_prev_samples = 0;
+} else if (have_prev_samples) {
+    cum_drift_s += (dr - dw);
+}
+
+double wall_elapsed = w - drift_tracker.initial_wall_time;
+double raw_elapsed  = r - drift_tracker.initial_raw_monotonic_time;
+
+double drift_ms  = cum_drift_s * 1e3;
+double drift_ppm = (wall_elapsed > 0.0) ? (cum_drift_s / wall_elapsed) * 1e6 : 0.0;
+
+prev_wall = w;
+prev_raw  = r;
+prev_synced_flag = 1;
+have_prev_samples = 1;
+
         time_t now = time(NULL);
         struct tm *tm = localtime(&now);
         
