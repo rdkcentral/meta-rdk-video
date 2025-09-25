@@ -105,11 +105,11 @@ int main(int argc, char *argv[]) {
                 strcpy(rtp_status, "NOT_READY");
             }
 
-              printf("%04d-%02d-%02d %02d:%02d:%02d,%.9f,%.6f,%ld,%.3f,%.6f,%s,%s,%+7.1f,%+6.1f,%.0f,%.0f\n",                                             
+              printf("%04d-%02d-%02d %02d:%02d:%02d,%.3f,%.3f,%ld,%.3f,%.6f,%s,%s,%+7.1f,%+6.1f,%.0f,%.0f\n",                                             
                    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,                                                                                     
                    tm->tm_hour, tm->tm_min, tm->tm_sec,                                                                                                 
                    offset_ms, freq_ppm, tx.constant, maxerror_ms, correction_rate,                                                                      
-                   synced ? "SYNC" : "UNSYNC", rtp_status,                                                                                              
+                   (status == 0) ? "SYNC" : "UNSYNC", rtp_status,                                                                                              
                    drift_ms, drift_ppm, wall_elapsed, raw_elapsed); 
         } else {
             // Human-readable format with monotonic drift info
