@@ -57,7 +57,8 @@ int main(int argc, char *argv[]) {
         struct timex tx = {0};
         int status = adjtimex(&tx);
         
-        double offset_ms = (double)tx.offset / 1000.0;
+       // double offset_ms = (double)tx.offset / 1000.0;
+        double offset_ms = (tx.status & STA_NANO) ? (tx.offset / 1e6) : (tx.offset / 1e3);
         double freq_ppm = (double)tx.freq / 65536.0;
         double maxerror_ms = (double)tx.maxerror / 1000.0;
         
