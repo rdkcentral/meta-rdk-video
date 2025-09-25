@@ -1,0 +1,10 @@
+[Unit]
+Description=NTP Metrics collector
+Before=systemd-timesyncd.service
+
+[Service]
+Type=simple
+ExecStart=/bin/sh -c '/usr/bin/ntpmetrics_poll --csv >> /tmp/ntp-metrics.csv'
+
+[Install]
+WantedBy=multi-user.target
