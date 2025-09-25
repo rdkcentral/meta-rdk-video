@@ -42,9 +42,14 @@ ntp_client_pid=$(systemctl show -p MainPID --value "$NTP_CLIENT_SERVICE")
 
 echo "pid:$ntp_client_pid"
 if [ -n $ntp_client_pid ]; then
-top -b -n1 -p "$ntp_client_pid" | awk -v pid="$ntp_client_pid" '$1==pid {
-  printf "%s,%s,%s\n", strftime("%Y-%m-%dT%H:%M:%S"), $9, $10
-}'>> /tmp/ntp_top.log
+  top -b -d 1 -p "$ntp_client_pid" | awk -v pid="$ntp_client_pid" '
+    $1==pid {
+      cmd = "date -u +%Y-%m-%dT%H:%M:%SZ"; cmd | getline ts; close(cmd);
+      printf "%s,%s,%s\n", ts, $9, $10
+      fflush(stdout)
+    }
+  ' >> "/tmp/ntp_top.log" &
+
  TOP_PID=$!
 fi
 
@@ -92,6 +97,8 @@ RATE=$(awk -v p="$PACKETS" -v d="$DUR" 'BEGIN{ if(d>0) printf "%.2f", p/d; else 
 
 [ -f "$SUMMARY_CSV" ] || echo "start_utc,end_utc,synced,iface,pcap_file,duration_s,total_packets,packets_per_sec" > "$SUMMARY_CSV"
 
+# Append one CSV row
+# (quotes around strings; numeric fields as-is)
 printf '"%s","%s","%s","%s","%s",%s,%s,%s\n' \
   "$START_TS_UTC" \
   "$END_TS_UTC" \
@@ -117,3 +124,4 @@ echo "Packets/sec   : $RATE"
 
 # Exit non-zero if marker not seen
 [ "$SYNCED" = "yes" ] || exit 2
+
