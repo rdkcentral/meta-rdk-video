@@ -10,10 +10,10 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-inputoutput;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+           file://0001-RDKEMW-5201-Dolby-end-user-calibration.patch \
           "
 
-# Release version - 1.4.7
-SRCREV = "1ea05228452c7547788b4d7471d47c6b0130887e"
+SRCREV = "05a6317482a177777662b48c23105fc05ceadbac"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
