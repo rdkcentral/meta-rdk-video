@@ -27,7 +27,7 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 inherit autotools systemd
 
 do_compile:append() {
-  ${CC} ${CFLAGS} ${LDFLAGS} ${WORKDIR}/ntp_metrics_poll.c -o ${B}/ntpmetrics_poll
+  #${CC} ${CFLAGS} ${LDFLAGS} ${WORKDIR}/ntp_metrics_poll.c -o ${B}/ntpmetrics_poll
    ${CC} ${CFLAGS} ${LDFLAGS} ${WORKDIR}/chronyc_metrics.c -o ${B}/chronymetrics_poll
 }
 
@@ -38,7 +38,7 @@ do_install() {
     install -d ${D}${systemd_unitdir}/system
     install -d ${D}${sysconfdir}
     install -d ${D}${base_libdir}/rdk
-    install -m 0755 ${B}/ntpmetrics_poll ${D}${bindir}/ntpmetrics_poll
+   # install -m 0755 ${B}/ntpmetrics_poll ${D}${bindir}/ntpmetrics_poll
     install -m 0755 ${B}/chronymetrics_poll ${D}${bindir}/chronymetrics_poll
     install -m 0644 ${WORKDIR}/ntp-monitor.conf ${D}${sysconfdir}
     install -m 0644 ${WORKDIR}/meminsight-runner.service ${D}${systemd_unitdir}/system/
@@ -70,6 +70,6 @@ FILES:${PN} += "${systemd_unitdir}/system/ntp-metrics-collector.service"
 FILES:${PN} += "${systemd_unitdir}/system/ntp-pcap-collector.service"
 FILES:${PN} += "${base_libdir}/rdk/ntp-pktrate-collector.sh"
 
-FILES:${PN} += "${bindir}/ntpmetrics_poll"
+#FILES:${PN} += "${bindir}/ntpmetrics_poll"
 FILES:${PN} += "${bindir}/chronymetrics_poll"
 
