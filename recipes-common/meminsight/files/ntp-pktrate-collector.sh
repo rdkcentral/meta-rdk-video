@@ -29,7 +29,7 @@ if ! kill -0 "$TCPDUMP_PID" 2>/dev/null; then
 fi
 
 TOP_PID=""
-if [ -f /lib/systemd/systemd-timesyncd.service ]; then
+if [ -f /lib/systemd/system/systemd-timesyncd.service ]; then
 NTP_CLIENT_SERVICE="systemd-timesyncd.service"
 else
 NTP_CLIENT_SERVICE="chronyd.service"
