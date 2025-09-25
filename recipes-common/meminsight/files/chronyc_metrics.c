@@ -40,6 +40,11 @@ typedef struct {
     int initialized;
 } drift_tracker_t;
 
+static double prev_wall = 0.0, prev_raw = 0.0;
+static int have_prev_samples = 0;
+static int prev_synced_flag = -1;
+static double cum_drift_s = 0.0;
+
 static drift_tracker_t drift_tracker = {0};
 
 static double now_wall() {
@@ -213,12 +218,66 @@ int main(int argc, char** argv) {
         const char* status = strstr(t.leap_status, "Normal") ? "SYNC" : "UNSYNC";
 
         // compute drift vs raw clock
-        double wall_elapsed = now_wall() - drift_tracker.initial_wall;
-        double raw_elapsed  = now_raw()  - drift_tracker.initial_raw;
-        double time_diff    = raw_elapsed - wall_elapsed;  // positive if raw runs faster
-        double drift_ms     = time_diff * 1e3;
-        double drift_ppm    = (wall_elapsed > 0) ? (time_diff / wall_elapsed) * 1e6 : 0.0;
+       // double wall_elapsed = now_wall() - drift_tracker.initial_wall;
+        //double raw_elapsed  = now_raw()  - drift_tracker.initial_raw;
+        //double time_diff    = raw_elapsed - wall_elapsed;  // positive if raw runs faster
+        //double drift_ms     = time_diff * 1e3;
+        //double drift_ppm    = (wall_elapsed > 0) ? (time_diff / wall_elapsed) * 1e6 : 0.0;
 
+
+double w = now_wall();
+double r = now_raw();
+
+if (!drift_tracker.initialized) {
+    drift_tracker.initial_wall = w;
+    drift_tracker.initial_raw  = r;
+    drift_tracker.initialized  = 1;
+    prev_wall = w;
+    prev_raw  = r;
+    prev_synced_flag = 1;
+    have_prev_samples = 0;        // first iteration, no delta yet
+}
+
+// deltas since last sample (if any)
+double dw = 0.0, dr = 0.0;
+int time_step = 0;
+
+if (have_prev_samples) {
+    dw = w - prev_wall;
+    dr = r - prev_raw;
+
+    // Heuristic: if wall vs raw delta mismatches by >0.5s over one loop, assume a step
+    // (tune 0.5 if your sampling interval is different)
+    if (fabs((dr - dw)) > 0.5 || dw < 0.0) {
+        time_step = 1;
+    }
+}
+
+// Re-baseline if a time step is detected or the sync state flips
+if (time_step || (prev_synced_flag != -1 && prev_synced_flag != 1)) {
+    drift_tracker.initial_wall = w;
+    drift_tracker.initial_raw  = r;
+    cum_drift_s = 0.0;
+    have_prev_samples = 0;   // reset accumulation starting next sample
+} else if (have_prev_samples) {
+    // accumulate incremental drift (raw - wall) since last sample
+    cum_drift_s += (dr - dw);
+}
+
+// elapsed since the last (re)baseline
+double wall_elapsed = w - drift_tracker.initial_wall;
+double raw_elapsed  = r - drift_tracker.initial_raw;
+
+// Report cumulative drift since baseline (stable, no explosion on step)
+double drift_ms  = cum_drift_s * 1e3;
+double drift_ppm = (wall_elapsed > 0.0) ? (cum_drift_s / wall_elapsed) * 1e6 : 0.0;
+
+// update previous-sample state
+prev_wall = w;
+prev_raw  = r;
+prev_synced_flag = 1;
+have_prev_samples = 1;
+        
         // simple correction rate from last_offset trend
         double corr_rate_ms_per_s = 0.0;
         if (have_prev) {
