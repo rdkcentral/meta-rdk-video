@@ -40,6 +40,9 @@ echo "service:$NTP_CLIENT_SERVICE"
 
 ntp_client_pid=$(systemctl show -p MainPID --value "$NTP_CLIENT_SERVICE")
 
+TOP_OUT="/tmp/ntp_top.log"
+[ -s "$TOP_OUT" ] || echo "timestamp_utc,cpu_pct,mem_pct" > "$TOP_OUT"
+
 echo "pid:$ntp_client_pid"
 if [ -n $ntp_client_pid ]; then
   top -b -d 1 -p "$ntp_client_pid" | awk -v pid="$ntp_client_pid" '
@@ -48,7 +51,7 @@ if [ -n $ntp_client_pid ]; then
       printf "%s,%s,%s\n", ts, $9, $10
       fflush(stdout)
     }
-  ' >> "/tmp/ntp_top.log" &
+  ' >> "$TOP_OUT" &
 
  TOP_PID=$!
 fi
