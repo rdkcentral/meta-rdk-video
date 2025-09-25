@@ -1,9 +1,10 @@
 #!/bin/sh
-# ntp_until_file.sh — Capture NTP packets until /tmp/systiemmgr/ntp is created
+#h — Capture NTP packets until /tmp/systiemmgr/ntp is created
 
 IFACE=${1:-any}         # Interface (default = any)
 MAX_WAIT=${2:-120}      # Max seconds to wait
 TAIL_AFTER_FILE=${3:-2} # Extra seconds to capture after file appears
+SUMMARY_CSV="/tmp/ntp_sync_summary.csv"
 
 PCAP_FILE="/tmp/ntp_$(date +%Y%m%dT%H%M%S).pcap"
 MARKER_FILE="/tmp/systimemgr/ntp"
@@ -17,7 +18,7 @@ echo
 
 # Monotonic start time (fractional seconds)
 start_up=$(awk '{print $1}' /proc/uptime)
-
+START_TS_UTC=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # Start tcpdump (packet-buffered with -U)
 tcpdump -i "$IFACE" udp port 123 -nn -U -w "$PCAP_FILE" 2>/dev/null &
 TCPDUMP_PID=$!
@@ -77,7 +78,9 @@ wait "$TCPDUMP_PID" 2>/dev/null || true
 # Monotonic end time
 end_up=$(awk '{print $1}' /proc/uptime)
 
-# Duration
+
+END_TS_UTC=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
 DUR=$(awk -v s="$start_up" -v e="$end_up" 'BEGIN{d=e-s; if(d<0)d=-d; if(d==0)d=1; printf "%.2f", d}')
 
 # Count packets from pcap
@@ -86,8 +89,25 @@ PACKETS=$(tcpdump -nn -q -r "$PCAP_FILE" 2>/dev/null | wc -l)
 # Calculate packets/sec
 RATE=$(awk -v p="$PACKETS" -v d="$DUR" 'BEGIN{ if(d>0) printf "%.2f", p/d; else print 0 }')
 
+
+[ -f "$SUMMARY_CSV" ] || echo "start_utc,end_utc,synced,iface,pcap_file,duration_s,total_packets,packets_per_sec" > "$SUMMARY_CSV"
+
+printf '"%s","%s","%s","%s","%s",%s,%s,%s\n' \
+  "$START_TS_UTC" \
+  "$END_TS_UTC" \
+  "$SYNCED" \
+  "$IFACE" \
+  "$PCAP_FILE" \
+  "$DUR" \
+  "$PACKETS" \
+  "$RATE" >> "$SUMMARY_CSV"
+
+echo "Summary appended to: $SUMMARY_CSV"
+
 echo
 echo "===== NTP Sync Summary ====="
+echo "Start (UTC)   : $START_TS_UTC"
+echo "End   (UTC)   : $END_TS_UTC"
 echo "Synced        : $SYNCED"
 echo "Interface     : $IFACE"
 echo "PCAP file     : $PCAP_FILE"
@@ -97,4 +117,3 @@ echo "Packets/sec   : $RATE"
 
 # Exit non-zero if marker not seen
 [ "$SYNCED" = "yes" ] || exit 2
-
