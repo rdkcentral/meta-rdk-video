@@ -41,7 +41,9 @@ ntp_client_pid=$(systemctl show -p MainPID --value "$NTP_CLIENT_SERVICE")
 
 echo "pid:$ntp_client_pid"
 if [ -n $ntp_client_pid ]; then
-top -b -n1 -p "$ntp_client_pid" | awk -v pid="$ntp_client_pid" '$1==pid {print $9}' >> /tmp/ntp_top.log
+top -b -n1 -p "$ntp_client_pid" | awk -v pid="$ntp_client_pid" '$1==pid {
+  printf "%s,%s,%s\n", strftime("%Y-%m-%dT%H:%M:%S"), $9, $10
+}'>> /tmp/ntp_top.log
  TOP_PID=$!
 fi
 
