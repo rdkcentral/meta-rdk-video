@@ -20,6 +20,9 @@ echo "Filter      : udp port 123"
 echo "Marker file : $MARKER_FILE"
 echo
 
+sh /lib/rdk/ntp-poll-interval.sh &
+POLL_PID=$!
+
 # Monotonic start time (fractional seconds)
 start_up=$(awk '{print $1}' /proc/uptime)
 START_TS_UTC=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -153,5 +156,6 @@ echo "Duration (s)  : $DUR"
 echo "Total packets : $PACKETS"
 echo "Packets/sec   : $RATE"
 
+trap 'kill $POLL_PID 2>/dev/null' TERM INT EXIT
 # Exit non-zero if marker not seen
 [ "$SYNCED" = "yes" ] || exit 2
