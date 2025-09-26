@@ -1,0 +1,101 @@
+From 849ec8fcc2f3f05da31dd1769cc6636f501646c2 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Fri, 29 Aug 2025 11:53:38 +0000
+Subject: [PATCH 1/2] webrtc: increase size of video appsrc buffer
+
+---
+ .../mediastream/gstreamer/GStreamerMediaStreamSource.cpp       | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/Source/WebCore/platform/mediastream/gstreamer/GStreamerMediaStreamSource.cpp b/Source/WebCore/platform/mediastream/gstreamer/GStreamerMediaStreamSource.cpp
+index f1c5640ad2ca..4f81466f835d 100644
+--- a/Source/WebCore/platform/mediastream/gstreamer/GStreamerMediaStreamSource.cpp
++++ b/Source/WebCore/platform/mediastream/gstreamer/GStreamerMediaStreamSource.cpp
+@@ -165,6 +165,9 @@ public:
+ 
+         g_object_set(m_src.get(), "is-live", TRUE, "format", GST_FORMAT_TIME, "emit-signals", TRUE, "min-percent", 100,
+             "do-timestamp", isCaptureTrack, nullptr);
++        if (track.isVideo())
++            g_object_set(m_src.get(), "max-bytes", static_cast<guint64>(2 * WTF::MB), nullptr);
++
+         g_signal_connect(m_src.get(), "enough-data", G_CALLBACK(+[](GstElement*, InternalSource* data) {
+             data->m_enoughData = true;
+         }), this);
+-- 
+2.34.1
+
+From db48c4670f19feba5a8fed697f71815fc5ee678f Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Fri, 29 Aug 2025 11:59:18 +0000
+Subject: [PATCH 2/2] webrtc: request keyframe every 10 seconds
+
+---
+ .../GStreamerVideoDecoderFactory.cpp          | 24 +++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoDecoderFactory.cpp b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoDecoderFactory.cpp
+index 150f41e7b60b..987698cbf033 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoDecoderFactory.cpp
++++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoDecoderFactory.cpp
+@@ -45,6 +45,19 @@ GST_DEBUG_CATEGORY(webkit_webrtcdec_debug);
+ 
+ namespace WebCore {
+ 
++static Seconds keyFrameRequestInterval() {
++    static Seconds interval { 10.0 };
++    static std::once_flag once;
++    std::call_once(once, []() {
++        StringView env = StringView::fromLatin1(std::getenv("WEBKIT_WEBRTC_KEY_REQUEST_INTERVAL"));
++        if (!env.isEmpty()) {
++            size_t parsedLength;
++            interval = Seconds { std::max(1.0, parseDouble(env, parsedLength)) };
++        }
++    });
++    return interval;
++}
++
+ class GStreamerWebRTCVideoDecoder : public webrtc::VideoDecoder {
+ public:
+     GStreamerWebRTCVideoDecoder()
+@@ -54,6 +67,7 @@ public:
+         , m_needsKeyframe(true)
+     {
+         m_rtpTimestampCaps = adoptGRef(gst_caps_new_empty_simple("timestamp/x-rtp"));
++        m_keyFrameRequestTimer.reset(g_timer_new());
+     }
+ 
+     static void decodebinPadAddedCb(GstElement*, GstPad* srcpad, GstPad* sinkpad)
+@@ -220,6 +234,10 @@ public:
+             return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+         }
+ 
++        if (inputImage._frameType == webrtc::VideoFrameType::kVideoFrameKey) {
++            GST_DEBUG_OBJECT(pipeline(), "Got a video key frame after %.2f seconds", g_timer_elapsed(m_keyFrameRequestTimer.get(), nullptr));
++            g_timer_reset(m_keyFrameRequestTimer.get());
++        }
+         // FIXME: Use a GstBufferPool.
+         GST_TRACE_OBJECT(pipeline(), "Pushing encoded image with RTP timestamp %u", inputImage.RtpTimestamp());
+         auto buffer = adoptGRef(gstBufferNewWrappedFast(fastMemDup(inputImage.data(), inputImage.size()), inputImage.size()));
+@@ -252,6 +270,11 @@ public:
+         auto frame = convertGStreamerSampleToLibWebRTCVideoFrame(WTFMove(sample), meta->timestamp);
+         GST_TRACE_OBJECT(pipeline(), "Pulled video frame with RTP timestamp %u from %" GST_PTR_FORMAT, static_cast<uint32_t>(meta->timestamp), buffer);
+         m_imageReadyCb->Decoded(frame);
++        if (g_timer_elapsed(m_keyFrameRequestTimer.get(), nullptr) > keyFrameRequestInterval().value()) {
++            GST_DEBUG_OBJECT(pipeline(), "requesting one keyframe after %.2f seconds, .", g_timer_elapsed(m_keyFrameRequestTimer.get(), nullptr));
++            g_timer_reset(m_keyFrameRequestTimer.get());
++            return WEBRTC_VIDEO_CODEC_OK_REQUEST_KEYFRAME;
++        }
+         return WEBRTC_VIDEO_CODEC_OK;
+     }
+ 
+@@ -308,6 +331,7 @@ private:
+     webrtc::DecodedImageCallback* m_imageReadyCb;
+ 
+     GRefPtr<GstCaps> m_rtpTimestampCaps;
++    GUniquePtr<GTimer> m_keyFrameRequestTimer;
+ };
+ 
+ class H264Decoder : public GStreamerWebRTCVideoDecoder {
+-- 
+2.34.1
+
