@@ -139,6 +139,6 @@ echo "Duration (s)  : $DUR"
 echo "Total packets : $PACKETS"
 echo "Packets/sec   : $RATE"
 
-trap 'kill $POLL_PID 2>/dev/null' TERM INT EXIT
+
 # Exit non-zero if marker not seen
 [ "$SYNCED" = "yes" ] || exit 2
