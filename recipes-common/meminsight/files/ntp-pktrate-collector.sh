@@ -33,15 +33,27 @@ if ! kill -0 "$TCPDUMP_PID" 2>/dev/null; then
 fi
 
 TOP_PID=""
-if [ -f /lib/systemd/system/systemd-timesyncd.service ]; then
-NTP_CLIENT_SERVICE="systemd-timesyncd.service"
+if systemctl list-unit-files | grep -q '^systemd-timesyncd.service'; then
+  SVC=systemd-timesyncd.service
+  KIND=timesyncd
 else
-NTP_CLIENT_SERVICE="chronyd.service"
+  SVC=chronyd.service
+  KIND=chrony
 fi
+echo "service:$SVC"
 
-echo "service:$NTP_CLIENT_SERVICE"
+# 2) wait until service is active
+until systemctl is-active --quiet "$SVC"; do sleep 1; done
 
-ntp_client_pid=$(systemctl show -p MainPID --value "$NTP_CLIENT_SERVICE")
+# 3) wait for a non-zero MainPID
+PID=0
+while :; do
+  PID="$(systemctl show -p MainPID --value "$SVC" || echo 0)"
+  [[ "$PID" != "0" && -n "$PID" ]] && break
+  sleep 1
+done
+
+ntp_client_pid=$PID
 
 echo "pid:$ntp_client_pid"
 if [ -n $ntp_client_pid ]; then
@@ -56,21 +68,17 @@ if [ -n $ntp_client_pid ]; then
  TOP_PID=$!
 fi
 
-
+echo "Capturing NTP Metrics,poll interval,Pkts... waiting for $MARKER_FILE to appear..."
 [ -s "$OUT" ] || echo "timestamp_utc,poll_interval" > "$OUT"
 
-awk -F 'poll interval:' '/poll interval:/ {
-  # grab ISO timestamp
+tail -f "$IN" | awk -F 'poll interval:' '/poll interval:/ {
   if (match($0, /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z/)) ts=substr($0,RSTART,RLENGTH);
-  # right side after "poll interval:" -> trim left spaces, coerce to number
   s=$2; sub(/^[[:space:]]+/, "", s); pi=s+0;
   if (ts!="" && pi!="") print ts "," pi;
-}' "$IN" >> "$OUT"
+}' >> "$OUT" &
 
 WATCH_PID=$!
 
-
-echo "Capturing NTP packets... waiting for $MARKER_FILE to appear..."
 
 elapsed=0
 SYNCED="no"
