@@ -16,6 +16,7 @@ SRC_URI:append = " file://meminsight-runner.service \
                    file://ntp-pcap-collector.service \
                    file://ntp-pktrate-collector.sh \
                    file://chronyc_metrics.c \
+                   file://ntp-poll-interval.sh \
                    "
 
 SRCREV = "f83f1804827cca0550d525d971f4337998d6ac1d"
@@ -46,6 +47,7 @@ do_install() {
     install -m 0644 ${WORKDIR}/ntp-metrics-collector.service ${D}${systemd_unitdir}/system/
     install -m 0644 ${WORKDIR}/ntp-pcap-collector.service ${D}${systemd_unitdir}/system/
     install -m 0755 ${WORKDIR}/ntp-pktrate-collector.sh  ${D}${base_libdir}/rdk
+install -m 0755 ${WORKDIR}/ntp-poll-interval.sh  ${D}${base_libdir}/rdk
     install -d ${D}${systemd_unitdir}/system/meminsight-runner.service.d
     install -d ${D}${systemd_unitdir}/system/meminsight-runner.path.d
 }
@@ -69,6 +71,7 @@ FILES:${PN} += "${sysconfdir}/ntp-monitor.conf"
 FILES:${PN} += "${systemd_unitdir}/system/ntp-metrics-collector.service"
 FILES:${PN} += "${systemd_unitdir}/system/ntp-pcap-collector.service"
 FILES:${PN} += "${base_libdir}/rdk/ntp-pktrate-collector.sh"
+FILES:${PN} += "${base_libdir}/rdk/ntp-poll-interval.sh"
 
 FILES:${PN} += "${bindir}/ntpmetrics_poll"
 FILES:${PN} += "${bindir}/chronymetrics_poll"
