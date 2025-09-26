@@ -1,0 +1,931 @@
+From e33e0f796d6fd30b737fb6e9b666fdd829d1d83e Mon Sep 17 00:00:00 2001
+From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+Date: Wed, 24 Sep 2025 17:48:21 +0000
+Subject: [PATCH] DeviceSettings Clientlibrary
+
+Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+---
+ Source/CMakeLists.txt                     |   2 +
+ Source/devicesettings/CMakeLists.txt      |  85 +++
+ Source/devicesettings/Module.cpp          |   0
+ Source/devicesettings/Module.h            |   0
+ Source/devicesettings/device_settings.cpp | 644 ++++++++++++++++++++++
+ Source/devicesettings/device_settings.h   | 142 +++++
+ 6 files changed, 873 insertions(+)
+ create mode 100644 Source/devicesettings/CMakeLists.txt
+ create mode 100644 Source/devicesettings/Module.cpp
+ create mode 100644 Source/devicesettings/Module.h
+ create mode 100644 Source/devicesettings/device_settings.cpp
+ create mode 100644 Source/devicesettings/device_settings.h
+
+diff --git a/Source/CMakeLists.txt b/Source/CMakeLists.txt
+index 4cc4cb1..f7255f9 100644
+--- a/Source/CMakeLists.txt
++++ b/Source/CMakeLists.txt
+@@ -62,3 +62,5 @@ endif()
+ if(POWERCONTROLLER)
+     add_subdirectory(powercontroller)
+ endif()
++
++    add_subdirectory(devicesettings)
+diff --git a/Source/devicesettings/CMakeLists.txt b/Source/devicesettings/CMakeLists.txt
+new file mode 100644
+index 0000000..44255a8
+--- /dev/null
++++ b/Source/devicesettings/CMakeLists.txt
+@@ -0,0 +1,85 @@
++# If not stated otherwise in this file or this component's LICENSE file the
++# following copyright and licenses apply:
++#
++# Copyright 2025 RDK Management
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++# http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++cmake_minimum_required(VERSION 3.3)
++
++find_package(WPEFramework)
++
++project(DSController)
++
++project_version(4.4.1)
++
++set(TARGET ${NAMESPACE}${PROJECT_NAME})
++
++message("Setup ${TARGET} v${PROJECT_VERSION}")
++
++find_package(${NAMESPACE}Core REQUIRED)
++find_package(${NAMESPACE}COM REQUIRED)
++find_package(CompileSettingsDebug CONFIG REQUIRED)
++
++set(PUBLIC_HEADERS "device_settings.h")
++
++add_library(${TARGET}  SHARED
++    Module.cpp
++    device_settings.cpp
++)
++
++target_link_libraries(${TARGET}
++        PRIVATE
++          ${NAMESPACE}Core::${NAMESPACE}Core
++          ${NAMESPACE}COM::${NAMESPACE}COM
++          CompileSettingsDebug::CompileSettingsDebug
++        )
++
++set_target_properties(${TARGET} PROPERTIES
++        CXX_STANDARD 11
++        CXX_STANDARD_REQUIRED YES
++        FRAMEWORK FALSE
++        PUBLIC_HEADER "${PUBLIC_HEADERS}" # specify the public headers
++        VERSION ${PROJECT_VERSION}
++        SOVERSION ${PROJECT_VERSION_MAJOR}
++        )
++
++target_include_directories( ${TARGET}
++        PUBLIC
++          $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
++          $<INSTALL_INTERFACE:include>
++        )
++
++install(TARGETS ${TARGET}
++        LIBRARY DESTINATION lib
++        PUBLIC_HEADER DESTINATION include
++        )
++
++install(
++        TARGETS ${TARGET}  EXPORT ${TARGET}Targets  # for downstream dependencies
++        ARCHIVE DESTINATION lib COMPONENT libs      # static lib
++        LIBRARY DESTINATION lib COMPONENT libs      # shared lib
++        RUNTIME DESTINATION bin COMPONENT libs      # binaries
++        FRAMEWORK DESTINATION bin COMPONENT libs    # for mac
++        PUBLIC_HEADER DESTINATION include/${NAMESPACE}/devicesettings COMPONENT devel   # headers for mac (note the different component -> different package)
++        INCLUDES DESTINATION include/${NAMESPACE}/devicesettings # headers
++)
++
++InstallCMakeConfig(
++        TARGETS ${TARGET})
++
++InstallPackageConfig(
++        TARGETS ${TARGET}
++        DESCRIPTION "communications channel abstraction for devicesettingsmanager plugin")
++
++# eof
+\ No newline at end of file
+diff --git a/Source/devicesettings/Module.cpp b/Source/devicesettings/Module.cpp
+new file mode 100644
+index 0000000..e69de29
+diff --git a/Source/devicesettings/Module.h b/Source/devicesettings/Module.h
+new file mode 100644
+index 0000000..e69de29
+diff --git a/Source/devicesettings/device_settings.cpp b/Source/devicesettings/device_settings.cpp
+new file mode 100644
+index 0000000..70df575
+--- /dev/null
++++ b/Source/devicesettings/device_settings.cpp
+@@ -0,0 +1,644 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2025 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++// std includes
++#include <algorithm>
++#include <functional>
++#include <list>
++#include <type_traits>
++
++#include <sys/inotify.h>
++#include <sys/syscall.h>
++
++// Thunder includes
++#include <interfaces/IDeviceSettingsManager.h>
++#include <plugins/Types.h>
++
++#include "device_settings.h"
++
++#define ENABLE_LOGGING
++
++#ifdef ENABLE_LOGGING
++#define LOGINFO(fmt, ...)                                                                                                                                                 \
++    do {                                                                                                                                                                  \
++        fprintf(stdout, "[DSCLILIB][%d] INFO  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fflush(stdout);                                                                                                                                                   \
++    } while (0)
++#define LOGWARN(fmt, ...)                                                                                                                                                 \
++    do {                                                                                                                                                                  \
++        fprintf(stdout, "[DSCLILIB][%d] WARN  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fflush(stdout);                                                                                                                                                   \
++    } while (0)
++#define LOGERR(fmt, ...)                                                                                                                                                  \
++    do {                                                                                                                                                                  \
++        fprintf(stderr, "[DSCLILIB][%d] ERROR [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fflush(stderr);                                                                                                                                                   \
++    } while (0)
++#else
++#define LOGINFO(fmt, ...)
++#define LOGWARN(fmt, ...)
++#define LOGERR(fmt, ...)
++#endif
++
++using namespace WPEFramework;
++
++static constexpr const TCHAR callSign[] = _T("org.rdk.DeviceSettingsManager");
++
++#define INVALID_PID (-1)
++#define INVALID_FD (-1)
++#define POLL_TIMEOUT (2000)
++
++using PIDFileChangedCb = std::function<void(const int pid)>;
++
++class PIDFileMonitor {
++    const std::string _pidFile; // pid file path `/tmp/wpeframework.pid`
++    const std::string _processName; // process name extracted from pid file `wpeframework`
++    PIDFileChangedCb _callback; // callback to notify PID file changes
++
++    int _fd; // inotify fd
++    int _wd; // inotify watch descriptor
++    int _pid; // current PID
++
++    bool _running; // current running state
++    volatile std::atomic<bool> _shutdown; // thread shutdown flag
++
++    std::unique_ptr<std::thread> _thread; // thread to monitor PID file changes
++
++    std::string parseProcessName(const std::string& pidFile)
++    {
++        std::string processName;
++
++        // Find the last '/' and '.pid'
++        size_t slash = pidFile.find_last_of('/');
++        size_t dot = pidFile.find_last_of('.');
++
++        if (slash != std::string::npos && dot != std::string::npos && dot > slash) {
++            processName = pidFile.substr(slash + 1, dot - slash - 1);
++        }
++
++        return processName;
++    }
++
++    char* trim(char* str)
++    {
++        char* end;
++
++        // Trim leading space
++        while (isspace((unsigned char)*str))
++            str++;
++
++        // If the string is empty, return it
++        if (*str == '\0')
++            return str;
++
++        // Trim trailing space
++        end = str + strlen(str) - 1;
++        while (end > str && isspace((unsigned char)*end))
++            end--;
++
++        // Null-terminate the string
++        *(end + 1) = '\0';
++
++        return str;
++    }
++
++    int parsePID(char* buf, size_t maxSz)
++    {
++        long pid = INVALID_PID;
++        char* end = nullptr;
++
++        do {
++            // if buf is empty, avoid parsing
++            if (strnlen(buf, maxSz) == 0) {
++                LOGERR("empty buffer");
++                break;
++            }
++
++            // trim leading/trailing spaces
++            buf = trim(buf);
++
++            // reset errno, strtol sets errno on failure
++            errno = 0;
++
++            // read as base 10
++            pid = strtol(buf, &end, 10);
++
++            if (errno) {
++                LOGERR("strtol failed, err: %s", strerror(errno));
++                pid = INVALID_PID;
++                break;
++            }
++
++            if (!pid) {
++                // strtol returns 0 if no valid conversion could be performed
++                LOGERR("strtol failed, no valid conversion");
++                pid = INVALID_PID;
++            }
++        } while (false);
++
++        return (int)pid;
++    }
++
++    int readPID()
++    {
++        constexpr size_t maxSz = 64;
++        int pid = INVALID_PID;
++
++        FILE* file = fopen(_pidFile.c_str(), "r");
++
++        do {
++            // Open the file in read mode
++            if (nullptr == file) {
++                LOGERR("%s open failed, err: %s", _pidFile.c_str(), strerror(errno));
++                break;
++            }
++
++            // Read file content (only first line)
++            char buffer[maxSz] = { 0 };
++
++            if (nullptr == fgets(buffer, maxSz, file) && !feof(file)) {
++                LOGERR("%s read failed, err: %s", _pidFile.c_str(), strerror(errno));
++                break;
++            }
++
++            // Convert the file content to an integer
++            pid = parsePID(buffer, maxSz);
++
++        } while (false);
++
++        if (nullptr != file) {
++            fclose(file);
++        }
++
++        LOGINFO("%s PID: %d", _pidFile.c_str(), pid);
++
++        return pid;
++    }
++
++    int handle_inotify_event(int fd)
++    {
++        // buffer to read 10 inotify events at a time
++        constexpr size_t maxSz = 10 * (sizeof(struct inotify_event) + 16);
++
++        /* Some systems cannot read integer variables if they are not
++           properly aligned. On other systems, incorrect alignment may
++           decrease performance. Hence, the buffer used for reading from
++           the inotify file descriptor should have the same alignment as
++           struct inotify_event. */
++
++        char buffer[maxSz]
++            __attribute__((aligned(__alignof__(struct inotify_event))));
++        const struct inotify_event* event;
++        ssize_t bytesRead;
++
++        /* Loop while events can be read from inotify file descriptor. */
++        for (;;) {
++
++            /* Read some events. */
++            bytesRead = read(fd, buffer, sizeof(buffer));
++            if (bytesRead == -1 && errno != EAGAIN) {
++                LOGERR("read failed, err: %s", strerror(errno));
++                return bytesRead; // error
++            }
++
++            if (bytesRead <= 0)
++                break;
++
++            /* Loop over all events in the buffer. */
++            for (char* ptr = buffer; ptr < buffer + bytesRead;
++                ptr += sizeof(struct inotify_event) + event->len) {
++
++                event = (const struct inotify_event*)ptr;
++
++                if (event->mask & IN_CLOSE_WRITE) {
++                    _pid = readPID();
++
++                    LOGINFO("inotify event IN_CLOSE_WRITE, PID: %d", _pid);
++
++                    ASSERT(INVALID_PID != _pid);
++
++                    if (INVALID_PID != _pid) {
++                        _callback(_pid);
++                    }
++                }
++            }
++        }
++        return bytesRead;
++    }
++
++    void monitorThread()
++    {
++        ASSERT(INVALID_PID != _pid);
++
++        LOGINFO("started, pid file: %s", _pidFile.c_str());
++
++        do {
++
++            _fd = inotify_init1(IN_NONBLOCK);
++
++            if (_fd < 0) {
++                LOGERR("inotify_init failed, err: %s", strerror(errno));
++                _fd = INVALID_FD;
++                break;
++            }
++
++            _wd = inotify_add_watch(_fd, _pidFile.c_str(), IN_CLOSE_WRITE);
++
++            if (_wd < 0) {
++                LOGERR("inotify_add_watch failed, err: %s", strerror(errno));
++                _wd = INVALID_FD;
++                break;
++            }
++
++            struct pollfd pfd = { .fd = _fd, .events = POLLIN };
++
++            while (!_shutdown) {
++
++                int poll_res = poll(&pfd, 1, POLL_TIMEOUT);
++
++                if (poll_res == -1) {
++                    if (errno == EINTR)
++                        continue;
++
++                    std::cerr << "FATAL poll failed, err: " << strerror(errno) << ", fd: " << _fd << ", wd: " << _wd << "\n";
++                    break;
++                } else if (poll_res == 0) {
++                    // timedout
++                    continue;
++                } else {
++                    if (pfd.revents & POLLIN) {
++                        /* Inotify events are available. */
++                        handle_inotify_event(_fd);
++                    }
++                }
++            }
++        } while (false);
++
++        if (INVALID_FD != _wd) {
++            close(_wd);
++        }
++        if (INVALID_FD != _fd) {
++            close(_fd);
++        }
++        std::cout << "monitorThread: exiting\n";
++    }
++
++public:
++    PIDFileMonitor(const std::string& pidFile, PIDFileChangedCb callback)
++        : _pidFile(pidFile)
++        , _processName(parseProcessName(pidFile))
++        , _callback(std::move(callback))
++        , _fd(INVALID_FD)
++        , _wd(INVALID_FD)
++        , _pid(INVALID_PID)
++        , _shutdown(false)
++        , _thread(nullptr)
++    {
++    }
++
++    inline bool Running() const
++    {
++        return _thread && _thread->joinable();
++    }
++
++    void Run()
++    {
++        // ensure valid pid file & pid before starting monitor thread
++        if (INVALID_PID == _pid) {
++            _pid = readPID();
++        }
++
++        if (!_shutdown && !Running()) {
++            _thread = std::unique_ptr<std::thread>(new std::thread(std::bind(&PIDFileMonitor::monitorThread, this)));
++        }
++    }
++
++    int PID()
++    {
++        if (INVALID_PID == _pid) {
++            _pid = readPID();
++        }
++        return _pid;
++    }
++
++    ~PIDFileMonitor()
++    {
++        std::cout << "PIDMonitor destructor\n";
++
++        _shutdown = true;
++
++        if (_thread) {
++            if (_thread->joinable()) {
++                _thread->join();
++            }
++            _thread.reset();
++        }
++    }
++
++    PIDFileMonitor(const PIDFileMonitor&) = delete;
++    PIDFileMonitor& operator=(const PIDFileMonitor&) = delete;
++};
++
++class DeviceSettings : public RPC::SmartInterfaceType<Exchange::IDeviceSettingsManager> {
++    private:
++        using BaseClass = RPC::SmartInterfaceType<Exchange::IDeviceSettingsManager>;
++
++        static DeviceSettings* _instance;
++        static Core::CriticalSection _apiLock;
++        static Core::CriticalSection _callbackLock;
++
++        std::string callSign;
++
++        Exchange::IDeviceSettingsManager* _deviceSettingsManagerInterface;
++        
++        PIDFileMonitor _pidMonitor;
++        int _pid;
++        bool _connected;
++        bool _shutdown;
++
++    DeviceSettings()
++        : BaseClass()
++        , _deviceSettingsManagerInterface(nullptr)
++        , _pidMonitor("/tmp/wpeframework.pid", std::bind(&DeviceSettings::pidChangedCb, this, std::placeholders::_1))
++        , _pid(INVALID_PID)
++        , _connected(false)
++        , _shutdown(false)
++    {
++        (void)Connect();
++    }
++
++    ~DeviceSettings()
++    {
++        _shutdown = true;
++        /* Close destroys _deviceSettingsManagerInterface too */
++        BaseClass::Close(Core::infinite);
++    }
++
++    void pidChangedCb(const int pid)
++    {
++        std::cout << "Thunder OLD PID: " << _pid << ", NEW PID: " << pid << "\n";
++
++        if (_pid != pid) {
++            Disconnect();
++            Connect();
++            _pid = pid;
++        }
++    }
++
++    virtual void Operational(const bool upAndRunning) override
++    {
++        LOGINFO("callsign: (%s), running: %d", callSign, upAndRunning);
++
++        _apiLock.Lock();
++
++        // avoid misleading log during shutdown
++        if ((upAndRunning && _shutdown) || !_shutdown) {
++            std::cout << "DeviceSettings::Operational (" << callSign << ") " << upAndRunning << std::endl;
++        }
++
++        if (upAndRunning) {
++            // Communicatior opened && DeviceSettingsManager is Activated
++            if (nullptr == _deviceSettingsManagerInterface) {
++                _deviceSettingsManagerInterface = BaseClass::Interface();
++                if (_deviceSettingsManagerInterface != nullptr) {
++                    RegisterNotificationsLocked();
++                    std::cout << "DeviceSettings successfully established COM-RPC connection with DeviceSettings plugin\n";
++                } else {
++                    // Internal error DeviceSettingsManager is running, but QueryInterface failed for it ?
++                    std::cerr << "DeviceSettings failed to established COM-RPC connection with DeviceSettings plugin\n";
++                }
++            }
++        } else {
++            // DeviceSettingsManager is Deactivated || Communicator closed
++            if (nullptr != _deviceSettingsManagerInterface) {
++                UnregisterNotificationsLocked();
++                _deviceSettingsManagerInterface->Release();
++                _deviceSettingsManagerInterface = nullptr;
++            } else {
++                LOGERR("Unexpected, DeviceSettings just deactivated, but interface already null ?");
++            }
++        }
++        _apiLock.Unlock();
++    }
++
++    // Locked method expected to be called from locked context
++    void RegisterNotificationsLocked()
++    {
++        //TODO
++    }
++
++    // Locked method expected to be called from locked context
++    void UnregisterNotificationsLocked()
++    {
++        //TODO
++    }
++
++    inline bool isConnected() const
++    {
++        return _connected;
++    }
++
++public:
++    // Locked method expected to be called from locked context
++    inline bool IsActivatedLocked() const
++    {
++        return (nullptr != _deviceSettingsManagerInterface);
++    }
++
++    uint32_t Connect()
++    {
++        uint32_t status = Core::ERROR_NONE;
++        std::string errMsg = "";
++
++        _apiLock.Lock();
++
++        do {
++            if (!isConnected()) {
++                uint32_t res = BaseClass::Open(RPC::CommunicationTimeOut, BaseClass::Connector(), callSign);
++                if (Core::ERROR_NONE == res) {
++                    _connected = true;
++                    if (!_pidMonitor.Running()) {
++                        // read pid file once to get initial PID
++                        _pid = _pidMonitor.PID();
++                        _pidMonitor.Run();
++                    }
++                } else {
++                    errMsg = "COM-RPC channel open failed. Is Thunder running ?";
++                    status = Core::ERROR_UNAVAILABLE;
++                    break;
++                }
++            } else {
++                errMsg = "COM-RPC channel already open";
++            }
++
++            if (nullptr == _deviceSettingsManagerInterface) {
++                errMsg = "DeviceSettings plugin is not activated yet";
++                status = Core::ERROR_NOT_EXIST;
++            }
++        } while (false);
++
++        _apiLock.Unlock();
++
++        std::cout << "DeviceSettings::Connect (" << callSign << ") status: " << status << ", errMsg: \"" << errMsg << "\"" << std::endl;
++
++        return status;
++    }
++
++    uint32_t Disconnect()
++    {
++        uint32_t status = Core::ERROR_GENERAL;
++        bool close = false;
++
++        _apiLock.Lock();
++
++        if (isConnected()) {
++            close = true;
++            _connected = false;
++        }
++
++        _apiLock.Unlock();
++
++        if (close) {
++            status = BaseClass::Close(Core::infinite);
++        }
++
++        std::cout << "DeviceSettings::disconnect\n";
++
++        return status;
++    }
++
++    static void Init()
++    {
++        _apiLock.Lock();
++        if (nullptr == _instance) {
++            _instance = new DeviceSettings();
++        }
++        _apiLock.Unlock();
++    }
++
++    static void Term()
++    {
++        _apiLock.Lock();
++        if (nullptr != _instance) {
++            delete _instance;
++            _instance = nullptr;
++        }
++        _apiLock.Unlock();
++    }
++
++    static DeviceSettings* Instance()
++    {
++        return _instance;
++    }
++
++/*    Core::hresult GetFPDColor(const FPDIndicator indicator , uint32_t &color)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        _apiLock.Lock();
++
++        if (_deviceSettingsManagerInterface) {
++            result = _deviceSettingsManagerInterface->GetFPDColor(indicator, color);
++        }
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult GetFPDBrightness(const FPDIndicator indicator , uint32_t &brightness)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        _apiLock.Lock();
++
++        if (_deviceSettingsManagerInterface) {
++            result = _deviceSettingsManagerInterface->GetFPDBrightness(indicator, brightness);
++        }
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++*/
++};
++
++/* static */ DeviceSettings* DeviceSettings::_instance = nullptr;
++/* static */ Core::CriticalSection DeviceSettings::_apiLock;
++
++extern "C" {
++
++    void DeviceSettings_Init()
++    {
++        DeviceSettings::Init();
++    }
++
++    void DeviceSettings_Term()
++    {
++        DeviceSettings::Term();
++    }
++
++    uint32_t DeviceSettings_Connect()
++    {
++        DeviceSettings *instance = DeviceSettings::Instance();
++        if (instance) {
++            return instance->Connect();
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++
++    uint32_t DeviceSettings_Disconnect()
++    {
++        DeviceSettings *instance = DeviceSettings::Instance();
++        if (instance) {
++            return instance->Disconnect();
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++
++    bool DeviceSettings_IsOperational()
++    {
++        DeviceSettings *instance = DeviceSettings::Instance();
++        if (instance) {
++            return instance->IsOperational();
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++
++/*    uint32_t DeviceSettings_GetFPDColor(const DeviceSettings_FPDIndicator_t indicator , uint32_t *color)
++    {
++        ASSERT(nullptr != color);
++        DeviceSettings *instance = DeviceSettings::Instance();
++        if (instance) {
++            return instance->GetFPDColor(static_cast<DeviceSettings::FPDIndicator>(indicator), *color);
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++
++    uint32_t DeviceSettings_GetFPDBrightness(const DeviceSettings_FPDIndicator_t indicator , uint32_t *brightness)
++    {
++        ASSERT(nullptr != brightness);
++        DeviceSettings *instance = DeviceSettings::Instance();
++        if (instance) {
++            return instance->GetFPDBrightness(static_cast<DeviceSettings::FPDIndicator>(indicator), *brightness);
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++*/
++}
+\ No newline at end of file
+diff --git a/Source/devicesettings/device_settings.h b/Source/devicesettings/device_settings.h
+new file mode 100644
+index 0000000..755b5ab
+--- /dev/null
++++ b/Source/devicesettings/device_settings.h
+@@ -0,0 +1,142 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2025 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef DEVICE_SETTINGS_H
++#define DEVICE_SETTINGS_H
++
++#include <stdbool.h>
++#include <stdint.h>
++
++#undef EXTERNAL
++#if defined(WIN32) || defined(_WINDOWS) || defined (__CYGWIN__) || defined(_WIN64)
++#ifdef DEVICEINFO_EXPORTS
++#define EXTERNAL __declspec(dllexport)
++#else
++#define EXTERNAL __declspec(dllimport)
++#pragma comment(lib, "deviceinfo.lib")
++#endif
++#else
++#define EXTERNAL __attribute__((visibility("default")))
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#define DEVICE_SETTINGS_ERROR_NONE 0
++#define DEVICE_SETTINGS_ERROR_GENERAL 1
++#define DEVICE_SETTINGS_ERROR_UNAVAILABLE 2
++#define DEVICE_SETTINGS_ERROR_NOT_EXIST 43
++
++/**
++ * @brief Initializes the Power Controller.
++ *
++ * This function creates an instance of the PowerManager plugin client interface and increments the client instance count.
++ *
++ * @details
++ * - If the Power Controller instance does not already exist, it will be created.
++ * - After Init, & before making any PowerController request client needs to ensure
++ *   - Power Manager plugin is activated and operational via `PowerController_IsOperational`.
++ *   - If not operational, clients can use this Connect API to establish COM-RPC connection with the Power Manager plugin.
++ *   - If there us any failure in Connect all PowerController requests will fail with `POWER_CONTROLLER_ERROR_UNAVAILABLE` (Except for callback register / unregister APIs).
++ *
++ * @see PowerController_Term
++ */
++EXTERNAL void DeviceSettings_Init();
++
++/**
++ * @brief PowerController attempts to connect to the Power Manager plugin.
++ *
++ * This function connects to the Power Manager plugin.
++ *
++ * @details
++ * - This function is used to connect to the Power Manager plugin.
++ * - Before making any PowerController request client needs to ensure
++ *   - Power Manager plugin is activated and operational via `PowerController_IsOperational`.
++ *   - If not operational, clients can use this Connect API to establish COM-RPC connection with the Power Manager plugin.
++ *   - If there us any failure in Connect all PowerController requests will fail with `POWER_CONTROLLER_ERROR_UNAVAILABLE` (Except for callback register / unregister APIs).
++ * - In case of failure this API should be called again with brief delay.
++ *
++ * @return `POWER_CONTROLLER_ERROR_NONE` on success.
++ * @return `POWER_CONTROLLER_ERROR_UNAVAILABLE` if Thunder RPC server is not running / error establishing RPC communication channel.
++ * @return `POWER_CONTROLLER_ERROR_NOT_EXIST` if the PowerManager plugin is not activated yet.
++ */
++EXTERNAL uint32_t DeviceSettings_Connect();
++
++/**
++ * @brief Disconnects from the Power Manager plugin via COMRPC.
++ *
++ * This function terminates the RPC connection to the Power Manager plugin
++ * using the Thunder COMRPC mechanism. It should be called when the client
++ * no longer needs to communicate with the Power Manager, or as part of
++ * cleanup during shutdown.
++ *
++ * @note After calling this function, any subsequent attempt to send requests
++ *       to the Power Manager plugin will fail until a new connection is established
++ *       using `PowerController_Connect`.
++ *
++ * @return POWER_CONTROLLER_ERROR_NONE
++ *         Successfully disconnected from the Power Manager plugin.
++ * @return POWER_CONTROLLER_ERROR_UNAVAILABLE
++ *         Failed to disconnect because the Thunder RPC server is not running,
++ *         or there was an error in the underlying RPC communication channel.
++ * @return POWER_CONTROLLER_ERROR_NOT_EXIST
++ *         The Power Manager plugin is not active or was never connected.
++ */
++EXTERNAL uint32_t DeviceSettings_Disconnect();
++
++/**
++ * @brief Terminates the Power Controller.
++ *
++ * This function decrements client instance count attempts to delete Power Controller instance
++ *
++ * @details
++ * - The controller instance is destroyed, and all associated resources are released (PowerManager plugin client instance).
++ * - Ensure that this function is called once for every call to `PowerController_Init`.
++ *
++ * @see PowerController_Init
++ */
++EXTERNAL void DeviceSettings_Term();
++
++/**
++ * @brief Checks if the Power Manager plugin is active & operational
++ *
++ * This function determines whether the Power Manager interface is operational and ready to handle requests.
++ * It can be used to verify the availability of the Power Manager client before initiating operations that depend on it.
++ *
++ * IMPORTANT - This is the first function that should be called after `PowerController_Init`.
++ *
++ * @return `true` if the Power Manager interface is active and operational, otherwise `false`.
++ *
++ * @details
++ * - Use this function to confirm the operational status of the Power Manager plugin.
++ * - Calling this function is NOT MANDATORY but optional
++ * - Clients can register for notifications about state changes using `PowerController_RegisterOperationalStateChangeCallback`.
++ * - If the Power Manager interface is not active, subsequent Power Manager operations will fail with the error `POWER_CONTROLLER_ERROR_UNAVAILABLE`.
++ * - Therefore in failure cases, clients can use `PowerController_Connect` to establish COM-RPC connection with the Power Manager plugin.
++ *
++ * @see PowerController_RegisterOperationalStateChangeCallback
++ */
++EXTERNAL bool DeviceSettings_IsOperational();
++
++#ifdef __cplusplus
++}; // extern "C"
++#endif
++
++#endif // DEVICESETTINGSMANAGER_CLIENT_H
+\ No newline at end of file
+-- 
+2.25.1
+
