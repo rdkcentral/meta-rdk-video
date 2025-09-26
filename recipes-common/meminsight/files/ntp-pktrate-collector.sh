@@ -33,15 +33,25 @@ if ! kill -0 "$TCPDUMP_PID" 2>/dev/null; then
 fi
 
 TOP_PID=""
+[ -s "$TOP_OUT" ] || echo "timestamp_utc,cpu_percent,mem_percent" > "$TOP_OUT"
 if [ -f /lib/systemd/system/systemd-timesyncd.service ]; then
-NTP_CLIENT_SERVICE="systemd-timesyncd.service"
+SVC="systemd-timesyncd.service"
 else
-NTP_CLIENT_SERVICE="chronyd.service"
+SVC="chronyd.service"
 fi
 
-echo "service:$NTP_CLIENT_SERVICE"
+echo "service:$SVC"
 
-ntp_client_pid=$(systemctl show -p MainPID --value "$NTP_CLIENT_SERVICE")
+# 2) wait until service is active
+until systemctl is-active --quiet "$SVC"; do sleep 1; done
+
+# 3) wait for a non-zero MainPID
+PID=0
+while :; do
+  PID="$(systemctl show -p MainPID --value "$SVC" || echo 0)"
+  [[ "$PID" != "0" && -n "$PID" ]] && break
+  sleep 1
+done
 
 echo "pid:$ntp_client_pid"
 if [ -n $ntp_client_pid ]; then
