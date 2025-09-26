@@ -23,7 +23,7 @@ index 44c40d63..404592f9 100755
  
  [Service]
 -ExecStart=/bin/sh -c '/usr/bin/tenableHDCP true >& /var/log/hdcp.log '
-+ExecStart=/bin/sh -c '/usr/bin/tenableHDCP true >> /opt/log/hdcp.log 2>&1'
++ExecStart=/bin/sh -c '/usr/bin/tenableHDCP true >> /opt/logs/hdcp.log 2>&1'
  
  [Install]
  WantedBy=multi-user.target
@@ -56,7 +56,7 @@ index 90de10c3..28247719 100644
 +    break;
 +    }
 +    catch (...) {
-+        printf("Exception Caught during initialize for [%s]\r\n", argv[0]);
++        printf("Exception Caught during initialize for [%s], Retrying... (%d/20)\r\n", argv[0],retryCount);
 +        usleep(50000); // Sleep for 50ms before retrying
 +    }
 +    } while (retryCount++ < 20);
