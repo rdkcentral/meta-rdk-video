@@ -73,11 +73,15 @@ fi
 echo "Capturing NTP Metrics,poll interval,Pkts... waiting for $MARKER_FILE to appear..."
 [ -s "$OUT" ] || echo "timestamp_utc,poll_interval" > "$OUT"
 
-tail -f "$IN" | awk -F 'poll interval:' '/poll interval:/ {
+awk -F 'poll interval:' '/poll interval:/ {
+  # grab ISO timestamp
   if (match($0, /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z/)) ts=substr($0,RSTART,RLENGTH);
+  # right side after "poll interval:" -> trim left spaces, coerce to number
   s=$2; sub(/^[[:space:]]+/, "", s); pi=s+0;
   if (ts!="" && pi!="") print ts "," pi;
-}' >> "$OUT" &
+}' "$IN" >> "$OUT"
+
+
 
 WATCH_PID=$!
 
