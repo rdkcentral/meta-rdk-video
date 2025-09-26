@@ -23,6 +23,7 @@ SRC_URI += "file://24/0004-Build-fix-for-ARM64.patch"
 SRC_URI += "file://24/0005-Use-Yocto-host-toolchain.patch"
 SRC_URI += "file://24/0001-Disalbe-wayland-platform-ext-until-ess-update.patch;patchdir=../larboard"
 SRC_URI += "file://24/0001-Prevent-cobalt-unloading.patch"
+SRC_URI += "file://24/player_internal_v6.patch;patchdir=../larboard"
 
 CR = "40"
 PR = "r${CR}"

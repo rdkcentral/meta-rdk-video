@@ -1,0 +1,42 @@
+diff --git a/src/third_party/starboard/rdk/shared/player/player_internal.cc b/src/third_party/starboard/rdk/shared/player/player_internal.cc
+index 542e389..20df983 100644
+--- a/src/third_party/starboard/rdk/shared/player/player_internal.cc
++++ b/src/third_party/starboard/rdk/shared/player/player_internal.cc
+@@ -1415,9 +1415,16 @@ struct PlayerRegistry
+   }
+ 
+   bool CanCreate(const char* max_video_capabilities) {
++    ::starboard::ScopedLock lock(mutex_);
++    
++    // Prevent new pipeline creation if any existing pipeline is still active
++    if (!players_.empty()) {
++        GST_DEBUG("Naveen Pipeline creation blocked: existing pipeline must be closed first (active players: %zu)", players_.size());
++	return false;
++    }
++
+     #if !defined(COBALT_BUILD_TYPE_GOLD)
+     bool has_max_video_caps_set = (max_video_capabilities && *max_video_capabilities);
+-    ::starboard::ScopedLock lock(mutex_);
+     for(const auto& p: players_) {
+       if (p->HasMaxVideoCaps() == has_max_video_caps_set)
+         return false;
+@@ -1503,7 +1510,8 @@ PlayerImpl::PlayerImpl(SbPlayer player,
+ 
+   static int player_id = 0;
+   player_id++;
+-
++  
++  GST_INFO_OBJECT(pipeline_,"Naveen - Pipeline Created");
+   pipeline_ = CreateGstElement("playbin", "media-pipeline-%d", player_id);
+ 
+   unsigned flagAudio = getGstPlayFlag("audio");
+@@ -1589,7 +1597,8 @@ PlayerImpl::PlayerImpl(SbPlayer player,
+ 
+ PlayerImpl::~PlayerImpl() {
+   GetPlayerRegistry()->Remove(this);
+-
++  
++  GST_INFO_OBJECT(pipeline_,"Naveen - Pipeline Destroyed");
+   GST_INFO_OBJECT(pipeline_, "Destroying player");
+   {
+     ::starboard::ScopedLock lock(source_setup_mutex_);
