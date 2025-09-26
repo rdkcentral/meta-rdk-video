@@ -12,9 +12,8 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;protocol=${CMF_GIT_PROTOCOL};branch=develop"
 
-# Apr 23, 2025
-SRCREV = "8a97f283f5382214184316bd63cfa03996d60550"
-
+# Aug 06, 2025
+SRCREV = "3202ca6bbf15d9567f3ab746ba37ce7eccd18c85"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
@@ -23,7 +22,9 @@ EXTRA_OEMAKE+= "PLATFORM_FLAGS="-DPLATFORM=-DNETFLIX_CALLSIGN_0=1""
 # Enable DISABLE_SECURITY_TOKEN
 EXTRA_OEMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '"DISABLE_SECURITY_TOKEN="-DDISABLE_SECURITY_TOKEN=1""', ' ', d)}"
 
-DEPENDS:append =  " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', ' libsoup ', ' libsoup-2.4 ', d)}"
+#libsoup3 not compatible with gdial
+#DEPENDS:append =  " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', ' libsoup ', ' libsoup-2.4 ', d)}"
+DEPENDS:append = " libsoup-2.4"
 DEPENDS:append = " gssdp"
 DEPENDS:append = " cmake-native"
 EXTRANATIVEPATH += "cmake-native"

@@ -11,7 +11,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=
 S = "${WORKDIR}/git"
 
 inherit systemd syslog-ng-config-gen logrotate_config
-SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup update-device-details applications vitalprocess-info iptables mount_log reboot-reason messages rdnssd zram"
+SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup update-device-details applications vitalprocess-info iptables mount_log reboot-reason messages zram"
 SYSLOG-NG_FILTER:append = " ConnectionStats systemd_timesyncd"
 SYSLOG-NG_SERVICE_ConnectionStats = "network-connection-stats.service"
 SYSLOG-NG_DESTINATION_ConnectionStats = "ConnectionStats.txt"
@@ -52,10 +52,6 @@ SYSLOG-NG_LOGRATE_messages = "low"
 
 # Get kernel logs via journal
 SYSLOG-NG_PROGRAM_messages += " kernel"
-
-# Drop rdnssd logs
-SYSLOG-NG_SERVICE_rdnssd = "rdnssd.service"
-SYSLOG-NG_LOGRATE_rdnssd = "medium"
 
 do_compile[noexec] = "1"
 CLEANBROKEN = "1"
@@ -140,11 +136,20 @@ do_install() {
 	install -m 0644 ${S}/systemd_units/dropbear.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/network-connection-stats.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/network-connection-stats.timer ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/rdnssd.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/NM_Bootstrap.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/zram.service ${D}${systemd_unitdir}/system
 
 
+	install -m 0644 ${S}/systemd_units/network-up.path ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/network-up.target ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/network-up.timer ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/ntp-time-sync.path ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/ntp-time-sync.target ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/ntp-time-sync-event.service ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/ntp-time-sync.timer ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/system-time-set.path ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/system-time-set.target ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/systemd_units/system-time-event.service ${D}${systemd_unitdir}/system
 
         if [ "${BIND_ENABLED}" = "true" ]; then
            echo "BIND_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
@@ -251,6 +256,8 @@ do_install() {
 	install -m 0755 ${S}/lib/rdk/NM_Dispatcher.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d
 	install -m 0755 ${S}/lib/rdk/NM_preDown.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
+        rm ${D}${base_libdir}/rdk/NM_Dispatcher.sh
+        rm ${D}${base_libdir}/rdk/NM_preDown.sh
 }
 
 do_install:append:rdkstb() {
@@ -290,7 +297,6 @@ SYSTEMD_SERVICE:${PN} += "update-reboot-info.service"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.path"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.service"
 SYSTEMD_SERVICE:${PN} += "gstreamer-cleanup.service"
-SYSTEMD_SERVICE:${PN} += "rdnssd.service"
 SYSTEMD_SERVICE:${PN} += "restart-timesyncd.path"
 SYSTEMD_SERVICE:${PN} += "ntp-event.service"
 SYSTEMD_SERVICE:${PN} += "ntp-event.path"
@@ -298,6 +304,13 @@ SYSTEMD_SERVICE:${PN} += "network-connection-stats.service"
 SYSTEMD_SERVICE:${PN} += "network-connection-stats.timer"
 SYSTEMD_SERVICE:${PN} += "NM_Bootstrap.service"
 SYSTEMD_SERVICE:${PN} += "zram.service"
+SYSTEMD_SERVICE:${PN} += "network-up.path"
+SYSTEMD_SERVICE:${PN} += "network-up.timer"
+SYSTEMD_SERVICE:${PN} += "ntp-time-sync.path"
+SYSTEMD_SERVICE:${PN} += "ntp-time-sync-event.service"
+SYSTEMD_SERVICE:${PN} += "ntp-time-sync.timer"
+SYSTEMD_SERVICE:${PN} += "system-time-set.path"
+SYSTEMD_SERVICE:${PN} += "system-time-event.service"
 
 FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
