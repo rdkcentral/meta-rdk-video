@@ -9,6 +9,7 @@ SUMMARY_CSV="/tmp/ntp_sync_summary.csv"
 PCAP_FILE="/tmp/ntp_$(date +%Y%m%dT%H%M%S).pcap"
 MARKER_FILE="/tmp/systimemgr/ntp"
 OUT="/tmp/ntp_poll_interval.csv"
+TOP_OUT="/tmp/ntp_top.csv"
 IN="/opt/logs/ntp.log"
 
 
@@ -33,6 +34,7 @@ if ! kill -0 "$TCPDUMP_PID" 2>/dev/null; then
 fi
 
 TOP_PID=""
+[ -s "$TOP_OUT" ] || echo "timestamp_utc,cpu_percent,mem_percent" > "$TOP_OUT"
 if systemctl list-unit-files | grep -q '^systemd-timesyncd.service'; then
   SVC=systemd-timesyncd.service
   KIND=timesyncd
@@ -63,7 +65,7 @@ if [ -n $ntp_client_pid ]; then
       printf "%s,%s,%s\n", ts, $9, $10
       fflush(stdout)
     }
-  ' >> "/tmp/ntp_top.log" &
+  ' >> "$TOP_OUT" &
 
  TOP_PID=$!
 fi
