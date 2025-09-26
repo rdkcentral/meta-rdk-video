@@ -1,0 +1,68 @@
+From 2feacaa91a3f434096a882fd2a14b424f264cbc8 Mon Sep 17 00:00:00 2001
+From: yuvaramachandran_gurusamy <yuvaramachandran_gurusamy@comcast.com>
+Date: Fri, 26 Sep 2025 05:15:43 +0000
+Subject: [PATCH] RDKEMW-7840: Fix for tenableHDCP crash and added hdmiservice
+ depends
+
+Signed-off-by: yuvaramachandran_gurusamy <yuvaramachandran_gurusamy@comcast.com>
+---
+ conf/hdcp.service |  4 ++--
+ tenableHDCP.cpp   | 15 ++++++++++++++-
+ 2 files changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/conf/hdcp.service b/conf/hdcp.service
+index 44c40d63..404592f9 100755
+--- a/conf/hdcp.service
++++ b/conf/hdcp.service
+@@ -18,10 +18,10 @@
+ ##########################################################################
+ [Unit]
+ Description=HDCP Service
+-After=dsmgr.service iarmbusd.service
++After=dsmgr.service iarmbusd.service hdmiservice.service
+ 
+ [Service]
+-ExecStart=/bin/sh -c '/usr/bin/tenableHDCP true >& /var/log/hdcp.log '
++ExecStart=/bin/sh -c '/usr/bin/tenableHDCP true >> /opt/log/hdcp.log 2>&1'
+ 
+ [Install]
+ WantedBy=multi-user.target
+diff --git a/tenableHDCP.cpp b/tenableHDCP.cpp
+index 90de10c3..28247719 100644
+--- a/tenableHDCP.cpp
++++ b/tenableHDCP.cpp
+@@ -44,6 +44,12 @@ int main(int argc, char *argv[])
+     IARM_Bus_Init("enableHDCPclient");
+     IARM_Bus_Connect();
+ 
++    unsigned int retryCount = 1;
++    int isInitialized = false;
++    do
++    {
++    try
++    {
+     device::Manager::Initialize();
+ 
+ 
+@@ -129,10 +135,17 @@ Patch to remove the mfr dependency for enabling hdcp. Devicesettings hal handle
+         }
+     }
+     catch (...) {
+-	    printf("Exception Caught during [%s]\r\n", argv[0]);
++	    printf("Exception Caught during enabledHDCP for [%s]\r\n", argv[0]);
+     }
+ 
+     device::Manager::DeInitialize();
++    break;
++    }
++    catch (...) {
++        printf("Exception Caught during initialize for [%s]\r\n", argv[0]);
++        usleep(50000); // Sleep for 50ms before retrying
++    }
++    } while (retryCount++ < 20);
+ 
+     IARM_Bus_Disconnect();
+     IARM_Bus_Term();
+-- 
+2.25.1
+
