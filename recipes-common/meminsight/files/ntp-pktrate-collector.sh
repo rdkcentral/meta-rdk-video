@@ -35,12 +35,10 @@ fi
 
 TOP_PID=""
 [ -s "$TOP_OUT" ] || echo "timestamp_utc,cpu_percent,mem_percent" > "$TOP_OUT"
-if systemctl list-unit-files | grep -q '^systemd-timesyncd.service'; then
-  SVC=systemd-timesyncd.service
-  KIND=timesyncd
+if [ -f /lib/systemd/system/systemd-timesyncd.service ]; then
+SVC="systemd-timesyncd.service"
 else
-  SVC=chronyd.service
-  KIND=chrony
+SVC="chronyd.service"
 fi
 echo "service:$SVC"
 
