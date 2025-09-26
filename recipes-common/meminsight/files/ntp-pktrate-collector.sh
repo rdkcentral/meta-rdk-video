@@ -8,6 +8,7 @@ SUMMARY_CSV="/tmp/ntp_sync_summary.csv"
 
 PCAP_FILE="/tmp/ntp_$(date +%Y%m%dT%H%M%S).pcap"
 MARKER_FILE="/tmp/systimemgr/ntp"
+TOP_OUT="/tmp/ntp_top.csv"
 OUT="/tmp/ntp_poll_interval.csv"
 IN="/opt/logs/ntp.log"
 
@@ -52,7 +53,7 @@ while :; do
   [[ "$PID" != "0" && -n "$PID" ]] && break
   sleep 1
 done
-
+ntp_client_pid=$PID
 echo "pid:$ntp_client_pid"
 if [ -n $ntp_client_pid ]; then
   top -b -d 1 -p "$ntp_client_pid" | awk -v pid="$ntp_client_pid" '
