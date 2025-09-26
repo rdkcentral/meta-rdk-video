@@ -8,7 +8,6 @@ SUMMARY_CSV="/tmp/ntp_sync_summary.csv"
 
 PCAP_FILE="/tmp/ntp_$(date +%Y%m%dT%H%M%S).pcap"
 MARKER_FILE="/tmp/systimemgr/ntp"
-OUT="/tmp/ntp_poll_interval.csv"
 TOP_OUT="/tmp/ntp_top.csv"
 IN="/opt/logs/ntp.log"
 
@@ -72,20 +71,6 @@ if [ -n $ntp_client_pid ]; then
 fi
 
 echo "Capturing NTP Metrics,poll interval,Pkts... waiting for $MARKER_FILE to appear..."
-[ -s "$OUT" ] || echo "timestamp_utc,poll_interval" > "$OUT"
-
-awk -F 'poll interval:' '/poll interval:/ {
-  # grab ISO timestamp
-  if (match($0, /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z/)) ts=substr($0,RSTART,RLENGTH);
-  # right side after "poll interval:" -> trim left spaces, coerce to number
-  s=$2; sub(/^[[:space:]]+/, "", s); pi=s+0;
-  if (ts!="" && pi!="") print ts "," pi;
-}' "$IN" >> "$OUT"
-
-
-
-WATCH_PID=$!
-
 
 elapsed=0
 SYNCED="no"
@@ -111,8 +96,6 @@ wait "$TCPDUMP_PID" 2>/dev/null || true
 [ -n "$TOP_PID" ] && kill -TERM "$TOP_PID" 2>/dev/null || true
 [ -n "$TOP_PID" ] && wait "$TOP_PID" 2>/dev/null || true
 
-kill -TERM "$WATCH_PID" 2>/dev/null || true
-wait "$WATCH_PID" 2>/dev/null || true
 
 # Monotonic end time
 end_up=$(awk '{print $1}' /proc/uptime)
