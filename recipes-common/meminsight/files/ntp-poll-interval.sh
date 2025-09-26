@@ -1,46 +1,34 @@
-#!/usr/bin/env sh
-#ead "poll interval" from ntp.log into a CSV (BusyBox-safe)
+#!/bin/bash
 
-IN=${IN:-/opt/logs/ntp.log}
-OUT=${OUT:-/tmp/ntp_poll_interval.csv}
+LOGFILE="/opt/logs/ntp.log"
+CSVFILE="/opt/poll_interval.csv"
 
-# Header once
-[ -s "$OUT" ] || echo "timestamp_utc,poll_interval" > "$OUT"
+sh /lib/rdk/ntp-pktrate-collector.sh
 
-# Reusable AWK: find "poll interval" (case-insensitive), grab first number
-parse='
-{
-  line=$0
-  low=toupper(line)                     # case-insensitive test
-  if (index(low,"POLL INTERVAL")) {
-    # timestamp from line if present; else use current UTC
-    ts=""
-    if (match(line, /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z/)) {
-      ts=substr(line,RSTART,RLENGTH)
-    } else {
-      cmd="date -u +%Y-%m-%dT%H:%M:%SZ"; cmd|getline ts; close(cmd)
-    }
-    # take text after "poll interval", then first number (int/float)
-    split(low, a, "POLL INTERVAL")
-    rest=a[2]
-    # map back to same slice of original (digits unaffected by case)
-    split(line, a2, "poll interval")
-    rest_orig=a2[2]
+# Ensure CSV file has a header
+if [ ! -f "$CSVFILE" ]; then
+    echo "timestamp,poll_interval" > "$CSVFILE"
+fi
 
-    # trim up to first digit or dot, then extract number
-    gsub(/^[^0-9.]*/, "", rest_orig)
-    if (match(rest_orig, /^[0-9]+(\.[0-9]+)?/)) {
-      pi=substr(rest_orig, RSTART, RLENGTH)
-      print ts "," pi
-      fflush()
-    }
-  }
-}
-'
+sleep 480
+echo "Starting to collect Poll interval after 8 mins >> /tmp/pktrate.log
+# Track whether we found any poll interval
+FOUND=0
 
-# 1) Capture whatever already exists
-awk "$parse" "$IN" >> "$OUT" 2>/dev/null
-
-# 2) Follow new lines forever (BusyBox tail -f)
-tail -n0 -f "$IN" | awk "$parse" >> "$OUT"
-
+echo "reading the file" >> /tmp/pktrate.log
+# Read file line by line
+while IFS= read -r line; do
+    if echo "$line" | grep -iq "poll interval"; then
+        # Extract timestamp (ISO format at start of line)
+        LOG_TIMESTAMP=$(echo "$line" | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z')
+        # Extract poll interval value
+        VALUE=$(echo "$line" | grep -oE 'poll interval: [0-9]+' | awk '{print $3}')
+        echo "$LOG_TIMESTAMP,$VALUE" >> "$CSVFILE"
+        FOUND=1
+    fi
+done < "$LOGFILE"
+echo "done reading file" >> /tmp/pktrate.log
+# If no poll interval was found
+if [ "$FOUND" -eq 0 ]; then
+    echo ",,poll_interval_not_found" >> "$CSVFILE"
+fi
