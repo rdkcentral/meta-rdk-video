@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 LOGFILE="/opt/logs/ntp.log"
 CSVFILE="/opt/poll_interval.csv"
