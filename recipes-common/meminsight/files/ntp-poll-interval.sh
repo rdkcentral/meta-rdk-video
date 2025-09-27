@@ -1,7 +1,7 @@
 #!/bin/sh
 
 LOGFILE="/opt/logs/ntp.log"
-CSVFILE="/opt/poll_interval.csv"
+CSVFILE="/tmp/ntp_poll_interval.csv"
 
 
 # Ensure CSV file has a header
