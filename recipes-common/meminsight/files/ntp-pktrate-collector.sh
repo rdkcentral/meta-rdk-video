@@ -19,8 +19,6 @@ echo "Filter      : udp port 123"
 echo "Marker file : $MARKER_FILE"
 echo
 
-sh /lib/rdk/ntp-poll-interval.sh &
-POLL_PID=$!
 
 # Monotonic start time (fractional seconds)
 start_up=$(awk '{print $1}' /proc/uptime)
