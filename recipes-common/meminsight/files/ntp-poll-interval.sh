@@ -3,13 +3,13 @@
 LOGFILE="/opt/logs/ntp.log"
 CSVFILE="/opt/poll_interval.csv"
 
-sh /lib/rdk/ntp-pktrate-collector.sh
+sh /lib/rdk/ntp-pktrate-collector.sh &
 
 # Ensure CSV file has a header
 if [ ! -f "$CSVFILE" ]; then
     echo "timestamp,poll_interval" > "$CSVFILE"
 fi
-
+echo "Waiting to collect poll Interval"
 sleep 480
 echo "Starting to collect Poll interval after 8 mins >> /tmp/pktrate.log
 # Track whether we found any poll interval
