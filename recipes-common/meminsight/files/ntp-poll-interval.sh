@@ -8,9 +8,9 @@ CSVFILE="/tmp/ntp_poll_interval.csv"
 if [ ! -f "$CSVFILE" ]; then
     echo "timestamp,poll_interval" > "$CSVFILE"
 fi
-echo "Waiting to collect poll Interval"
+echo "Waiting to collect poll Interval" >> /tmp/pktrate.log
 sleep 480
-echo "Starting to collect Poll interval after 8 mins >> /tmp/pktrate.log
+echo "Starting to collect Poll interval after 8 mins" >> /tmp/pktrate.log
 # Track whether we found any poll interval
 FOUND=0
 
