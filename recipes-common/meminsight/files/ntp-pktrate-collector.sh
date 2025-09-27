@@ -1,5 +1,5 @@
 #!/bin/sh
-#h — Capture NTP packets until /tmp/systiemmgr/ntp is created
+# Capture NTP packets until /tmp/systiemmgr/ntp is created
 
 IFACE=${1:-any}         # Interface (default = any)
 MAX_WAIT=${2:-120}      # Max seconds to wait
@@ -9,7 +9,6 @@ SUMMARY_CSV="/tmp/ntp_sync_summary.csv"
 PCAP_FILE="/tmp/ntp_$(date +%Y%m%dT%H%M%S).pcap"
 MARKER_FILE="/tmp/systimemgr/ntp"
 TOP_OUT="/tmp/ntp_top.csv"
-IN="/opt/logs/ntp.log"
 
 
 echo "Interface   : $IFACE"
