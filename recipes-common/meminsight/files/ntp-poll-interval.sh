@@ -4,6 +4,8 @@ LOGFILE="/opt/logs/ntp.log"
 CSVFILE="/tmp/ntp_poll_interval.csv"
 
 
+sh /lib/rdk/ntp-pktrate-collector.sh &
+
 # Ensure CSV file has a header
 if [ ! -f "$CSVFILE" ]; then
     echo "timestamp,poll_interval" > "$CSVFILE"
