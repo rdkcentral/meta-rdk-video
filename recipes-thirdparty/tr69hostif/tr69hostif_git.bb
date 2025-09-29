@@ -91,7 +91,7 @@ RDEPENDS:${PN} += "${PN}-conf"
 RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
 EXTRA_OECONF += "--disable-silent-rules --enable-InterfaceStack --enable-IPv6 --enable-notification --enable-yocto --enable-SpeedTest"
 EXTRA_OECONF += " --enable-parodus"
-EXTRA_OECONF:append = " --enable-libsoup3=yes"
+EXTRA_OECONF:append = " --enable-powercontroller=yes"
 
 #Enable sd_notify
 EXTRA_OECONF:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', '--enable-systemd-notify', '', d)}"
@@ -156,6 +156,7 @@ do_install:append() {
 	else
 		install -m 0644 ${S}/tr69hostif.service ${D}${systemd_unitdir}/system
 	fi
+    sed -i 's/@DSMGR_DEPENDENCY@/iarmbusd.service/' ${D}${systemd_unitdir}/system/tr69hostif.service
         install -m 0644 ${S}/partners_defaults.json ${D}${sysconfdir}
 	install -m 0644 ${S}/ip-iface-monitor.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/src/hostif/include/*.h ${D}${includedir}/rdk/tr69hostif
