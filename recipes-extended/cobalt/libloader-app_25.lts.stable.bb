@@ -26,6 +26,9 @@ SRC_URI += "file://25/0004-Build-fix-for-ARM64.patch"
 SRC_URI += "file://25/0005-Use-Yocto-host-toolchain.patch"
 SRC_URI += "file://25/0006-Use-certifi-to-tell-urllib-where-to-find-CA-file-397.patch"
 
+SRC_URI += "file://0007-PREMIUMAPP-2985-Add-rdk_enable_rialto-option.patch;patchdir=../larboard"
+SRC_URI:remove = "file://0005-YT23-PREMIUMAPP-1195-NPLB-Multisink-Fix.patch;patchdir=../larboard/src"
+
 CR = "30"
 PR = "r${CR}"
 SRCREV_cobalt = "25.lts.${CR}"
@@ -41,6 +44,8 @@ DEPENDS += "virtual/libgles2 virtual/egl essos gstreamer1.0 gstreamer1.0-plugins
 DEPENDS += " wpeframework entservices-apis wpeframework-clientlibraries"
 DEPENDS += " ninja-native bison-native openssl-native gn-native ccache-native"
 DEPENDS += " python3-six-native python3-urllib3-native"
+
+DEPENDS += "rialto-ocdm"
 
 RDEPENDS:${PN} += "gstreamer1.0-plugins-base-app gstreamer1.0-plugins-base-playback"
 
@@ -73,6 +78,7 @@ PACKAGECONFIG[gold]          = ""
 
 GN_ARGS_EXTRA ?= ""
 GN_ARGS_EXTRA:append = " sb_enable_cpp20_audit=false"
+GN_ARGS_EXTRA:append = " rdk_enable_rialto=true"
 GN_ARGS_EXTRA:append = " sb_is_evergreen_compatible=true"
 GN_ARGS_EXTRA:append:arm = " rdk_arm_call_convention=\"${@bb.utils.contains('TUNE_FEATURES', 'callconvention-hard', 'hardfp', 'softfp', d)}\""
 GN_ARGS_EXTRA:append = " ${PACKAGECONFIG_CONFARGS}"

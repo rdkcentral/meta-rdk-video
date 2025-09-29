@@ -1,0 +1,545 @@
+From 9aa5032f058e06c4c92a8f3d7f2da3383e5783e1 Mon Sep 17 00:00:00 2001
+From: Adam Stolcenburg <adam_stolcenburg@comcast.com>
+Date: Thu, 19 Sep 2024 14:40:15 +0200
+Subject: [PATCH] PREMIUMAPP-2985 YouTube 2025 integration with Rialto
+
+Index: git/RDKShell/CMakeLists.txt
+===================================================================
+--- git.orig/RDKShell/CMakeLists.txt
++++ git/RDKShell/CMakeLists.txt
+@@ -35,7 +35,7 @@ list(APPEND RDKSHELL_SOURCES Module.cpp)
+ 
+ if (RIALTO_FEATURE)
+   add_definitions("-DENABLE_RIALTO_FEATURE")
+-  list(APPEND RDKSHELL_SOURCES RialtoConnector.cpp)
++  list(APPEND RDKSHELL_SOURCES RialtoConnector.cpp RialtoAppsSessionManager.cpp)
+ endif(RIALTO_FEATURE)
+ 
+ add_library(${MODULE_NAME} SHARED ${RDKSHELL_SOURCES})
+Index: git/RDKShell/RDKShell.cpp
+===================================================================
+--- git.orig/RDKShell/RDKShell.cpp
++++ git/RDKShell/RDKShell.cpp
+@@ -19,6 +19,7 @@
+ 
+ 
+ #include "RDKShell.h"
++#include "RDKShellConfig.h"
+ #include <string>
+ #include <memory>
+ #include <iostream>
+@@ -1172,6 +1173,7 @@ namespace WPEFramework {
+             if (service)
+             {
+                 std::string configLine = service->ConfigLine();
++                mShell.handleDeinitialized(service->Callsign());
+                 if (configLine.empty())
+                 {
+                     return;
+@@ -1750,6 +1752,8 @@ namespace WPEFramework {
+         const string RDKShell::Initialize(PluginHost::IShell* service )
+         {
+             std::cout << "initializing\n";
++            RDKShellConfig config;
++            config.FromString(service->ConfigLine());
+             char* waylandDisplay = getenv("WAYLAND_DISPLAY");
+             if (NULL != waylandDisplay)
+             {
+@@ -2107,6 +2111,25 @@ namespace WPEFramework {
+         LOGWARN("Creating rialto connector");
+         RialtoConnector *rialtoBridge = new RialtoConnector();
+         rialtoConnector = std::shared_ptr<RialtoConnector>(rialtoBridge);
++
++        string xdgDir;
++        Core::SystemInfo::GetEnvironment(_T("XDG_RUNTIME_DIR"), xdgDir);
++
++        set<string> rialtoApps;
++        if (config.RialtoApps.IsSet())
++        {
++            Core::JSON::ArrayType<Core::JSON::String>::Iterator iter(config.RialtoApps.Elements());
++
++            while (iter.Next() == true) {
++                rialtoApps.insert(iter.Current().Value());
++            }
++        }
++
++        mRialtoAppsSessionManager = unique_ptr<RialtoAppsSessionManager>(new RialtoAppsSessionManager(
++            rialtoConnector,
++            std::move(xdgDir),
++            std::move(rialtoApps),
++            RIALTO_TIMEOUT_MILLIS));
+ #endif //  ENABLE_RIALTO_FEATURE
+             sem_wait(&gInitializeSemaphore);
+             return "";
+@@ -4131,9 +4154,11 @@ namespace WPEFramework {
+                 // Ensure cloned plugin displays are in a sub-dir based on
+                 // plugin classname
+                 string displayName;
++                string rialtoSocketName;
+                 if (type.empty())
+                 {
+                     displayName = "wst-" + callsign;
++                    rialtoSocketName = "rialto-" + callsign;
+                 }
+                 else
+                 {
+@@ -4144,6 +4169,7 @@ namespace WPEFramework {
+ 
+                     // don't add XDG_RUNTIME_DIR to display name
+                     displayName = type + "/" + "wst-" + callsign;
++                    rialtoSocketName = type + "/rialto-" + callsign;
+                 }
+ 
+                 if (gRdkShellSurfaceModeEnabled)
+@@ -4379,6 +4405,13 @@ namespace WPEFramework {
+                     }
+                 }
+                 configSet["clientidentifier"] = displayName;
++#ifdef ENABLE_RIALTO_FEATURE
++                if (mRialtoAppsSessionManager->usesRialto(type))
++                {
++                    configSet["rialtosocketname"] = rialtoSocketName;
++                }
++#endif // ENABLE_RIALTO_FEATURE
++
+                 if (!type.empty() && type == "Netflix")
+                 {
+                     std::cout << "setting launchtosuspend for Netflix: " << suspend << std::endl;
+@@ -4575,10 +4608,28 @@ namespace WPEFramework {
+ 
+                     if (status == 0)
+                     {
++#ifdef ENABLE_RIALTO_FEATURE
++                        bool tryActivate = false;
++#endif // ENABLE_RIALTO_FEATURE
++
+                         if (state == PluginHost::IShell::state::DEACTIVATED ||
+                             state == PluginHost::IShell::state::DEACTIVATION ||
+                             state == PluginHost::IShell::state::PRECONDITION)
+                         {
++#ifdef ENABLE_RIALTO_FEATURE
++                            if (mRialtoAppsSessionManager->createRialtoSessionAndWait(type, callsign, rialtoSocketName, displayName))
++                            {
++                                tryActivate = true;
++                            }
++                            else
++                            {
++                                status = Core::ERROR_PLAYER_UNAVAILABLE;
++                            }
++                        }
++
++                        if (tryActivate)
++                        {
++#endif // ENABLE_RIALTO_FEATURE
+                             launchType = RDKShellLaunchType::ACTIVATE;
+                             JsonObject activateParams;
+                             activateParams.Set("callsign",callsign.c_str());
+@@ -4595,6 +4646,12 @@ namespace WPEFramework {
+                                 //status = activate(mCurrentService, callsign);
+                                 std::cout << "activate 1 status: " << status << std::endl;
+                             }
++#ifdef ENABLE_RIALTO_FEATURE
++                            if (status > 0)
++                            {
++                                mRialtoAppsSessionManager->destroyRialtoSession(callsign);
++                            }
++#endif // ENABLE_RIALTO_FEATURE
+                         }
+                     }
+                     else
+@@ -4767,6 +4824,9 @@ namespace WPEFramework {
+                                 }
+                                 gPluginDataMutex.unlock();
+                                 launchType = RDKShellLaunchType::SUSPEND;
++#ifdef ENABLE_RIALTO_FEATURE
++                                mRialtoAppsSessionManager->suspendRialtoSessionAndWait(callsign);
++#endif // ENABLE_RIALTO_FEATURE
+                             }
+ 
+                             WPEFramework::Core::JSON::String stateString;
+@@ -4790,6 +4850,9 @@ namespace WPEFramework {
+                                 }
+                                 gPluginDataMutex.unlock();
+                                 launchType = RDKShellLaunchType::RESUME;
++#ifdef ENABLE_RIALTO_FEATURE
++                                mRialtoAppsSessionManager->resumeRialtoSessionAndWait(callsign);
++#endif // ENABLE_RIALTO_FEATURE
+                             }
+                             
+                             WPEFramework::Core::JSON::String stateString;
+@@ -4947,6 +5010,9 @@ namespace WPEFramework {
+                 }
+                 else
+                 {
++#ifdef ENABLE_RIALTO_FEATURE
++                    mRialtoAppsSessionManager->suspendRialtoSessionAndWait(callsign);
++#endif // ENABLE_RIALTO_FEATURE
+                     setVisibility(callsign, false);
+                     onSuspended(callsign);
+                 }
+@@ -6826,6 +6892,14 @@ namespace WPEFramework {
+         }
+         // Events end
+ 
++        void RDKShell::handleDeinitialized(const string& callsign)
++        {
++            LOGINFO("%s", callsign.c_str());
++#ifdef ENABLE_RIALTO_FEATURE
++            mRialtoAppsSessionManager->destroyRialtoSession(callsign);
++#endif // ENABLE_RIALTO_FEATURE
++        }
++
+         bool RDKShell::checkForBootupFactoryAppLaunch()
+         {
+             std::cout << "inside of checkForBootupFactoryAppLaunch\n";
+Index: git/RDKShell/RDKShell.h
+===================================================================
+--- git.orig/RDKShell/RDKShell.h
++++ git/RDKShell/RDKShell.h
+@@ -19,6 +19,7 @@
+ 
+ #pragma once
+ 
++#include "RialtoAppsSessionManager.h"
+ #include <mutex>
+ #include <condition_variable>
+ #include <set>
+@@ -182,6 +183,7 @@ namespace WPEFramework {
+ #endif
+ 
+             void notify(const std::string& event, const JsonObject& parameters);
++            void handleDeinitialized(const string& callsign);
+             void pluginEventHandler(const JsonObject& parameters);
+             void launchRequestThread(RDKShellApiRequest apiRequest);
+ 
+@@ -518,6 +520,7 @@ namespace WPEFramework {
+             bool mErmEnabled;
+ #ifdef ENABLE_RIALTO_FEATURE
+         std::shared_ptr<RialtoConnector>  rialtoConnector;
++            std::unique_ptr<RialtoAppsSessionManager> mRialtoAppsSessionManager;
+ #endif //ENABLE_RIALTO_FEATURE
+ #ifdef HIBERNATE_SUPPORT_ENABLED
+             HibernateExecutor mHibernateExecutor;
+Index: git/RDKShell/RDKShell.conf.in
+===================================================================
+--- git.orig/RDKShell/RDKShell.conf.in
++++ git/RDKShell/RDKShell.conf.in
+@@ -2,3 +2,13 @@ precondition = ["Platform"]
+ callsign = "org.rdk.RDKShell"
+ autostart = "@PLUGIN_RDKSHELL_AUTOSTART@"
+ startuporder = "@PLUGIN_RDKSHELL_STARTUPORDER@"
++
++configuration = JSON()
++
++if boolean("@RIALTO_FEATURE@"):
++    rialtoapps = []
++
++    if boolean("@RIALTO_COBALT_FEATURE@"):
++        rialtoapps.append("Cobalt")
++
++    configuration.add("rialtoapps", rialtoapps)
+Index: git/RDKShell/RDKShellConfig.h
+===================================================================
+--- /dev/null
++++ git/RDKShell/RDKShellConfig.h
+@@ -0,0 +1,31 @@
++/*
++* Copyright 2024 Metrological
++*
++* Licensed under the Apache License, Version 2.0 (the "License");
++* you may not use this file except in compliance with the License.
++* You may obtain a copy of the License at
++*
++* http://www.apache.org/licenses/LICENSE-2.0
++*
++* Unless required by applicable law or agreed to in writing, software
++* distributed under the License is distributed on an "AS IS" BASIS,
++* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++* See the License for the specific language governing permissions and
++* limitations under the License.
++*/
++
++#include <core/JSON.h>
++
++namespace WPEFramework {
++namespace Plugin {
++
++class RDKShellConfig : public Core::JSON::Container {
++public:
++    RDKShellConfig() {
++        Add(_T("rialtoapps"), &RialtoApps);
++    }
++    Core::JSON::ArrayType<Core::JSON::String> RialtoApps;
++};
++
++}
++}
+Index: git/RDKShell/RialtoAppsSessionManager.cpp
+===================================================================
+--- /dev/null
++++ git/RDKShell/RialtoAppsSessionManager.cpp
+@@ -0,0 +1,139 @@
++/*
++* Copyright 2024 Metrological
++*
++* Licensed under the Apache License, Version 2.0 (the "License");
++* you may not use this file except in compliance with the License.
++* You may obtain a copy of the License at
++*
++* http://www.apache.org/licenses/LICENSE-2.0
++*
++* Unless required by applicable law or agreed to in writing, software
++* distributed under the License is distributed on an "AS IS" BASIS,
++* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++* See the License for the specific language governing permissions and
++* limitations under the License.
++*/
++
++#include "RialtoAppsSessionManager.h"
++
++using namespace WPEFramework::Plugin;
++
++RialtoAppsSessionManager::RialtoAppsSessionManager(
++    std::shared_ptr<RialtoConnector> connector,
++    std::string rialtoSocketDir,
++    std::set<std::string> rialtoApps,
++    int timeoutMs) :
++    mConnector(std::move(connector)),
++    mRialtoSocketDir(std::move(rialtoSocketDir)),
++    mRialtoApps(std::move(rialtoApps)),
++    mTimeoutMs(timeoutMs) {
++
++    if (mRialtoSocketDir.empty()) {
++        LOGWARN("RialtoAppsSessionManager is disabled because an empty Rialto socket dir was specified");
++    }
++}
++
++std::string RialtoAppsSessionManager::makeRialtoSocketPath(const std::string& rialtoSocketName) {
++    return mRialtoSocketDir + "/" + rialtoSocketName;
++}
++
++void RialtoAppsSessionManager::insertSession(const std::string& callsign) {
++    mSessions.insert(callsign);
++}
++
++bool RialtoAppsSessionManager::hasSession(const std::string& callsign) {
++    return mSessions.find(callsign) != mSessions.end();
++}
++
++bool RialtoAppsSessionManager::removeSession(const std::string& callsign) {
++    return mSessions.erase(callsign) == 1;
++}
++
++bool RialtoAppsSessionManager::usesRialto(const std::string& app) {
++    return mRialtoSocketDir.empty() == false && mRialtoApps.find(app) != mRialtoApps.end();
++}
++
++bool RialtoAppsSessionManager::createRialtoSessionAndWait(
++    const std::string& app,
++    const std::string& callsign,
++    const std::string& rialtoSocketName,
++    const std::string& displayName) {
++
++    if (usesRialto(app) == false) return true;
++
++    std::lock_guard<std::mutex> l(mMutex);
++    std::string rialtoSocketPath = makeRialtoSocketPath(rialtoSocketName);
++
++    if (!mConnector->initialized()) {
++        LOGINFO("Initializing connector");
++        mConnector->initialize();
++    }
++
++    LOGINFO("[%s] Creating session %s %s %s %s", callsign.c_str(), app.c_str(),
++        callsign.c_str(), displayName.c_str(), rialtoSocketPath.c_str());
++
++    if (mConnector->createAppSession(callsign, displayName, rialtoSocketPath) == false) {
++        LOGWARN("[%s] createAppSession() failed", callsign.c_str());
++        return false;
++    }
++
++    if (mConnector->waitForStateChange(callsign, RialtoServerStates::ACTIVE, mTimeoutMs) == false) {
++        LOGWARN("[%s] ACTIVE state not reached in %d ms", callsign.c_str(), mTimeoutMs);
++        mConnector->deactivateSession(callsign);
++        return false;
++    }
++
++    insertSession(callsign);
++
++    LOGINFO("[%s] Session created", callsign.c_str());
++    return true;
++}
++
++bool RialtoAppsSessionManager::destroyRialtoSession(const std::string& callsign) {
++    std::lock_guard<std::mutex> l(mMutex);
++    if (removeSession(callsign) == false) return true;
++
++    if (mConnector->deactivateSession(callsign) == false) {
++        LOGWARN("[%s] deactivateSession() failed", callsign.c_str());
++        return false;
++    }
++
++    LOGINFO("[%s] Session destroyed", callsign.c_str());
++    return true;
++}
++
++bool RialtoAppsSessionManager::suspendRialtoSessionAndWait(const std::string& callsign) {
++    std::lock_guard<std::mutex> l(mMutex);
++    if (hasSession(callsign) == false) return true;
++
++    if (mConnector->suspendSession(callsign) == false) {
++        LOGWARN("[%s] suspendSession() failed", callsign.c_str());
++        return false;
++    }
++
++    if (mConnector->waitForStateChange(callsign, RialtoServerStates::INACTIVE, mTimeoutMs) == false) {
++        LOGWARN("[%s] INACTIVE state not reached in %d ms", callsign.c_str(), mTimeoutMs);
++        return false;
++    }
++
++    LOGINFO("[%s] Session suspended", callsign.c_str());
++    return true;
++}
++
++bool RialtoAppsSessionManager::resumeRialtoSessionAndWait(const std::string& callsign) {
++    std::lock_guard<std::mutex> l(mMutex);
++    if (hasSession(callsign) == false) return true;
++
++    if (mConnector->resumeSession(callsign) == false) {
++        LOGWARN("[%s] resumeSession() failed", callsign.c_str());
++        return false;
++    }
++
++    if (mConnector->waitForStateChange(callsign, RialtoServerStates::ACTIVE, mTimeoutMs) == false) {
++        LOGWARN("[%s] ACTIVE state not reached in %d ms", callsign.c_str(), mTimeoutMs);
++        return false;
++    }
++
++    LOGINFO("[%s] Session resumed", callsign.c_str());
++    return true;
++}
+Index: git/RDKShell/RialtoAppsSessionManager.h
+===================================================================
+--- /dev/null
++++ git/RDKShell/RialtoAppsSessionManager.h
+@@ -0,0 +1,120 @@
++/*
++* Copyright 2024 Metrological
++*
++* Licensed under the Apache License, Version 2.0 (the "License");
++* you may not use this file except in compliance with the License.
++* You may obtain a copy of the License at
++*
++* http://www.apache.org/licenses/LICENSE-2.0
++*
++* Unless required by applicable law or agreed to in writing, software
++* distributed under the License is distributed on an "AS IS" BASIS,
++* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++* See the License for the specific language governing permissions and
++* limitations under the License.
++*/
++
++#pragma once
++
++#include "RialtoConnector.h"
++
++#include <string>
++#include <set>
++#include <mutex>
++
++namespace WPEFramework {
++namespace Plugin {
++
++/**
++ * RialtoAppsSessionManager simplifies management of Rialto sessions associated
++ * with selected application instances.
++ */
++class RialtoAppsSessionManager {
++public:
++    /**
++     * Constructor
++     *
++     * @param connector A connector object.
++     * @param rialtoSocketDir A directory under which Rialto sockets will be created.
++     *  No sockets will be created if the value is empty.
++     * @param rialtoApps Types of applications for which Rialto sockets will be created.
++     * @param timeoutMs Timeout in milliseconds for all waiting operations.
++     */
++    RialtoAppsSessionManager(
++        std::shared_ptr<RialtoConnector> connector,
++        std::string rialtoSocketDir,
++        std::set<std::string> rialtoApps,
++        int timeoutMs);
++
++    /**
++     * Checks if Rialto socket should be created for given application type.
++     *
++     * @param app An application type.
++     *
++     * @return true if Rialto socket should be created, false otherwise.
++     */
++    bool usesRialto(const std::string& app);
++
++    /**
++     * Creates a Rialto session for an application instance.
++     *
++     * @param app An application type.
++     * @param callsign A unique signature of an application instance.
++     * @param rialtoSocketName The name of the socket that should be created.
++     * @param displayName The name of the display that should be used by the Rialto session.
++     *
++     * @return true if the Rialto session was created or the application of specified type do not use Rialto,
++     *  false in case when it was not possible to create Rialto session.
++     */
++    bool createRialtoSessionAndWait(
++        const std::string& app,
++        const std::string& callsign,
++        const std::string& rialtoSocketName,
++        const std::string& displayName);
++
++    /**
++     * Destroys the Rialto session associated with the application instance.
++     *
++     * @param callsign A unique signature of an application instance.
++     *
++     * @return true if the Rialto session was destroyed or there was no Rialto session associated
++     *  with the application instance, false on error.
++     */
++    bool destroyRialtoSession(const std::string& callsign);
++
++    /**
++     * Suspends the Rialto session associated with the application instance.
++     *
++     * @param callsign A unique signature of an application instance.
++     *
++     * @return true if the Rialto session was suspended or there was no Rialto session associated
++     *  with the application instance, false on error.
++     */
++    bool suspendRialtoSessionAndWait(const std::string& callsign);
++
++    /**
++     * Resumes the Rialto session associated with the application instance.
++     *
++     * @param callsign A unique signature of an application instance.
++     *
++     * @return true if the Rialto session was resumed or there was no Rialto session associated
++     *  with the application instance, false on error.
++     */
++    bool resumeRialtoSessionAndWait(const std::string& callsign);
++
++private:
++    std::shared_ptr<RialtoConnector> mConnector;
++    std::string mRialtoSocketDir;
++    std::set<std::string> mRialtoApps;
++    int mTimeoutMs;
++    std::set<std::string> mSessions;
++    std::mutex mMutex;
++
++    std::string makeRialtoSocketPath(const std::string& rialtoSocketName);
++    void insertSession(const std::string& callsign);
++    bool hasSession(const std::string& callsign);
++    bool removeSession(const std::string& callsign);
++};
++
++}
++}

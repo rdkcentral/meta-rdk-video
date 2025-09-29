@@ -13,6 +13,8 @@ PR = "r0"
 
 SRC_URI = "${LARBOARD_SRC_URI};protocol=${CMF_GIT_PROTOCOL};branch=develop"
 
+SRC_URI += "file://0001-RIALTO-725-Add-the-ability-to-define-the-Rialto-sock.patch;striplevel=2"
+
 SRCREV = "${LARBOARD_SRCREV_DEV}"
 
 S = "${WORKDIR}/git/plugin"

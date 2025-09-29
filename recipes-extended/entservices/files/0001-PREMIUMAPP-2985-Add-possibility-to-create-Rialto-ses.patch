@@ -1,0 +1,54 @@
+From f78c5814f36e9f6696408a7f0805ebf974deb2c6 Mon Sep 17 00:00:00 2001
+From: Adam Stolcenburg <adam_stolcenburg@comcast.com>
+Date: Fri, 27 Sep 2024 19:24:27 +0200
+Subject: [PATCH] PREMIUMAPP-2985 Add possibility to create Rialto session in
+ createDisplay
+
+Create Rialto session when the rialtoSocket parameter is provided to
+the org.rdk.RDKShell.1.createDisplay function.
+
+This functionality is needed to setup Rialto session for Cobalt
+NPLB test tool.
+
+---
+ RDKShell/RDKShell.cpp | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+Index: git/RDKShell/RDKShell.cpp
+===================================================================
+--- git.orig/RDKShell/RDKShell.cpp
++++ git/RDKShell/RDKShell.cpp
+@@ -3383,6 +3383,33 @@ namespace WPEFramework {
+                 if (false == result) {
+                   response["message"] = "failed to create display";
+                 }
++                else
++                {
++#ifdef ENABLE_RIALTO_FEATURE
++                    if (parameters.HasLabel("rialtoSocket"))
++                    {
++                        string rialtoSocket = parameters["rialtoSocket"].String();
++
++                        if (rialtoConnector->initialized() == false)
++                        {
++                            LOGWARN("Initializing rialto connector....");
++                            rialtoConnector->initialize();
++                        }
++
++                        LOGWARN("Creating app session ....");
++                        if (rialtoConnector->createAppSession(client, displayName, rialtoSocket) == false)
++                        {
++                            response["message"] = "Rialto app session initialisation failed";
++                            result = false;
++                        }
++                        else if (rialtoConnector->waitForStateChange(client, RialtoServerStates::ACTIVE, RIALTO_TIMEOUT_MILLIS) == false)
++                        {
++                            response["message"] = "Rialto app session not ready.";
++                            result = false;
++                        }
++                    }
++#endif //ENABLE_RIALTO_FEATURE
++                }
+             }
+             returnResponse(result);
+         }
