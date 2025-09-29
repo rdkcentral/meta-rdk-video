@@ -30,7 +30,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-DELIA-64727-Prealloc-secure-memory-before-decrypt.patch \
            file://r4.4/0001-PowerManagerClient-library-implementation.patch \
            file://r4.4/0001-RDKEMW-7064-Dont-decrypt-fake-buffer-is-revoke-has-b.patch \
-           file://r4.4/0001-DeviceSettings-Clientlibrary.patch \
+           file://r4.4/0001-DeviceSettings-Patch-2.patch \
            "
 
 # Oct 17, 2023
