@@ -14,6 +14,8 @@ PR = "r0"
 SRC_URI = "${LARBOARD_SRC_URI};protocol=${CMF_GIT_PROTOCOL};branch=develop"
 
 SRC_URI += "file://0001-RIALTO-725-Add-the-ability-to-define-the-Rialto-sock.patch;striplevel=2"
+SRC_URI += "file://prepare-rialto-sandbox.conf"
+SRC_URI += "file://rialto-sandbox.sh"
 
 SRCREV = "${LARBOARD_SRCREV_DEV}"
 
@@ -46,3 +48,9 @@ EXTRA_OECMAKE += " \
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so"
+FILES:${PN} += "${systemd_unitdir}"
+
+do_install:append() {
+    install -D -m 0644 ${WORKDIR}/prepare-rialto-sandbox.conf ${D}${systemd_unitdir}/system/wpeframework.service.d/prepare-rialto-sandbox.conf
+    install -D -m 0755 ${WORKDIR}/rialto-sandbox.sh ${D}${bindir}/rialto-sandbox.sh
+}
