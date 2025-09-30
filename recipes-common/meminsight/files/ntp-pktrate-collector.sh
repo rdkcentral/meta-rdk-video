@@ -89,13 +89,11 @@ WATCH_PID=$!
 elapsed=0
 SYNCED="no"
 
-
-  if [ -f "$MARKER_FILE" ]; then
-    SYNCED="yes"
-    break
-  fi
+while [ ! -f "$MARKER_FILE" ]; do
   sleep 1
-  elapsed=$((elapsed+1))
+done
+SYNCED="yes"
+elapsed=$((elapsed+1))
 
 
 # Extra grace period after marker detected
