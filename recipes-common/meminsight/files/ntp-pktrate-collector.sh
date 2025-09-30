@@ -2,7 +2,7 @@
 #h — Capture NTP packets until /tmp/systiemmgr/ntp is created
 
 IFACE=${1:-any}         # Interface (default = any)
-MAX_WAIT=${2:-120}      # Max seconds to wait
+#MAX_WAIT=${2:-120}      # Max seconds to wait
 TAIL_AFTER_FILE=${3:-2} # Extra seconds to capture after file appears
 SUMMARY_CSV="/tmp/ntp_sync_summary.csv"
 
@@ -14,7 +14,7 @@ IN="/opt/logs/ntp.log"
 
 
 echo "Interface   : $IFACE"
-echo "Max wait    : ${MAX_WAIT}s"
+#echo "Max wait    : ${MAX_WAIT}s"
 echo "PCAP output : $PCAP_FILE"
 echo "Filter      : udp port 123"
 echo "Marker file : $MARKER_FILE"
@@ -72,14 +72,14 @@ echo "Capturing NTP packets,cpu,mem... waiting for $MARKER_FILE to appear..."
 elapsed=0
 SYNCED="no"
 
-while [ $elapsed -lt "$MAX_WAIT" ]; do
+
   if [ -f "$MARKER_FILE" ]; then
     SYNCED="yes"
     break
   fi
   sleep 1
   elapsed=$((elapsed+1))
-done
+
 
 # Extra grace period after marker detected
 if [ "$SYNCED" = "yes" ] && [ "$TAIL_AFTER_FILE" -gt 0 ]; then
