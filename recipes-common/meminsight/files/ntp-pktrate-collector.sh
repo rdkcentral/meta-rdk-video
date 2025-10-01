@@ -73,11 +73,10 @@ elapsed=0
 SYNCED="no"
 
 
-  if [ -f "$MARKER_FILE" ]; then
-    SYNCED="yes"
-    break
-  fi
+while [ ! -f "$MARKER_FILE" ]; do
   sleep 1
+done
+SYNCED="yes"
   elapsed=$((elapsed+1))
 
 
