@@ -1,0 +1,21 @@
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index 0238abb14..2ad26102f 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -4456,10 +4546,12 @@ POP_WARNING()
+             }
+
+             // Drop the workerpool info (what is currently running and what is pending) to a file..
+-            Core::File dumpFile(_config.PostMortemPath() + "ThunderInternals.json");
+-            if (dumpFile.Create(false) == true) {
+-                data.IElement::ToFile(dumpFile);
+-            }
++            string jsonContent;
++            data.IElement::ToString(jsonContent);
++            fprintf(stderr,"**************workerpool info started *************\n");
++            fprintf(stderr, "%s\n", jsonContent.c_str());
++            fprintf(stderr,"**************workerpool info end *************\n");
++            fflush(stderr);
+         }
+         inline ServiceMap& Services()
+         {
