@@ -47,6 +47,7 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/Activating_plugins_Logs_COMRPC.patch \
            file://r4.4/Removed_Autostart_Check_From_WPEFramework.patch \
            file://r4.4/Append_WorkerPool_Info.patch \
+           file://r4.4/Integrate_deactivate_function_PluginActivator.patch \
            "
 
 SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
@@ -76,7 +77,7 @@ WPEFRAMEWORK_SYSTEM_PREFIX = "OE"
 WPEFRAMEWORK_PORT = "9998"
 WPEFRAMEWORK_BINDING = "127.0.0.1"
 WPEFRAMEWORK_IDLE_TIME = "0"
-WPEFRAMEWORK_THREADPOOL_COUNT ?= "16"
+WPEFRAMEWORK_THREADPOOL_COUNT ?= "8"
 WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
 
 

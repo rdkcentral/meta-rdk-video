@@ -1,8 +1,7 @@
 [Unit]
 Description=wpeframework-Thunder RPC version-R4.4.3
 Wants= local-fs.target
-After= local-fs.target securemount.service
-RequiresMountsFor=/opt/secure
+After= local-fs.target
 
 [Service]
 Type=notify
