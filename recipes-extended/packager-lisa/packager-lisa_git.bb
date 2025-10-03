@@ -8,7 +8,7 @@ PROVIDES = "virtual/libpackage"
 RPROVIDES:${PN} = "virtual/libpackage"
 
 DEPENDS = "sqlite3 boost libarchive"
-DEPENDS += "aihelpers-headers"
+DEPENDS += "eshelpers-headers"
 RDEPENDS_${PN} = " sqlite3 boost libarchive"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/libpackage;${CMF_GITHUB_SRC_URI_SUFFIX};name=lisapack"
