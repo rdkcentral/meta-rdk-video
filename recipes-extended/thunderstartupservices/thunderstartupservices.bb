@@ -16,7 +16,6 @@ S = "${WORKDIR}/git/systemd/system"
 THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-avinput.service \
     wpeframework-bluetooth.service \
-    wpeframework-cloudstore.service \
     wpeframework-cryptography.service \
     wpeframework-deviceinfo.service \
     wpeframework-displayinfo.service \
@@ -41,7 +40,6 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-voicecontrol.service \
     wpeframework-wifi.service \
     wpeframework-xcast.service \
-    wpeframework-analytics.service \
     wpeframework-usersettings.service \
     wpeframework-usbdevice.service \
     wpeframework-usbmassstorage.service \

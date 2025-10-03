@@ -23,8 +23,7 @@ DEPENDS += " devicesettings-hal-headers "
 CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal/ "
 CFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal/ "
 
-SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'disable_mfr_read_hdcpkey', ' file://0001-tenablehdcp-remove-mfr-dependency.patch file://0002-start-hdcp-service-after-hdmi-service.patch ', '', d)}"
-
+SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'disable_mfr_read_hdcpkey', ' file://0001-tenablehdcp-remove-mfr-dependency.patch file://0002-Fix-for-tenableHDCP-crash-and-added-hdmiservice.patch ', '', d)}"
 
 SYSTEMD_SERVICE:${PN} = "hdcp.service"
 FILES:${PN} += "${sysconfdir}/* ${systemd_unitdir}/system/hdcp.service"
