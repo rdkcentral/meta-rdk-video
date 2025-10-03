@@ -70,6 +70,7 @@ PACKAGECONFIG ?= " monitor \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
     ${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' messagecontrol ', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \
 "
 
 # TODO: As advised, 'ocicointainer' plugin has been modified to build unconditionally. It will be revisited in the upcoming sprint to control it via DISTRO_FEATURES."
@@ -118,6 +119,7 @@ PACKAGECONFIG[usbmass_storage]         = "-DPLUGIN_USB_MASS_STORAGE=ON,-DPLUGIN_
 PACKAGECONFIG[usersettings]         = "-DPLUGIN_USERSETTINGS=ON,-DPLUGIN_USERSETTINGS=OFF,"
 PACKAGECONFIG[analytics]            = "-DPLUGIN_ANALYTICS=ON,-DPLUGIN_ANALYTICS=OFF, entservices-apis, entservices-apis"
 PACKAGECONFIG[rdkshell]             = "-DPLUGIN_RDKSHELL=ON,-DPLUGIN_RDKSHELL=OFF,rdkshell entservices-apis,rdkshell entservices-apis"
+PACKAGECONFIG[rialtodac]            = "-DRIALTO_IN_DAC_FEATURE=ON,-DRIALTO_IN_DAC_FEATURE=OFF,rialto,rialto-servermanager-lib"
 PACKAGECONFIG[rdkshellrialto]       = "-DRIALTO_FEATURE=ON,-DRIALTO_FEATURE=OFF,rialto,rialto-servermanager-lib"
 PACKAGECONFIG[rustadapter]          = "-DPLUGIN_RUSTADAPTER=OFF,,,"
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON,-DPLUGIN_RUNTIME_MANAGER=OFF,entservices-apis,entservices-apis"
