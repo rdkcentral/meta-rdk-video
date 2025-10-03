@@ -1,4 +1,4 @@
-SUMMARY = "aihelpers Headers"
+SUMMARY = "eshelpers Headers"
 
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=99e7c83e5e6f31c2cbb811e186972945"
