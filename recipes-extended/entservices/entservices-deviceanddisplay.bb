@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
           "
 
 # Release version - 3.2.0
-SRCREV = "5d7ed5648ab54a3518e58cb03c5c4d5ddbc03747"
+SRCREV = "0c3b7fecf7550746d41a408bf5146258ee93f4ba"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -67,7 +67,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 
 PACKAGECONFIG:append = " displayinfo deviceinfo systemmode"
-PACKAGECONFIG:append = " erm"
+PACKAGECONFIG:append = " erm devicesettingsmanager"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
@@ -83,6 +83,7 @@ PACKAGECONFIG[systimemgrsupport]    = "-DBUILD_ENABLE_SYSTIMEMGR_SUPPORT=ON,,sys
 PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc entservices-apis devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc entservices-apis devicesettings"
 PACKAGECONFIG[powermanager]         = "-DPLUGIN_POWERMANAGER=ON,-DPLUGIN_POWERMANAGER=OFF,iarmbus virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal virtual/mfrlib,virtual/mfrlib"
 PACKAGECONFIG[systemmode] = "-DPLUGIN_SYSTEMMODE=ON,-DPLUGIN_SYSTEMMODE=OFF,"
+PACKAGECONFIG[devicesettingsmanager] = "-DPLUGIN_DEVICESETTINGSMANAGER=ON,-DPLUGIN_DEVICESETTINGSMANAGER=OFF,iarmbus iarmmgrs entservices-apis devicesettings virtual/vendor-devicesettings-hal ,iarmbus entservices-apis devicesettings"
 
 # ----------------------------------------------------------------------------
 
