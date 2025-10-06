@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=99e7c83e5e6f31c2cbb811e186972945"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "https://github.com/rdkcentral/eshelpers.git;protocol=https;branch=topic/RDKECOREMW-864"
+SRC_URI = "${CMF_GITHUB_ROOT}/eshelpers;${CMF_GITHUB_SRC_URI_SUFFIX};name=eshelpers"
 
 S = "${WORKDIR}/git"
 
