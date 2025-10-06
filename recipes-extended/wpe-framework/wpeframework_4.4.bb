@@ -47,6 +47,7 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/Activating_plugins_Logs_COMRPC.patch \
            file://r4.4/Removed_Autostart_Check_From_WPEFramework.patch \
            file://r4.4/Append_WorkerPool_Info.patch \
+           file://r4.4/Revert_PR-665_support_JSON_Parsing.patch \
            "
 
 SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
