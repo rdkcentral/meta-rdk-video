@@ -27,6 +27,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-add-svp-header-to-data-before-decryption.patch \
            file://r4.4/0001-error-handling-if-session-is-not-valid.patch \
            file://r4.4/0001-Add-vault-platform-case.patch \
+           file://0001-error-handling-if-invalid-external-input.patch \
            file://r4.4/0001-DELIA-64727-Prealloc-secure-memory-before-decrypt.patch \
            file://r4.4/RDK-55149.patch \
            file://r4.4/0001-Implement-IPersistent-interface-for-RPC-Vault.patch \
