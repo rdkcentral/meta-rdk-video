@@ -10,9 +10,10 @@ SRC_URI = "${CMF_GITHUB_ROOT}/eshelpers;${CMF_GITHUB_SRC_URI_SUFFIX};name=eshelp
 S = "${WORKDIR}/git"
 
 do_compile[noexec] = "1"
+do_configure[noexec] = "1"
 
 do_install() {
     install -d ${D}${includedir}
-    install -m 0644 ${S}/packager/IpackageImpl.h ${D}${includedir}
+    install -m 0644 ${S}/packager/IPackageImpl.h ${D}${includedir}
 }
 ALLOW_EMPTY:${PN} = "1"
