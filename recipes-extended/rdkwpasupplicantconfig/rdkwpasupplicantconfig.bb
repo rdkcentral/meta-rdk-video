@@ -13,16 +13,19 @@ inherit systemd
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SRC_URI = "file://prepareWpaSuppConfig.sh"
 SRC_URI += "file://00-wpa-supplicant.conf"
-
+SRC_URI += "file://wpa_supplicant.logging"
 
 do_install() {
     install -d ${D}${base_libdir}/rdk/
+    install -d ${D}${sysconfdir}
     install -m 0755 ${WORKDIR}/prepareWpaSuppConfig.sh ${D}${base_libdir}/rdk
+    install -m 0644 ${WORKDIR}/wpa_supplicant.logging ${D}${sysconfdir}
     install -D -m 0644 ${WORKDIR}/00-wpa-supplicant.conf ${D}${systemd_unitdir}/system/wpa_supplicant.service.d/00-wpa-supplicant.conf
 }
 
 FILES:${PN} += " ${base_libdir}/rdk/prepareWpaSuppConfig.sh"
 FILES:${PN} += " ${systemd_unitdir}/system/wpa_supplicant.service.d/*"
+FILES:${PN} += " ${sysconfdir}/wpa_supplicant.logging"
 
 do_configure[noexec] = "1"
 do_compile[noexec] = "1"

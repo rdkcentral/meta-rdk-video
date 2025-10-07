@@ -129,11 +129,11 @@ else
     echo "pmf=$PMF_CONFIG" >> $WPA_SUPP_CONF_FILE
 fi
 # Configuring wpa_supplicant log levels
-# Get debug.ini file with opt-override support
-if [ -f /opt/debug.ini ]  && [ "$BUILD_TYPE" != "prod" ]; then
-   DEBUGINIFILE=/opt/debug.ini
+# Get wpa_supplicant.logging file with opt-override support
+if [ -f /opt/wpa_supplicant.logging ]  && [ "$BUILD_TYPE" != "prod" ]; then
+   DEBUGINIFILE=/opt/wpa_supplicant.logging
 else
-   DEBUGINIFILE=/etc/debug.ini
+   DEBUGINIFILE=/etc/wpa_supplicant.logging
 fi
 #Read debug.ini file and map to wpa-supplicant logging level
 log_line=`grep "LOG.RDK.WIFIWPA" $DEBUGINIFILE`

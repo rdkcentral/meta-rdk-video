@@ -16,7 +16,6 @@ S = "${WORKDIR}/git/systemd/system"
 THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-avinput.service \
     wpeframework-bluetooth.service \
-    wpeframework-cloudstore.service \
     wpeframework-cryptography.service \
     wpeframework-deviceinfo.service \
     wpeframework-displayinfo.service \
@@ -40,7 +39,6 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-voicecontrol.service \
     wpeframework-wifi.service \
     wpeframework-xcast.service \
-    wpeframework-analytics.service \
     wpeframework-usersettings.service \
     wpeframework-usbdevice.service \
     wpeframework-usbmassstorage.service \
@@ -88,7 +86,9 @@ do_install() {
 }
 
 do_install:append() {
-    SERVICE="${D}${systemd_system_unitdir}/wpeframework-displaysettings.service"
+    SERVICE_DIR="${D}${systemd_system_unitdir}"
+
+    SERVICE="${SERVICE_DIR}/wpeframework-displaysettings.service"
 
     if [ -f "$SERVICE" ]; then
         # Insert the line before [Service], only if not already present
@@ -96,6 +96,44 @@ do_install:append() {
             sed -i '/^\[Service\]/i ConditionPathExists=/tmp/wpeframeworkstarted' "$SERVICE"
         fi
     fi
+
+    # IPControl service to add securemount dependencies
+    IP_SERVICE="${SERVICE_DIR}/wpeframework-ipcontrol.service"
+    if [ -f "$IP_SERVICE" ]; then
+        # Append securemount.service to the existing After= line
+        sed -i '/^After=/ s/$/ securemount.service/' "$IP_SERVICE"
+
+        # Add RequiresMountsFor=/opt/secure immediately after the After= line
+        sed -i '/^After=/a RequiresMountsFor=/opt/secure' "$IP_SERVICE"
+    fi
+
+
+    # Ensure all services are in proper Unix LF format
+    find "$SERVICE_DIR" -type f -name "*.service" -exec sed -i 's/\r$//' {} +
+
+    for x in ${THUNDER_STARTUP_SERVICES}; do
+        SERVICE_FILE="${SERVICE_DIR}/${x}"
+
+        # --- Normalize Description ---
+        # Converts: "Description=WPEFramework SystemMode Initialiser"
+        # To:      "Description=WPE SystemMode"
+        sed -i 's/^Description=WPEFramework \(.*\) Initialiser$/Description=WPE \1/' "$SERVICE_FILE"
+
+        if grep -q '^ExecStart=.*PluginActivator' "$SERVICE_FILE"; then
+            CALLSIGN=$(sed -n -E 's/.*PluginActivator.*[[:space:]]+([A-Za-z0-9_.-]+)$/\1/p' "$SERVICE_FILE")
+
+            if [ -n "$CALLSIGN" ]; then
+                if ! grep -q "^ExecStop=/usr/bin/PluginActivator.*$CALLSIGN" "$SERVICE_FILE"; then
+                    if grep -q '^ExecStartPost=' "$SERVICE_FILE"; then
+                        sed -i "/^ExecStartPost=/a ExecStop=/usr/bin/PluginActivator -r 5 -x $CALLSIGN" "$SERVICE_FILE"
+                    else
+                        sed -i "/^ExecStart=.*PluginActivator/a ExecStop=/usr/bin/PluginActivator -r 5 -x $CALLSIGN" "$SERVICE_FILE"
+                    fi
+                fi
+            fi
+        fi
+
+    done
 }
 
 FILES:${PN} += "${systemd_system_unitdir} ${sysconfdir}/systemd/system"

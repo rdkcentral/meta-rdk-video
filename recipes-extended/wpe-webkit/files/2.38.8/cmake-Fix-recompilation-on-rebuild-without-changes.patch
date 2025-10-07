@@ -1,0 +1,385 @@
+From 2b9fa742b58be7c4e49260c46573c01b46a0eb60 Mon Sep 17 00:00:00 2001
+From: Alicia Boya Garcia <aboya@igalia.com>
+Date: Thu, 4 Apr 2024 09:31:12 -0700
+Subject: [PATCH] [cmake] Fix recompilation on rebuild without changes
+ https://bugs.webkit.org/show_bug.cgi?id=257516
+
+Reviewed by Adrian Perez de Castro.
+
+Running build-webkit twice in a row made the second run still take
+somewhere in the order of a minute to complete, despite there being no
+changes in any code.
+
+This patch fixes the bugs in the build system causing that deficiency,
+at least for users of CMake >=3.20.
+
+Namely:
+
+* Amends 250761@main, which added a cmake_policy() command for CMP0116
+  without any effect. This patch sets it to NEW, which tells CMake to
+  rewrite depfiles to use paths relative to the sub-build directory if
+  the user CMake version is recent enough (>=3.20). Previous versions of
+  CMake will remain affected.
+
+* Refactors all usages of glib-compile-commands into a new CMake
+  function, GLIB_COMPILE_COMMANDS(), provided by a new
+  FindGLibCompileResources.cmake file.
+
+* Detects versions of the glib-compile-commands older than 2.77 as
+  potentially affected by this bug in depfile generation:
+  https://gitlab.gnome.org/GNOME/glib/-/issues/2829
+  If building with an affected version, a Perl post processing script is
+  added automatically that corrects the depfiles. The Perl script is
+  meant to be harmless in the case of false positives (older but patched
+  versions).
+
+* Modifies apply-build-revision-to-files.py, which is responsible for
+  generating BuildRevision.h, to not write to the file if the resulting
+  contents would remain unchanged. This avoids touching the modification
+  time of the file which build systems like Ninja use to test whether
+  files are dirty and therefore need to be recompiled along with all
+  their dependents. A similar check already exists for many other
+  generators that run on every build.
+
+* CMakeLists.txt:
+* Source/WebKit/InspectorGResources.cmake:
+* Source/WebKit/ModernMediaControlsGResources.cmake:
+* Source/WebKit/PdfJSGResources.cmake:
+* Source/WebKit/PlatformGTK.cmake:
+* Source/WebKit/PlatformWPE.cmake:
+* Source/cmake/FindGLibCompileResources.cmake: Added.
+* Source/cmake/OptionsGTK.cmake:
+* Source/cmake/OptionsWPE.cmake:
+* Tools/TestWebKitAPI/glib/CMakeLists.txt:
+* Tools/glib/apply-build-revision-to-files.py:
+(main):
+* Tools/glib/fix-glib-resources-depfile.pl: Added.
+
+Canonical link: https://commits.webkit.org/277059@main
+---
+ CMakeLists.txt                                |  2 +-
+ Source/WebKit/InspectorGResources.cmake       | 10 ++-
+ .../ModernMediaControlsGResources.cmake       | 10 ++-
+ Source/WebKit/PdfJSGResources.cmake           | 20 +++---
+ Source/WebKit/PlatformGTK.cmake               | 12 ++--
+ Source/WebKit/PlatformWPE.cmake               | 11 ++--
+ Source/cmake/FindGLibCompileResources.cmake   | 65 +++++++++++++++++++
+ Source/cmake/OptionsGTK.cmake                 |  1 +
+ Source/cmake/OptionsWPE.cmake                 |  1 +
+ Tools/TestWebKitAPI/glib/CMakeLists.txt       | 15 ++---
+ Tools/glib/apply-build-revision-to-files.py   | 15 +++--
+ Tools/glib/fix-glib-resources-depfile.pl      |  6 ++
+ 12 files changed, 116 insertions(+), 52 deletions(-)
+ create mode 100644 Source/cmake/FindGLibCompileResources.cmake
+ create mode 100644 Tools/glib/fix-glib-resources-depfile.pl
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8bb7d65fb87f..07295a9a1ec9 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -15,7 +15,7 @@ project(WebKit)
+ 
+ # Remove this cmake_policy() after upgrading cmake_minimum_required() to 3.20.
+ if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.20")
+-    cmake_policy(SET CMP0116 OLD)
++    cmake_policy(SET CMP0116 NEW)
+ endif ()
+ 
+ # -----------------------------------------------------------------------------
+diff --git a/Source/WebKit/InspectorGResources.cmake b/Source/WebKit/InspectorGResources.cmake
+index b8be58ac4073..4280fd172489 100644
+--- a/Source/WebKit/InspectorGResources.cmake
++++ b/Source/WebKit/InspectorGResources.cmake
+@@ -8,11 +8,9 @@ macro(WEBKIT_BUILD_INSPECTOR_GRESOURCES _derived_sources_dir)
+         VERBATIM
+     )
+ 
+-    add_custom_command(
+-        OUTPUT ${_derived_sources_dir}/InspectorGResourceBundle.c ${_derived_sources_dir}/InspectorGResourceBundle.deps
+-        DEPENDS ${_derived_sources_dir}/InspectorGResourceBundle.xml
+-        DEPFILE {_derived_sources_dir}/InspectorGResourceBundle.deps
+-        COMMAND glib-compile-resources --generate --sourcedir=${_derived_sources_dir}/InspectorResources/WebInspectorUI --target=${_derived_sources_dir}/InspectorGResourceBundle.c --dependency-file=${_derived_sources_dir}/InspectorGResourceBundle.deps ${_derived_sources_dir}/InspectorGResourceBundle.xml
+-        VERBATIM
++    GLIB_COMPILE_RESOURCES(
++        OUTPUT        ${_derived_sources_dir}/InspectorGResourceBundle.c
++        SOURCE_XML    ${_derived_sources_dir}/InspectorGResourceBundle.xml
++        RESOURCE_DIRS ${_derived_sources_dir}/InspectorResources/WebInspectorUI
+     )
+ endmacro()
+diff --git a/Source/WebKit/ModernMediaControlsGResources.cmake b/Source/WebKit/ModernMediaControlsGResources.cmake
+index 2cd6db1a5d6f..ea706544bdee 100644
+--- a/Source/WebKit/ModernMediaControlsGResources.cmake
++++ b/Source/WebKit/ModernMediaControlsGResources.cmake
+@@ -7,11 +7,9 @@ macro(WEBKIT_BUILD_MODERN_MEDIA_CONTROLS_GRESOURCES _derived_sources_dir)
+         VERBATIM
+     )
+ 
+-    add_custom_command(
+-        OUTPUT ${_derived_sources_dir}/ModernMediaControlsGResourceBundle.c ${_derived_sources_dir}/ModernMediaControlsGResourceBundle.deps
+-        DEPENDS ${_derived_sources_dir}/ModernMediaControlsGResourceBundle.xml
+-        DEPFILE {_derived_sources_dir}/ModernMediaControlsGResourceBundle.deps
+-        COMMAND glib-compile-resources --generate --sourcedir=${WEBCORE_DIR}/Modules/modern-media-controls/images/adwaita --target=${_derived_sources_dir}/ModernMediaControlsGResourceBundle.c --dependency-file=${_derived_sources_dir}/ModernMediaControlsGResourceBundle.deps ${_derived_sources_dir}/ModernMediaControlsGResourceBundle.xml
+-        VERBATIM
++    GLIB_COMPILE_RESOURCES(
++        OUTPUT        ${_derived_sources_dir}/ModernMediaControlsGResourceBundle.c
++        SOURCE_XML    ${_derived_sources_dir}/ModernMediaControlsGResourceBundle.xml
++        RESOURCE_DIRS ${WEBCORE_DIR}/Modules/modern-media-controls/images/adwaita
+     )
+ endmacro()
+diff --git a/Source/WebKit/PdfJSGResources.cmake b/Source/WebKit/PdfJSGResources.cmake
+index ba2cafa27e3b..e402078f1c67 100644
+--- a/Source/WebKit/PdfJSGResources.cmake
++++ b/Source/WebKit/PdfJSGResources.cmake
+@@ -10,12 +10,10 @@ macro(WEBKIT_BUILD_PDFJS_GRESOURCES _derived_sources_dir)
+         VERBATIM
+     )
+ 
+-    add_custom_command(
+-        OUTPUT ${_derived_sources_dir}/PdfJSGResourceBundle.c ${_derived_sources_dir}/PdfJSGResourceBundle.deps
+-        DEPENDS ${_derived_sources_dir}/PdfJSGResourceBundle.xml
+-        DEPFILE ${_derived_sources_dir}/PdfJSGResourceBundle.deps
+-        COMMAND glib-compile-resources --generate --sourcedir=${THIRDPARTY_DIR}/pdfjs --target=${_derived_sources_dir}/PdfJSGResourceBundle.c --dependency-file=${_derived_sources_dir}/PdfJSGResourceBundle.deps ${_derived_sources_dir}/PdfJSGResourceBundle.xml
+-        VERBATIM
++    GLIB_COMPILE_RESOURCES(
++        OUTPUT        ${_derived_sources_dir}/PdfJSGResourceBundle.c
++        SOURCE_XML    ${_derived_sources_dir}/PdfJSGResourceBundle.xml
++        RESOURCE_DIRS ${THIRDPARTY_DIR}/pdfjs
+     )
+ 
+     add_custom_command(
+@@ -26,11 +24,9 @@ macro(WEBKIT_BUILD_PDFJS_GRESOURCES _derived_sources_dir)
+         VERBATIM
+     )
+ 
+-    add_custom_command(
+-        OUTPUT ${_derived_sources_dir}/PdfJSGResourceBundleExtras.c ${_derived_sources_dir}/PdfJSGResourceBundleExtras.deps
+-        DEPENDS ${_derived_sources_dir}/PdfJSGResourceBundleExtras.xml
+-        DEPFILE ${_derived_sources_dir}/PdfJSGResourceBundleExtras.deps
+-        COMMAND glib-compile-resources --generate --sourcedir=${WEBCORE_DIR}/Modules/pdfjs-extras --target=${_derived_sources_dir}/PdfJSGResourceBundleExtras.c ${_derived_sources_dir}/PdfJSGResourceBundleExtras.xml
+-        VERBATIM
++    GLIB_COMPILE_RESOURCES(
++        OUTPUT        ${_derived_sources_dir}/PdfJSGResourceBundleExtras.c
++        SOURCE_XML    ${_derived_sources_dir}/PdfJSGResourceBundleExtras.xml
++        RESOURCE_DIRS ${WEBCORE_DIR}/Modules/pdfjs-extras
+     )
+ endmacro()
+diff --git a/Source/WebKit/PlatformGTK.cmake b/Source/WebKit/PlatformGTK.cmake
+index 0f5355b30560..5b2f2754101e 100644
+--- a/Source/WebKit/PlatformGTK.cmake
++++ b/Source/WebKit/PlatformGTK.cmake
+@@ -597,12 +597,12 @@ file(WRITE ${WebKit2Gtk_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.xml
+     "</gresources>\n"
+ )
+ 
+-add_custom_command(
+-    OUTPUT ${WebKit2Gtk_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.c ${WebKit2Gtk_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.deps
+-    DEPENDS ${WebKit2Gtk_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.xml
+-    DEPFILE ${WebKit2Gtk_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.deps
+-    COMMAND glib-compile-resources --generate --sourcedir=${CMAKE_SOURCE_DIR}/Source/WebCore/Resources --sourcedir=${CMAKE_SOURCE_DIR}/Source/WebCore/platform/audio/resources --sourcedir=${CMAKE_SOURCE_DIR}/Source/WebKit/Resources/gtk --target=${WebKit2Gtk_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.c --dependency-file=${WebKit2Gtk_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.deps ${WebKit2Gtk_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.xml
+-    VERBATIM
++GLIB_COMPILE_RESOURCES(
++    OUTPUT        ${WebKitGTK_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.c
++    SOURCE_XML    ${WebKitGTK_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.xml
++    RESOURCE_DIRS ${CMAKE_SOURCE_DIR}/Source/WebCore/Resources
++                  ${CMAKE_SOURCE_DIR}/Source/WebCore/platform/audio/resources
++                  ${CMAKE_SOURCE_DIR}/Source/WebKit/Resources/gtk
+ )
+ 
+ if (ENABLE_WAYLAND_TARGET)
+diff --git a/Source/WebKit/PlatformWPE.cmake b/Source/WebKit/PlatformWPE.cmake
+index 5af41ff28d84..5915c97d34d3 100644
+--- a/Source/WebKit/PlatformWPE.cmake
++++ b/Source/WebKit/PlatformWPE.cmake
+@@ -295,12 +295,11 @@ file(WRITE ${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.xml
+     "</gresources>\n"
+ )
+ 
+-add_custom_command(
+-    OUTPUT ${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.c ${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.deps
+-    DEPENDS ${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.xml
+-    DEPFILE ${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.deps
+-    COMMAND glib-compile-resources --generate --sourcedir=${CMAKE_SOURCE_DIR}/Source/WebCore/Resources --sourcedir=${CMAKE_SOURCE_DIR}/Source/WebCore/platform/audio/resources --target=${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.c --dependency-file=${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.deps ${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.xml
+-    VERBATIM
++GLIB_COMPILE_RESOURCES(
++    OUTPUT        ${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.c
++    SOURCE_XML    ${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.xml
++    RESOURCE_DIRS ${CMAKE_SOURCE_DIR}/Source/WebCore/Resources
++                  ${CMAKE_SOURCE_DIR}/Source/WebCore/platform/audio/resources
+ )
+ 
+ list(APPEND WebKit_INCLUDE_DIRECTORIES
+diff --git a/Source/cmake/FindGLibCompileResources.cmake b/Source/cmake/FindGLibCompileResources.cmake
+new file mode 100644
+index 000000000000..09488b923277
+--- /dev/null
++++ b/Source/cmake/FindGLibCompileResources.cmake
+@@ -0,0 +1,65 @@
++pkg_get_variable(GLIB2_PREFIX glib-2.0 prefix)
++find_program(
++    GLIB_COMPILE_RESOURCES_EXECUTABLE
++    NAMES glib-compile-resources
++    HINTS ${GLIB2_PREFIX}
++    REQUIRED
++)
++execute_process(
++    COMMAND ${GLIB_COMPILE_RESOURCES_EXECUTABLE} --version
++    OUTPUT_VARIABLE glib_compile_resources_version
++    OUTPUT_STRIP_TRAILING_WHITESPACE
++)
++message(STATUS "Found glib-compile-resources (required): "
++    ${GLIB_COMPILE_RESOURCES_EXECUTABLE}
++    " (${glib_compile_resources_version})"
++)
++
++set(glib_compile_resources_has_depfile_bug FALSE)
++if ("${glib_compile_resources_version}" VERSION_LESS 2.77)
++    set(glib_compile_resources_has_depfile_bug TRUE)
++endif ()
++
++function(GLIB_COMPILE_RESOURCES)
++    set(zeroArgKeywords "")
++    set(oneArgKeywords OUTPUT SOURCE_XML)
++    set(manyArgsKeywords RESOURCE_DIRS)
++    cmake_parse_arguments(
++        PARSE_ARGV 0 ARG
++        "${zeroArgKeywords}" "${oneArgKeywords}" "${manyArgsKeywords}"
++    )
++
++    set(resource_dir_args "")
++    foreach (resource_dir IN LISTS ARG_RESOURCE_DIRS)
++        list(APPEND resource_dir_args --sourcedir=${resource_dir})
++    endforeach ()
++
++    set(additional_cmd_line)
++    if (${glib_compile_resources_has_depfile_bug})
++        # Workaround for older versions of glib-compile-resources lacking this fix:
++        # https://gitlab.gnome.org/GNOME/glib/-/merge_requests/3460
++        #
++        # Affected versions produce broken depfiles that look like this:
++        #   foo.xml: resource1 resource2
++        # But depfiles should look like this:
++        #   foo.c: foo.xml resource1 resource2
++        set(additional_cmd_line &&
++            ${PERL_EXECUTABLE} -pi ${CMAKE_SOURCE_DIR}/Tools/glib/fix-glib-resources-depfile.pl
++            ${ARG_SOURCE_XML} ${ARG_OUTPUT} ${ARG_OUTPUT}.deps)
++    endif ()
++
++    add_custom_command(
++        OUTPUT  ${ARG_OUTPUT} ${ARG_OUTPUT}.deps
++        DEPENDS ${ARG_SOURCE_XML}
++        DEPFILE ${ARG_OUTPUT}.deps
++        COMMAND ${GLIB_COMPILE_RESOURCES_EXECUTABLE}
++                --generate
++                --target=${ARG_OUTPUT}
++                --dependency-file=${ARG_OUTPUT}.deps
++                ${resource_dir_args}
++                ${ARG_SOURCE_XML}
++                ${additional_cmd_line}
++        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
++        VERBATIM
++    )
++endfunction()
+\ No newline at end of file
+diff --git a/Source/cmake/OptionsGTK.cmake b/Source/cmake/OptionsGTK.cmake
+index 499778d861cc..a1465b49b8f8 100644
+--- a/Source/cmake/OptionsGTK.cmake
++++ b/Source/cmake/OptionsGTK.cmake
+@@ -33,6 +33,7 @@ find_package(OpenGL)
+ find_package(OpenGLES2)
+ 
+ include(GStreamerDefinitions)
++include(FindGLibCompileResources)
+ 
+ SET_AND_EXPOSE_TO_BUILD(USE_CAIRO TRUE)
+ SET_AND_EXPOSE_TO_BUILD(USE_XDGMIME TRUE)
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+index 2782115af0fa..7c361758ec91 100644
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -33,6 +33,7 @@ WEBKIT_OPTION_BEGIN()
+ SET_AND_EXPOSE_TO_BUILD(ENABLE_DEVELOPER_MODE ${DEVELOPER_MODE})
+ 
+ include(GStreamerDefinitions)
++include(FindGLibCompileResources)
+ 
+ # Public options shared with other WebKit ports. Do not add any options here
+ # without approval from a WPE reviewer. There must be strong reason to support
+diff --git a/Tools/TestWebKitAPI/glib/CMakeLists.txt b/Tools/TestWebKitAPI/glib/CMakeLists.txt
+index 84485beaf5f2..375e43fe3705 100644
+--- a/Tools/TestWebKitAPI/glib/CMakeLists.txt
++++ b/Tools/TestWebKitAPI/glib/CMakeLists.txt
+@@ -126,17 +126,10 @@ if (COMPILER_IS_GCC_OR_CLANG)
+     WEBKIT_ADD_TARGET_CXX_FLAGS(WebKitGLibAPITestsCore -Wno-unused-parameter)
+ endif ()
+ 
+-add_custom_command(
+-    OUTPUT ${TEST_RESOURCES_DIR}/webkitglib-tests-resources.gresource ${TEST_RESOURCES_DIR}/webkitglib-tests-resources.deps
+-    DEPENDS ${TOOLS_DIR}/TestWebKitAPI/Tests/WebKitGLib/resources/webkitglib-tests.gresource.xml
+-            ${TOOLS_DIR}/TestWebKitAPI/Tests/WebKitGLib/resources/link-title.js
+-    DEPFILE ${TEST_RESOURCES_DIR}/webkitglib-tests-resources.deps
+-    COMMAND glib-compile-resources
+-            --target=${TEST_RESOURCES_DIR}/webkitglib-tests-resources.gresource
+-            --sourcedir=${CMAKE_SOURCE_DIR}
+-            --dependency-file=${TEST_RESOURCES_DIR}/webkitglib-tests-resources.deps
+-            ${TOOLS_DIR}/TestWebKitAPI/Tests/WebKitGLib/resources/webkitglib-tests.gresource.xml
+-    VERBATIM
++GLIB_COMPILE_RESOURCES(
++    OUTPUT        ${TEST_RESOURCES_DIR}/webkitglib-tests-resources.gresource
++    RESOURCE_DIRS ${CMAKE_SOURCE_DIR}
++    SOURCE_XML    ${TOOLS_DIR}/TestWebKitAPI/Tests/WebKitGLib/resources/webkitglib-tests.gresource.xml
+ )
+ 
+ add_custom_target(test-gresource-bundle
+diff --git a/Tools/glib/apply-build-revision-to-files.py b/Tools/glib/apply-build-revision-to-files.py
+index 0ce2948d5ba4..49dde2d8b1b2 100644
+--- a/Tools/glib/apply-build-revision-to-files.py
++++ b/Tools/glib/apply-build-revision-to-files.py
+@@ -67,7 +67,7 @@ def main(args):
+         file = Path(in_file)
+         if file.name == "BuildRevision.h":
+             with open("Source/WebKit/Shared/glib/BuildRevision.h.in") as template:
+-                data = template.read()
++                template = template.read()
+         elif file.suffix == '.pc':
+             # Restore a valid BUILD_REVISION template.
+             lines = []
+@@ -76,13 +76,20 @@ def main(args):
+                     if line.startswith("revision"):
+                         line = "revision=@BUILD_REVISION@\n"
+                     lines.append(line)
+-            data = "".join(lines)
++            template = "".join(lines)
+         else:
+             print(f"Support for expanding @BUILD_REVISION@ in {file!s} is missing.")
+             return 1
+ 
+-        with file.open('w') as fd:
+-            fd.write(data.replace('@BUILD_REVISION@', build_revision))
++        new_contents = template.replace('@BUILD_REVISION@', build_revision)
++        # Only write the new contents to the output file if there are any changes.
++        # Otherwise, the file would become 'dirty' and all dependents would be
++        # recompiled unnecessarily.
++        with file.open() as fd:
++            old_contents = fd.read()
++        if old_contents != new_contents:
++            with file.open('w') as fd:
++                fd.write(new_contents)
+ 
+     return 0
+ 
+diff --git a/Tools/glib/fix-glib-resources-depfile.pl b/Tools/glib/fix-glib-resources-depfile.pl
+new file mode 100644
+index 000000000000..3fcbf1c2494e
+--- /dev/null
++++ b/Tools/glib/fix-glib-resources-depfile.pl
+@@ -0,0 +1,6 @@
++# Workaround for https://gitlab.gnome.org/GNOME/glib/-/merge_requests/3460
++# Used by FindGLibCompileResources.cmake for glib-compile-commands < 2.77
++BEGIN {
++    ($old_xml, $new_target) = splice(@ARGV, 0, 2);
++}
++s{\Q$old_xml:}{$new_target: $old_xml}
+\ No newline at end of file
+-- 
+2.34.1
+
