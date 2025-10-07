@@ -6,25 +6,25 @@ index 67e69b3e..e8f093a7 100644
          , _factoriesImplementation()
      {
          IFactories::Assign(&_factoriesImplementation);
-+	fprintf(stderr, "crash-dbg: PluginServer.cpp PluginHost::Server::Server() Ctor start\n");
- 
++       fprintf(stderr, "crash-dbg: PluginServer.cpp PluginHost::Server::Server() Ctor start\n");
+
          // See if the persitent path for our-selves exist, if not we will create it :-)
          Core::File persistentPath(_config.PersistentPath() + _T("PluginHost"));
 @@ -1034,6 +1035,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
          Channel::Initialize(_config.WebPrefix());
- 
+
          // Add the controller as a service to the services.
-+	fprintf(stderr, "crash-dbg: PluginServer.cpp PluginHost::Server::Server() Ctor assign _controller\n");
++       fprintf(stderr, "crash-dbg: PluginServer.cpp PluginHost::Server::Server() Ctor assign _controller\n");
          _controller = _services.Insert(metaDataConfig, Service::mode::CONFIGURED);
- 
+
  #ifdef PROCESSCONTAINERS_ENABLED
 @@ -1041,6 +1043,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
          ProcessContainers::IContainerAdministrator& admin = ProcessContainers::IContainerAdministrator::Instance();
          admin.Logging(_config.VolatilePath(), configuration.ProcessContainersLogging());
  #endif
-+	fprintf(stderr, "crash-dbg: PluginServer.cpp PluginHost::Server::Server() Ctor end\n");
++       fprintf(stderr, "crash-dbg: PluginServer.cpp PluginHost::Server::Server() Ctor end\n");
      }
- 
+
  POP_WARNING()
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
 index ebaf7b16..385f039b 100644
@@ -33,27 +33,27 @@ index ebaf7b16..385f039b 100644
 @@ -3071,6 +3071,15 @@ POP_WARNING()
              {
                  void* result = nullptr;
- 
-+		if (_server.Controller().IsValid()){
+
++               if (_server.Controller().IsValid()){
 +
-+		    fprintf(stderr,"crash-dbg: PluginServer.h PluginHost::Server::ServiceMap::QueryInterfaceByCallsign() Controller NOT EMPTY id=%x name=%s \n", id, name.c_str());
-+		}
-+		else {
++                   fprintf(stderr,"crash-dbg: PluginServer.h PluginHost::Server::ServiceMap::QueryInterfaceByCallsign() Controller NOT EMPTY id=%x name=%s \n", id, name.c_str());
++               }
++               else {
 +
-+		    fprintf(stderr,"crash-dbg: PluginServer.h PluginHost::Server::ServiceMap::QueryInterfaceByCallsign() Controller EMPTY about to crash id=%x name=%s \n", id, name.c_str());
-+		}
++                   fprintf(stderr,"crash-dbg: PluginServer.h PluginHost::Server::ServiceMap::QueryInterfaceByCallsign() Controller EMPTY about to crash id=%x name=%s \n", id, name.c_str());
++               }
 +
                  const string callsign(name.empty() == true ? _server.Controller()->Callsign() : name);
- 
+
                  Core::ProxyType<IShell> service;
 @@ -3082,6 +3091,7 @@ POP_WARNING()
                      result = service->QueryInterface(id);
                  }
- 
-+		fprintf(stderr, "crash-dbg: PluginServer.h PluginHost::Server::ServiceMap::QueryInterfaceByCallsign() End id=%x name=%s controller callsign: %s\n", id, name.c_str(), controller->Callsign().c_str());
+
++               fprintf(stderr, "crash-dbg: PluginServer.h PluginHost::Server::ServiceMap::QueryInterfaceByCallsign() End id=%x name=%s controller callsign: %s\n", id, name.c_str(), _server.Controller()->Callsign().c_str());
                  return (result);
              }
- 
+
 diff --git a/Source/com/Communicator.h b/Source/com/Communicator.h
 index d691d8a3..0684b786 100644
 --- a/Source/com/Communicator.h
@@ -61,40 +61,40 @@ index d691d8a3..0684b786 100644
 @@ -23,6 +23,10 @@
  #include <atomic>
  #include "Module.h"
- 
+
 +#include <cstdint>
 +#include <memory>
 +#include <cstring>
 +#include <algorithm>
- 
+
  #include "Administrator.h"
  #include "ICOM.h"
 @@ -1138,6 +1142,53 @@ namespace RPC {
                          Activated(remoteConnection);
                      }
- 
-+		    char path[40], process_name[256]; FILE *fp, *fq;
+
++                   char path[40], process_name[256]; FILE *fp, *fq;
 +                    char self_name[] = "WPEFramework";
 +                    uint32_t process_id;
 +                    uint8_t myId[4] = {0x0};
-+
-+                    std::unique_ptr<uint8_t[]> stream_out = make_unique<uint8_t[]>(info.Length());
++                    auto& infoCopy = const_cast<WPEFramework::RPC::Data::Init&>(info); //creates a non-const copy
++                    std::unique_ptr<uint8_t[]> stream_out(new uint8_t[info.Length()]);
 +                    snprintf(path, sizeof(path), "/proc/%d/comm", getpid());
 +                    fp = fopen(path, "r");
 +
-+		    if (fp == NULL)
++                   if (fp == NULL)
 +                        fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce error opening pid file fp\n");
 +
-+		    if (fgets(process_name, sizeof(process_name), fp) != NULL) {
++                   if (fgets(process_name, sizeof(process_name), fp) != NULL) {
 +                        if (strncmp(process_name, self_name, 5) == 0){
 +
-+                            info.Deserialize(stream_out.get(), info.Length(), 0);
++                            infoCopy.Deserialize(stream_out.get(), info.Length(), 0);
 +                            fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce Announce Msg: ");
 +
-+			    for(int i=0; i<info.Length(); i++){
++                           for(int i=0; i<info.Length(); i++){
 +                                fprintf(stderr, "0x%x ", stream_out[i]);
 +
-+				if(i>=5 && i<=8){
++                               if(i>=5 && i<=8){
 +                                    myId[i-5] = stream_out[i];
 +                                }
 +                            }
@@ -112,7 +112,7 @@ index d691d8a3..0684b786 100644
 +                            if (fq == NULL)
 +                                fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce error opening pid file fq\n");
 +
-+			     if (fgets(process_name, sizeof(process_name), fq) != NULL)
++                            if (fgets(process_name, sizeof(process_name), fq) != NULL)
 +                                fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce Msg from process id: %d process name: %s\n", process_id, process_name);
 +
 +                            fclose(fp);
@@ -122,4 +122,4 @@ index d691d8a3..0684b786 100644
 +
                      result = Handle(channel, info, response);
                  }
- 
+
