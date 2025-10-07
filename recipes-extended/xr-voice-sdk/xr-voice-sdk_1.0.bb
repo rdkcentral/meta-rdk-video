@@ -45,7 +45,8 @@ XRAUDIO_DECODE_ADPCM      ?= "1"
 XRAUDIO_DECODE_OPUS       ?= "1"
 XRAUDIO_RESOURCE_MGMT     ?= "0"
 
-VSDK_USE_CURTAIL          ?= "0"
+VSDK_CURTAIL_XLOG         ?= "0"
+VSDK_CURTAIL_XRAUDIO      ?= "0"
 
 DEPENDS:append = " ${XRAUDIO_KWD_COMPONENT} ${XRAUDIO_EOS_COMPONENT} ${XRAUDIO_DGA_COMPONENT} ${XRAUDIO_SDF_COMPONENT} ${XRAUDIO_OVC_COMPONENT} ${XRAUDIO_PPR_COMPONENT} ${XRAUDIO_FFV_HAL_COMPONENT}"
 
@@ -53,7 +54,7 @@ DEPENDS:append = "${@ ' curl'    if (d.getVar('ENABLE_HTTP_SUPPORT', expand=Fals
 DEPENDS:append = "${@ ' nopoll'  if (d.getVar('ENABLE_WS_SUPPORT',   expand=False) == "1") else ''}"
 DEPENDS:append = "${@ ' libopus' if (d.getVar('XRAUDIO_DECODE_OPUS', expand=False) == '1') else ''}"
 
-DEPENDS:append = "${@ ' curtail' if (d.getVar('VSDK_USE_CURTAIL',    expand=False) == '1') else ''}"
+DEPENDS:append = "${@ ' curtail' if (d.getVar('VSDK_CURTAIL_XLOG',   expand=False) == '1') else ' curtail' if (d.getVar('VSDK_CURTAIL_XRAUDIO', expand=False) == '1') else ''}"
 
 XRAUDIO_CONFIG_HAL     = "${PKG_CONFIG_SYSROOT_DIR}/usr/include/xraudio_hal_config.json"
 XRAUDIO_CONFIG_KWD     = "${PKG_CONFIG_SYSROOT_DIR}/usr/include/xraudio_kwd_config.json"
@@ -89,6 +90,7 @@ EXTRA_OECMAKE:append = "${@' -DXRSR_KEYWORD_PHRASE=${XRSR_KEYWORD_PHRASE}' if (d
 EXTRA_OECMAKE:append = "${@' -DXRAUDIO_RESOURCE_MGMT=ON'   if (d.getVar('XRAUDIO_RESOURCE_MGMT', expand=False) == '1') else ''}"
 EXTRA_OECMAKE:append = "${@' -DXRAUDIO_DECODE_ADPCM=ON'    if (d.getVar('XRAUDIO_DECODE_ADPCM',  expand=False) == '1') else ''}"
 EXTRA_OECMAKE:append = "${@' -DXRAUDIO_DECODE_OPUS=ON'     if (d.getVar('XRAUDIO_DECODE_OPUS',   expand=False) == '1') else ''}"
+EXTRA_OECMAKE:append = "${@' -DXRAUDIO_CURTAIL_ENABLED=ON' if (d.getVar('VSDK_CURTAIL_XRAUDIO',   expand=False) == '1') else ''}"
 
 EXTRA_OECMAKE:append = " -DXRAUDIO_CONFIG_JSON_HAL=${XRAUDIO_CONFIG_HAL}"
 EXTRA_OECMAKE:append = " -DXRAUDIO_CONFIG_JSON_KWD=${XRAUDIO_CONFIG_KWD}"
@@ -106,3 +108,5 @@ EXTRA_OECMAKE:append = "${@' -DXRAUDIO_DGA_ENABLED=ON' if d.getVar('XRAUDIO_DGA_
 EXTRA_OECMAKE:append = "${@' -DXRAUDIO_SDF_ENABLED=ON' if d.getVar('XRAUDIO_SDF_COMPONENT', True) else ''}"
 EXTRA_OECMAKE:append = "${@' -DXRAUDIO_OVC_ENABLED=ON' if d.getVar('XRAUDIO_OVC_COMPONENT', True) else ''}"
 EXTRA_OECMAKE:append = "${@' -DXRAUDIO_PPR_ENABLED=ON' if d.getVar('XRAUDIO_PPR_COMPONENT', True) else ''}"
+
+EXTRA_OECMAKE:append = "${@' -DXLOG_CURTAIL_ENABLED=ON' if (d.getVar('VSDK_CURTAIL_XLOG', expand=False) == '1') else ''}"
