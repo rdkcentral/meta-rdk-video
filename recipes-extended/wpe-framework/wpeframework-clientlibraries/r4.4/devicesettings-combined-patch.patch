@@ -704,7 +704,7 @@ index 0000000..212b95d
 +            Exchange::IDeviceSettingsManager::IFPD* fpdInterface = _deviceSettingsManagerInterface->QueryInterface<Exchange::IDeviceSettingsManager::IFPD>();
 +            if (fpdInterface) {
 +                result = fpdInterface->GetFPDBrightness(static_cast<Exchange::IDeviceSettingsManager::IFPD::FPDIndicator>(indicator), brightness);
-+                fpdInterface->Release();
++                //fpdInterface->Release();
 +            }
 +        }
 +
