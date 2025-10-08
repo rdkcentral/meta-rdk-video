@@ -16,10 +16,10 @@ S = "${WORKDIR}/git"
 PV ?= "2.0.0"
 PR ?= "r1"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/test_vipa"
 
 #Release 1.0.7
-SRCREV = "49dcea27ad8b1fc4d2c49623a117b2d9adb2124d"
+SRCREV = "1413a161c0ed1cf79a7f315ca8df7170b4c0b8ba"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
