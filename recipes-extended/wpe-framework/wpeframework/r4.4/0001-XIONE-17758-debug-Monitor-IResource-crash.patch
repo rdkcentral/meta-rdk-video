@@ -91,7 +91,7 @@ index d691d8a3..0684b786 100644
 +                            infoCopy.Deserialize(stream_out.get(), info.Length(), 0);
 +                            fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce Announce Msg: ");
 +
-+                           for(int i=0; i<info.Length(); i++){
++                           for(uint32_t i=0; i<info.Length(); i++){
 +                                fprintf(stderr, "0x%x ", stream_out[i]);
 +
 +                               if(i>=5 && i<=8){
