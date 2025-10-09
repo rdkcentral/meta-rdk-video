@@ -2,7 +2,7 @@ SUMMARY = "ENTServices inputoutput plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV ?= "1.4.7"
+PV ?= "1.4.9"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-inputoutput;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-RDKEMW-5201-Dolby-end-user-calibration.patch \
           "
 
-SRCREV = "05a6317482a177777662b48c23105fc05ceadbac"
+SRCREV = "14fb6bd17c74554d95d2b8e6ca5aa39d829fdbca"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
