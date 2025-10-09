@@ -25,7 +25,7 @@ interface changes for enhanced instance management and add operational state tra
  Source/powercontroller/CMakeLists.txt       |   79 +
  Source/powercontroller/Module.cpp           |   22 +
  Source/powercontroller/Module.h             |   33 +
- Source/powercontroller/power_controller.cpp | 1894 +++++++++++++++++++
+ Source/powercontroller/power_controller.cpp | 1914 +++++++++++++++++++
  Source/powercontroller/power_controller.h   |  405 ++++
  8 files changed, 2441 insertions(+), 1 deletion(-)
  create mode 100644 Source/powercontroller/CMakeLists.txt
@@ -224,7 +224,7 @@ new file mode 100644
 index 0000000..f2f3f19
 --- /dev/null
 +++ b/Source/powercontroller/power_controller.cpp
-@@ -0,0 +1,1894 @@
+@@ -0,0 +1,1914 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -790,7 +790,7 @@ index 0000000..f2f3f19
 +                    if (errno == EINTR)
 +                        continue;
 +
-+                    std::cerr << "FATAL poll failed, err: " << strerror(errno) << ", fd: " << _fd << ", wd: " << _wd << "\n";
++                    LOGERR("FATAL poll failed, err: [%s], fd: [%d], wd: [%d]", strerror(errno), _fd, _wd);
 +                    break;
 +                } else if (poll_res == 0) {
 +                    // timedout
@@ -806,11 +806,13 @@ index 0000000..f2f3f19
 +
 +        if (INVALID_FD != _wd) {
 +            close(_wd);
++            _wd = INVALID_FD;
 +        }
 +        if (INVALID_FD != _fd) {
 +            close(_fd);
++            _fd = INVALID_FD;
 +        }
-+        std::cout << "monitorThread: exiting\n";
++        LOGINFO("exiting\n");
 +    }
 +
 +public:
@@ -853,7 +855,7 @@ index 0000000..f2f3f19
 +
 +    ~PIDFileMonitor()
 +    {
-+        std::cout << "PIDMonitor destructor\n";
++        LOGINFO("destructor");
 +
 +        _shutdown = true;
 +
@@ -964,7 +966,7 @@ index 0000000..f2f3f19
 +        , _connected(false)
 +        , _shutdown(false)
 +    {
-+        (void)Connect();
++
 +    }
 +
 +    ~PowerController()
@@ -976,7 +978,7 @@ index 0000000..f2f3f19
 +
 +    void pidChangedCb(const int pid)
 +    {
-+        std::cout << "Thunder OLD PID: " << _pid << ", NEW PID: " << pid << "\n";
++        LOGINFO("Thunder OLD PID: %d, NEW PID: %d", _pid, pid);
 +
 +        if (_pid != pid) {
 +            Disconnect();
@@ -993,7 +995,7 @@ index 0000000..f2f3f19
 +
 +        // avoid misleading log during shutdown
 +        if ((upAndRunning && _shutdown) || !_shutdown) {
-+            std::cout << "PowerController::Operational (" << callSign << ") " << upAndRunning << std::endl;
++            LOGINFO("PowerController::Operational (%s) %d", callSign, upAndRunning);
 +        }
 +
 +        if (upAndRunning) {
@@ -1002,10 +1004,10 @@ index 0000000..f2f3f19
 +                _powerManagerInterface = BaseClass::Interface();
 +                if (_powerManagerInterface != nullptr) {
 +                    RegisterNotificationsLocked();
-+                    std::cout << "PowerController successfully established COM-RPC connection with PowerManager plugin\n";
++                    LOGINFO("PowerController successfully established COM-RPC connection with PowerManager plugin");
 +                } else {
 +                    // Internal error powerManager is running, but QueryInterface failed for it ?
-+                    std::cerr << "PowerController failed to establish COM-RPC connection with PowerManager plugin\n";
++                    LOGERR("PowerController failed to establish COM-RPC connection with PowerManager plugin");
 +                }
 +            }
 +        } else {
@@ -1070,35 +1072,47 @@ index 0000000..f2f3f19
 +        std::string errMsg = "";
 +
 +        _apiLock.Lock();
-+
-+        do {
-+            if (!isConnected()) {
-+                uint32_t res = BaseClass::Open(RPC::CommunicationTimeOut, BaseClass::Connector(), callSign);
-+                if (Core::ERROR_NONE == res) {
-+                    _connected = true;
-+                    if (!_pidMonitor.Running()) {
-+                        // read pid file once to get initial PID
-+                        _pid = _pidMonitor.PID();
-+                        _pidMonitor.Run();
++        try {
++            do {
++                if (!isConnected()) {
++                    uint32_t res = BaseClass::Open(RPC::CommunicationTimeOut, BaseClass::Connector(), callSign);
++                    if (Core::ERROR_NONE == res) {
++                        _connected = true;
++                        if (!_pidMonitor.Running()) {
++                            // read pid file once to get initial PID
++                            _pid = _pidMonitor.PID();
++                            _pidMonitor.Run();
++                        }
 +                    }
-+                } else {
-+                    errMsg = "COM-RPC channel open failed. Is Thunder running ?";
-+                    status = Core::ERROR_UNAVAILABLE;
-+                    break;
++                    else {
++                        errMsg = "COM-RPC channel open failed. Is Thunder running ?";
++                        status = Core::ERROR_UNAVAILABLE;
++                        break;
++                    }
 +                }
-+            } else {
-+                errMsg = "COM-RPC channel already open";
-+            }
++                else {
++                    errMsg = "COM-RPC channel already open";
++                }
 +
-+            if (nullptr == _powerManagerInterface) {
-+                errMsg = "PowerManager plugin is not activated yet";
-+                status = Core::ERROR_NOT_EXIST;
-+            }
-+        } while (false);
-+
++                if (nullptr == _powerManagerInterface) {
++                    errMsg = "PowerManager plugin is not activated yet";
++                    status = Core::ERROR_NOT_EXIST;
++                }
++            } while (false);
++        }
++        catch (const std::exception& ex) {
++            LOGERR("Exception in PowerController::Connect: %s", ex.what());
++            status = Core::ERROR_GENERAL;
++            errMsg = ex.what();
++        }
++        catch (...) {
++            LOGERR("Unknown exception in PowerController::Connect");
++            status = Core::ERROR_GENERAL;
++            errMsg = "Unknown exception";
++        }
 +        _apiLock.Unlock();
 +
-+        std::cout << "PowerController::Connect (" << callSign << ") status: " << status << ", errMsg: \"" << errMsg << "\"" << std::endl;
++        LOGINFO("PowerController::Connect (%s) status: %u, errMsg: \"%s\"", callSign, status, errMsg.c_str());
 +
 +        return status;
 +    }
@@ -1121,7 +1135,7 @@ index 0000000..f2f3f19
 +            status = BaseClass::Close(Core::infinite);
 +        }
 +
-+        std::cout << "PowerController::disconnect\n";
++        LOGINFO("PowerController::disconnect");
 +
 +        return status;
 +    }
@@ -1147,6 +1161,12 @@ index 0000000..f2f3f19
 +        _apiLock.Lock();
 +        if (nullptr == _instance) {
 +            _instance = new PowerController();
++            if (nullptr != _instance) {
++                _instance->Connect();
++            }
++            else {
++                LOGERR("PowerController::Init failed, out of memory ?");
++            }
 +        }
 +        _apiLock.Unlock();
 +    }
