@@ -1,3 +1,45 @@
+diff --git a/Source/WPEFramework/PluginHost.cpp b/Source/WPEFramework/PluginHost.cpp
+index d0c61749..3848027c 100644
+--- a/Source/WPEFramework/PluginHost.cpp
++++ b/Source/WPEFramework/PluginHost.cpp
+@@ -19,6 +19,12 @@
+
+ #include "PluginServer.h"
+ #include <fstream>
++#include <iostream>
++#include <cstdlib>
++#include <sys/resource.h>
++#include <unistd.h>
++#include <cerrno>
++#include <cstring>
+
+ #ifndef __WINDOWS__
+ #include <dlfcn.h> // for dladdr
+@@ -435,6 +441,24 @@ POP_WARNING()
+     int main(int argc, char** argv)
+ #endif
+     {
++       struct rlimit rl;
++       rl.rlim_cur = RLIM_INFINITY;
++       rl.rlim_max = RLIM_INFINITY;
++
++       if (setrlimit(RLIMIT_CORE, &rl) != 0) {
++           std::cerr << "Error: setrlimit failed - " << strerror(errno) << "\n";
++           return 1;
++       }
++
++       int ret = system("echo '/opt/%e.%s.core' > /proc/sys/kernel/core_pattern");
++
++       if (ret != 0) {
++           std::cerr << "Error: Failed to set core pattern (code " << ret << ")\n";
++           return 1;
++       }
++
++       fprintf(stderr, "Core dump configuration applied successfully.\n");
++       fprintf(stderr, "Core files will be saved as /opt/<executable>.<signal>.core\n");
+ #ifndef __WINDOWS__
+         //Set our Logging Mask and open the Log
+         setlogmask(LOG_UPTO(LOG_NOTICE));
 diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
 index 67e69b3e..e8f093a7 100644
 --- a/Source/WPEFramework/PluginServer.cpp
@@ -27,7 +69,7 @@ index 67e69b3e..e8f093a7 100644
 
  POP_WARNING()
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index ebaf7b16..385f039b 100644
+index ebaf7b16..2c1713a3 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
 @@ -3071,6 +3071,15 @@ POP_WARNING()
@@ -55,7 +97,7 @@ index ebaf7b16..385f039b 100644
              }
 
 diff --git a/Source/com/Communicator.h b/Source/com/Communicator.h
-index d691d8a3..0684b786 100644
+index d691d8a3..8aafae0c 100644
 --- a/Source/com/Communicator.h
 +++ b/Source/com/Communicator.h
 @@ -23,6 +23,10 @@
@@ -69,7 +111,16 @@ index d691d8a3..0684b786 100644
 
  #include "Administrator.h"
  #include "ICOM.h"
-@@ -1138,6 +1142,53 @@ namespace RPC {
+@@ -1105,7 +1109,7 @@ namespace RPC {
+
+                 _adminLock.Unlock();
+             }
+-            void* Announce(Core::ProxyType<Client>& channel, const Data::Init& info, Data::Setup& response)
++            void* Announce(Core::ProxyType<Client>& channel, Data::Init& info, Data::Setup& response)
+             {
+                 void* result = nullptr;
+
+@@ -1138,6 +1142,61 @@ namespace RPC {
                          Activated(remoteConnection);
                      }
 
@@ -77,49 +128,67 @@ index d691d8a3..0684b786 100644
 +                    char self_name[] = "WPEFramework";
 +                    uint32_t process_id;
 +                    uint8_t myId[4] = {0x0};
-+                    auto& infoCopy = const_cast<WPEFramework::RPC::Data::Init&>(info); //creates a non-const copy
-+                    std::unique_ptr<uint8_t[]> stream_out(new uint8_t[info.Length()]);
++
++                   std::unique_ptr<uint8_t[]> stream_out(new uint8_t[info.Length()]);
 +                    snprintf(path, sizeof(path), "/proc/%d/comm", getpid());
 +                    fp = fopen(path, "r");
 +
-+                   if (fp == NULL)
++                   if (fp == NULL) {
++
 +                        fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce error opening pid file fp\n");
++                   } else {
 +
-+                   if (fgets(process_name, sizeof(process_name), fp) != NULL) {
-+                        if (strncmp(process_name, self_name, 5) == 0){
++                       if (fgets(process_name, sizeof(process_name), fp) != NULL) {
 +
-+                            infoCopy.Deserialize(stream_out.get(), info.Length(), 0);
-+                            fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce Announce Msg: ");
++                           if (strncmp(process_name, self_name, 5) == 0) {
 +
-+                           for(uint32_t i=0; i<info.Length(); i++){
-+                                fprintf(stderr, "0x%x ", stream_out[i]);
++                                info.Deserialize(stream_out.get(),info.Length(),0);
++                                fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce Announce Msg: ");
 +
-+                               if(i>=5 && i<=8){
-+                                    myId[i-5] = stream_out[i];
++                               for(uint32_t i=0; i<info.Length(); i++) {
++                                    fprintf(stderr, "0x%x ", stream_out[i]);
++
++                                   if (i>=5 && i<=8) {
++                                        myId[i-5] = stream_out[i];
++                                    }
 +                                }
++
++                                std::reverse(myId, myId + sizeof(process_id));
++                                std::memcpy(&process_id, &myId, sizeof(process_id));
++                                fprintf(stderr, "\n");
++                                fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce Msg from process id: %d\n", process_id);
++
++                                std::memset(path, 0, sizeof(path));
++                                std::memset(process_name, 0, sizeof(process_name));
++                                snprintf(path, sizeof(path), "/proc/%d/comm", process_id);
++                                fq = fopen(path, "r");
++
++                                if (fq == NULL) {
++
++                                    fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce error opening pid file fq\n");
++                               } else {
++
++                                   if (fgets(process_name, sizeof(process_name), fq) != NULL)
++                                        fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce Msg from process id: %d process name: %s\n", process_id, process_name);
++
++                                   fclose(fq);
++                               }
 +                            }
++                       }
 +
-+                            std::reverse(myId, myId+sizeof(process_id));
-+                            std::memcpy(&process_id, &myId, sizeof(process_id));
-+                            fprintf(stderr, "\n");
-+                            fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce Msg from process id: %d\n", process_id);
-+
-+                            std::memset(path, 0, sizeof(path));
-+                            std::memset(process_name, 0, sizeof(process_name));
-+                            snprintf(path, sizeof(path), "/proc/%d/comm", process_id);
-+                            fq = fopen(path, "r");
-+
-+                            if (fq == NULL)
-+                                fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce error opening pid file fq\n");
-+
-+                            if (fgets(process_name, sizeof(process_name), fq) != NULL)
-+                                fprintf(stderr, "crash-dbg: Communicator.h RemoteConnectionMap::Announce Msg from process id: %d process name: %s\n", process_id, process_name);
-+
-+                            fclose(fp);
-+                            fclose(fq);
-+                        }
++                       fclose(fp);
 +                    }
 +
                      result = Handle(channel, info, response);
                  }
+
+@@ -1402,7 +1461,7 @@ POP_WARNING()
+             }
+
+         private:
+-            inline void* Announce(Core::ProxyType<Client>& channel, const Data::Init& info, Data::Setup& response)
++            inline void* Announce(Core::ProxyType<Client>& channel, Data::Init& info, Data::Setup& response)
+             {
+                 // We are in business, register the process with this channel.
+                 return (_connections.Announce(channel, info, response));
 
