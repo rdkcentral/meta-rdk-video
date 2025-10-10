@@ -21,7 +21,6 @@ SRCREV_thunder = "19100433e5517c743738bb2a9ed8ce2f79c10eaf"
 
 SRC_URI += "file://wpeframework-init \
            file://wpeframework.service.in \
-           file://network_manager_migration.conf \
            file://r4.4/Library_version_matched_with_release_tag.patch \
            file://r4.4/Remove_versioning_for_executables.patch \
            file://r4.4/wpeframework_version.patch \
