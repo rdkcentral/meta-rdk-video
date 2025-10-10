@@ -17,60 +17,97 @@ jobs:
         PR_TITLE: ${{ github.event.pull_request.title }}
         PR_BODY: ${{ github.event.pull_request.body }}
       run: |
-        # valid ticket IDs
+        # Define valid ticket IDs
         VALID_TICKET_IDS=("RDKEMW" "RDKEVD" "IMMUI" "RDKTV" "RDKSTB" "ES1" "XIONE" "SERCOMM")
         
-        # Use PR title if body is empty, otherwise use body
-        if [ -z "$PR_BODY" ]; then
-          DESCRIPTION="$PR_TITLE"
-        else
-          DESCRIPTION="$PR_BODY"
-        fi
-        
-        echo "Validating PR description: $DESCRIPTION"
-        
-        # Check if description matches the pattern <TICKETID>-<ticketno.> : <desc>
-        if [[ ! "$DESCRIPTION" =~ ^[A-Z0-9]+-[0-9]+[[:space:]]*:[[:space:]]*.+ ]]; then
-          echo "ERROR: PR description format is invalid."
-          echo "Expected format: <TICKETID>-<ticketno.> : <description>"
-          echo "Example: RDKEMW-123 : Fix playback issue"
-          echo ""
-          echo "Valid ticket IDs are:"
-          printf "%s\n" "${VALID_TICKET_IDS[@]}"
-          exit 1
-        fi
-        
-        # Extract ticket ID from the description
-        TICKET_PREFIX=$(echo "$DESCRIPTION" | sed -n 's/^\([A-Z0-9]\+\)-[0-9]\+[[:space:]]*:.*$/\1/p')
-        
-        if [ -z "$TICKET_PREFIX" ]; then
-          echo "ERROR: Could not extract ticket ID from description."
-          echo "Expected format: <TICKETID>-<ticketno.> : <description>"
-          echo ""
-          echo "Valid ticket IDs are:"
-          printf "%s\n" "${VALID_TICKET_IDS[@]}"
-          exit 1
-        fi
-        
-        # Check if extracted ticket ID is in the valid list
-        VALID=false
-        for valid_id in "${VALID_TICKET_IDS[@]}"; do
-          if [ "$TICKET_PREFIX" = "$valid_id" ]; then
-            VALID=true
-            break
+        # Function to validate ticket format and ID
+        validate_ticket() {
+          local text="$1"
+          local field_name="$2"
+          
+          echo "Validating $field_name: $text"
+          
+          # Check if text matches the pattern <TICKETID>-<ticketno.> : <desc>
+          if [[ ! "$text" =~ ^[A-Z0-9]+-[0-9]+[[:space:]]*:[[:space:]]*.+ ]]; then
+            echo "ERROR: $field_name format is invalid."
+            echo "Expected format: <TICKETID>-<ticketno.> : <description>"
+            echo "Example: RDKEMW-123 : Fix playbook issue"
+            echo ""
+            echo "Valid ticket IDs are:"
+            printf "%s\n" "${VALID_TICKET_IDS[@]}"
+            return 1
           fi
-        done
+          
+          # Extract ticket ID from the text
+          local ticket_prefix=$(echo "$text" | sed -n 's/^\([A-Z0-9]\+\)-[0-9]\+[[:space:]]*:.*$/\1/p')
+          
+          if [ -z "$ticket_prefix" ]; then
+            echo "ERROR: Could not extract ticket ID from $field_name."
+            echo "Expected format: <TICKETID>-<ticketno.> : <description>"
+            echo ""
+            echo "Valid ticket IDs are:"
+            printf "%s\n" "${VALID_TICKET_IDS[@]}"
+            return 1
+          fi
+          
+          # Check if extracted ticket ID is in the valid list
+          local valid=false
+          for valid_id in "${VALID_TICKET_IDS[@]}"; do
+            if [ "$ticket_prefix" = "$valid_id" ]; then
+              valid=true
+              break
+            fi
+          done
+          
+          if [ "$valid" = false ]; then
+            echo "ERROR: Invalid ticket ID '$ticket_prefix' in $field_name"
+            echo ""
+            echo "Valid ticket IDs are:"
+            printf "%s\n" "${VALID_TICKET_IDS[@]}"
+            echo ""
+            echo "Your $field_name should start with one of the above ticket IDs followed by a number."
+            echo "Example: RDKEMW-123 : Fix playbook issue"
+            return 1
+          fi
+          
+          echo "$field_name validation passed! Ticket ID: $ticket_prefix"
+          return 0
+        }
         
-        if [ "$VALID" = false ]; then
-          echo "ERROR: Invalid ticket ID '$TICKET_PREFIX'"
+        # Track validation results
+        TITLE_VALID=true
+        DESCRIPTION_VALID=true
+        
+        # Validate PR Title
+        echo "=== Validating PR Title ==="
+        if ! validate_ticket "$PR_TITLE" "PR title"; then
+          TITLE_VALID=false
+        fi
+        
+        echo ""
+        echo "=== Validating PR Description ==="
+        # Validate PR Description 
+        if [ -n "$PR_BODY" ]; then
+          if ! validate_ticket "$PR_BODY" "PR description"; then
+            DESCRIPTION_VALID=false
+          fi
+        else
+          echo "ERROR: PR description is empty."
+          echo "Both PR title and description must contain valid ticket IDs."
+          DESCRIPTION_VALID=false
+        fi
+        
+        echo ""
+        echo "=== Validation Summary ==="
+        echo "PR Title: $([ "$TITLE_VALID" = true ] && echo "PASSED" || echo " FAILED")"
+        echo "PR Description: $([ "$DESCRIPTION_VALID" = true ] && echo "PASSED" || echo "FAILED")"
+        
+        # Exit with error if either validation failed
+        if [ "$TITLE_VALID" = false ] || [ "$DESCRIPTION_VALID" = false ]; then
           echo ""
-          echo "Valid ticket IDs are:"
-          printf "%s\n" "${VALID_TICKET_IDS[@]}"
-          echo ""
-          echo "Your PR description should start with one of the above ticket IDs followed by a number."
-          echo "Example: RDKEMW-123 : Fix playback issue"
+          echo "VALIDATION FAILED: Both PR title and description must contain valid ticket IDs from the approved list."
           exit 1
         fi
         
-        echo "PR description validation passed!"
-        echo "Ticket ID: $TICKET_PREFIX"
+        echo ""
+        echo "🎉 ALL VALIDATIONS PASSED! Both PR title and description contain valid ticket IDs."
