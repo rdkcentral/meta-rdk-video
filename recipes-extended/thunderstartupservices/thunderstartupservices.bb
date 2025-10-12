@@ -120,21 +120,6 @@ do_install:append() {
         # Converts: "Description=WPEFramework SystemMode Initialiser"
         # To:      "Description=WPE SystemMode"
         sed -i 's/^Description=WPEFramework \(.*\) Initialiser$/Description=WPE \1/' "$SERVICE_FILE"
-
-        if grep -q '^ExecStart=.*PluginActivator' "$SERVICE_FILE"; then
-            CALLSIGN=$(sed -n -E 's/.*PluginActivator.*[[:space:]]+([A-Za-z0-9_.-]+)$/\1/p' "$SERVICE_FILE")
-
-            if [ -n "$CALLSIGN" ]; then
-                if ! grep -q "^ExecStop=/usr/bin/PluginActivator.*$CALLSIGN" "$SERVICE_FILE"; then
-                    if grep -q '^ExecStartPost=' "$SERVICE_FILE"; then
-                        sed -i "/^ExecStartPost=/a ExecStop=/usr/bin/PluginActivator -r 5 -x $CALLSIGN" "$SERVICE_FILE"
-                    else
-                        sed -i "/^ExecStart=.*PluginActivator/a ExecStop=/usr/bin/PluginActivator -r 5 -x $CALLSIGN" "$SERVICE_FILE"
-                    fi
-                fi
-            fi
-        fi
-
     done
 }
 
