@@ -102,7 +102,6 @@ do_install() {
         install -m 0644 ${S}/systemd_units/disk-threshold-check.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/disk-threshold-check.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/reboot-reason-logger.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-counter.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/reboot-counter.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/reboot-notifier@.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/iptables.service ${D}${systemd_unitdir}/system
@@ -117,7 +116,6 @@ do_install() {
         install -m 0644 ${S}/systemd_units/disk-threshold-check.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/disk-threshold-check.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/reboot-reason-logger.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-counter.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/reboot-counter.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/reboot-notifier@.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/iptables.service ${D}${systemd_unitdir}/system
@@ -284,7 +282,6 @@ SYSTEMD_SERVICE:${PN} += "minidump-secure-upload.path"
 SYSTEMD_SERVICE:${PN} += "dropbear.service"
 SYSTEMD_SERVICE:${PN} += "disk-threshold-check.timer"
 SYSTEMD_SERVICE:${PN} += "reboot-reason-logger.service"
-SYSTEMD_SERVICE:${PN} += "reboot-counter.service"
 SYSTEMD_SERVICE:${PN} += "reboot-counter.timer"
 SYSTEMD_SERVICE:${PN} += "reboot-notifier@.service"
 SYSTEMD_SERVICE:${PN} += "iptables.service"
