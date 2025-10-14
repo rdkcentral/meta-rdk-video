@@ -121,19 +121,27 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
     #Delete sae_password and ieee80211w
     sed -i "/ieee80211w/d" $WPA_SUPP_CONF_FILE
     sed -i "/sae_password/d" $WPA_SUPP_CONF_FILE
+	# WOWLAN triggers logic - add only if missing
+    if ! grep -q "wowlan_triggers=" "$WPA_SUPP_CONF_FILE"; then
+        echo "wowlan_triggers=any" >> "$WPA_SUPP_CONF_FILE"
+        log "Added wowlan_triggers=any to existing $WPA_SUPP_CONF_FILE"
+    else
+        log "wowlan_triggers already present in $WPA_SUPP_CONF_FILE, leaving as is"
+    fi
 else
     log "$WPA_SUPP_CONF_FILE file is missing. Creating file and updating configurations..."
     echo "ctrl_interface=/var/run/wpa_supplicant" > $WPA_SUPP_CONF_FILE
     echo "update_config=1" >> $WPA_SUPP_CONF_FILE
     echo "country=$COUNTRY_CODE" >> $WPA_SUPP_CONF_FILE
     echo "pmf=$PMF_CONFIG" >> $WPA_SUPP_CONF_FILE
+	echo "wowlan_triggers=any" >> $WPA_SUPP_CONF_FILE
 fi
 # Configuring wpa_supplicant log levels
-# Get debug.ini file with opt-override support
-if [ -f /opt/debug.ini ]  && [ "$BUILD_TYPE" != "prod" ]; then
-   DEBUGINIFILE=/opt/debug.ini
+# Get wpa_supplicant.logging file with opt-override support
+if [ -f /opt/wpa_supplicant.logging ]  && [ "$BUILD_TYPE" != "prod" ]; then
+   DEBUGINIFILE=/opt/wpa_supplicant.logging
 else
-   DEBUGINIFILE=/etc/debug.ini
+   DEBUGINIFILE=/etc/wpa_supplicant.logging
 fi
 #Read debug.ini file and map to wpa-supplicant logging level
 log_line=`grep "LOG.RDK.WIFIWPA" $DEBUGINIFILE`

@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Infra plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "1.7.4"
+PV ?= "2.1.0"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -13,7 +13,6 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-Add-monitoring-of-cloned-callsigns.patch \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
-           file://0001-RDK-41681-PR4013.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -65,10 +64,14 @@ PACKAGECONFIG ?= " monitor \
     lifecyclemanager \
     storagemanager \
     appmanager \
+    texttospeechmonitor \
+    preinstallmanager \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
     ${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' messagecontrol ', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \
 "
 
 # TODO: As advised, 'ocicointainer' plugin has been modified to build unconditionally. It will be revisited in the upcoming sprint to control it via DISTRO_FEATURES."
@@ -117,15 +120,18 @@ PACKAGECONFIG[usbmass_storage]         = "-DPLUGIN_USB_MASS_STORAGE=ON,-DPLUGIN_
 PACKAGECONFIG[usersettings]         = "-DPLUGIN_USERSETTINGS=ON,-DPLUGIN_USERSETTINGS=OFF,"
 PACKAGECONFIG[analytics]            = "-DPLUGIN_ANALYTICS=ON,-DPLUGIN_ANALYTICS=OFF, entservices-apis, entservices-apis"
 PACKAGECONFIG[rdkshell]             = "-DPLUGIN_RDKSHELL=ON,-DPLUGIN_RDKSHELL=OFF,rdkshell entservices-apis,rdkshell entservices-apis"
+PACKAGECONFIG[rialtodac]            = "-DRIALTO_IN_DAC_FEATURE=ON,-DRIALTO_IN_DAC_FEATURE=OFF,rialto,rialto-servermanager-lib"
 PACKAGECONFIG[rdkshellrialto]       = "-DRIALTO_FEATURE=ON,-DRIALTO_FEATURE=OFF,rialto,rialto-servermanager-lib"
 PACKAGECONFIG[rustadapter]          = "-DPLUGIN_RUSTADAPTER=OFF,,,"
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON,-DPLUGIN_RUNTIME_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[rdknativescript]      = "-DPLUGIN_NATIVEJS=ON,-DPLUGIN_NATIVEJS=OFF,rdknativescript,libuv"
-PACKAGECONFIG[packagemanager]       = "-DPLUGIN_PACKAGE_MANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_PACKAGE_MANAGER=OFF -DLIB_PACKAGE=OFF,curl virtual/libpackage,curl virtual/libpackage"
+PACKAGECONFIG[packagemanager]       = "-DPLUGIN_PACKAGE_MANAGER=ON ${PACKAGEMANAGER_PLUGIN_ARGS} -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_PACKAGE_MANAGER=OFF -DLIB_PACKAGE=OFF,curl virtual/libpackage,curl virtual/libpackage"
 PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LIFECYCLE_MANAGER=OFF,websocketpp entservices-apis,entservices-apis"
 PACKAGECONFIG[storagemanager]       = "-DPLUGIN_STORAGE_MANAGER=ON,-DPLUGIN_STORAGE_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[appmanager]           = "-DPLUGIN_APPMANAGER=ON,-DPLUGIN_APPMANAGER=OFF,entservices-apis,entservices-apis"
-
+PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON"
+PACKAGECONFIG[texttospeechmonitor]  = "-DPLUGIN_MONITOR_TEXTTOSPEECH=ON"
+PACKAGECONFIG[preinstallmanager]    = "-DPLUGIN_PREINSTALL_MANAGER=ON,-DPLUGIN_PREINSTALL_MANAGER=OFF,entservices-apis,entservices-apis"
 # ----------------------------------------------------------------------------
 
 MONITOR_PLUGIN_ARGS                ?= " \
@@ -136,7 +142,17 @@ MONITOR_PLUGIN_ARGS                ?= " \
                                        -DPLUGIN_MONITOR_SEARCH_AND_DISCOVERY_MEMORYLIMIT=888832 \
                                        -DPLUGIN_MONITOR_NETFLIX_APP_MEMORYLIMIT=1048576 \
 "
-
+PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
+                                       -DADD_DAC_PARAMS=${@d.getVar('DAC_PARAMS')} \
+                                       -DPLUGIN_DAC_DB_PATH=${DAC_DB_PATH} \
+                                       -DPLUGIN_DAC_APP_PATH=${DAC_APP_PATH} \
+                                       -DPLUGIN_DAC_DATA_PATH=${DAC_DATA_PATH} \
+                                       -DPLUGIN_DAC_ANTN_FILE=${DAC_ANN_FILE} \
+                                       -DPLUGIN_DAC_ANTN_REGEX=${DAC_ANN_REGEX} \
+                                       -DPLUGIN_DAC_BUN_FIRM_COMP_KEY=${DAC_BUN_FIRM_COMP_KEY} \
+                                       -DPLUGIN_DAC_BUN_PLATNAME_OVERRIDE=${DAC_BUN_PLATNAME_OVERRIDE} \
+                                       -DPLUGIN_DAC_CONFIGURL=${DAC_CONFIGURL} \
+"
 NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
 
 EXTRA_OECMAKE += " \

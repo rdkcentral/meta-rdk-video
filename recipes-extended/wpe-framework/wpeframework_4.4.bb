@@ -5,7 +5,7 @@ HOMEPAGE = "https://github.com/rdkcentral/Thunder"
 
 LIC_FILES_CHKSUM = "file://LICENSE;md5=85bcfede74b96d9a58c6ea5d4b607e58"
 
-DEPENDS = "zlib wpeframework-tools-native rfc thunderhangrecovery"
+DEPENDS = "zlib wpeframework-tools-native rfc thunder-hang-recovery"
 DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
 
@@ -46,7 +46,8 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/Update-Trace-Level-Logging-Logic.patch \
            file://r4.4/Activating_plugins_Logs_COMRPC.patch \
            file://r4.4/Removed_Autostart_Check_From_WPEFramework.patch \
-           file://r4.4/Integrate_deactivate_function_PluginActivator.patch \
+           file://r4.4/Append_WorkerPool_Info.patch \
+           file://r4.4/Revert_PR-665_support_JSON_Parsing.patch \
            "
 
 SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
@@ -63,6 +64,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/Jsonrpc_dynamic_error_handling.patch \
             file://r4.4/PR-1923-RDKEMW-6261-to-improve-system-shutdown-time-upon-R4.4.3.patch \
             file://r4.4/rdkemw-124-Link-Breakpad-wrapper.patch \
+            file://r4.4/RDKEMW-8889-Avoid-LoadMeta-On-Boot.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -90,7 +92,7 @@ PACKAGECONFIG ?= " \
     websocket \
     "
 
-PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com pluginactivator', '', d)}"
+PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com', '', d)}"
 
 # Buildtype
 # Maybe we need to couple this to a Yocto feature
@@ -115,7 +117,6 @@ PACKAGECONFIG[webkitbrowser]   = "-DPLUGIN_WEBKITBROWSER=ON,,"
 PACKAGECONFIG[websocket]       = "-DWEBSOCKET=ON,,"
 
 PACKAGECONFIG[com] = "-DCOM=ON,,,"
-PACKAGECONFIG[pluginactivator] = "-DBUILD_PLUGIN_ACTIVATOR=ON,,,"
 
 # FIXME, determine this a little smarter
 # Provision event is required for libprovision and provision plugin
@@ -159,14 +160,8 @@ EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
 EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 
 do_install:append() {
-    if ${@bb.utils.contains("DISTRO_FEATURES", "systemd", "true", "false", d)}
-    then
-        install -d ${D}${systemd_unitdir}/system
-        cp ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
-    else
-        install -d ${D}${sysconfdir}/init.d
-        install -m 0755 ${WORKDIR}/wpeframework-init ${D}${sysconfdir}/init.d/wpeframework
-    fi
+    install -d ${D}${systemd_unitdir}/system
+    install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
 
     install -d ${D}${systemd_unitdir}/system/wpeframework.service.d
     install -m 0644 ${WORKDIR}/network_manager_migration.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
@@ -195,7 +190,7 @@ INSANE_SKIP:${PN}-dbg += "dev-so"
 # ----------------------------------------------------------------------------
 
 RDEPENDS:${PN}_rpi = "userland"
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)} thunderhangrecovery"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)} thunder-hang-recovery"
 # Should be able to remove this when generic rdk_svp flag
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'sage_svp', 'gst-svp-ext', '', d)}"
 
