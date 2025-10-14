@@ -25,7 +25,7 @@ interface changes for enhanced instance management and add operational state tra
  Source/powercontroller/CMakeLists.txt       |   79 +
  Source/powercontroller/Module.cpp           |   22 +
  Source/powercontroller/Module.h             |   33 +
- Source/powercontroller/power_controller.cpp | 1914 +++++++++++++++++++
+ Source/powercontroller/power_controller.cpp | 1971 +++++++++++++++++++
  Source/powercontroller/power_controller.h   |  405 ++++
  8 files changed, 2441 insertions(+), 1 deletion(-)
  create mode 100644 Source/powercontroller/CMakeLists.txt
