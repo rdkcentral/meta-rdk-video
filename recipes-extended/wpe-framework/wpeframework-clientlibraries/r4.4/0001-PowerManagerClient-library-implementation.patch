@@ -25,7 +25,7 @@ interface changes for enhanced instance management and add operational state tra
  Source/powercontroller/CMakeLists.txt       |   79 +
  Source/powercontroller/Module.cpp           |   22 +
  Source/powercontroller/Module.h             |   33 +
- Source/powercontroller/power_controller.cpp | 1971 +++++++++++++++++++
+ Source/powercontroller/power_controller.cpp | 1969 +++++++++++++++++++
  Source/powercontroller/power_controller.h   |  405 ++++
  8 files changed, 2441 insertions(+), 1 deletion(-)
  create mode 100644 Source/powercontroller/CMakeLists.txt
@@ -221,10 +221,10 @@ index 0000000..c9c1321
 +#endif
 diff --git a/Source/powercontroller/power_controller.cpp b/Source/powercontroller/power_controller.cpp
 new file mode 100644
-index 0000000..97b8575
+index 0000000..f225ad8
 --- /dev/null
 +++ b/Source/powercontroller/power_controller.cpp
-@@ -0,0 +1,1971 @@
+@@ -0,0 +1,1969 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -1068,8 +1068,8 @@ index 0000000..97b8575
 +    uint32_t Connect()
 +    {
 +        uint32_t status = Core::ERROR_NONE;
-+        std::string errMsg = "";
 +
++        LOGINFO("Entering ...");
 +        _apiLock.Lock();
 +        try {
 +            do {
@@ -1077,7 +1077,7 @@ index 0000000..97b8575
 +                    LOGINFO("Opening COM-RPC channel ...");
 +                    uint32_t res = BaseClass::Open(RPC::CommunicationTimeOut, BaseClass::Connector(), callSign);
 +                    if (Core::ERROR_NONE == res) {
-+                        errMsg = "COM-RPC channel opened successfully";
++                        LOGINFO("COM-RPC channel opened successfully");
 +                        _connected = true;
 +                        if (!_pidMonitor.Running()) {
 +                            // read pid file once to get initial PID
@@ -1086,34 +1086,32 @@ index 0000000..97b8575
 +                        }
 +                    }
 +                    else {
-+                        errMsg = "COM-RPC channel open failed with status[" + std::to_string(res) + "]. Is Thunder running ?";
++                        LOGWARN("COM-RPC channel open failed with status[%u]. Is Thunder running ?", res);
 +                        status = Core::ERROR_UNAVAILABLE;
 +                        break;
 +                    }
 +                }
 +                else {
-+                    errMsg = "COM-RPC channel already open";
++                    LOGINFO("COM-RPC channel already open");
 +                }
 +
 +                if (nullptr == _powerManagerInterface) {
-+                    errMsg = "PowerManager plugin is not activated yet";
++                    LOGWARN("PowerManager plugin is not activated yet");
 +                    status = Core::ERROR_NOT_EXIST;
 +                }
 +            } while (false);
 +        }
 +        catch (const std::exception& ex) {
-+            LOGERR("Exception in PowerController::Connect: %s", ex.what());
++            LOGERR("Exception in PowerController::Connect [%s]", ex.what());
 +            status = Core::ERROR_GENERAL;
-+            errMsg = ex.what();
 +        }
 +        catch (...) {
 +            LOGERR("Unknown exception in PowerController::Connect");
 +            status = Core::ERROR_GENERAL;
-+            errMsg = "Unknown exception";
 +        }
 +        _apiLock.Unlock();
 +
-+        LOGINFO("callSign(%s) status: %u, errMsg:(%s)", callSign, status, errMsg.c_str());
++        LOGINFO("Exiting... status[%u]", status);
 +
 +        return status;
 +    }
@@ -1122,7 +1120,7 @@ index 0000000..97b8575
 +    {
 +        uint32_t status = Core::ERROR_GENERAL;
 +
-+        LOGINFO("Entering");
++        LOGINFO("Entering ...");
 +
 +        _apiLock.Lock();
 +
@@ -1140,7 +1138,7 @@ index 0000000..97b8575
 +
 +        _apiLock.Unlock();
 +
-+        LOGINFO("Exiting status: %u", status);
++        LOGINFO("Exiting ... status[%u]", status);
 +
 +        return status;
 +    }
