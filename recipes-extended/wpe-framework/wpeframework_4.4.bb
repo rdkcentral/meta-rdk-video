@@ -47,6 +47,7 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/Removed_Autostart_Check_From_WPEFramework.patch \
            file://r4.4/Append_WorkerPool_Info.patch \
            file://r4.4/Revert_PR-665_support_JSON_Parsing.patch \
+           file://r4.4/Add-LoadMetadata-timing-measurement.patch \
            "
 
 SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
@@ -63,7 +64,6 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/Jsonrpc_dynamic_error_handling.patch \
             file://r4.4/PR-1923-RDKEMW-6261-to-improve-system-shutdown-time-upon-R4.4.3.patch \
             file://r4.4/rdkemw-124-Link-Breakpad-wrapper.patch \
-            file://r4.4/RDKEMW-8889-Avoid-LoadMeta-On-Boot.patch \
            "
 
 S = "${WORKDIR}/git"

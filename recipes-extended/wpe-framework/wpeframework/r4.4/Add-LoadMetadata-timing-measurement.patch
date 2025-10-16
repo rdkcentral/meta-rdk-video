@@ -1,0 +1,16 @@
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index 650a2e1d9..27353622a 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -1096,7 +1096,11 @@ POP_WARNING()
+         // Load the metadata for the subsystem information..
+         while (iterator.Next() == true)
+         {
++            uint64_t start = WPEFramework::Core::SystemInfo::Instance().Ticks();
+             iterator->LoadMetadata();
++            uint64_t end = WPEFramework::Core::SystemInfo::Instance().Ticks();
++            uint64_t duration = (end - start) / WPEFramework::Core::Time::MicroSecondsPerMilliSecond;
++            SYSLOG(Logging::Startup, (_T("Duration of LoadingMetadata [%llu] ms for plugin [%s] in PluginServer"), duration, iterator->Callsign().c_str()));
+             for (const PluginHost::ISubSystem::subsystem& entry : iterator->SubSystemControl()) {
+                 Core::EnumerateType<PluginHost::ISubSystem::subsystem> name(entry);
+                 if (std::find(externallyControlled.begin(), externallyControlled.end(), entry) != externallyControlled.end()) {
