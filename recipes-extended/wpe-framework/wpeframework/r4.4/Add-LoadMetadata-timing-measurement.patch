@@ -1,9 +1,14 @@
 diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
-index 650a2e1d9..27353622a 100644
+index 650a2e1..f657823 100644
 --- a/Source/WPEFramework/PluginServer.cpp
 +++ b/Source/WPEFramework/PluginServer.cpp
-@@ -1096,7 +1096,11 @@ POP_WARNING()
-         // Load the metadata for the subsystem information..
+@@ -1093,10 +1093,15 @@ POP_WARNING()
+         std::vector<PluginHost::ISubSystem::subsystem> externallyControlled;
+         ServiceMap::Iterator iterator(_services.Services());
+
+-        // Load the metadata for the subsystem information..
++        uint64_t totaltime_start = WPEFramework::Core::SystemInfo::Instance().Ticks();
++       // Load the metadata for the subsystem information..
          while (iterator.Next() == true)
          {
 +            uint64_t start = WPEFramework::Core::SystemInfo::Instance().Ticks();
@@ -14,3 +19,12 @@ index 650a2e1d9..27353622a 100644
              for (const PluginHost::ISubSystem::subsystem& entry : iterator->SubSystemControl()) {
                  Core::EnumerateType<PluginHost::ISubSystem::subsystem> name(entry);
                  if (std::find(externallyControlled.begin(), externallyControlled.end(), entry) != externallyControlled.end()) {
+@@ -1111,6 +1116,9 @@ POP_WARNING()
+                 }
+             }
+         }
++        uint64_t totaltime_end = WPEFramework::Core::SystemInfo::Instance().Ticks();
++        uint64_t totalduration = (totaltime_end - totaltime_start) / WPEFramework::Core::Time::MicroSecondsPerMilliSecond;
++        SYSLOG(Logging::Startup, (_T("Total duration of LoadingMetadata and reading metadata from symbols to identify version & subsystem-controlled plugins: [%llu] ms in PluginServer"), totalduration));
+
+         _controller->Activate(PluginHost::IShell::STARTUP);
