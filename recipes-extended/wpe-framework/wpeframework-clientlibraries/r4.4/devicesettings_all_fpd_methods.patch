@@ -1,0 +1,2161 @@
+From e1e33568502ef85fdd9bf03c057580a3c291d9b6 Mon Sep 17 00:00:00 2001
+From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+Date: Mon, 29 Sep 2025 15:17:24 +0000
+Subject: [PATCH 1/7] DeviceSettings Patch 2
+
+Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+---
+ Source/CMakeLists.txt                     |   2 +
+ Source/devicesettings/CMakeLists.txt      |  85 +++
+ Source/devicesettings/Module.cpp          |   0
+ Source/devicesettings/Module.h            |   0
+ Source/devicesettings/device_settings.cpp | 656 ++++++++++++++++++++++
+ Source/devicesettings/device_settings.h   | 153 +++++
+ 6 files changed, 896 insertions(+)
+ create mode 100644 Source/devicesettings/CMakeLists.txt
+ create mode 100644 Source/devicesettings/Module.cpp
+ create mode 100644 Source/devicesettings/Module.h
+ create mode 100644 Source/devicesettings/device_settings.cpp
+ create mode 100644 Source/devicesettings/device_settings.h
+
+diff --git a/Source/CMakeLists.txt b/Source/CMakeLists.txt
+index af7578a..bcbae8b 100644
+--- a/Source/CMakeLists.txt
++++ b/Source/CMakeLists.txt
+@@ -58,3 +58,5 @@ endif()
+ if(LOCALTRACER)
+     add_subdirectory(localtracer)
+ endif()
++
++    add_subdirectory(devicesettings)
+diff --git a/Source/devicesettings/CMakeLists.txt b/Source/devicesettings/CMakeLists.txt
+new file mode 100644
+index 0000000..44255a8
+--- /dev/null
++++ b/Source/devicesettings/CMakeLists.txt
+@@ -0,0 +1,85 @@
++# If not stated otherwise in this file or this component's LICENSE file the
++# following copyright and licenses apply:
++#
++# Copyright 2025 RDK Management
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++# http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++cmake_minimum_required(VERSION 3.3)
++
++find_package(WPEFramework)
++
++project(DSController)
++
++project_version(4.4.1)
++
++set(TARGET ${NAMESPACE}${PROJECT_NAME})
++
++message("Setup ${TARGET} v${PROJECT_VERSION}")
++
++find_package(${NAMESPACE}Core REQUIRED)
++find_package(${NAMESPACE}COM REQUIRED)
++find_package(CompileSettingsDebug CONFIG REQUIRED)
++
++set(PUBLIC_HEADERS "device_settings.h")
++
++add_library(${TARGET}  SHARED
++    Module.cpp
++    device_settings.cpp
++)
++
++target_link_libraries(${TARGET}
++        PRIVATE
++          ${NAMESPACE}Core::${NAMESPACE}Core
++          ${NAMESPACE}COM::${NAMESPACE}COM
++          CompileSettingsDebug::CompileSettingsDebug
++        )
++
++set_target_properties(${TARGET} PROPERTIES
++        CXX_STANDARD 11
++        CXX_STANDARD_REQUIRED YES
++        FRAMEWORK FALSE
++        PUBLIC_HEADER "${PUBLIC_HEADERS}" # specify the public headers
++        VERSION ${PROJECT_VERSION}
++        SOVERSION ${PROJECT_VERSION_MAJOR}
++        )
++
++target_include_directories( ${TARGET}
++        PUBLIC
++          $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
++          $<INSTALL_INTERFACE:include>
++        )
++
++install(TARGETS ${TARGET}
++        LIBRARY DESTINATION lib
++        PUBLIC_HEADER DESTINATION include
++        )
++
++install(
++        TARGETS ${TARGET}  EXPORT ${TARGET}Targets  # for downstream dependencies
++        ARCHIVE DESTINATION lib COMPONENT libs      # static lib
++        LIBRARY DESTINATION lib COMPONENT libs      # shared lib
++        RUNTIME DESTINATION bin COMPONENT libs      # binaries
++        FRAMEWORK DESTINATION bin COMPONENT libs    # for mac
++        PUBLIC_HEADER DESTINATION include/${NAMESPACE}/devicesettings COMPONENT devel   # headers for mac (note the different component -> different package)
++        INCLUDES DESTINATION include/${NAMESPACE}/devicesettings # headers
++)
++
++InstallCMakeConfig(
++        TARGETS ${TARGET})
++
++InstallPackageConfig(
++        TARGETS ${TARGET}
++        DESCRIPTION "communications channel abstraction for devicesettingsmanager plugin")
++
++# eof
+\ No newline at end of file
+diff --git a/Source/devicesettings/Module.cpp b/Source/devicesettings/Module.cpp
+new file mode 100644
+index 0000000..e69de29
+diff --git a/Source/devicesettings/Module.h b/Source/devicesettings/Module.h
+new file mode 100644
+index 0000000..e69de29
+diff --git a/Source/devicesettings/device_settings.cpp b/Source/devicesettings/device_settings.cpp
+new file mode 100644
+index 0000000..212b95d
+--- /dev/null
++++ b/Source/devicesettings/device_settings.cpp
+@@ -0,0 +1,656 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2025 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++// std includes
++#include <algorithm>
++#include <functional>
++#include <list>
++#include <type_traits>
++
++#include <sys/inotify.h>
++#include <sys/syscall.h>
++
++// Thunder includes
++#include <interfaces/IDeviceSettingsManager.h>
++#include <plugins/Types.h>
++
++#include "device_settings.h"
++
++#define ENABLE_LOGGING
++
++#ifdef ENABLE_LOGGING
++#define LOGINFO(fmt, ...)                                                                                                                                                 \
++    do {                                                                                                                                                                  \
++        fprintf(stdout, "[DSCLILIB][%d] INFO  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fflush(stdout);                                                                                                                                                   \
++    } while (0)
++#define LOGWARN(fmt, ...)                                                                                                                                                 \
++    do {                                                                                                                                                                  \
++        fprintf(stdout, "[DSCLILIB][%d] WARN  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fflush(stdout);                                                                                                                                                   \
++    } while (0)
++#define LOGERR(fmt, ...)                                                                                                                                                  \
++    do {                                                                                                                                                                  \
++        fprintf(stderr, "[DSCLILIB][%d] ERROR [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fflush(stderr);                                                                                                                                                   \
++    } while (0)
++#else
++#define LOGINFO(fmt, ...)
++#define LOGWARN(fmt, ...)
++#define LOGERR(fmt, ...)
++#endif
++
++using namespace WPEFramework;
++
++static constexpr const TCHAR callSign[] = _T("org.rdk.DeviceSettingsManager");
++
++#define INVALID_PID (-1)
++#define INVALID_FD (-1)
++#define POLL_TIMEOUT (2000)
++
++using PIDFileChangedCb = std::function<void(const int pid)>;
++
++class PIDFileMonitor {
++    const std::string _pidFile; // pid file path `/tmp/wpeframework.pid`
++    const std::string _processName; // process name extracted from pid file `wpeframework`
++    PIDFileChangedCb _callback; // callback to notify PID file changes
++
++    int _fd; // inotify fd
++    int _wd; // inotify watch descriptor
++    int _pid; // current PID
++
++    bool _running; // current running state
++    volatile std::atomic<bool> _shutdown; // thread shutdown flag
++
++    std::unique_ptr<std::thread> _thread; // thread to monitor PID file changes
++
++    std::string parseProcessName(const std::string& pidFile)
++    {
++        std::string processName;
++
++        // Find the last '/' and '.pid'
++        size_t slash = pidFile.find_last_of('/');
++        size_t dot = pidFile.find_last_of('.');
++
++        if (slash != std::string::npos && dot != std::string::npos && dot > slash) {
++            processName = pidFile.substr(slash + 1, dot - slash - 1);
++        }
++
++        return processName;
++    }
++
++    char* trim(char* str)
++    {
++        char* end;
++
++        // Trim leading space
++        while (isspace((unsigned char)*str))
++            str++;
++
++        // If the string is empty, return it
++        if (*str == '\0')
++            return str;
++
++        // Trim trailing space
++        end = str + strlen(str) - 1;
++        while (end > str && isspace((unsigned char)*end))
++            end--;
++
++        // Null-terminate the string
++        *(end + 1) = '\0';
++
++        return str;
++    }
++
++    int parsePID(char* buf, size_t maxSz)
++    {
++        long pid = INVALID_PID;
++        char* end = nullptr;
++
++        do {
++            // if buf is empty, avoid parsing
++            if (strnlen(buf, maxSz) == 0) {
++                LOGERR("empty buffer");
++                break;
++            }
++
++            // trim leading/trailing spaces
++            buf = trim(buf);
++
++            // reset errno, strtol sets errno on failure
++            errno = 0;
++
++            // read as base 10
++            pid = strtol(buf, &end, 10);
++
++            if (errno) {
++                LOGERR("strtol failed, err: %s", strerror(errno));
++                pid = INVALID_PID;
++                break;
++            }
++
++            if (!pid) {
++                // strtol returns 0 if no valid conversion could be performed
++                LOGERR("strtol failed, no valid conversion");
++                pid = INVALID_PID;
++            }
++        } while (false);
++
++        return (int)pid;
++    }
++
++    int readPID()
++    {
++        constexpr size_t maxSz = 64;
++        int pid = INVALID_PID;
++
++        FILE* file = fopen(_pidFile.c_str(), "r");
++
++        do {
++            // Open the file in read mode
++            if (nullptr == file) {
++                LOGERR("%s open failed, err: %s", _pidFile.c_str(), strerror(errno));
++                break;
++            }
++
++            // Read file content (only first line)
++            char buffer[maxSz] = { 0 };
++
++            if (nullptr == fgets(buffer, maxSz, file) && !feof(file)) {
++                LOGERR("%s read failed, err: %s", _pidFile.c_str(), strerror(errno));
++                break;
++            }
++
++            // Convert the file content to an integer
++            pid = parsePID(buffer, maxSz);
++
++        } while (false);
++
++        if (nullptr != file) {
++            fclose(file);
++        }
++
++        LOGINFO("%s PID: %d", _pidFile.c_str(), pid);
++
++        return pid;
++    }
++
++    int handle_inotify_event(int fd)
++    {
++        // buffer to read 10 inotify events at a time
++        constexpr size_t maxSz = 10 * (sizeof(struct inotify_event) + 16);
++
++        /* Some systems cannot read integer variables if they are not
++           properly aligned. On other systems, incorrect alignment may
++           decrease performance. Hence, the buffer used for reading from
++           the inotify file descriptor should have the same alignment as
++           struct inotify_event. */
++
++        char buffer[maxSz]
++            __attribute__((aligned(__alignof__(struct inotify_event))));
++        const struct inotify_event* event;
++        ssize_t bytesRead;
++
++        /* Loop while events can be read from inotify file descriptor. */
++        for (;;) {
++
++            /* Read some events. */
++            bytesRead = read(fd, buffer, sizeof(buffer));
++            if (bytesRead == -1 && errno != EAGAIN) {
++                LOGERR("read failed, err: %s", strerror(errno));
++                return bytesRead; // error
++            }
++
++            if (bytesRead <= 0)
++                break;
++
++            /* Loop over all events in the buffer. */
++            for (char* ptr = buffer; ptr < buffer + bytesRead;
++                ptr += sizeof(struct inotify_event) + event->len) {
++
++                event = (const struct inotify_event*)ptr;
++
++                if (event->mask & IN_CLOSE_WRITE) {
++                    _pid = readPID();
++
++                    LOGINFO("inotify event IN_CLOSE_WRITE, PID: %d", _pid);
++
++                    ASSERT(INVALID_PID != _pid);
++
++                    if (INVALID_PID != _pid) {
++                        _callback(_pid);
++                    }
++                }
++            }
++        }
++        return bytesRead;
++    }
++
++    void monitorThread()
++    {
++        ASSERT(INVALID_PID != _pid);
++
++        LOGINFO("started, pid file: %s", _pidFile.c_str());
++
++        do {
++
++            _fd = inotify_init1(IN_NONBLOCK);
++
++            if (_fd < 0) {
++                LOGERR("inotify_init failed, err: %s", strerror(errno));
++                _fd = INVALID_FD;
++                break;
++            }
++
++            _wd = inotify_add_watch(_fd, _pidFile.c_str(), IN_CLOSE_WRITE);
++
++            if (_wd < 0) {
++                LOGERR("inotify_add_watch failed, err: %s", strerror(errno));
++                _wd = INVALID_FD;
++                break;
++            }
++
++            struct pollfd pfd = { .fd = _fd, .events = POLLIN };
++
++            while (!_shutdown) {
++
++                int poll_res = poll(&pfd, 1, POLL_TIMEOUT);
++
++                if (poll_res == -1) {
++                    if (errno == EINTR)
++                        continue;
++
++                    std::cerr << "FATAL poll failed, err: " << strerror(errno) << ", fd: " << _fd << ", wd: " << _wd << "\n";
++                    break;
++                } else if (poll_res == 0) {
++                    // timedout
++                    continue;
++                } else {
++                    if (pfd.revents & POLLIN) {
++                        /* Inotify events are available. */
++                        handle_inotify_event(_fd);
++                    }
++                }
++            }
++        } while (false);
++
++        if (INVALID_FD != _wd) {
++            close(_wd);
++        }
++        if (INVALID_FD != _fd) {
++            close(_fd);
++        }
++        std::cout << "monitorThread: exiting\n";
++    }
++
++public:
++    PIDFileMonitor(const std::string& pidFile, PIDFileChangedCb callback)
++        : _pidFile(pidFile)
++        , _processName(parseProcessName(pidFile))
++        , _callback(std::move(callback))
++        , _fd(INVALID_FD)
++        , _wd(INVALID_FD)
++        , _pid(INVALID_PID)
++        , _shutdown(false)
++        , _thread(nullptr)
++    {
++    }
++
++    inline bool Running() const
++    {
++        return _thread && _thread->joinable();
++    }
++
++    void Run()
++    {
++        // ensure valid pid file & pid before starting monitor thread
++        if (INVALID_PID == _pid) {
++            _pid = readPID();
++        }
++
++        if (!_shutdown && !Running()) {
++            _thread = std::unique_ptr<std::thread>(new std::thread(std::bind(&PIDFileMonitor::monitorThread, this)));
++        }
++    }
++
++    int PID()
++    {
++        if (INVALID_PID == _pid) {
++            _pid = readPID();
++        }
++        return _pid;
++    }
++
++    ~PIDFileMonitor()
++    {
++        std::cout << "PIDMonitor destructor\n";
++
++        _shutdown = true;
++
++        if (_thread) {
++            if (_thread->joinable()) {
++                _thread->join();
++            }
++            _thread.reset();
++        }
++    }
++
++    PIDFileMonitor(const PIDFileMonitor&) = delete;
++    PIDFileMonitor& operator=(const PIDFileMonitor&) = delete;
++};
++
++class DeviceSettings : public RPC::SmartInterfaceType<Exchange::IDeviceSettingsManager> {
++    private:
++        using BaseClass = RPC::SmartInterfaceType<Exchange::IDeviceSettingsManager>;
++
++    //    static DeviceSettings* _instance;
++    //    static Core::CriticalSection _apiLock;
++    //    static Core::CriticalSection _callbackLock;
++
++        std::string callSign;
++        
++    //    PIDFileMonitor _pidMonitor;
++    //    int _pid;
++    //    bool _connected;
++    //    bool _shutdown;
++
++    DeviceSettings()
++        : BaseClass()
++        , _deviceSettingsManagerInterface(nullptr)
++        , _pidMonitor("/tmp/wpeframework.pid", std::bind(&DeviceSettings::pidChangedCb, this, std::placeholders::_1))
++        , _pid(INVALID_PID)
++        , _connected(false)
++        , _shutdown(false)
++    {
++        (void)Connect();
++    }
++
++    ~DeviceSettings()
++    {
++        _shutdown = true;
++        /* Close destroys _deviceSettingsManagerInterface too */
++        BaseClass::Close(Core::infinite);
++    }
++
++    void pidChangedCb(const int pid)
++    {
++        std::cout << "Thunder OLD PID: " << _pid << ", NEW PID: " << pid << "\n";
++
++        if (_pid != pid) {
++            Disconnect();
++            Connect();
++            _pid = pid;
++        }
++    }
++
++    virtual void Operational(const bool upAndRunning) override
++    {
++        LOGINFO("callsign: (%s), running: %d", callSign, upAndRunning);
++
++        _apiLock.Lock();
++
++        // avoid misleading log during shutdown
++        if ((upAndRunning && _shutdown) || !_shutdown) {
++            std::cout << "DeviceSettings::Operational (" << callSign << ") " << upAndRunning << std::endl;
++        }
++
++        if (upAndRunning) {
++            // Communicatior opened && DeviceSettingsManager is Activated
++            if (nullptr == _deviceSettingsManagerInterface) {
++                _deviceSettingsManagerInterface = BaseClass::Interface();
++                if (_deviceSettingsManagerInterface != nullptr) {
++                    RegisterNotificationsLocked();
++                    std::cout << "DeviceSettings successfully established COM-RPC connection with DeviceSettings plugin\n";
++                } else {
++                    // Internal error DeviceSettingsManager is running, but QueryInterface failed for it ?
++                    std::cerr << "DeviceSettings failed to established COM-RPC connection with DeviceSettings plugin\n";
++                }
++            }
++        } else {
++            // DeviceSettingsManager is Deactivated || Communicator closed
++            if (nullptr != _deviceSettingsManagerInterface) {
++                UnregisterNotificationsLocked();
++                _deviceSettingsManagerInterface->Release();
++                _deviceSettingsManagerInterface = nullptr;
++            } else {
++                LOGERR("Unexpected, DeviceSettings just deactivated, but interface already null ?");
++            }
++        }
++        _apiLock.Unlock();
++    }
++
++    // Locked method expected to be called from locked context
++    void RegisterNotificationsLocked()
++    {
++        //TODO
++    }
++
++    // Locked method expected to be called from locked context
++    void UnregisterNotificationsLocked()
++    {
++        //TODO
++    }
++
++    inline bool isConnected() const
++    {
++        return _connected;
++    }
++
++public:
++    // Locked method expected to be called from locked context
++    inline bool IsActivatedLocked() const
++    {
++        return (nullptr != _deviceSettingsManagerInterface);
++    }
++
++    uint32_t Connect()
++    {
++        uint32_t status = Core::ERROR_NONE;
++        std::string errMsg = "";
++
++        _apiLock.Lock();
++
++        do {
++            if (!isConnected()) {
++                uint32_t res = BaseClass::Open(RPC::CommunicationTimeOut, BaseClass::Connector(), callSign);
++                if (Core::ERROR_NONE == res) {
++                    _connected = true;
++                    if (!_pidMonitor.Running()) {
++                        // read pid file once to get initial PID
++                        _pid = _pidMonitor.PID();
++                        _pidMonitor.Run();
++                    }
++                } else {
++                    errMsg = "COM-RPC channel open failed. Is Thunder running ?";
++                    status = Core::ERROR_UNAVAILABLE;
++                    break;
++                }
++            } else {
++                errMsg = "COM-RPC channel already open";
++            }
++
++            if (nullptr == _deviceSettingsManagerInterface) {
++                errMsg = "DeviceSettings plugin is not activated yet";
++                status = Core::ERROR_NOT_EXIST;
++            }
++        } while (false);
++
++        _apiLock.Unlock();
++
++        std::cout << "DeviceSettings::Connect (" << callSign << ") status: " << status << ", errMsg: \"" << errMsg << "\"" << std::endl;
++
++        return status;
++    }
++
++    uint32_t Disconnect()
++    {
++        uint32_t status = Core::ERROR_GENERAL;
++        bool close = false;
++
++        _apiLock.Lock();
++
++        if (isConnected()) {
++            close = true;
++            _connected = false;
++        }
++
++        _apiLock.Unlock();
++
++        if (close) {
++            status = BaseClass::Close(Core::infinite);
++        }
++
++        std::cout << "DeviceSettings::disconnect\n";
++
++        return status;
++    }
++
++    static void Init()
++    {
++        _apiLock.Lock();
++        if (nullptr == _instance) {
++            _instance = new DeviceSettings();
++        }
++        _apiLock.Unlock();
++    }
++
++    static void Term()
++    {
++        _apiLock.Lock();
++        if (nullptr != _instance) {
++            delete _instance;
++            _instance = nullptr;
++        }
++        _apiLock.Unlock();
++    }
++
++    static DeviceSettings* Instance()
++    {
++        return _instance;
++    }
++
++/*    Core::hresult GetFPDColor(const FPDIndicator indicator , uint32_t &color)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        _apiLock.Lock();
++
++        if (_deviceSettingsManagerInterface) {
++            result = _deviceSettingsManagerInterface->GetFPDColor(indicator, color);
++        }
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++*/
++    Core::hresult GetFPDBrightness(DeviceSettings_FPDIndicator_t indicator , uint32_t &brightness)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        _apiLock.Lock();
++
++        if (_deviceSettingsManagerInterface) {
++            Exchange::IDeviceSettingsManager::IFPD* fpdInterface = _deviceSettingsManagerInterface->QueryInterface<Exchange::IDeviceSettingsManager::IFPD>();
++            if (fpdInterface) {
++                result = fpdInterface->GetFPDBrightness(static_cast<Exchange::IDeviceSettingsManager::IFPD::FPDIndicator>(indicator), brightness);
++                fpdInterface->Release();
++            }
++        }
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++private:
++    Exchange::IDeviceSettingsManager* _deviceSettingsManagerInterface; //Remote DeviceSettingsManager plugin interface
++
++    static DeviceSettings* _instance;
++    static Core::CriticalSection _apiLock;
++    static Core::CriticalSection _callbackLock;
++
++    PIDFileMonitor _pidMonitor;
++    int _pid;
++    bool _connected;
++    bool _shutdown;
++};
++
++/* static */ DeviceSettings* DeviceSettings::_instance = nullptr;
++/* static */ Core::CriticalSection DeviceSettings::_apiLock;
++
++extern "C" {
++
++    void DeviceSettings_Init()
++    {
++        DeviceSettings::Init();
++    }
++
++    void DeviceSettings_Term()
++    {
++        DeviceSettings::Term();
++    }
++
++    uint32_t DeviceSettings_Connect()
++    {
++        DeviceSettings *instance = DeviceSettings::Instance();
++        if (instance) {
++            return instance->Connect();
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++
++    uint32_t DeviceSettings_Disconnect()
++    {
++        DeviceSettings *instance = DeviceSettings::Instance();
++        if (instance) {
++            return instance->Disconnect();
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++
++    bool DeviceSettings_IsOperational()
++    {
++        DeviceSettings *instance = DeviceSettings::Instance();
++        if (instance) {
++            return instance->IsOperational();
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++
++/*    uint32_t DeviceSettings_GetFPDColor(const DeviceSettings_FPDIndicator_t indicator , uint32_t *color)
++    {
++        ASSERT(nullptr != color);
++        DeviceSettings *instance = DeviceSettings::Instance();
++        if (instance) {
++            return instance->GetFPDColor(static_cast<DeviceSettings::FPDIndicator>(indicator), *color);
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++*/
++    uint32_t DeviceSettings_GetFPDBrightness(DeviceSettings_FPDIndicator_t indicator , uint32_t *brightness)
++    {
++        ASSERT(nullptr != brightness);
++        DeviceSettings *instance = DeviceSettings::Instance();
++        if (instance) {
++            return instance->GetFPDBrightness(indicator, *brightness);
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++}
+\ No newline at end of file
+diff --git a/Source/devicesettings/device_settings.h b/Source/devicesettings/device_settings.h
+new file mode 100644
+index 0000000..b99272b
+--- /dev/null
++++ b/Source/devicesettings/device_settings.h
+@@ -0,0 +1,153 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2025 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef DEVICE_SETTINGS_H
++#define DEVICE_SETTINGS_H
++
++#include <stdbool.h>
++#include <stdint.h>
++
++#undef EXTERNAL
++#if defined(WIN32) || defined(_WINDOWS) || defined (__CYGWIN__) || defined(_WIN64)
++#ifdef DEVICEINFO_EXPORTS
++#define EXTERNAL __declspec(dllexport)
++#else
++#define EXTERNAL __declspec(dllimport)
++#pragma comment(lib, "deviceinfo.lib")
++#endif
++#else
++#define EXTERNAL __attribute__((visibility("default")))
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#define DEVICE_SETTINGS_ERROR_NONE 0
++#define DEVICE_SETTINGS_ERROR_GENERAL 1
++#define DEVICE_SETTINGS_ERROR_UNAVAILABLE 2
++#define DEVICE_SETTINGS_ERROR_NOT_EXIST 43
++
++typedef enum DeviceSettings_FPDIndicator {
++    FPD_INDICATOR_MESSAGE = 0 /* MESSAGE */,
++    FPD_INDICATOR_POWER = 1 /* POWER */,
++    FPD_INDICATOR_RECORD = 2 /* RECORD */,
++    FPD_INDICATOR_REMOTE = 3 /* REMOTE */,
++    FPD_INDICATOR_RFBYPASS = 4 /* RFBYPASS */,
++    FPD_INDICATOR_MAX = 5 /* MAX */
++} DeviceSettings_FPDIndicator_t;
++
++/**
++ * @brief Initializes the Power Controller.
++ *
++ * This function creates an instance of the PowerManager plugin client interface and increments the client instance count.
++ *
++ * @details
++ * - If the Power Controller instance does not already exist, it will be created.
++ * - After Init, & before making any PowerController request client needs to ensure
++ *   - Power Manager plugin is activated and operational via `PowerController_IsOperational`.
++ *   - If not operational, clients can use this Connect API to establish COM-RPC connection with the Power Manager plugin.
++ *   - If there us any failure in Connect all PowerController requests will fail with `POWER_CONTROLLER_ERROR_UNAVAILABLE` (Except for callback register / unregister APIs).
++ *
++ * @see PowerController_Term
++ */
++EXTERNAL void DeviceSettings_Init();
++
++/**
++ * @brief PowerController attempts to connect to the Power Manager plugin.
++ *
++ * This function connects to the Power Manager plugin.
++ *
++ * @details
++ * - This function is used to connect to the Power Manager plugin.
++ * - Before making any PowerController request client needs to ensure
++ *   - Power Manager plugin is activated and operational via `PowerController_IsOperational`.
++ *   - If not operational, clients can use this Connect API to establish COM-RPC connection with the Power Manager plugin.
++ *   - If there us any failure in Connect all PowerController requests will fail with `POWER_CONTROLLER_ERROR_UNAVAILABLE` (Except for callback register / unregister APIs).
++ * - In case of failure this API should be called again with brief delay.
++ *
++ * @return `POWER_CONTROLLER_ERROR_NONE` on success.
++ * @return `POWER_CONTROLLER_ERROR_UNAVAILABLE` if Thunder RPC server is not running / error establishing RPC communication channel.
++ * @return `POWER_CONTROLLER_ERROR_NOT_EXIST` if the PowerManager plugin is not activated yet.
++ */
++EXTERNAL uint32_t DeviceSettings_Connect();
++
++/**
++ * @brief Disconnects from the Power Manager plugin via COMRPC.
++ *
++ * This function terminates the RPC connection to the Power Manager plugin
++ * using the Thunder COMRPC mechanism. It should be called when the client
++ * no longer needs to communicate with the Power Manager, or as part of
++ * cleanup during shutdown.
++ *
++ * @note After calling this function, any subsequent attempt to send requests
++ *       to the Power Manager plugin will fail until a new connection is established
++ *       using `PowerController_Connect`.
++ *
++ * @return POWER_CONTROLLER_ERROR_NONE
++ *         Successfully disconnected from the Power Manager plugin.
++ * @return POWER_CONTROLLER_ERROR_UNAVAILABLE
++ *         Failed to disconnect because the Thunder RPC server is not running,
++ *         or there was an error in the underlying RPC communication channel.
++ * @return POWER_CONTROLLER_ERROR_NOT_EXIST
++ *         The Power Manager plugin is not active or was never connected.
++ */
++EXTERNAL uint32_t DeviceSettings_Disconnect();
++
++/**
++ * @brief Terminates the Power Controller.
++ *
++ * This function decrements client instance count attempts to delete Power Controller instance
++ *
++ * @details
++ * - The controller instance is destroyed, and all associated resources are released (PowerManager plugin client instance).
++ * - Ensure that this function is called once for every call to `PowerController_Init`.
++ *
++ * @see PowerController_Init
++ */
++EXTERNAL void DeviceSettings_Term();
++
++/**
++ * @brief Checks if the Power Manager plugin is active & operational
++ *
++ * This function determines whether the Power Manager interface is operational and ready to handle requests.
++ * It can be used to verify the availability of the Power Manager client before initiating operations that depend on it.
++ *
++ * IMPORTANT - This is the first function that should be called after `PowerController_Init`.
++ *
++ * @return `true` if the Power Manager interface is active and operational, otherwise `false`.
++ *
++ * @details
++ * - Use this function to confirm the operational status of the Power Manager plugin.
++ * - Calling this function is NOT MANDATORY but optional
++ * - Clients can register for notifications about state changes using `PowerController_RegisterOperationalStateChangeCallback`.
++ * - If the Power Manager interface is not active, subsequent Power Manager operations will fail with the error `POWER_CONTROLLER_ERROR_UNAVAILABLE`.
++ * - Therefore in failure cases, clients can use `PowerController_Connect` to establish COM-RPC connection with the Power Manager plugin.
++ *
++ * @see PowerController_RegisterOperationalStateChangeCallback
++ */
++EXTERNAL bool DeviceSettings_IsOperational();
++
++EXTERNAL uint32_t DeviceSettings_GetFPDBrightness(DeviceSettings_FPDIndicator_t indicator , uint32_t *brightness);
++
++#ifdef __cplusplus
++}; // extern "C"
++#endif
++
++#endif // DEVICESETTINGSMANAGER_CLIENT_H
+\ No newline at end of file
+-- 
+2.44.4
+
+
+From 1cb530c2af47fa2093f173ccb48051b342dbdc1b Mon Sep 17 00:00:00 2001
+From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+Date: Mon, 6 Oct 2025 09:04:04 +0000
+Subject: [PATCH 2/7] Commit extra debug info
+
+Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+---
+ Source/devicesettings/device_settings.cpp | 144 ++++++++++++++++++++--
+ Source/devicesettings/device_settings.h   |   4 +
+ 2 files changed, 136 insertions(+), 12 deletions(-)
+
+diff --git a/Source/devicesettings/device_settings.cpp b/Source/devicesettings/device_settings.cpp
+index 212b95d..2213a96 100644
+--- a/Source/devicesettings/device_settings.cpp
++++ b/Source/devicesettings/device_settings.cpp
+@@ -22,6 +22,8 @@
+ #include <functional>
+ #include <list>
+ #include <type_traits>
++#include <chrono>
++#include <thread>
+ 
+ #include <sys/inotify.h>
+ #include <sys/syscall.h>
+@@ -359,16 +361,16 @@ class DeviceSettings : public RPC::SmartInterfaceType<Exchange::IDeviceSettingsM
+     private:
+         using BaseClass = RPC::SmartInterfaceType<Exchange::IDeviceSettingsManager>;
+ 
+-    //    static DeviceSettings* _instance;
+-    //    static Core::CriticalSection _apiLock;
+-    //    static Core::CriticalSection _callbackLock;
++        Exchange::IDeviceSettingsManager* _deviceSettingsManagerInterface; //Remote DeviceSettingsManager plugin interface
+ 
+-        std::string callSign;
++        static DeviceSettings* _instance;
++        static Core::CriticalSection _apiLock;
++        static Core::CriticalSection _callbackLock;
+         
+-    //    PIDFileMonitor _pidMonitor;
+-    //    int _pid;
+-    //    bool _connected;
+-    //    bool _shutdown;
++        PIDFileMonitor _pidMonitor;
++        int _pid;
++        bool _connected;
++        bool _shutdown;
+ 
+     DeviceSettings()
+         : BaseClass()
+@@ -413,13 +415,15 @@ class DeviceSettings : public RPC::SmartInterfaceType<Exchange::IDeviceSettingsM
+         if (upAndRunning) {
+             // Communicatior opened && DeviceSettingsManager is Activated
+             if (nullptr == _deviceSettingsManagerInterface) {
++                std::cout << "DeviceSettings::Operational - Plugin activated, attempting to get interface..." << std::endl;
+                 _deviceSettingsManagerInterface = BaseClass::Interface();
+                 if (_deviceSettingsManagerInterface != nullptr) {
+                     RegisterNotificationsLocked();
+                     std::cout << "DeviceSettings successfully established COM-RPC connection with DeviceSettings plugin\n";
+                 } else {
+-                    // Internal error DeviceSettingsManager is running, but QueryInterface failed for it ?
+-                    std::cerr << "DeviceSettings failed to established COM-RPC connection with DeviceSettings plugin\n";
++                    // This likely means the plugin loaded but the implementation (.so) failed to load
++                    std::cerr << "DeviceSettings failed to get interface - Plugin shell loaded but implementation likely failed to load\n";
++                    std::cerr << "Check if DeviceSettingsManagerImp.so is available and its dependencies are satisfied\n";
+                 }
+             }
+         } else {
+@@ -459,6 +463,70 @@ public:
+         return (nullptr != _deviceSettingsManagerInterface);
+     }
+ 
++    bool IsOperational() const
++    {
++        _apiLock.Lock();
++        bool result = (isConnected() && (nullptr != _deviceSettingsManagerInterface));
++        _apiLock.Unlock();
++        return result;
++    }
++
++    // Wait for the plugin to become operational with timeout
++    bool WaitForOperational(uint32_t timeoutMs = 5000) const
++    {
++        const uint32_t pollIntervalMs = 100;
++        uint32_t elapsedMs = 0;
++        
++        while (elapsedMs < timeoutMs) {
++            if (IsOperational()) {
++                return true;
++            }
++            std::this_thread::sleep_for(std::chrono::milliseconds(pollIntervalMs));
++            elapsedMs += pollIntervalMs;
++        }
++        return false;
++    }
++
++    // Force check and acquire interface if plugin is operational but Operational() wasn't called
++    bool ForceCheckOperational()
++    {
++        _apiLock.Lock();
++        bool result = false;
++        
++        if (isConnected() && _deviceSettingsManagerInterface == nullptr) {
++            std::cout << "DeviceSettings::ForceCheckOperational - Manually checking if plugin is operational..." << std::endl;
++            std::cout << "DeviceSettings::ForceCheckOperational - Using callsign: " << callSign << std::endl;
++            std::cout << "DeviceSettings::ForceCheckOperational - Connected state: " << isConnected() << std::endl;
++            
++            Exchange::IDeviceSettingsManager* testInterface = BaseClass::Interface();
++            std::cout << "DeviceSettings::ForceCheckOperational - BaseClass::Interface() returned: " << testInterface << std::endl;
++            
++            if (testInterface != nullptr) {
++                std::cout << "DeviceSettings::ForceCheckOperational - Plugin IS operational! Acquiring interface..." << std::endl;
++                _deviceSettingsManagerInterface = testInterface;
++                RegisterNotificationsLocked();
++                result = true;
++                std::cout << "DeviceSettings::ForceCheckOperational - Successfully acquired interface without Operational() callback!" << std::endl;
++            } else {
++                std::cout << "DeviceSettings::ForceCheckOperational - Plugin still not operational." << std::endl;
++                std::cout << "DeviceSettings::ForceCheckOperational - This indicates the plugin is not providing the interface yet." << std::endl;
++                
++                // Let's try to get more information about the connection state
++                std::cout << "DeviceSettings::ForceCheckOperational - BaseClass connection state info:" << std::endl;
++                std::cout << "DeviceSettings::ForceCheckOperational - Connected state: " << isConnected() << std::endl;
++                std::cout << "DeviceSettings::ForceCheckOperational - IsOperational: " << BaseClass::IsOperational() << std::endl;
++            }
++        } else if (!isConnected()) {
++            std::cout << "DeviceSettings::ForceCheckOperational - Not connected to Thunder!" << std::endl;
++        } else if (_deviceSettingsManagerInterface != nullptr) {
++            std::cout << "DeviceSettings::ForceCheckOperational - Interface already acquired!" << std::endl;
++            result = true;
++        }
++        
++        _apiLock.Unlock();
++        return result;
++    }
++
+     uint32_t Connect()
+     {
+         uint32_t status = Core::ERROR_NONE;
+@@ -468,26 +536,43 @@ public:
+ 
+         do {
+             if (!isConnected()) {
++                std::cout << "DeviceSettings::Connect - Attempting to connect to Thunder with callsign: " << callSign << std::endl;
+                 uint32_t res = BaseClass::Open(RPC::CommunicationTimeOut, BaseClass::Connector(), callSign);
+                 if (Core::ERROR_NONE == res) {
+                     _connected = true;
++                    std::cout << "DeviceSettings::Connect - Successfully opened RPC connection to Thunder" << std::endl;
++                    
++                    // Check if interface is immediately available (plugin already activated)
++                    Exchange::IDeviceSettingsManager* testInterface = BaseClass::Interface();
++                    if (testInterface != nullptr) {
++                        std::cout << "DeviceSettings::Connect - Plugin already operational! Interface available immediately." << std::endl;
++                        // Don't store it yet, let Operational() handle it properly
++                        testInterface->Release();
++                    } else {
++                        std::cout << "DeviceSettings::Connect - Plugin not yet operational. Waiting for Operational(true) callback..." << std::endl;
++                    }
++                    
+                     if (!_pidMonitor.Running()) {
+                         // read pid file once to get initial PID
+                         _pid = _pidMonitor.PID();
+                         _pidMonitor.Run();
+                     }
++                    
+                 } else {
+                     errMsg = "COM-RPC channel open failed. Is Thunder running ?";
+                     status = Core::ERROR_UNAVAILABLE;
++                    std::cout << "DeviceSettings::Connect - Failed to open RPC connection, error: " << res << std::endl;
+                     break;
+                 }
+             } else {
+                 errMsg = "COM-RPC channel already open";
++                std::cout << "DeviceSettings::Connect - RPC channel already open" << std::endl;
+             }
+ 
+             if (nullptr == _deviceSettingsManagerInterface) {
+-                errMsg = "DeviceSettings plugin is not activated yet";
++                errMsg = "DeviceSettings plugin is not activated yet. The Operational(true) callback has not been triggered.";
+                 status = Core::ERROR_NOT_EXIST;
++                std::cout << "DeviceSettings::Connect - DeviceSettingsManager plugin not yet operational. Check if plugin is configured and activated in Thunder." << std::endl;
+             }
+         } while (false);
+ 
+@@ -495,6 +580,8 @@ public:
+ 
+         std::cout << "DeviceSettings::Connect (" << callSign << ") status: " << status << ", errMsg: \"" << errMsg << "\"" << std::endl;
+ 
++        std::cout << "DeviceSettings isConnected: " << isConnected() << ", isActivated: " << IsActivatedLocked() << "\n";
++
+         return status;
+     }
+ 
+@@ -566,8 +653,13 @@ public:
+ 
+         _apiLock.Lock();
+ 
++        std::cout << "DeviceSettings_GetFPDBrightness: _deviceSettingsManagerInterface: " << _deviceSettingsManagerInterface << "\n";
++
+         if (_deviceSettingsManagerInterface) {
+             Exchange::IDeviceSettingsManager::IFPD* fpdInterface = _deviceSettingsManagerInterface->QueryInterface<Exchange::IDeviceSettingsManager::IFPD>();
++
++            std::cout << "DeviceSettings_GetFPDBrightness: fpdInterface: " << fpdInterface << "\n";
++
+             if (fpdInterface) {
+                 result = fpdInterface->GetFPDBrightness(static_cast<Exchange::IDeviceSettingsManager::IFPD::FPDIndicator>(indicator), brightness);
+                 fpdInterface->Release();
+@@ -579,7 +671,7 @@ public:
+         return result;
+     }
+ 
+-private:
++/* private:
+     Exchange::IDeviceSettingsManager* _deviceSettingsManagerInterface; //Remote DeviceSettingsManager plugin interface
+ 
+     static DeviceSettings* _instance;
+@@ -590,6 +682,7 @@ private:
+     int _pid;
+     bool _connected;
+     bool _shutdown;
++*/
+ };
+ 
+ /* static */ DeviceSettings* DeviceSettings::_instance = nullptr;
+@@ -634,6 +727,29 @@ extern "C" {
+         return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
+     }
+ 
++    bool DeviceSettings_ForceCheckOperational()
++    {
++        DeviceSettings *instance = DeviceSettings::Instance();
++        if (instance) {
++            return instance->ForceCheckOperational();
++        }
++        return false;
++    }
++
++    void DeviceSettings_DebugConnectionState()
++    {
++        DeviceSettings *instance = DeviceSettings::Instance();
++        if (instance) {
++            std::cout << "=== DeviceSettings Debug Info ===" << std::endl;
++            std::cout << "Instance: " << instance << std::endl;
++            std::cout << "IsOperational: " << instance->IsOperational() << std::endl;
++            instance->ForceCheckOperational(); // This will print detailed debug info
++            std::cout << "=================================" << std::endl;
++        } else {
++            std::cout << "DeviceSettings instance is null!" << std::endl;
++        }
++    }
++
+ /*    uint32_t DeviceSettings_GetFPDColor(const DeviceSettings_FPDIndicator_t indicator , uint32_t *color)
+     {
+         ASSERT(nullptr != color);
+@@ -648,7 +764,11 @@ extern "C" {
+     {
+         ASSERT(nullptr != brightness);
+         DeviceSettings *instance = DeviceSettings::Instance();
++
++        std::cout << "DeviceSettings_GetFPDBrightness Instance: " << instance << "\n";
++
+         if (instance) {
++            std::cout << "Calling  instance->GetFPDBrightness\n";
+             return instance->GetFPDBrightness(indicator, *brightness);
+         }
+         return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
+diff --git a/Source/devicesettings/device_settings.h b/Source/devicesettings/device_settings.h
+index b99272b..2125719 100644
+--- a/Source/devicesettings/device_settings.h
++++ b/Source/devicesettings/device_settings.h
+@@ -144,6 +144,10 @@ EXTERNAL void DeviceSettings_Term();
+  */
+ EXTERNAL bool DeviceSettings_IsOperational();
+ 
++EXTERNAL bool DeviceSettings_ForceCheckOperational();
++
++EXTERNAL void DeviceSettings_DebugConnectionState();
++
+ EXTERNAL uint32_t DeviceSettings_GetFPDBrightness(DeviceSettings_FPDIndicator_t indicator , uint32_t *brightness);
+ 
+ #ifdef __cplusplus
+-- 
+2.44.4
+
+
+From 66be6738aa32997fd4382864910f50ecb729eb6e Mon Sep 17 00:00:00 2001
+From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+Date: Mon, 13 Oct 2025 12:23:11 +0000
+Subject: [PATCH 3/7] Removed the DeviceSettingsManager from interface
+
+Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+---
+ Source/devicesettings/device_settings.cpp | 218 ++++++++++++++++++++--
+ 1 file changed, 203 insertions(+), 15 deletions(-)
+
+diff --git a/Source/devicesettings/device_settings.cpp b/Source/devicesettings/device_settings.cpp
+index 2213a96..97963c7 100644
+--- a/Source/devicesettings/device_settings.cpp
++++ b/Source/devicesettings/device_settings.cpp
+@@ -27,6 +27,8 @@
+ 
+ #include <sys/inotify.h>
+ #include <sys/syscall.h>
++#include <signal.h>
++#include <execinfo.h>
+ 
+ // Thunder includes
+ #include <interfaces/IDeviceSettingsManager.h>
+@@ -60,6 +62,29 @@
+ 
+ using namespace WPEFramework;
+ 
++// Signal handler for debugging segfaults
++void segfault_handler(int sig) {
++    void *array[10];
++    size_t size;
++    
++    // Get void*'s for all entries on the stack
++    size = backtrace(array, 10);
++    
++    // Print out all the frames to stderr
++    fprintf(stderr, "\n=== SEGFAULT HANDLER ===\n");
++    fprintf(stderr, "Signal %d caught\n", sig);
++    fprintf(stderr, "Backtrace:\n");
++    backtrace_symbols_fd(array, size, STDERR_FILENO);
++    fprintf(stderr, "========================\n");
++    
++    // Let the default handler take over
++    signal(sig, SIG_DFL);
++    raise(sig);
++}
++
++// Type alias for cleaner code
++using FPDIndicator = Exchange::IDeviceSettingsManagerFPD::FPDIndicator;
++
+ static constexpr const TCHAR callSign[] = _T("org.rdk.DeviceSettingsManager");
+ 
+ #define INVALID_PID (-1)
+@@ -357,11 +382,13 @@ public:
+     PIDFileMonitor& operator=(const PIDFileMonitor&) = delete;
+ };
+ 
+-class DeviceSettings : public RPC::SmartInterfaceType<Exchange::IDeviceSettingsManager> {
++class DeviceSettings : public RPC::SmartInterfaceType<Exchange::IDeviceSettingsManagerFPD> {
+     private:
+-        using BaseClass = RPC::SmartInterfaceType<Exchange::IDeviceSettingsManager>;
++        using BaseClass = RPC::SmartInterfaceType<Exchange::IDeviceSettingsManagerFPD>;
+ 
+-        Exchange::IDeviceSettingsManager* _deviceSettingsManagerInterface; //Remote DeviceSettingsManager plugin interface
++        Exchange::IDeviceSettingsManagerFPD* _deviceSettingsManagerInterface; //Remote DeviceSettingsManager plugin interface
++    //    Exchange::IDeviceSettingsManagerFPD::IFPD* _cachedFpdInterface; // Cached FPD interface to avoid multiple QueryInterface calls
++    //    Exchange::IDeviceSettingsManagerFPD::IFPD* _deviceSettingsManagerFpdInterface; // Fixed naming for FPD interface
+ 
+         static DeviceSettings* _instance;
+         static Core::CriticalSection _apiLock;
+@@ -419,7 +446,21 @@ class DeviceSettings : public RPC::SmartInterfaceType<Exchange::IDeviceSettingsM
+                 _deviceSettingsManagerInterface = BaseClass::Interface();
+                 if (_deviceSettingsManagerInterface != nullptr) {
+                     RegisterNotificationsLocked();
++                    ASSERT(_deviceSettingsManagerInterface != nullptr);
+                     std::cout << "DeviceSettings successfully established COM-RPC connection with DeviceSettings plugin\n";
++
++                /*    if (_deviceSettingsManagerFpdInterface == nullptr)
++                    {
++                        // Cache FPD interface using correct QueryInterface syntax
++                        _deviceSettingsManagerFpdInterface = _deviceSettingsManagerInterface->QueryInterface<Exchange::IDeviceSettingsManager::IFPD>();
++                        if (_deviceSettingsManagerFpdInterface != nullptr) {
++                            ASSERT(_deviceSettingsManagerFpdInterface != nullptr);
++                            std::cout << "DeviceSettings::Operational - Successfully cached IFPD interface\n";
++                        } else {
++                            std::cerr << "DeviceSettings::Operational - Failed to cache IFPD interface, QueryInterface returned nullptr\n";
++                        }
++                    }
++                */
+                 } else {
+                     // This likely means the plugin loaded but the implementation (.so) failed to load
+                     std::cerr << "DeviceSettings failed to get interface - Plugin shell loaded but implementation likely failed to load\n";
+@@ -497,8 +538,9 @@ public:
+             std::cout << "DeviceSettings::ForceCheckOperational - Manually checking if plugin is operational..." << std::endl;
+             std::cout << "DeviceSettings::ForceCheckOperational - Using callsign: " << callSign << std::endl;
+             std::cout << "DeviceSettings::ForceCheckOperational - Connected state: " << isConnected() << std::endl;
++            std::cout << " - IDeviceSettingsManager ID: " << WPEFramework::Exchange::ID_DEVICESETTINGS_MANAGER_FPD << std::endl;
+             
+-            Exchange::IDeviceSettingsManager* testInterface = BaseClass::Interface();
++            Exchange::IDeviceSettingsManagerFPD* testInterface = BaseClass::Interface();
+             std::cout << "DeviceSettings::ForceCheckOperational - BaseClass::Interface() returned: " << testInterface << std::endl;
+             
+             if (testInterface != nullptr) {
+@@ -542,7 +584,7 @@ public:
+                     _connected = true;
+                     std::cout << "DeviceSettings::Connect - Successfully opened RPC connection to Thunder" << std::endl;
+                     
+-                    // Check if interface is immediately available (plugin already activated)
++                /*    // Check if interface is immediately available (plugin already activated)
+                     Exchange::IDeviceSettingsManager* testInterface = BaseClass::Interface();
+                     if (testInterface != nullptr) {
+                         std::cout << "DeviceSettings::Connect - Plugin already operational! Interface available immediately." << std::endl;
+@@ -551,7 +593,8 @@ public:
+                     } else {
+                         std::cout << "DeviceSettings::Connect - Plugin not yet operational. Waiting for Operational(true) callback..." << std::endl;
+                     }
+-                    
++                */
++
+                     if (!_pidMonitor.Running()) {
+                         // read pid file once to get initial PID
+                         _pid = _pidMonitor.PID();
+@@ -632,14 +675,92 @@ public:
+         return _instance;
+     }
+ 
++    // Test method to safely validate IFPD interface without calling potentially crashing methods
++/*    Core::hresult TestFPDInterface()
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++        
++        _apiLock.Lock();
++        
++        LOGINFO("Testing IFPD interface acquisition and basic validation");
++        
++        if (_deviceSettingsManagerInterface) {
++            LOGINFO("Main interface available, attempting QueryInterface<IFPD>");
++
++            // Exchange::IDeviceSettingsManager::IFPD* fpdInterface = _deviceSettingsManagerInterface->QueryInterface<Exchange::IDeviceSettingsManager::IFPD>();
++
++            // LOGINFO("QueryInterface<IFPD> returned: %p", fpdInterface);
++            
++            if (fpdInterface) {
++                LOGINFO("IFPD interface acquired successfully!");
++                
++                // Test basic interface validity by checking vtable pointer
++                void* vtable = *(void**)fpdInterface;
++                LOGINFO("Interface vtable pointer: %p", vtable);
++                
++                if (vtable != nullptr) {
++                    LOGINFO("Interface appears to have valid vtable");
++                    result = Core::ERROR_NONE;
++                } else {
++                    LOGERR("Interface has null vtable - corrupted interface!");
++                    result = Core::ERROR_GENERAL;
++                }
++                
++                fpdInterface->Release();
++                LOGINFO("IFPD interface released successfully");
++            } else {
++                LOGERR("Failed to acquire IFPD interface - plugin may not support FPD functionality");
++                result = Core::ERROR_UNAVAILABLE;
++            }
++        } else {
++            LOGERR("Main DeviceSettingsManager interface is null");
++        }
++        
++        _apiLock.Unlock();
++        
++        return result;
++    }
++*/
++    // Get or create cached FPD interface to avoid multiple QueryInterface calls
++/*    Exchange::IDeviceSettingsManager::IFPD* GetCachedFPDInterface()
++    {
++        if (!_cachedFpdInterface && _deviceSettingsManagerInterface) {
++            LOGINFO("Creating cached FPD interface");
++            _cachedFpdInterface = _deviceSettingsManagerInterface->QueryInterface<Exchange::IDeviceSettingsManager::IFPD>();
++            LOGINFO("Cached FPD interface: %p", _cachedFpdInterface);
++        }
++        return _cachedFpdInterface;
++    }
++
++    // Clear cached interface (call when main interface changes)
++    void ClearCachedFPDInterface()
++    {
++        if (_cachedFpdInterface) {
++            LOGINFO("Releasing cached FPD interface: %p", _cachedFpdInterface);
++            _cachedFpdInterface->Release();
++            _cachedFpdInterface = nullptr;
++        }
++    }
++*/
++
+ /*    Core::hresult GetFPDColor(const FPDIndicator indicator , uint32_t &color)
+     {
+         Core::hresult result = Core::ERROR_UNAVAILABLE;
+ 
++        FPDIndicator fpdIndicator = static_cast<FPDIndicator>(indicator);
++
+         _apiLock.Lock();
+ 
+-        if (_deviceSettingsManagerInterface) {
+-            result = _deviceSettingsManagerInterface->GetFPDColor(indicator, color);
++        if (_deviceSettingsManagerInterface)
++        {
++            Exchange::IDeviceSettingsManager::IFPD* fpdInterface = GetCachedFPDInterface();
++
++            LOGINFO("QueryInterface<IFPD> returned: %p, FPD indicator: %d (enum value: %d)", fpdInterface, indicator, static_cast<int>(fpdIndicator));
++
++            if (fpdInterface) 
++            {
++                result = fpdInterface->GetFPDColor(fpdIndicator, color);
++            }
+         }
+ 
+         _apiLock.Unlock();
+@@ -651,23 +772,77 @@ public:
+     {
+         Core::hresult result = Core::ERROR_UNAVAILABLE;
+ 
++        // Validate input parameters first
++        if (indicator < 0 || indicator >= 5) {  // Valid range: 0-4 (DS_FPD_INDICATOR_MAX = 5)
++            LOGERR("Invalid FPD indicator value: %d (valid range: 0-4)", indicator);
++            return Core::ERROR_BAD_REQUEST;
++        }
++
++    /*    uint32_t testResult = TestFPDInterface();
++
++        if (testResult != 0)
++        {
++            LOGERR("IFPD interface test failed, aborting GetFPDBrightness call");
++            return testResult;
++        }
++    */
++        FPDIndicator fpdIndicator = static_cast<FPDIndicator>(indicator);
++
+         _apiLock.Lock();
+ 
+-        std::cout << "DeviceSettings_GetFPDBrightness: _deviceSettingsManagerInterface: " << _deviceSettingsManagerInterface << "\n";
++        LOGINFO("GetFPDBrightness called with indicator=%d, _deviceSettingsManagerInterface=%p", indicator, _deviceSettingsManagerInterface);
++
++        LOGINFO("QueryInterface<IFPD> returned: %p, FPD indicator: %d (enum value: %d)", _deviceSettingsManagerInterface, indicator, static_cast<int>(fpdIndicator));
+ 
+         if (_deviceSettingsManagerInterface) {
+-            Exchange::IDeviceSettingsManager::IFPD* fpdInterface = _deviceSettingsManagerInterface->QueryInterface<Exchange::IDeviceSettingsManager::IFPD>();
++            try {
++                LOGINFO("About to call _deviceSettingsManagerInterface->GetFPDBrightness(indicator=%d)", static_cast<int>(fpdIndicator));
++
++                // Initialize brightness to a known value before the call
++                brightness = 0;
++                LOGINFO("Brightness initialized to: %u", brightness);
++                
++                // Validate interface pointer before call
++                LOGINFO("fpdInterface pointer: %p", _deviceSettingsManagerInterface);
++                LOGINFO("fpdInterface vtable pointer: %p", *(void**)_deviceSettingsManagerInterface);
++
++                // Add memory barrier and flush
++                __sync_synchronize();
++                fflush(stdout);
++                fflush(stderr);
++                
++                LOGINFO("=== CALLING GetFPDBrightness NOW ===");
++                
++                // Try with a smaller delay to see if timing matters
++                usleep(1000); // 1ms delay
+ 
+-            std::cout << "DeviceSettings_GetFPDBrightness: fpdInterface: " << fpdInterface << "\n";
++                result = _deviceSettingsManagerInterface->GetFPDBrightness(fpdIndicator, brightness);
+ 
+-            if (fpdInterface) {
+-                result = fpdInterface->GetFPDBrightness(static_cast<Exchange::IDeviceSettingsManager::IFPD::FPDIndicator>(indicator), brightness);
+-                fpdInterface->Release();
++            //    result = fpdInterface->GetFPDColor(fpdIndicator, brightness);
++
++                LOGINFO("=== GetFPDBrightness RETURNED ===");
++                
++                LOGINFO("_deviceSettingsManagerFpdInterface->GetFPDBrightness returned: result=%u, brightness=%u", result, brightness);
++                
++            } catch (const std::exception& e) {
++                LOGERR("C++ exception during GetFPDBrightness call: %s", e.what());
++                result = Core::ERROR_GENERAL;
++            } catch (...) {
++                LOGERR("Unknown exception during GetFPDBrightness call");
++                result = Core::ERROR_GENERAL;
+             }
++            
++            // CRITICAL: Always release the interface
++            _deviceSettingsManagerInterface->Release();
++            LOGINFO("Successfully released IFPD interface");
++        } else {
++            LOGERR("Failed to acquire IFPD interface - plugin may not support FPD functionality");
++            result = Core::ERROR_UNAVAILABLE;
+         }
+ 
+         _apiLock.Unlock();
+ 
++        LOGINFO("GetFPDBrightness completed: result=%u, brightness=%u", result, brightness);
+         return result;
+     }
+ 
+@@ -736,6 +911,15 @@ extern "C" {
+         return false;
+     }
+ 
++/*    uint32_t DeviceSettings_TestFPDInterface()
++    {
++        DeviceSettings *instance = DeviceSettings::Instance();
++        if (instance) {
++            return instance->TestFPDInterface();
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++*/
+     void DeviceSettings_DebugConnectionState()
+     {
+         DeviceSettings *instance = DeviceSettings::Instance();
+@@ -754,8 +938,12 @@ extern "C" {
+     {
+         ASSERT(nullptr != color);
+         DeviceSettings *instance = DeviceSettings::Instance();
++
++        std::cout << "DeviceSettings_GetFPDColor Instance: " << instance << "\n";
++
+         if (instance) {
+-            return instance->GetFPDColor(static_cast<DeviceSettings::FPDIndicator>(indicator), *color);
++            std::cout << "Calling  instance->GetFPDColor\n";
++            return instance->GetFPDColor(indicator, *color);
+         }
+         return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
+     }
+-- 
+2.44.4
+
+
+From 37b0b472afd49b9ce142ed03a1acaed44386532b Mon Sep 17 00:00:00 2001
+From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+Date: Mon, 13 Oct 2025 16:17:20 +0000
+Subject: [PATCH 4/7] Added SetFPDBrightness method
+
+Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+---
+ Source/devicesettings/device_settings.cpp | 41 +++++++++++++++++++++++
+ Source/devicesettings/device_settings.h   |  2 ++
+ 2 files changed, 43 insertions(+)
+
+diff --git a/Source/devicesettings/device_settings.cpp b/Source/devicesettings/device_settings.cpp
+index 97963c7..4978301 100644
+--- a/Source/devicesettings/device_settings.cpp
++++ b/Source/devicesettings/device_settings.cpp
+@@ -768,6 +768,35 @@ public:
+         return result;
+     }
+ */
++
++    Core::hresult SetFPDBrightness(DeviceSettings_FPDIndicator_t indicator, const uint32_t brightness)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        const bool persist = true;
++
++        FPDIndicator fpdIndicator = static_cast<FPDIndicator>(indicator);
++
++        _apiLock.Lock();
++
++        LOGINFO("SetFPDBrightness called with indicator=%d, _deviceSettingsManagerInterface=%p", indicator, _deviceSettingsManagerInterface);
++
++        LOGINFO("QueryInterface<IFPD> returned: %p, FPD indicator: %d (enum value: %d) brightness: %d", _deviceSettingsManagerInterface, indicator, static_cast<int>(fpdIndicator), brightness);
++
++        if (_deviceSettingsManagerInterface) {
++
++            result = _deviceSettingsManagerInterface->SetFPDBrightness(fpdIndicator, brightness, persist);
++            LOGINFO("_deviceSettingsManagerFpdInterface->SetFPDBrightness returned: %u", result);
++        } else {
++            LOGERR("Failed to acquire IFPD interface - plugin may not support FPD functionality");
++            result = Core::ERROR_UNAVAILABLE;
++        }
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
+     Core::hresult GetFPDBrightness(DeviceSettings_FPDIndicator_t indicator , uint32_t &brightness)
+     {
+         Core::hresult result = Core::ERROR_UNAVAILABLE;
+@@ -961,4 +990,16 @@ extern "C" {
+         }
+         return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
+     }
++
++    uint32_t DeviceSettings_SetFPDBrightness(DeviceSettings_FPDIndicator_t indicator , uint32_t brightness)
++    {
++        DeviceSettings *instance = DeviceSettings::Instance();
++
++        if (instance) {
++            std::cout << "Calling  instance->SetFPDBrightness\n";
++            return instance->SetFPDBrightness(indicator, brightness);
++        }
++
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
+ }
+\ No newline at end of file
+diff --git a/Source/devicesettings/device_settings.h b/Source/devicesettings/device_settings.h
+index 2125719..02ace36 100644
+--- a/Source/devicesettings/device_settings.h
++++ b/Source/devicesettings/device_settings.h
+@@ -150,6 +150,8 @@ EXTERNAL void DeviceSettings_DebugConnectionState();
+ 
+ EXTERNAL uint32_t DeviceSettings_GetFPDBrightness(DeviceSettings_FPDIndicator_t indicator , uint32_t *brightness);
+ 
++EXTERNAL uint32_t DeviceSettings_SetFPDBrightness(DeviceSettings_FPDIndicator_t indicator , uint32_t brightness);
++
+ #ifdef __cplusplus
+ }; // extern "C"
+ #endif
+-- 
+2.44.4
+
+
+From 316e58bba1b97f99127df08fd12cc74e109607d4 Mon Sep 17 00:00:00 2001
+From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+Date: Fri, 17 Oct 2025 05:16:46 +0000
+Subject: [PATCH 5/7] Added HdmiIn methods and Interface
+
+Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+---
+ Source/devicesettings/device_settings.cpp | 43 +++++++++++++++++++++++
+ Source/devicesettings/device_settings.h   | 19 ++++++++++
+ 2 files changed, 62 insertions(+)
+
+diff --git a/Source/devicesettings/device_settings.cpp b/Source/devicesettings/device_settings.cpp
+index 4978301..2eb41ad 100644
+--- a/Source/devicesettings/device_settings.cpp
++++ b/Source/devicesettings/device_settings.cpp
+@@ -387,6 +387,7 @@ class DeviceSettings : public RPC::SmartInterfaceType<Exchange::IDeviceSettingsM
+         using BaseClass = RPC::SmartInterfaceType<Exchange::IDeviceSettingsManagerFPD>;
+ 
+         Exchange::IDeviceSettingsManagerFPD* _deviceSettingsManagerInterface; //Remote DeviceSettingsManager plugin interface
++        Exchange::IDeviceSettingsManagerHDMIIn* _deviceSettingsManagerHdmiInInterface;
+     //    Exchange::IDeviceSettingsManagerFPD::IFPD* _cachedFpdInterface; // Cached FPD interface to avoid multiple QueryInterface calls
+     //    Exchange::IDeviceSettingsManagerFPD::IFPD* _deviceSettingsManagerFpdInterface; // Fixed naming for FPD interface
+ 
+@@ -402,6 +403,7 @@ class DeviceSettings : public RPC::SmartInterfaceType<Exchange::IDeviceSettingsM
+     DeviceSettings()
+         : BaseClass()
+         , _deviceSettingsManagerInterface(nullptr)
++        , _deviceSettingsManagerHdmiInInterface(nullptr)
+         , _pidMonitor("/tmp/wpeframework.pid", std::bind(&DeviceSettings::pidChangedCb, this, std::placeholders::_1))
+         , _pid(INVALID_PID)
+         , _connected(false)
+@@ -449,6 +451,18 @@ class DeviceSettings : public RPC::SmartInterfaceType<Exchange::IDeviceSettingsM
+                     ASSERT(_deviceSettingsManagerInterface != nullptr);
+                     std::cout << "DeviceSettings successfully established COM-RPC connection with DeviceSettings plugin\n";
+ 
++                    if(_deviceSettingsManagerHdmiInInterface == nullptr)
++                    {
++                        // Cache HDMIIn interface using correct QueryInterface syntax
++                        _deviceSettingsManagerHdmiInInterface = _deviceSettingsManagerInterface->QueryInterface<Exchange::IDeviceSettingsManagerHDMIIn>();
++                        if (_deviceSettingsManagerHdmiInInterface != nullptr) {
++                            ASSERT(_deviceSettingsManagerHdmiInInterface != nullptr);
++                            std::cout << "DeviceSettings::Operational - Successfully cached IHDMIIn interface\n";
++                        } else {
++                            std::cerr << "DeviceSettings::Operational - Failed to cache IHDMIIn interface, QueryInterface returned nullptr\n";
++                        }
++                    }
++
+                 /*    if (_deviceSettingsManagerFpdInterface == nullptr)
+                     {
+                         // Cache FPD interface using correct QueryInterface syntax
+@@ -875,6 +889,25 @@ public:
+         return result;
+     }
+ 
++        Core::hresult GetHDMIVersion(DeviceSettings_HDMIInPort_t port, DeviceSettings_HDMIInCapabilityVersion_t &capabilityVersion)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        _apiLock.Lock();
++
++        if (nullptr != _deviceSettingsManagerInterface && nullptr != _deviceSettingsManagerHdmiInInterface) {
++
++            LOGINFO("hdmiInInterface pointer: %p", _deviceSettingsManagerHdmiInInterface);
++
++            result = _deviceSettingsManagerHdmiInInterface->GetHDMIVersion(static_cast<Exchange::IDeviceSettingsManagerHDMIIn::HDMIInPort>(port),
++                                                                      reinterpret_cast<Exchange::IDeviceSettingsManagerHDMIIn::HDMIInCapabilityVersion&>(capabilityVersion));
++        }
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
+ /* private:
+     Exchange::IDeviceSettingsManager* _deviceSettingsManagerInterface; //Remote DeviceSettingsManager plugin interface
+ 
+@@ -1002,4 +1035,14 @@ extern "C" {
+ 
+         return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
+     }
++
++    uint32_t DeviceSettings_GetHDMIVersion(DeviceSettings_HDMIInPort_t port, DeviceSettings_HDMIInCapabilityVersion_t &capabilityVersion)
++    {
++        DeviceSettings *instance = DeviceSettings::Instance();
++
++        if (instance) {
++            return instance->GetHDMIVersion(port, capabilityVersion);
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
+ }
+\ No newline at end of file
+diff --git a/Source/devicesettings/device_settings.h b/Source/devicesettings/device_settings.h
+index 02ace36..8117ecc 100644
+--- a/Source/devicesettings/device_settings.h
++++ b/Source/devicesettings/device_settings.h
+@@ -53,6 +53,23 @@ typedef enum DeviceSettings_FPDIndicator {
+     FPD_INDICATOR_MAX = 5 /* MAX */
+ } DeviceSettings_FPDIndicator_t;
+ 
++typedef enum DeviceSettings_HDMIInPort {
++    DS_HDMI_IN_PORT_NONE    = -1,
++    DS_HDMI_IN_PORT_0       = 0,
++    DS_HDMI_IN_PORT_1       = 1,
++    DS_HDMI_IN_PORT_2       = 2,
++    DS_HDMI_IN_PORT_3       = 3,
++    DS_HDMI_IN_PORT_4       = 4,
++    DS_HDMI_IN_PORT_MAX     = 5
++} DeviceSettings_HDMIInPort_t;
++
++typedef enum DeviceSettings_HDMIInCapabilityVersion {
++    HDMI_COMPATIBILITY_VERSION_14  = 0,
++    HDMI_COMPATIBILITY_VERSION_20  = 1,
++    HDMI_COMPATIBILITY_VERSION_21  = 2,
++    HDMI_COMPATIBILITY_VERSION_MAX = 3
++} DeviceSettings_HDMIInCapabilityVersion_t;
++
+ /**
+  * @brief Initializes the Power Controller.
+  *
+@@ -152,6 +169,8 @@ EXTERNAL uint32_t DeviceSettings_GetFPDBrightness(DeviceSettings_FPDIndicator_t
+ 
+ EXTERNAL uint32_t DeviceSettings_SetFPDBrightness(DeviceSettings_FPDIndicator_t indicator , uint32_t brightness);
+ 
++EXTERNAL uint32_t DeviceSettings_GetHDMIVersion(DeviceSettings_HDMIInPort_t port, DeviceSettings_HDMIInCapabilityVersion_t &capabilityVersion);
++
+ #ifdef __cplusplus
+ }; // extern "C"
+ #endif
+-- 
+2.44.4
+
+
+From 66ea4ed1bf35f8f533497161957a89c84d8667b8 Mon Sep 17 00:00:00 2001
+From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+Date: Tue, 21 Oct 2025 06:58:15 +0000
+Subject: [PATCH 6/7] Added GetHDMIInNumbefOfInputs method
+
+Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+---
+ Source/devicesettings/device_settings.cpp | 33 ++++++++++++++++++++++-
+ Source/devicesettings/device_settings.h   |  2 ++
+ 2 files changed, 34 insertions(+), 1 deletion(-)
+
+diff --git a/Source/devicesettings/device_settings.cpp b/Source/devicesettings/device_settings.cpp
+index 2eb41ad..82a484b 100644
+--- a/Source/devicesettings/device_settings.cpp
++++ b/Source/devicesettings/device_settings.cpp
+@@ -889,7 +889,7 @@ public:
+         return result;
+     }
+ 
+-        Core::hresult GetHDMIVersion(DeviceSettings_HDMIInPort_t port, DeviceSettings_HDMIInCapabilityVersion_t &capabilityVersion)
++    Core::hresult GetHDMIVersion(DeviceSettings_HDMIInPort_t port, DeviceSettings_HDMIInCapabilityVersion_t &capabilityVersion)
+     {
+         Core::hresult result = Core::ERROR_UNAVAILABLE;
+ 
+@@ -908,6 +908,26 @@ public:
+         return result;
+     }
+ 
++    Core::hresult GetHDMIInNumbefOfInputs(int32_t &count)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        count = 0;
++
++        _apiLock.Lock();
++
++        if (nullptr != _deviceSettingsManagerInterface && nullptr != _deviceSettingsManagerHdmiInInterface) {
++
++            LOGINFO("hdmiInInterface pointer: %p", _deviceSettingsManagerHdmiInInterface);
++
++            result = _deviceSettingsManagerHdmiInInterface->GetHDMIInNumbefOfInputs(count);
++        }
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
+ /* private:
+     Exchange::IDeviceSettingsManager* _deviceSettingsManagerInterface; //Remote DeviceSettingsManager plugin interface
+ 
+@@ -1045,4 +1065,15 @@ extern "C" {
+         }
+         return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
+     }
++
++    uint32_t DeviceSettings_GetHDMIInNumbefOfInputs(int32_t *numberOfInputs)
++    {
++        ASSERT(nullptr != numberOfInputs);
++        DeviceSettings *instance = DeviceSettings::Instance();
++
++        if (instance) {
++            return instance->GetHDMIInNumbefOfInputs(*numberOfInputs);
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
+ }
+\ No newline at end of file
+diff --git a/Source/devicesettings/device_settings.h b/Source/devicesettings/device_settings.h
+index 8117ecc..35e6773 100644
+--- a/Source/devicesettings/device_settings.h
++++ b/Source/devicesettings/device_settings.h
+@@ -171,6 +171,8 @@ EXTERNAL uint32_t DeviceSettings_SetFPDBrightness(DeviceSettings_FPDIndicator_t
+ 
+ EXTERNAL uint32_t DeviceSettings_GetHDMIVersion(DeviceSettings_HDMIInPort_t port, DeviceSettings_HDMIInCapabilityVersion_t &capabilityVersion);
+ 
++EXTERNAL uint32_t DeviceSettings_GetHDMIInNumbefOfInputs(int32_t *numberOfInputs);
++
+ #ifdef __cplusplus
+ }; // extern "C"
+ #endif
+-- 
+2.44.4
+
+
+From 495baeaaef6f62c6a62163561b15890547c862b8 Mon Sep 17 00:00:00 2001
+From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+Date: Tue, 21 Oct 2025 16:57:35 +0000
+Subject: [PATCH 7/7] Added all FPD methods
+
+Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+---
+ Source/devicesettings/device_settings.cpp | 185 ++++++++++++++++++++++
+ Source/devicesettings/device_settings.h   |  24 +++
+ 2 files changed, 209 insertions(+)
+
+diff --git a/Source/devicesettings/device_settings.cpp b/Source/devicesettings/device_settings.cpp
+index 82a484b..14081de 100644
+--- a/Source/devicesettings/device_settings.cpp
++++ b/Source/devicesettings/device_settings.cpp
+@@ -84,6 +84,8 @@ void segfault_handler(int sig) {
+ 
+ // Type alias for cleaner code
+ using FPDIndicator = Exchange::IDeviceSettingsManagerFPD::FPDIndicator;
++using HDMIInStatus = WPEFramework::Exchange::IDeviceSettingsManagerHDMIIn::HDMIInStatus;
++using IHDMIInPortConnectionStatusIterator = WPEFramework::Exchange::IDeviceSettingsManagerHDMIIn::IHDMIInPortConnectionStatusIterator;
+ 
+ static constexpr const TCHAR callSign[] = _T("org.rdk.DeviceSettingsManager");
+ 
+@@ -889,6 +891,100 @@ public:
+         return result;
+     }
+ 
++    Core::hresult GetFPDState(DeviceSettings_FPDIndicator_t indicator, DeviceSettings_FPDState_t &state)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        FPDIndicator fpdIndicator = static_cast<FPDIndicator>(indicator);
++
++        _apiLock.Lock();
++
++        LOGINFO("GetFPDState called with indicator=%d, _deviceSettingsManagerInterface=%p", indicator, _deviceSettingsManagerInterface);
++
++        LOGINFO("QueryInterface<IFPD> returned: %p, FPD indicator: %d (enum value: %d)", _deviceSettingsManagerInterface, indicator, static_cast<int>(fpdIndicator));
++
++        if (_deviceSettingsManagerInterface) {
++
++            result = _deviceSettingsManagerInterface->GetFPDState(fpdIndicator,
++                reinterpret_cast<Exchange::IDeviceSettingsManagerFPD::FPDState&>(state));
++            LOGINFO("_deviceSettingsManagerFpdInterface->GetFPDState returned: %u State=%d", result, static_cast<int>(state));
++        }
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult SetFPDState(DeviceSettings_FPDIndicator_t indicator, DeviceSettings_FPDState_t state)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        FPDIndicator fpdIndicator = static_cast<FPDIndicator>(indicator);
++
++        _apiLock.Lock();
++
++        LOGINFO("SetFPDState called with indicator=%d, state=%d, _deviceSettingsManagerInterface=%p", indicator, state, _deviceSettingsManagerInterface);
++
++        LOGINFO("QueryInterface<IFPD> returned: %p, FPD indicator: %d (enum value: %d) state: %d", _deviceSettingsManagerInterface, indicator, static_cast<int>(fpdIndicator), state);
++
++        if (_deviceSettingsManagerInterface) {
++
++            result = _deviceSettingsManagerInterface->SetFPDState(fpdIndicator,
++                static_cast<Exchange::IDeviceSettingsManagerFPD::FPDState>(state));
++            LOGINFO("_deviceSettingsManagerFpdInterface->SetFPDState returned: %u", result);
++        }
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult GetFPDColor(DeviceSettings_FPDIndicator_t indicator, uint32_t &color)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        FPDIndicator fpdIndicator = static_cast<FPDIndicator>(indicator);
++
++        _apiLock.Lock();
++
++        LOGINFO("GetFPDColor called with indicator=%d, _deviceSettingsManagerInterface=%p", indicator, _deviceSettingsManagerInterface);
++
++        LOGINFO("QueryInterface<IFPD> returned: %p, FPD indicator: %d (enum value: %d)", _deviceSettingsManagerInterface, indicator, static_cast<int>(fpdIndicator));
++
++        if (_deviceSettingsManagerInterface) {
++
++            result = _deviceSettingsManagerInterface->GetFPDColor(fpdIndicator, color);
++            LOGINFO("_deviceSettingsManagerFpdInterface->GetFPDColor returned: %u Color=%u", result, color);
++        }
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult SetFPDColor(DeviceSettings_FPDIndicator_t indicator, uint32_t color)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        FPDIndicator fpdIndicator = static_cast<FPDIndicator>(indicator);
++
++        _apiLock.Lock();
++
++        LOGINFO("SetFPDColor called with indicator=%d, color=%u, _deviceSettingsManagerInterface=%p", indicator, color, _deviceSettingsManagerInterface);
++
++        LOGINFO("QueryInterface<IFPD> returned: %p, FPD indicator: %d (enum value: %d) color: %u", _deviceSettingsManagerInterface, indicator, static_cast<int>(fpdIndicator), color);
++
++        if (_deviceSettingsManagerInterface) {
++
++            result = _deviceSettingsManagerInterface->SetFPDColor(fpdIndicator, color);
++            LOGINFO("_deviceSettingsManagerFpdInterface->SetFPDColor returned: %u", result);
++        }
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
+     Core::hresult GetHDMIVersion(DeviceSettings_HDMIInPort_t port, DeviceSettings_HDMIInCapabilityVersion_t &capabilityVersion)
+     {
+         Core::hresult result = Core::ERROR_UNAVAILABLE;
+@@ -928,6 +1024,30 @@ public:
+         return result;
+     }
+ 
++Core::hresult GetHDMIInStatus(DeviceSettings_HDMIInStatus_t &hdmiStatus, void*& portConnectionStatus)
++{
++    Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++    _apiLock.Lock();
++
++    if (nullptr != _deviceSettingsManagerInterface && nullptr != _deviceSettingsManagerHdmiInInterface) {
++        Exchange::IDeviceSettingsManagerHDMIIn::HDMIInStatus status;
++        Exchange::IDeviceSettingsManagerHDMIIn::IHDMIInPortConnectionStatusIterator* iterator = nullptr;
++        
++        result = _deviceSettingsManagerHdmiInInterface->GetHDMIInStatus(status, iterator);
++        
++        if (result == Core::ERROR_NONE) {
++            // Convert from Thunder types to C API types
++            hdmiStatus.isPresented = status.isPresented;
++            hdmiStatus.activePort = static_cast<DeviceSettings_HDMIInPort_t>(status.activePort);
++            portConnectionStatus = iterator; // Store iterator for later use
++        }
++    }
++
++    _apiLock.Unlock();
++    return result;
++}
++
+ /* private:
+     Exchange::IDeviceSettingsManager* _deviceSettingsManagerInterface; //Remote DeviceSettingsManager plugin interface
+ 
+@@ -1056,6 +1176,49 @@ extern "C" {
+         return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
+     }
+ 
++    uint32_t DeviceSettings_GetFPDState(DeviceSettings_FPDIndicator_t indicator, DeviceSettings_FPDState_t &state)
++    {
++        DeviceSettings *instance = DeviceSettings::Instance();
++        
++        if (instance) {
++            return instance->GetFPDState(indicator, state);
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++
++    uint32_t DeviceSettings_SetFPDState(DeviceSettings_FPDIndicator_t indicator, DeviceSettings_FPDState_t state)
++    {
++        DeviceSettings *instance = DeviceSettings::Instance();
++
++        if (instance) {
++            return instance->SetFPDState(indicator, state);
++        }
++
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++
++    uint32_t DeviceSettings_GetFPDColor(DeviceSettings_FPDIndicator_t indicator, uint32_t *color)
++    {
++        ASSERT(nullptr != color);
++        DeviceSettings *instance = DeviceSettings::Instance();
++
++        if (instance) {
++            return instance->GetFPDColor(indicator, *color);
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++
++    uint32_t DeviceSettings_SetFPDColor(DeviceSettings_FPDIndicator_t indicator, uint32_t color)
++    {
++        ASSERT(nullptr != color);
++        DeviceSettings *instance = DeviceSettings::Instance();
++
++        if (instance) {
++            return instance->SetFPDColor(indicator, color);
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
++
+     uint32_t DeviceSettings_GetHDMIVersion(DeviceSettings_HDMIInPort_t port, DeviceSettings_HDMIInCapabilityVersion_t &capabilityVersion)
+     {
+         DeviceSettings *instance = DeviceSettings::Instance();
+@@ -1076,4 +1239,26 @@ extern "C" {
+         }
+         return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
+     }
++
++    uint32_t DeviceSettings_GetHDMIInStatus(DeviceSettings_HDMIInStatus_t *status, DeviceSettings_IHDMIInPortConnectionStatusIterator **portConnectionStatus)
++    {
++        ASSERT(nullptr != status);
++        ASSERT(nullptr != portConnectionStatus);
++        
++        DeviceSettings *instance = DeviceSettings::Instance();
++
++        if (instance) {
++            // Use the C++ method with proper types
++            void* iterator = nullptr;
++            
++            uint32_t result = instance->GetHDMIInStatus(*status, iterator);
++            
++            if (result == DEVICE_SETTINGS_ERROR_NONE) {
++                *portConnectionStatus = static_cast<DeviceSettings_IHDMIInPortConnectionStatusIterator*>(iterator);
++            }
++            
++            return result;
++        }
++        return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
++    }
+ }
+\ No newline at end of file
+diff --git a/Source/devicesettings/device_settings.h b/Source/devicesettings/device_settings.h
+index 35e6773..c8375a7 100644
+--- a/Source/devicesettings/device_settings.h
++++ b/Source/devicesettings/device_settings.h
+@@ -70,6 +70,20 @@ typedef enum DeviceSettings_HDMIInCapabilityVersion {
+     HDMI_COMPATIBILITY_VERSION_MAX = 3
+ } DeviceSettings_HDMIInCapabilityVersion_t;
+ 
++typedef enum DeviceSettings_FPDState {
++    DS_FPD_STATE_OFF        = 0,
++    DS_FPD_STATE_ON         = 1,
++    DS_FPD_STATE_MAX        = 2
++} DeviceSettings_FPDState_t;
++
++// Add these type definitions to match the interface
++typedef struct {
++    bool isPresented;
++    DeviceSettings_HDMIInPort_t activePort;
++} DeviceSettings_HDMIInStatus_t;
++
++typedef void* DeviceSettings_IHDMIInPortConnectionStatusIterator;
++
+ /**
+  * @brief Initializes the Power Controller.
+  *
+@@ -169,10 +183,20 @@ EXTERNAL uint32_t DeviceSettings_GetFPDBrightness(DeviceSettings_FPDIndicator_t
+ 
+ EXTERNAL uint32_t DeviceSettings_SetFPDBrightness(DeviceSettings_FPDIndicator_t indicator , uint32_t brightness);
+ 
++EXTERNAL uint32_t DeviceSettings_SetFPDState(DeviceSettings_FPDIndicator_t indicator, DeviceSettings_FPDState_t state);
++
++EXTERNAL uint32_t DeviceSettings_GetFPDState(DeviceSettings_FPDIndicator_t indicator, DeviceSettings_FPDState_t &state);
++
++EXTERNAL uint32_t DeviceSettings_GetFPDColor(DeviceSettings_FPDIndicator_t indicator, uint32_t *color);
++
++EXTERNAL uint32_t DeviceSettings_SetFPDColor(DeviceSettings_FPDIndicator_t indicator, uint32_t color);
++
+ EXTERNAL uint32_t DeviceSettings_GetHDMIVersion(DeviceSettings_HDMIInPort_t port, DeviceSettings_HDMIInCapabilityVersion_t &capabilityVersion);
+ 
+ EXTERNAL uint32_t DeviceSettings_GetHDMIInNumbefOfInputs(int32_t *numberOfInputs);
+ 
++EXTERNAL uint32_t DeviceSettings_GetHDMIInStatus(DeviceSettings_HDMIInStatus_t *status, DeviceSettings_IHDMIInPortConnectionStatusIterator **portConnectionStatus);
++
+ #ifdef __cplusplus
+ }; // extern "C"
+ #endif
+-- 
+2.44.4
+
