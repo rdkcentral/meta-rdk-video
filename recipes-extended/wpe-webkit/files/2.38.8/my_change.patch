@@ -1,0 +1,13 @@
+diff --git a/Source/WebCore/html/HTMLMediaElement.cpp b/Source/WebCore/html/HTMLMediaElement.cpp
+index c253065..77174a5 100644
+--- a/Source/WebCore/html/HTMLMediaElement.cpp
++++ b/Source/WebCore/html/HTMLMediaElement.cpp
+@@ -489,7 +489,7 @@ HTMLMediaElement::HTMLMediaElement(const QualifiedName& tagName, Document& docum
+     ALWAYS_LOG(LOGIDENTIFIER);
+ 
+     setHasCustomStyleResolveCallbacks();
+-
++    ALWAYS_LOG(LOGIDENTIFIER, "DARKO TEST PRINTOUT");
+     InspectorInstrumentation::addEventListenersToNode(*this);
+ }
+ 
