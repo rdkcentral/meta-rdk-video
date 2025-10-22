@@ -1,7 +1,7 @@
 From e1e33568502ef85fdd9bf03c057580a3c291d9b6 Mon Sep 17 00:00:00 2001
 From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 Date: Mon, 29 Sep 2025 15:17:24 +0000
-Subject: [PATCH 1/7] DeviceSettings Patch 2
+Subject: [PATCH 1/8] DeviceSettings Patch 2
 
 Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 ---
@@ -956,7 +956,7 @@ index 0000000..b99272b
 From 1cb530c2af47fa2093f173ccb48051b342dbdc1b Mon Sep 17 00:00:00 2001
 From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 Date: Mon, 6 Oct 2025 09:04:04 +0000
-Subject: [PATCH 2/7] Commit extra debug info
+Subject: [PATCH 2/8] Commit extra debug info
 
 Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 ---
@@ -1240,7 +1240,7 @@ index b99272b..2125719 100644
 From 66be6738aa32997fd4382864910f50ecb729eb6e Mon Sep 17 00:00:00 2001
 From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 Date: Mon, 13 Oct 2025 12:23:11 +0000
-Subject: [PATCH 3/7] Removed the DeviceSettingsManager from interface
+Subject: [PATCH 3/8] Removed the DeviceSettingsManager from interface
 
 Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 ---
@@ -1575,7 +1575,7 @@ index 2213a96..97963c7 100644
 From 37b0b472afd49b9ce142ed03a1acaed44386532b Mon Sep 17 00:00:00 2001
 From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 Date: Mon, 13 Oct 2025 16:17:20 +0000
-Subject: [PATCH 4/7] Added SetFPDBrightness method
+Subject: [PATCH 4/8] Added SetFPDBrightness method
 
 Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 ---
@@ -1661,7 +1661,7 @@ index 2125719..02ace36 100644
 From 316e58bba1b97f99127df08fd12cc74e109607d4 Mon Sep 17 00:00:00 2001
 From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 Date: Fri, 17 Oct 2025 05:16:46 +0000
-Subject: [PATCH 5/7] Added HdmiIn methods and Interface
+Subject: [PATCH 5/8] Added HdmiIn methods and Interface
 
 Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 ---
@@ -1794,7 +1794,7 @@ index 02ace36..8117ecc 100644
 From 66ea4ed1bf35f8f533497161957a89c84d8667b8 Mon Sep 17 00:00:00 2001
 From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 Date: Tue, 21 Oct 2025 06:58:15 +0000
-Subject: [PATCH 6/7] Added GetHDMIInNumbefOfInputs method
+Subject: [PATCH 6/8] Added GetHDMIInNumbefOfInputs method
 
 Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 ---
@@ -1879,7 +1879,7 @@ index 8117ecc..35e6773 100644
 From 495baeaaef6f62c6a62163561b15890547c862b8 Mon Sep 17 00:00:00 2001
 From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 Date: Tue, 21 Oct 2025 16:57:35 +0000
-Subject: [PATCH 7/7] Added all FPD methods
+Subject: [PATCH 7/8] Added all FPD methods
 
 Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
 ---
@@ -2156,6 +2156,128 @@ index 35e6773..c8375a7 100644
  #ifdef __cplusplus
  }; // extern "C"
  #endif
+-- 
+2.44.4
+
+
+From 703054e091480f20db1e015f3dd794501aa2953b Mon Sep 17 00:00:00 2001
+From: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+Date: Wed, 22 Oct 2025 12:30:02 +0000
+Subject: [PATCH 8/8] Modified GetFPDState method
+
+Signed-off-by: Manimaran Renganathan <manimaran_renganathan@comcast.com>
+---
+ Source/devicesettings/device_settings.cpp | 53 ++++++++++++++++++++---
+ Source/devicesettings/device_settings.h   |  2 +-
+ 2 files changed, 49 insertions(+), 6 deletions(-)
+
+diff --git a/Source/devicesettings/device_settings.cpp b/Source/devicesettings/device_settings.cpp
+index 14081de..ccbdd0f 100644
+--- a/Source/devicesettings/device_settings.cpp
++++ b/Source/devicesettings/device_settings.cpp
+@@ -84,9 +84,39 @@ void segfault_handler(int sig) {
+ 
+ // Type alias for cleaner code
+ using FPDIndicator = Exchange::IDeviceSettingsManagerFPD::FPDIndicator;
++using FPDState = Exchange::IDeviceSettingsManagerFPD::FPDState;
+ using HDMIInStatus = WPEFramework::Exchange::IDeviceSettingsManagerHDMIIn::HDMIInStatus;
+ using IHDMIInPortConnectionStatusIterator = WPEFramework::Exchange::IDeviceSettingsManagerHDMIIn::IHDMIInPortConnectionStatusIterator;
+ 
++const std::unordered_map<FPDState, DeviceSettings_FPDState_t>& fpdStateMap()
++{
++    static const std::unordered_map<FPDState, DeviceSettings_FPDState_t> map = {
++        { FPDState::DS_FPD_STATE_OFF, DS_FPD_STATE_OFF },
++        { FPDState::DS_FPD_STATE_ON, DS_FPD_STATE_ON },
++    };
++
++    return map;
++}
++
++DeviceSettings_FPDState_t covert(const FPDState from)
++{
++    auto& map = fpdStateMap();
++    auto it = map.find(from);
++    return (it != map.end()) ? it->second : DS_FPD_STATE_OFF;
++}
++
++FPDState convert (const DeviceSettings_FPDState_t from)
++{
++    auto& map = fpdStateMap();
++
++    for(const auto& kv : map) {
++        if (kv.second == from) {
++            return kv.first;
++        }
++    }
++    return FPDState::DS_FPD_STATE_OFF;
++}
++
+ static constexpr const TCHAR callSign[] = _T("org.rdk.DeviceSettingsManager");
+ 
+ #define INVALID_PID (-1)
+@@ -891,12 +921,14 @@ public:
+         return result;
+     }
+ 
+-    Core::hresult GetFPDState(DeviceSettings_FPDIndicator_t indicator, DeviceSettings_FPDState_t &state)
++    Core::hresult GetFPDState(DeviceSettings_FPDIndicator_t indicator, DeviceSettings_FPDState_t* state)
+     {
+         Core::hresult result = Core::ERROR_UNAVAILABLE;
+ 
+         FPDIndicator fpdIndicator = static_cast<FPDIndicator>(indicator);
+ 
++        FPDState stateLocal = FPDState::DS_FPD_STATE_OFF;
++
+         _apiLock.Lock();
+ 
+         LOGINFO("GetFPDState called with indicator=%d, _deviceSettingsManagerInterface=%p", indicator, _deviceSettingsManagerInterface);
+@@ -905,9 +937,19 @@ public:
+ 
+         if (_deviceSettingsManagerInterface) {
+ 
+-            result = _deviceSettingsManagerInterface->GetFPDState(fpdIndicator,
+-                reinterpret_cast<Exchange::IDeviceSettingsManagerFPD::FPDState&>(state));
+-            LOGINFO("_deviceSettingsManagerFpdInterface->GetFPDState returned: %u State=%d", result, static_cast<int>(state));
++        /*    result = _deviceSettingsManagerInterface->GetFPDState(fpdIndicator,
++                reinterpret_cast<Exchange::IDeviceSettingsManagerFPD::FPDState&>(state)); */
++
++            result = _deviceSettingsManagerInterface->GetFPDState(fpdIndicator, stateLocal);
++
++            LOGINFO("_deviceSettingsManagerFpdInterface->GetFPDState returned: %u State=%d", result, static_cast<int>(stateLocal));
++        }
++
++        if (Core::ERROR_NONE == result)
++        {
++            *state = covert(stateLocal);
++
++            LOGINFO("Converted FPD state: %d", static_cast<int>(*state));
+         }
+ 
+         _apiLock.Unlock();
+@@ -1176,8 +1218,9 @@ extern "C" {
+         return DEVICE_SETTINGS_ERROR_UNAVAILABLE;
+     }
+ 
+-    uint32_t DeviceSettings_GetFPDState(DeviceSettings_FPDIndicator_t indicator, DeviceSettings_FPDState_t &state)
++    uint32_t DeviceSettings_GetFPDState(DeviceSettings_FPDIndicator_t indicator, DeviceSettings_FPDState_t* state)
+     {
++        ASSERT(nullptr != state)
+         DeviceSettings *instance = DeviceSettings::Instance();
+         
+         if (instance) {
+diff --git a/Source/devicesettings/device_settings.h b/Source/devicesettings/device_settings.h
+index c8375a7..a617dd9 100644
+--- a/Source/devicesettings/device_settings.h
++++ b/Source/devicesettings/device_settings.h
+@@ -185,7 +185,7 @@ EXTERNAL uint32_t DeviceSettings_SetFPDBrightness(DeviceSettings_FPDIndicator_t
+ 
+ EXTERNAL uint32_t DeviceSettings_SetFPDState(DeviceSettings_FPDIndicator_t indicator, DeviceSettings_FPDState_t state);
+ 
+-EXTERNAL uint32_t DeviceSettings_GetFPDState(DeviceSettings_FPDIndicator_t indicator, DeviceSettings_FPDState_t &state);
++EXTERNAL uint32_t DeviceSettings_GetFPDState(DeviceSettings_FPDIndicator_t indicator, DeviceSettings_FPDState_t* state);
+ 
+ EXTERNAL uint32_t DeviceSettings_GetFPDColor(DeviceSettings_FPDIndicator_t indicator, uint32_t *color);
+ 
 -- 
 2.44.4
 
