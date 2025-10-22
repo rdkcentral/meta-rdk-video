@@ -165,8 +165,8 @@ EXTRA_OECMAKE:append = "${@ ' -DXRSR_SDT=ON' if (d.getVar('SUPPORT_VOICE_DEST_AL
 
 DEPENDS:append   = "${@ ' virtual-mic' if (d.getVar('SUPPORT_VOICE_DEST_ALSA',   expand=False) == "true") else ''}"
 
-EXTRA_OECMAKE:append = " -DCMAKE_SYSROOT=${RECIPE_SYSROOT}"
-EXTRA_OECMAKE:append = " -DGIT_BRANCH=${CMF_GIT_BRANCH}"
+EXTRA_OECMAKE:append = " -DCMAKE_SYSROOT=${RECIPE_SYSROOT} -DCMAKE_PROJECT_VERSION=${PV}"
+
 EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm_mic_tap', ' -DMIC_TAP=ON', '', d)}"
 
 addtask ctrlm_config after do_configure before do_compile
