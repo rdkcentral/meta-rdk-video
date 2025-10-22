@@ -120,6 +120,7 @@ CFLAGS += "-DHAS_FLASH_PERSISTENT -DHAS_THERMAL_API -DdsFPD_BRIGHTNESS_DEFAULT=1
 #enabling HDCP callback in rpc server
 CFLAGS += " -DHAS_HDCP_CALLBACK"
 CFLAGS += "${@bb.utils.contains("DISTRO_FEATURES", "uhd_enabled", "-DHAS_4K_SUPPORT ", "", d)}"
+
 CFLAGS += " -DENABLE_DEEP_SLEEP"
 CFLAGS += "${@bb.utils.contains("DISTRO_FEATURES", "RDKE_PLATFORM_TV", "", " -DIGNORE_EDID_LOGIC ", d)}"
 CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', '-DENABLE_EU_RESOLUTION', \
@@ -134,6 +135,8 @@ CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_hdmiin_support', ' -D
 CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_compositein_support', ' -DHAS_COMPOSITE_IN_SUPPORT ', '', d)}"
 CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_spdif_support', ' -DHAS_SPDIF_SUPPORT ', '', d)}"
 CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_headphone_support', ' -DHAS_HEADPHONE_SUPPORT ', '', d)}"
+CFLAGS += "${@oe.utils.conditional("SKY_VARIANT", "false", "-DENABLE_US_RESOLUTION -DENABLE_US_LED_CONFIG", "" ,d)}"
+CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk', '-DENABLE_FLEX2_RESOLUTION ', '', d)}"
 
 do_install:append() {
     if ${@bb.utils.contains('DISTRO_FEATURES' , 'RDKE_PLATFORM_TV', 'true', 'false', d)}; then
