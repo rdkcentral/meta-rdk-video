@@ -6,7 +6,7 @@ require wpe-webkit.inc
 PR  = "r9"
 
 # Temporary build fix
-DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
+DEPENDS:append = " cairo virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
 DEPENDS:append = " fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -118,8 +118,9 @@ PACKAGECONFIG[vp9_hdr]           = "-DENABLE_HDR=ON,-DENABLE_HDR=OFF,,gstreamer1
 PACKAGECONFIG[instantratechange] = "-DENABLE_INSTANT_RATE_CHANGE=ON,-DENABLE_INSTANT_RATE_CHANGE=OFF,"
 PACKAGECONFIG[logs]              = "-DENABLE_LOGS=ON,,"
 PACKAGECONFIG[fhd]               = "-DVIDEO_DECODING_LIMIT=1920x1080@60,,"
+PACKAGECONFIG[2dcanvas]          = "-DENABLE_ACCELERATED_2D_CANVAS=ON,-DENABLE_ACCELERATED_2D_CANVAS=OFF,"
 
-PACKAGECONFIG:append = " vp9_hdr dolbyvision breakpad native_video woff2 serviceworker"
+PACKAGECONFIG:append = " 2dcanvas vp9_hdr dolbyvision breakpad native_video woff2 serviceworker"
 PACKAGECONFIG:append = " webcrypto webdriver remoteinspector releaselog accessibility speechsynthesis webaudio instantratechange"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', 'usesoup3', 'usesoup2', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'malloc_heap_breakdown', 'malloc_heap_breakdown', '', d)}"
