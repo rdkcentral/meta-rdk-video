@@ -12,7 +12,7 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r50"
+PR = "r51"
 PV = "4.4.1"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
@@ -54,6 +54,7 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/FirmwareUpdate_UptoDate.patch \
            file://r4.4/Removed_Autostart_Check_From_WPEFramework.patch \
            file://r4.4/Backport-PR-1923-RDKEMW-6261-to-improve-system-shutdown-time-upon-R4.4.1.patch \
+           file://r4.4/thunder-debug-RDKTV-33397.patch \
            "
 
 SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
@@ -170,7 +171,7 @@ do_install:append() {
         install -d ${D}${sysconfdir}/init.d
         install -m 0755 ${WORKDIR}/wpeframework-init ${D}${sysconfdir}/init.d/wpeframework
     fi
-
+    sed -i '/ExecStart=-\/usr\/bin\/WPEFramework -b/i ExecStartPre=\/bin\/bash -c "\/opt\/wpe-pre.sh"' ${D}${systemd_unitdir}/system/wpeframework.service
     install -d ${D}${systemd_unitdir}/system/wpeframework.service.d
     install -m 0644 ${WORKDIR}/network_manager_migration.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
 }
