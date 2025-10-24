@@ -68,6 +68,9 @@ PACKAGECONFIG ?= " monitor \
     texttospeechmonitor \
     preinstallmanager \
     migration \
+    appgateway \
+    appnotifications \
+    fbsettings \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
@@ -135,6 +138,9 @@ PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON"
 PACKAGECONFIG[texttospeechmonitor]  = "-DPLUGIN_MONITOR_TEXTTOSPEECH=ON"
 PACKAGECONFIG[preinstallmanager]    = "-DPLUGIN_PREINSTALL_MANAGER=ON,-DPLUGIN_PREINSTALL_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[migration]            = "-DPLUGIN_MIGRATION=ON,-DPLUGIN_MIGRATION=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[appgateway]           = "-DPLUGIN_APPGATEWAY=ON,-DPLUGIN_APPGATEWAY=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[appnotifications]     = "-DPLUGIN_APPNOTIFICATIONS=ON,-DPLUGIN_APPNOTIFICATIONS=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[fbsettings]           = "-DPLUGIN_FBSETTINGS=ON,-DPLUGIN_FBSETTINGS=OFF,entservices-apis,entservices-apis"
 # ----------------------------------------------------------------------------
 
 MONITOR_PLUGIN_ARGS                ?= " \
