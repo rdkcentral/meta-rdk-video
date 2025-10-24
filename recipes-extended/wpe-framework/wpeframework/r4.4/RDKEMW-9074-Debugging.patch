@@ -1,0 +1,12 @@
+diff --git a/Source/core/SocketPort.cpp b/Source/core/SocketPort.cpp
+index 0898183d..12e82fc2 100644
+--- a/Source/core/SocketPort.cpp
++++ b/Source/core/SocketPort.cpp
+@@ -1250,6 +1250,7 @@ namespace WPEFramework {
+ 
+             if (m_State != 0) {
+                 result = false;
++                TRACE_L1("In Closed m_State(%X) is not = 0", m_State);
+             }
+             else {
+                 DestroySocket(m_Socket);
