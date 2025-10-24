@@ -58,7 +58,7 @@ inherit ${@bb.utils.contains('DISTRO_FEATURES', 'comcast-gperftools-heapcheck-wp
 inherit systemd coverity
 
 # Breakpad Support
-BREAKPAD           ??= "false"
+BREAKPAD           ??= "true"
 inherit ${@bb.utils.contains('BREAKPAD', 'true', 'breakpad-wrapper breakpad-logmapper', '', d)}
 DEPENDS:append       = "${@bb.utils.contains('BREAKPAD', 'true', ' breakpad', '', d)}"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('BREAKPAD', 'true', ' -DBREAKPAD=ON', ' -DBREAKPAD=OFF', d)}"
