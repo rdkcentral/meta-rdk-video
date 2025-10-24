@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Infra plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "2.1.0"
+PV ?= "3.0.0"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -71,6 +71,7 @@ PACKAGECONFIG ?= " monitor \
     appgateway \
     appnotifications \
     fbsettings \
+    migration \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
@@ -141,7 +142,7 @@ PACKAGECONFIG[app2appprovider]      = "-DPLUGIN_APP2APPPROVIDER=ON,-DPLUGIN_APP2
 PACKAGECONFIG[appgateway]           = "-DPLUGIN_APPGATEWAY=ON,-DPLUGIN_APPGATEWAY=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[appnotifications]     = "-DPLUGIN_APPNOTIFICATIONS=ON,-DPLUGIN_APPNOTIFICATIONS=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[fbsettings]           = "-DPLUGIN_FBSETTINGS=ON,-DPLUGIN_FBSETTINGS=OFF,entservices-apis,entservices-apis"
-
+PACKAGECONFIG[migration]            = "-DPLUGIN_MIGRATION=ON,-DPLUGIN_MIGRATION=OFF,entservices-apis,entservices-apis"
 # ----------------------------------------------------------------------------
 
 MONITOR_PLUGIN_ARGS                ?= " \
