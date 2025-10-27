@@ -10,10 +10,10 @@ S = "${WORKDIR}/git"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;protocol=${CMF_GIT_PROTOCOL};branch=develop"
+SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;protocol=${CMF_GIT_PROTOCOL};branch=topic/RDKEMW_6891_coverity"
 
-# Aug 06, 2025
-SRCREV = "3202ca6bbf15d9567f3ab746ba37ce7eccd18c85"
+# Aug 21, 2025
+SRCREV = "e1926c6518fa1aa42141f8131ed92f23e4ff58f4"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
