@@ -42,6 +42,8 @@ PACKAGECONFIG[webaudio] = "-DENABLE_WEB_AUDIO=ON,-DENABLE_WEB_AUDIO=OFF,gstreame
 PACKAGECONFIG[tools] = "-DENABLE_TOOLS=ON,-DENABLE_TOOLS=OFF,,"
 PACKAGECONFIG[breakpad] = "-DENABLE_BREAKPAD=ON, -DENABLE_BREAKPAD=OFF, breakpad"
 PACKAGECONFIG[wpeframework_opencdm] = "-DENABLE_THUNDER=ON,-DENABLE_THUNDER=OFF,wpeframework-clientlibraries,"
+PACKAGECONFIG[debugfission] = "-DDEBUG_FISSION=ON,-DDEBUG_FISSION=OFF,"
+PACKAGECONFIG[uselld] = "-DTRY_USE_LD_LLD=ON -DUSE_LD_LLD=ON,,${MLPREFIX}clang-cross-${TARGET_ARCH}"
 
 RDEPENDS:${PN} += "\
   libatomic \
@@ -64,8 +66,6 @@ FULL_OPTIMIZATION:append = " -g1"
 FULL_OPTIMIZATION:remove = "-Os"
 FULL_OPTIMIZATION:remove = "-O2"
 FULL_OPTIMIZATION:remove = "-O3"
-SELECTED_OPTIMIZATION:remove = "-g"
-SELECTED_OPTIMIZATION:append = " -g1 "
 
 WPE_WEBKIT_OPTIMIZATION ?= "-O2"
 
@@ -141,3 +141,19 @@ do_add_version () {
     echo "WPE_WEBKIT_VERSION=${PV}-${PR}" > ${EXTRA_VERSIONS_PATH}/${PN}.txt
 }
 
+
+# Build wpewebkit with split-dwarf, see for more info:
+#   https://gcc.gnu.org/wiki/DebugFission
+#   https://www.tweag.io/blog/2023-11-23-debug-fission/
+PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', 'debugfission uselld','', d)}"
+SELECTED_OPTIMIZATION:remove =  "${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', '-g1', '-g', d)}"
+SELECTED_OPTIMIZATION:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', '-g', '-g1', d)}"
+WPE_WEBKIT_LTO:remove = "${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', '-flto=auto', '', d)}"
+do_install:append() {
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', 'true', 'false', d)}; then
+       rm -rf ${D}/usr/src/debug/${PN}-dwo.tgz
+       install -d ${D}/usr/src/debug/
+       # unfortunately dwp crashes when used with wpewebkit binaries. pack *.dwo files in tarball instead.
+       (cd ${B}; find . -name '*.dwo' -print0 | tar -czvf ${D}/usr/src/debug/${PN}-dwo.tgz --null -T -)
+    fi
+}
