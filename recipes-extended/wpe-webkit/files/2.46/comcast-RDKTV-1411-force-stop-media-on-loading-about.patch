@@ -1,4 +1,4 @@
-From 8c047bd0ba5349845bc6aac3401c5c0908f2f4b3 Mon Sep 17 00:00:00 2001
+From 117f91f029db07153571c73e888bb82fa4c99438 Mon Sep 17 00:00:00 2001
 From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
 Date: Mon, 2 Jun 2025 13:12:13 +0200
 Subject: [PATCH] comcast - RDKTV-1411 - force stop media on loading
@@ -8,7 +8,6 @@ Reason for change: force player stop on app suspend
 Test Procedure: Check app switch from YouTube
 Risks: Low
 Signed-off-by: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
-
 ---
  Source/WebCore/html/HTMLMediaElement.cpp     |  9 +++++++++
  Source/WebKit/WebProcess/WebPage/WebPage.cpp | 10 ++++++++++
@@ -35,12 +34,12 @@ index 8b738f710595..76b1175a40e1 100644
  {
      static const NeverDestroyed<String> values[] = {
 diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.cpp b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
-index 93ab51c110cd..4b60ce898388 100644
+index 94173ccccb2b..f03cf3ea17f6 100644
 --- a/Source/WebKit/WebProcess/WebPage/WebPage.cpp
 +++ b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
-@@ -463,6 +463,10 @@
- #include <pal/cf/CoreTextSoftLink.h>
- #endif
+@@ -468,6 +468,10 @@
+ #include <WebCore/ScreenProperties.h>
+ #endif // PLATFORM(WPE) && !ENABLE(WPE_PLATFORM)
  
 +namespace WebCore {
 +void ForceStopMediaElements();  // defined in HTMLMediaElement
@@ -49,7 +48,7 @@ index 93ab51c110cd..4b60ce898388 100644
  namespace WebKit {
  using namespace JSC;
  using namespace WebCore;
-@@ -2101,6 +2105,12 @@ void WebPage::loadRequest(LoadParameters&& loadParameters)
+@@ -2108,6 +2112,12 @@ void WebPage::loadRequest(LoadParameters&& loadParameters)
      if (auto onwerPermissionsPolicy = std::exchange(loadParameters.ownerPermissionsPolicy, { }))
          localFrame->setOwnerPermissionsPolicy(WTFMove(*onwerPermissionsPolicy));
  

@@ -6,26 +6,29 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r15"
+PR  = "r21"
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
 DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-# Tip of the branch on Aug 07, 2025
-SRCREV = "a710083012198719609db9c917afe6c03db24f87"
+# Tip of the branch on Oct 17, 2025
+SRCREV = "5582c3d4c4b602683fb9c08b7b8f47868ef46b4e"
 
 BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.46"
 SRC_URI = "${BASE_URI}"
 
 # Drop after PR is accepted
-SRC_URI += "file://2.46/1528.patch"
-SRC_URI += "file://2.46/1557.patch"
+# -none currently-
+
+# Drop after westeros change is approved and released
+SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
 
 # Comcast specific changes
 SRC_URI += "file://2.46/comcast-RDKTV-380-disable-privileges-loss.patch"
 SRC_URI += "file://2.46/comcast-WKIT-553-add-video-ave-mimetype-for-holepunc.patch"
 SRC_URI += "file://2.46/comcast-AMLOGIC-628-always-initialze-volume.patch"
+SRC_URI += "file://2.46/comcast-RDK-57261-Disable-optional-parser.patch"
 SRC_URI += "file://2.46/comcast-RDK-57741-sleep-150-microsecs-instead-of-s.patch"
 SRC_URI += "file://2.46/comcast-RDK-56287-rdkat-atspi2.patch"
 SRC_URI += "file://2.46/comcast-RDK-57771-Flush-AppendPipeline-resetParserState.patch"
@@ -46,9 +49,9 @@ SRC_URI += "file://2.46/comcast-RDK-57915-log-HTML5-video-playback.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-EME-generate-MEDIA_ERR_ENCRYPTED.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-Track-encrypted-playback.patch"
 SRC_URI += "file://2.46/comcast-WebRTC-keep-render-time-interpolation.patch"
-#SRC_URI += "file://2.46/comcast-RDKTV-28214-Quick-_exit.patch"
+SRC_URI += "file://2.46/comcast-DELIA-59087-Disable-pausing-playback-for-buf.patch"
+SRC_URI += "file://2.46/comcast-RDKTV-28214-Quick-_exit.patch"
 #SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
-
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"
@@ -57,7 +60,6 @@ PACKAGECONFIG[avif]                  = "-DUSE_AVIF=ON,-DUSE_AVIF=OFF,"
 PACKAGECONFIG[bubblewrapsandbox]     = "-DENABLE_BUBBLEWRAP_SANDBOX=ON,-DENABLE_BUBBLEWRAP_SANDBOX=OFF,"
 PACKAGECONFIG[developermode]         = "-DDEVELOPER_MODE=ON -DENABLE_COG=OFF,-DDEVELOPER_MODE=OFF,wpebackend-fdo wayland-native,"
 PACKAGECONFIG[documentation]         = "-DENABLE_DOCUMENTATION=ON,-DENABLE_DOCUMENTATION=OFF, gi-docgen-native gi-docgen"
-PACKAGECONFIG[dolbyvision]           = "-DENABLE_DV=ON,-DENABLE_DV=OFF,,"
 PACKAGECONFIG[encryptedmedia]        = "-DENABLE_ENCRYPTED_MEDIA=ON,-DENABLE_ENCRYPTED_MEDIA=OFF,"
 PACKAGECONFIG[experimental]          = "-DENABLE_EXPERIMENTAL_FEATURES=ON,-DENABLE_EXPERIMENTAL_FEATURES=OFF,"
 PACKAGECONFIG[fhd]                   = "-DVIDEO_DECODING_LIMIT=1920x1080@60,-DVIDEO_DECODING_LIMIT=3840x2160@60,"
@@ -80,7 +82,6 @@ PACKAGECONFIG[remoteinspector]       = "-DENABLE_REMOTE_INSPECTOR=ON,-DENABLE_RE
 PACKAGECONFIG[speechsynthesis]       = "-DENABLE_SPEECH_SYNTHESIS=ON -DUSE_FLITE=OFF -DUSE_TTS_CLIENT=ON,-DENABLE_SPEECH_SYNTHESIS=OFF,tts"
 PACKAGECONFIG[touchevents]           = "-DENABLE_TOUCH_EVENTS=ON,-DENABLE_TOUCH_EVENTS=OFF,"
 PACKAGECONFIG[video]                 = "-DENABLE_VIDEO=ON,-DENABLE_VIDEO=OFF,gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad,${RDEPS_VIDEO}"
-PACKAGECONFIG[vp9_hdr]               = "-DENABLE_HDR=ON,-DENABLE_HDR=OFF,,gstreamer1.0-plugins-good-matroska"
 PACKAGECONFIG[webassembly]           = "-DENABLE_WEBASSEMBLY=ON,-DENABLE_WEBASSEMBLY=OFF, "
 PACKAGECONFIG[webdriver]             = "-DENABLE_WEBDRIVER=ON,-DENABLE_WEBDRIVER=OFF,"
 PACKAGECONFIG[woff2]                 = "-DUSE_WOFF2=ON,-DUSE_WOFF2=OFF,woff2"
@@ -102,10 +103,8 @@ PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'malloc_heap_br
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-developer-mode', 'developermode tools', '', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('BROWSER_MEMORYPROFILE', 'fhd', 'fhd', '', d)}"
 
-PACKAGECONFIG:append_aarch64 = " webassembly"
-
-PACKAGECONFIG:remove = "${@bb.utils.contains('HAS_HDR_SUPPORT', '0', 'vp9_hdr', '', d)}"
-PACKAGECONFIG:remove = "${@bb.utils.contains('HAS_DOLBY_VISION_SUPPORT', '0', 'dolbyvision', '', d)}"
+PACKAGECONFIG:append:aarch64 = " webassembly"
+PACKAGECONFIG:append:toolchain-clang = " uselld"
 
 EXTRA_OECMAKE += " \
   -DPYTHON_EXECUTABLE=${STAGING_BINDIR_NATIVE}/python3-native/python3 \
@@ -120,7 +119,7 @@ TUNE_CCARGS:append = " -fno-delete-null-pointer-checks"
 WPE_WEBKIT_LTO ??= "-flto=auto"
 TARGET_CFLAGS += "${WPE_WEBKIT_LTO}"
 TARGET_LDFLAGS += "${WPE_WEBKIT_LTO}"
-TARGET_LDFLAGS_toolchain-clang += "-fuse-ld=lld"
+TARGET_LDFLAGS:toolchain-clang += "-fuse-ld=lld"
 
 def wk_use_ccache(bb,d):
     if d.getVar('CCACHE_DISABLED', True) == "1":
