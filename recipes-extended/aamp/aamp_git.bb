@@ -23,7 +23,15 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 #To be removed later, the AAMP_RELEASE_TAG_NAME is not using.
 AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
+# AAMP Widget Configuration
+AAMP_WIDGET_ID = "2843fd32-2107-4ecb-bc9d-c5dde74d1482"
+AAMP_WIDGET_URL = "https://artifacts.appmanager.sky.com/e3176c18-7c7b-41c6-bab6-2fa071c8a04b"
+
+# Multiple sources in SRC_URI - both AAMP source and AAMP widget
+SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp \
+           ${AAMP_WIDGET_URL}/${AAMP_WIDGET_ID}.wgt;name=aampwidget;downloadfilename=${AAMP_WIDGET_ID}.wgt \
+          "
+BB_STRICT_CHECKSUM = "0"
 
 S = "${WORKDIR}/git"
 
@@ -58,6 +66,9 @@ FILES:${PN} += "${libdir}/aamp/lib*.so"
 FILES:${PN} +="${libdir}/gstreamer-1.0/lib*.so"
 FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
+# Add AAMP widget files to package
+FILES:${PN} += "/var/sky/packages/${AAMP_WIDGET_ID}.wgt"
+
 INSANE_SKIP:${PN} = "dev-so"
 CXXFLAGS += "-DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 -I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
 
@@ -89,4 +100,24 @@ do_install:append() {
     # remove the static library if it is installed, 
     # CMakelist in aamp code installing static lib below line should avoid build error 
     rm -f ${D}${libdir}/libtsb.a
+
+ # Install AAMP Widget (additional functionality - enhances AAMP)
+    echo "DEBUG: Installing AAMP widget ${AAMP_WIDGET_ID}"
+    echo "DEBUG: Looking for widget file in WORKDIR: ${WORKDIR}"
+    
+    # Create widget installation directory
+    install -d ${D}/var/sky/packages
+    
+    # Install the downloaded widget file
+    if [ -f ${WORKDIR}/${AAMP_WIDGET_ID}.wgt ]; then
+        echo "DEBUG: Found widget file, installing to /var/sky/packages"
+        install -m 0644 ${WORKDIR}/${AAMP_WIDGET_ID}.wgt ${D}/var/sky/packages/
+        echo "AAMP widget ${AAMP_WIDGET_ID} installed successfully"
+    else
+        echo "DEBUG: Widget file not found at ${WORKDIR}/${AAMP_WIDGET_ID}.wgt"
+        echo "DEBUG: Available files in WORKDIR:"
+        ls -la ${WORKDIR}/ || echo "DEBUG: Cannot list WORKDIR"
+        echo "WARNING: AAMP widget not found - continuing with AAMP installation"
+    fi
+
 }
