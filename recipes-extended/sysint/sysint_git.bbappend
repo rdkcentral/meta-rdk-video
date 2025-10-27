@@ -24,7 +24,10 @@ LOGROTATE_ROTATION_MEM_pqstats="3"
 do_install:append() {
     install -m 0755 ${WORKDIR}/udhcpc.vendor_specific ${D}${sysconfdir}/udhcpc.vendor_specific
     install -m 0644 ${WORKDIR}/timeZone_offset_map ${D}${sysconfdir}/timeZone_offset_map
+    install -d ${D}${systemd_unitdir}/system/systemd-timesyncd.service.d
+    install -m 644 ${WORKDIR}/timesyncd-update.conf ${D}${systemd_unitdir}/system/systemd-timesyncd.service.d
 
+    
     if [ "${DOBBY_ENABLED}" = "true" ]; then
         echo "DOBBY_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
     fi
@@ -38,7 +41,9 @@ do_install:append() {
     if ${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', 'true', 'false', d)}; then
        sed -i 's/BUILD_TYPE=dev/BUILD_TYPE=prod/g' ${D}${sysconfdir}/device.properties
     fi
-
+    sed -i -E 's/^(Before=).*/\1time-sync.target shutdown.target/' ${D}/lib/systemd/system/systemd-timesyncd.service
+    sed -i -E '/^\[Install\]/,/^\[/{s/(WantedBy=).*/\1network-up.target/}' ${D}/lib/systemd/system/systemd-timesyncd.service
+     rm -rf ${D}${sysconfdir}/systemd/system/sysinit.target.wants/systemd-timesyncd.service
 }
 
 FILES:${PN} += "${sysconfdir}/udhcpc.vendor_specific"
@@ -183,3 +188,5 @@ LOGROTATE_SIZE_dcm="1572864"
 LOGROTATE_ROTATION_dcm="1"
 LOGROTATE_SIZE_MEM_dcm="512000"
 LOGROTATE_ROTATION_MEM_dcm="1"
+
+FILES:${PN}:append = " ${systemd_unitdir}/system/systemd-timesyncd.service.d/timesyncd-update.conf"
