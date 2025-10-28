@@ -25,7 +25,7 @@ interface changes for enhanced instance management and add operational state tra
  Source/powercontroller/CMakeLists.txt       |   79 +
  Source/powercontroller/Module.cpp           |   22 +
  Source/powercontroller/Module.h             |   33 +
- Source/powercontroller/power_controller.cpp | 1894 +++++++++++++++++++
+ Source/powercontroller/power_controller.cpp | 1969 +++++++++++++++++++
  Source/powercontroller/power_controller.h   |  405 ++++
  8 files changed, 2441 insertions(+), 1 deletion(-)
  create mode 100644 Source/powercontroller/CMakeLists.txt
@@ -221,10 +221,10 @@ index 0000000..c9c1321
 +#endif
 diff --git a/Source/powercontroller/power_controller.cpp b/Source/powercontroller/power_controller.cpp
 new file mode 100644
-index 0000000..f2f3f19
+index 0000000..f225ad8
 --- /dev/null
 +++ b/Source/powercontroller/power_controller.cpp
-@@ -0,0 +1,1894 @@
+@@ -0,0 +1,1969 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -266,17 +266,17 @@ index 0000000..f2f3f19
 +#ifdef ENABLE_LOGGING
 +#define LOGINFO(fmt, ...)                                                                                                                                                 \
 +    do {                                                                                                                                                                  \
-+        fprintf(stdout, "[%d] INFO  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fprintf(stdout, "[PowerController][%d] INFO  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
 +        fflush(stdout);                                                                                                                                                   \
 +    } while (0)
 +#define LOGWARN(fmt, ...)                                                                                                                                                 \
 +    do {                                                                                                                                                                  \
-+        fprintf(stdout, "[%d] WARN  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fprintf(stdout, "[PowerController][%d] WARN  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
 +        fflush(stdout);                                                                                                                                                   \
 +    } while (0)
 +#define LOGERR(fmt, ...)                                                                                                                                                  \
 +    do {                                                                                                                                                                  \
-+        fprintf(stderr, "[%d] ERROR [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fprintf(stderr, "[PowerController][%d] ERROR [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
 +        fflush(stderr);                                                                                                                                                   \
 +    } while (0)
 +#else
@@ -790,7 +790,7 @@ index 0000000..f2f3f19
 +                    if (errno == EINTR)
 +                        continue;
 +
-+                    std::cerr << "FATAL poll failed, err: " << strerror(errno) << ", fd: " << _fd << ", wd: " << _wd << "\n";
++                    LOGERR("FATAL poll failed, Err[%s], fd[%d], wd[%d]", strerror(errno), _fd, _wd);
 +                    break;
 +                } else if (poll_res == 0) {
 +                    // timedout
@@ -806,11 +806,13 @@ index 0000000..f2f3f19
 +
 +        if (INVALID_FD != _wd) {
 +            close(_wd);
++            _wd = INVALID_FD;
 +        }
 +        if (INVALID_FD != _fd) {
 +            close(_fd);
++            _fd = INVALID_FD;
 +        }
-+        std::cout << "monitorThread: exiting\n";
++        LOGINFO("exiting\n");
 +    }
 +
 +public:
@@ -853,7 +855,7 @@ index 0000000..f2f3f19
 +
 +    ~PIDFileMonitor()
 +    {
-+        std::cout << "PIDMonitor destructor\n";
++        LOGINFO("destructor");
 +
 +        _shutdown = true;
 +
@@ -970,13 +972,12 @@ index 0000000..f2f3f19
 +    ~PowerController()
 +    {
 +        _shutdown = true;
-+        /* Close destroys _powerManagerInterface too */
-+        BaseClass::Close(Core::infinite);
++        (void)Disconnect(); /* Internally it will Close destroys _powerManagerInterface too */
 +    }
 +
 +    void pidChangedCb(const int pid)
 +    {
-+        std::cout << "Thunder OLD PID: " << _pid << ", NEW PID: " << pid << "\n";
++        LOGINFO("Thunder OLD PID: %d, NEW PID: %d", _pid, pid);
 +
 +        if (_pid != pid) {
 +            Disconnect();
@@ -993,7 +994,7 @@ index 0000000..f2f3f19
 +
 +        // avoid misleading log during shutdown
 +        if ((upAndRunning && _shutdown) || !_shutdown) {
-+            std::cout << "PowerController::Operational (" << callSign << ") " << upAndRunning << std::endl;
++            LOGINFO("callsign: (%s), running: %d", callSign, upAndRunning);
 +        }
 +
 +        if (upAndRunning) {
@@ -1002,10 +1003,10 @@ index 0000000..f2f3f19
 +                _powerManagerInterface = BaseClass::Interface();
 +                if (_powerManagerInterface != nullptr) {
 +                    RegisterNotificationsLocked();
-+                    std::cout << "PowerController successfully established COM-RPC connection with PowerManager plugin\n";
++                    LOGINFO("Established COM-RPC connection with PowerManager plugin");
 +                } else {
 +                    // Internal error powerManager is running, but QueryInterface failed for it ?
-+                    std::cerr << "PowerController failed to establish COM-RPC connection with PowerManager plugin\n";
++                    LOGERR("Failed to Establish COM-RPC connection with PowerManager plugin");
 +                }
 +            }
 +        } else {
@@ -1067,38 +1068,50 @@ index 0000000..f2f3f19
 +    uint32_t Connect()
 +    {
 +        uint32_t status = Core::ERROR_NONE;
-+        std::string errMsg = "";
 +
++        LOGINFO("Entering ...");
 +        _apiLock.Lock();
-+
-+        do {
-+            if (!isConnected()) {
-+                uint32_t res = BaseClass::Open(RPC::CommunicationTimeOut, BaseClass::Connector(), callSign);
-+                if (Core::ERROR_NONE == res) {
-+                    _connected = true;
-+                    if (!_pidMonitor.Running()) {
-+                        // read pid file once to get initial PID
-+                        _pid = _pidMonitor.PID();
-+                        _pidMonitor.Run();
++        try {
++            do {
++                if (!isConnected()) {
++                    LOGINFO("Opening COM-RPC channel ...");
++                    uint32_t res = BaseClass::Open(RPC::CommunicationTimeOut, BaseClass::Connector(), callSign);
++                    if (Core::ERROR_NONE == res) {
++                        LOGINFO("COM-RPC channel opened successfully");
++                        _connected = true;
++                        if (!_pidMonitor.Running()) {
++                            // read pid file once to get initial PID
++                            _pid = _pidMonitor.PID();
++                            _pidMonitor.Run();
++                        }
 +                    }
-+                } else {
-+                    errMsg = "COM-RPC channel open failed. Is Thunder running ?";
-+                    status = Core::ERROR_UNAVAILABLE;
-+                    break;
++                    else {
++                        LOGWARN("COM-RPC channel open failed with status[%u]. Is Thunder running ?", res);
++                        status = Core::ERROR_UNAVAILABLE;
++                        break;
++                    }
 +                }
-+            } else {
-+                errMsg = "COM-RPC channel already open";
-+            }
++                else {
++                    LOGINFO("COM-RPC channel already open");
++                }
 +
-+            if (nullptr == _powerManagerInterface) {
-+                errMsg = "PowerManager plugin is not activated yet";
-+                status = Core::ERROR_NOT_EXIST;
-+            }
-+        } while (false);
-+
++                if (nullptr == _powerManagerInterface) {
++                    LOGWARN("PowerManager plugin is not activated yet");
++                    status = Core::ERROR_NOT_EXIST;
++                }
++            } while (false);
++        }
++        catch (const std::exception& ex) {
++            LOGERR("Exception in PowerController::Connect [%s]", ex.what());
++            status = Core::ERROR_GENERAL;
++        }
++        catch (...) {
++            LOGERR("Unknown exception in PowerController::Connect");
++            status = Core::ERROR_GENERAL;
++        }
 +        _apiLock.Unlock();
 +
-+        std::cout << "PowerController::Connect (" << callSign << ") status: " << status << ", errMsg: \"" << errMsg << "\"" << std::endl;
++        LOGINFO("Exiting... status[%u]", status);
 +
 +        return status;
 +    }
@@ -1106,22 +1119,26 @@ index 0000000..f2f3f19
 +    uint32_t Disconnect()
 +    {
 +        uint32_t status = Core::ERROR_GENERAL;
-+        bool close = false;
++
++        LOGINFO("Entering ...");
 +
 +        _apiLock.Lock();
 +
 +        if (isConnected()) {
-+            close = true;
++            LOGINFO("Closing COM-RPC channel ...");
++            status = BaseClass::Close(Core::infinite);
++            if (Core::ERROR_NONE != status) {
++                LOGERR("COM-RPC channel close failed, status: %u", status);
++            }
++            else {
++                LOGINFO("COM-RPC channel closed");
++            }
 +            _connected = false;
 +        }
 +
 +        _apiLock.Unlock();
 +
-+        if (close) {
-+            status = BaseClass::Close(Core::infinite);
-+        }
-+
-+        std::cout << "PowerController::disconnect\n";
++        LOGINFO("Exiting ... status[%u]", status);
 +
 +        return status;
 +    }
@@ -1144,21 +1161,28 @@ index 0000000..f2f3f19
 +
 +    static void Init()
 +    {
++        LOGINFO("Entering ...");
 +        _apiLock.Lock();
 +        if (nullptr == _instance) {
 +            _instance = new PowerController();
++            if (nullptr == _instance) {
++                LOGERR("PowerController::Init failed, out of memory ?");
++            }
 +        }
 +        _apiLock.Unlock();
++        LOGINFO("Exiting ...");
 +    }
 +
 +    static void Term()
 +    {
++        LOGINFO("Entering ...");
 +        _apiLock.Lock();
 +        if (nullptr != _instance) {
 +            delete _instance;
 +            _instance = nullptr;
 +        }
 +        _apiLock.Unlock();
++        LOGINFO("Exiting ...");
 +    }
 +
 +    static PowerController* Instance()
@@ -1178,6 +1202,7 @@ index 0000000..f2f3f19
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetPowerState(currentState_, previousState_);
 +        }
++        LOGINFO("result[%d], Prev[%d], Current[%d]", result, previousState_, currentState_);
 +
 +        _apiLock.Unlock();
 +
@@ -1200,6 +1225,7 @@ index 0000000..f2f3f19
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->SetPowerState(keyCode, powerState_, reason);
 +        }
++        LOGINFO("result[%d], keyCode[%d], powerState[%d], reason[%s]", result, keyCode, powerState_, reason);
 +
 +        _apiLock.Unlock();
 +
@@ -1210,11 +1236,16 @@ index 0000000..f2f3f19
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
++        if (nullptr == currentTemperature) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetThermalState(*currentTemperature);
 +        }
++        LOGINFO("result[%d], currentTemperature[%f]", result, *currentTemperature);
 +
 +        _apiLock.Unlock();
 +
@@ -1230,6 +1261,7 @@ index 0000000..f2f3f19
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->SetTemperatureThresholds(high, critical);
 +        }
++        LOGINFO("result[%d], high[%f], critical[%f]", result, high, critical);
 +
 +        _apiLock.Unlock();
 +
@@ -1240,11 +1272,16 @@ index 0000000..f2f3f19
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
++        if (nullptr == high || nullptr == critical) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetTemperatureThresholds(*high, *critical);
 +        }
++        LOGINFO("result[%d], high[%f], critical[%f]", result, *high, *critical);
 +
 +        _apiLock.Unlock();
 +
@@ -1260,6 +1297,7 @@ index 0000000..f2f3f19
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->SetOvertempGraceInterval(graceInterval);
 +        }
++        LOGINFO("result[%d], graceInterval[%d]", result, graceInterval);
 +
 +        _apiLock.Unlock();
 +
@@ -1270,11 +1308,16 @@ index 0000000..f2f3f19
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
++        if (nullptr == graceInterval) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetOvertempGraceInterval(*graceInterval);
 +        }
++        LOGINFO("result[%d], graceInterval[%d]", result, *graceInterval);
 +
 +        _apiLock.Unlock();
 +
@@ -1290,6 +1333,7 @@ index 0000000..f2f3f19
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->SetDeepSleepTimer(timeOut);
 +        }
++        LOGINFO("result[%d], timeOut[%d]", result, timeOut);
 +
 +        _apiLock.Unlock();
 +
@@ -1301,11 +1345,16 @@ index 0000000..f2f3f19
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +        WakeupReason wakeupReason_ = WakeupReason::WAKEUP_REASON_UNKNOWN;
 +
++        if (nullptr == wakeupReason) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetLastWakeupReason(wakeupReason_);
 +        }
++        LOGINFO("result[%d], wakeupReason[%d]", result, wakeupReason_);
 +
 +        _apiLock.Unlock();
 +
@@ -1320,11 +1369,16 @@ index 0000000..f2f3f19
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
++        if (nullptr == keycode) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            _powerManagerInterface->GetLastWakeupKeyCode(*keycode);
 +        }
++        LOGINFO("result[%d], keycode[%d]", result, *keycode);
 +
 +        _apiLock.Unlock();
 +
@@ -1335,11 +1389,16 @@ index 0000000..f2f3f19
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
++        if (nullptr == rebootRequestor || nullptr == rebootReasonCustom || nullptr == rebootReasonOther) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->Reboot(rebootRequestor, rebootReasonCustom, rebootReasonOther);
 +        }
++        LOGINFO("result[%d], rebootRequestor[%s], rebootReasonCustom[%s], rebootReasonOther[%s]", result, rebootRequestor, rebootReasonCustom, rebootReasonOther);
 +
 +        _apiLock.Unlock();
 +
@@ -1355,6 +1414,7 @@ index 0000000..f2f3f19
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->SetNetworkStandbyMode(standbyMode);
 +        }
++        LOGINFO("result[%d], standbyMode[%d]", result, standbyMode);
 +
 +        _apiLock.Unlock();
 +
@@ -1364,11 +1424,16 @@ index 0000000..f2f3f19
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
++        if (nullptr == standbyMode) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetNetworkStandbyMode(*standbyMode);
 +        }
++        LOGINFO("result[%d], standbyMode[%d]", result, *standbyMode);
 +
 +        _apiLock.Unlock();
 +
@@ -1386,6 +1451,7 @@ index 0000000..f2f3f19
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->SetSystemMode(currentMode_, newMode_);
 +        }
++        LOGINFO("result[%d], currentMode[%d], newMode[%d]", result, currentMode_, newMode_);
 +
 +        _apiLock.Unlock();
 +
@@ -1397,11 +1463,16 @@ index 0000000..f2f3f19
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +        PowerState powerStateBeforeReboot_ = PowerState::POWER_STATE_UNKNOWN;
 +
++        if (nullptr == powerStateBeforeReboot) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetPowerStateBeforeReboot(powerStateBeforeReboot_);
 +        }
++        LOGINFO("result[%d], powerStateBeforeReboot[%d]", result, powerStateBeforeReboot_);
 +
 +        _apiLock.Unlock();
 +
@@ -1421,6 +1492,7 @@ index 0000000..f2f3f19
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->AddPowerModePreChangeClient(clientName, clientId);
 +        }
++        LOGINFO("result[%d], clientName[%s], clientId[%d]", result, clientName.c_str(), clientId);
 +
 +        _apiLock.Unlock();
 +
@@ -1436,6 +1508,7 @@ index 0000000..f2f3f19
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->RemovePowerModePreChangeClient(clientId);
 +        }
++        LOGINFO("result[%d], clientId[%d]", result, clientId);
 +
 +        _apiLock.Unlock();
 +
@@ -1451,6 +1524,7 @@ index 0000000..f2f3f19
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->DelayPowerModeChangeBy(clientId, transactionId, delay);
 +        }
++        LOGINFO("result[%d], clientId[%d], transactionId[%d], delay[%d]", result, clientId, transactionId, delay);
 +
 +        _apiLock.Unlock();
 +
@@ -1466,6 +1540,7 @@ index 0000000..f2f3f19
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->PowerModePreChangeComplete(clientId, transactionId);
 +        }
++        LOGINFO("result[%d], clientId[%d], transactionId[%d]", result, clientId, transactionId);
 +
 +        _apiLock.Unlock();
 +
