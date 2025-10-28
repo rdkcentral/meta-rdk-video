@@ -21,7 +21,6 @@ SRCREV_thunder = "19100433e5517c743738bb2a9ed8ce2f79c10eaf"
 
 SRC_URI += "file://wpeframework-init \
            file://wpeframework.service.in \
-           file://network_manager_migration.conf \
            file://r4.4/Library_version_matched_with_release_tag.patch \
            file://r4.4/Remove_versioning_for_executables.patch \
            file://r4.4/wpeframework_version.patch \
@@ -47,6 +46,7 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/Activating_plugins_Logs_COMRPC.patch \
            file://r4.4/Removed_Autostart_Check_From_WPEFramework.patch \
            file://r4.4/Append_WorkerPool_Info.patch \
+           file://r4.4/Revert_PR-665_support_JSON_Parsing.patch \
            "
 
 SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
@@ -63,6 +63,8 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/Jsonrpc_dynamic_error_handling.patch \
             file://r4.4/PR-1923-RDKEMW-6261-to-improve-system-shutdown-time-upon-R4.4.3.patch \
             file://r4.4/rdkemw-124-Link-Breakpad-wrapper.patch \
+            file://r4.4/RDKEMW-8889-Avoid-LoadMeta-On-Boot.patch \
+            file://r4.4/0001-To-handle-truncated-UTF-code-on-parsing-empty-null-t.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -160,9 +162,6 @@ EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
-
-    install -d ${D}${systemd_unitdir}/system/wpeframework.service.d
-    install -m 0644 ${WORKDIR}/network_manager_migration.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
