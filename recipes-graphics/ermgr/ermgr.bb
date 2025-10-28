@@ -29,6 +29,7 @@ do_install() {
    fi
    # appsservice expects ERM UDS in /tmp folder
    sed -i "/^Environment=\"XDG_RUNTIME_DIR/ s/run\"$/tmp\"/" ${D}${systemd_unitdir}/system/ermgr.service
+   sed -i -e '/Environment=.*/aEnvironment=\"ESSRMGR_DEBUG=7\"' ${D}${systemd_unitdir}/system/ermgr.service
 }
 
 SYSTEMD_SERVICE:${PN} += "ermgr.service"
