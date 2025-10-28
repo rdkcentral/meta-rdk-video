@@ -1,0 +1,66 @@
+From 117f91f029db07153571c73e888bb82fa4c99438 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Mon, 2 Jun 2025 13:12:13 +0200
+Subject: [PATCH] comcast - RDKTV-1411 - force stop media on loading
+ about:blank
+
+Reason for change: force player stop on app suspend
+Test Procedure: Check app switch from YouTube
+Risks: Low
+Signed-off-by: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+---
+ Source/WebCore/html/HTMLMediaElement.cpp     |  9 +++++++++
+ Source/WebKit/WebProcess/WebPage/WebPage.cpp | 10 ++++++++++
+ 2 files changed, 19 insertions(+)
+
+diff --git a/Source/WebCore/html/HTMLMediaElement.cpp b/Source/WebCore/html/HTMLMediaElement.cpp
+index 8b738f710595..76b1175a40e1 100644
+--- a/Source/WebCore/html/HTMLMediaElement.cpp
++++ b/Source/WebCore/html/HTMLMediaElement.cpp
+@@ -249,6 +249,15 @@ static constexpr auto mediaSourceBlobProtocol = "blob"_s;
+ 
+ using namespace HTMLNames;
+ 
++void ForceStopMediaElements()
++{
++    for (auto mediaElement : HTMLMediaElement::allMediaElements()) {
++        WTFLogAlways("Force stop '%s'", mediaElement->currentSrc().string().utf8().data());
++        ActiveDOMObject* obj = mediaElement.ptr();
++        obj->stop();
++    }
++}
++
+ String convertEnumerationToString(HTMLMediaElement::ReadyState enumerationValue)
+ {
+     static const NeverDestroyed<String> values[] = {
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.cpp b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+index 94173ccccb2b..f03cf3ea17f6 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.cpp
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+@@ -468,6 +468,10 @@
+ #include <WebCore/ScreenProperties.h>
+ #endif // PLATFORM(WPE) && !ENABLE(WPE_PLATFORM)
+ 
++namespace WebCore {
++void ForceStopMediaElements();  // defined in HTMLMediaElement
++}
++
+ namespace WebKit {
+ using namespace JSC;
+ using namespace WebCore;
+@@ -2108,6 +2112,12 @@ void WebPage::loadRequest(LoadParameters&& loadParameters)
+     if (auto onwerPermissionsPolicy = std::exchange(loadParameters.ownerPermissionsPolicy, { }))
+         localFrame->setOwnerPermissionsPolicy(WTFMove(*onwerPermissionsPolicy));
+ 
++    // If the URL is empty, we are loading an empty document, so we should stop any media elements that might be playing.
++    if (frameLoadRequest.resourceRequest().url().isEmpty() ||
++        LegacySchemeRegistry::shouldLoadURLSchemeAsEmptyDocument(frameLoadRequest.resourceRequest().url().protocol().toStringWithoutCopying())) {
++        ForceStopMediaElements();
++    }
++
+     localFrame->loader().setHTTPFallbackInProgress(loadParameters.isPerformingHTTPFallback);
+ 
+     localFrame->loader().load(WTFMove(frameLoadRequest));
+-- 
+2.48.1
+
