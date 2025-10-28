@@ -23,7 +23,7 @@ SRCREV ?= "a0a88b812d39ee57b15b48f00488c4d9ba737f14"
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SRC_URI:append = " file://shared_ptr_fix_kirkstone.patch"
 
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_rdkshell_force_1080', '-DRDKSHELL_BUILD_FORCE_1080=ON', '', d)}"
+EXTRA_OECMAKE += "-DRDKSHELL_BUILD_FORCE_1080=ON"
 
 do_install() {
     install -d ${D}/home/root
