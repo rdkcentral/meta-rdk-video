@@ -13,14 +13,14 @@ index e6293d876..5a10b955f 100644
                                  _flagsAndCounters ^= QuotedAreaBit;
 @@ -2135,19 +2135,6 @@ namespace Core {
              }
-
+ 
          private:
 -            bool IsEscaped(const string& value) const {
 -                // This code determines if a lot of back slashes to esscape the backslash
 -                // Is odd or even, so does it escape the last character..
 -                // e.g. 'Test \\\\\\\\\\"' is not the escaping of the quote (")
 -                //      'Test \\\\\\\\\" continued"'  is the escaping of th quote..
--                //      'Test \" and \" and than \\\"' are all escaped quotes
+-                //      'Test \" and \" and than \\\"' are all escaped quotes 
 -                uint32_t index = static_cast<uint32_t>(value.length() - 1);
 -                uint32_t start = index;
 -                while ( (index != static_cast<uint32_t>(~0)) && (value[index] == '\\') ) {
