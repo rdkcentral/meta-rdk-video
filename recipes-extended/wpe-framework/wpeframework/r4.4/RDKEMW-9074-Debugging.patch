@@ -1,12 +1,50 @@
+diff --git a/Source/core/Services.cpp b/Source/core/Services.cpp
+index 393f0475..d6f88f53 100644
+--- a/Source/core/Services.cpp
++++ b/Source/core/Services.cpp
+@@ -103,7 +103,7 @@ namespace Core {
+     void ServiceAdministrator::FlushLibraries()
+     {
+         _adminLock.Lock();
+-        while (_unreferencedLibraries.size() != 0) {
++        if (_unreferencedLibraries.size() != 0) {
+             // A few closing code instructions might still be required for 
+             // that thread that submitted the librray to complete, so at 
+             // least give that thread a slice to complete the last few 
 diff --git a/Source/core/SocketPort.cpp b/Source/core/SocketPort.cpp
-index 0898183d..12e82fc2 100644
+index 0898183d..05235386 100644
 --- a/Source/core/SocketPort.cpp
 +++ b/Source/core/SocketPort.cpp
-@@ -1250,6 +1250,7 @@ namespace WPEFramework {
+@@ -411,6 +411,9 @@ namespace WPEFramework {
+             // Make sure the socket is closed before you destruct. Otherwise
+             // the virtuals might be called, which are destructed at this point !!!!
+             ASSERT((m_Socket == INVALID_SOCKET) || (IsClosed()));
++            if ((m_Socket == INVALID_SOCKET) || (IsClosed())) {
++                printf("[%s:%d-%s] Socket(%d) is not closed in dtor\n", __FILE__, __LINE__, __FUNCTION__, m_Socket );
++            }
+ 
+             if (m_Socket != INVALID_SOCKET) {
+                 DestroySocket(m_Socket);
+@@ -1249,9 +1252,11 @@ namespace WPEFramework {
+             m_State &= (~SHUTDOWN);
  
              if (m_State != 0) {
-                 result = false;
-+                TRACE_L1("In Closed m_State(%X) is not = 0", m_State);
+-                result = false;
++                // result = false;
++                printf("In Closed m_State(%X) is not = 0\n", m_State.load());
++                m_State = 0;
              }
-             else {
+-            else {
++            // else {
                  DestroySocket(m_Socket);
+                 ResourceMonitor::Instance().Unregister(*this);
+                 // Remove socket descriptor for UNIX domain datagram socket.
+@@ -1265,7 +1270,7 @@ namespace WPEFramework {
+                     unlink(m_LocalNode.HostName().c_str());
+ #endif
+                 }
+-            }
++            // }
+ 
+             m_syncAdmin.Unlock();
+ 
