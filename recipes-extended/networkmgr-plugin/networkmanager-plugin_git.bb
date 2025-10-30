@@ -17,14 +17,14 @@ PR = "r0"
 PV = "1.3.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=main"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=develop"
 
 # Sep 17, 2025
-SRCREV = "9709dd5f5ed714bf6f6f41e0c368dcd804b16e71"
+SRCREV = "fa667e1be3f1951aad74d46ec93108bda9e8793e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
-RDEPENDS:${PN} += " wpeframework rdk-logger curl ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
+DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
+RDEPENDS:${PN} += " wpeframework rdk-logger curl iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
 
 inherit cmake pkgconfig python3native
 
@@ -41,7 +41,11 @@ EXTRA_OECMAKE += " \
                 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON    \
                 -DUSE_TELEMETRY=ON \
                 -DENABLE_ROUTER_DISCOVERY_TOOL=ON \
+                -DENABLE_MIGRATION_MFRMGR_SUPPORT=ON \
                 "
+
+CXXFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
+CFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
 
 # Configure Logging for the Router Discovery Tool
 inherit syslog-ng-config-gen logrotate_config
