@@ -11,14 +11,14 @@ index 393f0475..02324b6c 100644
          }
          _adminLock.Unlock();
 diff --git a/Source/core/SocketPort.cpp b/Source/core/SocketPort.cpp
-index 0898183d..83168929 100644
+index 0898183d..8f0df39b 100644
 --- a/Source/core/SocketPort.cpp
 +++ b/Source/core/SocketPort.cpp
 @@ -411,8 +411,16 @@ namespace WPEFramework {
              // Make sure the socket is closed before you destruct. Otherwise
              // the virtuals might be called, which are destructed at this point !!!!
              ASSERT((m_Socket == INVALID_SOCKET) || (IsClosed()));
-+            if ((m_Socket != INVALID_SOCKET) )
++            if (m_Socket != INVALID_SOCKET )
 +                printf("[%s:%d-%s] Socket(%d) is not set to INVALID but reached dtor\n", __FILE__, __LINE__, __FUNCTION__, m_Socket );
 +            }
 +
