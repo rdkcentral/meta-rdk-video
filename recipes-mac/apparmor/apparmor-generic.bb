@@ -4,6 +4,7 @@ LIC_FILES_CHKSUM = "file://rdk-apparmor-profiles/LICENSE;md5=86d3f3a95c324c9479b
 
 inherit pkgconfig autotools systemd
 SRC_URI = "${CMF_GITHUB_ROOT}/rdk-apparmor-profiles.git;${CMF_GITHUB_SRC_URI_SUFFIX};destsuffix=git/rdk-apparmor-profiles;name=rdk-apparmor-profiles"
+SRC_URI:append = " file://features "
 
 S = "${WORKDIR}/git"
 PACKAGE_BEFORE_PN += "${PN}-optimized"
@@ -16,6 +17,9 @@ do_install() {
 
     install -m 0755 ${S}/rdk-apparmor-profiles/apparmor_parse.sh ${D}${sysconfdir}/apparmor/apparmor_parse.sh
     install -m 0644 ${S}/rdk-apparmor-profiles/apparmor.service ${D}${systemd_system_unitdir}/apparmor.service
+
+    install -d ${D}${libdir}/apparmor_cache
+    install -m 0755 ${WORKDIR}/features ${D}${libdir}/features
 }
 SYSTEMD_SERVICE:${PN}:append = " apparmor.service"
 FILES:${PN} += "${systemd_system_unitdir}/apparmor.service"
@@ -26,3 +30,5 @@ FILES:${PN}-optimized = "${sysconfdir}/apparmor/parser.conf \
                          ${base_libdir}/apparmor/rc.apparmor.functions \
                          ${bindir}/aa-enabled \
                          ${bindir}/aa-exec"
+FILES:${PN} += "${libdir}/features"
+
