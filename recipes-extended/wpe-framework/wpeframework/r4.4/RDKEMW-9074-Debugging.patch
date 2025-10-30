@@ -11,7 +11,7 @@ index 393f0475..02324b6c 100644
          }
          _adminLock.Unlock();
 diff --git a/Source/core/SocketPort.cpp b/Source/core/SocketPort.cpp
-index 0898183d..af32f49d 100644
+index 0898183d..83168929 100644
 --- a/Source/core/SocketPort.cpp
 +++ b/Source/core/SocketPort.cpp
 @@ -411,8 +411,16 @@ namespace WPEFramework {
@@ -22,7 +22,7 @@ index 0898183d..af32f49d 100644
 +                printf("[%s:%d-%s] Socket(%d) is not set to INVALID but reached dtor\n", __FILE__, __LINE__, __FUNCTION__, m_Socket );
 +            }
 +
-+            if (IsClosed() = false) {
++            if (IsClosed() == false) {
 +                printf("[%s:%d-%s] Socket(%d) is NOT CLOSED but reached dtor\n", __FILE__, __LINE__, __FUNCTION__, m_Socket );
 +            }
  
