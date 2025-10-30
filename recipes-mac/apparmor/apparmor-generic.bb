@@ -18,7 +18,7 @@ do_install() {
     install -m 0755 ${S}/rdk-apparmor-profiles/apparmor_parse.sh ${D}${sysconfdir}/apparmor/apparmor_parse.sh
     install -m 0644 ${S}/rdk-apparmor-profiles/apparmor.service ${D}${systemd_system_unitdir}/apparmor.service
 
-    install -d ${D}${libdir}/apparmor_cache
+    install -d ${D}${libdir}/
     install -m 0755 ${WORKDIR}/features ${D}${libdir}/features
 }
 SYSTEMD_SERVICE:${PN}:append = " apparmor.service"
@@ -30,5 +30,5 @@ FILES:${PN}-optimized = "${sysconfdir}/apparmor/parser.conf \
                          ${base_libdir}/apparmor/rc.apparmor.functions \
                          ${bindir}/aa-enabled \
                          ${bindir}/aa-exec"
-FILES:${PN} += "${libdir}/features"
+FILES:${PN} += "${libdir}/features "
 
