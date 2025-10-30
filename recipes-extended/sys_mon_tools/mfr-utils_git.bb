@@ -16,7 +16,7 @@ PROVIDES="mfr-utils"
 
 inherit pkgconfig autotools systemd
 
-DEPENDS ="virtual/mfrlib iarmmgrs-hal-headers iarmbus iarmmgrs wpeframework-clientlibraries"
+DEPENDS ="virtual/mfrlib iarmmgrs-hal-headers iarmbus iarmmgrs wpeframework-clientlibraries devicesettings"
 RDEPENDS:$PN = "virtual/mfrlib wpeframework-clientlibraries"
 
 inherit autotools pkgconfig coverity
