@@ -34,7 +34,7 @@ CFLAGS += "-fcommon"
 
 DEPENDS += "gssdp openssl c-ares curl util-linux glib-2.0 cmake-native wpeframework wpeframework-clientlibraries entservices-apis iarmmgrs"
 
-inherit logrotate_config
+inherit logrotate_config pkgconfig
 
 LOGROTATE_NAME="xdial"
 LOGROTATE_LOGNAME_xdial="xdial.log"
