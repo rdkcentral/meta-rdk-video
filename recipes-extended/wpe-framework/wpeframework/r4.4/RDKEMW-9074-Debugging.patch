@@ -1,12 +1,21 @@
 diff --git a/Source/core/Services.cpp b/Source/core/Services.cpp
-index 393f0475..02324b6c 100644
+index 393f0475..31ef57ce 100644
 --- a/Source/core/Services.cpp
 +++ b/Source/core/Services.cpp
+@@ -103,7 +103,7 @@ namespace Core {
+     void ServiceAdministrator::FlushLibraries()
+     {
+         _adminLock.Lock();
+-        while (_unreferencedLibraries.size() != 0) {
++        if (_unreferencedLibraries.size() != 0) {
+             // A few closing code instructions might still be required for 
+             // that thread that submitted the librray to complete, so at 
+             // least give that thread a slice to complete the last few 
 @@ -111,6 +111,7 @@ namespace Core {
              // the last reference)
              std::this_thread::yield();
  
-+            printf("[%s:%d:%s] Releasing library: %s\n", __FILE__, __LINE__, __FUNCTION__, _unreferencedLibraries.front().Name().c_str());
++            printf("Releasing library: %s\n", _unreferencedLibraries.front().Name().c_str());
              _unreferencedLibraries.pop_front();
          }
          _adminLock.Unlock();
