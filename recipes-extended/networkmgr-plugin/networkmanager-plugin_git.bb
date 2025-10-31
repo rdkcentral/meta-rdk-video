@@ -17,10 +17,10 @@ PR = "r0"
 PV = "1.5.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=main"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/gdbus_timing"
 
 # Oct 25, 2025
-SRCREV = "dead85eb29bb8ca79b5f725f51294959a8a1f9c8"
+SRCREV = "74975e1e158196065d52f5a822a6fe12eb3ce9f2"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
@@ -41,6 +41,7 @@ EXTRA_OECMAKE += " \
                 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON    \
                 -DUSE_TELEMETRY=ON \
                 -DENABLE_ROUTER_DISCOVERY_TOOL=ON \
+                -DENABLE_GNOME_GDBUS=ON \
                 "
 
 # Configure Logging for the Router Discovery Tool
