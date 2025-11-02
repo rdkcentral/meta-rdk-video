@@ -9,6 +9,9 @@ SRCREV = "125b87e9dd639d333ea9915fb0b8e463a6adedfa"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 SRC_URI = "${CMF_GIT_ROOT}/rdk/components/generic/ermgr;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GIT_BRANCH}"
 
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+SRC_URI += "file://MW_ERM_RUN_TIME_LIBRARY.patch"
+
 DEPENDS = "essos"
 inherit autotools pkgconfig systemd syslog-ng-config-gen
 

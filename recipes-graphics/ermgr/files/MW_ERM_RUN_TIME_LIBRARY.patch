@@ -1,0 +1,44 @@
+diff --git a/ermgr.cpp b/ermgr.cpp
+index a3bff96..8a18ab2 100644
+--- a/ermgr.cpp
++++ b/ermgr.cpp
+@@ -20,6 +20,7 @@
+ #include <signal.h>
+ #include <unistd.h>
+ #include "essos-resmgr.h"
++#include <dlfcn.h>
+ 
+ static bool gRunning;
+ 
+@@ -39,6 +40,23 @@ int main( int argc, const char *argv )
+    sigaction(SIGINT, &sigint, NULL);
+ 
+    fprintf(stderr,"ermgr: starting\n");
++   
++   void *handle = dlopen("/opt/ERM/libessosrmgr.so.0.0.0", RTLD_LAZY);
++
++   if (!handle) {
++     fprintf(stderr, "Error opening library: %s\n", dlerror());
++     return 1;
++   }
++
++   bool (*ERMInit)();
++
++   ERMInit = (bool (*)())dlsym(handle, "EssRMgrInit");
++   if (!ERMInit) {
++     fprintf(stderr, "Error finding symbol: %s\n", dlerror());
++     dlclose(handle);
++     return 1;
++   }
++   
+    bool rc= EssRMgrInit();
+    if ( rc )
+    {
+@@ -54,6 +72,7 @@ int main( int argc, const char *argv )
+       }
+       EssRMgrTerm();
+    }
++   dlclose(handle);
+    fprintf(stderr,"ermgr: stopped\n");
+ }
+ 
