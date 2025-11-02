@@ -77,6 +77,7 @@ PACKAGECONFIG ?= " monitor \
     ${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' messagecontrol ', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \
+    downloadmanager \
 "
 
 # TODO: As advised, 'ocicointainer' plugin has been modified to build unconditionally. It will be revisited in the upcoming sprint to control it via DISTRO_FEATURES."
@@ -141,6 +142,7 @@ PACKAGECONFIG[migration]            = "-DPLUGIN_MIGRATION=ON,-DPLUGIN_MIGRATION=
 PACKAGECONFIG[appgateway]           = "-DPLUGIN_APPGATEWAY=ON,-DPLUGIN_APPGATEWAY=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[appnotifications]     = "-DPLUGIN_APPNOTIFICATIONS=ON,-DPLUGIN_APPNOTIFICATIONS=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[fbsettings]           = "-DPLUGIN_FBSETTINGS=ON,-DPLUGIN_FBSETTINGS=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[downloadmanager]      = "-DPLUGIN_DOWNLOADMANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_DOWNLOADMANAGER=OFF -DLIB_PACKAGE=OFF,entservices-apis curl virtual/libpackage,entservices-apis curl virtual/libpackage"
 # ----------------------------------------------------------------------------
 
 MONITOR_PLUGIN_ARGS                ?= " \

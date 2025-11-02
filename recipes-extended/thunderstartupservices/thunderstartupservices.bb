@@ -56,6 +56,8 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-appgateway.service \
     wpeframework-appnotifications.service \
     wpeframework-fbsettings.service \
+    wpeframework-downloadmanager.service \
+    wpeframework-preinstallmanager.service \
     "
 
 CONTROL_FILES = "\
