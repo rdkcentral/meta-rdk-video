@@ -31,6 +31,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -D
 
 DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native virtual/mfrlib"
 RDEPENDS:${PN} += "wpeframework virtual/mfrlib"
+bbnote "RDEPENDS:${PN} = ${RDEPENDS_${PN}}"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
