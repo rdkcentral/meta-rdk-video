@@ -31,7 +31,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -D
 
 DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native virtual/mfrlib"
 RDEPENDS:${PN} += "wpeframework virtual/mfrlib"
-bbnote "RDEPENDS:${PN} = ${RDEPENDS_${PN}}"
+
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
@@ -98,6 +98,12 @@ python () {
     machine_name = d.getVar('MACHINE')
     if 'raspberrypi4' in machine_name:
         d.appendVar('EXTRA_OECMAKE', ' -DBUILD_RPI=ON')
+}
+
+python __anonymous() {
+    import bb
+    rdepends = d.getVar("RDEPENDS:%s" % d.getVar("PN"))
+    bb.note("RDEPENDS for %s: %s" % (d.getVar("PN"), rdepends))
 }
 
 do_install:append() {
