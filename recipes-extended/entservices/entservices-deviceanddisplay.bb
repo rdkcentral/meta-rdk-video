@@ -29,8 +29,8 @@ EXTRA_OECMAKE += " -DBUILD_ENABLE_DEVICE_MANUFACTURER_INFO=ON "
 EXTRA_OECMAKE += " -DBUILD_ENABLE_APP_CONTROL_AUDIOPORT_INIT=ON "
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
 
-DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native"
-RDEPENDS:${PN} += "wpeframework"
+DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native virtual/mfrlib"
+RDEPENDS:${PN} += "wpeframework virtual/mfrlib"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
