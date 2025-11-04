@@ -53,6 +53,8 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-storagemanager.service \
     wpeframework-packagemanager.service \
     wpeframework-appmanager.service \
+    wpeframework-downloadmanager.service \
+    wpeframework-preinstallmanager.service \
     "
 
 CONTROL_FILES = "\

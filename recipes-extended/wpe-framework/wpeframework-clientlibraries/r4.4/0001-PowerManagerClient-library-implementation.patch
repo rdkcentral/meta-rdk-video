@@ -34,20 +34,20 @@ interface changes for enhanced instance management and add operational state tra
  create mode 100644 Source/powercontroller/power_controller.cpp
  create mode 100644 Source/powercontroller/power_controller.h
 
-diff --git a/.gitignore b/.gitignore
-index 9ed30d6..1d22f62 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -39,3 +39,5 @@ Source/playerinfo/player_info/player_info
+Index: git/.gitignore
+===================================================================
+--- git.orig/.gitignore
++++ git/.gitignore
+@@ -39,3 +39,5 @@ Source/playerinfo/player_info/player_inf
  */*/*/*/*tests
  */*/generated
  */*/*/*/lib*.a
 +.cache
 +compile_commands.json
-diff --git a/NOTICE b/NOTICE
-index fd4f8ed..f0bbef9 100644
---- a/NOTICE
-+++ b/NOTICE
+Index: git/NOTICE
+===================================================================
+--- git.orig/NOTICE
++++ git/NOTICE
 @@ -31,4 +31,5 @@ Licensed under the MIT License
  Copyright (C) 2015,2019 Metrological
  Licensed under the BSD-2 License
@@ -55,10 +55,10 @@ index fd4f8ed..f0bbef9 100644
 -
 +Copyright 2025 RDK Management
 +Licensed under the Apache License, Version 2.0
-diff --git a/Source/CMakeLists.txt b/Source/CMakeLists.txt
-index af7578a..4cc4cb1 100644
---- a/Source/CMakeLists.txt
-+++ b/Source/CMakeLists.txt
+Index: git/Source/CMakeLists.txt
+===================================================================
+--- git.orig/Source/CMakeLists.txt
++++ git/Source/CMakeLists.txt
 @@ -58,3 +58,7 @@ endif()
  if(LOCALTRACER)
      add_subdirectory(localtracer)
@@ -67,11 +67,10 @@ index af7578a..4cc4cb1 100644
 +if(POWERCONTROLLER)
 +    add_subdirectory(powercontroller)
 +endif()
-diff --git a/Source/powercontroller/CMakeLists.txt b/Source/powercontroller/CMakeLists.txt
-new file mode 100644
-index 0000000..786bffc
+Index: git/Source/powercontroller/CMakeLists.txt
+===================================================================
 --- /dev/null
-+++ b/Source/powercontroller/CMakeLists.txt
++++ git/Source/powercontroller/CMakeLists.txt
 @@ -0,0 +1,79 @@
 +# If not stated otherwise in this file or this component's LICENSE file the
 +# following copyright and licenses apply:
@@ -152,11 +151,10 @@ index 0000000..786bffc
 +        TARGETS ${TARGET}
 +        DESCRIPTION "communications channel abstraction for powermanager plugin")
 +
-diff --git a/Source/powercontroller/Module.cpp b/Source/powercontroller/Module.cpp
-new file mode 100644
-index 0000000..e924dc3
+Index: git/Source/powercontroller/Module.cpp
+===================================================================
 --- /dev/null
-+++ b/Source/powercontroller/Module.cpp
++++ git/Source/powercontroller/Module.cpp
 @@ -0,0 +1,22 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
@@ -180,11 +178,10 @@ index 0000000..e924dc3
 +#include "Module.h"
 +
 +MODULE_NAME_DECLARATION(BUILD_REFERENCE)
-diff --git a/Source/powercontroller/Module.h b/Source/powercontroller/Module.h
-new file mode 100644
-index 0000000..c9c1321
+Index: git/Source/powercontroller/Module.h
+===================================================================
 --- /dev/null
-+++ b/Source/powercontroller/Module.h
++++ git/Source/powercontroller/Module.h
 @@ -0,0 +1,33 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
@@ -219,12 +216,11 @@ index 0000000..c9c1321
 +#undef EXTERNAL
 +#define EXTERNAL EXTERNAL_EXPORT
 +#endif
-diff --git a/Source/powercontroller/power_controller.cpp b/Source/powercontroller/power_controller.cpp
-new file mode 100644
-index 0000000..f225ad8
+Index: git/Source/powercontroller/power_controller.cpp
+===================================================================
 --- /dev/null
-+++ b/Source/powercontroller/power_controller.cpp
-@@ -0,0 +1,1969 @@
++++ git/Source/powercontroller/power_controller.cpp
+@@ -0,0 +1,1942 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -1440,24 +1436,6 @@ index 0000000..f225ad8
 +        return result;
 +    }
 +
-+    Core::hresult SetSystemMode(const PowerController_SystemMode_t currentMode, const PowerController_SystemMode_t newMode)
-+    {
-+        Core::hresult result = Core::ERROR_UNAVAILABLE;
-+        SystemMode currentMode_ = convert(currentMode);
-+        SystemMode newMode_ = convert(newMode);
-+
-+        _apiLock.Lock();
-+
-+        if (_powerManagerInterface) {
-+            result = _powerManagerInterface->SetSystemMode(currentMode_, newMode_);
-+        }
-+        LOGINFO("result[%d], currentMode[%d], newMode[%d]", result, currentMode_, newMode_);
-+
-+        _apiLock.Unlock();
-+
-+        return result;
-+    }
-+
 +    Core::hresult GetPowerStateBeforeReboot(PowerController_PowerState_t* powerStateBeforeReboot)
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
@@ -2010,15 +1988,6 @@ index 0000000..f225ad8
 +    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
-+uint32_t PowerController_SetSystemMode(const PowerController_SystemMode_t currentMode, const PowerController_SystemMode_t newMode)
-+{
-+    PowerController *instance = PowerController::Instance();
-+    if (instance) {
-+        return instance->SetSystemMode(currentMode, newMode);
-+    }
-+    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+}
-+
 +uint32_t PowerController_GetPowerStateBeforeReboot(PowerController_PowerState_t* powerStateBeforeReboot)
 +{
 +    ASSERT(nullptr != powerStateBeforeReboot);
@@ -2194,12 +2163,11 @@ index 0000000..f225ad8
 +}
 +
 +} // extern "C"
-diff --git a/Source/powercontroller/power_controller.h b/Source/powercontroller/power_controller.h
-new file mode 100644
-index 0000000..8ee58e5
+Index: git/Source/powercontroller/power_controller.h
+===================================================================
 --- /dev/null
-+++ b/Source/powercontroller/power_controller.h
-@@ -0,0 +1,405 @@
++++ git/Source/powercontroller/power_controller.h
+@@ -0,0 +1,398 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -2470,13 +2438,6 @@ index 0000000..8ee58e5
 +// @param standbyMode: Network standby mode
 +EXTERNAL uint32_t PowerController_GetNetworkStandbyMode(bool* standbyMode /* @out */);
 +
-+/** Initiate System mode change */
-+// @text PowerController_SetSystemMode
-+// @brief System mode change
-+// @param oldMode: current mode
-+// @param newMode: new mode
-+EXTERNAL uint32_t PowerController_SetSystemMode(const PowerController_SystemMode_t currentMode /* @in */, const PowerController_SystemMode_t newMode /* @in */);
-+
 +/** Get Power State before last reboot */
 +// @text PowerController_GetPowerStateBeforeReboot
 +// @brief Get Power state before last reboot
@@ -2605,6 +2566,3 @@ index 0000000..8ee58e5
 +#endif
 +
 +#endif // POWERMANAGER_CLIENT_H
--- 
-2.37.7
-
