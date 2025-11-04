@@ -166,6 +166,9 @@ PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
                                        -DPLUGIN_DAC_BUN_PLATNAME_OVERRIDE=${DAC_BUN_PLATNAME_OVERRIDE} \
                                        -DPLUGIN_DAC_CONFIGURL=${DAC_CONFIGURL} \
 "
+RUNTIMEMANAGER_PLUGIN_ARGS         ?= " \
+                                       -DPLUGIN_RUNTIME_APP_PORTAL=${RUNTIME_APP_PORTAL} \
+"
 NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
 
 EXTRA_OECMAKE += " \
