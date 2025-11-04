@@ -134,6 +134,7 @@ do_install() {
 
 
 	install -m 0644 ${S}/systemd_units/network-up.path ${D}${systemd_unitdir}/system
+    install -m 0644 ${S}/systemd_units/NetworkManager.path‎ ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/network-up.target ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/network-up.timer ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-time-sync.path ${D}${systemd_unitdir}/system
@@ -251,7 +252,6 @@ do_install() {
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
         rm ${D}${base_libdir}/rdk/NM_Dispatcher.sh
         rm ${D}${base_libdir}/rdk/NM_preDown.sh
-    install -m 0755 ${S}/systemd_units/NetworkManager.path‎ ${D}${systemd_unitdir}/system/NetworkManager.path
 }
 
 do_install:append:rdkstb() {
@@ -296,6 +296,7 @@ SYSTEMD_SERVICE:${PN} += "NM_Bootstrap.service"
 SYSTEMD_SERVICE:${PN} += "zram.service"
 SYSTEMD_SERVICE:${PN} += "network-up.path"
 SYSTEMD_SERVICE:${PN} += "network-up.timer"
+SYSTEMD_SERVICE:${PN} += "NetworkManager.path"
 SYSTEMD_SERVICE:${PN} += "ntp-time-sync.path"
 SYSTEMD_SERVICE:${PN} += "ntp-time-sync-event.service"
 SYSTEMD_SERVICE:${PN} += "ntp-time-sync.timer"
