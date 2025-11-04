@@ -28,7 +28,7 @@ file_bootversion_bak="/opt/.bootversion.bak"
 if [ -e "$file_updateStatus" ]; then
      status=$(<"$file_updateStatus")
      if [ "$status" == "INPROGRESS" ]; then
-         echo "Update in progress, $file_bootType is incomplete. Looking for backup file"
+         echo "Update in progress, $file_bootversion is incomplete. Looking for backup file"
            if [ -e "$file_bootversion_bak" ]; then
                echo -e "Found backup file, restoring $file_bootversion from $file_bootversion_bak"
                cp -f $file_bootversion_bak $file_bootversion
