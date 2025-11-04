@@ -134,7 +134,7 @@ do_install() {
 
 
 	install -m 0644 ${S}/systemd_units/network-up.path ${D}${systemd_unitdir}/system
-    install -m 0644 ${S}/systemd_units/NetworkManager.path‎ ${D}${systemd_unitdir}/system
+    install -m 0644 ${S}/systemd_units/NetworkManager.path ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/network-up.target ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/network-up.timer ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-time-sync.path ${D}${systemd_unitdir}/system
