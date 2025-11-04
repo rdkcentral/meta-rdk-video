@@ -10,6 +10,7 @@ DEPENDS = "systemd"
 
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'texttrack', 'file://wpeframework-texttrack.service;subdir=${WORKDIR}/git/systemd/system', '', d)} \
 "
 S = "${WORKDIR}/git/systemd/system"
 
@@ -58,6 +59,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-fbsettings.service \
     wpeframework-downloadmanager.service \
     wpeframework-preinstallmanager.service \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'texttrack', 'wpeframework-texttrack.service', '', d)} \
     "
 
 CONTROL_FILES = "\
