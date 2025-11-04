@@ -22,6 +22,35 @@ file_version="/version.txt"
 file_bootversion="/opt/.bootversion"
 file_bootType="/tmp/bootType"
 file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
+file_updateStatus="/opt/.updateStatus"
+file_bootversion_bak="/opt/.bootversion.bak"
+#bootversion backup 
+if [ -e "$file_updateStatus" ]; then
+     status=$(<"$file_updateStatus")
+     if [ "$status" == "INPROGRESS" ]; then
+         echo "Update in progress, $file_bootversion is incomplete. Looking for backup file"
+           if [ -e "$file_bootversion_bak" ]; then
+               echo -e "Found backup file, restoring $file_bootversion from $file_bootversion_bak"
+               cp -f $file_bootversion_bak $file_bootversion
+           else
+               echo "No backup file found, cannot restore $file_bootversion and removing incomplete $file_bootversion"
+               rm -rf $file_bootversion
+           fi
+     elif [ "$status" == "COMPLETED" ]; then
+         echo "Update completed, $file_bootversion file is backedup as $file_bootversion_bak"
+         cp -f $file_bootversion $file_bootversion_bak
+         echo "INPROGRESS" > $file_updateStatus
+         echo -e "Backup in progress..."
+     fi
+else
+     echo "$file_updateStatus file is not present, No update in progress, creating $file_updateStatus"
+     if [ -e "$file_bootversion" ]; then
+          echo -e "Found $file_bootversion file, restoring $file_bootversion_bak from $file_bootversion"
+          cp -f $file_bootversion $file_bootversion_bak
+     fi
+     echo "INPROGRESS" > $file_updateStatus
+     echo -e "Backup in progress..."
+fi
 
 # /version.txt image details
 v_imagename=$(grep "^imagename" $file_version)
@@ -36,6 +65,8 @@ if [ ! -e "$file_bootversion" ]; then
      echo "$v_FW_Class" >> $file_bootversion
      echo "BOOT_TYPE=BOOT_INIT" > $file_bootType
      echo -e "BOOT_INIT is set since $file_bootversion is not present"
+	 echo "COMPLETED" > $file_updateStatus
+     echo -e "Backup completed."
      exit 0
 fi
 
@@ -98,3 +129,6 @@ if [ "$current_bootType" == "BOOT_MIGRATION" ]; then
         chmod +r "$migrationDSFile"
     fi
 fi
+
+echo "COMPLETED" > $file_updateStatus
+echo -e "Backup completed."
