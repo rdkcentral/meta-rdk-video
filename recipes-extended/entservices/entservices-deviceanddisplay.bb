@@ -29,8 +29,8 @@ EXTRA_OECMAKE += " -DBUILD_ENABLE_DEVICE_MANUFACTURER_INFO=ON "
 EXTRA_OECMAKE += " -DBUILD_ENABLE_APP_CONTROL_AUDIOPORT_INIT=ON "
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
 
-DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native virtual/mfrlib"
-RDEPENDS:${PN} += "wpeframework virtual/mfrlib"
+DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native"
+RDEPENDS:${PN} += "wpeframework"
 
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
@@ -73,7 +73,7 @@ PACKAGECONFIG:append = " erm"
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[devicediagnostics]    = "-DPLUGIN_DEVICEDIAGNOSTICS=ON,-DPLUGIN_DEVICEDIAGNOSTICS=OFF,curl entservices-apis,curl entservices-apis"
-PACKAGECONFIG[deviceinfo]           = "-DPLUGIN_DEVICEINFO=ON,-DPLUGIN_DEVICEINFO=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-apis,iarmbus rfc devicesettings entservices-apis virtual/mfrlib,virtual/mfrlib"
+PACKAGECONFIG[deviceinfo]           = "-DPLUGIN_DEVICEINFO=ON,-DPLUGIN_DEVICEINFO=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-apis,iarmbus rfc devicesettings entservices-apis"
 PACKAGECONFIG[displayinfo]          = "-DPLUGIN_DISPLAYINFO=ON  -DUSE_DEVICESETTINGS=1,-DPLUGIN_DISPLAYINFO=OFF,iarmbus iarmmgrs drm entservices-apis devicesettings virtual/vendor-devicesettings-hal virtual/vendor-displayinfo-soc,iarmbus libdrm entservices-apis devicesettings virtual/vendor-displayinfo-soc"
 PACKAGECONFIG[displaysettings]      = "-DPLUGIN_DISPLAYSETTINGS=ON,-DPLUGIN_DISPLAYSETTINGS=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc devicesettings"
 PACKAGECONFIG[erm]                  = "-DBUILD_ENABLE_ERM=ON,-DBUILD_ENABLE_ERM=OFF,essos,essos"
@@ -98,12 +98,6 @@ python () {
     machine_name = d.getVar('MACHINE')
     if 'raspberrypi4' in machine_name:
         d.appendVar('EXTRA_OECMAKE', ' -DBUILD_RPI=ON')
-}
-
-python __anonymous() {
-    import bb
-    rdepends = d.getVar("RDEPENDS:%s" % d.getVar("PN"))
-    bb.note("RDEPENDS for %s: %s" % (d.getVar("PN"), rdepends))
 }
 
 do_install:append() {
