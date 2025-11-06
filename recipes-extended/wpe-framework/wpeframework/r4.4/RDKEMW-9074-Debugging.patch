@@ -1,5 +1,5 @@
 diff --git a/Source/core/ResourceMonitor.h b/Source/core/ResourceMonitor.h
-index b5a8f096..00c7f593 100644
+index b5a8f096..a5a5a28e 100644
 --- a/Source/core/ResourceMonitor.h
 +++ b/Source/core/ResourceMonitor.h
 @@ -100,6 +100,7 @@ namespace Core {
@@ -14,8 +14,8 @@ index b5a8f096..00c7f593 100644
              // Make sure this entry is only registered once !!!
              if (std::find(_resourceList.begin(), _resourceList.end(), &resource) == _resourceList.end()) {
                  _resourceList.push_back(&resource);
-+                printf("[RDKMW-9074] Adding entry (%p) from resources map\n", &resource);
-+                _resourcesMap.insert(std::pair<RESOURCE*, string>(&resource, Core::ClassNameOnly(typeid((resource)).      name()).Text()));
++                printf("[RDKMW-9074] Adding entry (%p) to resources map type: %s\n", &resource, Core::ClassNameOnly(typeid((resource)).name()).Text());
++                _resourcesMap.insert(std::pair<RESOURCE*, string>(&resource, Core::ClassNameOnly(typeid((resource)).name()).Text()));
 +
              }
  
@@ -31,26 +31,32 @@ index b5a8f096..00c7f593 100644
  
              if (index != _resourceList.end()) {
                  *index = nullptr;
-@@ -373,7 +380,17 @@ namespace Core {
+@@ -373,7 +380,23 @@ namespace Core {
                  RESOURCE* entry = (*index);
  
                  uint16_t events;
 -
-+                if (entry != nullptr){
-+                    auto iter = _resourcesMap.find(entry);
-+                    if (iter != _resourcesMap.end()) {
-+                        printf("[RDKMW-9074] Checking events on :%s \n", iter->second.c_str());
-+                    } else {
-+                        printf("[RDKMW-9074] Unable to find the resource in map %p\n", iter->first);
++                if(access("/tmp/watchResources", F_OK) == 0)
++                {
++                    if (entry != nullptr){
++                        auto iter = _resourcesMap.find(entry);
++                        if (iter != _resourcesMap.end()) {
++                            printf("[RDKMW-9074] Checking events on :%s \n", iter->second.c_str());
++                        } else {
++                            printf("[RDKMW-9074] Unable to find the resource in map %p\n", iter->first);
++                        }
++                    }
++                    else {
++                        printf("[RDKMW-9074] entry is null\n");
 +                    }
 +                }
 +                else {
-+                    printf("[RDKMW-9074] entry is null\n");
++                    printf("[RDKMW-9074] Checking for events on:%p\n", entry);
 +                }
                  if ((entry == nullptr) || ((events = entry->Events()) == 0)) {
                      index = _resourceList.erase(index);
                  } else {
-@@ -525,6 +542,7 @@ namespace Core {
+@@ -525,6 +548,7 @@ namespace Core {
          MonitorWorker* _monitor;
          mutable Core::CriticalSection _adminLock;
          std::list<RESOURCE*> _resourceList;
@@ -59,19 +65,19 @@ index b5a8f096..00c7f593 100644
          string _name;
          WATCHDOG _watchDog;
 diff --git a/Source/core/Services.cpp b/Source/core/Services.cpp
-index 393f0475..efc835f4 100644
+index 393f0475..416bc151 100644
 --- a/Source/core/Services.cpp
 +++ b/Source/core/Services.cpp
 @@ -111,6 +111,7 @@ namespace Core {
              // the last reference)
              std::this_thread::yield();
  
-+            printf("Releasing library: %s\n", _unreferencedLibraries.front().Name().c_str());
++            printf("[RDKMW-9074] Releasing library: %s\n", _unreferencedLibraries.front().Name().c_str());
              _unreferencedLibraries.pop_front();
          }
          _adminLock.Unlock();
 diff --git a/Source/core/SocketPort.cpp b/Source/core/SocketPort.cpp
-index 0898183d..6cbfccb5 100644
+index 0898183d..8dbd088d 100644
 --- a/Source/core/SocketPort.cpp
 +++ b/Source/core/SocketPort.cpp
 @@ -411,8 +411,16 @@ namespace WPEFramework {
@@ -79,15 +85,15 @@ index 0898183d..6cbfccb5 100644
              // the virtuals might be called, which are destructed at this point !!!!
              ASSERT((m_Socket == INVALID_SOCKET) || (IsClosed()));
 +            if (m_Socket != INVALID_SOCKET ) {
-+                printf("[%s:%d-%s] Socket(%d) is not set to INVALID but reached dtor\n", __FILE__, __LINE__, __FUNCTION__, m_Socket );
++                printf("[RDKMW-9074] [%s:%d-%s] Socket(%d) is not set to INVALID but reached dtor\n", __FILE__, __LINE__, __FUNCTION__, m_Socket );
 +            }
 +
 +            if (IsClosed() == false) {
-+                printf("[%s:%d-%s] Socket(%d) is NOT CLOSED but reached dtor\n", __FILE__, __LINE__, __FUNCTION__, m_Socket );
++                printf("[RDKMW-9074] [%s:%d-%s] Socket(%d) is NOT CLOSED but reached dtor\n", __FILE__, __LINE__, __FUNCTION__, m_Socket );
 +            }
  
              if (m_Socket != INVALID_SOCKET) {
-+                printf("[%s:%d-%s] Destroying Socket(%d) in dtor \n", __FILE__, __LINE__, __FUNCTION__, m_Socket );
++                printf("[RDKMW-9074] [%s:%d-%s] Destroying Socket(%d) in dtor \n", __FILE__, __LINE__, __FUNCTION__, m_Socket );
                  DestroySocket(m_Socket);
              }
  
@@ -95,36 +101,8 @@ index 0898183d..6cbfccb5 100644
  
              if (m_State != 0) {
                  result = false;
-+                printf("In Closed m_State(%X) is not = 0\n", m_State.load());
++                printf("[RDKMW-9074] In Closed m_State(%X) is not = 0\n", m_State.load());
 +                // m_State = 0;
              }
              else {
                  DestroySocket(m_Socket);
-diff --git a/Source/websocket/JSONRPCLink.h b/Source/websocket/JSONRPCLink.h
-index d7dc2f08..9cc281b3 100644
---- a/Source/websocket/JSONRPCLink.h
-+++ b/Source/websocket/JSONRPCLink.h
-@@ -260,6 +260,7 @@ namespace WPEFramework {
- 				}
- 				void Deinitialize()
- 				{
-+					printf("LinkType Deinitialize called\n");
- 					Close();
- 				}
- 
-@@ -533,6 +534,7 @@ namespace WPEFramework {
- 				if (version != static_cast<uint8_t>(~0)) {
- 					_versionstring = '.' + Core::NumberType<uint8_t>(version).Text();
- 				}
-+				printf("LinkType ctor for localspace:%s\n", _localSpace.c_str());
- 			}
- 			void Announce() {
- 				_channel->Register(*this);
-@@ -555,6 +557,7 @@ namespace WPEFramework {
- 			}
- 			virtual ~LinkType()
- 			{
-+				printf("LinkType dtor called for localspace: %s\n", _localSpace.c_str());
- 				_channel->Unregister(*this);
- 
- 				for (auto& element : _pendingQueue) {
