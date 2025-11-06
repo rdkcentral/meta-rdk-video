@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 3.3.5
-SRCREV = "7fbbbcbfa2fc08ae4702f118d638660aa611540e"
+# Release version - 3.2.9
+SRCREV = "2031f507a2c90698d7ade89af4f0debc351cea86"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -31,6 +31,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -D
 
 DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
+
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
