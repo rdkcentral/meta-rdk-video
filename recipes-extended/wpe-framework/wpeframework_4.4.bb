@@ -166,7 +166,7 @@ do_install:append() {
         install -d ${D}${sysconfdir}/init.d
         install -m 0755 ${WORKDIR}/wpeframework-init ${D}${sysconfdir}/init.d/wpeframework
     fi
-
+    sed '/^SyslogIdentifier=WPEFramework/a ExecStartPre=\/bin\/bash -c "\/opt\/wpe-pre.sh"' ${D}${systemd_system_unitdir}/wpeframework.service
     install -d ${D}${systemd_unitdir}/system/wpeframework.service.d
     install -m 0644 ${WORKDIR}/network_manager_migration.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
 }
