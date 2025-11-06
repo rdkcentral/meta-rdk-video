@@ -17,6 +17,8 @@ index 8d52c7485..19e037580 100644
 +
 +                            if( frameworkError <= 999 ) {
 +                                Code = static_cast<int32_t>(frameworkError);
++                            } else if ( frameworkError >= 21000 && frameworkError < 24000 )  {
++                                Code = static_cast<int32_t>(frameworkError);
 +                            } else {
 +                                Code = -31000 - static_cast<int32_t>(frameworkError);
 +                            }
