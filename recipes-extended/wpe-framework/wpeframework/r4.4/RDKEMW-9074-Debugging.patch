@@ -1,5 +1,5 @@
 diff --git a/Source/core/ResourceMonitor.h b/Source/core/ResourceMonitor.h
-index b5a8f096..cbb82298 100644
+index b5a8f096..5e2f9979 100644
 --- a/Source/core/ResourceMonitor.h
 +++ b/Source/core/ResourceMonitor.h
 @@ -100,6 +100,7 @@ namespace Core {
@@ -14,8 +14,8 @@ index b5a8f096..cbb82298 100644
              // Make sure this entry is only registered once !!!
              if (std::find(_resourceList.begin(), _resourceList.end(), &resource) == _resourceList.end()) {
                  _resourceList.push_back(&resource);
-+                printf("[RDKMW-9074] Adding entry (%p) to resources map type: %s\n", &resource, Core::ClassNameOnly(typeid((resource)).name()).Text().c_str());
-+                _resourcesMap.insert(std::pair<RESOURCE*, string>(&resource, Core::ClassNameOnly(typeid((resource)).name()).Text()));
++                // printf("[RDKMW-9074] Adding entry (%p) to resources map type: %s\n", &resource, Core::ClassNameOnly(typeid((resource)).name()).Text().c_str());
++                // _resourcesMap.insert(std::pair<RESOURCE*, string>(&resource, Core::ClassNameOnly(typeid((resource)).name()).Text()));
 +
              }
  
@@ -26,7 +26,7 @@ index b5a8f096..cbb82298 100644
              // Make sure this entry does not exist, only register resources once !!!
 +
              typename std::list<RESOURCE*>::iterator index(std::find(_resourceList.begin(), _resourceList.end(), &resource));
-+            printf("[RDKMW-9074] Removing entry (%p) from resources map\n", &resource);
++            // printf("[RDKMW-9074] Removing entry (%p) from resources map\n", &resource);
 +            _resourcesMap.erase(&resource);
  
              if (index != _resourceList.end()) {
@@ -36,20 +36,20 @@ index b5a8f096..cbb82298 100644
  
                  uint16_t events;
 -
-+                if(access("/tmp/watchResources", F_OK) == 0)
-+                {
-+                    if (entry != nullptr){
-+                        auto iter = _resourcesMap.find(entry);
-+                        if (iter != _resourcesMap.end()) {
-+                            printf("[RDKMW-9074] Checking events on :%s \n", iter->second.c_str());
-+                        } else {
-+                            printf("[RDKMW-9074] Unable to find the resource in map %p\n", iter->first);
-+                        }
-+                    }
-+                    else {
-+                        printf("[RDKMW-9074] entry is null\n");
-+                    }
-+                }
++                // if(access("/tmp/watchResources", F_OK) == 0)
++                // {
++                //     if (entry != nullptr){
++                //         auto iter = _resourcesMap.find(entry);
++                //         if (iter != _resourcesMap.end()) {
++                //             printf("[RDKMW-9074] Checking events on :%s \n", iter->second.c_str());
++                //         } else {
++                //             printf("[RDKMW-9074] Unable to find the resource in map %p\n", iter->first);
++                //         }
++                //     }
++                //     else {
++                //         printf("[RDKMW-9074] entry is null\n");
++                //     }
++                // }
 +                // else {
 +                //     printf("[RDKMW-9074] Checking for events on:%p\n", entry);
 +                // }
