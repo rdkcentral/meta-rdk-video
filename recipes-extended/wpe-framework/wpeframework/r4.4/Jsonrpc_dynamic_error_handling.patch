@@ -1,8 +1,8 @@
 diff --git a/Source/core/JSONRPC.h b/Source/core/JSONRPC.h
-index 8d52c748..49b9cc09 100644
+index 8d52c748..6028cdb8 100644
 --- a/Source/core/JSONRPC.h
 +++ b/Source/core/JSONRPC.h
-@@ -138,7 +138,26 @@ namespace Core {
+@@ -138,7 +138,24 @@ namespace Core {
                          break;
                      default:
                          Code = static_cast<int32_t>(frameworkError);
@@ -14,11 +14,9 @@ index 8d52c748..49b9cc09 100644
 +                            // one hand keep the current Thunder error codes used in 4.4 backwards compatible (so the numbers as reported in
 +                            // json rpc will not change) while at the same time making sure that code used in dynamic json rpc override will behave
 +                            // as in Thunder 5 (so if the error code is changed to 1000 there it will result in a -32000 error code reported for json rpc)
-+                            // New range 21000 - 23999 is added for pass through for a temporary fix for ContentProtection range
++                            // New range > 2000 is added for pass through for a temporary fix for ContentProtection range
 +
-+                            if( frameworkError <= 999 ) {
-+                                Code = static_cast<int32_t>(frameworkError);
-+                            } else if( frameworkError >= 21000 && frameworkError < 24000 ) {
++                            if( frameworkError <= 999  || frameworkError > 2000 ) {
 +                                Code = static_cast<int32_t>(frameworkError);
 +                            } else {
 +                                Code = -31000 - static_cast<int32_t>(frameworkError);
