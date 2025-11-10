@@ -39,7 +39,7 @@ boottypeLog() {
 if [ -e "$file_updateStatus" ]; then
      status=$(<"$file_updateStatus")
      if [ "$status" == "INPROGRESS" ]; then
-         boottypeLog "Update in progress, $file_bootversion is incomplete. Looking for backup file"
+         boottypeLog "Update was in progress, $file_bootversion is incomplete. Looking for backup file"
            if [ -e "$file_bootversion_bak" ]; then
                boottypeLog "Found backup file, restoring $file_bootversion from $file_bootversion_bak"
                cp -f $file_bootversion_bak $file_bootversion
@@ -48,19 +48,19 @@ if [ -e "$file_updateStatus" ]; then
                rm -rf $file_bootversion
            fi
      elif [ "$status" == "COMPLETED" ]; then
-         boottypeLog "Update completed, $file_bootversion file is backedup as $file_bootversion_bak"
+          boottypeLog "Update previously completed, $file_bootversion file is backedup as $file_bootversion_bak"
          cp -f $file_bootversion $file_bootversion_bak
          echo "INPROGRESS" > $file_updateStatus
-         boottypeLog "Backup in progress..."
+         boottypeLog "Update in progress..."
      fi
 else
-     boottypeLog "$file_updateStatus file is not present, No update in progress, creating $file_updateStatus"
+     boottypeLog "$file_updateStatus file is not present, No update was in progress, creating $file_updateStatus"
      if [ -e "$file_bootversion" ]; then
-          boottypeLog "Found $file_bootversion file, restoring $file_bootversion_bak from $file_bootversion"
+          boottypeLog "Found $file_bootversion file, creating $file_bootversion_bak from $file_bootversion"
           cp -f $file_bootversion $file_bootversion_bak
      fi
      echo "INPROGRESS" > $file_updateStatus
-     boottypeLog "Backup in progress..."
+     boottypeLog "Update in progress..."
 fi
 
 # /version.txt image details
@@ -77,7 +77,7 @@ if [ ! -e "$file_bootversion" ]; then
      echo "BOOT_TYPE=BOOT_INIT" > $file_bootType
      boottypeLog "BOOT_INIT is set since $file_bootversion is not present"
 	 echo "COMPLETED" > $file_updateStatus
-     boottypeLog "Backup completed."
+     boottypeLog "Update completed."
      exit 0
 fi
 
@@ -122,4 +122,4 @@ else
 fi
 
 echo "COMPLETED" > $file_updateStatus
-boottypeLog "Backup completed."
+boottypeLog "Update completed."
