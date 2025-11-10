@@ -17,7 +17,7 @@ PR = "r0"
 PV = "1.5.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=main"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=feature/wifi_connect_with_ssid"
 
 # Oct 25, 2025
 SRCREV = "5ccbfa791883947eff2d6db459ce1707fe749587"
