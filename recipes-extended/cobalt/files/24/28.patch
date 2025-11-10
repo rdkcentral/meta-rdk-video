@@ -1,0 +1,42 @@
+From 1223c4dd9d14eddbba0885c62159bbcf2928da11 Mon Sep 17 00:00:00 2001
+From: dkumar798 <dinesh_kumar2@comcast.com>
+Date: Mon, 10 Nov 2025 07:23:03 +0530
+Subject: [PATCH] Update rdkservices.cc
+
+---
+ src/third_party/starboard/rdk/shared/rdkservices.cc | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/src/third_party/starboard/rdk/shared/rdkservices.cc b/src/third_party/starboard/rdk/shared/rdkservices.cc
+index 8d86260..1574e5e 100644
+--- a/src/third_party/starboard/rdk/shared/rdkservices.cc
++++ b/src/third_party/starboard/rdk/shared/rdkservices.cc
+@@ -30,7 +30,6 @@
+ #include <interfaces/json/JsonData_HDRProperties.h>
+ #include <interfaces/json/JsonData_PlayerProperties.h>
+ #include <interfaces/json/JsonData_DeviceIdentification.h>
+-#include <interfaces/json/JsonData_DeviceInfo.h>
+ 
+ #ifdef HAS_SECURITY_AGENT
+ #include <securityagent/securityagent.h>
+@@ -1389,17 +1388,16 @@ void DeviceInfoImpl::Refresh() {
+     }
+   }
+ 
+-  using namespace WPEFramework::JsonData::DeviceInfo;
+-  SupportedaudioportsData audio_ports;
++  Core::JSON::ArrayType<Core::JSON::String> audio_ports;
+   rc = device_info_.Get(timeout.value(), "supportedaudioports", audio_ports);
+   if (Core::ERROR_NONE != rc) {
+     SB_LOG(ERROR) << "'" << kDeviceInfoCallsign << ".supportedaudioports' failed, rc = " << rc
+                   << " ( " << Core::ErrorToString(rc) << " )";
+     needs_refresh |= (Core::ERROR_ASYNC_FAILED == rc || Core::ERROR_TIMEDOUT  == rc);
+-  } else if (audio_ports.SupportedAudioPorts.Length() == 0) {
++  } else if (audio_ports.Length() == 0) {
+     SB_LOG(INFO) << "No supported audio ports.";
+   } else {
+-    auto index(audio_ports.SupportedAudioPorts.Elements());
++    auto index(audio_ports.Elements());
+     while (index.Next()) {
+       const auto& port_name = index.Current().Value();
+       SB_LOG(INFO) << "Supported audio port name: " << port_name;
