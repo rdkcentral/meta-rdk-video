@@ -6,6 +6,9 @@ LICENSE = "BSD-3-Clause"
 # This license has been stored locally as COBALT_LICENSE
 LIC_FILES_CHKSUM = "file://../COBALT_LICENSE;md5=0fca02217a5d49a14dfe2d11837bb34d"
 
+inherit features_check
+REQUIRED_DISTRO_FEATURES = "cobalt-24"
+
 FILESEXTRAPATHS:prepend := "${THISDIR}/evergreen:"
 DEPENDS += "unzip-native breakpad-native"
 OVERRIDES:append = ":${TARGET_FPU}:${@bb.utils.filter('DISTRO_FEATURES', 'cobalt-qa', d)}"
