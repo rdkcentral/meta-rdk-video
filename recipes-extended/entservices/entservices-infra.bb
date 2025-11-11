@@ -70,6 +70,9 @@ PACKAGECONFIG ?= " monitor \
     texttospeechmonitor \
     preinstallmanager \
     migration \
+    appgateway \
+    appnotifications \
+    fbsettings \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
@@ -138,6 +141,9 @@ PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON"
 PACKAGECONFIG[texttospeechmonitor]  = "-DPLUGIN_MONITOR_TEXTTOSPEECH=ON"
 PACKAGECONFIG[preinstallmanager]    = "-DPLUGIN_PREINSTALL_MANAGER=ON,-DPLUGIN_PREINSTALL_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[migration]            = "-DPLUGIN_MIGRATION=ON,-DPLUGIN_MIGRATION=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[appgateway]           = "-DPLUGIN_APPGATEWAY=ON,-DPLUGIN_APPGATEWAY=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[appnotifications]     = "-DPLUGIN_APPNOTIFICATIONS=ON,-DPLUGIN_APPNOTIFICATIONS=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[fbsettings]           = "-DPLUGIN_FBSETTINGS=ON,-DPLUGIN_FBSETTINGS=OFF,entservices-apis networkmanager-plugin,entservices-apis"
 PACKAGECONFIG[downloadmanager]      = "-DPLUGIN_DOWNLOADMANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_DOWNLOADMANAGER=OFF -DLIB_PACKAGE=OFF,entservices-apis curl virtual/libpackage,entservices-apis curl virtual/libpackage"
 # ----------------------------------------------------------------------------
 

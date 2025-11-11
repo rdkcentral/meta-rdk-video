@@ -131,6 +131,7 @@ do_install() {
         install -m 0644 ${S}/systemd_units/network-connection-stats.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/NM_Bootstrap.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/zram.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/notify-network-ready.service ${D}${systemd_unitdir}/system
 
 
 	install -m 0644 ${S}/systemd_units/network-up.path ${D}${systemd_unitdir}/system
@@ -300,7 +301,7 @@ SYSTEMD_SERVICE:${PN} += "ntp-time-sync-event.service"
 SYSTEMD_SERVICE:${PN} += "ntp-time-sync.timer"
 SYSTEMD_SERVICE:${PN} += "system-time-set.path"
 SYSTEMD_SERVICE:${PN} += "system-time-event.service"
-
+SYSTEMD_SERVICE:${PN} += "notify-network-ready.service"
 FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
 FILES:${PN} += "${base_libdir}/rdk/*"
