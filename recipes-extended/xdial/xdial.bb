@@ -4,16 +4,16 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d7a8c87b0741f248c5139ca80a783231"
 
-PV ?= "3.0.0"
-PR ?= "r100"
+PV ?= "1.0.1"
+PR ?= "r1"
 S = "${WORKDIR}/git"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;protocol=${CMF_GIT_PROTOCOL};branch=develop"
+SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-# Nov 07, 2025
-SRCREV = "beac7004e30a31252ca5f564472fc40eb8ec8b23"
+# Nov 11, 2025
+SRCREV = "d8656d43f757247f1348cddc322bd2478e13aaff"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
