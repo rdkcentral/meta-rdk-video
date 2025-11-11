@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
           "
 
 # Release version - 3.3.7
-SRCREV = "e97a852aa595af01d3f3e519563bde3edcf9171c"
+SRCREV = "8c872c9210458f8e2aac4a06faf63b8d3952142e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -48,7 +48,6 @@ INCLUDE_DIRS = " \
     -I=${includedir}/WPEFramework/powercontroller \
     "
 
-CXXFLAGS += " -DPLATCO_BOOTTO_STANDBY"
 CXXFLAGS += " -DOFFLINE_MAINT_REBOOT"
 
 CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
