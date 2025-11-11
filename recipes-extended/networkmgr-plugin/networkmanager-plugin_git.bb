@@ -44,6 +44,9 @@ EXTRA_OECMAKE += " \
                 -DENABLE_MIGRATION_MFRMGR_SUPPORT=ON \
                 "
 
+CXXFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
+CFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
+
 # Configure Logging for the Router Discovery Tool
 inherit syslog-ng-config-gen logrotate_config
 SYSLOG-NG_FILTER = "routerDiscovery"
