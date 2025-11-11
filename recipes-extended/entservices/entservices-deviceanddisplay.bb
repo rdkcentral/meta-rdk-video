@@ -2,7 +2,7 @@ SUMMARY = "ENTServices deviceanddisplay plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV ?= "3.3.5"
+PV ?= "3.3.7"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 3.3.5
-SRCREV = "7fbbbcbfa2fc08ae4702f118d638660aa611540e"
+# Release version - 3.3.7
+SRCREV = "645462bbee889ab5150c7d07c498e0a0f48ca0e1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -48,7 +48,6 @@ INCLUDE_DIRS = " \
     -I=${includedir}/WPEFramework/powercontroller \
     "
 
-CXXFLAGS += " -DPLATCO_BOOTTO_STANDBY"
 CXXFLAGS += " -DOFFLINE_MAINT_REBOOT"
 
 CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
