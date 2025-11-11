@@ -67,6 +67,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/0001-To-handle-truncated-UTF-code-on-parsing-empty-null-t.patch \
             file://r4.4/0002-Print-Log-Upon-Time-ComRPC-Timeout.patch \
             file://r4.4/Add-LoadLibrary-time-measurement.patch \
+            file://r4.4/Add-LoadMetadata-timing-measurement.patch \
            "
 
 S = "${WORKDIR}/git"
