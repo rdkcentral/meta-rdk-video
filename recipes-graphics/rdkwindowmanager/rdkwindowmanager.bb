@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=9b36bf6cc7d5808435a27926d9dc6f7d"
 FILESEXTRAPATHS:prepend := "${THISDIR}:"
 DEPENDS = "westeros wayland essos virtual/egl rapidjson jpeg libpng curl"
 
-DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'prodlog-variant prod-variant', '', 'libsoup-2.4 boost libsyswrapper', d)}"
+DEPENDS:append = "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '', 'libsoup-2.4 boost libsyswrapper', d)}"
 
 S = "${WORKDIR}/git"
 PV ?= "1.8.0"
@@ -18,7 +18,7 @@ EXTRA_OECMAKE += "-DRDK_WINDOW_MANAGER_BUILD_TEST_APP=OFF"
 
 inherit cmake pkgconfig
 
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_WINDOW_MANAGER_VNC_SERVER=OFF', '-DRDK_WINDOW_MANAGER_VNC_SERVER=ON', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_WINDOW_MANAGER_VNC_SERVER=OFF', '-DRDK_WINDOW_MANAGER_VNC_SERVER=ON', d)}"
 
 do_install() {
     install -d ${D}/${libdir}
@@ -52,12 +52,11 @@ do_install() {
     fi
 
     if [ -f ${B}/rdkwmtest ]; then
-    install -m 0755 ${B}/rdkwmtest ${D}/${bindir}/
+        install -m 0755 ${B}/rdkwmtest ${D}/${bindir}/
     fi
 
     install -d ${D}${includedir}/rdkwindowmanager/include/
     install -m 644 ${S}/include/*.h ${D}${includedir}/rdkwindowmanager/include/
-  
 }
 
 INSANE_SKIP:${PN} = "installed-vs-shipped"
