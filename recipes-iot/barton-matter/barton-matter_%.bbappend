@@ -1,4 +1,5 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/../../../meta-rdk-iot/recipes-matter/barton-matter-example/files:"
+#FILESEXTRAPATHS:prepend := "${THISDIR}/../../../meta-rdk-iot/recipes-matter/barton-matter-example/files:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 # Skip unless the distro advertises "ENABLE_MATTER_BARTON"
 inherit features_check
