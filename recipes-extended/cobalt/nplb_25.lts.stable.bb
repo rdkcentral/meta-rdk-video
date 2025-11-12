@@ -9,6 +9,17 @@ LIC_FILES_CHKSUM = " \
 inherit features_check
 REQUIRED_DISTRO_FEATURES = "cobalt-25"
 
+inherit gcs_fetch
+
+# Define your GCS bucket name
+GCS_BUCKET = "cobalt-static-storage-public"
+
+# Directory containing .sha1 files
+GCS_SHA1_DIR = "${THISDIR}/files/sha1s"
+
+# Where to place the downloaded files
+GCS_OUTPUT_DIR = "${DL_DIR}/testdata"
+
 TOOLCHAINS_DIR = "starboard-toolchains"
 CLANG_BUILD_REVISION = "17-init-8029-g27f27d15-3"
 CLANG_BUILD_SUBDIR = "${TOOLCHAINS_DIR}/x86_64-linux-gnu-clang-chromium-${CLANG_BUILD_REVISION}"
@@ -21,6 +32,8 @@ SRC_URI += "https://commondatastorage.googleapis.com/chromium-browser-clang/Linu
 SRC_URI += "file://25/0006-Use-certifi-to-tell-urllib-where-to-find-CA-file-397.patch"
 SRC_URI += "file://25/0001-Fix-NPBL-with-cast_codec_tests-config.patch"
 SRC_URI += "file://25/0001-Ensure-GCS-buckets-are-publicly-accessible-mirrors-5.patch"
+SRC_URI += "file://25/skip-gcs-testdata-download.patch"
+SRC_URI += "file://sha1s"
 
 SRC_URI[clang.sha256sum] = "1ac590c011158940037ce9442d4bf12943dc14a7ddaab6094e75a8750b47b861"
 
@@ -28,6 +41,8 @@ CR = "30"
 PR = "r${CR}"
 SRCREV_cobalt = "25.lts.${CR}"
 do_fetch[vardeps] += " SRCREV_FORMAT SRCREV_cobalt"
+# Ensure do_gcs_fetch runs after do_unpack
+do_fetch[postfuncs] += "do_gcs_fetch"
 
 DEPENDS  = "ninja-native bison-native openssl-native gn-native ccache-native nodejs-native"
 DEPENDS += " python3-six-native python3-urllib3-native"
@@ -77,8 +92,6 @@ do_configure() {
 }
 
 do_compile[progress] = "percent"
-# To resolve jenkins build error (https://docs.yoctoproject.org/4.0.4/migration-guides/migration-4.0.html#fetching-changes)
-do_compile[network] = "1"
 
 do_compile() {
     export NINJA_STATUS='%p '
