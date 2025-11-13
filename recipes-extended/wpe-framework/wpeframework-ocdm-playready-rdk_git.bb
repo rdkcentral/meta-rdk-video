@@ -22,7 +22,7 @@ TOOLCHAIN = "gcc"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/playready-rdk.git;${CMF_GITHUB_SRC_URI_SUFFIX};name=pr-source"
-SRCREV = "1694f5072654a22f3d9872aa67ec479f1bf85418"
+SRCREV = "206c908feaf2da01967358a19cd3425c850bab92"
 SRCREV_FORMAT = "pr-source pr-header"
 S = "${WORKDIR}/git"
 
