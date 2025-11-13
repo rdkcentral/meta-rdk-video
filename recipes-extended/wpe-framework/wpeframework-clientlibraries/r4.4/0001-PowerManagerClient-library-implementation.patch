@@ -1016,7 +1016,7 @@ index 00000000..4c462897
 +    ~PowerController()
 +    {
 +        _shutdown = true;
-+        (void)Disconnect(); /* Internally it will Close destroys _powerManagerInterface too */
++        (void)disconnect(); /* Internally it will Close destroys _powerManagerInterface too */
 +    }
 +
 +    void pidChangedCb(const int pid)
@@ -1540,7 +1540,7 @@ index 00000000..4c462897
 +            result = _powerManagerInterface->SetSystemMode(currentMode_, newMode_);
 +        }
 +        LOGINFO("result[%d], CurrentMode[%d], NewMode[%d]", result, currentMode, newMode);
-+    
++
 +        _apiLock.Unlock();
 +
 +        return result;
