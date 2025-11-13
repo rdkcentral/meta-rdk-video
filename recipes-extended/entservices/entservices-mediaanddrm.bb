@@ -76,7 +76,6 @@ OPENCDM_DRMS ??= " ${@bb.utils.contains('DISTRO_FEATURES' , 'widevine_v16', 'ope
 PACKAGECONFIG:append = " ${OPENCDM_DRMS}"
 PACKAGECONFIG:append = " systemaudioplayer"
 PACKAGECONFIG:append = " cryptography"
-PACKAGECONFIG:append = " playerinfo"
 PACKAGECONFIG:append = " unifiedcasmanagement"
 
 inherit features_check
