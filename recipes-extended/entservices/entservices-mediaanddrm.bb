@@ -77,6 +77,7 @@ PACKAGECONFIG:append = " ${OPENCDM_DRMS}"
 PACKAGECONFIG:append = " systemaudioplayer"
 PACKAGECONFIG:append = " cryptography"
 PACKAGECONFIG:append = " playerinfo"
+PACKAGECONFIG:append = " unifiedcasmanagement"
 
 inherit features_check
 REQUIRED_DISTRO_FEATURES = "${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec', 'DOBBY_CONTAINERS', '', d)}"
