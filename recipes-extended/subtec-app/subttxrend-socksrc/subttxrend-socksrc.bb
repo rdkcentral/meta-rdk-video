@@ -9,7 +9,7 @@ DEPENDS = "glib-2.0 subttxrend-common subttxrend-protocol"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-6213"
 S = "${WORKDIR}/git/subttxrend-socksrc"
 
 #
