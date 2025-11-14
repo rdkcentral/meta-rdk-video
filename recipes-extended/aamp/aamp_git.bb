@@ -11,11 +11,11 @@ SRCREV_FORMAT = "aamp"
 inherit pkgconfig
 DEPENDS += "curl libdash libxml2 cjson readline"
 DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', ' player-interface', '', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', '-DCMAKE_TEST_MW=0', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', '-DCMAKE_TEST_MW=1', '', d)}"
 
 RDEPENDS:${PN} += "devicesettings"
 RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', ' player-interface', '', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', ' -DCMAKE_TEST_MW=0', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', ' -DCMAKE_TEST_MW=1', '', d)}"
 #DEPENDS += "curl libdash libxml2 cjson readline player-interface"
 #RDEPENDS:${PN} += "devicesettings player-interface"
 NO_RECOMMENDATIONS = "1"
