@@ -1,0 +1,213 @@
+From 835ea606264f00a020480fae7480a2c74e164a12 Mon Sep 17 00:00:00 2001
+From: Przemyslaw Gorszkowski <pgorszkowski@igalia.com>
+Date: Wed, 26 Feb 2025 09:00:11 +0100
+Subject: [PATCH] Revert "[offscreenCanvas] Take WebGL's rendered textures
+ directly to the compositor instead of copying."
+
+This reverts commit 871c426b1e25b5f8d87873b20c16acf29acbca97.
+---
+ Source/WebCore/html/OffscreenCanvas.cpp       |  5 +---
+ .../html/canvas/CanvasRenderingContext.h      |  1 -
+ .../html/canvas/WebGLRenderingContextBase.cpp | 11 -------
+ .../html/canvas/WebGLRenderingContextBase.h   |  2 --
+ .../platform/graphics/ImageBufferPipe.h       |  3 --
+ .../nicosia/NicosiaImageBufferPipe.cpp        | 30 -------------------
+ .../graphics/nicosia/NicosiaImageBufferPipe.h |  4 ---
+ .../graphics/opengl/GraphicsContextGLOpenGL.h |  2 --
+ 8 files changed, 1 insertion(+), 57 deletions(-)
+
+diff --git a/Source/WebCore/html/OffscreenCanvas.cpp b/Source/WebCore/html/OffscreenCanvas.cpp
+index 5e1864d00fa1b..872f7cdf520fd 100644
+--- a/Source/WebCore/html/OffscreenCanvas.cpp
++++ b/Source/WebCore/html/OffscreenCanvas.cpp
+@@ -209,7 +209,6 @@ void OffscreenCanvas::createContextWebGL(RenderingContextType contextType, WebGL
+     UNUSED_PARAM(contextType);
+ #endif
+     m_context = WebGLRenderingContextBase::create(*this, attrs, webGLVersion);
+-    m_placeholderData->bufferPipeSource->setGraphicsContextGL(static_cast<WebGLRenderingContextBase*>(m_context.get())->graphicsContextGL());
+ }
+ 
+ #endif // ENABLE(WEBGL)
+@@ -449,10 +448,8 @@ void OffscreenCanvas::commitToPlaceholderCanvas()
+ 
+     // FIXME: Transfer texture over if we're using accelerated compositing
+     if (m_context && (m_context->isWebGL() || m_context->isAccelerated())) {
+-        m_context->prepareForDisplayWithSwapBuffers();
+-        m_placeholderData->bufferPipeSource->swapBuffers();
++        m_context->prepareForDisplayWithPaint();
+         m_context->paintRenderingResultsToCanvas();
+-        return;
+     }
+ 
+     if (m_placeholderData->bufferPipeSource) {
+diff --git a/Source/WebCore/html/canvas/CanvasRenderingContext.h b/Source/WebCore/html/canvas/CanvasRenderingContext.h
+index 6f7e451e3acf1..680a8473e9a49 100644
+--- a/Source/WebCore/html/canvas/CanvasRenderingContext.h
++++ b/Source/WebCore/html/canvas/CanvasRenderingContext.h
+@@ -76,7 +76,6 @@ class CanvasRenderingContext : public ScriptWrappable, public CanMakeWeakPtr<Can
+     // Called before paintRenderingResultsToCanvas if paintRenderingResultsToCanvas is
+     // used for compositing purposes.
+     virtual void prepareForDisplayWithPaint() { }
+-    virtual void prepareForDisplayWithSwapBuffers() { }
+     virtual void paintRenderingResultsToCanvas() { }
+     virtual RefPtr<GraphicsLayerContentsDisplayDelegate> layerContentsDisplayDelegate();
+ 
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+index 9cad89861ae0b..bb227faa27a84 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+@@ -1455,22 +1455,11 @@ void WebGLRenderingContextBase::prepareForDisplayWithPaint()
+     m_isDisplayingWithPaint = true;
+ }
+ 
+-void WebGLRenderingContextBase::prepareForDisplayWithSwapBuffers()
+-{
+-    m_isDisplayingWithSwapBuffers = true;
+-}
+-
+ void WebGLRenderingContextBase::paintRenderingResultsToCanvas()
+ {
+     if (isContextLostOrPending())
+         return;
+ 
+-    if (m_isDisplayingWithSwapBuffers) {
+-        m_isDisplayingWithSwapBuffers = false;
+-        m_markedCanvasDirty = false;
+-        return;
+-    }
+-
+     if (m_isDisplayingWithPaint) {
+         bool canvasContainsDisplayBuffer = !m_markedCanvasDirty;
+         prepareForDisplay();
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.h b/Source/WebCore/html/canvas/WebGLRenderingContextBase.h
+index 06239e5205cb6..973116f0888a2 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.h
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.h
+@@ -424,7 +424,6 @@ class WebGLRenderingContextBase : public GraphicsContextGL::Client, public GPUBa
+     void reshape(int width, int height) override;
+ 
+     void prepareForDisplayWithPaint() final;
+-    void prepareForDisplayWithSwapBuffers() final;
+     void paintRenderingResultsToCanvas() final;
+     RefPtr<PixelBuffer> paintRenderingResultsToPixelBuffer();
+ #if ENABLE(MEDIA_STREAM)
+@@ -748,7 +747,6 @@ class WebGLRenderingContextBase : public GraphicsContextGL::Client, public GPUBa
+ 
+     bool m_compositingResultsNeedUpdating { false };
+     bool m_isDisplayingWithPaint { false };
+-    bool m_isDisplayingWithSwapBuffers { false };
+ 
+     // Enabled extension objects.
+     // FIXME: Move some of these to WebGLRenderingContext, the ones not needed for WebGL2
+diff --git a/Source/WebCore/platform/graphics/ImageBufferPipe.h b/Source/WebCore/platform/graphics/ImageBufferPipe.h
+index 681ba21ce302c..3bed1d0ae6e39 100644
+--- a/Source/WebCore/platform/graphics/ImageBufferPipe.h
++++ b/Source/WebCore/platform/graphics/ImageBufferPipe.h
+@@ -34,7 +34,6 @@
+ namespace WebCore {
+ 
+ class ImageBuffer;
+-class GraphicsContextGL;
+ 
+ // Used to provide GraphicsLayer contents for an externally managed ImageBuffer; e.g. an ImageBuffer created and owned by a Worker thread
+ class ImageBufferPipe : public RefCounted<ImageBufferPipe> {
+@@ -44,8 +43,6 @@ class ImageBufferPipe : public RefCounted<ImageBufferPipe> {
+         virtual ~Source() = default;
+ 
+         virtual void handle(RefPtr<ImageBuffer>&&) = 0;
+-        virtual void swapBuffers() = 0;
+-        virtual void setGraphicsContextGL(GraphicsContextGL*) = 0;
+     };
+ 
+     static RefPtr<ImageBufferPipe> create();
+diff --git a/Source/WebCore/platform/graphics/nicosia/NicosiaImageBufferPipe.cpp b/Source/WebCore/platform/graphics/nicosia/NicosiaImageBufferPipe.cpp
+index 8b8019a4680a5..d8cc9815d9a85 100644
+--- a/Source/WebCore/platform/graphics/nicosia/NicosiaImageBufferPipe.cpp
++++ b/Source/WebCore/platform/graphics/nicosia/NicosiaImageBufferPipe.cpp
+@@ -104,36 +104,6 @@ void NicosiaImageBufferPipeSource::handle(RefPtr<ImageBuffer>&& buffer)
+     m_imageBuffer = WTFMove(buffer);
+ }
+ 
+-void NicosiaImageBufferPipeSource::swapBuffers()
+-{
+-    if (!m_context)
+-        return;
+-
+-    if (m_context->layerComposited())
+-        return;
+-
+-    m_context->prepareTexture();
+-    IntSize textureSize(m_context->m_currentWidth, m_context->m_currentHeight);
+-
+-    TextureMapperGL::Flags flags = TextureMapperGL::ShouldFlipTexture;
+-    if (m_context->contextAttributes().alpha)
+-        flags |= TextureMapperGL::ShouldBlend;
+-
+-    {
+-        auto& proxy = downcast<Nicosia::ContentLayerTextureMapperImpl>(m_nicosiaLayer->impl()).proxy();
+-        Locker locker { proxy.lock() };
+-        ASSERT(is<TextureMapperPlatformLayerProxyGL>(proxy));
+-        downcast<TextureMapperPlatformLayerProxyGL>(proxy).pushNextBuffer(makeUnique<TextureMapperPlatformLayerBuffer>(m_context->m_compositorTexture, textureSize, flags, m_context->m_internalColorFormat));
+-    }
+-
+-    m_context->markLayerComposited();
+-}
+-
+-void NicosiaImageBufferPipeSource::setGraphicsContextGL(GraphicsContextGL* context)
+-{
+-    m_context = static_cast<GraphicsContextGLOpenGL*>(context);
+-}
+-
+ void NicosiaImageBufferPipeSource::swapBuffersIfNeeded()
+ {
+ }
+diff --git a/Source/WebCore/platform/graphics/nicosia/NicosiaImageBufferPipe.h b/Source/WebCore/platform/graphics/nicosia/NicosiaImageBufferPipe.h
+index 2a76af780f169..0805c4789485a 100644
+--- a/Source/WebCore/platform/graphics/nicosia/NicosiaImageBufferPipe.h
++++ b/Source/WebCore/platform/graphics/nicosia/NicosiaImageBufferPipe.h
+@@ -26,7 +26,6 @@
+ 
+ #pragma once
+ 
+-#include "GraphicsContextGLOpenGL.h"
+ #include "ImageBufferPipe.h"
+ #include "NicosiaContentLayerTextureMapperImpl.h"
+ 
+@@ -57,8 +56,6 @@ class NicosiaImageBufferPipeSource : public WebCore::ImageBufferPipe::Source, pu
+ 
+     // ImageBufferPipe::Source overrides.
+     void handle(RefPtr<WebCore::ImageBuffer>&&) final;
+-    void swapBuffers() final;
+-    void setGraphicsContextGL(WebCore::GraphicsContextGL*) final;
+ 
+     // ContentLayerTextureMapperImpl::Client overrides.
+     void swapBuffersIfNeeded() override;
+@@ -69,7 +66,6 @@ class NicosiaImageBufferPipeSource : public WebCore::ImageBufferPipe::Source, pu
+ 
+     mutable Lock m_imageBufferLock;
+     RefPtr<WebCore::ImageBuffer> m_imageBuffer;
+-    WebCore::GraphicsContextGLOpenGL* m_context;
+ };
+ 
+ class NicosiaImageBufferPipe final : public WebCore::ImageBufferPipe {
+diff --git a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.h b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.h
+index e2136ddbe0741..75395a9ba499e 100644
+--- a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.h
++++ b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.h
+@@ -39,7 +39,6 @@
+ #if USE(NICOSIA)
+ namespace Nicosia {
+ class GCGLLayer;
+-class NicosiaImageBufferPipeSource;
+ }
+ #endif
+ 
+@@ -575,7 +574,6 @@ class WEBCORE_EXPORT GraphicsContextGLOpenGL : public GraphicsContextGL
+ 
+ #if USE(NICOSIA)
+     friend class Nicosia::GCGLLayer;
+-    friend class Nicosia::NicosiaImageBufferPipeSource;
+     std::unique_ptr<Nicosia::GCGLLayer> m_nicosiaLayer;
+ #elif USE(TEXTURE_MAPPER)
+     friend class TextureMapperGCGLPlatformLayer;
+
