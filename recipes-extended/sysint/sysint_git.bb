@@ -258,7 +258,7 @@ do_install() {
         rm ${D}${base_libdir}/rdk/NM_Dispatcher.sh
         rm ${D}${base_libdir}/rdk/NM_preDown.sh
     install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
-    install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
+    install -m 0644 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
 }
 
 do_install:append:rdkstb() {
