@@ -132,10 +132,7 @@ EXTRA_OECMAKE:append = "${@ ' -DXRSR_SDT=ON' if (d.getVar('SUPPORT_VOICE_DEST_AL
 EXTRA_OECMAKE:append = "${@ ' -DXRSR_HTTP=ON' if (d.getVar('SUPPORT_VOICE_DEST_HTTP', expand=False) == "true") else ''}"
 
 BUILD_FACTORY_TEST ??= "true"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' -DBUILD_FACTORY_TEST=ON', '', d)}"
-
-AUDIO_CONTROL         ?= "false"
-EXTRA_OECMAKE:append   = "${@bb.utils.contains('AUDIO_CONTROL', 'true', ' -DFACTORY_AUDIO_CONTROL=ON', '', d)}"
+EXTRA_OECMAKE:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' -DBUILD_FACTORY_TEST=ON', ' -DBUILD_FACTORY_TEST=OFF', d)}"
 
 export CTRLM_UTILS_JSON_TO_HEADER  = "${RECIPE_SYSROOT}/usr/include/vsdk_json_to_header.py"
 export CTRLM_UTILS_JSON_COMBINE    = "${RECIPE_SYSROOT}/usr/include/vsdk_json_combine.py"
@@ -163,12 +160,6 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm_mic_tap',
 addtask ctrlm_config after do_configure before do_compile
 do_ctrlm_config() {
 }
-
-FACTORY_AUDIO_PLAYBACK ?= "false"
-EXTRA_OECMAKE:append   = "${@bb.utils.contains('AUDIO_PLAYBACK', 'true', ' -DFACTORY_AUDIO_PLAYBACK=ON', '', d)}"
-
-CUSTOM_AUDIO_ANALYSIS_LIB ?= ""
-EXTRA_OECMAKE:append       = "${@ ' -DCUSTOM_AUDIO_ANALYSIS_LIB=${CUSTOM_AUDIO_ANALYSIS_LIB}' if (d.getVar('CUSTOM_AUDIO_ANALYSIS_LIB', expand=False) != "") else ''}"
 
 CUSTOM_AUTH_LIB      ?= ""
 EXTRA_OECMAKE:append  = "${@ ' -DCUSTOM_AUTH_LIB=${CUSTOM_AUTH_LIB}' if (d.getVar('CUSTOM_AUTH_LIB', expand=False) != "") else ''}"
