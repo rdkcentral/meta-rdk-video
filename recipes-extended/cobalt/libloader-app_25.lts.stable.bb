@@ -8,7 +8,6 @@ LIC_FILES_CHKSUM = " \
 "
 
 inherit features_check
-REQUIRED_DISTRO_FEATURES = "cobalt-25"
 
 require larboard_revision.inc
 require rdke-cobalt-buildfix.inc
