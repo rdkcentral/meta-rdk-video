@@ -36,9 +36,9 @@ inherit autotools pkgconfig coverity systemd
 
 do_install:append () {
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${S}/rdkfwupgrader.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${S}/rdkFwupdateMgr.service ${D}${systemd_unitdir}/system
 }
-SYSTEMD_SERVICE:${PN} += " rdkfwupgrader.service"
+SYSTEMD_SERVICE:${PN} += " rdkFwupdateMgr.service"
 
 FILES:${PN}+= " ${bindir}/rdkfwupgrader_deamon \
                  ${base_libdir}/rdk/rdkfwupgrader_start.sh \
