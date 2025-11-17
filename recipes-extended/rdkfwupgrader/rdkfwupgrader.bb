@@ -40,7 +40,7 @@ do_install:append () {
 }
 SYSTEMD_SERVICE:${PN} += " rdkFwupdateMgr.service"
 
-FILES:${PN}+= " ${bindir}/rdkfwupgrader_deamon \
+FILES:${PN}+= " ${bindir}/rdkFwupdateMgr \
                  ${base_libdir}/rdk/rdkfwupgrader_start.sh \
                  ${base_libdir}/rdk/rdkfwupgrader_check_now.sh \
                  ${systemd_unitdir}/system \
