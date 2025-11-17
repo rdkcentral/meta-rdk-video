@@ -25,7 +25,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
           "
           
 # Release version - 1.3.7
-SRCREV = "f29ece171a6a67b4eecfa3f28669d92fc14d692e"
+SRCREV = "a180269e5e6071f5825eb382d7d5e9c3bfaacca9"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -76,7 +76,7 @@ OPENCDM_DRMS ??= " ${@bb.utils.contains('DISTRO_FEATURES' , 'widevine_v16', 'ope
 PACKAGECONFIG:append = " ${OPENCDM_DRMS}"
 PACKAGECONFIG:append = " systemaudioplayer"
 PACKAGECONFIG:append = " cryptography"
-PACKAGECONFIG:append = " playerinfo"
+PACKAGECONFIG:append = " unifiedcasmanagement"
 
 inherit features_check
 REQUIRED_DISTRO_FEATURES = "${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec', 'DOBBY_CONTAINERS', '', d)}"
@@ -99,7 +99,7 @@ PACKAGECONFIG[playerinfo]           = "-DPLUGIN_PLAYERINFO=ON -DUSE_DEVICESETTIN
 PACKAGECONFIG[screencapture]        = "-DPLUGIN_SCREENCAPTURE=ON,-DPLUGIN_SCREENCAPTURE=OFF,entservices-apis curl libpng drm,entservices-apis curl libpng libdrm"
 PACKAGECONFIG[systemaudioplayer]    = "-DPLUGIN_SYSTEMAUDIOPLAYER=ON,,entservices-apis trower-base64 boost websocketpp wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app,entservices-apis trower-base64 wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app"
 PACKAGECONFIG[cryptography] = "-DPLUGIN_CRYPTOGRAPHY=ON,,entservices-apis, entservices-apis"
-PACKAGECONFIG[unifiedcasmanagement] = "-DPLUGIN_UNIFIEDCASMANAGEMENT=ON,,rmfgeneric, rmfgeneric"
+PACKAGECONFIG[unifiedcasmanagement] = "-DPLUGIN_UNIFIEDCASMANAGEMENT=ON,,entservices-apis entservices-infra,entservices-apis"
 
 # ----------------------------------------------------------------------------
 
