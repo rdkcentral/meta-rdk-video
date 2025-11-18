@@ -1,7 +1,7 @@
 [Unit]
 Description=wpeframework
 Wants= local-fs.target
-After= local-fs.target securemount.service
+After= local-fs.target securemount.service dobby.service
 RequiresMountsFor=/opt/secure
 
 [Service]
