@@ -1,0 +1,63 @@
+diff --git a/src/third_party/starboard/rdk/shared/audio_sink/gstreamer_audio_sink_type.cc b/src/third_party/starboard/rdk/shared/audio_sink/gstreamer_audio_sink_type.cc
+index c4f76f5..c0b8644 100644
+--- a/src/third_party/starboard/rdk/shared/audio_sink/gstreamer_audio_sink_type.cc
++++ b/src/third_party/starboard/rdk/shared/audio_sink/gstreamer_audio_sink_type.cc
+@@ -69,6 +69,25 @@ constexpr int kFramesPerRequest = 1024;
+ 
+ using ::starboard::shared::starboard::media::GetBytesPerSample;
+ 
++namespace {
++  bool isRialtoEnabled() {
++    static bool is_rialto_enabled = false;
++    static gsize init = 0;
++
++    if (g_once_init_enter (&init)) {
++      GstElementFactory *factory = gst_element_factory_find("rialtowebaudiosink");
++      if (factory) {
++        guint rank = gst_plugin_feature_get_rank((GstPluginFeature *)factory);
++        gst_object_unref(GST_OBJECT(factory));
++        is_rialto_enabled = rank >= GST_RANK_PRIMARY;
++      }
++      g_once_init_leave (&init, 1);
++    }
++
++    return is_rialto_enabled;
++  }
++} // namespace
++
+ class GStreamerAudioSink : public SbAudioSinkPrivate {
+  public:
+   GStreamerAudioSink(
+@@ -204,9 +223,14 @@ GStreamerAudioSink::GStreamerAudioSink(
+   gst_app_src_set_caps(GST_APP_SRC(appsrc_), audio_caps);
+ 
+   audiosink_ = gst_element_factory_make("autoaudiosink", "sink");
+-  g_signal_connect(
+-      audiosink_, "child-added",
+-      G_CALLBACK(&GStreamerAudioSink::AutoAudioSinkChildAddedCallback), this);
++  if (!isRialtoEnabled()) {
++    audiosink_ = gst_element_factory_make("autoaudiosink", "sink");
++    g_signal_connect(
++        audiosink_, "child-added",
++        G_CALLBACK(&GStreamerAudioSink::AutoAudioSinkChildAddedCallback), this);
++  } else {
++    audiosink_ = gst_element_factory_make("rialtowebaudiosink", "sink");
++  }
+ 
+   pipeline_ = gst_pipeline_new("audio");
+   GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline_));
+diff --git a/src/third_party/starboard/rdk/shared/player/player_internal.cc b/src/third_party/starboard/rdk/shared/player/player_internal.cc
+index cd46d2e..d2080fa 100644
+--- a/src/third_party/starboard/rdk/shared/player/player_internal.cc
++++ b/src/third_party/starboard/rdk/shared/player/player_internal.cc
+@@ -3098,8 +3098,8 @@ void PlayerImpl::UpdatePresentingState() {
+   GstState state, pending;
+   GstStateChangeReturn ret;
+   ret = gst_element_get_state(pipeline_, &state, &pending, 0);
+-  if ((state < GST_STATE_PAUSED) || (pending >= GST_STATE_PAUSED && ret == GST_STATE_CHANGE_ASYNC)) {
+-    GST_INFO_OBJECT(pipeline_, "Delay State::kPresenting due to async transition pending %s -> %s", gst_element_state_get_name(state), gst_element_state_get_name(pending));
++  if ((state < GST_STATE_PAUSED) || (ret == GST_STATE_CHANGE_ASYNC && (pending == GST_STATE_PAUSED || pending == GST_STATE_PLAYING)) {
++  GST_INFO_OBJECT(pipeline_, "Delay State::kPresenting due to async transition pending %s -> %s", gst_element_state_get_name(state), gst_element_state_get_name(pending));
+     return;
+   }
+ 
