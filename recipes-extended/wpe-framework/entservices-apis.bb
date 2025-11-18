@@ -12,6 +12,8 @@ DEPENDS = "wpeframework wpeframework-tools-native"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis"
 
 SRC_URI += "file://RDKEMW-1007.patch"
+SRC_URI += "file://plugin.patch"
+SRC_URI += "file://IBartonMatter.h"
 
 
 # Tag 2.4.0
@@ -26,6 +28,13 @@ EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
 "
+
+# ----------------------------------------------------------------------------
+
+do_configure:prepend() {
+	install -d ${S}/apis/BartonMatter
+	install -m 0644 ${WORKDIR}/IBartonMatter.h ${S}/apis/BartonMatter/
+}
 
 # ----------------------------------------------------------------------------
 

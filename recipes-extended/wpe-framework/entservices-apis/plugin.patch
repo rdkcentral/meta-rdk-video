@@ -1,0 +1,13 @@
+diff --git a/apis/Ids.h b/apis/Ids.h
+index aca140e..7d833e0 100755
+--- a/apis/Ids.h
++++ b/apis/Ids.h
+@@ -319,6 +319,8 @@ namespace Exchange {
+         ID_PREINSTALL_MANAGER_NOTIFICATION              = ID_PREINSTALL_MANAGER + 1,
+         ID_PREINSTALL_MANAGER_INSTALL_INFO_ITERATOR     = ID_PREINSTALL_MANAGER + 2,
+ 
++		ID_BARTONMATTER                             = ID_ENTOS_OFFSET + 0x420,
++
+         ID_DOWNLOAD_MANAGER                          = ID_ENTOS_OFFSET + 0x420,
+         ID_DOWNLOAD_MANAGER_NOTIFICATION             = ID_DOWNLOAD_MANAGER + 1,
+ 
