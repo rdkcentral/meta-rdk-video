@@ -46,6 +46,7 @@ SRC_URI[test_tones.sha256sum] = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'tru
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 SRCREV_FORMAT = "ctrlm-main"
+SRCREV = "41af9e06bbe71b981eedbe5c1b991213f2d6b721"
 
 S = "${WORKDIR}/git"
 

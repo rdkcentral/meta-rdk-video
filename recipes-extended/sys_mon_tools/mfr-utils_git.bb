@@ -10,6 +10,7 @@ PACKAGE_ARCH ?= "${MIDDLEWARE_ARCH}"
 
 
 SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX};name=mfr-utils"
+SRCREV = "a309758f5721a10ff8cdfa3ef8b957f7614a2d29"
 S = "${WORKDIR}/git"
 
 PROVIDES="mfr-utils"
