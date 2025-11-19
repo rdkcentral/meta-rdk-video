@@ -14,17 +14,17 @@ NETWORKMANAGER_STUN_PORT ?= "19302"
 NETWORKMANAGER_LOGLEVEL ?= "3"
 
 PR = "r0"
-PV = "1.5.0"
+PV = "1.8.0"
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/RDKEMW-9249"
 
 # Oct 25, 2025
-SRCREV = "0d1198ef9f9ad0ec8442b7f29609679e0c61cd8b"
+SRCREV = "fcef494d7c282ec6c001afa4fc04edbfeaeba629"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry  ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
-RDEPENDS:${PN} += " wpeframework rdk-logger curl ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', ' iarmbus iarmmgrs ', d)} "
+DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
+RDEPENDS:${PN} += " wpeframework rdk-logger curl iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
 
 inherit cmake pkgconfig python3native
 
