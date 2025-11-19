@@ -2,7 +2,7 @@ SUMMARY = "ENTServices deviceanddisplay plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV ?= "3.3.5"
+PV ?= "3.4.0"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
            file://es1_rtk_gCrrRes.patch \
           "
 
-# Release version - 3.3.5
-SRCREV = "7fbbbcbfa2fc08ae4702f118d638660aa611540e"
+# Release version - 3.4.0
+SRCREV = "801966b09788e83da453dcbc3b522ef74c0d1dbf"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
