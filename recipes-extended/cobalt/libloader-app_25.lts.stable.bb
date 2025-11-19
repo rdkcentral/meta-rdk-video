@@ -18,7 +18,7 @@ TOOLCHAIN = "gcc"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI  = "git://github.com/youtube/cobalt.git;protocol=https;name=cobalt;branch=25.lts.stable"
-SRC_URI += "${LARBOARD_SRC_URI};protocol=${CMF_GITHUB_PROTOCOL};destsuffix=larboard;name=larboard;branch=develop"
+SRC_URI += "${LARBOARD_SRC_URI};protocol=${CMF_GITHUB_PROTOCOL};destsuffix=larboard;name=larboard;branch=feature/ENTDAI-748"
 SRC_URI += "file://25/0001-Include-RDK-platforms.patch"
 SRC_URI += "file://25/0002-Fix-crashpad-build.patch"
 SRC_URI += "file://25/0003-breakpad-add-mapping-info.patch"
