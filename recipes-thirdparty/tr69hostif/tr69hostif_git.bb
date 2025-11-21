@@ -5,7 +5,6 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=99e7c83e5e6f31c2cbb811e186972945"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 S = "${WORKDIR}/git"
 
 DEPENDS = "iarmbus iarmmgrs e2fsprogs libsoup libsyswrapper yajl \
@@ -221,3 +220,9 @@ FILES:${PN}-conf = "${sysconfdir}/rfcdefaults/tr69hostif.ini"
 # Breakpad processname and logfile mapping
 BREAKPAD_LOGMAPPER_PROCLIST = "tr69hostif"
 BREAKPAD_LOGMAPPER_LOGLIST = "tr69hostif.log"
+
+SRCREV_tr69hostif = "d05547a1e693171e77b0532128f9322775c468a4"
+
+PV = "1.2.8"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

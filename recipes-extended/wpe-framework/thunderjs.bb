@@ -7,7 +7,6 @@ SRC_URI = "git://github.com/rdkcentral/ThunderJS.git;protocol=https;branch=maste
 # Last Check-in at Aug 28
 SRCREV = "903f843ebbe9136609fbe348b1e39c306489c0b1"
 S = "${WORKDIR}/git"
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 

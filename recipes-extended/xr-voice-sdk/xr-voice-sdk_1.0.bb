@@ -108,3 +108,6 @@ EXTRA_OECMAKE:append = "${@' -DXRAUDIO_OVC_ENABLED=ON' if d.getVar('XRAUDIO_OVC_
 EXTRA_OECMAKE:append = "${@' -DXRAUDIO_PPR_ENABLED=ON' if d.getVar('XRAUDIO_PPR_COMPONENT', True) else ''}"
 
 EXTRA_OECMAKE:append = "${@' -DXLOG_CURTAIL_ENABLED=ON' if (d.getVar('XLOG_USE_CURTAIL', expand=False) == '1') else ''}"
+
+SRCREV_xr-voice-sdk = "5eda37f9e95767fcbe2893a52e3b6b1fafd0135c"
+

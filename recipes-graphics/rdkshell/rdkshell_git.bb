@@ -17,9 +17,10 @@ S = "${WORKDIR}/git"
 SRC_URI = "git://github.com/rdkcentral/RDKShell;branch=master"
 
 # Jun 5, 2024
-SRCREV ?= "a0a88b812d39ee57b15b48f00488c4d9ba737f14"
+SRCREV = "a0a88b812d39ee57b15b48f00488c4d9ba737f14"
 
 # Adding this as patch for development phase. This can be upstreamed once kirkstone builds are verified
+
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SRC_URI:append = " file://shared_ptr_fix_kirkstone.patch"
 

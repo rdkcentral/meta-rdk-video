@@ -13,6 +13,7 @@ SRC_URI = "git://github.com/rdkcentral/PackageManager.git;protocol=https;branch=
 
 SRCREV = "38729b8edfc3ddaba0b3625c19bcd2dd1a05b027"
 
+
 DEPENDS += "wpeframework entservices-apis wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework "
 

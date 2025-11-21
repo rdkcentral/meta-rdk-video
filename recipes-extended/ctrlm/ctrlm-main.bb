@@ -189,3 +189,5 @@ do_clean_oem_config() {
     rm -f ${CTRLM_CONFIG_CPC_ADD} ${CTRLM_CONFIG_CPC_SUB} ${CTRLM_CONFIG_OEM_ADD} ${CTRLM_CONFIG_OEM_SUB}
 }
 
+SRCREV_ctrlm-main = "41af9e06bbe71b981eedbe5c1b991213f2d6b721"
+

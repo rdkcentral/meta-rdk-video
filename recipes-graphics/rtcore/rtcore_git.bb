@@ -3,7 +3,6 @@ DESCRIPTION = "rtCore"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=e7948fb185616891f6b4b35c09cd6ba5"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "openssl util-linux curl zlib"
 
@@ -12,8 +11,6 @@ EXTRA_OECMAKE += "-DCMAKE_SKIP_RPATH=ON "
 
 inherit cmake pythonnative
 
-PV ?= "1.0.0"
-PR ?= "r0"
 
 S = "${WORKDIR}/git"
 
@@ -41,3 +38,7 @@ INSANE_SKIP:${PN} += "dev-so staticdev"
 INSANE_SKIP:${PN}:append:morty = " ldflags"
 DEBIAN_NOAUTONAME:${PN} = "1"
 BBCLASSEXTEND = "native"
+
+PV = "1.0.1"
+PR = "r2"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

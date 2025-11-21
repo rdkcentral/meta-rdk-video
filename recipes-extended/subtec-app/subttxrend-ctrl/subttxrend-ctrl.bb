@@ -21,3 +21,6 @@ S = "${WORKDIR}/git/subttxrend-ctrl"
 #
 
 inherit pkgconfig cmake coverity
+
+SRCREV = "72ecd131bbd1ff569a62cb6df3928290e5a570d2"
+

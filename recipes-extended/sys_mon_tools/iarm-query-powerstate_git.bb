@@ -32,3 +32,6 @@ FILES:${PN} = "${bindir}/QueryPowerState \
                /QueryPowerState"
 
 INSANE_SKIP:${PN} += "useless-rpaths"
+
+SRCREV_iarm_query_powerstate = "a309758f5721a10ff8cdfa3ef8b957f7614a2d29"
+
