@@ -1,0 +1,12 @@
+[Unit]
+Description=WPEFramework TextTrack Initialiser
+Requires=wpeframework.service sky-appsservice.service
+After=wpeframework.service wpeframework-persistentstore.service sky-appsservice.service
+ConditionPathExists=/tmp/wpeframeworkstarted
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/usr/bin/appsservicectl start-subtitles-client
+ExecStart=/usr/bin/PluginActivator org.rdk.TextTrack
+
