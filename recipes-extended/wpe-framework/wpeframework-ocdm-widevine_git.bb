@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=19a2b3c39737289f92c7991b16599360"
 include recipes-extended/wpe-framework/include/wpeframework-plugins.inc
 
 SRC_URI = "git://github.com/rdkcentral/widevine-rdk.git;${CMF_GITHUB_SRC_URI_SUFFIX}"
-SRCREV = "5bf9018d7fddf9407540ccebcd45a6adeb3b6903"
+SRCREV = "7fcbe276c8c93bf1093f55774c4e7d16c01d6738"
 
 # Platform configurations
 DEPENDS += " ${platform-widevine-depends}"
@@ -24,3 +24,9 @@ FILES:${PN} = " ${datadir}/WPEFramework/OCDM/*.drm"
 FILES:${PN}-dbg += " ${datadir}/WPEFramework/OCDM/.debug/"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
+WIDEVINE_VERSION="${@bb.utils.contains('DISTRO_FEATURES', 'widevine_v18', '18', \
+                     bb.utils.contains('DISTRO_FEATURES', 'widevine_v17', '17', \
+                                                                          '16', \
+                                                                            d), \
+                                                                            d)}"
