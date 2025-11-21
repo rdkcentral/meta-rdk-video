@@ -47,3 +47,6 @@ CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC
 PACKAGECONFIG ??= "httpsrc"
 PACKAGECONFIG[httpsrc] = "--enable-httpsrc,,openssl,"
 
+SRCREV_gst-plugins-rdk = "2a713a366153cf38dcf7bbced0b0c9de828c34c7"
+
+

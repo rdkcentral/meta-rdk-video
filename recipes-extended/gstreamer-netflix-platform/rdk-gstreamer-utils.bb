@@ -34,3 +34,6 @@ INSANE_SKIP:${PN} = "dev-so"
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/*.so"
 INSANE_SKIP:${PN} += "ldflags textrel"
+
+SRCREV = "ea9c7ec1a810053619596123f5bd6fd22b3215f4"
+

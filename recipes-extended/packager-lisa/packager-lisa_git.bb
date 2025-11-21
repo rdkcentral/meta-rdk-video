@@ -18,3 +18,6 @@ S = "${WORKDIR}/git"
 
 inherit cmake pkgconfig
 
+SRCREV_lisapack = "53fea63b4fb6e5491364781dcdfd91bcc47397f8"
+
+

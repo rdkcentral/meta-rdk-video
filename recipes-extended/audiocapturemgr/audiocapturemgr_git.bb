@@ -48,3 +48,8 @@ SYSTEMD_SERVICE:${PN} = "audiocapturemgr.service"
 BREAKPAD_LOGMAPPER_PROCLIST = "audiocapturemgr"
 BREAKPAD_LOGMAPPER_LOGLIST = "audiocapturemgr.log"
 
+SRCREV_audiocapturemgr = "29f81aa9d1c749221a606002a31d669b030028ad"
+
+PV = "1.0.0"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

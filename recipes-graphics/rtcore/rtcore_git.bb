@@ -41,3 +41,7 @@ INSANE_SKIP:${PN} += "dev-so staticdev"
 INSANE_SKIP:${PN}:append:morty = " ldflags"
 DEBIAN_NOAUTONAME:${PN} = "1"
 BBCLASSEXTEND = "native"
+
+PV = "1.0.1"
+PR = "r2"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

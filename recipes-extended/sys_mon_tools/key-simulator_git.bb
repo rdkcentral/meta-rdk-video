@@ -25,3 +25,6 @@ do_install() {
 
 FILES:${PN} += "${bindir}/keySimulator"
 INSANE_SKIP:${PN} += "useless-rpaths"
+
+SRCREV_key-simulator = "a309758f5721a10ff8cdfa3ef8b957f7614a2d29"
+

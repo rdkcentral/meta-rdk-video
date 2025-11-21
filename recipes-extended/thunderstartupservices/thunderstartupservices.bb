@@ -127,3 +127,6 @@ do_install:append() {
 }
 
 FILES:${PN} += "${systemd_system_unitdir} ${sysconfdir}/systemd/system"
+
+SRCREV_thunderstartupservices = "481bf0d7de702762925512bbf362a5a5463ee40b"
+

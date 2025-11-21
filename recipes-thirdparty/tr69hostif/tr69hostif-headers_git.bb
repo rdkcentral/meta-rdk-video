@@ -34,3 +34,9 @@ do_install() {
 	install -m 0644 ${S}/src/hostif/handlers/include/*.h ${D}${includedir}
 }
 ALLOW_EMPTY:${PN} = "1"
+
+SRCREV_tr69hostif = "d05547a1e693171e77b0532128f9322775c468a4"
+
+PV = "1.2.8"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

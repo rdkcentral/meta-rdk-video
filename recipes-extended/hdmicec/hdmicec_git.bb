@@ -71,3 +71,9 @@ do_install:append() {
 # Breakpad processname and logfile mapping
 #BREAKPAD_LOGMAPPER_PROCLIST = "CecDaemonMain"
 #BREAKPAD_LOGMAPPER_LOGLIST = "cec_log.txt"
+
+SRCREV_hdmicec = "b407684e91a936a07fadf4ef393505a5d06db890"
+
+PV = "1.0.7"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

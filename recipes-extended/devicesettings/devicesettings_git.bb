@@ -143,3 +143,8 @@ do_install:append() {
 
 }
 
+SRCREV_devicesettings = "9e5462efeb2d20f54ffa3210ce9a37fa72cc6667"
+
+PV = "1.0.24"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

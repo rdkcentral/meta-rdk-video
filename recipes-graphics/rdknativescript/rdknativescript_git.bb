@@ -98,3 +98,7 @@ FILES:${PN} += "${@'/home/root/JSRuntimeClient' if d.getVar('BUILD_CLIENT') == '
 FILES:${PN} += "/home/root/JSRuntimeJSC"
 FILES:${PN} += "/home/root/modules"
 FILES:${PN} += "${libdir}/libJSRuntimeJSC.so"
+
+PV = "1.0.10"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

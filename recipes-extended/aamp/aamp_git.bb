@@ -178,3 +178,9 @@ do_deploy_artifacts() {
 
 addtask do_create_artifacts after do_install before do_package
 addtask do_deploy_artifacts after do_create_artifacts before do_package
+
+SRCREV_aamp = "079a61bffe38f6ad9b8626bb592df171b5219361"
+
+PV = "2.10.0"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

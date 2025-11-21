@@ -218,6 +218,9 @@ INSANE_SKIP:${PN} += "dev-so"
 BREAKPAD_LOGMAPPER_PROCLIST = "dsMgrMain,IARMDaemonMain,mfrMgrMain,sysMgrMain"
 BREAKPAD_LOGMAPPER_LOGLIST = "uimgr_log.txt"
 
+SRCREV_iarmmgrs = "b8208e7feb22da102adb4b5b91227b8c9d0f200d"
+
+
 DEPENDS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' sqlite3  ', '',d)}"
 RDEPENDS:${PN}:client += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' sqlite3  ', '',d)}"
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' sqlite3', '',d)}"
@@ -335,3 +338,7 @@ FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', '', '/mnt/nfs/e
 
 
 ALLOW_EMPTY:${PN} = "1"
+
+PV = "1.1.4"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
