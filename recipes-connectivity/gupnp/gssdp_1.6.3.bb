@@ -17,7 +17,7 @@ DEPENDS = " \
     libsoup-3.0 \
 "
 
-inherit gnomebase pkgconfig gobject-introspection vala gi-docgen features_check
+inherit gnomebase pkgconfig gobject-introspection vala gi-docgen features_check meson
 
 # manpages require pandoc-native
 EXTRA_OEMESON += "-Dmanpages=false"
