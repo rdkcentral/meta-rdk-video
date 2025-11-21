@@ -25,7 +25,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
           "
           
 # Release version - 1.3.7
-SRCREV = "4c9a6b3bf584d0cfc2359e49f3f3f611a77acfb6"
+SRCREV = "2bc5ea514045aad991226a82214bdd7b5cf684a2"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
