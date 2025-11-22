@@ -13,6 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/audiocapturemgr;${CMF_GITHUB_SRC_URI_SUFFIX};name=
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
+SRCREV = "29f81aa9d1c749221a606002a31d669b030028ad"
 SRCREV_FORMAT = "audiocapturemgr"
 DEPENDS = "virtual/vendor-media-utils media-utils-headers iarmbus iarmmgrs libunpriv"
 RDEPENDS:${PN}:append = " virtual/vendor-media-utils"

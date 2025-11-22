@@ -16,6 +16,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/gst-plugins-rdk;${CMF_GITHUB_SRC_URI_SUFFIX};name=
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
+SRCREV = "2a713a366153cf38dcf7bbced0b0c9de828c34c7"
 SRCREV_FORMAT = "gst-plugins-rdk"
 
 S = "${WORKDIR}/git"
