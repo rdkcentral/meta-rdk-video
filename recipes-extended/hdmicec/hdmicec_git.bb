@@ -9,6 +9,7 @@ PR ?= "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
+SRCREV = "b407684e91a936a07fadf4ef393505a5d06db890"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"

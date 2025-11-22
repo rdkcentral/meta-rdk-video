@@ -10,6 +10,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "${RDK_RELEASE}"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX};name=key-simulator"
+SRCREV = "a309758f5721a10ff8cdfa3ef8b957f7614a2d29"
 S = "${WORKDIR}/git"
 
 CFLAGS:append = " -DYOCTO_BUILD"

@@ -9,6 +9,7 @@ DEPENDS += "wpeframework entservices-apis"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/sceneset;${CMF_GITHUB_SRC_URI_SUFFIX};name=sceneset"
 SRCREV_FORMAT = "sceneset"
+SRCREV = "b9fc1bca0c1b42c72825ae1adecc07a7b6170c75"
 
 S = "${WORKDIR}/git"
 

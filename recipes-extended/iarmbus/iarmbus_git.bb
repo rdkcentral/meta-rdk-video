@@ -13,6 +13,7 @@ PR ?= "r0"
 
 SRCREV_iarmbus ?= "fbfc891de8644f88cdd7e4a452c06b5a07e98ade"
 SRCREV_FORMAT = "iarmbus"
+SRCREV = "6dd8bd51b96cec8df3416fd162cee3dd2c089a26"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmbus;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmbus"
 
 S = "${WORKDIR}/git"

@@ -15,6 +15,7 @@ PACKAGE_ARCH ?= "${MIDDLEWARE_ARCH}"
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/RDKShell;branch=master"
+SRCREV = "a0a88b812d39ee57b15b48f00488c4d9ba737f14"
 
 # Jun 5, 2024
 SRCREV ?= "a0a88b812d39ee57b15b48f00488c4d9ba737f14"
