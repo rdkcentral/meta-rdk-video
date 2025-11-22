@@ -31,3 +31,6 @@ INSANE_SKIP:${PN} += "ldflags"
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/*.so"
 FILES:${PN} += "/lib/rdk/*"
+
+SRCREV = "53206b1d1ce346dc4c7bdbe1b9767bcfe866a478"
+

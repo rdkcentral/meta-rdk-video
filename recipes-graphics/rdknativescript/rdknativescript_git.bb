@@ -13,8 +13,6 @@ inherit cmake pkgconfig perlnative ${@bb.utils.contains("DISTRO_FEATURES", "kirk
 
 S = "${WORKDIR}/git"
 
-PV ?= "2.0.0"
-PR ?= "r1"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -22,7 +20,6 @@ SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX}"
 SRCREV = "ed8693097ece92b7ea8c14019559e4b5139d129c"
 
 OECMAKE_GENERATOR = "Ninja"
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 EXTRA_OECMAKE += " -DPKG_CONFIG_SYSROOT_DIR=${PKG_CONFIG_SYSROOT_DIR}"
 
 EXTRA_OECMAKE += " -DJSRUNTIME_ENGINE_NAME=jsc"
@@ -98,3 +95,7 @@ FILES:${PN} += "${@'/home/root/JSRuntimeClient' if d.getVar('BUILD_CLIENT') == '
 FILES:${PN} += "/home/root/JSRuntimeJSC"
 FILES:${PN} += "/home/root/modules"
 FILES:${PN} += "${libdir}/libJSRuntimeJSC.so"
+
+PV = "1.0.10"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

@@ -31,3 +31,6 @@ do_install() {
 FILES:${PN} = "${bindir}/SetPowerState \
                /SetPowerState"
 INSANE_SKIP:${PN} += "useless-rpaths"
+
+SRCREV_iarm-set-powerstate = "a309758f5721a10ff8cdfa3ef8b957f7614a2d29"
+

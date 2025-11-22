@@ -33,3 +33,6 @@ FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/*.so"
 
 INSANE_SKIP:${PN} += "ldflags"
+
+SRCREV = "e52ebe05b6703dff7ca700fd286d84c0c72c41ea"
+

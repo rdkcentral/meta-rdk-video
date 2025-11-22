@@ -35,3 +35,6 @@ do_install() {
 FILES:${PN} += "${bindir}/IARM_event_sender"
 INSANE_SKIP:${PN} += "useless-rpaths"
 
+SRCREV = "a309758f5721a10ff8cdfa3ef8b957f7614a2d29"
+
+

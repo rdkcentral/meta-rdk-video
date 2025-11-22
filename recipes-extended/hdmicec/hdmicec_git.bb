@@ -4,13 +4,10 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV ?= "1.0.1"
-PR ?= "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
 RDEPENDS:${PN} = " devicesettings telemetry"
 
@@ -38,7 +35,6 @@ LOGROTATE_ROTATION_cec="1"
 LOGROTATE_SIZE_MEM_cec="128000"
 LOGROTATE_ROTATION_MEM_cec="1"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 
@@ -71,3 +67,9 @@ do_install:append() {
 # Breakpad processname and logfile mapping
 #BREAKPAD_LOGMAPPER_PROCLIST = "CecDaemonMain"
 #BREAKPAD_LOGMAPPER_LOGLIST = "cec_log.txt"
+
+SRCREV_hdmicec = "b407684e91a936a07fadf4ef393505a5d06db890"
+
+PV = "1.0.7"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

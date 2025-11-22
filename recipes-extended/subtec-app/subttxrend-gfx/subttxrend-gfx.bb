@@ -27,3 +27,6 @@ EXTRA_OECMAKE:append = " -DBUILD_RDK_REFERENCE=1"
 CXXFLAGS:append:kirkstone = " -fpermissive"
 
 INSANE_SKIP:subttxrend-gfx := "file-rdeps"
+
+SRCREV = "72ecd131bbd1ff569a62cb6df3928290e5a570d2"
+

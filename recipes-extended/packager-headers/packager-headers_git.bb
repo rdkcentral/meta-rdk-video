@@ -15,3 +15,6 @@ do_install() {
     install -m 0644 ${S}/packager/IPackageImpl.h ${D}${includedir}
 }
 ALLOW_EMPTY:${PN} = "1"
+
+SRCREV_eshelpers = "c18a6cdf4c87fc43bf920167781a537efa225eba"
+

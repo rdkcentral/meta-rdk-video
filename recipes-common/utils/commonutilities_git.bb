@@ -22,3 +22,6 @@ S = "${WORKDIR}/git"
 
 inherit autotools pkgconfig coverity
 
+SRCREV = "071361f284ba9049bf7d8cb9a75b583b9b1e353b"
+
+

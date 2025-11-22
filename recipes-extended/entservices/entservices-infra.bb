@@ -210,3 +210,6 @@ FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WP
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
+
+SRCREV = "c349dc2e327138f95f31daa859c835dc3ba45168"
+

@@ -21,3 +21,6 @@ FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
 
 SYSTEMD_SERVICE:${PN} = "sceneset.service"
+
+SRCREV_sceneset = "b9fc1bca0c1b42c72825ae1adecc07a7b6170c75"
+
