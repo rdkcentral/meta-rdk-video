@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 SECTION = "base"
-DEPENDS = "sqlite3 curl rdkversion jansson glib-2.0 systemd iarmbus iarmmgrs breakpad util-linux devicesettings nopoll rfc libarchive safec-common-wrapper gperf-native xr-voice-sdk libsyswrapper xr-voice-sdk-headers"
+DEPENDS = "sqlite3 curl rdkversion jansson glib-2.0 systemd iarmbus iarmmgrs util-linux devicesettings nopoll rfc libarchive safec-common-wrapper gperf-native xr-voice-sdk libsyswrapper xr-voice-sdk-headers"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 RDEPENDS:${PN}:append = " devicesettings iarmbus"
@@ -12,11 +12,7 @@ PROVIDES = "ctrlm"
 RPROVIDES:${PN} = "ctrlm"
 
 
-inherit cmake pkgconfig ${@bb.utils.contains("DISTRO_FEATURES", "kirkstone", "python3native", "pythonnative", d)} syslog-ng-config-gen breakpad-wrapper breakpad-logmapper logrotate_config
-
-# Breakpad processname and logfile mapping
-BREAKPAD_LOGMAPPER_PROCLIST = "controlMgr"
-BREAKPAD_LOGMAPPER_LOGLIST = "ctrlm_log.txt"
+inherit cmake pkgconfig ${@bb.utils.contains("DISTRO_FEATURES", "kirkstone", "python3native", "pythonnative", d)} syslog-ng-config-gen logrotate_config
 
 SYSLOG-NG_FILTER = "ctrlm"
 SYSLOG-NG_SERVICE_ctrlm = "ctrlm-main.service"
@@ -61,7 +57,16 @@ inherit ${@bb.utils.contains('DISTRO_FEATURES', 'comcast-gperftools-heapcheck-wp
 
 inherit systemd coverity
 
-BREAKPAD_BIN = "controlMgr"
+# Breakpad Support
+BREAKPAD           ??= "true"
+inherit ${@bb.utils.contains('BREAKPAD', 'true', 'breakpad-wrapper breakpad-logmapper', '', d)}
+DEPENDS:append       = "${@bb.utils.contains('BREAKPAD', 'true', ' breakpad', '', d)}"
+EXTRA_OECMAKE:append = "${@bb.utils.contains('BREAKPAD', 'true', ' -DBREAKPAD=ON', ' -DBREAKPAD=OFF', d)}"
+BREAKPAD_BIN         = "controlMgr"
+
+# Breakpad processname and logfile mapping
+BREAKPAD_LOGMAPPER_PROCLIST = "controlMgr"
+BREAKPAD_LOGMAPPER_LOGLIST  = "ctrlm_log.txt"
 
 EXTRA_OECMAKE:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' -DUSE_SAFEC=ON', '', d)}"
 
@@ -119,12 +124,6 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('AUTH', 'true', ' -DAUTH_ENABLED=ON
 AUTH_ACTIVATION_STATUS ?= "false"
 EXTRA_OECONF:append = "${@bb.utils.contains('AUTH_ACTIVATION_STATUS', 'true', ' -DAUTH_ACTIVACTION_STATUS', '', d)}"
 
-VOICE_KEYWORD_BEEP ??= "false"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('VOICE_KEYWORD_BEEP', 'true', ' -DVOICE_KEYWORD_BEEP=ON', '', d)}"
-
-# Enable breakpad
-EXTRA_OECMAKE:append = " -DBREAKPAD=ON"
-
 SUPPORT_VOICE_DEST_HTTP   ?= "false"
 SUPPORT_VOICE_DEST_ALSA   ?= "false"
 
@@ -158,7 +157,6 @@ EXTRA_OECMAKE:append = "${@ ' -DXRSR_SDT=ON' if (d.getVar('SUPPORT_VOICE_DEST_AL
 DEPENDS:append   = "${@ ' virtual-mic' if (d.getVar('SUPPORT_VOICE_DEST_ALSA',   expand=False) == "true") else ''}"
 
 EXTRA_OECMAKE:append = " -DCMAKE_SYSROOT=${RECIPE_SYSROOT} -DCMAKE_PROJECT_VERSION=${PV}"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm_mic_tap', ' -DMIC_TAP=ON', '', d)}"
 
 addtask ctrlm_config after do_configure before do_compile
 do_ctrlm_config() {
