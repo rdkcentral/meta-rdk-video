@@ -43,7 +43,7 @@ SYSLOG-NG_LOGRATE_vitalprocess-info = "high"
 SYSLOG-NG_SERVICE_mount_log:append:rdkstb = " disk-check.service "
 SYSLOG-NG_DESTINATION_mount_log = "mount_log.txt"
 SYSLOG-NG_LOGRATE_mount_log = "low"
-SYSLOG-NG_SERVICE_reboot-reason = "reboot-reason-logger.service update-reboot-info.service"
+SYSLOG-NG_SERVICE_reboot-reason = "reboot-reason-logger.service"
 SYSLOG-NG_DESTINATION_reboot-reason = "rebootreason.log"
 SYSLOG-NG_LOGRATE_reboot-reason = "low"
 SYSLOG-NG_FILTER += "messages"
@@ -104,8 +104,6 @@ do_install() {
         install -m 0644 ${S}/systemd_units/reboot-reason-logger.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/iptables.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/update-device-details.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/update-reboot-info.path ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/update-reboot-info.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
@@ -116,8 +114,6 @@ do_install() {
         install -m 0644 ${S}/systemd_units/reboot-reason-logger.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/iptables.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/update-device-details.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/update-reboot-info.path ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/update-reboot-info.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
@@ -284,8 +280,6 @@ SYSTEMD_SERVICE:${PN} += "reboot-reason-logger.service"
 SYSTEMD_SERVICE:${PN} += "iptables.service"
 SYSTEMD_SERVICE:${PN} += "update-device-details.service"
 SYSTEMD_SERVICE:${PN} += "oops-dump.service"
-SYSTEMD_SERVICE:${PN} += "update-reboot-info.path"
-SYSTEMD_SERVICE:${PN} += "update-reboot-info.service"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.path"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.service"
 SYSTEMD_SERVICE:${PN} += "gstreamer-cleanup.service"
