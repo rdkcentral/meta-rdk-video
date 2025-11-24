@@ -64,3 +64,4 @@ FILES:${PN} += "${sysconfdir}/*"
 
 SYSTEMD_SERVICE:${PN} = "ripple.service"
 INSANE_SKIP:${PN}:append = "already-stripped"
+PR = "r0"

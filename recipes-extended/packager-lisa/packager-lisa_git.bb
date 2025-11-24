@@ -17,4 +17,6 @@ SRCREV_FORMAT = "lisapack"
 S = "${WORKDIR}/git"
 
 inherit cmake pkgconfig
-
+SRCREV = "53fea63b4fb6e5491364781dcdfd91bcc47397f8"
+PV = "1.0.0"
+PR = "r0"

@@ -5,10 +5,9 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV ?= "1.0.1"
-PR ?= "r0"
+PV = "1.0.6"
+PR = "r0"
 
-PACKAGE_ARCH  = "${MIDDLEWARE_ARCH}"
 SRCREV_FORMAT = "xr-voice-sdk"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/xr-voice-sdk;${CMF_GITHUB_SRC_URI_SUFFIX};name=xr-voice-sdk"
@@ -108,3 +107,5 @@ EXTRA_OECMAKE:append = "${@' -DXRAUDIO_OVC_ENABLED=ON' if d.getVar('XRAUDIO_OVC_
 EXTRA_OECMAKE:append = "${@' -DXRAUDIO_PPR_ENABLED=ON' if d.getVar('XRAUDIO_PPR_COMPONENT', True) else ''}"
 
 EXTRA_OECMAKE:append = "${@' -DXLOG_CURTAIL_ENABLED=ON' if (d.getVar('XLOG_USE_CURTAIL', expand=False) == '1') else ''}"
+SRCREV_xr-voice-sdk = "5eda37f9e95767fcbe2893a52e3b6b1fafd0135c"
+PACKAGE_ARCH  = "${MIDDLEWARE_ARCH}"

@@ -23,8 +23,8 @@ SYSLOG-NG_SERVICE_ctrlm = "ctrlm-main.service"
 SYSLOG-NG_DESTINATION_ctrlm = "ctrlm_log.txt"
 SYSLOG-NG_LOGRATE_ctrlm = "medium"
 
-PV ?= "1.0.1"
-PR ?= "r0"
+PV = "1.1.5"
+PR = "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-main"
 
@@ -188,4 +188,4 @@ addtask clean_oem_config after do_unpack before do_configure
 do_clean_oem_config() {
     rm -f ${CTRLM_CONFIG_CPC_ADD} ${CTRLM_CONFIG_CPC_SUB} ${CTRLM_CONFIG_OEM_ADD} ${CTRLM_CONFIG_OEM_SUB}
 }
-
+SRCREV_ctrlm-main = "41af9e06bbe71b981eedbe5c1b991213f2d6b721"
