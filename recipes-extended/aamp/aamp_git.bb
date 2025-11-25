@@ -79,6 +79,10 @@ CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_IT', ' -
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_DE', ' -DENABLE_PTS_RESTAMP=1', '', d)}"
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_AU', ' -DENABLE_PTS_RESTAMP=1', '', d)}"
 
+# Do not merge, temp for custom builds 
+CXXFLAGS:append = " -DENABLE_USE_SINGLE_PIPELINE=1"
+CXXFLAGS:append = " -DENABLE_PTS_RESTAMP=1"
+
 INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/ds-hal \
     "
