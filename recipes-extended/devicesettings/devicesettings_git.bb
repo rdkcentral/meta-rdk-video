@@ -8,6 +8,7 @@ PV ?= "1.0.1"
 PR ?= "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
+SRCREV = "9d6edc7f0c2ef741309d84f0b6019a97b99f18bc"
 
 # devicesettings is not a 'generic' component, as some of its source
 # files include .h files that come from the HAL implementation until

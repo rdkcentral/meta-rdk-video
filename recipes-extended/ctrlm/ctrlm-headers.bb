@@ -10,6 +10,7 @@ DEPENDS = ""
 include ctrlm.inc
 
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-headers"
+SRCREV = "41af9e06bbe71b981eedbe5c1b991213f2d6b721"
 
 S = "${WORKDIR}/git"
 
