@@ -32,7 +32,7 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${W
 
 require aamp-common.inc
 require aamp-artifacts-version.inc
-require ${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', '', 'aamp-middleware.inc', d)}
+require aamp-middleware.inc
 
 EXTRA_OECMAKE += " -DCMAKE_WPEWEBKIT_WATERMARK_JSBINDINGS=1 "
 
