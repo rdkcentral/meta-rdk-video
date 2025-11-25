@@ -6,6 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV ?= "2.0.2"
 PR ?= "r0"
 
+SRCREV = "079a61bffe38f6ad9b8626bb592df171b5219361"
 SRCREV_FORMAT = "aamp"
 
 inherit pkgconfig

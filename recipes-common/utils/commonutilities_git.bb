@@ -5,6 +5,8 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=24691c8ce48996ecd1102d29eab1216e"
 # To have a possibility to override SRC_URI later, we are introducing the following workaround:
 SRC_URI = "${CMF_GITHUB_ROOT}/common_utilities;module=.;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
+SRCREV = "071361f284ba9049bf7d8cb9a75b583b9b1e353b"
+
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS +=" cjson curl rdk-logger"
 

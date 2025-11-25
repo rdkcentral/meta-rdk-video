@@ -22,6 +22,8 @@ SYSLOG-NG_LOGRATE_ctrlm = "medium"
 PV ?= "1.0.1"
 PR ?= "r0"
 
+SRCREV = "41af9e06bbe71b981eedbe5c1b991213f2d6b721"
+
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-main"
 
 LOGROTATE_NAME="ctrlm_log"

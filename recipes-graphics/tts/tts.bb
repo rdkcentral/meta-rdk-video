@@ -13,6 +13,8 @@ DEPENDS += "breakpad breakpad-wrapper"
 EXTRA_OECMAKE += "-DENABLE_BREAKPAD=1"
 BREAKPAD_BIN = " TTSEngine *.so "
 
+SRCREV = "53206b1d1ce346dc4c7bdbe1b9767bcfe866a478"
+
 SRC_URI = "${CMF_GITHUB_ROOT}/ttsengine;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 S = "${WORKDIR}/git"
