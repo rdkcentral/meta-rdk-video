@@ -9,8 +9,8 @@ SECTION = "console/utils"
 LICENSE = "LGPL-2.0-only"
 LIC_FILES_CHKSUM = "file://COPYING;md5=db791dc95f6a08e8e4d206839bc67ec0"
 
-PV ?= "1.0.0"
-PR ?= "r0"
+PV = "1.0.0"
+PR = "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/gst-plugins-rdk;${CMF_GITHUB_SRC_URI_SUFFIX};name=gst-plugins-rdk"
 
@@ -47,3 +47,5 @@ CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC
 PACKAGECONFIG ??= "httpsrc"
 PACKAGECONFIG[httpsrc] = "--enable-httpsrc,,openssl,"
 
+
+SRCREV_gst-plugins-rdk = "2a713a366153cf38dcf7bbced0b0c9de828c34c7"

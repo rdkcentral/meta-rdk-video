@@ -65,3 +65,7 @@ SYSTEMD_AUTO_ENABLE:service = "enable"
 FILES:${PN}:append:service = "${systemd_system_unitdir}/subttxrend-app.service"
 
 DEPENDS += " westeros-simpleshell"
+
+SRCREV = "72ecd131bbd1ff569a62cb6df3928290e5a570d2"
+PV = "1.5.0"
+PR = "r0"

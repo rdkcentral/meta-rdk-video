@@ -30,3 +30,5 @@ FILES:${PN} += " ${sysconfdir}/wpa_supplicant.logging"
 do_configure[noexec] = "1"
 do_compile[noexec] = "1"
 
+PV = "1.0.0"
+PR = "r0"

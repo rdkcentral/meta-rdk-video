@@ -2,8 +2,8 @@ SUMMARY = "ENTServices deviceanddisplay plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV ?= "3.4.4"
-PR ?= "r0"
+PV = "3.4.4"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig

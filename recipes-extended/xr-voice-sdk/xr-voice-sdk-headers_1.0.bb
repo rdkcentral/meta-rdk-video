@@ -71,3 +71,5 @@ do_install() {
 ALLOW_EMPTY:${PN} = "1"
 
 
+
+SRCREV = "b01e2cb1e8110da235b75df589c85031b01fa7fd"

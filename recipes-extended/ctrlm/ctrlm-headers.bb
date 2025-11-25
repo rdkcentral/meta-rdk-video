@@ -131,3 +131,5 @@ do_install() {
 }
 
 ALLOW_EMPTY:${PN} = "1"
+
+SRCREV_ctrlm-headers = "a5109c82635bae5cf6a97f86bf1e43be051c5d5f"

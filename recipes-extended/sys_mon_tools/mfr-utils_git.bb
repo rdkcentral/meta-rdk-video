@@ -4,8 +4,8 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV ?= "${RDK_RELEASE}"
-PR ?= "r0"
+PV = "1.0.8"
+PR = "r0"
 PACKAGE_ARCH ?= "${MIDDLEWARE_ARCH}"
 
 
@@ -35,3 +35,5 @@ do_install() {
 
 FILES:${PN} += "${bindir}/mfr_util"
 INSANE_SKIP:${PN} += "useless-rpaths"
+
+SRCREV_mfr-utils = "a309758f5721a10ff8cdfa3ef8b957f7614a2d29"
