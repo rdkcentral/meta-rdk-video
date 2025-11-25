@@ -5,9 +5,8 @@ on:
     types: [closed]
     branches:
       - develop
-      - support/dunfell
       - 'support/*.*.*'
-
+      - 'support/*.*.*.*'
 jobs:
   call_auto_pr_workflow:
     uses: rdkcentral/build_tools_workflows/.github/workflows/auto_pr_creation_manifest.yml@develop
