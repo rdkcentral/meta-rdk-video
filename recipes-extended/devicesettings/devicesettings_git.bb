@@ -4,10 +4,12 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-PV ?= "1.0.1"
-PR ?= "r0"
+PV = "1.0.24"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
+SRCREV_devicesettings = "9e5462efeb2d20f54ffa3210ce9a37fa72cc6667"
 
 # devicesettings is not a 'generic' component, as some of its source
 # files include .h files that come from the HAL implementation until

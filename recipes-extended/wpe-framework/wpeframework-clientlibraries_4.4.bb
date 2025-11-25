@@ -3,8 +3,8 @@ LICENSE = "Apache-2.0"
 HOMEPAGE = "https://github.com/rdkcentral/ThunderClientlibraries"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=847677038847363222ffb66cfa6406c2"
 
-PR = "r20"
 PV = "4.4.2"
+PR = "r20"
 
 inherit python3native cmake pkgconfig
 

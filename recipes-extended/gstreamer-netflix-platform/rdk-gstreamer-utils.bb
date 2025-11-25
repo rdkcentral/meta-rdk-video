@@ -2,6 +2,7 @@ SUMMARY = "Soc-specific implementations for video applications"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
+PV = "2.0.2"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS += " gstreamer1.0 gstreamer1.0-plugins-base virtual/vendor-audio-service "
 DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform"
@@ -15,6 +16,7 @@ PV ?= "1.0.0"
 PR ?= "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/gstreamer-netflix-platform;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRCREV = "ea9c7ec1a810053619596123f5bd6fd22b3215f4"
 
 S = "${WORKDIR}/git"
 CXXFLAGS += "-I${STAGING_INCDIR}/glib-2.0 -I${STAGING_INCDIR}/gstreamer-1.0 -I${STAGING_DIR_TARGET}/${libdir}/glib-2.0/include/ "

@@ -14,7 +14,8 @@ SRC_URI += " \
     file://ripple-start.sh \
     file://ripple.service \
     "
-PV = "${RIPPLE_VERSION}"
+PV = "${RIPPLE_RELEASE_VER}"
+PR = "r1"
 
 #Working directory for open components
 S = "${OPEN_RIPPLE_S}"

@@ -12,6 +12,7 @@ DEPENDS += "packager-headers"
 RDEPENDS_${PN} = " sqlite3 boost libarchive"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/libpackage;${CMF_GITHUB_SRC_URI_SUFFIX};name=lisapack"
+SRCREV_lisapack = "53fea63b4fb6e5491364781dcdfd91bcc47397f8"
 SRCREV_FORMAT = "lisapack"
 
 S = "${WORKDIR}/git"

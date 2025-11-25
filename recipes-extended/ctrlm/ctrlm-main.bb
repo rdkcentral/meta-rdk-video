@@ -19,8 +19,8 @@ SYSLOG-NG_SERVICE_ctrlm = "ctrlm-main.service"
 SYSLOG-NG_DESTINATION_ctrlm = "ctrlm_log.txt"
 SYSLOG-NG_LOGRATE_ctrlm = "medium"
 
-PV ?= "1.0.1"
-PR ?= "r0"
+PV = "1.1.6"
+PR = "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-main"
 
@@ -41,6 +41,7 @@ SRC_URI[test_tones.md5sum]    = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'tru
 SRC_URI[test_tones.sha256sum] = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', 'ef10d7174a8bc79aff71b30980cd1304a2a33cf10afc38049c13cb11d1a309cc', '', d)}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+SRCREV = "a5109c82635bae5cf6a97f86bf1e43be051c5d5f"
 SRCREV_FORMAT = "ctrlm-main"
 
 S = "${WORKDIR}/git"

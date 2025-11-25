@@ -4,6 +4,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=70514b59ff7b36bbbc30d093c6814d8e"
 
 # To have a possibility to override SRC_URI later, we are introducing the following workaround:
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkfwupdater;${CMF_GITHUB_SRC_URI_SUFFIX};name=rdkfw"
+SRCREV_rdkfw = "709c65295687bb998d12c2303d879e4f3f6cfbff"
 
 DEPENDS +=" cjson curl rdk-logger rbus"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
@@ -28,7 +29,8 @@ LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-confi
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV_FORMAT = "rdkfw"
+PV = "1.3.3"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 
