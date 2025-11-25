@@ -15,10 +15,12 @@ CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'debug_curl_cdl', ' -DCURL_DE
 
 CFLAGS:append = " -DRDK_LOGGER"
 
-PV ?= "1.1.0"
-PR ?= "r0"
+PV = "1.4.3"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 
 inherit autotools pkgconfig coverity
 
+
+SRCREV = "071361f284ba9049bf7d8cb9a75b583b9b1e353b"

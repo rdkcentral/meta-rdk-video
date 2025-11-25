@@ -2,8 +2,8 @@ SUMMARY = "ENTServices Infra plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "3.0.0"
-PR ?= "r0"
+PV = "3.7.0"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -210,3 +210,5 @@ FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WP
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
+
+SRCREV = "d6e618a7157ba837dd1e4559337edcb64f143c7c"

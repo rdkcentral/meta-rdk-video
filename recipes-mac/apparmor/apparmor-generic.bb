@@ -26,3 +26,7 @@ FILES:${PN}-optimized = "${sysconfdir}/apparmor/parser.conf \
                          ${base_libdir}/apparmor/rc.apparmor.functions \
                          ${bindir}/aa-enabled \
                          ${bindir}/aa-exec"
+
+SRCREV_rdk-apparmor-profiles = "0e9b3f4d100c23a99427891f6dcb417e77fe7b00"
+PV = "1.1.0"
+PR = "r0"

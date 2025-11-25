@@ -42,3 +42,7 @@ FILES:${PN}:remove = " ${bindir}/rdkfwupgrader \
                  ${base_libdir}/rdk/rdkfwupgrader_abort_reboot.sh "
 
 INSANE_SKIP:${PN}:append = " installed-vs-shipped"
+
+SRCREV_rdkfw = "709c65295687bb998d12c2303d879e4f3f6cfbff"
+PV = "1.3.3"
+PR = "r0"

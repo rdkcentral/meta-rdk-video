@@ -221,3 +221,7 @@ FILES:${PN}-conf = "${sysconfdir}/rfcdefaults/tr69hostif.ini"
 # Breakpad processname and logfile mapping
 BREAKPAD_LOGMAPPER_PROCLIST = "tr69hostif"
 BREAKPAD_LOGMAPPER_LOGLIST = "tr69hostif.log"
+
+SRCREV_tr69hostif = "d05547a1e693171e77b0532128f9322775c468a4"
+PV = "1.2.8"
+PR = "r0"

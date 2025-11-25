@@ -61,3 +61,7 @@ DEBIAN_NOAUTONAME_${PN}-client = "1"
 DEBIAN_NOAUTONAME_${PN}-server = "1"
 DEBIAN_NOAUTONAME_${PN}-servermanager-lib = "1"
 DEBIAN_NOAUTONAME_${PN}-servermanager = "1"
+
+SRCREV = "421e9152841e7883663fc580161bfcba40585909"
+PV = "0.14.3"
+PR = "r0"

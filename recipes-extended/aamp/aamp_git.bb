@@ -3,8 +3,8 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV ?= "2.0.2"
-PR ?= "r0"
+PV = "2.10.0"
+PR = "r0"
 
 SRCREV_FORMAT = "aamp"
 
@@ -178,3 +178,5 @@ do_deploy_artifacts() {
 
 addtask do_create_artifacts after do_install before do_package
 addtask do_deploy_artifacts after do_create_artifacts before do_package
+
+SRCREV_aamp = "079a61bffe38f6ad9b8626bb592df171b5219361"

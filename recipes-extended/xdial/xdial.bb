@@ -61,3 +61,7 @@ FILES:${PN} += "${libdir}/*"
 TARGET_CC_ARCH += "${LDFLAGS}"
 INSANE_SKIP:${PN}-dev += "dev-deps rpaths dev-elf"
 INSANE_SKIP:${PN} += "rpaths"
+
+SRCREV = "c48dff76657733cb73a81de73a2a886d86c1dde2"
+PV = "1.0.1"
+PR = "r0"
