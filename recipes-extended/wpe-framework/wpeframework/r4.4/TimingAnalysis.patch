@@ -1,0 +1,72 @@
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index fa723305..69d4b72d 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -1093,11 +1093,13 @@ POP_WARNING()
+         std::vector<PluginHost::ISubSystem::subsystem> externallyControlled;
+         ServiceMap::Iterator iterator(_services.Services());
+ 
+-#if 0
++#if 1
+         // Load the metadata for the subsystem information..
+         while (iterator.Next() == true)
+         {
++            START_TIME("Loading Metadata", iterator->Callsign.c_str());
+             iterator->LoadMetadata();
++            STOP_TIME_AND_PRINT_DURATION
+             for (const PluginHost::ISubSystem::subsystem& entry : iterator->SubSystemControl()) {
+                 Core::EnumerateType<PluginHost::ISubSystem::subsystem> name(entry);
+                 if (std::find(externallyControlled.begin(), externallyControlled.end(), entry) != externallyControlled.end()) {
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index 643c8450..436376d4 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -1942,7 +1942,9 @@ namespace PluginHost {
+                         ErrorMessage(_T("local class definitions/version does not exist"));
+                     }
+                 } else {
++                    START_TIME(__FUNCTION__, locator.c_str());
+                     _library = LoadLibrary(locator);
++                    STOP_TIME_AND_PRINT_DURATION
+                     if (_library.IsLoaded() == false) {
+                         ErrorMessage(_T("Library could not be loaded"));
+                     }
+diff --git a/Source/core/Library.cpp b/Source/core/Library.cpp
+index b38ffe78..302549fc 100644
+--- a/Source/core/Library.cpp
++++ b/Source/core/Library.cpp
+@@ -101,7 +101,9 @@ namespace Core {
+         , _error()
+     {
+ #ifdef __LINUX__
++        START_TIME("dlopen", fileName);
+         void* handle = dlopen(fileName, RTLD_LAZY);
++        STOP_TIME_AND_PRINT_DURATION
+ #endif
+ #ifdef __WINDOWS__
+         HMODULE handle = ::LoadLibrary(fileName);
+diff --git a/Source/core/core.h b/Source/core/core.h
+index 42749c1d..86b015b0 100644
+--- a/Source/core/core.h
++++ b/Source/core/core.h
+@@ -109,3 +109,19 @@
+ #endif
+ 
+ #endif
++
++#define START_TIME(FUNCTION_NAME, REMARKS)                                   \
++    auto __start_time = std::chrono::high_resolution_clock::now();           \
++    string __func_name = (FUNCTION_NAME);                               \
++    string __remarks = (REMARKS);
++
++#define STOP_TIME_AND_PRINT_DURATION                                         \
++    do {                                                                      \
++        auto __end_time = std::chrono::high_resolution_clock::now();          \
++        auto __duration = std::chrono::duration_cast<std::chrono::milliseconds>( \
++            __end_time - __start_time                                        \
++        ).count();                                                            \
++        printf("Time for %s %s = %lld ms\n",                                  \
++               __func_name.c_str(), __remarks.c_str(),                        \
++               (long long)__duration);                                        \
++    } while(0);
+\ No newline at end of file
