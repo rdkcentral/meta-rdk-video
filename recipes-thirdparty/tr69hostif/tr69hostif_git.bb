@@ -8,7 +8,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/tr69hostif.git;protocol=https;branch=topic/RDK-59423_4.7.7"
-SRCREV = "90537ce4450a2839c940dcc97e7ad6c2c4eaf66d
+SRCREV = "90537ce4450a2839c940dcc97e7ad6c2c4eaf66d"
 
 DEPENDS = "iarmbus iarmmgrs e2fsprogs libsoup libsyswrapper yajl \
            devicesettings procps glib-2.0 \
