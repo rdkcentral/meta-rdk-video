@@ -1,0 +1,96 @@
+diff --git a/src/third_party/starboard/rdk/shared/player/player_internal.cc b/src/third_party/starboard/rdk/shared/player/player_internal.cc
+index cd46d2e..4e726e1 100644
+--- a/src/third_party/starboard/rdk/shared/player/player_internal.cc
++++ b/src/third_party/starboard/rdk/shared/player/player_internal.cc
+@@ -1394,6 +1394,7 @@ struct PlayerRegistry
+ {
+   ::starboard::Mutex mutex_;
+   std::vector<PlayerImpl*> players_;
++  std::atomic<bool> creation_in_progress_{false};
+ 
+   void Add(PlayerImpl *p) {
+     ::starboard::ScopedLock lock(mutex_);
+@@ -1401,6 +1402,8 @@ struct PlayerRegistry
+     if (it == players_.end()) {
+       players_.push_back(p);
+     }
++    // Clear the creation flag once player is successfully registered
++    creation_in_progress_ = false;
+   }
+ 
+   void Remove(PlayerImpl *p) {
+@@ -1428,17 +1431,40 @@ struct PlayerRegistry
+   }
+ 
+   bool CanCreate(const char* max_video_capabilities) {
++    ::starboard::ScopedLock lock(mutex_);
++    
++    // Block if another pipeline creation is in progress (prevents race condition)
++    if (creation_in_progress_) {
++        GST_DEBUG("Naveen Pipeline creation blocked: another pipeline is being created");
++        return false;
++    }
++    
++    // Block if any existing pipeline is still active (enforce single pipeline)
++    if (!players_.empty()) {
++        GST_DEBUG("Naveen Pipeline creation blocked: existing pipeline must be closed first (active players: %zu)", players_.size());
++        return false;
++    }
++    
++    // Reserve the creation slot atomically
++    creation_in_progress_ = true;
++    
+     #if !defined(COBALT_BUILD_TYPE_GOLD)
+     bool has_max_video_caps_set = (max_video_capabilities && *max_video_capabilities);
+-    ::starboard::ScopedLock lock(mutex_);
+     for(const auto& p: players_) {
+-      if (p->HasMaxVideoCaps() == has_max_video_caps_set)
++      if (p->HasMaxVideoCaps() == has_max_video_caps_set) {
++        creation_in_progress_ = false;
+         return false;
++      }
+     }
+     #endif
+     return true;
+   }
+ 
++  void CancelCreation() {
++    ::starboard::ScopedLock lock(mutex_);
++    creation_in_progress_ = false;
++  }
++
+   void AudioConfigurationChanged() {
+     ::starboard::ScopedLock lock(mutex_);
+     for(const auto& p: players_) {
+@@ -1517,7 +1543,8 @@ PlayerImpl::PlayerImpl(SbPlayer player,
+ 
+   static int player_id = 0;
+   player_id++;
+-
++  
++  GST_INFO_OBJECT(pipeline_,"Naveen - Pipeline Created (ID: %d)", player_id);
+   pipeline_ = CreateGstElement("playbin", "media-pipeline-%d", player_id);
+ 
+   unsigned flagAudio = getGstPlayFlag("audio");
+@@ -1600,7 +1627,8 @@ PlayerImpl::PlayerImpl(SbPlayer player,
+ 
+ PlayerImpl::~PlayerImpl() {
+   GetPlayerRegistry()->Remove(this);
+-
++  
++  GST_INFO_OBJECT(pipeline_,"Naveen - Pipeline Destroyed");
+   GST_INFO_OBJECT(pipeline_, "Destroying player");
+   {
+     ::starboard::ScopedLock lock(source_setup_mutex_);
+@@ -3350,7 +3378,10 @@ SbPlayerPrivate::SbPlayerPrivate(
+                      context,
+                      output_mode,
+                      provider));
+-    if (  !static_cast<PlayerImpl&>(*player_).IsValid() )
++    if (!static_cast<PlayerImpl&>(*player_).IsValid()) {
++      // If player creation failed, cancel the reservation
++      third_party::starboard::rdk::shared::player::GetPlayerRegistry()->CancelCreation();
+       player_.reset(nullptr);
++    }
+   }
+ }
