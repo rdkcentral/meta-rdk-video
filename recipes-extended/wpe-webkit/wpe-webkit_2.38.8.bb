@@ -79,6 +79,7 @@ SRC_URI += "file://2.38.8/comcast-dynamic-insertion-of-decryptor.patch"
 SRC_URI += "file://2.38.8/comcast-RDKEMW-2744-BitmapTextureGL-Check-EGL-context.patch"
 SRC_URI += "file://2.38.8/comcast-DELIA-68848-webrtc-improvements.patch"
 SRC_URI += "file://2.38.8/comcast-RDKEMW-8425-HDR-DV-MediaCapabilities.patch"
++SRC_URI += "file://2.38/new-dtags.patch"
 
 PACKAGECONFIG[wpeqtapi]          = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[westeros]          = "-DUSE_WPEWEBKIT_PLATFORM_WESTEROS=ON -DUSE_GSTREAMER_HOLEPUNCH=ON -DUSE_EXTERNAL_HOLEPUNCH=ON -DUSE_WESTEROS_SINK=ON,,westeros virtual/vendor-westeros-sink"
@@ -134,6 +135,13 @@ EXTRA_OECMAKE += " \
   -DPYTHON_EXECUTABLE=${STAGING_BINDIR_NATIVE}/python3-native/python3 \
 "
 
+WPE_LIB_RUNPATH = "\$ORIGIN/../../lib"
+EXTRA_OECMAKE += " \
+    -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
+    -DCMAKE_INSTALL_RPATH=${WPE_LIB_RUNPATH} \
+    -DCMAKE_EXE_LINKER_FLAGS='-Wl,--enable-new-dtags' \
+"
+
 FILES:${PN} += " ${libdir}/wpe-webkit-*/injected-bundle/libWPEInjectedBundle.so"
 FILES:${PN}-web-inspector-plugin += " ${libdir}/wpe-webkit-*/libWPEWebInspectorResources.so"
 
@@ -151,3 +159,4 @@ def wk_use_ccache(bb,d):
        return "NO"
     return "YES"
 export WK_USE_CCACHE="${@wk_use_ccache(bb, d)}"
+SYSROOT_DIRS:append = "${libexecdir}"

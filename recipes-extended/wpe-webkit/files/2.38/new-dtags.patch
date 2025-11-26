@@ -1,0 +1,13 @@
+diff --git a/Source/cmake/OptionsCommon.cmake b/Source/cmake/OptionsCommon.cmake
+index 98a65ac0a0c8..3d2bf570090b 100644
+--- a/Source/cmake/OptionsCommon.cmake
++++ b/Source/cmake/OptionsCommon.cmake
+@@ -54,7 +54,7 @@ unset(LD_VERSION_COMMAND)
+ set(LD_SUPPORTS_GDB_INDEX TRUE)
+ set(LD_SUPPORTS_SPLIT_DEBUG TRUE)
+ set(LD_SUPPORTS_THIN_ARCHIVES TRUE)
+-set(LD_SUPPORTS_DISABLE_NEW_DTAGS TRUE)
++set(LD_SUPPORTS_DISABLE_NEW_DTAGS FALSE)
+ if (LD_VERSION MATCHES "^LLD ")
+     set(LD_VARIANT LLD)
+ elseif (LD_VERSION MATCHES "^mold ")
