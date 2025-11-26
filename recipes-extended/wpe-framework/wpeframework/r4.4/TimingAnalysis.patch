@@ -46,10 +46,10 @@ index b38ffe78..302549fc 100644
  #ifdef __WINDOWS__
          HMODULE handle = ::LoadLibrary(fileName);
 diff --git a/Source/core/core.h b/Source/core/core.h
-index 42749c1d..86b015b0 100644
+index 42749c1d..20bd4b3e 100644
 --- a/Source/core/core.h
 +++ b/Source/core/core.h
-@@ -109,3 +109,19 @@
+@@ -109,3 +109,20 @@
  #endif
  
  #endif
@@ -69,4 +69,4 @@ index 42749c1d..86b015b0 100644
 +               __func_name.c_str(), __remarks.c_str(),                        \
 +               (long long)__duration);                                        \
 +    } while(0);
-\ No newline at end of file
++
