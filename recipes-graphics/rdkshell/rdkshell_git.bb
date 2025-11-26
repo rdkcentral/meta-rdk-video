@@ -8,16 +8,15 @@ DEPENDS = "westeros essos libjpeg libpng virtual/libgles2"
 
 inherit cmake
 
-PV ?= "1.0.0"
-PR ?= "r0"
-PACKAGE_ARCH ?= "${MIDDLEWARE_ARCH}"
+PV = "1.0.0"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/RDKShell;branch=master"
 
 # Jun 5, 2024
-SRCREV ?= "a0a88b812d39ee57b15b48f00488c4d9ba737f14"
+SRCREV = "a0a88b812d39ee57b15b48f00488c4d9ba737f14"
 
 # Adding this as patch for development phase. This can be upstreamed once kirkstone builds are verified
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
@@ -58,3 +57,4 @@ DEBIAN_NOAUTONAME:${PN} = "1"
 
 # Extend to native builds if this is intended for the build system
 BBCLASSEXTEND = "native"
+PACKAGE_ARCH ?= "${MIDDLEWARE_ARCH}"

@@ -11,7 +11,7 @@ EXTRA_OECMAKE += " \
     -DAUDIOMIXER_NOT_SUPPORTED=${AUDIOMIXER_NOT_SUPPORTED} \
 "
 
-PV ?= "1.0.0"
+PV = "2.0.2"
 PR ?= "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/gstreamer-netflix-platform;${CMF_GITHUB_SRC_URI_SUFFIX}"
@@ -34,3 +34,4 @@ INSANE_SKIP:${PN} = "dev-so"
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/*.so"
 INSANE_SKIP:${PN} += "ldflags textrel"
+SRCREV = "ea9c7ec1a810053619596123f5bd6fd22b3215f4"

@@ -216,4 +216,3 @@ BREAKPAD_LOGMAPPER_LOGLIST = "wpeframework.log"
 do_add_version () {
     echo "WPEFRAMEWORK-VERSION=${THUNDER_RELEASE_TAG_NAME}" > ${EXTRA_VERSIONS_PATH}/${PN}.txt
 }
-

@@ -22,3 +22,5 @@ do_install() {
 }
 
 FILES:${PN} += "${datadir}/WPEFramework/Controller/UI/*"
+PV = "1.0.0"
+PR = "r0"
