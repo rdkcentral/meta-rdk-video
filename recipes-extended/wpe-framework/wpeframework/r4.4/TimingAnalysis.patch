@@ -1,5 +1,5 @@
 diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
-index fa723305..69d4b72d 100644
+index fa723305..22f071be 100644
 --- a/Source/WPEFramework/PluginServer.cpp
 +++ b/Source/WPEFramework/PluginServer.cpp
 @@ -1093,11 +1093,13 @@ POP_WARNING()
@@ -11,7 +11,7 @@ index fa723305..69d4b72d 100644
          // Load the metadata for the subsystem information..
          while (iterator.Next() == true)
          {
-+            START_TIME("Loading Metadata", iterator->Callsign.c_str());
++            START_TIME("Loading Metadata", iterator->Callsign().c_str());
              iterator->LoadMetadata();
 +            STOP_TIME_AND_PRINT_DURATION
              for (const PluginHost::ISubSystem::subsystem& entry : iterator->SubSystemControl()) {
