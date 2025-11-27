@@ -3,7 +3,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r11"
+PR  = "r12"
 
 # Temporary build fix
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
@@ -20,8 +20,6 @@ SRC_URI = "${BASE_URI}"
 SRC_URI += "file://2.38.2/1196.patch"
 SRC_URI += "file://2.38.6/1384.patch"
 SRC_URI += "file://2.38.7/1410.patch"
-SRC_URI += "file://2.38.8/1448_Added-API-to-get-and-set-screen-supports-HDR-setting.patch"
-SRC_URI += "file://2.38.8/1463_GStreamer-support-the-eotf-additional-MIME-type.patch"
 
 # Drop after issue is addressed and a corresponding PR is merged
 SRC_URI += "file://2.38.8/1456-RDKTV-35082-Workaround-premature-finishSeek.patch"
@@ -30,6 +28,10 @@ SRC_URI += "file://2.38.8/1456-RDKTV-35082-Workaround-premature-finishSeek.patch
 SRC_URI += "file://2.38.8/1423-revert.patch"
 SRC_URI += "file://2.38.8/1531.patch"
 SRC_URI += "file://2.38.8/cmake-Fix-recompilation-on-rebuild-without-changes.patch"
+SRC_URI += "file://2.38.8/1488_GST_Quirks_auto.patch"
+SRC_URI += "file://2.38.8/1583_GstQuirks_gst_init.patch"
+SRC_URI += "file://2.38.8/1448_Added-API-to-get-and-set-screen-supports-HDR-setting.patch"
+SRC_URI += "file://2.38.8/1463_GStreamer-support-the-eotf-additional-MIME-type.patch"
 SRC_URI += "file://2.38.8/1467.patch"
 
 # Drop after libwpe upgrade
