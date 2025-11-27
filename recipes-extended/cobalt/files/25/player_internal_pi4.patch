@@ -1,0 +1,173 @@
+diff --git a/src/third_party/starboard/rdk/shared/player/player_internal.cc b/src/third_party/starboard/rdk/shared/player/player_internal.cc
+index cd46d2e..288e361 100644
+--- a/src/third_party/starboard/rdk/shared/player/player_internal.cc
++++ b/src/third_party/starboard/rdk/shared/player/player_internal.cc
+@@ -1394,6 +1394,7 @@ struct PlayerRegistry
+ {
+   ::starboard::Mutex mutex_;
+   std::vector<PlayerImpl*> players_;
++  bool creation_in_progress_{false};  // Protected by mutex_, not atomic
+ 
+   void Add(PlayerImpl *p) {
+     ::starboard::ScopedLock lock(mutex_);
+@@ -1401,6 +1402,7 @@ struct PlayerRegistry
+     if (it == players_.end()) {
+       players_.push_back(p);
+     }
++    // DO NOT clear creation_in_progress_ here - it will be cleared after full construction
+   }
+ 
+   void Remove(PlayerImpl *p) {
+@@ -1428,17 +1430,52 @@ struct PlayerRegistry
+   }
+ 
+   bool CanCreate(const char* max_video_capabilities) {
++    ::starboard::ScopedLock lock(mutex_);
++    
++    // CRITICAL: All checks must be done under the same mutex lock to prevent race conditions
++    
++    // Check 1: Block if another pipeline creation is in progress
++    // This prevents the race where two threads both pass the players_.empty() check
++    if (creation_in_progress_) {
++        GST_DEBUG("Naveen Pipeline creation blocked: another pipeline is being created");
++        return false;
++    }
++    
++    // Check 2: Block if any existing pipeline is still active (enforce single pipeline)
++    // This ensures only one pipeline exists at a time
++    if (!players_.empty()) {
++        GST_DEBUG("Naveen Pipeline creation blocked: existing pipeline must be closed first (active players: %zu)", players_.size());
++        return false;
++    }
++    
++    // Check 3: Debug build check for max_video_capabilities conflicts
+     #if !defined(COBALT_BUILD_TYPE_GOLD)
+     bool has_max_video_caps_set = (max_video_capabilities && *max_video_capabilities);
+-    ::starboard::ScopedLock lock(mutex_);
+     for(const auto& p: players_) {
+-      if (p->HasMaxVideoCaps() == has_max_video_caps_set)
++      if (p->HasMaxVideoCaps() == has_max_video_caps_set) {
++        // Don't set creation_in_progress_ if this check fails
++        GST_DEBUG("Naveen Pipeline creation blocked: max_video_capabilities conflict");
+         return false;
++      }
+     }
+     #endif
++    
++    // All checks passed - atomically reserve the creation slot
++    // IMPORTANT: This flag MUST be cleared by CancelCreation() after construction completes
++    // (whether successful or failed) to prevent deadlock
++    creation_in_progress_ = true;
++    
+     return true;
+   }
+ 
++  void CancelCreation() {
++    ::starboard::ScopedLock lock(mutex_);
++    if (!creation_in_progress_) {
++      GST_WARNING("CancelCreation() called but creation_in_progress_ is already false");
++    }
++    creation_in_progress_ = false;
++  }
++
+   void AudioConfigurationChanged() {
+     ::starboard::ScopedLock lock(mutex_);
+     for(const auto& p: players_) {
+@@ -1517,7 +1554,8 @@ PlayerImpl::PlayerImpl(SbPlayer player,
+ 
+   static int player_id = 0;
+   player_id++;
+-
++  
++  GST_INFO_OBJECT(pipeline_,"Naveen - Pipeline Created (ID: %d)", player_id);
+   pipeline_ = CreateGstElement("playbin", "media-pipeline-%d", player_id);
+ 
+   unsigned flagAudio = getGstPlayFlag("audio");
+@@ -1595,12 +1633,14 @@ PlayerImpl::PlayerImpl(SbPlayer player,
+   else {
+     SB_NOTREACHED();
+   }
+-  GetPlayerRegistry()->Add(this);
++  // NOTE: Add() is now called from SbPlayerPrivate constructor for better control
++  // GetPlayerRegistry()->Add(this);
+ }
+ 
+ PlayerImpl::~PlayerImpl() {
+   GetPlayerRegistry()->Remove(this);
+-
++  
++  GST_INFO_OBJECT(pipeline_,"Naveen - Pipeline Destroyed");
+   GST_INFO_OBJECT(pipeline_, "Destroying player");
+   {
+     ::starboard::ScopedLock lock(source_setup_mutex_);
+@@ -3335,22 +3375,54 @@ SbPlayerPrivate::SbPlayerPrivate(
+     SbPlayerOutputMode output_mode,
+     SbDecodeTargetGraphicsContextProvider* provider) {
+   if ( third_party::starboard::rdk::shared::player::GetPlayerRegistry()->CanCreate(max_video_capabilities) ) {
+-    player_.reset(
+-      new PlayerImpl(this,
+-                     window,
+-                     video_codec,
+-                     audio_codec,
+-                     drm_system,
+-                     audio_info,
+-                     max_video_capabilities,
+-                     sample_deallocate_func,
+-                     decoder_status_func,
+-                     player_status_func,
+-                     player_error_func,
+-                     context,
+-                     output_mode,
+-                     provider));
+-    if (  !static_cast<PlayerImpl&>(*player_).IsValid() )
++    // IMPORTANT: CanCreate() set creation_in_progress_ = true
++    // We MUST call CancelCreation() on ALL exit paths (success, failure, exception)
++    // to prevent deadlock
++    
++    bool should_clear_flag = true;
++    bool construction_successful = false;
++    
++    try {
++      player_.reset(
++        new PlayerImpl(this,
++                       window,
++                       video_codec,
++                       audio_codec,
++                       drm_system,
++                       audio_info,
++                       max_video_capabilities,
++                       sample_deallocate_func,
++                       decoder_status_func,
++                       player_status_func,
++                       player_error_func,
++                       context,
++                       output_mode,
++                       provider));
++      
++      // Check if construction was truly successful
++      if (player_ && static_cast<PlayerImpl&>(*player_).IsValid()) {
++        // Construction successful - now add to registry
++        third_party::starboard::rdk::shared::player::GetPlayerRegistry()->Add(
++          static_cast<PlayerImpl*>(player_.get()));
++        construction_successful = true;
++      } else {
++        // Construction failed
++        GST_ERROR("PlayerImpl construction failed or IsValid() returned false");
++        player_.reset(nullptr);
++      }
++      
++    } catch (...) {
++      // Exception during construction - player was NOT added to registry
++      // Clear the flag and re-throw
+       player_.reset(nullptr);
++      third_party::starboard::rdk::shared::player::GetPlayerRegistry()->CancelCreation();
++      should_clear_flag = false;  // Already cleared in catch block
++      throw;  // Re-throw the exception
++    }
++    
++    // Clear the creation flag if not already done in catch block
++    if (should_clear_flag) {
++      third_party::starboard::rdk::shared::player::GetPlayerRegistry()->CancelCreation();
++    }
+   }
+ }
