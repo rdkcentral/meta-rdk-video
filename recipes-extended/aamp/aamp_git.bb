@@ -11,11 +11,11 @@ SRCREV_FORMAT = "aamp"
 inherit pkgconfig
 DEPENDS += "curl libdash libxml2 cjson readline"
 DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', ' player-interface', '', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', '-DCMAKE_TEST_MW=0', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', '-DCMAKE_TEST_MW=0', ' -DCMAKE_TEST_MW=0', d)}"
 
 RDEPENDS:${PN} += "devicesettings"
 RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', ' player-interface', '', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', ' -DCMAKE_TEST_MW=0', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', ' -DCMAKE_TEST_MW=0', ' -DCMAKE_TEST_MW=0', d)}"
 #DEPENDS += "curl libdash libxml2 cjson readline player-interface"
 #RDEPENDS:${PN} += "devicesettings player-interface"
 NO_RECOMMENDATIONS = "1"
@@ -32,7 +32,7 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${W
 
 require aamp-common.inc
 require aamp-artifacts-version.inc
-require aamp-middleware.inc
+require ${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', '', 'aamp-middleware.inc', d)}
 
 EXTRA_OECMAKE += " -DCMAKE_WPEWEBKIT_WATERMARK_JSBINDINGS=1 "
 
