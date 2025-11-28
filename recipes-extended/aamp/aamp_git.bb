@@ -9,9 +9,17 @@ PR ?= "r0"
 SRCREV_FORMAT = "aamp"
 
 inherit pkgconfig
+DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework"
+require ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', '', 'aamp-middleware.inc', d)}
 
-DEPENDS += "curl libdash libxml2 cjson readline player-interface"
-RDEPENDS:${PN} += "devicesettings player-interface"
+DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', ' player-interface', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', '-DCMAKE_TEST_MW=1', ' -DCMAKE_TEST_MW=0', d)}"
+
+RDEPENDS:${PN} += "devicesettings"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', ' player-interface', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', ' -DCMAKE_TEST_MW=1', ' -DCMAKE_TEST_MW=0', d)}"
+#DEPENDS += "curl libdash libxml2 cjson readline player-interface"
+#RDEPENDS:${PN} += "devicesettings player-interface"
 NO_RECOMMENDATIONS = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
