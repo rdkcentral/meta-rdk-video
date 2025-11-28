@@ -46,6 +46,7 @@ include include/maintenanceMgr.inc
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
     firmwareupdate \
+    firmwaredownload \
     "
 
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'whoami_enabled', 'whoami', '', d)}"
@@ -55,6 +56,7 @@ PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'whoami_enabled
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[firmwareupdate]          = "-DPLUGIN_FIRMWAREUPDATE=ON,-DPLUGIN_FIRMWAREUPDATE=OFF,wpeframework-clientlibraries,"
+PACKAGECONFIG[firmwaredownload]     = "-DPLUGIN_FIRMWAREDOWNLOAD=ON,-DPLUGIN_FIRMWAREDOWNLOAD=OFF,,"
 PACKAGECONFIG[whoami]        = "-DENABLE_WHOAMI=ON,-DENABLE_WHOAMI=OFF,"
 
 # ----------------------------------------------------------------------------
