@@ -72,3 +72,20 @@ index c63b0e3d..5bcb90c2 100644
 +
 +
  #endif // __PORTABILITY_H
+diff --git a/Source/plugins/MetaData.h b/Source/plugins/MetaData.h
+index 206b4f6d..2ff76ffc 100644
+--- a/Source/plugins/MetaData.h
++++ b/Source/plugins/MetaData.h
+@@ -447,9 +447,12 @@ namespace Plugin {
+             , _precondition(precondition)
+             , _termination(termination)
+             , _control(control) {
++            printf("Start of Metadata ctor for %s\n", _Id.c_str());
++            START_TIME("Metadata Ctor", _Id.c_str());
+             ASSERT(Core::System::ROOT_META_DATA == nullptr);
+             Core::System::ROOT_META_DATA = this;
+             Core::ServiceAdministrator::Instance().Register(this, &_factory);
++            STOP_TIME_AND_PRINT_DURATION
+         }
+         ~Metadata() {
+             Core::ServiceAdministrator::Instance().Unregister(this, &_factory);
