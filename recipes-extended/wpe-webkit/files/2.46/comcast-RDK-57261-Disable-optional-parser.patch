@@ -1,0 +1,39 @@
+From a011f5e38d82e97e84462371987623940d83ec81 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Fri, 9 May 2025 13:46:54 +0200
+Subject: [PATCH] comcast - RDK-57261 - Disable optional parser
+
+This is a part of Dynamic decryptor insertion chnage.
+Format parser in AppendPipeline created for clear
+content will not work with encrypted one. It throws
+not-negotiated error upon receiving encrypted caps
+(that are not supported by the parser created).
+Never create optional parser then, just use `identity` element
+in all cases.
+
+Can be tested with:
+http://192.168.0.102/tr/tests/DELIA-65629_mse_eme_clear_encrypted_transition.html?drm=widevine&start=clear
+---
+ .../platform/graphics/gstreamer/mse/AppendPipeline.cpp      | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp
+index ed4b119109d4..8f9812cfe77c 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp
+@@ -816,6 +816,12 @@ GRefPtr<GstElement> createOptionalParserForFormat([[maybe_unused]] GstBin* bin,
+         elementClass = "vp9parse";
+     }
+ 
++#if ENABLE(THUNDER)
++    // Disable opitonal parser in AppendPipeline to support changeing caps to encrpyted ones
++    // that are not supported by parser (x-cenc)
++    elementClass = "identity";
++#endif
++
+     GST_DEBUG_OBJECT(bin, "Creating %s parser for stream with caps %" GST_PTR_FORMAT, elementClass, caps);
+     GRefPtr<GstElement> result(makeGStreamerElement(elementClass, parserName.ascii().data()));
+     if (!result && g_strcmp0(elementClass, "identity")) {
+-- 
+2.45.2
+
