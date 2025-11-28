@@ -1,0 +1,9 @@
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include 
+ 
+Name: subtec 
+Description: subtec library 
+Version: 1.0 
+Libs: -L${libdir} -lsubtec 
+Cflags: -I${includedir}
