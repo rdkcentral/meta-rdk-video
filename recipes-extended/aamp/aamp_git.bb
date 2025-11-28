@@ -9,6 +9,7 @@ PR ?= "r0"
 SRCREV_FORMAT = "aamp"
 
 inherit pkgconfig
+REQUIRED_DISTRO_FEATURES = "sec_manager1"
 
 DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0  gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)}"
