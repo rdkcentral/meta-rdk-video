@@ -9,19 +9,17 @@ PR ?= "r0"
 SRCREV_FORMAT = "aamp"
 
 inherit pkgconfig
-DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework"
-require ${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', '', 'aamp-middleware.inc', d)}
 
-DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', ' player-interface', '', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', '-DCMAKE_TEST_MW=1', ' -DCMAKE_TEST_MW=0', d)}"
-
+DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0  gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)}"
+RDEPENDS_${PN} +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
+DEPENDS += " wpe-webkit"
+DEPENDS += " wpeframework-clientlibraries"
 RDEPENDS:${PN} += "devicesettings"
-RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', ' player-interface', '', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', ' -DCMAKE_TEST_MW=1', ' -DCMAKE_TEST_MW=0', d)}"
-#DEPENDS += "curl libdash libxml2 cjson readline player-interface"
-#RDEPENDS:${PN} += "devicesettings player-interface"
+DEPENDS:append = " virtual/vendor-gst-drm-plugins essos "
 NO_RECOMMENDATIONS = "1"
 
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 #To be removed later, the AAMP_RELEASE_TAG_NAME is not using.
 AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
 
@@ -31,9 +29,21 @@ S = "${WORKDIR}/git"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)}"
 
+DEPENDS:append = " virtual/vendor-secapi2-adapter "
+
 require aamp-common.inc
 require aamp-artifacts-version.inc
 
+PACKAGECONFIG:append = " playready widevine clearkey"
+
+DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
+EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', '-DCMAKE_GST_SUBTEC_ENABLED=1 ', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON ', '', d)}"
+
+EXTRA_OECMAKE += "  -DCMAKE_WPEFRAMEWORK_REQUIRED=1 "
+
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'sec_manager', ' -DCMAKE_USE_SECMANAGER=1 ', '', d)}"
 EXTRA_OECMAKE += " -DCMAKE_WPEWEBKIT_WATERMARK_JSBINDINGS=1 "
 
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
@@ -50,7 +60,9 @@ FILES:${PN} +="${libdir}/gstreamer-1.0/lib*.so"
 FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
+CXXFLAGS += "-DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 -I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
 
+CXXFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '', ' -lWPEFrameworkSecurityUtil ', d)}"
 EXTRA_OECMAKE += " -DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 "
 
 CXXFLAGS += " -DAAMP_BUILD_INFO=${AAMP_RELEASE_TAG_NAME}" 
