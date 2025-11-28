@@ -32,8 +32,6 @@ ENABLE_SDT_SUPPORT     ?= "0"
 
 XRSR_ALLOW_INPUT_FAILURE  ?= "0"
 
-XRSR_KEYWORD_PHRASE       ?= ""
-
 XRAUDIO_KWD_COMPONENT     ?= ""
 XRAUDIO_EOS_COMPONENT     ?= ""
 XRAUDIO_DGA_COMPONENT     ?= ""
@@ -81,8 +79,6 @@ EXTRA_OECMAKE:append = "${@ ' -DWS_ENABLED=ON -DWS_NOPOLL_PATCHES=ON' if (d.getV
 EXTRA_OECMAKE:append = "${@ ' -DSDT_ENABLED=ON'     if (d.getVar('ENABLE_SDT_SUPPORT',  expand=False) == "1")  else ''}"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm_mic_tap', ' -DMICROPHONE_TAP_ENABLED=ON', '', d)}"
 EXTRA_OECMAKE:append = "${@ ' -DXRSR_ALLOW_INPUT_FAILURE=ON'     if (d.getVar('XRSR_ALLOW_INPUT_FAILURE',  expand=False) == "1")  else ''}"
-
-EXTRA_OECMAKE:append = "${@' -DXRSR_KEYWORD_PHRASE=${XRSR_KEYWORD_PHRASE}' if (d.getVar('XRSR_KEYWORD_PHRASE', expand=False) != '') else ''}"
 
 EXTRA_OECMAKE:append = "${@' -DXRAUDIO_RESOURCE_MGMT=ON'   if (d.getVar('XRAUDIO_RESOURCE_MGMT', expand=False) == '1') else ''}"
 EXTRA_OECMAKE:append = "${@' -DXRAUDIO_CURTAIL_ENABLED=ON' if (d.getVar('XRAUDIO_USE_CURTAIL',   expand=False) == '1') else ''}"
