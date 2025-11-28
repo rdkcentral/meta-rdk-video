@@ -22,6 +22,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', ' -DCMAKE_T
 #RDEPENDS:${PN} += "devicesettings player-interface"
 NO_RECOMMENDATIONS = "1"
 
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 #To be removed later, the AAMP_RELEASE_TAG_NAME is not using.
 AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
 
