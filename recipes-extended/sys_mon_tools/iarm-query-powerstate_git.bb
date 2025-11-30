@@ -8,9 +8,10 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-PV ?= "1.0.0"
-PR ?= "r0"
+PV = "1.0.8"
+PR = "r0"
 
+SRCREV = "a309758f5721a10ff8cdfa3ef8b957f7614a2d29"
 SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarm_query_powerstate"
 S = "${WORKDIR}/git"
 

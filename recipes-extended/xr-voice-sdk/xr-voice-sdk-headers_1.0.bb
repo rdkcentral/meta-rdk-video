@@ -10,6 +10,7 @@ PR ?= "r0"
 
 PACKAGE_ARCH  = "${MIDDLEWARE_ARCH}"
 SRCREV_FORMAT = "xr-voice-sdk"
+SRCREV = "b01e2cb1e8110da235b75df589c85031b01fa7fd"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/xr-voice-sdk;${CMF_GITHUB_SRC_URI_SUFFIX};name=xr-voice-sdk"
 
