@@ -2,6 +2,9 @@ SUMMARY = "Thunder from systemd Initialiser Service"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
+PV = "1.2.1"
+PR = "r0"
+
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -11,6 +14,7 @@ DEPENDS = "systemd"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
+SRCREV:pn-thunderstartupservices = "481bf0d7de702762925512bbf362a5a5463ee40b"
 S = "${WORKDIR}/git/systemd/system"
 
 THUNDER_STARTUP_SERVICES:append = "\

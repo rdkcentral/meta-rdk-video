@@ -2,8 +2,9 @@ SUMMARY = "PackageManager plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=c03d0e6d700b63b51bf8da6b61dac850"
 
-PR = "r1"
-PV = "${SRCREV}+git${SRCPV}"
+PV = "4.4.1"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 S = "${WORKDIR}/git"
 
@@ -11,7 +12,7 @@ inherit cmake pkgconfig python3native
 
 SRC_URI = "git://github.com/rdkcentral/PackageManager.git;protocol=https;branch=main"
 
-SRCREV = "38729b8edfc3ddaba0b3625c19bcd2dd1a05b027"
+SRCREV:pn-packagemanager = "38729b8edfc3ddaba0b3625c19bcd2dd1a05b027"
 
 DEPENDS += "wpeframework entservices-apis wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework "

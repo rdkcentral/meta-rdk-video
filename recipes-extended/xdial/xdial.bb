@@ -4,11 +4,14 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d7a8c87b0741f248c5139ca80a783231"
 
-S = "${WORKDIR}/git"
-
+PV = "1.0.1"
+PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
+S = "${WORKDIR}/git"
+
 SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRCREV:pn-xdial = "c48dff76657733cb73a81de73a2a886d86c1dde2"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 

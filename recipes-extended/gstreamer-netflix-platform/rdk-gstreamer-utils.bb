@@ -11,10 +11,10 @@ EXTRA_OECMAKE += " \
     -DAUDIOMIXER_NOT_SUPPORTED=${AUDIOMIXER_NOT_SUPPORTED} \
 "
 
-PV ?= "1.0.0"
-PR ?= "r0"
+PV = "2.0.2"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/gstreamer-netflix-platform;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRCREV:pn-rdk-gstreamer-utils = "ea9c7ec1a810053619596123f5bd6fd22b3215f4"
 
 S = "${WORKDIR}/git"
 CXXFLAGS += "-I${STAGING_INCDIR}/glib-2.0 -I${STAGING_INCDIR}/gstreamer-1.0 -I${STAGING_DIR_TARGET}/${libdir}/glib-2.0/include/ "

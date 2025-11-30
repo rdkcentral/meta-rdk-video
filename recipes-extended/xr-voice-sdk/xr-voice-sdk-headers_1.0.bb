@@ -12,6 +12,7 @@ PACKAGE_ARCH  = "${MIDDLEWARE_ARCH}"
 SRCREV_FORMAT = "xr-voice-sdk"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/xr-voice-sdk;${CMF_GITHUB_SRC_URI_SUFFIX};name=xr-voice-sdk"
+SRCREV:pn-xr-voice-sdk-headers = "${SRCREV:pn-xr-voice-sdk}"
 
 S = "${WORKDIR}/git"
 

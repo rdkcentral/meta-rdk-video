@@ -5,8 +5,8 @@ DESCRIPTION = "Application to recovery thunder when it hangs by restarting thund
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${COREBASE}/../../middleware/generic/meta-rdk-video/LICENSE;md5=5bfad6e034e497ee148eec56e175c6e8"
 
-PR = "r0"
 PV = "1.0.0"
+PR = "r0"
 # The source file to compile
 SRC_URI = "file://thunderHangRecovery.cpp \
            file://thunderHangRecovery.service \

@@ -11,6 +11,10 @@ SUMMARY = "Rialto-ocdm"
 LICENSE  = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=1fa88b316b1ce25ab7d95ae4d854ec8f"
 
+PV = "0.9.3"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
 require rialto_revision.inc
 
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto-ocdm;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
