@@ -74,7 +74,7 @@ index c63b0e3d..d6892165 100644
 +
  #endif // __PORTABILITY_H
 diff --git a/Source/plugins/MetaData.h b/Source/plugins/MetaData.h
-index 206b4f6d..38f8c101 100644
+index 206b4f6d..efb0d540 100644
 --- a/Source/plugins/MetaData.h
 +++ b/Source/plugins/MetaData.h
 @@ -442,14 +442,20 @@ namespace Plugin {
@@ -90,7 +90,7 @@ index 206b4f6d..38f8c101 100644
              , _control(control) {
 +            auto endTime = std::chrono::high_resolution_clock::now();
 +            auto initDuration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - _startTime).count();
-+            printf("Time for Metadata Initializing %s = %lld ms\n", __Id.c_str(), (long long)initDuration);
++            printf("Time for Metadata Initializing %s = %lld ms\n", _Id.c_str(), (long long)initDuration);
 +            START_TIME("Metadata Ctor", _Id.c_str());
              ASSERT(Core::System::ROOT_META_DATA == nullptr);
              Core::System::ROOT_META_DATA = this;
