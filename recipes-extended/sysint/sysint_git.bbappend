@@ -37,7 +37,7 @@ do_install:append() {
     if [ "${DUNFELL_BUILD}" = "true" ] && [ "${SYSTEMD_VERSION}" = "1:230%" ]; then
        sed -i -e 's|.*PathExists=.*|PathExists=/tmp/clock-event|g' ${D}${systemd_unitdir}/system/ntp-event.path
     fi
-
+    
     if ${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', 'true', 'false', d)}; then
        sed -i 's/BUILD_TYPE=dev/BUILD_TYPE=prod/g' ${D}${sysconfdir}/device.properties
     fi
