@@ -161,9 +161,6 @@ addtask ctrlm_config after do_configure before do_compile
 do_ctrlm_config() {
 }
 
-CUSTOM_AUTH_LIB      ?= ""
-EXTRA_OECMAKE:append  = "${@ ' -DCUSTOM_AUTH_LIB=${CUSTOM_AUTH_LIB}' if (d.getVar('CUSTOM_AUTH_LIB', expand=False) != "") else ''}"
-
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
