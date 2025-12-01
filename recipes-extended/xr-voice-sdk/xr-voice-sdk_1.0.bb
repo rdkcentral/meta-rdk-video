@@ -79,7 +79,6 @@ EXTRA_OECMAKE:append = " -DSTAGING_BINDIR_NATIVE=${STAGING_BINDIR_NATIVE}"
 EXTRA_OECMAKE:append = "${@ ' -DHTTP_ENABLED=ON'    if (d.getVar('ENABLE_HTTP_SUPPORT', expand=False) == "1")  else ''}"
 EXTRA_OECMAKE:append = "${@ ' -DWS_ENABLED=ON -DWS_NOPOLL_PATCHES=ON' if (d.getVar('ENABLE_WS_SUPPORT',   expand=False) == "1")  else ''}"
 EXTRA_OECMAKE:append = "${@ ' -DSDT_ENABLED=ON'     if (d.getVar('ENABLE_SDT_SUPPORT',  expand=False) == "1")  else ''}"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm_mic_tap', ' -DMICROPHONE_TAP_ENABLED=ON', '', d)}"
 EXTRA_OECMAKE:append = "${@ ' -DXRSR_ALLOW_INPUT_FAILURE=ON'     if (d.getVar('XRSR_ALLOW_INPUT_FAILURE',  expand=False) == "1")  else ''}"
 
 EXTRA_OECMAKE:append = "${@' -DXRSR_KEYWORD_PHRASE=${XRSR_KEYWORD_PHRASE}' if (d.getVar('XRSR_KEYWORD_PHRASE', expand=False) != '') else ''}"
