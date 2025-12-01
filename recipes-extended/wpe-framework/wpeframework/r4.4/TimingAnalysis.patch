@@ -73,14 +73,23 @@ index c63b0e3d..5bcb90c2 100644
 +
  #endif // __PORTABILITY_H
 diff --git a/Source/plugins/MetaData.h b/Source/plugins/MetaData.h
-index 206b4f6d..2ff76ffc 100644
+index 206b4f6d..48063197 100644
 --- a/Source/plugins/MetaData.h
 +++ b/Source/plugins/MetaData.h
-@@ -447,9 +447,12 @@ namespace Plugin {
+@@ -442,14 +442,20 @@ namespace Plugin {
+             const std::initializer_list<subsystem>& precondition,
+             const std::initializer_list<subsystem>& termination,
+             const std::initializer_list<subsystem>& control)
+-            : _version((major << 16) | (minor << 8) | patch)
++            : _startTime(std::chrono::high_resolution_clock::now())
++            , _version((major << 16) | (minor << 8) | patch)
+             , _Id(Core::ClassNameOnly(typeid(ACTUALSERVICE).name()).Text())
              , _precondition(precondition)
              , _termination(termination)
              , _control(control) {
-+            printf("Start of Metadata ctor for %s\n", _Id.c_str());
++            auto endTime = std::chrono::high_resolution_clock::now();
++            auto initDuration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - _startTime).count();
++            printf("Time for Metadata Initializing: %lld\n", (long long)initDuration);
 +            START_TIME("Metadata Ctor", _Id.c_str());
              ASSERT(Core::System::ROOT_META_DATA == nullptr);
              Core::System::ROOT_META_DATA = this;
@@ -89,3 +98,11 @@ index 206b4f6d..2ff76ffc 100644
          }
          ~Metadata() {
              Core::ServiceAdministrator::Instance().Unregister(this, &_factory);
+@@ -483,6 +489,7 @@ namespace Plugin {
+         }
+ 
+     private:
++        std::chrono::time_point<std::chrono::high_resolution_clock> _startTime;
+         uint32_t _version;
+         string _Id;
+         std::vector<subsystem> _precondition;
