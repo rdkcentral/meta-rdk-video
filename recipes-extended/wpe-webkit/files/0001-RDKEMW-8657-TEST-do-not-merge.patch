@@ -1,0 +1,29 @@
+From 022cdbc5b6b8c2f5176c2214d3e473bc3e3975ad Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Tue, 2 Dec 2025 10:33:38 +0100
+Subject: [PATCH] RDKEMW-8657: TEST - do not merge
+
+Quick fix for stream IDs mismatch
+---
+ .../graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp        | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index f473c85da17d..441b46419642 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -1262,8 +1262,10 @@ void MediaPlayerPrivateGStreamer::videoSinkCapsChanged(GstPad* videoSinkPad)
+ 
+ void MediaPlayerPrivateGStreamer::handleTextSample(GstSample* sample, const char* streamId)
+ {
++    std::string streamIdStr(streamId);
++    std::string rawID = streamIdStr.substr(streamIdStr.find("/00") + 3); // Extract the raw ID from the stream ID.
+     for (auto& track : m_textTracks.values()) {
+-        if (!strcmp(track->id().string().utf8().data(), streamId)) {
++        if (!strcmp(track->id().string().utf8().data(), rawID.c_str())) {
+             track->handleSample(sample);
+             return;
+         }
+-- 
+2.51.0
+
