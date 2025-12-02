@@ -41,6 +41,7 @@ DEPENDS += "virtual/libgles2 virtual/egl essos gstreamer1.0 gstreamer1.0-plugins
 DEPENDS += " wpeframework entservices-apis wpeframework-clientlibraries"
 DEPENDS += " ninja-native bison-native openssl-native gn-native ccache-native"
 DEPENDS += " python3-six-native python3-urllib3-native"
+DEPENDS += "virtual/${TARGET_PREFIX}g++"
 
 RDEPENDS:${PN} += "gstreamer1.0-plugins-base-app gstreamer1.0-plugins-base-playback"
 
