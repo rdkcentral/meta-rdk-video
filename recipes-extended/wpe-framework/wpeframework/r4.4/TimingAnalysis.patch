@@ -46,7 +46,7 @@ index b38ffe78..302549fc 100644
  #ifdef __WINDOWS__
          HMODULE handle = ::LoadLibrary(fileName);
 diff --git a/Source/core/Portability.h b/Source/core/Portability.h
-index c63b0e3d..d6892165 100644
+index c63b0e3d..e0be1693 100644
 --- a/Source/core/Portability.h
 +++ b/Source/core/Portability.h
 @@ -965,4 +965,23 @@ namespace std {
@@ -58,7 +58,7 @@ index c63b0e3d..d6892165 100644
 +    auto __start_time = std::chrono::high_resolution_clock::now();           \
 +    string __func_name = (FUNCTION_NAME);                               \
 +    string __remarks = (REMARKS);\
-+    printf("Starting Time for %s %s \n", __func_name.c_str(), __remarks.c_str());
++    printf("<TID: %u> Starting Time for %s %s \n", static_cast<uint32_t>(gettid()), __func_name.c_str(), __remarks.c_str());
 +
 +#define STOP_TIME_AND_PRINT_DURATION                                         \
 +    do {                                                                      \
@@ -66,8 +66,8 @@ index c63b0e3d..d6892165 100644
 +        auto __duration = std::chrono::duration_cast<std::chrono::milliseconds>( \
 +            __end_time - __start_time                                        \
 +        ).count();                                                            \
-+        printf("Time for %s %s = %lld ms\n",                                  \
-+               __func_name.c_str(), __remarks.c_str(),                        \
++        printf("<TID:%u >Time for %s %s = %lld ms\n",                                  \
++               static_cast<uint32_t>(gettid()), __func_name.c_str(), __remarks.c_str(),                        \
 +               (long long)__duration);                                        \
 +    } while(0);
 +
