@@ -46,10 +46,10 @@ index b38ffe78..302549fc 100644
  #ifdef __WINDOWS__
          HMODULE handle = ::LoadLibrary(fileName);
 diff --git a/Source/core/Portability.h b/Source/core/Portability.h
-index c63b0e3d..e0be1693 100644
+index c63b0e3d..9a8c0ebb 100644
 --- a/Source/core/Portability.h
 +++ b/Source/core/Portability.h
-@@ -965,4 +965,23 @@ namespace std {
+@@ -965,4 +965,24 @@ namespace std {
  #define THUNDER_VERSION_MAJOR 4
  #define THUNDER_VERSION_MINOR 4
  
@@ -58,7 +58,8 @@ index c63b0e3d..e0be1693 100644
 +    auto __start_time = std::chrono::high_resolution_clock::now();           \
 +    string __func_name = (FUNCTION_NAME);                               \
 +    string __remarks = (REMARKS);\
-+    printf("<TID: %u> Starting Time for %s %s \n", static_cast<uint32_t>(gettid()), __func_name.c_str(), __remarks.c_str());
++    printf("<TID: %u> Starting Time (%ld) for %s %s \n", static_cast<uint32_t>(gettid()), \
++    __start_time.time_since_epoch().count(), __func_name.c_str(), __remarks.c_str());
 +
 +#define STOP_TIME_AND_PRINT_DURATION                                         \
 +    do {                                                                      \
@@ -74,7 +75,7 @@ index c63b0e3d..e0be1693 100644
 +
  #endif // __PORTABILITY_H
 diff --git a/Source/plugins/MetaData.h b/Source/plugins/MetaData.h
-index 206b4f6d..efb0d540 100644
+index 206b4f6d..5ef63644 100644
 --- a/Source/plugins/MetaData.h
 +++ b/Source/plugins/MetaData.h
 @@ -442,14 +442,20 @@ namespace Plugin {
@@ -90,7 +91,7 @@ index 206b4f6d..efb0d540 100644
              , _control(control) {
 +            auto endTime = std::chrono::high_resolution_clock::now();
 +            auto initDuration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - _startTime).count();
-+            printf("Time for Metadata Initializing %s = %lld ms\n", _Id.c_str(), (long long)initDuration);
++            printf("Time for Metadata Initializing %s = %lld ms startTimefromEpoch(%ld)\n", _Id.c_str(), (long long)initDuration, _startTime.time_since_epoch().count());
 +            START_TIME("Metadata Ctor", _Id.c_str());
              ASSERT(Core::System::ROOT_META_DATA == nullptr);
              Core::System::ROOT_META_DATA = this;
