@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-peripherals;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.0.16
-SRCREV = "79a9ef72902241033515e641848888e631d500f1"
+# Release version - 1.0.17
+SRCREV = "f4b1a406713c22c1289f6a66d3d3e758120aba91"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
