@@ -43,7 +43,7 @@ DEPENDS += " ninja-native bison-native openssl-native gn-native ccache-native"
 DEPENDS += " python3-six-native python3-urllib3-native"
 
 RDEPENDS:${PN} += "gstreamer1.0-plugins-base-app gstreamer1.0-plugins-base-playback"
-DEPENDS += "gcc-runtime libstdc++"
+DEPENDS += "gcc-runtime"
 
 TUNE_CCARGS:remove = "-fno-omit-frame-pointer -fno-optimize-sibling-calls"
 
