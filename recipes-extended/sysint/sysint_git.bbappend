@@ -22,7 +22,7 @@ LOGROTATE_ROTATION_pqstats="3"
 LOGROTATE_SIZE_MEM_pqstats="1572864"
 LOGROTATE_ROTATION_MEM_pqstats="3"
 
-NW_CONNECTIVITY_CHECK_URL ?= "http://nmcheck.gnome.org/check_network_status.txt"
+NW_CONNECTIVITY_CHECK_URL ?= "https://nmcheck.gnome.org/check_network_status.txt"
 NW_CONNECTIVITY_CHECK_RESPONSE ?= "NetworkManager is online"
 
 do_install:append() {
@@ -45,12 +45,12 @@ do_install:append() {
 
     install -d ${D}${sysconfdir}/NetworkManager/conf.d/
     install -m 0755 ${WORKDIR}/nm-connectivity.conf ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
-    if [ -f "${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf ]; then
+    if [ -f "${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf" ]; then
            if [ -n "${NW_CONNECTIVITY_CHECK_URL}" ]; then
-               sed -i "s|uri=.*|uri=${NW_CONNECTIVITY_CHECK_URL}|g" "${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
+               sed -i "s|uri=.*|uri=${NW_CONNECTIVITY_CHECK_URL}|g" ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
            fi
            if [ -n "${NW_CONNECTIVITY_CHECK_RESPONSE}" ]; then
-               sed -i "s|response=|response=${NW_CONNECTIVITY_CHECK_RESPONSE}|g" "${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
+               sed -i "s|response=|response=${NW_CONNECTIVITY_CHECK_RESPONSE}|g" ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
            fi
     fi
 }
