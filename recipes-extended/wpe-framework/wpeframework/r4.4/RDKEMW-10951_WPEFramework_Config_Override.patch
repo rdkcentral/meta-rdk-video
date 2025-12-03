@@ -30,3 +30,15 @@ index d14d2ab35..93d6d631d 100644
  systempath = '@SYSTEM_PATH@'
  proxystubpath = '@PROXYSTUB_PATH@'
  postmortempath = '@POSTMORTEM_PATH@'
+diff --git a/Source/WPEFramework/params.config b/Source/WPEFramework/params.config
+index e0fd44524..410c7f73a 100644
+--- a/Source/WPEFramework/params.config
++++ b/Source/WPEFramework/params.config
+@@ -7,6 +7,7 @@ idletime
+ softkillcheckwaittime
+ hardkillcheckwaittime
+ persistentpath
++configs
+ volatilepath
+ datapath
+ systempath
