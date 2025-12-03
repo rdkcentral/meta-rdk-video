@@ -1,9 +1,9 @@
-#FILESEXTRAPATHS:prepend := "${THISDIR}/../../../meta-rdk-iot/recipes-matter/barton-matter-example/files:"
+# FILESEXTRAPATHS:prepend := "${THISDIR}/../../../meta-rdk-iot/recipes-matter/barton-matter-example/files:"
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 # Skip unless the distro advertises "ENABLE_MATTER_BARTON"
-#inherit features_check
-#REQUIRED_DISTRO_FEATURES = "ENABLE_MATTER_BARTON"
+inherit features_check
+REQUIRED_DISTRO_FEATURES = "ENABLE_MATTER_BARTON"
 
 SRC_URI += " \
     file://barton.zap \
@@ -18,7 +18,7 @@ MATTER_IDL_FILE = "${WORKDIR}/barton.matter"
 MATTER_ZZZ_GENERATED = "${WORKDIR}/zzz_generated"
 
 MATTER_CONF_DIR = "/var/lib/my-product"
-MATTER_IDL_FILE = "${WORKDIR}/barton.matter"
+
 do_install:append() {
     cp -r "${S}/third_party/jsoncpp/repo/include/"* "${D}${includedir}/matter/"
 }
