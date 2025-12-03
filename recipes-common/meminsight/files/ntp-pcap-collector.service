@@ -1,0 +1,10 @@
+[Unit]
+Description=NTP Pktrate collector
+Before=systemd-timesyncd.service
+
+[Service]
+Type=simple
+ExecStart=/bin/sh -c '/lib/rdk/ntp-pktrate-collector.sh >> /tmp/pktrate.log'
+
+[Install]
+WantedBy=multi-user.target
