@@ -98,6 +98,7 @@ addtask unpack_extra after do_patch before do_configure
 
 do_configure[cleandirs] = "${B}"
 do_configure() {
+(export PATH=$PATH:/usr/bin; dpkg -l | cat; cat /etc/lsb-release; uname -a; cd /; md5sum -c /var/lib/dpkg/info/lib32stdc++-9-dev.md5sums)
     cd ${S}
     platform_path=$(${PYTHON} ${S}/starboard/build/platforms.py ${COBALT_PLATFORM})
 
@@ -116,6 +117,7 @@ do_configure() {
 
 do_compile[progress] = "percent"
 do_compile() {
+(export PATH=$PATH:/usr/bin; dpkg -l | cat; cat /etc/lsb-release; uname -a; cd /; md5sum -c /var/lib/dpkg/info/lib32stdc++-9-dev.md5sums)
     export NINJA_STATUS='%p '
     ninja -C ${COBALT_OUT_DIR} loader_app loader_app_bin native_target/crashpad_handler
     ninja -C ${COBALT_OUT_DEV_DIR} elf_loader_sandbox_bin nplb_evergreen_compat_tests
