@@ -133,8 +133,8 @@ index b5dd44ab736d..08df87abc492 100644
                  error = MediaPlayer::NetworkState::DecodeError;
                  attemptNextLocation = true;
 -            } else if (err->domain == GST_RESOURCE_ERROR)
-+        } else if (err->domain == GST_RESOURCE_ERROR) {
-+            fprintf(stderr, "HTML5 video: Playback failed: Network error [%s]\n",m_url.string().utf8().data());
++            } else if (err->domain == GST_RESOURCE_ERROR) {
++                fprintf(stderr, "HTML5 video: Playback failed: Network error [%s]\n",m_url.string().utf8().data());
                  error = MediaPlayer::NetworkState::NetworkError;
 +        }
  
