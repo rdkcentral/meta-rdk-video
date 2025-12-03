@@ -1,159 +1,22 @@
-diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index cef643f91..d59870ab9 100644
---- a/Source/WPEFramework/PluginServer.h
-+++ b/Source/WPEFramework/PluginServer.h
-@@ -1506,70 +1506,75 @@ namespace PluginHost {
-                         result = _jsonrpc->Invoke(channelId, message.Id.Value(), token, method, message.Parameters.Value(), output);
- 
-                         if (response.IsValid() == true) {
--                            switch (result) {
--                            case Core::ERROR_NONE:
-+			    if (result == static_cast<uint32_t>(~0)) {
-+                                response.Release();
-+
-+                            } else if (result == Core::ERROR_NONE) {
-                                 if (output.empty() == true) {
-                                     response->Result.Null(true);
-                                 }
-                                 else {
-                                     response->Result = output;
-                                 }
--                                break;
--                            case Core::ERROR_INVALID_RANGE:
--                                response->Error.SetError(Core::ERROR_INVALID_RANGE);
--                                response->Error.Text = _T("Requested version is not supported.");
--                                break;
--                            case Core::ERROR_INCORRECT_URL:
--                                response->Error.SetError(Core::ERROR_INVALID_DESIGNATOR);
--                                response->Error.Text = _T("Dessignator is invalid.");
--                                break;
--                            case Core::ERROR_BAD_REQUEST:
--                                response->Error.SetError(Core::ERROR_UNKNOWN_KEY);
--                                response->Error.Text = _T("Unknown method.");
--                                break;
--                            case Core::ERROR_FAILED_REGISTERED:
--                                response->Error.SetError(Core::ERROR_UNKNOWN_KEY);
--                                response->Error.Text = _T("Registration already done!!!.");
--                                break;
--                            case Core::ERROR_FAILED_UNREGISTERED:
--                                response->Error.SetError(Core::ERROR_UNKNOWN_KEY);
--                                response->Error.Text = _T("Unregister was already done!!!.");
--                                break;
--                            case Core::ERROR_HIBERNATED:
--                                response->Error.SetError(Core::ERROR_HIBERNATED);
--                                response->Error.Text = _T("The service is in an Hibernated state!!!.");
--                                break;
--                            case Core::ERROR_ILLEGAL_STATE:
--                                response->Error.SetError(Core::ERROR_ILLEGAL_STATE);
--                                response->Error.Text = _T("The service is in an illegal state!!!.");
--                                break;
--                            case Core::ERROR_INVALID_PARAMETER:
--                                response->Error.SetError(Core::ERROR_INVALID_SIGNATURE);
--                                response->Error.Text = _T("Invalid Parameter");
--                                break;
--                            case Core::ERROR_INVALID_DEVICENAME:
--                                response->Error.SetError(Core::ERROR_INVALID_DEVICENAME);
--                                response->Error.Text = _T("Invalid device name");
--                                break;
--                            case Core::ERROR_INVALID_MOUNTPOINT:
--                                response->Error.SetError(Core::ERROR_INVALID_MOUNTPOINT);
--                                response->Error.Text = _T("Invalid mount path");
--                                break;
--                            case Core::ERROR_FIRMWAREUPDATE_INPROGRESS:
--                                response->Error.SetError(Core::ERROR_FIRMWAREUPDATE_INPROGRESS);
--                                response->Error.Text = _T("Firmware update already in progress");
--                                break;
--                            case Core::ERROR_FIRMWAREUPDATE_UPTODATE:
--                                response->Error.SetError(Core::ERROR_FIRMWAREUPDATE_UPTODATE);
--                                response->Error.Text = _T("Firmware is already upto date");
--                                break;
--                            case static_cast<uint32_t>(~0):
--                                response.Release();
--                                break;
--                            default:
--                                response->Error.Code = result;
--                                response->Error.Text = Core::ErrorToString(result);
--                                break;
-+
-+                            } else {
-+                            	switch (result) {
-+                            	case Core::ERROR_INVALID_RANGE:
-+                                	response->Error.SetError(Core::ERROR_INVALID_RANGE);
-+                                	response->Error.Text = _T("Requested version is not supported.");
-+                                	break;
-+                            	case Core::ERROR_INCORRECT_URL:
-+                                	response->Error.SetError(Core::ERROR_INVALID_DESIGNATOR);
-+                                	response->Error.Text = _T("Dessignator is invalid.");
-+	                                break;
-+        	                case Core::ERROR_BAD_REQUEST:
-+                	                response->Error.SetError(Core::ERROR_UNKNOWN_KEY);
-+                        	        response->Error.Text = _T("Unknown method.");
-+                                	break;
-+	                        case Core::ERROR_FAILED_REGISTERED:
-+        	                        response->Error.SetError(Core::ERROR_UNKNOWN_KEY);
-+                	                response->Error.Text = _T("Registration already done!!!.");
-+                        	        break;
-+                            	case Core::ERROR_FAILED_UNREGISTERED:
-+                                	response->Error.SetError(Core::ERROR_UNKNOWN_KEY);
-+	                                response->Error.Text = _T("Unregister was already done!!!.");
-+        	                        break;
-+                                case Core::ERROR_HIBERNATED:
-+                                	response->Error.SetError(Core::ERROR_HIBERNATED);
-+	                                response->Error.Text = _T("The service is in an Hibernated state!!!.");
-+        	                        break;
-+                                case Core::ERROR_ILLEGAL_STATE:
-+                    	            	response->Error.SetError(Core::ERROR_ILLEGAL_STATE);
-+                        	        response->Error.Text = _T("The service is in an illegal state!!!.");
-+                                	break;
-+                                case Core::ERROR_INVALID_PARAMETER:
-+    	                                response->Error.SetError(Core::ERROR_INVALID_SIGNATURE);
-+            	                        response->Error.Text = _T("Invalid Parameter");
-+                    	                break;
-+                            	case Core::ERROR_INVALID_DEVICENAME:
-+                                	response->Error.SetError(Core::ERROR_INVALID_DEVICENAME);
-+                                	response->Error.Text = _T("Invalid device name");
-+                                	break;
-+                            	case Core::ERROR_INVALID_MOUNTPOINT:
-+                                	response->Error.SetError(Core::ERROR_INVALID_MOUNTPOINT);
-+                                	response->Error.Text = _T("Invalid mount path");
-+                                	break;
-+                                case Core::ERROR_FIRMWAREUPDATE_INPROGRESS:
-+                                	response->Error.SetError(Core::ERROR_FIRMWAREUPDATE_INPROGRESS);
-+                                	response->Error.Text = _T("Firmware update already in progress");
-+                                	break;
-+                            	case Core::ERROR_FIRMWAREUPDATE_UPTODATE:
-+                                	response->Error.SetError(Core::ERROR_FIRMWAREUPDATE_UPTODATE);
-+                                	response->Error.Text = _T("Firmware is already upto date");
-+                                	break;
-+                            	default:
-+                                	response->Error.SetError(result);
-+                                	break;
-+				}
-+
-+				if (output.empty() == false) {
-+                                    response->Error.Text = output;
-+                                }
-                             }
-                         }
-                     }
 diff --git a/Source/core/JSONRPC.h b/Source/core/JSONRPC.h
-index dc9f21521..76d4bb131 100644
+index 8d52c748..6028cdb8 100644
 --- a/Source/core/JSONRPC.h
 +++ b/Source/core/JSONRPC.h
-@@ -111,9 +111,25 @@ namespace Core {
-                         Code = -32004; // Firmware upto date
+@@ -138,7 +138,24 @@ namespace Core {
                          break;
                      default:
--                        Code = static_cast<int32_t>(frameworkError);
-+                    	if ((frameworkError & 0x80000000) == 0) {
+                         Code = static_cast<int32_t>(frameworkError);
+-                        Text = Core::ErrorToString(frameworkError);
++                        if ((frameworkError & 0x80000000) == 0) {
 +
-+                            // Heras solution to enable the possibility to override the json rpc errorcode and make it fall into 
-+                            // the -32000 to -32099 range (as desired by some externally defined interfaces). The 1000 offset and -31000 base are chosen to on 
-+                            // one hand keep the current Thunder error codes used in 4.4 backwards compatible (so the numbers as reported in 
-+                            // json rpc will not change) while at the same time making sure that code used in dynamic json rpc override will behave 
++                            // Heras solution to enable the possibility to override the json rpc errorcode and make it fall into
++                            // the -32000 to -32099 range (as desired by some externally defined interfaces). The 1000 offset and -31000 base are chosen to on
++                            // one hand keep the current Thunder error codes used in 4.4 backwards compatible (so the numbers as reported in
++                            // json rpc will not change) while at the same time making sure that code used in dynamic json rpc override will behave
 +                            // as in Thunder 5 (so if the error code is changed to 1000 there it will result in a -32000 error code reported for json rpc)
++                            // New range > 2000 is added for pass through for a temporary fix for ContentProtection range
 +
-+                            if( frameworkError <= 999 ) {
++                            if( frameworkError <= 999  || frameworkError > 2000 ) {
 +                                Code = static_cast<int32_t>(frameworkError);
 +                            } else {
 +                                Code = -31000 - static_cast<int32_t>(frameworkError);
@@ -161,35 +24,20 @@ index dc9f21521..76d4bb131 100644
 +                        } else {
 +                            Code = static_cast<int32_t>(frameworkError & 0x7FFFFFFF) + 500;
 +                        }
-+                        Text = Core::ErrorToString(frameworkError);
++                       Text = Core::ErrorToString(frameworkError);
                          break;
--                    }
-+		    }
+                     }
                  }
-                 Core::JSON::DecSInt32 Code;
-                 Core::JSON::String Text;
-diff --git a/Source/core/Portability.h b/Source/core/Portability.h
-index 1bc3f987d..8343dc72a 100644
---- a/Source/core/Portability.h
-+++ b/Source/core/Portability.h
-@@ -876,6 +876,7 @@ namespace Core {
-         ERROR_CODE(ERROR_FAILED_REGISTERED, 48) \
-         ERROR_CODE(ERROR_FAILED_UNREGISTERED, 49) \
-         ERROR_CODE(ERROR_ABORTED, 50) \
-+        ERROR_CODE(ERROR_UNKNOWN_METHOD, 53) \
-         ERROR_CODE(ERROR_INVALID_PARAMETER, 54) \
-         ERROR_CODE(ERROR_INVALID_DEVICENAME, 59) \
-         ERROR_CODE(ERROR_INVALID_MOUNTPOINT, 60) \
 diff --git a/Source/plugins/JSONRPC.h b/Source/plugins/JSONRPC.h
-index 63329bb29..82961696e 100644
+index 8f23df36..1ae2e22d 100644
 --- a/Source/plugins/JSONRPC.h
 +++ b/Source/plugins/JSONRPC.h
-@@ -29,6 +29,24 @@ namespace WPEFramework {
+@@ -28,6 +28,23 @@
+ namespace WPEFramework {
  
  namespace PluginHost {
- 
 +namespace {
-+    
++
 +        template<typename JSONRPCERRORASSESSORTYPE>
 +        uint32_t InvokeOnHandler(const Core::JSONRPC::Context& context, const string& method, const string& parameters, string& response, Core::JSONRPC::Handler& handler, JSONRPCERRORASSESSORTYPE errorhandler) 
 +        {
@@ -205,38 +53,26 @@ index 63329bb29..82961696e 100644
 +            return handler.Invoke(context, method, parameters, response);
 +        }
 +    }
-+
+ 
      struct EXTERNAL ILocalDispatcher : public IDispatcher {
          virtual ~ILocalDispatcher() override = default;
- 
-@@ -426,8 +444,14 @@ namespace PluginHost {
+@@ -426,7 +443,14 @@ namespace PluginHost {
              }
              return (Core::ERROR_NONE);
          }
 -        Core::hresult Invoke(IDispatcher::ICallback*, const uint32_t channelId, const uint32_t id, const string& token, const string& method, const string& parameters, string& response) override {
--            uint32_t result(Core::ERROR_BAD_REQUEST);
 +        Core::hresult Invoke(IDispatcher::ICallback* callback, const uint32_t channelId, const uint32_t id, const string& token, const string& method, const string& parameters, string& response) override 
 +        {
 +            return InvokeHandler(callback, channelId, id, token, method, parameters, response);
 +        }
-+	template<typename JSONRPCERRORASSESSORTYPE = void*>
++
++        template<typename JSONRPCERRORASSESSORTYPE = void*>
 +        Core::hresult InvokeHandler(IDispatcher::ICallback*, const uint32_t channelId, const uint32_t id, const string& token, const string& method, const string& parameters, string& response, JSONRPCERRORASSESSORTYPE errorhandler = nullptr) 
 +        {
-+            uint32_t result(Core::ERROR_UNKNOWN_METHOD);
+             uint32_t result(Core::ERROR_UNKNOWN_METHOD);
              Core::JSONRPC::Handler* handler(Handler(method));
              string realMethod(Core::JSONRPC::Message::Method(method));
- 
-@@ -437,15 +461,15 @@ namespace PluginHost {
-             else if (realMethod == _T("exists")) {
-                 result = Core::ERROR_NONE;
-                 if (handler->Exists(parameters) == Core::ERROR_NONE) {
--                    response = _T("1");
-+                    response = Core::NumberType<uint32_t>(Core::ERROR_NONE).Text();
-                 }
-                 else {
--                    response = _T("0");
-+                    response = Core::NumberType<uint32_t>(Core::ERROR_UNKNOWN_KEY).Text();
-                 }
+@@ -445,7 +469,7 @@ namespace PluginHost {
              }
              else if (handler->Exists(realMethod) == Core::ERROR_NONE) {
                  Core::JSONRPC::Context context(channelId, id, token);
@@ -276,12 +112,12 @@ index 63329bb29..82961696e 100644
 +    template<>
 +    class EXTERNAL JSONRPCErrorAssessor<JSONRPCErrorAssessorTypes::StdFunctionCallbackType> : public JSONRPC {
 +    public:
-+        JSONRPCErrorAssessor(const JSONRPCErrorAssessorTypes::StdFunctionCallbackType& errorhandler) 
++        JSONRPCErrorAssessor(const JSONRPCErrorAssessorTypes::StdFunctionCallbackType& errorhandler)
 +            : JSONRPC()
 +            , _errorhandler(errorhandler)
 +            {
 +            }
-+        JSONRPCErrorAssessor(JSONRPCErrorAssessorTypes::StdFunctionCallbackType&& errorhandler) 
++        JSONRPCErrorAssessor(JSONRPCErrorAssessorTypes::StdFunctionCallbackType&& errorhandler)
 +            : JSONRPC()
 +            , _errorhandler(std::move(errorhandler))
 +            {

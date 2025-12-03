@@ -1,0 +1,279 @@
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index 0238abb14..ebaf7b16c 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -960,6 +960,12 @@ namespace PluginHost {
+                     ASSERT(interfaceId >= RPC::IDS::ID_EXTERNAL_INTERFACE_OFFSET);
+                     return (interfaceId >= RPC::IDS::ID_EXTERNAL_INTERFACE_OFFSET ? _plugin->QueryInterface(interfaceId) : nullptr);
+                 }
++                void Dangling(Danglings&& proxies) override {
++                    for (const std::pair<uint32_t, Core::IUnknown*>& entry : proxies) {
++                        entry.second->Release();
++                    };
++                    proxies.clear();
++                }
+ 
+             private:
+                 Core::IUnknown* _plugin;
+@@ -2265,6 +2271,7 @@ namespace PluginHost {
+             class CommunicatorServer : public RPC::Communicator {
+             private:
+                 using Observers = std::vector<IShell::ICOMLink::INotification*>;
++                using Danglings = RPC::Communicator::Danglings;
+ 
+                 class RemoteHost : public RPC::Communicator::RemoteConnection {
+                 private:
+@@ -2399,6 +2406,9 @@ namespace PluginHost {
+                     , _adminLock()
+                     , _requestObservers()
+                     , _proxyStubObserver(*this, observableProxyStubPath)
++                    , _deadProxiesProtection()
++                    , _deadProxies()
++                    , _job(*this)
+                 {
+                     // Shall we enable the non-happy day functionality to cleanup Release on behalf of unexpected
+                     // channel closes. Only for testing Buggy plugins, turn it off (false)!
+@@ -2422,6 +2432,15 @@ namespace PluginHost {
+                 }
+                 virtual ~CommunicatorServer()
+                 {
++                    _job.Revoke();
++                    Danglings::iterator pIndex(_deadProxies.begin());
++                    while (pIndex != _deadProxies.end()) {
++                        if (pIndex->second->Release() != Core::ERROR_DESTRUCTION_SUCCEEDED) {
++                            TRACE(Trace::Warning, (_T("Potentially a Proxy leak on interface %d"), pIndex->first));
++                        }
++                        pIndex++;
++                    }
++                    _deadProxies.clear();
+                     ASSERT(_requestObservers.size() == 0 && "Sink for ICOMLink::INotifications not unregistered!");
+                     Observers::iterator index(_requestObservers.begin());
+                     while (index != _requestObservers.end()) {
+@@ -2516,6 +2535,44 @@ namespace PluginHost {
+                         _adminLock.Unlock();
+                     }
+                 }
++                void Dispatch() {
++                    // Oke time to notify the destruction of some proxies...
++                    // We use a dedicated synchronisation object as we must make sure
++                    // that the deadproxies are now not worked upon if we are evaluating
++                    // the list, and if needed, extract one element from it.
++                    // The addition to this list might be done by the communicator thread
++                    // and this thread should always be deterministicly short locked. So 
++                    // do not call anything that could potentially be undeteministic (or 
++                    // even worse, use the communicator thread..
++                    _deadProxiesProtection.Lock();
++                    while (_deadProxies.empty() == false) {
++                        std::pair<uint32_t, Core::IUnknown*> entry(std::move(_deadProxies.back()));
++                        _deadProxies.pop_back();
++
++                        // Now the communicator thread can continue! In the span of the lock
++                        // there are *no* calls that are undeterministaic or mght require the
++                        // communicator thread to safely continue.
++                        _deadProxiesProtection.Unlock();
++
++                        _parent.Dangling(entry.second, entry.first);
++
++                        _adminLock.Lock();
++                        for (IShell::ICOMLink::INotification* observer : _requestObservers) {
++                            observer->Dangling(entry.second, entry.first);
++                        }
++                        _adminLock.Unlock();
++
++                        // We reported the dangling to all interested. Drop ourr reference..
++                        if (entry.second->Release() != Core::ERROR_DESTRUCTION_SUCCEEDED) {
++                            TRACE(Trace::Warning, (_T("Potentially a Proxy leak on interface %d"), entry.first));
++                        }
++                        TRACE(Activity, (_T("Dangling resource cleanup of interface: 0x%X"), entry.first));
++
++                        _deadProxiesProtection.Lock();
++                    }
++                    _deadProxiesProtection.Unlock();
++                }
++
+ 
+             private:
+                 void Reload(const string& path) {
+@@ -2556,19 +2613,12 @@ namespace PluginHost {
+                     return (_parent.Acquire(interfaceId, className, version));
+                 }
+ 
+-                void Dangling(const Core::IUnknown* source, const uint32_t interfaceId) override
++                void Dangling(Danglings&& danglingProxies) override
+                 {
+-                    _adminLock.Lock();
+-
+-                    _parent.Dangling(source, interfaceId);
+-
+-                    for (auto& observer : _requestObservers) {
+-                        observer->Dangling(source, interfaceId);
+-                    }
+-
+-                    _adminLock.Unlock();
+-
+-                    TRACE(Activity, (_T("Dangling resource cleanup of interface: 0x%X"), interfaceId));
++                    _deadProxiesProtection.Lock();
++                    _deadProxies.insert(_deadProxies.end(), std::make_move_iterator(danglingProxies.begin()), std::make_move_iterator(danglingProxies.end()));
++                    _deadProxiesProtection.Unlock();
++                    _job.Submit();
+                 }
+ 
+                 void Revoke(const Core::IUnknown* remote, const uint32_t interfaceId) override
+@@ -2604,6 +2654,9 @@ namespace PluginHost {
+                 mutable Core::CriticalSection _adminLock;
+                 Observers _requestObservers;
+                 ProxyStubObserver _proxyStubObserver;
++                Core::CriticalSection _deadProxiesProtection;
++                Danglings _deadProxies;
++                Core::WorkerPool::JobType<CommunicatorServer&> _job;
+             };
+             class RemoteInstantiation : public IRemoteInstantiation {
+             private:
+@@ -3324,6 +3377,7 @@ POP_WARNING()
+                             TRACE(Activity, (_T("Unregistered the dangling: PluginHost::IPlugin::INotification")));
+                         }
+                         _notificationLock.Unlock();
++                        base->Release();
+                     }
+                 }
+             }
+diff --git a/Source/com/Administrator.cpp b/Source/com/Administrator.cpp
+index 02889bc2e..6de35743d 100644
+--- a/Source/com/Administrator.cpp
++++ b/Source/com/Administrator.cpp
+@@ -353,7 +353,7 @@ namespace RPC {
+         return(index != _stubs.end() ? index->second->Convert(rawImplementation) : nullptr);
+     }
+ 
+-    void Administrator::DeleteChannel(const Core::ProxyType<Core::IPCChannel>& channel, Proxies& pendingProxies)
++    void Administrator::DeleteChannel(const Core::ProxyType<Core::IPCChannel>& channel, Danglings& pendingProxies)
+     {
+         _adminLock.Lock();
+ 
+@@ -386,15 +386,22 @@ namespace RPC {
+ 
+         if (index != _channelProxyMap.end()) {
+             for (auto entry : index->second) {
+-                entry->Invalidate();
++                if (entry->Invalidate() == true) {
++                    // This is actually for the pendingProxies to be reported
++                    // dangling!!
++                    // Note: If the invalidation succeeds, hence why we are here, 
++                    //       a reference has been taken on the interface so it can
++                    //       be properly released, once it is reported!
++                    pendingProxies.emplace_back(std::pair<uint32_t,Core::IUnknown*>(entry->InterfaceId(), entry->Parent()));
++                }
++                // The _channelProxyMap does have a reference for each Proxy it
++                // holds, so it is safe to just move the vector from the map to
++                // the _danglingProxies. This is to keep the Proxies we created
++                // registered untill, really the last reference is dropped. Till
++                // that time we keep track of the proxy and report it as a potential
++                // leak that should be investigated!!!
+                 _danglingProxies.emplace_back(entry);
+             }
+-            // The _channelProxyMap does have a reference for each Proxy it 
+-            // holds, so it is safe to just move the vector from the map to
+-            // the pendingProxies. The receiver of pendingProxies has to take
+-            // care of releasing the last reference we, as administration layer
+-            // hold upon this..
+-            pendingProxies = std::move(index->second);
+             _channelProxyMap.erase(index);
+         }
+ 
+diff --git a/Source/com/Administrator.h b/Source/com/Administrator.h
+index c3630f6e7..9a6c7ee5a 100644
+--- a/Source/com/Administrator.h
++++ b/Source/com/Administrator.h
+@@ -48,6 +48,7 @@ namespace RPC {
+     class EXTERNAL Administrator {
+     public:
+         using Proxies = std::vector<ProxyStub::UnknownProxy*>;
++        using Danglings = std::vector<std::pair<uint32_t, Core::IUnknown*>>;
+ 
+     private:
+         Administrator();
+@@ -210,7 +211,7 @@ namespace RPC {
+             return (_factory.Element());
+         }
+ 
+-        void DeleteChannel(const Core::ProxyType<Core::IPCChannel>& channel, Proxies& pendingProxies);
++        void DeleteChannel(const Core::ProxyType<Core::IPCChannel>& channel, Danglings& pendingProxies);
+ 
+         template <typename ACTUALINTERFACE>
+         ACTUALINTERFACE* ProxyFind(const Core::ProxyType<Core::IPCChannel>& channel, const Core::instance_id& impl)
+diff --git a/Source/com/Communicator.h b/Source/com/Communicator.h
+index 811dd10da..d691d8a3c 100644
+--- a/Source/com/Communicator.h
++++ b/Source/com/Communicator.h
+@@ -1434,6 +1434,8 @@ POP_WARNING()
+         void LoadProxyStubs(const string& pathName);
+ 
+     public:
++        using Danglings = Administrator::Danglings;
++
+         Communicator() = delete;
+         Communicator(Communicator&&) = delete;
+         Communicator(const Communicator&) = delete;
+@@ -1519,18 +1521,13 @@ POP_WARNING()
+     private:
+         void Closed(const Core::ProxyType<Core::IPCChannel>& channel)
+         {
+-            Administrator::Proxies deadProxies;
++            Danglings deadProxies;
+ 
+             RPC::Administrator::Instance().DeleteChannel(channel, deadProxies);
+                 
+-            std::vector<ProxyStub::UnknownProxy*>::const_iterator loop(deadProxies.begin());
+-            while (loop != deadProxies.end()) {
+-                Dangling((*loop)->Parent(), (*loop)->InterfaceId());
+-
+-                // To avoid race conditions, the creation of the deadProxies took a reference
+-                // on the interfaces, we presented here. Do not forget to release this reference.
+-                (*loop)->Parent()->Release();
+-                loop++;
++            if(!deadProxies.empty())
++            {
++                Dangling(std::move(deadProxies));
+             }
+         }
+         virtual void* Acquire(const string& /* className */, const uint32_t /* interfaceId */, const uint32_t /* version */)
+@@ -1541,7 +1538,15 @@ POP_WARNING()
+         }
+         virtual void Revoke(const Core::IUnknown* /* remote */, const uint32_t /* interfaceId */) {
+         }
+-        virtual void Dangling(const Core::IUnknown* /* remote */, const uint32_t /* interfaceId */) {
++        virtual void Dangling(Danglings&& proxies){
++            TRACE_L1("Implement this to gracefully handle the dangling proxies acquired through this channel!!!");
++            Danglings::const_iterator loop(proxies.begin());
++            while (loop != proxies.end()) {
++                // To avoid race conditions, the creation of the deadProxies took a reference
++                // on the interfaces, we presented here. Do not forget to release this reference.
++                (*loop).second->Release();
++                loop++;
++            }
+         }
+ 
+     private:
+diff --git a/Source/com/IUnknown.h b/Source/com/IUnknown.h
+index debde5808..7c0682d26 100644
+--- a/Source/com/IUnknown.h
++++ b/Source/com/IUnknown.h
+@@ -155,11 +155,16 @@ namespace ProxyStub {
+         uint32_t ReferenceCount() const {
+             return(_refCount);
+         }
+-    	void Invalidate() {
++        bool Invalidate() {
++            bool succeeded = false;
+             ASSERT(_refCount > 0);
+             _adminLock.Lock();
+-            _channel.Release();
++            if (_channel.IsValid() == true) {
++                _channel.Release();
++                succeeded = true;
++            }
+             _adminLock.Unlock();
++            return(succeeded);
+         }
+         // -------------------------------------------------------------------------------------------------------------------------------
+         // Proxy/Stub (both) environment calls

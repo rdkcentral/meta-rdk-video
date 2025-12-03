@@ -3,8 +3,8 @@ LICENSE = "Apache-2.0"
 HOMEPAGE = "https://github.com/rdkcentral/ThunderClientlibraries"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=847677038847363222ffb66cfa6406c2"
 
-PR = "r15"
-PV = "4.4.1"
+PR = "r20"
+PV = "4.4.2"
 
 inherit python3native cmake pkgconfig
 
@@ -19,10 +19,8 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/R4.2_compilation_error_assert.patch \
            file://r4.4/0001-Cryptography-CipherNetflix.r4.4.patch \
            file://r4.4/0003-trace_l2-BuildError-fix.patch \
-           file://r4.4/DELIA-64604-RialtoServer-crash-clientlibraries.patch \
            file://r4.4/0001-reconnect-if-connection-establishment-is-failed.patch \
            file://r4.4/0001-check-_session-has-a-valid-pointer.patch \
-           file://r4.4/0001-PowerManagerClient-library-implementation.patch \
            file://r4.4/0001-add-svp-header-to-data-before-decryption.patch \
            file://r4.4/RDK-55149.patch \
            file://r4.4/0001-Add-vault-platform-case.patch \
@@ -30,10 +28,12 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-Implement-IPersistent-interface-for-RPC-Vault.patch \
            file://r4.4/0001-SecAPI-Re-acquire-sec-handle-after-flush.patch \
            file://r4.4/0001-DELIA-64727-Prealloc-secure-memory-before-decrypt.patch \
-          "
+           file://r4.4/0001-RDKEMW-7064-Dont-decrypt-fake-buffer-is-revoke-has-b.patch \
+           file://r4.4/0001-PowerManagerClient-library-implementation.patch \
+           "
 
 # Oct 17, 2023
-SRCREV_wpeframework-clientlibraries = "699f6c5f83aaffafdfdb75c01b281f292287f6ce"
+SRCREV_wpeframework-clientlibraries = "09a75a85e1263e0520f182dea6dc19c673e070a1"
 
 # ----------------------------------------------------------------------------
 

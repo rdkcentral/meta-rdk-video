@@ -22,6 +22,46 @@ file_version="/version.txt"
 file_bootversion="/opt/.bootversion"
 file_bootType="/tmp/bootType"
 file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
+file_updateStatus="/opt/.updateStatus"
+file_bootversion_bak="/opt/.bootversion.bak"
+
+if [ -z $LOG_PATH ]; then
+    LOG_PATH="/opt/logs/"
+fi
+
+BOOTTYPE_LOG_FILE="$LOG_PATH/boottypescript.log"
+
+boottypeLog() {
+    echo "`/bin/timestamp`: $0: $*" >> $BOOTTYPE_LOG_FILE
+}
+
+#bootversion backup 
+if [ -e "$file_updateStatus" ]; then
+     status=$(<"$file_updateStatus")
+     if [ "$status" == "INPROGRESS" ]; then
+         boottypeLog "Update was in progress, $file_bootversion is incomplete. Looking for backup file"
+           if [ -e "$file_bootversion_bak" ]; then
+               boottypeLog "Found backup file, restoring $file_bootversion from $file_bootversion_bak"
+               cp -f $file_bootversion_bak $file_bootversion
+           else
+               boottypeLog "No backup file found, cannot restore $file_bootversion and removing incomplete $file_bootversion"
+               rm -rf $file_bootversion
+           fi
+     elif [ "$status" == "COMPLETED" ]; then
+         boottypeLog "Update previously completed, $file_bootversion file is backedup as $file_bootversion_bak"
+         cp -f $file_bootversion $file_bootversion_bak
+         echo "INPROGRESS" > $file_updateStatus
+         boottypeLog "Update in progress..."
+     fi
+else
+     boottypeLog "$file_updateStatus file is not present, No update was in progress, creating $file_updateStatus"
+     if [ -e "$file_bootversion" ]; then
+          boottypeLog "Found $file_bootversion file, creating $file_bootversion_bak from $file_bootversion"
+          cp -f $file_bootversion $file_bootversion_bak
+     fi
+     echo "INPROGRESS" > $file_updateStatus
+     boottypeLog "Update in progress..."
+fi
 
 # /version.txt image details
 v_imagename=$(grep "^imagename" $file_version)
@@ -35,7 +75,9 @@ if [ ! -e "$file_bootversion" ]; then
      echo "$v_version" >> $file_bootversion
      echo "$v_FW_Class" >> $file_bootversion
      echo "BOOT_TYPE=BOOT_INIT" > $file_bootType
-     echo -e "BOOT_INIT is set since $file_bootversion is not present"
+     boottypeLog "BOOT_INIT is set since $file_bootversion is not present"
+	 echo "COMPLETED" > $file_updateStatus
+     boottypeLog "Update completed."
      exit 0
 fi
 
@@ -57,24 +99,47 @@ s1_FW_Class=$(grep -m 1 "FW_CLASS" $file_bootversion)
 
 MigrationStatus=$(tr181 -g Device.DeviceInfo.Migration.MigrationStatus 2>&1)
 
-echo -e "MigrationStatus: $MigrationStatus"
+boottypeLog "MigrationStatus: $MigrationStatus"
 #comparing slot1 and slot2 FW Class
 if [ "$v_FW_Class" != "$s1_FW_Class" ]; then
 	# migration fw is run for first time, migration not completed
 	echo "NOT_STARTED" > $file_MigrationStatus
 	echo "BOOT_TYPE=BOOT_MIGRATION" > $file_bootType
-	echo -e "BOOT_MIGRATION is set since FW_Class is not same"
+	boottypeLog "BOOT_MIGRATION is set since FW_Class is not same"
 else
      if [ "$MigrationStatus" != "MIGRATION_COMPLETED" ] && [ "$MigrationStatus" != "NOT_NEEDED" ]; then
           echo "BOOT_TYPE=BOOT_MIGRATION" > $file_bootType
-	  echo -e "BOOT_MIGRATION since MigrationStatus is not equal to MIGRATION_COMPLETED"
+	      boottypeLog "BOOT_MIGRATION since MigrationStatus is not equal to MIGRATION_COMPLETED"
      elif [ "$MigrationStatus" == "MIGRATION_COMPLETED" ] || [ "$MigrationStatus" == "NOT_NEEDED" ]; then
 	     if [ "$v_version" == "$s1_version" ]; then
 	         echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
-	    	 echo -e "BOOT_NORMAL since Version is equal and MigrationStatus is MIGRATION_COMPLETED"
+	    	 boottypeLog "BOOT_NORMAL since Version is equal and MigrationStatus is MIGRATION_COMPLETED"
 	     else
 	         echo "BOOT_TYPE=BOOT_UPDATE" > $file_bootType
-	         echo -e "BOOT_UPDATE since Version is not equal"
+	         boottypeLog "BOOT_UPDATE since Version is not equal"
              fi
      fi
 fi
+
+#update the read permission to migration datastore files
+current_bootType=$(<"$file_bootType")
+current_bootType=${current_bootType:10}
+if [ "$current_bootType" == "BOOT_MIGRATION" ]; then
+    migrationDSFile="/opt/secure/migration/migration_data_store.json"
+    migrationDir="/opt/secure/migration"
+
+    # Check if the directory exists
+    if [ -d "$migrationDir" ]; then
+        boottypeLog "changed the permission of $migrationDir by +x"
+        chmod +x "$migrationDir"
+    fi
+
+    # Check if the file exists
+    if [ -f "$migrationDSFile" ]; then
+        boottypeLog "changed the permission of $migrationDSFile by +r"
+        chmod +r "$migrationDSFile"
+    fi
+fi
+
+echo "COMPLETED" > $file_updateStatus
+boottypeLog "Update completed."

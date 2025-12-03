@@ -1,0 +1,71 @@
+From cab735720b1a12c65ff6aca1c9855ccc6a3ba63c Mon Sep 17 00:00:00 2001
+From: Callum Wilson <callum_wilson@comcast.com>
+Date: Wed, 13 Aug 2025 16:36:05 +0000
+Subject: [PATCH] RDKEMW-7064: Dont decrypt fake buffer is revoke has been
+ called
+
+Reason for change:
+Some platforms cannot allocate secure buffers
+if Essos RM revoke has been called. In this situation
+fake buffers will be allocated which we can't use
+during decryption.
+
+Priority: P2
+
+Risks: Low
+
+Test Procedure:
+- Verify encrypted playback
+- Source switch during encrypted playback
+- Verify app switch during encrypted playback
+
+Signed-off-by: Callum Wilson <callum_wilson@comcast.com>
+---
+ Source/ocdm/adapter/rdk/open_cdm_adapter.cpp | 34 +++++++++++++++-----
+ 1 file changed, 26 insertions(+), 8 deletions(-)
+
+diff --git a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
+index 9d1948f..6b9dec9 100644
+--- a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
++++ b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
+@@ -446,14 +446,32 @@ OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
+ 
+                memcpy(encryptedData, mappedData, mappedDataSize);
+ 
+-               GstPerf* ocdm_perf = new GstPerf("opencdm_session_decrypt_v2");
+-               result = opencdm_session_decrypt_v2(session,
+-                                                svpData,
+-                                                dataBlockSize,
+-                                                &sampleInfo,
+-                                                &streamProperties);
+-
+-               delete ocdm_perf;
++               TokenType tokenType = TokenType::InPlace;
++               if (!gst_svp_header_get_field(session->SessionPrivateData(), svpData, SvpHeaderFieldName::Type, (uint32_t*) &tokenType))
++               {
++                  TRACE_L1("Failed to get type from SVP header");
++               }
++
++               const bool isRevokedAllocation = needSecureMemoryPrealloc 
++                                                && tokenType != TokenType::InPlace
++                                                && tokenType != TokenType::Handle
++                                                && tokenType != TokenType::PreAllocatedHandle;
++
++               if (!isRevokedAllocation)
++               {
++                GstPerf* ocdm_perf = new GstPerf("opencdm_session_decrypt_v2");
++                result = opencdm_session_decrypt_v2(session,
++                                                    svpData,
++                                                    dataBlockSize,
++                                                    &sampleInfo,
++                                                    &streamProperties);
++                delete ocdm_perf;
++               }
++               else
++               {
++                    TRACE_L1("Skipping decrypt as resources have been revoked");
++                    result = ERROR_NONE;
++               }
+ 
+                if(result == ERROR_NONE) {
+                   GstPerf* svpTransform_perf3 = new GstPerf("opencdm_svp_transform_subsample");

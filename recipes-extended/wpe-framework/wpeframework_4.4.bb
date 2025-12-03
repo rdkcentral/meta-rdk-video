@@ -5,27 +5,25 @@ HOMEPAGE = "https://github.com/rdkcentral/Thunder"
 
 LIC_FILES_CHKSUM = "file://LICENSE;md5=85bcfede74b96d9a58c6ea5d4b607e58"
 
-DEPENDS = "zlib wpeframework-tools-native rfc thunderhangrecovery"
+DEPENDS = "zlib wpeframework-tools-native rfc thunder-hang-recovery"
 DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
 
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r48"
-PV = "4.4.1"
+PR = "r39"
+PV = "4.4.3"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
 
-SRCREV_thunder = "b81d0f079345739cc2d8ee142b3499be7e4e6b15"
+SRCREV_thunder = "19100433e5517c743738bb2a9ed8ce2f79c10eaf"
 
-#default patches for compiling thunder
 SRC_URI += "file://wpeframework-init \
            file://wpeframework.service.in \
-           file://network_manager_migration.conf \
            file://r4.4/Library_version_matched_with_release_tag.patch \
            file://r4.4/Remove_versioning_for_executables.patch \
-           file://r4.4/wpeframework_version_r4.4.1.patch \
+           file://r4.4/wpeframework_version.patch \
            file://r4.4/0001_Remove_DEBUG_Macro_Definition.patch \
            file://r4.4/0003-OCDM-increase-RPC-comm-timeout.patch \
            file://r4.4/wpeframework_added_optimization_flag_improvement.patch \
@@ -36,13 +34,9 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/RDKTV-15803-WPEFramework-crash-malloc-printerr.patch \
            file://r4.4/DELIA-54331-Do-not-set-the-receive-buffer.patch \
            file://r4.4/RDKTV-16992-Added_timeout-and-synchronisation-when-stopping-containers.patch \
-           file://r4.4/Fix_DeadLock_In_PluginServer_Closed.patch \
-           file://r4.4/WorkerPool_Increase.patch \
            file://r4.4/0001-WPEFramework-Regex-Removal-r4.4.1.patch \
-           file://r4.4/0002_Add_INSTALLATION_as_Subsystem.patch \
            file://r4.4/crash_debug_callstack_R4_4.patch \
            file://r4.4/wpeframework_persistentpathchanges.patch \
-           file://r4.4/Use_Legact_Alt_Based_On_ThunderTools_R4.4.3.patch \
            file://r4.4/1004-Add-support-for-project-dir.patch \
            file://r4.4/Enable_Thunder_Logging_R4.4.1.patch \
            file://r4.4/Thunder_FirmwareUpdate_USB_Mount_Error_codes.patch \
@@ -50,20 +44,15 @@ SRC_URI += "file://wpeframework-init \
            file://r4.4/RDKEMW-733-Add-ENTOS-IDS.patch \
            file://r4.4/Update-Trace-Level-Logging-Logic.patch \
            file://r4.4/Activating_plugins_Logs_COMRPC.patch \
-           file://r4.4/FirmwareUpdate_UptoDate.patch \
            file://r4.4/Removed_Autostart_Check_From_WPEFramework.patch \
+           file://r4.4/Append_WorkerPool_Info.patch \
+           file://r4.4/Revert_PR-665_support_JSON_Parsing.patch \
            "
 
-SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
-            file://r4.4/PR-1632-WebSocket-CornerCase.patch \
-            file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
+SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/PR-1756-Remove-Recursive-Function-From-SmartLinkType.patch \
-            file://r4.4/PR-1390-1467-Controls_Init_Shutdown_Singleton_Fixes.patch \
             file://r4.4/PR-1586-Use-Monotonic-Clocks.patch\
-            file://r4.4/PR-1630-JSON-Parsing-Escape-Sequence.patch \
             file://r4.4/PR-1533-Refernce-counted-Library-COMRPC-objects.patch  \
-            file://r4.4/PR-1376-1386-1441-1650-ProcessContainerCompilationFix.patch \
-            file://r4.4/PR-1619-Update-SocketServer.h.patch \
             file://r4.4/PR-1751-Load-Library-ThunderR4.patch \
             file://r4.4/PR-1785-Reduce_scope_of_adminlock.patch \
             file://r4.4/PR-1791-Thunder-hung-SocketPort-close-Delete-channel.patch \
@@ -71,7 +60,12 @@ SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
             file://r4.4/PR1832-Thunder-ABBA-Deadlock-Fix.patch \
             file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
             file://r4.4/0001-SmarkLink-Crash-Fix.patch \
-	    file://r4.4/Jsonrpc_dynamic_error_handling.patch \
+            file://r4.4/Jsonrpc_dynamic_error_handling.patch \
+            file://r4.4/PR-1923-RDKEMW-6261-to-improve-system-shutdown-time-upon-R4.4.3.patch \
+            file://r4.4/rdkemw-124-Link-Breakpad-wrapper.patch \
+            file://r4.4/RDKEMW-8889-Avoid-LoadMeta-On-Boot.patch \
+            file://r4.4/0001-To-handle-truncated-UTF-code-on-parsing-empty-null-t.patch \
+            file://r4.4/0002-Print-Log-Upon-Time-ComRPC-Timeout.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -85,8 +79,13 @@ WPEFRAMEWORK_SYSTEM_PREFIX = "OE"
 WPEFRAMEWORK_PORT = "9998"
 WPEFRAMEWORK_BINDING = "127.0.0.1"
 WPEFRAMEWORK_IDLE_TIME = "0"
-WPEFRAMEWORK_THREADPOOL_COUNT ?= "8"
+WPEFRAMEWORK_THREADPOOL_COUNT ?= "16"
 WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
+
+
+BREAKPAD_LDFLAGS:pn-wpeframework = "${BACKTRACE_LDFLAGS}"
+EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
+LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
 
 PACKAGECONFIG ?= " \
     release \
@@ -94,7 +93,7 @@ PACKAGECONFIG ?= " \
     websocket \
     "
 
-PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com pluginactivator', '', d)}"
+PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com', '', d)}"
 
 # Buildtype
 # Maybe we need to couple this to a Yocto feature
@@ -119,7 +118,6 @@ PACKAGECONFIG[webkitbrowser]   = "-DPLUGIN_WEBKITBROWSER=ON,,"
 PACKAGECONFIG[websocket]       = "-DWEBSOCKET=ON,,"
 
 PACKAGECONFIG[com] = "-DCOM=ON,,,"
-PACKAGECONFIG[pluginactivator] = "-DBUILD_PLUGIN_ACTIVATOR=ON,,,"
 
 # FIXME, determine this a little smarter
 # Provision event is required for libprovision and provision plugin
@@ -160,18 +158,11 @@ EXTRA_OECMAKE += " \
 
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
 
-do_install:append() {
-    if ${@bb.utils.contains("DISTRO_FEATURES", "systemd", "true", "false", d)}
-    then
-        install -d ${D}${systemd_unitdir}/system
-        cp ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
-    else
-        install -d ${D}${sysconfdir}/init.d
-        install -m 0755 ${WORKDIR}/wpeframework-init ${D}${sysconfdir}/init.d/wpeframework
-    fi
+EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 
-    install -d ${D}${systemd_unitdir}/system/wpeframework.service.d
-    install -m 0644 ${WORKDIR}/network_manager_migration.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
+do_install:append() {
+    install -d ${D}${systemd_unitdir}/system
+    install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
@@ -197,7 +188,7 @@ INSANE_SKIP:${PN}-dbg += "dev-so"
 # ----------------------------------------------------------------------------
 
 RDEPENDS:${PN}_rpi = "userland"
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)} thunderhangrecovery"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)} thunder-hang-recovery"
 # Should be able to remove this when generic rdk_svp flag
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'sage_svp', 'gst-svp-ext', '', d)}"
 

@@ -4,17 +4,11 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d7a8c87b0741f248c5139ca80a783231"
 
-PV ?= "3.0.0"
-PR ?= "r0"
 S = "${WORKDIR}/git"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;protocol=${CMF_GIT_PROTOCOL};branch=develop"
-
-# Jul 10, 2025
-SRCREV = "25a673567c43acc1a1bdc5471b4f3a6650ed2da9"
-
+SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
@@ -23,7 +17,9 @@ EXTRA_OEMAKE+= "PLATFORM_FLAGS="-DPLATFORM=-DNETFLIX_CALLSIGN_0=1""
 # Enable DISABLE_SECURITY_TOKEN
 EXTRA_OEMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '"DISABLE_SECURITY_TOKEN="-DDISABLE_SECURITY_TOKEN=1""', ' ', d)}"
 
-DEPENDS:append =  " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', ' libsoup ', ' libsoup-2.4 ', d)}"
+#libsoup3 not compatible with gdial
+#DEPENDS:append =  " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', ' libsoup ', ' libsoup-2.4 ', d)}"
+DEPENDS:append = " libsoup-2.4"
 DEPENDS:append = " gssdp"
 DEPENDS:append = " cmake-native"
 EXTRANATIVEPATH += "cmake-native"
@@ -33,7 +29,7 @@ CFLAGS += "-fcommon"
 
 DEPENDS += "gssdp openssl c-ares curl util-linux glib-2.0 cmake-native wpeframework wpeframework-clientlibraries entservices-apis iarmmgrs"
 
-inherit logrotate_config
+inherit logrotate_config pkgconfig
 
 LOGROTATE_NAME="xdial"
 LOGROTATE_LOGNAME_xdial="xdial.log"

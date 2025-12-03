@@ -6,6 +6,7 @@ on:
     branches:
       - develop
       - support/dunfell
+      - 'support/*.*.*'
 
 jobs:
   call_auto_pr_workflow:

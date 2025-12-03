@@ -66,7 +66,6 @@ BREAKPAD_BIN = "controlMgr"
 EXTRA_OECMAKE:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' -DUSE_SAFEC=ON', '', d)}"
 
 #EXTRA_OECMAKE:append = " -DMEM_DEBUG=ON"
-#EXTRA_OECMAKE:append = " -DANSI_CODES_DISABLED=ON"
 
 
 # Thunder Dependency
@@ -74,7 +73,7 @@ THUNDER             ??= "true"
 DEPENDS:append        = "${@bb.utils.contains('THUNDER', 'true', ' wpeframework', '', d)}"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE:append  = "${@bb.utils.contains('THUNDER', 'true', bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', " -DWPE_FRAMEWORK_COM_SOCKET=ON", " -DWPE_FRAMEWORK_PROTO_TRACING=ON", d), " ", d)}"
-EXTRA_OECMAKE:append  = "${@bb.utils.contains('THUNDER', 'true', ' -DTHUNDER=ON', '', d)}"
+EXTRA_OECMAKE:append  = "${@bb.utils.contains('THUNDER', 'true', ' -DTHUNDER=ON', ' -DTHUNDER=OFF', d)}"
 
 THUNDER_SECURITY  ??= "${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', 'false', 'true', d)}"
 DEPENDS:append      = "${@bb.utils.contains('THUNDER_SECURITY', 'true', ' wpeframework-clientlibraries', '', d)}"
@@ -113,23 +112,12 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('BLE_SERVICES', 'true', ' -DBLE_SER
 
 DEPENDS:append = " libevdev"
 
-# Advanced Secure Binding Support
-ASB ??= "false"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('ASB', 'true', ' -DASB=ON', '', d)}"
-
 # Authorization Support
 AUTH                ?= "true"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('AUTH', 'true', ' -DAUTH_ENABLED=ON', '', d)}"
 # Auth Activation Status Support
 AUTH_ACTIVATION_STATUS ?= "false"
 EXTRA_OECONF:append = "${@bb.utils.contains('AUTH_ACTIVATION_STATUS', 'true', ' -DAUTH_ACTIVACTION_STATUS', '', d)}"
-
-
-RF4CE_PACKET_ANALYSIS ??= "true"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('RF4CE_PACKET_ANALYSIS', 'true', ' -DRF4CE_PACKET_ANALYSIS=ON', '', d)}"
-
-VOICE_NEXTGEN_MAC ??= "true"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('VOICE_NEXTGEN_MAC', 'true', ' -DVOICE_NEXTGEN_MAC=ON', '', d)}"
 
 VOICE_KEYWORD_BEEP ??= "false"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('VOICE_KEYWORD_BEEP', 'true', ' -DVOICE_KEYWORD_BEEP=ON', '', d)}"
@@ -169,8 +157,7 @@ EXTRA_OECMAKE:append = "${@ ' -DXRSR_SDT=ON' if (d.getVar('SUPPORT_VOICE_DEST_AL
 
 DEPENDS:append   = "${@ ' virtual-mic' if (d.getVar('SUPPORT_VOICE_DEST_ALSA',   expand=False) == "true") else ''}"
 
-EXTRA_OECMAKE:append = " -DCMAKE_SYSROOT=${RECIPE_SYSROOT}"
-EXTRA_OECMAKE:append = " -DGIT_BRANCH=${CMF_GIT_BRANCH}"
+EXTRA_OECMAKE:append = " -DCMAKE_SYSROOT=${RECIPE_SYSROOT} -DCMAKE_PROJECT_VERSION=${PV}"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm_mic_tap', ' -DMIC_TAP=ON', '', d)}"
 
 addtask ctrlm_config after do_configure before do_compile

@@ -90,7 +90,6 @@ do_install() {
         install -m 0644 ${S}/systemd_units/vitalprocess-info.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/logrotate.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/logrotate.timer ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/scheduled-reboot.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/dump-backup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-secure-upload.service ${D}${systemd_unitdir}/system
@@ -103,9 +102,6 @@ do_install() {
         install -m 0644 ${S}/systemd_units/disk-threshold-check.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/disk-threshold-check.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/reboot-reason-logger.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-counter.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-counter.timer ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-notifier@.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/iptables.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/update-device-details.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/update-reboot-info.path ${D}${systemd_unitdir}/system
@@ -118,9 +114,6 @@ do_install() {
         install -m 0644 ${S}/systemd_units/disk-threshold-check.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/disk-threshold-check.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/reboot-reason-logger.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-counter.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-counter.timer ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-notifier@.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/iptables.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/update-device-details.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/update-reboot-info.path ${D}${systemd_unitdir}/system
@@ -257,6 +250,8 @@ do_install() {
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
         rm ${D}${base_libdir}/rdk/NM_Dispatcher.sh
         rm ${D}${base_libdir}/rdk/NM_preDown.sh
+    install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
+    install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
 }
 
 do_install:append:rdkstb() {
@@ -271,7 +266,6 @@ SYSTEMD_SERVICE:${PN} += "log-rdk-start.service"
 SYSTEMD_SERVICE:${PN} += "previous-log-backup.service"
 SYSTEMD_SERVICE:${PN} += "vitalprocess-info.timer"
 SYSTEMD_SERVICE:${PN} += "logrotate.timer"
-SYSTEMD_SERVICE:${PN} += "scheduled-reboot.service"
 SYSTEMD_SERVICE:${PN} += "dump-backup.service"
 SYSTEMD_SERVICE:${PN}:append:rdkstb = " disk-check.service "
 SYSTEMD_SERVICE:${PN} += "coredump-upload.service"
@@ -285,9 +279,6 @@ SYSTEMD_SERVICE:${PN} += "minidump-secure-upload.path"
 SYSTEMD_SERVICE:${PN} += "dropbear.service"
 SYSTEMD_SERVICE:${PN} += "disk-threshold-check.timer"
 SYSTEMD_SERVICE:${PN} += "reboot-reason-logger.service"
-SYSTEMD_SERVICE:${PN} += "reboot-counter.service"
-SYSTEMD_SERVICE:${PN} += "reboot-counter.timer"
-SYSTEMD_SERVICE:${PN} += "reboot-notifier@.service"
 SYSTEMD_SERVICE:${PN} += "iptables.service"
 SYSTEMD_SERVICE:${PN} += "update-device-details.service"
 SYSTEMD_SERVICE:${PN} += "oops-dump.service"
@@ -311,7 +302,7 @@ SYSTEMD_SERVICE:${PN} += "ntp-time-sync-event.service"
 SYSTEMD_SERVICE:${PN} += "ntp-time-sync.timer"
 SYSTEMD_SERVICE:${PN} += "system-time-set.path"
 SYSTEMD_SERVICE:${PN} += "system-time-event.service"
-
+SYSTEMD_SERVICE:${PN} += "notify-network-ready.service"
 FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
 FILES:${PN} += "${base_libdir}/rdk/*"

@@ -2,7 +2,7 @@ SUMMARY = "ENTServices peripherals plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
-PV ?= "1.0.6"
+PV ?= "1.0.8"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-peripherals;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.0.6
-SRCREV = "f1d16ae83517db502a81b8874478238f8d198ceb"
+# Release version - 1.0.17
+SRCREV = "f4b1a406713c22c1289f6a66d3d3e758120aba91"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -43,7 +43,7 @@ PACKAGECONFIG ?= " breakpadsupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'voicecontrol remotecontrol', '', d)} \
 "
 
-PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_MOTION_DETECTION', ' motiondetection','',d)}"
+PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'motiondetection','',d)}"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
