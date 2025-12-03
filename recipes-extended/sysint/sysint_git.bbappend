@@ -5,6 +5,7 @@ DOBBY_ENABLED = "${@bb.utils.contains('DISTRO_FEATURES', 'DOBBY_CONTAINERS','tru
 SRC_URI += "file://udhcpc.vendor_specific"
 SRC_URI += "file://timeZone_offset_map"
 
+
 inherit logrotate_config 
 
 LOGROTATE_NAME = "rtk_fw"
@@ -183,3 +184,5 @@ LOGROTATE_SIZE_dcm="1572864"
 LOGROTATE_ROTATION_dcm="1"
 LOGROTATE_SIZE_MEM_dcm="512000"
 LOGROTATE_ROTATION_MEM_dcm="1"
+
+

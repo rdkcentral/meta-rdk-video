@@ -1,0 +1,10 @@
+[Unit]
+Description=NTP chrony Metrics collector
+Before=chronyd.service
+
+[Service]
+Type=simple
+ExecStart=/bin/sh -c '/usr/bin/chronymetrics_poll --csv >> /tmp/ntp-chrony-metrics.csv'
+
+[Install]
+WantedBy=multi-user.target
