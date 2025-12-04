@@ -1,0 +1,13 @@
+diff --git a/PackageManager/PackageManager.cpp b/PackageManager/PackageManager.cpp
+index f21d8def..0e2ae786 100644
+--- a/PackageManager/PackageManager.cpp
++++ b/PackageManager/PackageManager.cpp
+@@ -26,7 +26,7 @@ namespace Plugin
+ {
+ 
+     namespace {
+-        static Metadata<PackageManager> metadata(
++        __attribute__((section(".plugin"))) static Metadata<PackageManager> metadata(
+             // Version
+             1, 0, 0,
+             // Preconditions
