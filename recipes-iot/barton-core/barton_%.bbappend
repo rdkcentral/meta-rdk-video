@@ -15,6 +15,7 @@ SRC_URI += "file://0001-included-path-for-providers.patch"
 SRC_URI += "file://0001-puts-app-in-rootfs.patch"
 SRC_URI += "file://0001-change-default-dir.patch"
 SRC_URI += "file://0001-changing-storage-to-opt.patch"
+SRC_URI += "file://0001-matter-Add-Casting-Video-Client-driver.patch"
 
 #Enable the reference application
 EXTRA_OECMAKE:append = "${@' -DBCORE_BUILD_REFERENCE=ON' if 'BARTON_REFERENCE_APP' in d.getVar('DISTRO_FEATURES').split() else ' -DBCORE_BUILD_REFERENCE=OFF'}"
