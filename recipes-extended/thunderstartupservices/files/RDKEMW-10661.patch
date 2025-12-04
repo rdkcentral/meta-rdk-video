@@ -1,0 +1,1648 @@
+From b82814d8a327fe68b98f5defd2c32694a7829ada Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Wed, 26 Nov 2025 16:25:31 +0200
+Subject: [PATCH 1/8] Revert "RDKEMW-4076:Sync DELIA-67278 changes to RDK-E
+ (#52)"
+
+This reverts commit 1f7cba1d17dcb6c5be4627435b0d66eed1c3f578.
+---
+ wpeframework-analytics.service          |  1 -
+ wpeframework-appmanager.service         |  1 -
+ wpeframework-avinput.service            |  1 -
+ wpeframework-avoutput.service           |  1 -
+ wpeframework-bluetooth.service          |  1 -
+ wpeframework-cloudstore.service         |  1 -
+ wpeframework-deviceinfo.service         |  1 -
+ wpeframework-displayinfo.service        |  1 -
+ wpeframework-firmwareupdate.service     |  1 -
+ wpeframework-frontpanel.service         |  1 -
+ wpeframework-hdcpprofile.service        |  1 -
+ wpeframework-hdmicecsink.service        |  1 -
+ wpeframework-hdmicecsource.service      |  1 -
+ wpeframework-lifecyclemanager.service   |  1 -
+ wpeframework-lisa.service               |  1 -
+ wpeframework-locationsync.service       |  1 -
+ wpeframework-maintenancemanager.service |  1 -
+ wpeframework-messenger.service          |  1 -
+ wpeframework-monitor.service            |  1 -
+ wpeframework-network.service            |  1 -
+ wpeframework-networkmanager.service     |  1 -
+ wpeframework-ocdm.service               |  1 -
+ wpeframework-ocicontainer.service       |  1 -
+ wpeframework-packagemanager.service     |  1 -
+ wpeframework-persistentstore.service    |  1 -
+ wpeframework-playerinfo.service         |  1 -
+ wpeframework-powermanager.service       |  1 -
+ wpeframework-rdkshell.service           |  1 -
+ wpeframework-rdkwindowmanager.service   |  1 -
+ wpeframework-remotecontrol.service      |  1 -
+ wpeframework-runtimemanager.service     |  1 -
+ wpeframework-services.path              | 13 -------------
+ wpeframework-services.target            |  7 -------
+ wpeframework-sharedstorage.service      |  1 -
+ wpeframework-storagemanager.service     |  1 -
+ wpeframework-system.service             |  1 -
+ wpeframework-systemaudioplayer.service  |  1 -
+ wpeframework-systemmode.service         |  1 -
+ wpeframework-telemetry.service          |  1 -
+ wpeframework-texttospeech.service       |  1 -
+ wpeframework-usbdevice.service          |  1 -
+ wpeframework-usbmassstorage.service     |  1 -
+ wpeframework-usersettings.service       |  1 -
+ wpeframework-voicecontrol.service       |  1 -
+ wpeframework-wifi.service               |  1 -
+ wpeframework-xcast.service              |  1 -
+ 46 files changed, 64 deletions(-)
+ delete mode 100644 systemd/system/wpeframework-services.path
+ delete mode 100644 systemd/system/wpeframework-services.target
+
+diff --git a/wpeframework-analytics.service b/wpeframework-analytics.service
+index 3d9228c..8414b80 100644
+--- a/wpeframework-analytics.service
++++ b/wpeframework-analytics.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework Analytics Initialiser
+ Requires=wpeframework.service wpeframework-persistentstore.service wpeframework-system.service
+ After=wpeframework.service wpeframework-persistentstore.service wpeframework-system.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-appmanager.service b/wpeframework-appmanager.service
+index a6b024a..f2609dd 100644
+--- a/wpeframework-appmanager.service
++++ b/wpeframework-appmanager.service
+@@ -3,7 +3,6 @@ Description=WPEFramework AppManager Initialiser
+ Requires= wpeframework.service wpeframework-lifecyclemanager.service wpeframework-persistentstore.service wpeframework-packagemanager.service
+ After= wpeframework.service wpeframework-lifecyclemanager.service wpeframework-persistentstore.service wpeframework-packagemanager.service
+ ConditionPathExists=/opt/ai2managers
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-avinput.service b/wpeframework-avinput.service
+index 4aa43c5..d651d19 100644
+--- a/wpeframework-avinput.service
++++ b/wpeframework-avinput.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework AVInput Initialiser
+ Requires=wpeframework.service dsmgr.service
+ After=wpeframework.service dsmgr.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-avoutput.service b/wpeframework-avoutput.service
+index f625c2e..a30a961 100644
+--- a/wpeframework-avoutput.service
++++ b/wpeframework-avoutput.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework AVOutput Initialiser
+ Requires=wpeframework.service dsmgr.service
+ After=wpeframework.service dsmgr.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-bluetooth.service b/wpeframework-bluetooth.service
+index 2cddfb0..d9c0b08 100644
+--- a/wpeframework-bluetooth.service
++++ b/wpeframework-bluetooth.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework Bluetooth Initialiser
+ Requires=wpeframework-powermanager.service iarmbusd.service bluetooth.service
+ After=wpeframework-powermanager.service iarmbusd.service btmgr.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-cloudstore.service b/wpeframework-cloudstore.service
+index dcb8637..7656006 100644
+--- a/wpeframework-cloudstore.service
++++ b/wpeframework-cloudstore.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework CloudStore Initialiser
+ Requires=wpeframework-powermanager.service
+ After=wpeframework-powermanager.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-deviceinfo.service b/wpeframework-deviceinfo.service
+index 4ec186a..b8eacc3 100644
+--- a/wpeframework-deviceinfo.service
++++ b/wpeframework-deviceinfo.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework DeviceInfo Initialiser
+ Requires=wpeframework.service iarmbusd.service dsmgr.service
+ After=wpeframework.service iarmbusd.service dsmgr.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-displayinfo.service b/wpeframework-displayinfo.service
+index a5150ce..2f57524 100644
+--- a/wpeframework-displayinfo.service
++++ b/wpeframework-displayinfo.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework DisplayInfo Initialiser
+ Requires=wpeframework-powermanager.service iarmbusd.service dsmgr.service
+ After=wpeframework-powermanager.service iarmbusd.service dsmgr.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-firmwareupdate.service b/wpeframework-firmwareupdate.service
+index 5e10c3d..554927f 100644
+--- a/wpeframework-firmwareupdate.service
++++ b/wpeframework-firmwareupdate.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework FirmwareUpdate Initialiser
+ Requires=wpeframework-powermanager.service
+ After=wpeframework-powermanager.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-frontpanel.service b/wpeframework-frontpanel.service
+index 60fd06e..c1f74fc 100644
+--- a/wpeframework-frontpanel.service
++++ b/wpeframework-frontpanel.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework FrontPanel Initialiser
+ Requires=wpeframework-powermanager.service dsmgr.service
+ After=wpeframework-powermanager.service dsmgr.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-hdcpprofile.service b/wpeframework-hdcpprofile.service
+index f474d88..40a78a9 100644
+--- a/wpeframework-hdcpprofile.service
++++ b/wpeframework-hdcpprofile.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework HdcpProfile Initialiser
+ Requires=wpeframework-powermanager.service dsmgr.service
+ After=wpeframework-powermanager.service dsmgr.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-hdmicecsink.service b/wpeframework-hdmicecsink.service
+index 2625cba..4eafc9b 100644
+--- a/wpeframework-hdmicecsink.service
++++ b/wpeframework-hdmicecsink.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework HdmiCecSink Initialiser
+ Requires=dsmgr.service wpeframework-powermanager.service
+ After=dsmgr.service wpeframework-powermanager.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-hdmicecsource.service b/wpeframework-hdmicecsource.service
+index ed4d8e1..7d15583 100644
+--- a/wpeframework-hdmicecsource.service
++++ b/wpeframework-hdmicecsource.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework HdmiCecSource Initialiser
+ Requires=wpeframework.service
+ After=wpeframework-powermanager.service dsmgr.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-lifecyclemanager.service b/wpeframework-lifecyclemanager.service
+index 8c61374..bb00a0e 100755
+--- a/wpeframework-lifecyclemanager.service
++++ b/wpeframework-lifecyclemanager.service
+@@ -3,7 +3,6 @@ Description=WPEFramework LifecycleManager Initialiser
+ Requires= wpeframework.service wpeframework-runtimemanager.service
+ After= wpeframework.service wpeframework-runtimemanager.service
+ ConditionPathExists=/opt/ai2managers
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-lisa.service b/wpeframework-lisa.service
+index bf8c85a..b42be37 100644
+--- a/wpeframework-lisa.service
++++ b/wpeframework-lisa.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework DAC LISA Plugin Initialiser
+ Requires=wpeframework.service iarmbusd.service dsmgr.service
+ After=wpeframework.service iarmbusd.service dsmgr.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ ConditionPathExists=!/opt/ai2managers
+ 
+ [Service]
+diff --git a/wpeframework-locationsync.service b/wpeframework-locationsync.service
+index 0bdbabb..16d4b2e 100644
+--- a/wpeframework-locationsync.service
++++ b/wpeframework-locationsync.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework LocationSync Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service wpeframework-network.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-maintenancemanager.service b/wpeframework-maintenancemanager.service
+index f004ea2..e786005 100644
+--- a/wpeframework-maintenancemanager.service
++++ b/wpeframework-maintenancemanager.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework MaintenanceManager Initialiser
+ Requires=wpeframework.service iarmbusd.service mfrmgr.service wpeframework-network.service
+ After=wpeframework.service iarmbusd.service mfrmgr.service wpeframework-network.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-messenger.service b/wpeframework-messenger.service
+index e5f6685..49c7c70 100644
+--- a/wpeframework-messenger.service
++++ b/wpeframework-messenger.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework Messenger Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-monitor.service b/wpeframework-monitor.service
+index 959cf04..4a58def 100644
+--- a/wpeframework-monitor.service
++++ b/wpeframework-monitor.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework Monitor Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-network.service b/wpeframework-network.service
+index 9d01f29..b9e4de2 100644
+--- a/wpeframework-network.service
++++ b/wpeframework-network.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework Network Initialiser
+ Requires=wpeframework.service iarmbusd.service wpeframework-networkmanager.service
+ After=wpeframework.service iarmbusd.service wpeframework-networkmanager.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-networkmanager.service b/wpeframework-networkmanager.service
+index 3301923..8131ff1 100644
+--- a/wpeframework-networkmanager.service
++++ b/wpeframework-networkmanager.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework NetworkManager Initialiser
+ Requires=wpeframework.service iarmbusd.service NetworkManager.service
+ After=wpeframework.service iarmbusd.service NetworkManager.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-ocdm.service b/wpeframework-ocdm.service
+index 2261dcf..324ea10 100644
+--- a/wpeframework-ocdm.service
++++ b/wpeframework-ocdm.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework OCDM Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-ocicontainer.service b/wpeframework-ocicontainer.service
+index 4ef535f..7f73666 100644
+--- a/wpeframework-ocicontainer.service
++++ b/wpeframework-ocicontainer.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework OCIContainer Plugin Initialiser
+ Requires=wpeframework.service iarmbusd.service dsmgr.service
+ After=wpeframework.service iarmbusd.service dsmgr.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-packagemanager.service b/wpeframework-packagemanager.service
+index 40d2b3c..1ef50ba 100644
+--- a/wpeframework-packagemanager.service
++++ b/wpeframework-packagemanager.service
+@@ -3,7 +3,6 @@ Description=WPEFramework PackageManagerRDKEMS Initialiser
+ Requires= wpeframework.service wpeframework-storagemanager.service
+ After= wpeframework.service wpeframework-storagemanager.service
+ ConditionPathExists=/opt/ai2managers
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-persistentstore.service b/wpeframework-persistentstore.service
+index 7cefe5e..5ef8119 100644
+--- a/wpeframework-persistentstore.service
++++ b/wpeframework-persistentstore.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework PersistentStore Initialiser
+ Requires=wpeframework-powermanager.service
+ After=wpeframework-powermanager.service securemount.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ RequiresMountsFor=/opt/secure
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-playerinfo.service b/wpeframework-playerinfo.service
+index 3ec94c6..bd8f483 100644
+--- a/wpeframework-playerinfo.service
++++ b/wpeframework-playerinfo.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework PlayerInfo Initialiser
+ Requires=wpeframework-powermanager.service iarmbusd.service dsmgr.service
+ After=wpeframework-powermanager.service iarmbusd.service dsmgr.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-powermanager.service b/wpeframework-powermanager.service
+index 01feedc..a0d5441 100755
+--- a/wpeframework-powermanager.service
++++ b/wpeframework-powermanager.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework PowerManager Initialiser
+ Requires=wpeframework.service iarmbusd.service
+ After=wpeframework.service iarmbusd.service 
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-rdkshell.service b/wpeframework-rdkshell.service
+index 0215c3a..15f0095 100644
+--- a/wpeframework-rdkshell.service
++++ b/wpeframework-rdkshell.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework RDKShell Plugin Initialiser
+ Requires=wpeframework.service iarmbusd.service dsmgr.service
+ After=wpeframework.service iarmbusd.service dsmgr.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ ConditionPathExists=!/opt/ai2managers
+ 
+ [Service]
+diff --git a/wpeframework-rdkwindowmanager.service b/wpeframework-rdkwindowmanager.service
+index 66cc3ce..0f7b39a 100755
+--- a/wpeframework-rdkwindowmanager.service
++++ b/wpeframework-rdkwindowmanager.service
+@@ -3,7 +3,6 @@ Description=WPEFramework RDKWindowManager Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
+ ConditionPathExists=/opt/ai2managers
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-remotecontrol.service b/wpeframework-remotecontrol.service
+index 88ef326..62d96f8 100644
+--- a/wpeframework-remotecontrol.service
++++ b/wpeframework-remotecontrol.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework RemoteControl Initialiser
+ Requires=wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
+ After=wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-runtimemanager.service b/wpeframework-runtimemanager.service
+index 27d3550..6a36646 100755
+--- a/wpeframework-runtimemanager.service
++++ b/wpeframework-runtimemanager.service
+@@ -3,7 +3,6 @@ Description=WPEFramework RuntimeManager Initialiser
+ Requires= wpeframework.service wpeframework-storagemanager.service wpeframework-rdkwindowmanager.service wpeframework-ocicontainer.service
+ After= wpeframework.service wpeframework-storagemanager.service wpeframework-rdkwindowmanager.service wpeframework-ocicontainer.service
+ ConditionPathExists=/opt/ai2managers
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-services.path b/wpeframework-services.path
+deleted file mode 100644
+index d6f4c59..0000000
+--- a/wpeframework-services.path
++++ /dev/null
+@@ -1,13 +0,0 @@
+-#This file keeps track of path - whenever it's changed it will trigger thunderstartupservices.
+-#In thunderstartup service files we use ConditionPathExists to check whether path exixts or not.
+-
+-[Unit]
+-Description=Path Changed
+-OnFailure=path-fail-notifier@%n.service
+-
+-[Path]
+-PathChanged=/tmp/wpeframeworkstarted
+-Unit=wpeframework-services.target
+-
+-[Install]
+-WantedBy=multi-user.target
+diff --git a/wpeframework-services.target b/wpeframework-services.target
+deleted file mode 100644
+index 175bad1..0000000
+--- a/wpeframework-services.target
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#This file is used to trigger restart of the wpeframework plugins.
+-#The Requires field will be filled in by the bb file.
+-
+-[Unit]
+-Description=Target for WPEFramework-related services
+-Requires=
+-After=wpeframework.service
+diff --git a/wpeframework-sharedstorage.service b/wpeframework-sharedstorage.service
+index 1910a46..2af6e63 100644
+--- a/wpeframework-sharedstorage.service
++++ b/wpeframework-sharedstorage.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework SharedStorage Initialiser
+ Requires=wpeframework.service wpeframework-persistentstore.service
+ After=wpeframework.service wpeframework-persistentstore.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-storagemanager.service b/wpeframework-storagemanager.service
+index 3c3937c..f6c2d88 100644
+--- a/wpeframework-storagemanager.service
++++ b/wpeframework-storagemanager.service
+@@ -3,7 +3,6 @@ Description=WPEFramework StorageManager Initialiser
+ Requires= wpeframework.service
+ After= wpeframework.service
+ ConditionPathExists=/opt/ai2managers
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-system.service b/wpeframework-system.service
+index f5aea8c..27784cf 100644
+--- a/wpeframework-system.service
++++ b/wpeframework-system.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework System Initialiser
+ Requires=wpeframework-powermanager.service sysmgr.service mfrmgr.service
+ After=wpeframework-powermanager.service sysmgr.service mfrmgr.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-systemaudioplayer.service b/wpeframework-systemaudioplayer.service
+index 5277053..38e55d9 100644
+--- a/wpeframework-systemaudioplayer.service
++++ b/wpeframework-systemaudioplayer.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework SystemAudioPlayer Initialiser
+ Requires=wpeframework-powermanager.service
+ After=wpeframework-powermanager.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-systemmode.service b/wpeframework-systemmode.service
+index bb8cc83..284e611 100644
+--- a/wpeframework-systemmode.service
++++ b/wpeframework-systemmode.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework SystemMode Initialiser
+ Requires=wpeframework-powermanager.service
+ After=wpeframework-powermanager.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-telemetry.service b/wpeframework-telemetry.service
+index 307ee73..3326081 100644
+--- a/wpeframework-telemetry.service
++++ b/wpeframework-telemetry.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework Telemetry Initialiser
+ Requires=wpeframework-system.service wpeframework-powermanager.service wpeframework-usersettings.service
+ After=wpeframework-system.service wpeframework-powermanager.service wpeframework-usersettings.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-texttospeech.service b/wpeframework-texttospeech.service
+index 6348963..5f49ee7 100644
+--- a/wpeframework-texttospeech.service
++++ b/wpeframework-texttospeech.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework TextToSpeech Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-usbdevice.service b/wpeframework-usbdevice.service
+index d611182..66e7130 100644
+--- a/wpeframework-usbdevice.service
++++ b/wpeframework-usbdevice.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework UsbDevice Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-usbmassstorage.service b/wpeframework-usbmassstorage.service
+index 68e3878..de2a5cd 100644
+--- a/wpeframework-usbmassstorage.service
++++ b/wpeframework-usbmassstorage.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework USBMassStorage Initialiser
+ Requires=wpeframework.service wpeframework-usbdevice.service
+ After=wpeframework.service wpeframework-usbdevice.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-usersettings.service b/wpeframework-usersettings.service
+index 232e15b..c7a9041 100644
+--- a/wpeframework-usersettings.service
++++ b/wpeframework-usersettings.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework UserSettings Initialiser
+ Requires=wpeframework.service wpeframework-persistentstore.service
+ After=wpeframework.service wpeframework-persistentstore.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-voicecontrol.service b/wpeframework-voicecontrol.service
+index b28a074..ff68493 100644
+--- a/wpeframework-voicecontrol.service
++++ b/wpeframework-voicecontrol.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework VoiceControl Initialiser
+ Requires=wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
+ After=wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-wifi.service b/wpeframework-wifi.service
+index 55f9c4f..76452b1 100644
+--- a/wpeframework-wifi.service
++++ b/wpeframework-wifi.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework Wifi Initialiser
+ Requires=wpeframework.service iarmbusd.service wpeframework-networkmanager.service
+ After=wpeframework.service iarmbusd.service wpeframework-networkmanager.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-xcast.service b/wpeframework-xcast.service
+index 7be90b2..4aece03 100644
+--- a/wpeframework-xcast.service
++++ b/wpeframework-xcast.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework Xcast Initialiser
+ Requires=wpeframework-powermanager.service
+ After=wpeframework-powermanager.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+-- 
+2.43.0
+
+
+From d9af2c8afa8aa34eaf4b8fcea37993622519bec3 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Mon, 1 Dec 2025 14:58:36 +0200
+Subject: [PATCH 2/8] Revert "Merge pull request #26 from
+ rdkcentral/topic/RDKEMW-1766"
+
+This reverts commit dbfd6c88912067aace026a2a62e4cb819d2e8346, reversing
+changes made to 93abfa73a962ec2fc848d2591980ca553262fda6.
+---
+ wpeframework-bluetooth.service         | 4 ++--
+ wpeframework-cloudstore.service        | 4 ++--
+ wpeframework-displayinfo.service       | 4 ++--
+ wpeframework-displaysettings.service   | 4 ++--
+ wpeframework-firmwareupdate.service    | 4 ++--
+ wpeframework-persistentstore.service   | 4 ++--
+ wpeframework-playerinfo.service        | 4 ++--
+ wpeframework-remotecontrol.service     | 4 ++--
+ wpeframework-systemaudioplayer.service | 4 ++--
+ wpeframework-systemmode.service        | 4 ++--
+ wpeframework-voicecontrol.service      | 4 ++--
+ 11 files changed, 22 insertions(+), 22 deletions(-)
+
+diff --git a/wpeframework-bluetooth.service b/wpeframework-bluetooth.service
+index d9c0b08..1fa2d45 100644
+--- a/wpeframework-bluetooth.service
++++ b/wpeframework-bluetooth.service
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=WPEFramework Bluetooth Initialiser
+-Requires=wpeframework-powermanager.service iarmbusd.service bluetooth.service
+-After=wpeframework-powermanager.service iarmbusd.service btmgr.service
++Requires=wpeframework.service wpeframework-powermanager.service iarmbusd.service bluetooth.service
++After=wpeframework.service wpeframework-powermanager.service iarmbusd.service btmgr.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-cloudstore.service b/wpeframework-cloudstore.service
+index 7656006..c4ed0b5 100644
+--- a/wpeframework-cloudstore.service
++++ b/wpeframework-cloudstore.service
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=WPEFramework CloudStore Initialiser
+-Requires=wpeframework-powermanager.service
+-After=wpeframework-powermanager.service
++Requires=wpeframework.service
++After=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-displayinfo.service b/wpeframework-displayinfo.service
+index 2f57524..3e0db09 100644
+--- a/wpeframework-displayinfo.service
++++ b/wpeframework-displayinfo.service
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=WPEFramework DisplayInfo Initialiser
+-Requires=wpeframework-powermanager.service iarmbusd.service dsmgr.service
+-After=wpeframework-powermanager.service iarmbusd.service dsmgr.service
++Requires=wpeframework.service wpeframework-powermanager.service iarmbusd.service dsmgr.service
++After=wpeframework.service wpeframework-powermanager.service iarmbusd.service dsmgr.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-displaysettings.service b/wpeframework-displaysettings.service
+index 5a0d379..e9acb2d 100644
+--- a/wpeframework-displaysettings.service
++++ b/wpeframework-displaysettings.service
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=WPEFramework DisplaySettings Initialiser
+-Requires=dsmgr.service wpeframework-powermanager.service
+-After=dsmgr.service wpeframework-powermanager.service
++Requires=wpeframework.service dsmgr.service wpeframework-powermanager.service
++After=wpeframework.service dsmgr.service wpeframework-powermanager.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-firmwareupdate.service b/wpeframework-firmwareupdate.service
+index 554927f..2e07cda 100644
+--- a/wpeframework-firmwareupdate.service
++++ b/wpeframework-firmwareupdate.service
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=WPEFramework FirmwareUpdate Initialiser
+-Requires=wpeframework-powermanager.service
+-After=wpeframework-powermanager.service
++Requires=wpeframework.service wpeframework-powermanager.service
++After=wpeframework.service wpeframework-powermanager.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-persistentstore.service b/wpeframework-persistentstore.service
+index 5ef8119..4b832ad 100644
+--- a/wpeframework-persistentstore.service
++++ b/wpeframework-persistentstore.service
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=WPEFramework PersistentStore Initialiser
+-Requires=wpeframework-powermanager.service
+-After=wpeframework-powermanager.service securemount.service
++Requires=wpeframework.service
++After=wpeframework.service securemount.service
+ RequiresMountsFor=/opt/secure
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-playerinfo.service b/wpeframework-playerinfo.service
+index bd8f483..b0a663e 100644
+--- a/wpeframework-playerinfo.service
++++ b/wpeframework-playerinfo.service
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=WPEFramework PlayerInfo Initialiser
+-Requires=wpeframework-powermanager.service iarmbusd.service dsmgr.service
+-After=wpeframework-powermanager.service iarmbusd.service dsmgr.service
++Requires=wpeframework.service wpeframework-powermanager.service iarmbusd.service dsmgr.service
++After=wpeframework.service wpeframework-powermanager.service iarmbusd.service dsmgr.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-remotecontrol.service b/wpeframework-remotecontrol.service
+index 62d96f8..aaf8f11 100644
+--- a/wpeframework-remotecontrol.service
++++ b/wpeframework-remotecontrol.service
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=WPEFramework RemoteControl Initialiser
+-Requires=wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
+-After=wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
++Requires=wpeframework.service wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
++After=wpeframework.service wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-systemaudioplayer.service b/wpeframework-systemaudioplayer.service
+index 38e55d9..66306a1 100644
+--- a/wpeframework-systemaudioplayer.service
++++ b/wpeframework-systemaudioplayer.service
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=WPEFramework SystemAudioPlayer Initialiser
+-Requires=wpeframework-powermanager.service
+-After=wpeframework-powermanager.service
++Requires=wpeframework.service wpeframework-powermanager.service
++After=wpeframework.service wpeframework-powermanager.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-systemmode.service b/wpeframework-systemmode.service
+index 284e611..5bfb17f 100644
+--- a/wpeframework-systemmode.service
++++ b/wpeframework-systemmode.service
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=WPEFramework SystemMode Initialiser
+-Requires=wpeframework-powermanager.service
+-After=wpeframework-powermanager.service
++Requires=wpeframework.service wpeframework-powermanager.service
++After=wpeframework.service wpeframework-powermanager.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-voicecontrol.service b/wpeframework-voicecontrol.service
+index ff68493..1ee81cf 100644
+--- a/wpeframework-voicecontrol.service
++++ b/wpeframework-voicecontrol.service
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=WPEFramework VoiceControl Initialiser
+-Requires=wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
+-After=wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
++Requires=wpeframework.service wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
++After=wpeframework.service wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+-- 
+2.43.0
+
+
+From 794fabcc1228bcceeb25693a837f24b5ff8f772d Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Mon, 1 Dec 2025 16:35:54 +0200
+Subject: [PATCH 3/8] Revert the hack
+ "ConditionPathExists=/tmp/wpeframeworkstarted" from pr#123
+
+---
+ wpeframework-appgateway.service       | 1 -
+ wpeframework-appnotifications.service | 1 -
+ wpeframework-fbsettings.service       | 1 -
+ 3 files changed, 3 deletions(-)
+
+diff --git a/wpeframework-appgateway.service b/wpeframework-appgateway.service
+index 99c58d9..1440630 100644
+--- a/wpeframework-appgateway.service
++++ b/wpeframework-appgateway.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework AppGateway Initialiser
+ Requires=wpeframework.service wpeframework-appnotifications.service
+ After=wpeframework.service wpeframework-appnotifications.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ ConditionPathExists=/opt/appgatewayenabled
+ 
+ [Service]
+diff --git a/wpeframework-appnotifications.service b/wpeframework-appnotifications.service
+index 9e50cec..4adf528 100644
+--- a/wpeframework-appnotifications.service
++++ b/wpeframework-appnotifications.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework AppNotifications Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ ConditionPathExists=/opt/appgatewayenabled
+ 
+ [Service]
+diff --git a/wpeframework-fbsettings.service b/wpeframework-fbsettings.service
+index 112bf57..9866ed3 100644
+--- a/wpeframework-fbsettings.service
++++ b/wpeframework-fbsettings.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework FbSetting Initialiser
+ Requires=wpeframework.service wpeframework-appgateway.service
+ After=wpeframework.service wpeframework-appgateway.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ ConditionPathExists=/opt/appgatewayenabled
+ 
+ [Service]
+-- 
+2.43.0
+
+
+From 19831141a858a75cdfa677d5486d18d2caed4230 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Mon, 1 Dec 2025 16:38:28 +0200
+Subject: [PATCH 4/8] Revert the hack
+ "ConditionPathExists=/tmp/wpeframeworkstarted" from pr#58
+
+---
+ wpeframework-cryptography.service | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/wpeframework-cryptography.service b/wpeframework-cryptography.service
+index 0f9df25..f606590 100644
+--- a/wpeframework-cryptography.service
++++ b/wpeframework-cryptography.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework Cryptography Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+-- 
+2.43.0
+
+
+From 50f43e11e1ea9d10a8ddb3849345cea02f16e23f Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Mon, 1 Dec 2025 16:40:05 +0200
+Subject: [PATCH 5/8] Revert the hack
+ "ConditionPathExists=/tmp/wpeframeworkstarted" from pr#117
+
+---
+ wpeframework-preinstallmanager.service | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/wpeframework-preinstallmanager.service b/wpeframework-preinstallmanager.service
+index b2785ef..264a641 100755
+--- a/wpeframework-preinstallmanager.service
++++ b/wpeframework-preinstallmanager.service
+@@ -3,7 +3,6 @@ Description=WPEFramework PreinstallManager Initialiser
+ Requires= wpeframework.service wpeframework-packagemanager.service
+ After= wpeframework.service wpeframework-packagemanager.service
+ ConditionPathExists=/opt/ai2managers
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ 
+ [Service]
+ Type=oneshot
+-- 
+2.43.0
+
+
+From 3641f2d74ccbbcd9e749d50fd698965997d8f09e Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Mon, 1 Dec 2025 16:41:55 +0200
+Subject: [PATCH 6/8] Revert the hack
+ "ConditionPathExists=/tmp/wpeframeworkstarted" from pr#101
+
+---
+ wpeframework-downloadmanager.service | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/wpeframework-downloadmanager.service b/wpeframework-downloadmanager.service
+index f1d5c2f..0256a94 100755
+--- a/wpeframework-downloadmanager.service
++++ b/wpeframework-downloadmanager.service
+@@ -3,7 +3,6 @@ Description=WPEFramework DownloadManager Initialiser
+ Requires= wpeframework.service wpeframework-storagemanager.service
+ After= wpeframework.service wpeframework-storagemanager.service
+ ConditionPathExists=/opt/ai2managers
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ 
+ [Service]
+ Type=oneshot
+-- 
+2.43.0
+
+
+From fb6b8e9e531cff4c4f9e9619d43769fd53092a02 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Mon, 1 Dec 2025 16:42:52 +0200
+Subject: [PATCH 7/8] Revert the hack
+ "ConditionPathExists=/tmp/wpeframeworkstarted" from pr#113
+
+---
+ wpeframework-migration.service | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/wpeframework-migration.service b/wpeframework-migration.service
+index 1d77aac..e772313 100644
+--- a/wpeframework-migration.service
++++ b/wpeframework-migration.service
+@@ -2,7 +2,6 @@
+ Description=WPEFramework Migration Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
+-ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+-- 
+2.43.0
+
+
+From 2f86274d88b4725ef7b0e108847be077f9fa0f58 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Mon, 1 Dec 2025 16:58:46 +0200
+Subject: [PATCH 8/8] Services are part of wpeframework should be PartOf= to
+ stop/restart with wpeframework
+
+---
+ wpeframework-analytics.service          | 1 +
+ wpeframework-appgateway.service         | 1 +
+ wpeframework-appmanager.service         | 1 +
+ wpeframework-appnotifications.service   | 1 +
+ wpeframework-avinput.service            | 1 +
+ wpeframework-avoutput.service           | 1 +
+ wpeframework-bluetooth.service          | 1 +
+ wpeframework-cloudstore.service         | 1 +
+ wpeframework-cryptography.service       | 1 +
+ wpeframework-deviceinfo.service         | 1 +
+ wpeframework-displayinfo.service        | 1 +
+ wpeframework-displaysettings.service    | 1 +
+ wpeframework-downloadmanager.service    | 1 +
+ wpeframework-fbsettings.service         | 1 +
+ wpeframework-firmwareupdate.service     | 1 +
+ wpeframework-frontpanel.service         | 1 +
+ wpeframework-hdcpprofile.service        | 1 +
+ wpeframework-hdmicecsink.service        | 1 +
+ wpeframework-hdmicecsource.service      | 1 +
+ wpeframework-lifecyclemanager.service   | 1 +
+ wpeframework-lisa.service               | 1 +
+ wpeframework-locationsync.service       | 1 +
+ wpeframework-maintenancemanager.service | 1 +
+ wpeframework-messenger.service          | 1 +
+ wpeframework-migration.service          | 1 +
+ wpeframework-monitor.service            | 1 +
+ wpeframework-network.service            | 1 +
+ wpeframework-networkmanager.service     | 1 +
+ wpeframework-ocdm.service               | 1 +
+ wpeframework-ocicontainer.service       | 1 +
+ wpeframework-packagemanager.service     | 1 +
+ wpeframework-persistentstore.service    | 1 +
+ wpeframework-playerinfo.service         | 1 +
+ wpeframework-powermanager.service       | 3 ++-
+ wpeframework-preinstallmanager.service  | 1 +
+ wpeframework-rdkshell.service           | 1 +
+ wpeframework-rdkwindowmanager.service   | 1 +
+ wpeframework-remotecontrol.service      | 1 +
+ wpeframework-runtimemanager.service     | 1 +
+ wpeframework-sharedstorage.service      | 1 +
+ wpeframework-storagemanager.service     | 1 +
+ wpeframework-system.service             | 1 +
+ wpeframework-systemaudioplayer.service  | 1 +
+ wpeframework-systemmode.service         | 1 +
+ wpeframework-telemetry.service          | 1 +
+ wpeframework-texttospeech.service       | 1 +
+ wpeframework-usbdevice.service          | 1 +
+ wpeframework-usbmassstorage.service     | 1 +
+ wpeframework-usersettings.service       | 1 +
+ wpeframework-voicecontrol.service       | 1 +
+ wpeframework-wifi.service               | 1 +
+ wpeframework-xcast.service              | 1 +
+ 52 files changed, 53 insertions(+), 1 deletion(-)
+
+diff --git a/wpeframework-analytics.service b/wpeframework-analytics.service
+index 8414b80..6dc2912 100644
+--- a/wpeframework-analytics.service
++++ b/wpeframework-analytics.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework Analytics Initialiser
+ Requires=wpeframework.service wpeframework-persistentstore.service wpeframework-system.service
+ After=wpeframework.service wpeframework-persistentstore.service wpeframework-system.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-appgateway.service b/wpeframework-appgateway.service
+index 1440630..609614c 100644
+--- a/wpeframework-appgateway.service
++++ b/wpeframework-appgateway.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework AppGateway Initialiser
+ Requires=wpeframework.service wpeframework-appnotifications.service
+ After=wpeframework.service wpeframework-appnotifications.service
++PartOf=wpeframework.service
+ ConditionPathExists=/opt/appgatewayenabled
+ 
+ [Service]
+diff --git a/wpeframework-appmanager.service b/wpeframework-appmanager.service
+index f2609dd..7593ff0 100644
+--- a/wpeframework-appmanager.service
++++ b/wpeframework-appmanager.service
+@@ -3,6 +3,7 @@ Description=WPEFramework AppManager Initialiser
+ Requires= wpeframework.service wpeframework-lifecyclemanager.service wpeframework-persistentstore.service wpeframework-packagemanager.service
+ After= wpeframework.service wpeframework-lifecyclemanager.service wpeframework-persistentstore.service wpeframework-packagemanager.service
+ ConditionPathExists=/opt/ai2managers
++PartOf=wpeframework.service
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-appnotifications.service b/wpeframework-appnotifications.service
+index 4adf528..5b43bd9 100644
+--- a/wpeframework-appnotifications.service
++++ b/wpeframework-appnotifications.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework AppNotifications Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
++PartOf=wpeframework.service
+ ConditionPathExists=/opt/appgatewayenabled
+ 
+ [Service]
+diff --git a/wpeframework-avinput.service b/wpeframework-avinput.service
+index d651d19..b5d73b5 100644
+--- a/wpeframework-avinput.service
++++ b/wpeframework-avinput.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework AVInput Initialiser
+ Requires=wpeframework.service dsmgr.service
+ After=wpeframework.service dsmgr.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-avoutput.service b/wpeframework-avoutput.service
+index a30a961..3309535 100644
+--- a/wpeframework-avoutput.service
++++ b/wpeframework-avoutput.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework AVOutput Initialiser
+ Requires=wpeframework.service dsmgr.service
+ After=wpeframework.service dsmgr.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-bluetooth.service b/wpeframework-bluetooth.service
+index 1fa2d45..d7fc975 100644
+--- a/wpeframework-bluetooth.service
++++ b/wpeframework-bluetooth.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework Bluetooth Initialiser
+ Requires=wpeframework.service wpeframework-powermanager.service iarmbusd.service bluetooth.service
+ After=wpeframework.service wpeframework-powermanager.service iarmbusd.service btmgr.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-cloudstore.service b/wpeframework-cloudstore.service
+index c4ed0b5..e5a2f2d 100644
+--- a/wpeframework-cloudstore.service
++++ b/wpeframework-cloudstore.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework CloudStore Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-cryptography.service b/wpeframework-cryptography.service
+index f606590..26e85d5 100644
+--- a/wpeframework-cryptography.service
++++ b/wpeframework-cryptography.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework Cryptography Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-deviceinfo.service b/wpeframework-deviceinfo.service
+index b8eacc3..6d4782c 100644
+--- a/wpeframework-deviceinfo.service
++++ b/wpeframework-deviceinfo.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework DeviceInfo Initialiser
+ Requires=wpeframework.service iarmbusd.service dsmgr.service
+ After=wpeframework.service iarmbusd.service dsmgr.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-displayinfo.service b/wpeframework-displayinfo.service
+index 3e0db09..3a0979b 100644
+--- a/wpeframework-displayinfo.service
++++ b/wpeframework-displayinfo.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework DisplayInfo Initialiser
+ Requires=wpeframework.service wpeframework-powermanager.service iarmbusd.service dsmgr.service
+ After=wpeframework.service wpeframework-powermanager.service iarmbusd.service dsmgr.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-displaysettings.service b/wpeframework-displaysettings.service
+index e9acb2d..f11ad8c 100644
+--- a/wpeframework-displaysettings.service
++++ b/wpeframework-displaysettings.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework DisplaySettings Initialiser
+ Requires=wpeframework.service dsmgr.service wpeframework-powermanager.service
+ After=wpeframework.service dsmgr.service wpeframework-powermanager.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-downloadmanager.service b/wpeframework-downloadmanager.service
+index 0256a94..c1e7b08 100755
+--- a/wpeframework-downloadmanager.service
++++ b/wpeframework-downloadmanager.service
+@@ -3,6 +3,7 @@ Description=WPEFramework DownloadManager Initialiser
+ Requires= wpeframework.service wpeframework-storagemanager.service
+ After= wpeframework.service wpeframework-storagemanager.service
+ ConditionPathExists=/opt/ai2managers
++PartOf=wpeframework.service
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-fbsettings.service b/wpeframework-fbsettings.service
+index 9866ed3..c96dc3a 100644
+--- a/wpeframework-fbsettings.service
++++ b/wpeframework-fbsettings.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework FbSetting Initialiser
+ Requires=wpeframework.service wpeframework-appgateway.service
+ After=wpeframework.service wpeframework-appgateway.service
++PartOf=wpeframework.service
+ ConditionPathExists=/opt/appgatewayenabled
+ 
+ [Service]
+diff --git a/wpeframework-firmwareupdate.service b/wpeframework-firmwareupdate.service
+index 2e07cda..ba98b4c 100644
+--- a/wpeframework-firmwareupdate.service
++++ b/wpeframework-firmwareupdate.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework FirmwareUpdate Initialiser
+ Requires=wpeframework.service wpeframework-powermanager.service
+ After=wpeframework.service wpeframework-powermanager.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-frontpanel.service b/wpeframework-frontpanel.service
+index c1f74fc..7a6bf2c 100644
+--- a/wpeframework-frontpanel.service
++++ b/wpeframework-frontpanel.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework FrontPanel Initialiser
+ Requires=wpeframework-powermanager.service dsmgr.service
+ After=wpeframework-powermanager.service dsmgr.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-hdcpprofile.service b/wpeframework-hdcpprofile.service
+index 40a78a9..bc5e48a 100644
+--- a/wpeframework-hdcpprofile.service
++++ b/wpeframework-hdcpprofile.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework HdcpProfile Initialiser
+ Requires=wpeframework-powermanager.service dsmgr.service
+ After=wpeframework-powermanager.service dsmgr.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-hdmicecsink.service b/wpeframework-hdmicecsink.service
+index 4eafc9b..a52b7cf 100644
+--- a/wpeframework-hdmicecsink.service
++++ b/wpeframework-hdmicecsink.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework HdmiCecSink Initialiser
+ Requires=dsmgr.service wpeframework-powermanager.service
+ After=dsmgr.service wpeframework-powermanager.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-hdmicecsource.service b/wpeframework-hdmicecsource.service
+index 7d15583..072286b 100644
+--- a/wpeframework-hdmicecsource.service
++++ b/wpeframework-hdmicecsource.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework HdmiCecSource Initialiser
+ Requires=wpeframework.service
+ After=wpeframework-powermanager.service dsmgr.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-lifecyclemanager.service b/wpeframework-lifecyclemanager.service
+index bb00a0e..c717291 100755
+--- a/wpeframework-lifecyclemanager.service
++++ b/wpeframework-lifecyclemanager.service
+@@ -3,6 +3,7 @@ Description=WPEFramework LifecycleManager Initialiser
+ Requires= wpeframework.service wpeframework-runtimemanager.service
+ After= wpeframework.service wpeframework-runtimemanager.service
+ ConditionPathExists=/opt/ai2managers
++PartOf=wpeframework.service
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-lisa.service b/wpeframework-lisa.service
+index b42be37..80e2461 100644
+--- a/wpeframework-lisa.service
++++ b/wpeframework-lisa.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework DAC LISA Plugin Initialiser
+ Requires=wpeframework.service iarmbusd.service dsmgr.service
+ After=wpeframework.service iarmbusd.service dsmgr.service
++PartOf=wpeframework.service
+ ConditionPathExists=!/opt/ai2managers
+ 
+ [Service]
+diff --git a/wpeframework-locationsync.service b/wpeframework-locationsync.service
+index 16d4b2e..a5b2392 100644
+--- a/wpeframework-locationsync.service
++++ b/wpeframework-locationsync.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework LocationSync Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service wpeframework-network.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-maintenancemanager.service b/wpeframework-maintenancemanager.service
+index e786005..3e1f53e 100644
+--- a/wpeframework-maintenancemanager.service
++++ b/wpeframework-maintenancemanager.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework MaintenanceManager Initialiser
+ Requires=wpeframework.service iarmbusd.service mfrmgr.service wpeframework-network.service
+ After=wpeframework.service iarmbusd.service mfrmgr.service wpeframework-network.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-messenger.service b/wpeframework-messenger.service
+index 49c7c70..d8f1425 100644
+--- a/wpeframework-messenger.service
++++ b/wpeframework-messenger.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework Messenger Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-migration.service b/wpeframework-migration.service
+index e772313..cd41b4b 100644
+--- a/wpeframework-migration.service
++++ b/wpeframework-migration.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework Migration Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-monitor.service b/wpeframework-monitor.service
+index 4a58def..b4ef216 100644
+--- a/wpeframework-monitor.service
++++ b/wpeframework-monitor.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework Monitor Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-network.service b/wpeframework-network.service
+index b9e4de2..aaec911 100644
+--- a/wpeframework-network.service
++++ b/wpeframework-network.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework Network Initialiser
+ Requires=wpeframework.service iarmbusd.service wpeframework-networkmanager.service
+ After=wpeframework.service iarmbusd.service wpeframework-networkmanager.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-networkmanager.service b/wpeframework-networkmanager.service
+index 8131ff1..0be0854 100644
+--- a/wpeframework-networkmanager.service
++++ b/wpeframework-networkmanager.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework NetworkManager Initialiser
+ Requires=wpeframework.service iarmbusd.service NetworkManager.service
+ After=wpeframework.service iarmbusd.service NetworkManager.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-ocdm.service b/wpeframework-ocdm.service
+index 324ea10..0078cb3 100644
+--- a/wpeframework-ocdm.service
++++ b/wpeframework-ocdm.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework OCDM Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-ocicontainer.service b/wpeframework-ocicontainer.service
+index 7f73666..cb7ad61 100644
+--- a/wpeframework-ocicontainer.service
++++ b/wpeframework-ocicontainer.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework OCIContainer Plugin Initialiser
+ Requires=wpeframework.service iarmbusd.service dsmgr.service
+ After=wpeframework.service iarmbusd.service dsmgr.service
++PartOf=wpeframework.service
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-packagemanager.service b/wpeframework-packagemanager.service
+index 1ef50ba..c429ac7 100644
+--- a/wpeframework-packagemanager.service
++++ b/wpeframework-packagemanager.service
+@@ -3,6 +3,7 @@ Description=WPEFramework PackageManagerRDKEMS Initialiser
+ Requires= wpeframework.service wpeframework-storagemanager.service
+ After= wpeframework.service wpeframework-storagemanager.service
+ ConditionPathExists=/opt/ai2managers
++PartOf=wpeframework.service
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-persistentstore.service b/wpeframework-persistentstore.service
+index 4b832ad..81e3f56 100644
+--- a/wpeframework-persistentstore.service
++++ b/wpeframework-persistentstore.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework PersistentStore Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service securemount.service
++PartOf=wpeframework.service
+ RequiresMountsFor=/opt/secure
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-playerinfo.service b/wpeframework-playerinfo.service
+index b0a663e..4bfabd6 100644
+--- a/wpeframework-playerinfo.service
++++ b/wpeframework-playerinfo.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework PlayerInfo Initialiser
+ Requires=wpeframework.service wpeframework-powermanager.service iarmbusd.service dsmgr.service
+ After=wpeframework.service wpeframework-powermanager.service iarmbusd.service dsmgr.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-powermanager.service b/wpeframework-powermanager.service
+index a0d5441..499cf61 100755
+--- a/wpeframework-powermanager.service
++++ b/wpeframework-powermanager.service
+@@ -1,7 +1,8 @@
+ [Unit]
+ Description=WPEFramework PowerManager Initialiser
+ Requires=wpeframework.service iarmbusd.service
+-After=wpeframework.service iarmbusd.service 
++After=wpeframework.service iarmbusd.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-preinstallmanager.service b/wpeframework-preinstallmanager.service
+index 264a641..07d3e4f 100755
+--- a/wpeframework-preinstallmanager.service
++++ b/wpeframework-preinstallmanager.service
+@@ -3,6 +3,7 @@ Description=WPEFramework PreinstallManager Initialiser
+ Requires= wpeframework.service wpeframework-packagemanager.service
+ After= wpeframework.service wpeframework-packagemanager.service
+ ConditionPathExists=/opt/ai2managers
++PartOf=wpeframework.service
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-rdkshell.service b/wpeframework-rdkshell.service
+index 15f0095..89b6e15 100644
+--- a/wpeframework-rdkshell.service
++++ b/wpeframework-rdkshell.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework RDKShell Plugin Initialiser
+ Requires=wpeframework.service iarmbusd.service dsmgr.service
+ After=wpeframework.service iarmbusd.service dsmgr.service
++PartOf=wpeframework.service
+ ConditionPathExists=!/opt/ai2managers
+ 
+ [Service]
+diff --git a/wpeframework-rdkwindowmanager.service b/wpeframework-rdkwindowmanager.service
+index 0f7b39a..763aa88 100755
+--- a/wpeframework-rdkwindowmanager.service
++++ b/wpeframework-rdkwindowmanager.service
+@@ -3,6 +3,7 @@ Description=WPEFramework RDKWindowManager Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
+ ConditionPathExists=/opt/ai2managers
++PartOf=wpeframework.service
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-remotecontrol.service b/wpeframework-remotecontrol.service
+index aaf8f11..e3e43d8 100644
+--- a/wpeframework-remotecontrol.service
++++ b/wpeframework-remotecontrol.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework RemoteControl Initialiser
+ Requires=wpeframework.service wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
+ After=wpeframework.service wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-runtimemanager.service b/wpeframework-runtimemanager.service
+index 6a36646..48e4079 100755
+--- a/wpeframework-runtimemanager.service
++++ b/wpeframework-runtimemanager.service
+@@ -3,6 +3,7 @@ Description=WPEFramework RuntimeManager Initialiser
+ Requires= wpeframework.service wpeframework-storagemanager.service wpeframework-rdkwindowmanager.service wpeframework-ocicontainer.service
+ After= wpeframework.service wpeframework-storagemanager.service wpeframework-rdkwindowmanager.service wpeframework-ocicontainer.service
+ ConditionPathExists=/opt/ai2managers
++PartOf=wpeframework.service
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-sharedstorage.service b/wpeframework-sharedstorage.service
+index 2af6e63..e69d0ad 100644
+--- a/wpeframework-sharedstorage.service
++++ b/wpeframework-sharedstorage.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework SharedStorage Initialiser
+ Requires=wpeframework.service wpeframework-persistentstore.service
+ After=wpeframework.service wpeframework-persistentstore.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-storagemanager.service b/wpeframework-storagemanager.service
+index f6c2d88..b13b0b6 100644
+--- a/wpeframework-storagemanager.service
++++ b/wpeframework-storagemanager.service
+@@ -3,6 +3,7 @@ Description=WPEFramework StorageManager Initialiser
+ Requires= wpeframework.service
+ After= wpeframework.service
+ ConditionPathExists=/opt/ai2managers
++PartOf=wpeframework.service
+ 
+ [Service]
+ Type=oneshot
+diff --git a/wpeframework-system.service b/wpeframework-system.service
+index 27784cf..e3f488a 100644
+--- a/wpeframework-system.service
++++ b/wpeframework-system.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework System Initialiser
+ Requires=wpeframework-powermanager.service sysmgr.service mfrmgr.service
+ After=wpeframework-powermanager.service sysmgr.service mfrmgr.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-systemaudioplayer.service b/wpeframework-systemaudioplayer.service
+index 66306a1..d0b8249 100644
+--- a/wpeframework-systemaudioplayer.service
++++ b/wpeframework-systemaudioplayer.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework SystemAudioPlayer Initialiser
+ Requires=wpeframework.service wpeframework-powermanager.service
+ After=wpeframework.service wpeframework-powermanager.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-systemmode.service b/wpeframework-systemmode.service
+index 5bfb17f..5b5779d 100644
+--- a/wpeframework-systemmode.service
++++ b/wpeframework-systemmode.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework SystemMode Initialiser
+ Requires=wpeframework.service wpeframework-powermanager.service
+ After=wpeframework.service wpeframework-powermanager.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-telemetry.service b/wpeframework-telemetry.service
+index 3326081..dc7e001 100644
+--- a/wpeframework-telemetry.service
++++ b/wpeframework-telemetry.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework Telemetry Initialiser
+ Requires=wpeframework-system.service wpeframework-powermanager.service wpeframework-usersettings.service
+ After=wpeframework-system.service wpeframework-powermanager.service wpeframework-usersettings.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-texttospeech.service b/wpeframework-texttospeech.service
+index 5f49ee7..88641d9 100644
+--- a/wpeframework-texttospeech.service
++++ b/wpeframework-texttospeech.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework TextToSpeech Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-usbdevice.service b/wpeframework-usbdevice.service
+index 66e7130..2f4e729 100644
+--- a/wpeframework-usbdevice.service
++++ b/wpeframework-usbdevice.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework UsbDevice Initialiser
+ Requires=wpeframework.service
+ After=wpeframework.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-usbmassstorage.service b/wpeframework-usbmassstorage.service
+index de2a5cd..feff669 100644
+--- a/wpeframework-usbmassstorage.service
++++ b/wpeframework-usbmassstorage.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework USBMassStorage Initialiser
+ Requires=wpeframework.service wpeframework-usbdevice.service
+ After=wpeframework.service wpeframework-usbdevice.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-usersettings.service b/wpeframework-usersettings.service
+index c7a9041..87e6b55 100644
+--- a/wpeframework-usersettings.service
++++ b/wpeframework-usersettings.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework UserSettings Initialiser
+ Requires=wpeframework.service wpeframework-persistentstore.service
+ After=wpeframework.service wpeframework-persistentstore.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-voicecontrol.service b/wpeframework-voicecontrol.service
+index 1ee81cf..9137181 100644
+--- a/wpeframework-voicecontrol.service
++++ b/wpeframework-voicecontrol.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework VoiceControl Initialiser
+ Requires=wpeframework.service wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
+ After=wpeframework.service wpeframework-powermanager.service iarmbusd.service ctrlm-main.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-wifi.service b/wpeframework-wifi.service
+index 76452b1..8e1b227 100644
+--- a/wpeframework-wifi.service
++++ b/wpeframework-wifi.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework Wifi Initialiser
+ Requires=wpeframework.service iarmbusd.service wpeframework-networkmanager.service
+ After=wpeframework.service iarmbusd.service wpeframework-networkmanager.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+diff --git a/wpeframework-xcast.service b/wpeframework-xcast.service
+index 4aece03..71822c0 100644
+--- a/wpeframework-xcast.service
++++ b/wpeframework-xcast.service
+@@ -2,6 +2,7 @@
+ Description=WPEFramework Xcast Initialiser
+ Requires=wpeframework-powermanager.service
+ After=wpeframework-powermanager.service
++PartOf=wpeframework.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+-- 
+2.43.0
+
