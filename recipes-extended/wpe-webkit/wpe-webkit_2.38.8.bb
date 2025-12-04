@@ -81,6 +81,7 @@ SRC_URI += "file://2.38.8/comcast-dynamic-insertion-of-decryptor.patch"
 SRC_URI += "file://2.38.8/comcast-RDKEMW-2744-BitmapTextureGL-Check-EGL-context.patch"
 SRC_URI += "file://2.38.8/comcast-DELIA-68848-webrtc-improvements.patch"
 SRC_URI += "file://2.38.8/comcast-RDKEMW-8425-HDR-DV-MediaCapabilities.patch"
+SRC_URI += "file://2.38/comcast-RDKEMW-9893-new-dtags-enable.patch"
 
 PACKAGECONFIG[wpeqtapi]          = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[westeros]          = "-DUSE_WPEWEBKIT_PLATFORM_WESTEROS=ON -DUSE_GSTREAMER_HOLEPUNCH=ON -DUSE_EXTERNAL_HOLEPUNCH=ON -DUSE_WESTEROS_SINK=ON,,westeros virtual/vendor-westeros-sink"
@@ -135,6 +136,10 @@ PACKAGECONFIG:remove = "${@bb.utils.contains('HAS_HDR_SUPPORT', '0', 'vp9_hdr', 
 EXTRA_OECMAKE += " \
   -DPYTHON_EXECUTABLE=${STAGING_BINDIR_NATIVE}/python3-native/python3 \
 "
+
+WPE_LIB_RUNPATH ?= "\$ORIGIN/../../lib"
+EXTRA_OECMAKE:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-enable-new-dtags-runpath', ' -DCMAKE_INSTALL_RPATH=${WPE_LIB_RUNPATH} -DLD_SUPPORTS_DISABLE_NEW_DTAGS=OFF', '', d)}"
+SYSROOT_DIRS:append = " ${libexecdir}"
 
 FILES:${PN} += " ${libdir}/wpe-webkit-*/injected-bundle/libWPEInjectedBundle.so"
 FILES:${PN}-web-inspector-plugin += " ${libdir}/wpe-webkit-*/libWPEWebInspectorResources.so"
