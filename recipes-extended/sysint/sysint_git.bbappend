@@ -4,6 +4,7 @@ DOBBY_ENABLED = "${@bb.utils.contains('DISTRO_FEATURES', 'DOBBY_CONTAINERS','tru
 
 SRC_URI += "file://udhcpc.vendor_specific"
 SRC_URI += "file://timeZone_offset_map"
+SRC_URI += "file://timesyncd-update.conf"
 SRC_URI += "file://nm-connectivity.conf"
 
 inherit logrotate_config 
@@ -22,12 +23,14 @@ LOGROTATE_ROTATION_pqstats="3"
 LOGROTATE_SIZE_MEM_pqstats="1572864"
 LOGROTATE_ROTATION_MEM_pqstats="3"
 
-NW_CONNECTIVITY_CHECK_URL ?= "https://nmcheck.gnome.org/check_network_status.txt"
-NW_CONNECTIVITY_CHECK_RESPONSE ?= "NetworkManager is online"
+NM_CONNECTIVITY_CHECK_URL ?= "http://nmcheck.gnome.org/check_network_status.txt"
+NM_CONNECTIVITY_CHECK_RESPONSE ?= "NetworkManager is online"
 
 do_install:append() {
     install -m 0755 ${WORKDIR}/udhcpc.vendor_specific ${D}${sysconfdir}/udhcpc.vendor_specific
     install -m 0644 ${WORKDIR}/timeZone_offset_map ${D}${sysconfdir}/timeZone_offset_map
+    install -d ${D}${systemd_unitdir}/system/systemd-timesyncd.service.d
+    install -m 644 ${WORKDIR}/timesyncd-update.conf ${D}${systemd_unitdir}/system/systemd-timesyncd.service.d
 
     if [ "${DOBBY_ENABLED}" = "true" ]; then
         echo "DOBBY_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
@@ -46,11 +49,11 @@ do_install:append() {
     install -d ${D}${sysconfdir}/NetworkManager/conf.d/
     install -m 0755 ${WORKDIR}/nm-connectivity.conf ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
     if [ -f "${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf" ]; then
-           if [ -n "${NW_CONNECTIVITY_CHECK_URL}" ]; then
-               sed -i "s|uri=.*|uri=${NW_CONNECTIVITY_CHECK_URL}|g" ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
+           if [ -n "${NM_CONNECTIVITY_CHECK_URL}" ]; then
+               sed -i "s|uri=.*|uri=${NM_CONNECTIVITY_CHECK_URL}|g" ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
            fi
-           if [ -n "${NW_CONNECTIVITY_CHECK_RESPONSE}" ]; then
-               sed -i "s|response=|response=${NW_CONNECTIVITY_CHECK_RESPONSE}|g" ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
+           if [ -n "${NM_CONNECTIVITY_CHECK_RESPONSE}" ]; then
+               sed -i "s|response=|response=${NM_CONNECTIVITY_CHECK_RESPONSE}|g" ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
            fi
     fi
 }

@@ -122,8 +122,6 @@ do_install() {
         install -m 0644 ${S}/systemd_units/restart-parodus.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/oops-dump.service ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/restart-timesyncd.service ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/restart-timesyncd.path ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-event.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-event.path ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/dropbear.service ${D}${systemd_unitdir}/system
@@ -289,7 +287,6 @@ SYSTEMD_SERVICE:${PN} += "update-reboot-info.service"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.path"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.service"
 SYSTEMD_SERVICE:${PN} += "gstreamer-cleanup.service"
-SYSTEMD_SERVICE:${PN} += "restart-timesyncd.path"
 SYSTEMD_SERVICE:${PN} += "ntp-event.service"
 SYSTEMD_SERVICE:${PN} += "ntp-event.path"
 SYSTEMD_SERVICE:${PN} += "network-connection-stats.service"
