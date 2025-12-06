@@ -40,6 +40,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-wifi.service \
     wpeframework-xcast.service \
     wpeframework-usersettings.service \
+    wpeframework-userpreferences.service \
     wpeframework-usbdevice.service \
     wpeframework-usbmassstorage.service \
     wpeframework-firmwareupdate.service \
