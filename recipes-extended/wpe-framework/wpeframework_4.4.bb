@@ -15,6 +15,12 @@ DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '
 PR = "r39"
 PV = "4.4.3"
 
+CFLAGS:append = " -g3 -O0 -fno-omit-frame-pointer -fno-inline -fvar-tracking-assignments"
+CXXFLAGS:append = " -g3 -O0 -fno-omit-frame-pointer -fno-inline -fvar-tracking-assignments"
+
+INHIBIT_PACKAGE_STRIP = "1"
+INHIBIT_SYSROOT_STRIP = "1"
+
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
 
 SRCREV_thunder = "19100433e5517c743738bb2a9ed8ce2f79c10eaf"
