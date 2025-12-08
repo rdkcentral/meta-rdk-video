@@ -31,4 +31,4 @@ Index: gupnp-0.20.10/gupnp-1.0.pc.in
  Cflags: -I${includedir}/gupnp-1.0
 -Requires.private: gssdp-1.0 libxml-2.0 libsoup-2.4 uuid
 +Requires: libxml-2.0
-+Requires.private: gssdp-1.6 libxml-2.0 libsoup-2.4 uuid
++Requires.private: gssdp-1.6 libxml-2.0 libsoup-3.0 uuid
