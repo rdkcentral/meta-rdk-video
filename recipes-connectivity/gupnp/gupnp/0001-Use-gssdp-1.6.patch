@@ -1,5 +1,34 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
-## The below patch is required to use gssdp-1.6 with gupnp-1.0
-SRC_URI:remove = " file://0001-Use-gssdp-1.2.patch"
+From 553591c643e23cc9bf94c70821abbe783166df4f Mon Sep 17 00:00:00 2001
+From: mselva006c <mani_selvaraj@comcast.com>
+Date: Thu, 1 Apr 2021 03:22:56 +0000
+Subject: [PATCH] Use gssdp-1.2 for dunfell build with gupnp-0.20.10
 
-SRC_URI:append = " file://0001-Use-gssdp-1.6.patch"
+Source: COMCAST
+Upstream-Status: Pending
+
+Signed-off-by: mselva006c <mani_selvaraj@comcast.com>
+---
+Index: gupnp-0.20.10/configure.ac
+===================================================================
+--- gupnp-0.20.10.orig/configure.ac
++++ gupnp-0.20.10/configure.ac
+@@ -49,7 +49,7 @@ esac
+ PKG_CHECK_MODULES(LIBGUPNP, glib-2.0 >= 2.24.0 \
+                             gio-2.0 \
+                             gmodule-2.0 \
+-                            gssdp-1.0 >= 0.13.0 \
++                            gssdp-1.6 >= 0.13.0 \
+                             libsoup-2.4 >= 2.28.2 \
+                             libxml-2.0 \
+                             $UUID)
+Index: gupnp-0.20.10/gupnp-1.0.pc.in
+===================================================================
+--- gupnp-0.20.10.orig/gupnp-1.0.pc.in
++++ gupnp-0.20.10/gupnp-1.0.pc.in
+@@ -8,4 +8,5 @@ Description: GObject-based UPnP library
+ Version: @VERSION@
+ Libs: -L${libdir} -lgupnp-1.0
+ Cflags: -I${includedir}/gupnp-1.0
+-Requires.private: gssdp-1.0 libxml-2.0 libsoup-2.4 uuid
++Requires: libxml-2.0
++Requires.private: gssdp-1.6 libxml-2.0 libsoup-2.4 uuid
