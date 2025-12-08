@@ -4,6 +4,7 @@ DOBBY_ENABLED = "${@bb.utils.contains('DISTRO_FEATURES', 'DOBBY_CONTAINERS','tru
 
 SRC_URI += "file://udhcpc.vendor_specific"
 SRC_URI += "file://timeZone_offset_map"
+SRC_URI += "file://timesyncd-update.conf"
 
 inherit logrotate_config 
 
@@ -24,6 +25,8 @@ LOGROTATE_ROTATION_MEM_pqstats="3"
 do_install:append() {
     install -m 0755 ${WORKDIR}/udhcpc.vendor_specific ${D}${sysconfdir}/udhcpc.vendor_specific
     install -m 0644 ${WORKDIR}/timeZone_offset_map ${D}${sysconfdir}/timeZone_offset_map
+    install -d ${D}${systemd_unitdir}/system/systemd-timesyncd.service.d
+    install -m 644 ${WORKDIR}/timesyncd-update.conf ${D}${systemd_unitdir}/system/systemd-timesyncd.service.d
 
     if [ "${DOBBY_ENABLED}" = "true" ]; then
         echo "DOBBY_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
