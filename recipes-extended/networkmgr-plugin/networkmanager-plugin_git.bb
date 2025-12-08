@@ -19,7 +19,7 @@ S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=support/0.20.0"
 
-# Nov 20, 2025
+# Dec 8, 2025
 SRCREV = "8a486bfa7a5e061b13fa20bfa08e0dd91111a001"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
