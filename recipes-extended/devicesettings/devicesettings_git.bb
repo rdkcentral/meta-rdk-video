@@ -93,6 +93,7 @@ do_compile() {
     oe_runmake -B -C ${S}/rpc/srv
     export CFLAGS="$CFLAGS -std=c++11"
     oe_runmake -B -C ${S}/ds
+    oe_runmake -B -C ${S}/hal-configs
 #To Build Test Samples under "sample/"
     export LDFLAGS="$LDFLAGS -L${S}/ds -lds -L${S}/rpc/cli -ldshalcli"
     oe_runmake -B -C ${S}/sample
@@ -108,7 +109,7 @@ do_install() {
     install -m 0644 ${S}/rpc/include/*.h* ${D}${includedir}/rdk/ds-rpc
 
     install -d ${D}${libdir}
-    for i in ${S}/rpc/cli/*.so ${S}/rpc/srv/*.so ${S}/ds/*.so; do
+    for i in ${S}/rpc/cli/*.so ${S}/rpc/srv/*.so ${S}/ds/*.so ${S}/hal-configs/*.so; do
         install -m 0755 $i ${D}${libdir}
     done
 }
