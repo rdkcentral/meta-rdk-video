@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFF
           "
 
 # Release version - 1.1.0
-SRCREV = "d3bffbf0fa14380fbf2d73e6b24dc23f1e730a7c"
+SRCREV = "f213cb8868d4de532f87a5ba3893a6509a29eb46"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -22,6 +22,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', 'wpa-supplicant', '', d)}"
 DEPENDS += "wpeframework wpeframework-tools-native"
+DEPENDS += "barton"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
