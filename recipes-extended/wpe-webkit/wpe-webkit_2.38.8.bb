@@ -3,7 +3,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r8"
+PR  = "r12"
 
 # Temporary build fix
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
@@ -27,6 +27,12 @@ SRC_URI += "file://2.38.8/1456-RDKTV-35082-Workaround-premature-finishSeek.patch
 # Drop after tip of branch has been revised
 SRC_URI += "file://2.38.8/1423-revert.patch"
 SRC_URI += "file://2.38.8/1531.patch"
+SRC_URI += "file://2.38.8/cmake-Fix-recompilation-on-rebuild-without-changes.patch"
+SRC_URI += "file://2.38.8/1488_GST_Quirks_auto.patch"
+SRC_URI += "file://2.38.8/1583_GstQuirks_gst_init.patch"
+SRC_URI += "file://2.38.8/1448_Added-API-to-get-and-set-screen-supports-HDR-setting.patch"
+SRC_URI += "file://2.38.8/1463_GStreamer-support-the-eotf-additional-MIME-type.patch"
+SRC_URI += "file://2.38.8/1467.patch"
 
 # Drop after libwpe upgrade
 SRC_URI += "file://2.38.8/RDK-54304-Fix-build-with-an-older-libpwe.patch"
@@ -48,7 +54,6 @@ SRC_URI += "file://2.38/comcast-LLAMA-2184-Support-for-external-sink-for-x-d.pat
 SRC_URI += "file://2.38/comcast-XRE-13799-XRE-13989-Track-encrypted-playback.patch"
 SRC_URI += "file://2.38.4/comcast-RDK-28954-SERXIONE-4574-Minidump-exception-h.patch"
 SRC_URI += "file://2.38/comcast-RDKTV-17737-play-pause-mapping.patch"
-SRC_URI += "file://2.38.5/comcast-XRE-15382-XIONE-4595-RDKTV-17736-HDR-DV-conf.patch"
 SRC_URI += "file://2.38/comcast-RDKTV-17281-RDKTV-17781-Workaround-for-AppleTV-rende.patch"
 SRC_URI += "file://2.38/comcast-RDKTV-18852-Restrict-inspection-of-locally-h.patch"
 SRC_URI += "file://2.38/comcast-LLAMA-8030-Fix-init-data-filtering.patch"
@@ -74,6 +79,8 @@ SRC_URI += "file://2.38.8/comcast-DELIA-67128-GCHeap-snapshot.patch"
 SRC_URI += "file://2.38.8/comcast-LLAMA-16805-Include-HW-secure-decrypt-decode-in-robu.patch"
 SRC_URI += "file://2.38.8/comcast-dynamic-insertion-of-decryptor.patch"
 SRC_URI += "file://2.38.8/comcast-RDKEMW-2744-BitmapTextureGL-Check-EGL-context.patch"
+SRC_URI += "file://2.38.8/comcast-DELIA-68848-webrtc-improvements.patch"
+SRC_URI += "file://2.38.8/comcast-RDKEMW-8425-HDR-DV-MediaCapabilities.patch"
 
 PACKAGECONFIG[wpeqtapi]          = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[westeros]          = "-DUSE_WPEWEBKIT_PLATFORM_WESTEROS=ON -DUSE_GSTREAMER_HOLEPUNCH=ON -DUSE_EXTERNAL_HOLEPUNCH=ON -DUSE_WESTEROS_SINK=ON,,westeros virtual/vendor-westeros-sink"
@@ -81,11 +88,10 @@ PACKAGECONFIG[encryptedmedia]    = "-DENABLE_ENCRYPTED_MEDIA=ON,-DENABLE_ENCRYPT
 PACKAGECONFIG[mathml]            = "-DENABLE_MATHML=ON,-DENABLE_MATHML=OFF,"
 PACKAGECONFIG[touchevents]       = "-DENABLE_TOUCH_EVENTS=ON,-DENABLE_TOUCH_EVENTS=OFF,"
 PACKAGECONFIG[remoteinspector]   = "-DENABLE_REMOTE_INSPECTOR=ON,-DENABLE_REMOTE_INSPECTOR=OFF,"
-PACKAGECONFIG[vp9_hdr]           = "-DENABLE_HDR=ON,-DENABLE_HDR=OFF,,gstreamer1.0-plugins-good-matroska"
+PACKAGECONFIG[vp9_hdr]           = "-DENABLE_HDR=ON,-DENABLE_HDR=OFF,,"
 PACKAGECONFIG[gstreamergl]       = "-DUSE_GSTREAMER_GL=ON,-DUSE_GSTREAMER_GL=OFF,"
 PACKAGECONFIG[mediastream]       = "-DENABLE_MEDIA_STREAM=ON -DENABLE_WEB_RTC=ON,-DENABLE_MEDIA_STREAM=OFF -DENABLE_WEB_RTC=OFF,libevent libopus libvpx alsa-lib,libevent"
 PACKAGECONFIG[asan]              = "-DENABLE_SANITIZERS=address,,gcc-sanitizers"
-PACKAGECONFIG[dolbyvision]       = "-DENABLE_DV=ON,-DENABLE_DV=OFF,,"
 PACKAGECONFIG[developermode]     = "-DDEVELOPER_MODE=ON -DENABLE_COG=OFF,-DDEVELOPER_MODE=OFF,wpebackend-fdo wayland-native,"
 PACKAGECONFIG[accessibility]     = "-DENABLE_ACCESSIBILITY=ON,-DENABLE_ACCESSIBILITY=OFF,atk tts rdkat,rdkat"
 PACKAGECONFIG[speechsynthesis]   = "-DENABLE_SPEECH_SYNTHESIS=ON,-DENABLE_SPEECH_SYNTHESIS=OFF,tts"
@@ -111,13 +117,11 @@ PACKAGECONFIG[lcms]              = "-DUSE_LCMS=ON,-DUSE_LCMS=OFF, "
 PACKAGECONFIG[webassembly]       = "-DENABLE_WEBASSEMBLY=ON,-DENABLE_WEBASSEMBLY=OFF -DENABLE_WEBASSEMBLY_B3JIT=OFF, "
 PACKAGECONFIG[malloc_heap_breakdown] = "-DENABLE_MALLOC_HEAP_BREAKDOWN=ON,-DENABLE_MALLOC_HEAP_BREAKDOWN=OFF,malloc-zone, malloc-zone"
 PACKAGECONFIG[pdfjs]             = "-DENABLE_PDFJS=ON,-DENABLE_PDFJS=OFF,,"
-PACKAGECONFIG[dolbyvision]       = "-DENABLE_DV=ON,-DENABLE_DV=OFF,,"
-PACKAGECONFIG[vp9_hdr]           = "-DENABLE_HDR=ON,-DENABLE_HDR=OFF,,gstreamer1.0-plugins-good-matroska"
 PACKAGECONFIG[instantratechange] = "-DENABLE_INSTANT_RATE_CHANGE=ON,-DENABLE_INSTANT_RATE_CHANGE=OFF,"
 PACKAGECONFIG[logs]              = "-DENABLE_LOGS=ON,,"
 PACKAGECONFIG[fhd]               = "-DVIDEO_DECODING_LIMIT=1920x1080@60,,"
 
-PACKAGECONFIG:append = " vp9_hdr dolbyvision breakpad native_video woff2 serviceworker"
+PACKAGECONFIG:append = " vp9_hdr breakpad native_video woff2 serviceworker"
 PACKAGECONFIG:append = " webcrypto webdriver remoteinspector releaselog accessibility speechsynthesis webaudio instantratechange"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', 'usesoup3', 'usesoup2', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'malloc_heap_breakdown', 'malloc_heap_breakdown', '', d)}"
@@ -127,7 +131,6 @@ PACKAGECONFIG:append = " ${@bb.utils.contains('BROWSER_MEMORYPROFILE', 'fhd', 'f
 PACKAGECONFIG:append:aarch64 = " webassembly"
 
 PACKAGECONFIG:remove = "${@bb.utils.contains('HAS_HDR_SUPPORT', '0', 'vp9_hdr', '', d)}"
-PACKAGECONFIG:remove = "${@bb.utils.contains('HAS_DOLBY_VISION_SUPPORT', '0', 'dolbyvision', '', d)}"
 
 EXTRA_OECMAKE += " \
   -DPYTHON_EXECUTABLE=${STAGING_BINDIR_NATIVE}/python3-native/python3 \
@@ -138,6 +141,10 @@ FILES:${PN}-web-inspector-plugin += " ${libdir}/wpe-webkit-*/libWPEWebInspectorR
 
 TUNE_CCARGS:remove = "-fno-omit-frame-pointer -fno-optimize-sibling-calls"
 TUNE_CCARGS:append = " -fno-delete-null-pointer-checks"
+
+WPE_WEBKIT_LTO ??= "-flto=auto -fno-fat-lto-objects"
+TARGET_CFLAGS += "${WPE_WEBKIT_LTO}"
+TARGET_LDFLAGS += "${WPE_WEBKIT_LTO}"
 
 def wk_use_ccache(bb,d):
     if d.getVar('CCACHE_DISABLED', True) == "1":
