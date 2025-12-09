@@ -10,14 +10,14 @@ SRCREV_FORMAT = "aamp"
 
 inherit pkgconfig
 DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework"
-require ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', '', 'aamp-middleware.inc', d)}
+require ${@bb.utils.contains('DISTRO_FEATURES', 'build_player_interface', '', 'aamp-middleware.inc', d)}
 
-DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', ' player-interface', '', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', '-DCMAKE_TEST_MW=1', ' -DCMAKE_TEST_MW=0', d)}"
+DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'build_player_interface', ' player-interface', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'build_player_interface', '-DCMAKE_INBUILT_PLAYER_INTERFACE_DEPENDENCIES=1', ' -DCMAKE_INBUILT_PLAYER_INTERFACE_DEPENDENCIES=0', d)}"
 
 RDEPENDS:${PN} += "devicesettings"
-RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', ' player-interface', '', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', ' -DCMAKE_TEST_MW=1', ' -DCMAKE_TEST_MW=0', d)}"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'build_player_interface', ' player-interface', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'build_player_interface', ' -DCMAKE_INBUILT_PLAYER_INTERFACE_DEPENDENCIES=1', ' -DCMAKE_INBUILT_PLAYER_INTERFACE_DEPENDENCIES=0', d)}"
 #DEPENDS += "curl libdash libxml2 cjson readline player-interface"
 #RDEPENDS:${PN} += "devicesettings player-interface"
 NO_RECOMMENDATIONS = "1"
