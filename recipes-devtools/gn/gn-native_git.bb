@@ -1,3 +1,4 @@
+#sample
 SUMMARY = "GN is a meta-build system that generates build files for Ninja."
 HOMEPAGE = "https://gn.googlesource.com/gn"
 LICENSE = "BSD-3-Clause"
