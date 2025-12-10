@@ -60,6 +60,7 @@ PACKAGECONFIG ?= " monitor \
     usersettings \
     ocicontainer \
     runtimemanager \
+    lifecyclemanager \
     messagecontrol \
     rdknativescript \
     javascriptcore \
@@ -132,6 +133,7 @@ PACKAGECONFIG[rialtodac]            = "-DRIALTO_IN_DAC_FEATURE=ON,-DRIALTO_IN_DA
 PACKAGECONFIG[rdkshellrialto]       = "-DRIALTO_FEATURE=ON,-DRIALTO_FEATURE=OFF,rialto,rialto-servermanager-lib"
 PACKAGECONFIG[rustadapter]          = "-DPLUGIN_RUSTADAPTER=OFF,,,"
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON,-DPLUGIN_RUNTIME_MANAGER=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LIFECYCLE_MANAGER=OFF,websocketpp entservices-apis,entservices-apis"
 PACKAGECONFIG[rdknativescript]      = "-DPLUGIN_NATIVEJS=ON,-DPLUGIN_NATIVEJS=OFF,rdknativescript,libuv"
 PACKAGECONFIG[packagemanager]       = "-DPLUGIN_PACKAGE_MANAGER=ON ${PACKAGEMANAGER_PLUGIN_ARGS} -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_PACKAGE_MANAGER=OFF -DLIB_PACKAGE=OFF,curl virtual/libpackage,curl virtual/libpackage"
 PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LIFECYCLE_MANAGER=OFF,websocketpp entservices-apis,entservices-apis"
