@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-runtime;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
 # Release version - 1.0.1
-SRCREV = "fd49566fa3dbde9697aea8ff9c35cec45ecc8805"
+SRCREV = "9e4410a4d972731b0c2902245deb6733cbba9534"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
