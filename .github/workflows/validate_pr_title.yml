@@ -1,4 +1,4 @@
-name: PR Description Validation
+name: PR Title Validation
 
 on:
   pull_request:
@@ -6,13 +6,13 @@ on:
     types: [opened, edited, synchronize]
 
 jobs:
-  validate-pr-description:
+  validate-pr-title:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Validate PR Description
+    - name: Validate PR Title
       env:
         PR_TITLE: ${{ github.event.pull_request.title }}
         PR_BODY: ${{ github.event.pull_request.body }}
@@ -74,40 +74,16 @@ jobs:
           return 0
         }
         
-        # Track validation results
-        TITLE_VALID=true
-        DESCRIPTION_VALID=true
-        
-        # Validate PR Title
+        # Validate PR Title (always required)
         echo "=== Validating PR Title ==="
         if ! validate_ticket "$PR_TITLE" "PR title"; then
-          TITLE_VALID=false
-        fi
-        
-        echo ""
-        echo "=== Validating PR Description ==="
-        # Validate PR Description 
-        if [ -n "$PR_BODY" ]; then
-          if ! validate_ticket "$PR_BODY" "PR description"; then
-            DESCRIPTION_VALID=false
-          fi
-        else
-          echo "ERROR: PR description is empty."
-          echo "Both PR title and description must contain valid ticket IDs."
-          DESCRIPTION_VALID=false
-        fi
-        
-        echo ""
-        echo "=== Validation Summary ==="
-        echo "PR Title: $([ "$TITLE_VALID" = true ] && echo "PASSED" || echo " FAILED")"
-        echo "PR Description: $([ "$DESCRIPTION_VALID" = true ] && echo "PASSED" || echo "FAILED")"
-        
-        # Exit with error if either validation failed
-        if [ "$TITLE_VALID" = false ] || [ "$DESCRIPTION_VALID" = false ]; then
           echo ""
-          echo "VALIDATION FAILED: Both PR title and description must contain valid ticket IDs from the approved list."
+          echo "VALIDATION FAILED: PR title must contain a valid ticket ID from the approved list: ${VALID_TICKET_IDS[@]}"
           exit 1
         fi
         
         echo ""
-        echo "🎉 ALL VALIDATIONS PASSED! Both PR title and description contain valid ticket IDs."
+        echo "=== PR Title Validation PASSED ==="
+        echo "Ticket ID found in PR title."
+        echo ""
+        echo "ALL VALIDATIONS PASSED! PR title contains a valid ticket ID."
