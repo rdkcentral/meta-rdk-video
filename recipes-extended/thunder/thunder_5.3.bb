@@ -17,8 +17,8 @@ SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R5_3;na
 
 SRCREV_thunder = "ca7ad203398b3f065f9f494b89bc12038cd24f95"
 
-#SRC_URI += "file://1002-Update-CMake-Module-Path.patch \
-#           "
+SRC_URI += "file://thunder.service.in \
+           "
 
 S = "${WORKDIR}/git"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
