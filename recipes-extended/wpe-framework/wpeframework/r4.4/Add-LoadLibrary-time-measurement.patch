@@ -1,0 +1,16 @@
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index 0238abb14..bfcce6301 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -1906,7 +1942,11 @@ namespace PluginHost {
+                         ErrorMessage(_T("local class definitions/version does not exist"));
+                     }
+                 } else {
++                    uint64_t start = WPEFramework::Core::SystemInfo::Instance().Ticks();
+                     _library = LoadLibrary(locator);
++                    uint64_t end = WPEFramework::Core::SystemInfo::Instance().Ticks();
++                    uint64_t duration = (end - start) / WPEFramework::Core::Time::MicroSecondsPerMilliSecond;
++                    SYSLOG(Logging::Startup, (_T("Duration of LoadLibrary [%llu] ms for locator [%s] in PluginServer.h"), duration, locator.c_str()));
+                     if (_library.IsLoaded() == false) {
+                         ErrorMessage(_T("Library could not be loaded"));
+                     }
