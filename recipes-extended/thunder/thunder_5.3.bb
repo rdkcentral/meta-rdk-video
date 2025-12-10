@@ -5,51 +5,46 @@ HOMEPAGE = "https://github.com/rdkcentral/Thunder"
 
 LIC_FILES_CHKSUM = "file://LICENSE;md5=85bcfede74b96d9a58c6ea5d4b607e58"
 
-DEPENDS = "zlib thunder-tools-native rfc"
+DEPENDS = "zlib thunder-tools-native"
 DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
 
-# Need gst-svp-ext which is an abstracting lib for metadata
-DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
 PR = "r0"
-PV = "5.3"
+PV = "5.3.0"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R5.3.0;name=thunder"
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R5_3;name=thunder"
 
 SRCREV_thunder = "ca7ad203398b3f065f9f494b89bc12038cd24f95"
 
-#SRC_URI += "file://wpeframework-init \
-#           file://wpeframework.service.in \
+#SRC_URI += "file://1002-Update-CMake-Module-Path.patch \
 #           "
 
 S = "${WORKDIR}/git"
-TOOLCHAIN = "gcc"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 
 inherit cmake pkgconfig systemd python3native add-version
 
-WPEFRAMEWORK_PERSISTENT_PATH = "/opt/persistent/rdkservices"
-WPEFRAMEWORK_SYSTEM_PREFIX = "OE"
-WPEFRAMEWORK_PORT = "9998"
-WPEFRAMEWORK_BINDING = "127.0.0.1"
-WPEFRAMEWORK_IDLE_TIME = "0"
-WPEFRAMEWORK_THREADPOOL_COUNT ?= "16"
-WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
+THUNDER_PERSISTENT_PATH = "/opt/persistent/rdkservices"
+THUNDER_SYSTEM_PREFIX = "OE"
+THUNDER_PORT = "9999"
+THUNDER_BINDING = "127.0.0.1"
+THUNDER_IDLE_TIME = "0"
+THUNDER_THREADPOOL_COUNT ?= "16"
+THUNDER_EXIT_REASONS ?= "WatchdogExpired"
 
 
-BREAKPAD_LDFLAGS:pn-wpeframework = "${BACKTRACE_LDFLAGS}"
+BREAKPAD_LDFLAGS:pn-thunder = "${BACKTRACE_LDFLAGS}"
 EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
-LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
 
 PACKAGECONFIG ?= " \
     release \
     virtualinput \
     websocket \
+    com \
     "
 
-PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com', '', d)}"
 
 # Buildtype
 # Maybe we need to couple this to a Yocto feature
@@ -67,7 +62,7 @@ PACKAGECONFIG[processcontainers]          = "-DPROCESSCONTAINERS=ON,-DPROCESSCON
 PACKAGECONFIG[processcontainers_dobby]    = "-DPROCESSCONTAINERS_DOBBY=ON,,dobby"
 
 # FIXME
-# The WPEFramework also needs limited Plugin info in order to determine what to put in the "resumes" configuration
+# The Thunder also needs limited Plugin info in order to determine what to put in the "resumes" configuration
 # it feels a bit the other way around but lets set at least webserver and webkit
 PACKAGECONFIG[websource]       = "-DPLUGIN_WEBSERVER=ON,,"
 PACKAGECONFIG[webkitbrowser]   = "-DPLUGIN_WEBKITBROWSER=ON,,"
@@ -83,58 +78,49 @@ PACKAGECONFIG[com] = "-DCOM=ON,,,"
 # Internet event is provided by the LocationSync plugin
 # WebSource event is provided by the WebServer plugin
 
-WPEFRAMEWORK_EXTERN_EVENTS ?= "\
+THUNDER_EXTERN_EVENTS ?= "\
 Decryption \
-${@bb.utils.contains('PACKAGECONFIG', 'websource', 'WebSource ', '', d)}\
-Location Time Internet Provisioning \
-${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'Security ', d)}\
+Time Internet Provisioning \
 "
 
 EXTRA_OECMAKE += " \
     -DINSTALL_HEADERS_TO_TARGET=ON \
-    -DEXTERN_EVENTS="${WPEFRAMEWORK_EXTERN_EVENTS}" \
+    -DEXTERN_EVENTS="${THUNDER_EXTERN_EVENTS}" \
     -DEXCEPTIONS_ENABLE=ON \  
-    -DBUILD_SHARED_LIBS=ON \
-    -DRPC=ON \
     -DBUILD_REFERENCE=${SRCREV} \
     -DTREE_REFERENCE=${SRCREV_thunder} \
-    -DPORT=${WPEFRAMEWORK_PORT} \
-    -DBINDING=${WPEFRAMEWORK_BINDING} \
+    -DPORT=${THUNDER_PORT} \
+    -DBINDING=${THUNDER_BINDING} \
     -DENABLED_TRACING_LEVEL=2 \
-    -DPERSISTENT_PATH=${WPEFRAMEWORK_PERSISTENT_PATH} \
-    -DSYSTEM_PREFIX=${WPEFRAMEWORK_SYSTEM_PREFIX} \
-    -DIDLE_TIME=${WPEFRAMEWORK_IDLE_TIME} \
-    -DTHREADPOOL_COUNT=${WPEFRAMEWORK_THREADPOOL_COUNT} \
+    -DPERSISTENT_PATH=${THUNDER_PERSISTENT_PATH} \
+    -DSYSTEM_PREFIX=${THUNDER_SYSTEM_PREFIX} \
+    -DIDLE_TIME=${THUNDER_IDLE_TIME} \
+    -DTHREADPOOL_COUNT=${THUNDER_THREADPOOL_COUNT} \
     -DHIDE_NON_EXTERNAL_SYMBOLS=OFF \
-    -DEXIT_REASONS=${WPEFRAMEWORK_EXIT_REASONS} \
+    -DEXIT_REASONS=${THUNDER_EXIT_REASONS} \
     -DMESSAGING=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
+    -DPOSTMORTEM_PATH=/opt/secure/minidumps \
 "
-
-EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
-
-EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
+    install -m 0644 ${WORKDIR}/thunder.service.in  ${D}${systemd_unitdir}/system/thunder.service
 }
 
-SYSTEMD_SERVICE:${PN} = "wpeframework.service"
+SYSTEMD_SERVICE:${PN} = "thunder.service"
 
 # ----------------------------------------------------------------------------
 
 PACKAGES =+ "${PN}-initscript"
 
-FILES:${PN}-initscript = "${sysconfdir}/init.d/wpeframework"
+FILES:${PN}-initscript = "${sysconfdir}/init.d/thunder"
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/*.so ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
+FILES:${PN} += "${libdir}/*.so ${datadir}/Thunder/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN} += "${includedir}/cdmi.h"
-FILES:${PN} += "${systemd_unitdir}/system/wpeframework.service.d/network_manager_migration.conf"
 FILES:${PN}-dev += "${libdir}/cmake/*"
-FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/"
+FILES:${PN}-dbg += "${libdir}/thunder/proxystubs/.debug/"
 
 # ----------------------------------------------------------------------------
 
@@ -144,32 +130,30 @@ INSANE_SKIP:${PN}-dbg += "dev-so"
 # ----------------------------------------------------------------------------
 
 RDEPENDS:${PN}_rpi = "userland"
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)} thunder-hang-recovery"
-# Should be able to remove this when generic rdk_svp flag
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'sage_svp', 'gst-svp-ext', '', d)}"
+RDEPENDS:${PN} += "thunder-hang-recovery"
 
 RDEPENDS:${PN}:append:rpi = " ${@bb.utils.contains('DISTRO_FEATURES', 'vc4graphics', '', 'userland', d)}"
 
 inherit breakpad-logmapper syslog-ng-config-gen logrotate_config
 
-SYSLOG-NG_FILTER = "wpeframework"
-SYSLOG-NG_SERVICE_wpeframework = "wpeframework.service thunderHangRecovery.service"
-SYSLOG-NG_DESTINATION_wpeframework = "wpeframework.log"
-SYSLOG-NG_LOGRATE_wpeframework = "high"
+SYSLOG-NG_FILTER = "thunder"
+SYSLOG-NG_SERVICE_thunder = "thunder.service"
+SYSLOG-NG_DESTINATION_thunder = "thunder.log"
+SYSLOG-NG_LOGRATE_thunder = "high"
 
-LOGROTATE_NAME="wpeframework"
-LOGROTATE_LOGNAME_wpeframework="wpeframework.log"
-LOGROTATE_SIZE_wpeframework="1572864"
-LOGROTATE_ROTATION_wpeframework="3"
-LOGROTATE_SIZE_MEM_wpeframework="1572864"
-LOGROTATE_ROTATION_MEM_wpeframework="3"
+LOGROTATE_NAME="thunder"
+LOGROTATE_LOGNAME_thunder="thunder.log"
+LOGROTATE_SIZE_thunder="1572864"
+LOGROTATE_ROTATION_thunder="3"
+LOGROTATE_SIZE_MEM_thunder="1572864"
+LOGROTATE_ROTATION_MEM_thunder="3"
 
 # Breakpad processname and logfile mapping
-BREAKPAD_LOGMAPPER_PROCLIST = "WPEFramework,WorkerPool::Thr,WPEProcess,WPEWebProcess,startWPE,WPENetworkProcess,WideVine.drm,PlayReady.drm,NetworkManager,Monitor::IResou"
-BREAKPAD_LOGMAPPER_LOGLIST = "wpeframework.log"
+BREAKPAD_LOGMAPPER_PROCLIST = "Thunder,WorkerPool::Thr,Monitor::IResou"
+BREAKPAD_LOGMAPPER_LOGLIST = "thunder.log"
 
 # Ensure we'll get the Thunder version  into the versions.txt file part of the build image
 do_add_version () {
-    echo "WPEFRAMEWORK-VERSION=${THUNDER_RELEASE_TAG_NAME}" > ${EXTRA_VERSIONS_PATH}/${PN}.txt
+    echo "THUNDER-VERSION=${THUNDER_RELEASE_TAG_NAME}" > ${EXTRA_VERSIONS_PATH}/${PN}.txt
 }
 

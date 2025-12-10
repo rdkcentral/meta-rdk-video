@@ -11,6 +11,8 @@ S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderTools.git;protocol=https;branch=R5_3"
 
+SRC_URI += "file://0001-Change-MODULE-PATH.patch"
+
 SRCREV = "R5.3.0"
 
 inherit cmake pkgconfig python3native
