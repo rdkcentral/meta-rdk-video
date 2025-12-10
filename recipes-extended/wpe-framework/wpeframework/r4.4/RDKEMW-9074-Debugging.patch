@@ -1,0 +1,108 @@
+diff --git a/Source/core/ResourceMonitor.h b/Source/core/ResourceMonitor.h
+index b5a8f096..5e2f9979 100644
+--- a/Source/core/ResourceMonitor.h
++++ b/Source/core/ResourceMonitor.h
+@@ -100,6 +100,7 @@ namespace Core {
+             : _monitor(nullptr)
+             , _adminLock()
+             , _resourceList()
++            , _resourcesMap()
+             , _monitorRuns(0)
+             , _name(_T("Monitor::") + ClassNameOnly(typeid(RESOURCE).name()).Text())
+             , _watchDog(1024 * 512, _name.c_str())
+@@ -210,6 +211,9 @@ namespace Core {
+             // Make sure this entry is only registered once !!!
+             if (std::find(_resourceList.begin(), _resourceList.end(), &resource) == _resourceList.end()) {
+                 _resourceList.push_back(&resource);
++                // printf("[RDKMW-9074] Adding entry (%p) to resources map type: %s\n", &resource, Core::ClassNameOnly(typeid((resource)).name()).Text().c_str());
++                // _resourcesMap.insert(std::pair<RESOURCE*, string>(&resource, Core::ClassNameOnly(typeid((resource)).name()).Text()));
++
+             }
+ 
+             if (_resourceList.size() == 1) {
+@@ -232,7 +236,10 @@ namespace Core {
+             _adminLock.Lock();
+ 
+             // Make sure this entry does not exist, only register resources once !!!
++
+             typename std::list<RESOURCE*>::iterator index(std::find(_resourceList.begin(), _resourceList.end(), &resource));
++            // printf("[RDKMW-9074] Removing entry (%p) from resources map\n", &resource);
++            _resourcesMap.erase(&resource);
+ 
+             if (index != _resourceList.end()) {
+                 *index = nullptr;
+@@ -373,7 +380,23 @@ namespace Core {
+                 RESOURCE* entry = (*index);
+ 
+                 uint16_t events;
+-
++                // if(access("/tmp/watchResources", F_OK) == 0)
++                // {
++                //     if (entry != nullptr){
++                //         auto iter = _resourcesMap.find(entry);
++                //         if (iter != _resourcesMap.end()) {
++                //             printf("[RDKMW-9074] Checking events on :%s \n", iter->second.c_str());
++                //         } else {
++                //             printf("[RDKMW-9074] Unable to find the resource in map %p\n", iter->first);
++                //         }
++                //     }
++                //     else {
++                //         printf("[RDKMW-9074] entry is null\n");
++                //     }
++                // }
++                // else {
++                //     printf("[RDKMW-9074] Checking for events on:%p\n", entry);
++                // }
+                 if ((entry == nullptr) || ((events = entry->Events()) == 0)) {
+                     index = _resourceList.erase(index);
+                 } else {
+@@ -525,6 +548,7 @@ namespace Core {
+         MonitorWorker* _monitor;
+         mutable Core::CriticalSection _adminLock;
+         std::list<RESOURCE*> _resourceList;
++        std::map<RESOURCE*, string> _resourcesMap;
+         uint32_t _monitorRuns;
+         string _name;
+         WATCHDOG _watchDog;
+diff --git a/Source/core/Services.cpp b/Source/core/Services.cpp
+index 393f0475..416bc151 100644
+--- a/Source/core/Services.cpp
++++ b/Source/core/Services.cpp
+@@ -111,6 +111,7 @@ namespace Core {
+             // the last reference)
+             std::this_thread::yield();
+ 
++            printf("[RDKMW-9074] Releasing library: %s\n", _unreferencedLibraries.front().Name().c_str());
+             _unreferencedLibraries.pop_front();
+         }
+         _adminLock.Unlock();
+diff --git a/Source/core/SocketPort.cpp b/Source/core/SocketPort.cpp
+index 0898183d..8dbd088d 100644
+--- a/Source/core/SocketPort.cpp
++++ b/Source/core/SocketPort.cpp
+@@ -411,8 +411,16 @@ namespace WPEFramework {
+             // Make sure the socket is closed before you destruct. Otherwise
+             // the virtuals might be called, which are destructed at this point !!!!
+             ASSERT((m_Socket == INVALID_SOCKET) || (IsClosed()));
++            if (m_Socket != INVALID_SOCKET ) {
++                printf("[RDKMW-9074] [%s:%d-%s] Socket(%d) is not set to INVALID but reached dtor\n", __FILE__, __LINE__, __FUNCTION__, m_Socket );
++            }
++
++            if (IsClosed() == false) {
++                printf("[RDKMW-9074] [%s:%d-%s] Socket(%d) is NOT CLOSED but reached dtor\n", __FILE__, __LINE__, __FUNCTION__, m_Socket );
++            }
+ 
+             if (m_Socket != INVALID_SOCKET) {
++                printf("[RDKMW-9074] [%s:%d-%s] Destroying Socket(%d) in dtor \n", __FILE__, __LINE__, __FUNCTION__, m_Socket );
+                 DestroySocket(m_Socket);
+             }
+ 
+@@ -1250,6 +1258,8 @@ namespace WPEFramework {
+ 
+             if (m_State != 0) {
+                 result = false;
++                printf("[RDKMW-9074] In Closed m_State(%X) is not = 0\n", m_State.load());
++                // m_State = 0;
+             }
+             else {
+                 DestroySocket(m_Socket);
