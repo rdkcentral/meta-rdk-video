@@ -223,6 +223,9 @@ do_install() {
         if [ -f "${D}${base_libdir}/rdk/getDeviceId.sh" ]; then
            if [ -n "${BUILTIN_PARTNER_ID}" ]; then
                sed -i "s|defaultPartnerId=\"comcast\"|defaultPartnerId=\"${BUILTIN_PARTNER_ID}\"|g" "${D}${base_libdir}/rdk/getDeviceId.sh"
+	       # Below needs to be investigated
+	       sed -i '/if \[ "x${deviceId}" != "x" \]; then/,+2d' ${D}${base_libdir}/rdk/getDeviceId.sh
+	       sed -i 's|# If boostrap partnerId is missing, use default id based on device class|# If boostrap partnerId is missing, use default id based on device class\n               partnerId=${defaultPartnerId}|g' ${D}${base_libdir}/rdk/getDeviceId.sh
            fi
         fi
 

@@ -22,6 +22,13 @@ TEXTTOSPEECH_LOCALVOICE_FOR_GB ?= " "
 TEXTTOSPEECH_LOCALVOICE_FOR_DE ?= " "
 TEXTTOSPEECH_LOCALVOICE_FOR_IT ?= " "
 
+#Below changes needs to be migrated to rdke-region-us-config 
+TEXTTOSPEECH_LOCAL_ENDPOINT = "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk', 'http://localhost:50050/nuanceEve/tts?', '',d)}"
+TEXTTOSPEECH_ENDPOINT_TYPE = "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk', 'TTS2', '',d)}"
+TEXTTOSPEECH_SPEECHRATE =  "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk', 'medium', '',d)}"
+TEXTTOSPEECH_SATPLUGINCALLSIGN =  "${@bb.utils.contains('DISTRO_FEATURES', 'flex2_rdk', 'org.rdk.AuthService', '',d)}"
+# ----------------------------------------------------------------------------
+
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG[texttospeech] = "-DPLUGIN_TEXTTOSPEECH=ON \
