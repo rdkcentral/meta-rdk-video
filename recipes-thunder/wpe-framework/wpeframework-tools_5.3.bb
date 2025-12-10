@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=c3349dc67b2f8c28fc99b300eb39e3cc"
 
 TOOLCHAIN = "gcc"
 PR = "r0"
-PV = "R5.3.0"
+PV = "5.3.0"
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderTools.git;protocol=https;branch=R5_3"

@@ -5,7 +5,7 @@ HOMEPAGE = "https://github.com/rdkcentral/Thunder"
 
 LIC_FILES_CHKSUM = "file://LICENSE;md5=85bcfede74b96d9a58c6ea5d4b607e58"
 
-DEPENDS = "zlib thunder-tools-native"
+DEPENDS = "zlib wpeframework-tools-native"
 DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
 
@@ -15,7 +15,7 @@ PV = "5.3.0"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R5_3;name=thunder"
 
-SRCREV_thunder = "ca7ad203398b3f065f9f494b89bc12038cd24f95"
+SRCREV_thunder = "R5.3.0"
 
 SRC_URI += "file://thunder.service.in \
            "
@@ -70,19 +70,6 @@ PACKAGECONFIG[websocket]       = "-DWEBSOCKET=ON,,"
 
 PACKAGECONFIG[com] = "-DCOM=ON,,,"
 
-# FIXME, determine this a little smarter
-# Provision event is required for libprovision and provision plugin
-# Location event is required for locationsync plugin
-# Time event is required for timesync plugin
-# Identifier event is required for Compositor plugin
-# Internet event is provided by the LocationSync plugin
-# WebSource event is provided by the WebServer plugin
-
-THUNDER_EXTERN_EVENTS ?= "\
-Decryption \
-Time Internet Provisioning \
-"
-
 EXTRA_OECMAKE += " \
     -DINSTALL_HEADERS_TO_TARGET=ON \
     -DEXTERN_EVENTS="${THUNDER_EXTERN_EVENTS}" \
@@ -111,10 +98,6 @@ do_install:append() {
 SYSTEMD_SERVICE:${PN} = "thunder.service"
 
 # ----------------------------------------------------------------------------
-
-PACKAGES =+ "${PN}-initscript"
-
-FILES:${PN}-initscript = "${sysconfdir}/init.d/thunder"
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/*.so ${datadir}/Thunder/* ${PKG_CONFIG_DIR}/*.pc"
