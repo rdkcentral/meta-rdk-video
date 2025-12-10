@@ -122,7 +122,7 @@ AUTH                ?= "true"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('AUTH', 'true', ' -DAUTH_ENABLED=ON', '', d)}"
 # Auth Activation Status Support
 AUTH_ACTIVATION_STATUS ?= "false"
-EXTRA_OECONF:append = "${@bb.utils.contains('AUTH_ACTIVATION_STATUS', 'true', ' -DAUTH_ACTIVACTION_STATUS', '', d)}"
+EXTRA_OECMAKE:append = "${@bb.utils.contains('AUTH_ACTIVATION_STATUS', 'true', ' -DAUTH_ACTIVATION_STATUS', '', d)}"
 
 SUPPORT_VOICE_DEST_HTTP   ?= "false"
 SUPPORT_VOICE_DEST_ALSA   ?= "false"
