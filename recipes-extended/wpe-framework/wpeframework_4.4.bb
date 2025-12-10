@@ -66,6 +66,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/RDKEMW-8889-Avoid-LoadMeta-On-Boot.patch \
             file://r4.4/0001-To-handle-truncated-UTF-code-on-parsing-empty-null-t.patch \
             file://r4.4/0002-Print-Log-Upon-Time-ComRPC-Timeout.patch \
+            file://r4.4/RDKEMW-9539-Debugging.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -144,7 +145,7 @@ EXTRA_OECMAKE += " \
     -DTREE_REFERENCE=${SRCREV_thunder} \
     -DPORT=${WPEFRAMEWORK_PORT} \
     -DBINDING=${WPEFRAMEWORK_BINDING} \
-    -DENABLED_TRACING_LEVEL=2 \
+    -DENABLED_TRACING_LEVEL=3 \
     -DPERSISTENT_PATH=${WPEFRAMEWORK_PERSISTENT_PATH} \
     -DSYSTEM_PREFIX=${WPEFRAMEWORK_SYSTEM_PREFIX} \
     -DIDLE_TIME=${WPEFRAMEWORK_IDLE_TIME} \
