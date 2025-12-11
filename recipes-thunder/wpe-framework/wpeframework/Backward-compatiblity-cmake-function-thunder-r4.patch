@@ -1,0 +1,48 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index dcb447dd2..f218e5a02 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -126,6 +126,17 @@ install(DIRECTORY
+         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${NAMESPACE}
+         COMPONENT ${NAMESPACE}_Development)
+
++install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${NAMESPACE}.cmake"
++        RENAME "WPEFrameworkConfig.cmake"
++        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/WPEFramework
++        COMPONENT ${NAMESPACE}_Development)
++
++install(DIRECTORY
++            "${CMAKE_CURRENT_SOURCE_DIR}/cmake/common"
++            "${CMAKE_CURRENT_SOURCE_DIR}/cmake/templates"
++        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/WPEFramework
++        COMPONENT ${NAMESPACE}_Development)
++
+ if(APPLE)
+     # Mac needed variables
+     # http://www.cmake.org/Wiki/CMake_RPATH_handling#Mac_OS_X_and_the_RPATH)
+diff --git a/Source/core/Portability.h b/Source/core/Portability.h
+index af7f7de23..73a86c926 100644
+--- a/Source/core/Portability.h
++++ b/Source/core/Portability.h
+@@ -935,10 +935,11 @@ namespace Thunder {
+
+ // code to make (to some extend) old code whioch still uses the WPEFramework instead of Thunder still compile
+
++/*
+ namespace WPEFramework {
+     using namespace Thunder;
+ }
+-
++*/
+ #define WPEFRAMEWORK_NESTEDNAMESPACE_COMPATIBILIY(NESTED_NAMESPACE) \
+ namespace WPEFramework { \
+ namespace NESTED_NAMESPACE { \
+@@ -946,6 +947,8 @@ namespace NESTED_NAMESPACE { \
+ } \
+ }
+
++#define WPEFramework Thunder
++
+ extern "C" {
+
+ #ifdef __WINDOWS__

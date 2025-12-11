@@ -18,6 +18,7 @@ SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R5_3;na
 SRCREV_thunder = "R5.3.0"
 
 SRC_URI += "file://thunder.service.in \
+            file://Backward-compatiblity-cmake-function-thunder-r4.patch \
            "
 
 S = "${WORKDIR}/git"
