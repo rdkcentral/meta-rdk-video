@@ -20,12 +20,12 @@ EXTRA_OEMAKE += "SYSROOT_INCLUDES_DIR=${STAGING_INCDIR}"
 EXTRA_OEMAKE += "SYSROOT_LIBS_DIR=${STAGING_LIBDIR}"
 
 do_compile () {
-    oe_runmake -C ${S} -f Makefile
+    oe_runmake -C ${S} -f Makefile.atk
 }
 
 do_install () {
     export INSTALL_PATH=${D}
-    oe_runmake -C ${S} -f Makefile install
+    oe_runmake -C ${S} -f Makefile.atk install
 }
 
 INSANE_SKIP:${PN} = "dev-so"
