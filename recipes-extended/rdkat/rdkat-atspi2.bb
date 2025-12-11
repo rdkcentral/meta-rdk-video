@@ -30,13 +30,10 @@ do_install () {
     oe_runmake -C ${S} -f Makefile.atspi2 install-tests
 }
 
-PACKAGES += "${PN}-tests"
+PACKAGES =+ "${PN}-tests"
 
-FILES:${PN} = "${libdir}/*.so*"
-FILES:${PN}-dbg = "${libdir}/.debug/*.so*"
+FILES:${PN} += "${libdir}/*.so"
 FILES:${PN}-tests = "${bindir}/run-tests"
-
-RDEPENDS:${PN}-tests += "${PN}"
 
 DEPENDS += "glib-2.0 tts gtest gmock"
 RDEPENDS:${PN} += "glib-2.0 tts"
