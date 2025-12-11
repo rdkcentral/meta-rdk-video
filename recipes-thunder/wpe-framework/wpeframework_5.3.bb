@@ -79,7 +79,7 @@ EXTRA_OECMAKE += " \
     -DTREE_REFERENCE=${SRCREV_thunder} \
     -DPORT=${THUNDER_PORT} \
     -DBINDING=${THUNDER_BINDING} \
-    -DENABLED_TRACING_LEVEL=2 \
+    -DENABLED_TRACING_LEVEL=3 \
     -DPERSISTENT_PATH=${THUNDER_PERSISTENT_PATH} \
     -DSYSTEM_PREFIX=${THUNDER_SYSTEM_PREFIX} \
     -DIDLE_TIME=${THUNDER_IDLE_TIME} \
@@ -106,6 +106,16 @@ FILES:${PN} += "${includedir}/cdmi.h"
 FILES:${PN}-dev += "${libdir}/cmake/*"
 FILES:${PN}-dbg += "${libdir}/thunder/proxystubs/.debug/"
 
+FILES:${PN} += " \
+    ${libdir}/thunder/proxystubs/ \
+"
+
+# Handle the /opt directories
+FILES:${PN} += " \
+    /opt \
+    /opt/persistent \
+    /opt/persistent/rdkservices \
+"
 # ----------------------------------------------------------------------------
 
 INSANE_SKIP:${PN} += "dev-so"
