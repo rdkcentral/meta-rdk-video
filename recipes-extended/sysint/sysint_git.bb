@@ -243,6 +243,7 @@ do_install() {
 	# For NetworkManager
 	install -d ${D}${sysconfdir}/NetworkManager
 	install -d ${D}${sysconfdir}/NetworkManager/conf.d
+    install -d ${D}${sysconfdir}/NetworkManager/dnsmasq.d
 	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d
 	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
 	install -m 0755 ${S}/lib/rdk/NM_Dispatcher.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d
