@@ -5,6 +5,7 @@ DOBBY_ENABLED = "${@bb.utils.contains('DISTRO_FEATURES', 'DOBBY_CONTAINERS','tru
 SRC_URI += "file://udhcpc.vendor_specific"
 SRC_URI += "file://timeZone_offset_map"
 SRC_URI += "file://timesyncd-update.conf"
+SRC_URI += "file://nm-connectivity.conf"
 
 inherit logrotate_config 
 
@@ -21,6 +22,9 @@ LOGROTATE_SIZE_pqstats="1572864"
 LOGROTATE_ROTATION_pqstats="3"
 LOGROTATE_SIZE_MEM_pqstats="1572864"
 LOGROTATE_ROTATION_MEM_pqstats="3"
+
+NM_CONNECTIVITY_CHECK_URL ?= "http://nmcheck.gnome.org/check_network_status.txt"
+NM_CONNECTIVITY_CHECK_RESPONSE ?= "NetworkManager is online"
 
 do_install:append() {
     install -m 0755 ${WORKDIR}/udhcpc.vendor_specific ${D}${sysconfdir}/udhcpc.vendor_specific
@@ -42,6 +46,16 @@ do_install:append() {
        sed -i 's/BUILD_TYPE=dev/BUILD_TYPE=prod/g' ${D}${sysconfdir}/device.properties
     fi
 
+    install -d ${D}${sysconfdir}/NetworkManager/conf.d/
+    install -m 0755 ${WORKDIR}/nm-connectivity.conf ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
+    if [ -f "${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf" ]; then
+           if [ -n "${NM_CONNECTIVITY_CHECK_URL}" ]; then
+               sed -i "s|uri=.*|uri=${NM_CONNECTIVITY_CHECK_URL}|g" ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
+           fi
+           if [ -n "${NM_CONNECTIVITY_CHECK_RESPONSE}" ]; then
+               sed -i "s|response=|response=${NM_CONNECTIVITY_CHECK_RESPONSE}|g" ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
+           fi
+    fi
 }
 
 FILES:${PN} += "${sysconfdir}/udhcpc.vendor_specific"
@@ -186,3 +200,5 @@ LOGROTATE_SIZE_dcm="1572864"
 LOGROTATE_ROTATION_dcm="1"
 LOGROTATE_SIZE_MEM_dcm="512000"
 LOGROTATE_ROTATION_MEM_dcm="1"
+
+FILES:${PN} += "${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf"
