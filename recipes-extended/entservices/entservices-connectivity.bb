@@ -23,6 +23,8 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', 'wpa-supplicant', '', d)}"
 DEPENDS += "wpeframework wpeframework-tools-native"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_MATTER_BARTON', ' barton', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_MATTER_BARTON', '-DENABLE_MATTER_BARTON=ON', '-DENABLE_MATTER_BARTON=OFF', d)}"
+
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
