@@ -16,10 +16,13 @@ S = "${WORKDIR}/git"
 PV ?= "2.0.0"
 PR ?= "r1"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};"
 
-#Release 1.0.7
-SRCREV = "49dcea27ad8b1fc4d2c49623a117b2d9adb2124d"
+#Release 2.0.0
+SRCREV = "7a81374692ce4df3e4b17d375f8fe62531813829"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+
+SRC_URI += " file://lib-addition.patch"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -52,7 +55,8 @@ do_install() {
    fi
 
    cp -a ${B}/JSRuntimeJSC ${D}/home/root/JSRuntimeJSC
-
+   cp -a ${B}/JSRuntimeContainer ${D}/home/root/JSRuntimeContainer
+   
    cp -a ${S}/utils/xhr.js ${D}/home/root/modules/.
    cp -a ${S}/utils/punycode.js ${D}/home/root/modules/.
    cp -a ${S}/utils/http.js ${D}/home/root/modules/.
@@ -73,6 +77,7 @@ do_install() {
 
    install -d ${D}/${libdir}
    cp -a ${B}/libJSRuntimeJSC.so ${D}/${libdir}
+   cp -a ${B}/libJSRuntimeContainer.so ${D}/${libdir}
    cp -a ${B}/libjsclib.so ${D}/${libdir}
 
 
@@ -98,3 +103,5 @@ FILES:${PN} += "${@'/home/root/JSRuntimeClient' if d.getVar('BUILD_CLIENT') == '
 FILES:${PN} += "/home/root/JSRuntimeJSC"
 FILES:${PN} += "/home/root/modules"
 FILES:${PN} += "${libdir}/libJSRuntimeJSC.so"
+FILES:${PN} += "${libdir}/libJSRuntimeContainer.so"
+FILES:${PN} += "/home/root/JSRuntimeContainer"
