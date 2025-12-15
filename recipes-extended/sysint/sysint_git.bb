@@ -249,11 +249,11 @@ do_install() {
 	install -m 0755 ${S}/lib/rdk/NM_preDown.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
 	install -m 0755 ${S}/lib/rdk/NM_preUp.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-up.d
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
-        rm ${D}${base_libdir}/rdk/NM_Dispatcher.sh
-        rm ${D}${base_libdir}/rdk/NM_preDown.sh
-        rm ${D}${base_libdir}/rdk/NM_preUp.sh
-    install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
-    install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
+            rm ${D}${base_libdir}/rdk/NM_Dispatcher.sh
+            rm ${D}${base_libdir}/rdk/NM_preDown.sh
+            rm ${D}${base_libdir}/rdk/NM_preUp.sh
+        install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
+        install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
 }
 
 do_install:append:rdkstb() {
