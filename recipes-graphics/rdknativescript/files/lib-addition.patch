@@ -1,0 +1,23 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index de08db5..a3f407e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -141,6 +141,7 @@ set(JSRUNTIME_CONTAINER_FILES
+ )
+ set(JSRUNTIME_FILES
+         ${JSRUNTIME_COMMON_SOURCE_DIRECTORY}/JSRuntimeContainer.cpp
++       ${JSRUNTIME_COMMON_SOURCE_DIRECTORY}/NativeJSLogger.cpp
+ )
+
+ set(JSRUNTIME_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/include/${JSRUNTIME_ENGINE_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/include/linux ${CMAKE_CURRENT_SOURCE_DIR}/src/jsc/jsc_lib ${JSRUNTIME_ENGINE_INCLUDE_DIRECTORIES})
+@@ -212,7 +213,7 @@ if (BUILD_JSRUNTIME_CONTAINER)
+     add_dependencies(jsruntime_container ${JSRUNTIMECONTAINER_LIBRARY_NAME})
+     target_include_directories(jsruntime_container PRIVATE ${JSRUNTIME_INCLUDE_DIRECTORIES})
+     set_target_properties(jsruntime_container PROPERTIES OUTPUT_NAME "JSRuntimeContainer")
+-    target_link_libraries(jsruntime_container ${JSRUNTIME_LIBRARY_LINK_DIRECTORIES} -l${JSRUNTIMECONTAINER_LIBRARY_NAME} -lpthread)
++    target_link_libraries(jsruntime_container ${JSRUNTIME_LIBRARY_LINK_DIRECTORIES} -l${JSRUNTIMECONTAINER_LIBRARY_NAME} ${JSRUNTIME_LINK_ETHANLIB} -lpthread)
+
+ endif (BUILD_JSRUNTIME_CONTAINER)
+
+
+
