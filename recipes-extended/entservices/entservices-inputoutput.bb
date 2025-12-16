@@ -10,6 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-inputoutput;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+	   file://0002-RDKEMW-11606-Recipe-to-use-entservices-avoutput-for-.patch \
           "
 
 # Release version - 1.4.7
@@ -30,7 +31,6 @@ TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
-CXXFLAGS += " -DDEVICE_TYPE=AVOutputTV "
 # enable filtering for undefined interfaces and link local ip address notifications
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
@@ -46,12 +46,10 @@ PACKAGECONFIG ?= " breakpadsupport \
 "
 
 PACKAGECONFIG:append = " hdmicecsink "
-PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', ' avoutput', '', d)}"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[avinput]              = "-DPLUGIN_AVINPUT=ON,-DPLUGIN_AVINPUT=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal,iarmbus devicesettings"
-PACKAGECONFIG[avoutput]             = "-DPLUGIN_AVOUTPUT=ON -DAVOUTPUT_TV=true,,"
 PACKAGECONFIG[compositeinput]       = "-DPLUGIN_COMPOSITEINPUT=ON,-DPLUGIN_COMPOSITEINPUT=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal,iarmbus devicesettings"
 PACKAGECONFIG[hdcpprofile]          = "-DPLUGIN_HDCPPROFILE=ON,-DPLUGIN_HDCPPROFILE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal,iarmbus devicesettings"
 PACKAGECONFIG[hdmicec2]             = "-DPLUGIN_HDMICEC2=ON,-DPLUGIN_HDMICEC2=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader,iarmbus devicesettings hdmicec"
@@ -73,6 +71,11 @@ python () {
 }
 
 do_install:append() {
+    install -d ${D}${includedir}
+    install -m 644 ${S}/helpers/UtilsLogging.h ${D}${includedir}/
+    install -m 644 ${S}/helpers/UtilsJsonRpc.h ${D}${includedir}/
+    install -m 644 ${S}/helpers/UtilsIarm.h ${D}${includedir}/
+    install -m 644 ${S}/helpers/UtilsSearchRDKProfile.h ${D}${includedir}/
     install -d ${D}${sysconfdir}/rfcdefaults
     if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
     then
@@ -88,6 +91,7 @@ do_install:append() {
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
+FILES:${PN} = "${includedir}"
 
-INSANE_SKIP:${PN} += "libdir staticdev dev-so"
+INSANE_SKIP:${PN} += "libdir staticdev dev-so installed-vs-shipped"
 INSANE_SKIP:${PN}-dbg += "libdir"
