@@ -18,6 +18,8 @@ RDEPENDS:${PN} += "wpeframework entservices-apis"
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 EXTRA_OECMAKE += " -DENABLE_APP_GATEWAY_AUTOMATION=ON -DAUTOMATION_APP_ID=\"boltextn\" -DAPP_GATEWAY_ENHANCED_LOGGING_INDICATOR=\"/opt/appgatewayenabled\""
+EXTRA_OECMAKE += " -DBUILD_CONFIG_PATH=/var/sky/build/buildConfig.json"
+EXTRA_OECMAKE += " -DVENDOR_CONFIG_PATH=/var/sky/build/vendorConfig.json"
 
 PACKAGECONFIG ?= "appgateway appnotifications appgatewaycommon"
 
