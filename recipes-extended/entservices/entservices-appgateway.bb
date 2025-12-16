@@ -22,7 +22,7 @@ PACKAGECONFIG ?= "appgateway appnotifications appgatewaycommon"
 
 PACKAGECONFIG[appgateway]       = "-DPLUGIN_APPGATEWAY=ON,-DPLUGIN_APPGATEWAY=OFF"
 PACKAGECONFIG[appnotifications] = "-DPLUGIN_APPNOTIFICATIONS=ON,-DPLUGIN_APPNOTIFICATIONS=OFF"
-PACKAGECONFIG[appgatewaycommon] = "-DPLUGIN_FBSETTINGS=ON,-DPLUGIN_FBSETTINGS=OFF,networkmanager-plugin"
+PACKAGECONFIG[appgatewaycommon] = "-DPLUGIN_APPGATEWAYCOMMON=ON,-DPLUGIN_APPGATEWAYCOMMON=OFF,networkmanager-plugin"
 
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so"
 
