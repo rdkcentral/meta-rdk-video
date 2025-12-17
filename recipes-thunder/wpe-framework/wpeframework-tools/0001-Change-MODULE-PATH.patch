@@ -1,3 +1,13 @@
+**************************************************************************
+From: Thamim Razith <tabbas651@cable.comcast.com>
+Date: Tue, 05 Dec 2025 10:53:28 +0000
+Subject: [PATCH] 0001-Change-MODULE-PATH.patch
+Reason for Change:In Thunder 5.3.0, the generated paths from JsonGenerator.py and StubGenerator.py were modified.
+To align with the RDK-E installation layout, we have updated the generated header paths to use the RDK-E install path instead of the current working directory.
+Reason for Change:In Thunder 5.3.0 , they modified the JsonGenerator.py,StubGenerator.py generated path 
+Upstream-Status: Comcast Changes
+Signed-off-by: Thamim Razith  <tabbas651@cable.comcast.com>
+*************************************************************************
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 index d41de94..9250f71 100644
 --- a/CMakeLists.txt

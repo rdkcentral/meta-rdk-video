@@ -1,0 +1,48 @@
+*************************************************************************************************
+From: Karunakaran Amirthalingam
+Date: Tue, 11 Dec 2025 10:49:57 +0000
+Subject: [PATCH] 0002-Change-namspace-Proxystub-Json-Generator.patch
+Reason for Change: The namespace has been updated from WPEFramework to Thunder in both the ProxyStubGenerator and JsonGenerator to align with the namespace changes introduced in Thunder-R5.3.0
+Upstream-Status: Comcast changes
+Signed-off-by: Karunakaran Amirthalingam <karunakaran_amirthalingam@cable.comcast.com>
+*****************************************************************************************************
+diff --git a/JsonGenerator/JsonGenerator.py b/JsonGenerator/JsonGenerator.py
+index 1d62a76..5b0ef2b 100755
+--- a/JsonGenerator/JsonGenerator.py
++++ b/JsonGenerator/JsonGenerator.py
+@@ -60,6 +60,15 @@ if __name__ == "__main__":
+             else:
+                 files.append(p)
+
++        for infile in files:
++            with open(infile, "r") as file:
++                content = file.read()
++            # Replace the word
++            modified_content = content.replace("WPEFramework", "Thunder")
++            # Write to output file
++            with open(infile, 'w') as file:
++                file.write(modified_content)
++
+         for path in files:
+
+             trackers.enum_tracker.Reset()
+diff --git a/ProxyStubGenerator/StubGenerator.py b/ProxyStubGenerator/StubGenerator.py
+index f66cd75..8977985 100755
+--- a/ProxyStubGenerator/StubGenerator.py
++++ b/ProxyStubGenerator/StubGenerator.py
+@@ -2850,6 +2850,15 @@ if __name__ == "__main__":
+         faces = []
+         skipped = []
+
++        for infile in interface_files:
++            with open(infile, "r") as file:
++                content = file.read()
++            # Replace the word
++            modified_content = content.replace("WPEFramework", "Thunder")
++            # Write to output file
++            with open(infile, 'w') as file:
++                file.write(modified_content)
++
+         if interface_files:
+             if args.lua_code:
+                 name = "protocol-thunder-comrpc.data"

@@ -10,7 +10,7 @@ DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
 
 
-PR = "r0"
+PR = "r1"
 PV = "5.3.0"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R5_3;name=thunder"
