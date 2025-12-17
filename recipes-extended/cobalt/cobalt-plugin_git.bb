@@ -11,7 +11,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "1.0.0"
 PR = "r0"
 
-SRC_URI = "${LARBOARD_SRC_URI};protocol=${CMF_GIT_PROTOCOL};branch=develop"
+SRC_URI = "${LARBOARD_SRC_URI};protocol=${CMF_GIT_PROTOCOL};branch=feature/RDKEMW-9147_fix"
 
 SRCREV = "${LARBOARD_SRCREV_DEV}"
 
