@@ -1,0 +1,148 @@
+diff --git a/AuditLibrary/AuditLib.cpp b/AuditLibrary/AuditLib.cpp
+new file mode 100644
+index 00000000..6dbee97b
+--- /dev/null
++++ b/AuditLibrary/AuditLib.cpp
+@@ -0,0 +1,98 @@
++#include <link.h>
++#include <stdio.h>
++#include <time.h>
++#include <string.h>
++
++static int in_add = 0;
++static struct timespec add_start;
++static unsigned long add_seq = 0;
++
++#define MAX_GROUP_LIBS 1024
++static const char *group_libs[MAX_GROUP_LIBS];
++static int group_count = 0;
++
++// Return the audit interface version we support
++unsigned int la_version(unsigned int version) {
++    return LAV_CURRENT;
++}
++
++#if 0
++// Called when the linker activity state changes (ADD / DELETE / CONSISTENT)
++void la_activity(uintptr_t *cookie, unsigned int flag) {
++    if (flag == LA_ACT_ADD) {
++        // A new group of objects is about to be added (program start or dlopen)
++        in_add = 1;
++        group_count = 0;
++        clock_gettime(CLOCK_MONOTONIC, &add_start);
++    } else if (flag == LA_ACT_CONSISTENT && in_add) {
++        // The group is now consistent; measure and report
++        struct timespec end;
++        clock_gettime(CLOCK_MONOTONIC, &end);
++
++        long sec  = end.tv_sec  - add_start.tv_sec;
++        long nsec = end.tv_nsec - add_start.tv_nsec;
++        double ms = (double)sec * 1000.0 + (double)nsec / 1.0e6;
++
++        ++add_seq;
++
++        fprintf(stderr,
++                "\n[ld_audit] ADD group #%lu finished: %.3f ms, %d new objects\n",
++                add_seq, ms, group_count);
++
++        for (int i = 0; i < group_count; ++i) {
++            const char *name = group_libs[i];
++            if (name == NULL || name[0] == '\0') {
++                name = "<anonymous>";
++            }
++            fprintf(stderr, "  [ld_audit]   %s\n", name);
++        }
++
++        fprintf(stderr, "[ld_audit] --- end of group #%lu ---\n\n", add_seq);
++
++        in_add = 0;
++    }
++}
++#else
++void la_activity (uintptr_t *cookie, unsigned int flag)
++       {
++           printf("la_activity(): cookie = %p; flag = %s\n", cookie,
++                   (flag == LA_ACT_CONSISTENT) ? "LA_ACT_CONSISTENT" :
++                   (flag == LA_ACT_ADD) ?        "LA_ACT_ADD" :
++                   (flag == LA_ACT_DELETE) ?     "LA_ACT_DELETE" :
++                   "???");
++       }
++#endif
++
++// Called whenever a new object is opened (main binary or a shared lib)
++unsigned int la_objopen(struct link_map *map, Lmid_t lmid, uintptr_t *cookie) {
++    // We just record names during an ADD phase
++    if (in_add && group_count < MAX_GROUP_LIBS) {
++        group_libs[group_count++] = map->l_name;
++    }
++    fprintf(stderr,"la_objopen(): loading \"%s\"; lmid = %s; cookie=%p\n",
++                   map->l_name,
++                   (lmid == LM_ID_BASE) ?  "LM_ID_BASE" :
++                   (lmid == LM_ID_NEWLM) ? "LM_ID_NEWLM" :
++                   "???",
++                   cookie);
++
++    // We don't change binding behavior, so return 0
++    //return 0;
++     return LA_FLG_BINDTO | LA_FLG_BINDFROM;
++}
++
++char *
++       la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
++       {
++           printf("la_objsearch(): name = %s; cookie = %p", name, cookie);
++           printf("; flag = %s\n",
++                   (flag == LA_SER_ORIG) ?    "LA_SER_ORIG" :
++                   (flag == LA_SER_LIBPATH) ? "LA_SER_LIBPATH" :
++                   (flag == LA_SER_RUNPATH) ? "LA_SER_RUNPATH" :
++                   (flag == LA_SER_DEFAULT) ? "LA_SER_DEFAULT" :
++                   (flag == LA_SER_CONFIG) ?  "LA_SER_CONFIG" :
++                   (flag == LA_SER_SECURE) ?  "LA_SER_SECURE" :
++                   "???");
++
++           return (char*) name;
++       }
+diff --git a/AuditLibrary/CMakeLists.txt b/AuditLibrary/CMakeLists.txt
+new file mode 100644
+index 00000000..7de4ca17
+--- /dev/null
++++ b/AuditLibrary/CMakeLists.txt
+@@ -0,0 +1,25 @@
++# If not stated otherwise in this file or this component's LICENSE file the
++# following copyright and licenses apply:
++#
++# Copyright 2022 RDK Management
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++# http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++cmake_minimum_required(VERSION 3.14)
++
++add_library(AuditLib SHARED
++        AuditLib.cpp
++)
++
++install(TARGETS AuditLib
++        DESTINATION lib/${STORAGE_DIRECTORY}/plugins)
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index cde223e7..ec52873d 100755
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -175,6 +175,8 @@ if(PLUGIN_FBSETTINGS)
+ 	add_subdirectory(FbSettings)
+ endif()
+ 
++add_subdirectory(AuditLibrary)
++
+ 
+ if(WPEFRAMEWORK_CREATE_IPKG_TARGETS)
+     set(CPACK_GENERATOR "DEB")
