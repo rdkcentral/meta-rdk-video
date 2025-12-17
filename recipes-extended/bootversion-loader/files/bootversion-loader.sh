@@ -97,7 +97,11 @@ s1_FW_Class=$(grep -m 1 "FW_CLASS" $file_bootversion)
      echo "$s1_FW_Class" >> $file_bootversion
 
 
-MigrationStatus=$(tr181 -g Device.DeviceInfo.Migration.MigrationStatus 2>&1)
+if [ -f /opt/secure/persistent/MigrationStatus ]; then
+    MigrationStatus=$(cat /opt/secure/persistent/MigrationStatus)
+else
+    MigrationStatus="NOT_NEEDED"
+fi
 
 boottypeLog "MigrationStatus: $MigrationStatus"
 #comparing slot1 and slot2 FW Class
