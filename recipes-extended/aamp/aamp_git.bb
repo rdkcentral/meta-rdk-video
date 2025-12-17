@@ -9,9 +9,15 @@ PR ?= "r0"
 SRCREV_FORMAT = "aamp"
 
 inherit pkgconfig
+DEPENDS += "curl libdash libxml2 cjson readline"
+DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', ' player-interface', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', '-DCMAKE_TEST_MW=0', '', d)}"
 
-DEPENDS += "curl libdash libxml2 cjson readline player-interface"
-RDEPENDS:${PN} += "devicesettings player-interface"
+RDEPENDS:${PN} += "devicesettings"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', ' player-interface', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', ' -DCMAKE_TEST_MW=0', '', d)}"
+#DEPENDS += "curl libdash libxml2 cjson readline player-interface"
+#RDEPENDS:${PN} += "devicesettings player-interface"
 NO_RECOMMENDATIONS = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -25,6 +31,7 @@ S = "${WORKDIR}/git"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)}"
 
 require aamp-common.inc
+require ${@bb.utils.contains('DISTRO_FEATURES', 'subtec1', '', 'aamp-middleware.inc', d)}
 require aamp-artifacts-version.inc
 
 EXTRA_OECMAKE += " -DCMAKE_WPEWEBKIT_WATERMARK_JSBINDINGS=1 "
