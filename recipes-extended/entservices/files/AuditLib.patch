@@ -1,17 +1,17 @@
 diff --git a/AuditLibrary/AuditLib.cpp b/AuditLibrary/AuditLib.cpp
 new file mode 100644
-index 00000000..6dbee97b
+index 00000000..1808660a
 --- /dev/null
 +++ b/AuditLibrary/AuditLib.cpp
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,100 @@
 +#include <link.h>
 +#include <stdio.h>
 +#include <time.h>
 +#include <string.h>
 +
++
++
 +static int in_add = 0;
-+static struct timespec add_start;
-+static unsigned long add_seq = 0;
 +
 +#define MAX_GROUP_LIBS 1024
 +static const char *group_libs[MAX_GROUP_LIBS];
@@ -23,6 +23,8 @@ index 00000000..6dbee97b
 +}
 +
 +#if 0
++static struct timespec add_start;
++static unsigned long add_seq = 0;
 +// Called when the linker activity state changes (ADD / DELETE / CONSISTENT)
 +void la_activity(uintptr_t *cookie, unsigned int flag) {
 +    if (flag == LA_ACT_ADD) {
