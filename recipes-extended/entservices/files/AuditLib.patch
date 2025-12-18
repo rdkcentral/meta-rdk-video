@@ -1,9 +1,9 @@
 diff --git a/AuditLibrary/AuditLib.cpp b/AuditLibrary/AuditLib.cpp
 new file mode 100644
-index 00000000..b536752c
+index 00000000..4584bb1a
 --- /dev/null
 +++ b/AuditLibrary/AuditLib.cpp
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,109 @@
 +#include <link.h>
 +#include <stdio.h>
 +#include <time.h>
@@ -22,7 +22,7 @@ index 00000000..b536752c
 +    return LAV_CURRENT;
 +}
 +
-+#if 0
++#if 1
 +static struct timespec add_start;
 +static unsigned long add_seq = 0;
 +// Called when the linker activity state changes (ADD / DELETE / CONSISTENT)
@@ -32,6 +32,7 @@ index 00000000..b536752c
 +        in_add = 1;
 +        group_count = 0;
 +        clock_gettime(CLOCK_MONOTONIC, &add_start);
++        printf("la_activity(): cookie = %p; flag = %s\n", cookie, "LA_ACT_ADD");
 +    } else if (flag == LA_ACT_CONSISTENT && in_add) {
 +        // The group is now consistent; measure and report
 +        struct timespec end;
@@ -43,21 +44,22 @@ index 00000000..b536752c
 +
 +        ++add_seq;
 +
-+        fprintf(stderr,
-+                "\n[ld_audit] ADD group #%lu finished: %.3f ms, %d new objects\n",
-+                add_seq, ms, group_count);
++        // fprintf(stderr,
++        //         "\n[ld_audit] ADD group #%lu finished: %.3f ms, %d new objects\n",
++        //         add_seq, ms, group_count);
 +
-+        for (int i = 0; i < group_count; ++i) {
-+            const char *name = group_libs[i];
-+            if (name == NULL || name[0] == '\0') {
-+                name = "<anonymous>";
-+            }
-+            fprintf(stderr, "  [ld_audit]   %s\n", name);
-+        }
++        // for (int i = 0; i < group_count; ++i) {
++        //     const char *name = group_libs[i];
++        //     if (name == NULL || name[0] == '\0') {
++        //         name = "<anonymous>";
++        //     }
++        //     fprintf(stderr, "  [ld_audit]   %s\n", name);
++        // }
 +
-+        fprintf(stderr, "[ld_audit] --- end of group #%lu ---\n\n", add_seq);
++        // fprintf(stderr, "[ld_audit] --- end of group #%lu ---\n\n", add_seq);
 +
 +        in_add = 0;
++        printf("la_activity(): cookie = %p; flag = %s time to load: %.3f\n", cookie, "LA_ACT_CONSISTENT",ms);
 +    }
 +}
 +#else
@@ -90,8 +92,8 @@ index 00000000..b536752c
 +                   curr_time.tv_nsec);
 +
 +    // We don't change binding behavior, so return 0
-+    //return 0;
-+     return LA_FLG_BINDTO | LA_FLG_BINDFROM;
++    return 0;
++    //  return LA_FLG_BINDTO | LA_FLG_BINDFROM;
 +}
 +
 +#if 0
