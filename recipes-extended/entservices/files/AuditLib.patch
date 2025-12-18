@@ -1,9 +1,10 @@
 diff --git a/AuditLibrary/AuditLib.cpp b/AuditLibrary/AuditLib.cpp
 new file mode 100644
-index 00000000..4584bb1a
+index 00000000..31de4516
 --- /dev/null
 +++ b/AuditLibrary/AuditLib.cpp
-@@ -0,0 +1,109 @@
+@@ -0,0 +1,221 @@
++#if 0
 +#include <link.h>
 +#include <stdio.h>
 +#include <time.h>
@@ -113,6 +114,118 @@ index 00000000..4584bb1a
 +           return (char*) name;
 +       }
 +#endif
++#else
++#define _GNU_SOURCE
++#include <link.h>
++#include <unistd.h>
++#include <fcntl.h>
++#include <time.h>
++#include <stdint.h>
++
++/* Global log FD */
++static int log_fd = -1;
++
++/* Open log file once */
++__attribute__((constructor))
++static void audit_init(void)
++{
++    log_fd = open("/tmp/ld_audit_timing.log",
++                  O_WRONLY | O_CREAT | O_APPEND,
++                  0644);
++}
++
++/* Close on unload */
++__attribute__((destructor))
++static void audit_fini(void)
++{
++    if (log_fd >= 0)
++        close(log_fd);
++}
++
++/* Fast timestamp (no malloc, no locks) */
++static inline uint64_t now_ns(void)
++{
++    struct timespec ts;
++    clock_gettime(CLOCK_MONOTONIC_COARSE, &ts);
++    return (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
++}
++
++/* Minimal uint64 -> ascii */
++static inline int u64toa(uint64_t v, char *buf)
++{
++    char tmp[32];
++    int i = 0, j = 0;
++
++    do {
++        tmp[i++] = '0' + (v % 10);
++        v /= 10;
++    } while (v);
++
++    while (i--)
++        buf[j++] = tmp[i];
++
++    return j;
++}
++
++/* ---------------- la_activity ---------------- */
++void la_activity(uintptr_t *cookie, unsigned int activity)
++{
++    if (log_fd < 0)
++        return;
++
++    char buf[96];
++    int n = 0;
++
++    uint64_t ts = now_ns();
++
++    /* "ACT <ts> <state>\n" */
++    buf[n++] = 'A'; buf[n++] = 'C'; buf[n++] = 'T'; buf[n++] = ' ';
++    n += u64toa(ts, buf + n);
++    buf[n++] = ' ';
++
++    if (activity == LA_ACT_ADD)
++        { buf[n++]='A'; buf[n++]='D'; buf[n++]='D'; }
++    else if (activity == LA_ACT_DELETE)
++        { buf[n++]='D'; buf[n++]='E'; buf[n++]='L'; }
++    else if (activity == LA_ACT_CONSISTENT)
++        { buf[n++]='C'; buf[n++]='O'; buf[n++]='N'; }
++
++    buf[n++] = '\n';
++
++    write(log_fd, buf, n);
++}
++
++/* ---------------- la_objopen ---------------- */
++unsigned int la_objopen(struct link_map *map,
++                        Lmid_t lmid,
++                        uintptr_t *cookie)
++{
++    if (log_fd < 0)
++        return LA_FLG_BINDTO | LA_FLG_BINDFROM;
++
++    char buf[512];
++    int n = 0;
++
++    uint64_t ts = now_ns();
++
++    /* "OBJ <ts> <path>\n" */
++    buf[n++] = 'O'; buf[n++] = 'B'; buf[n++] = 'J'; buf[n++] = ' ';
++    n += u64toa(ts, buf + n);
++    buf[n++] = ' ';
++
++    const char *p = map->l_name ? map->l_name : "<anonymous>";
++    while (*p && n < (int)(sizeof(buf) - 2))
++        buf[n++] = *p++;
++
++    buf[n++] = '\n';
++
++    write(log_fd, buf, n);
++
++    return LA_FLG_BINDTO | LA_FLG_BINDFROM;
++}
++
++#endif
+\ No newline at end of file
 diff --git a/AuditLibrary/CMakeLists.txt b/AuditLibrary/CMakeLists.txt
 new file mode 100644
 index 00000000..7de4ca17

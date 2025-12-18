@@ -18,7 +18,7 @@ Environment="FORCE_SVP=TRUE"
 Environment="FORCE_SAP=TRUE"
 ExecStartPre=-/usr/bin/rdkLogMileStone WPE_FRAMEWORK_START
 SyslogIdentifier=WPEFramework
-ExecStart=/usr/bin/WPEFramework -b
+ExecStart=LD_AUDIT=/usr/lib/wpeframework/plugins/libAuditLib.so /usr/bin/WPEFramework -b
 # Manually adding PID file support. This is used by Thunder clients to know if
 # Thunder aka WPEFramework process is restarted. Please note if PIDFile name is changed
 # it will need corresponding code change in ThunderClientLibraries (power_controller) too.
