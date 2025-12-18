@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name
 
 SRC_URI += "file://RDKEMW-1007.patch"
 
-# Tag 1.7.3.4
+# Tag 1.7.3.5
 SRCREV_entservices-apis = "6fb7ec52f67e3d76e3d1e515660c26e122901723"
 
 S = "${WORKDIR}/git"
