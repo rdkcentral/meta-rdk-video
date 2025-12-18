@@ -1,0 +1,25 @@
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index fa723305..dffe25c9 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -1093,8 +1093,10 @@ POP_WARNING()
+         std::vector<PluginHost::ISubSystem::subsystem> externallyControlled;
+         ServiceMap::Iterator iterator(_services.Services());
+ 
+-#if 0
++#if 1
+         // Load the metadata for the subsystem information..
++        SYSLOG(Logging::Startup, (Core::Format(_T("Loading Metadata for all plugins"))));
++        printf("Loading Metadata for all plugins\n");
+         while (iterator.Next() == true)
+         {
+             iterator->LoadMetadata();
+@@ -1112,6 +1114,8 @@ POP_WARNING()
+                 }
+             }
+         }
++        SYSLOG(Logging::Startup, (Core::Format(_T("End of Loading Metadata for all plugins"))));
++        printf("End of Loading Metadata for all plugins\n");
+ #endif
+ 
+         _controller->Activate(PluginHost::IShell::STARTUP);

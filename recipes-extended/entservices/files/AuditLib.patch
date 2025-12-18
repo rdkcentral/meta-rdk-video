@@ -1,9 +1,9 @@
 diff --git a/AuditLibrary/AuditLib.cpp b/AuditLibrary/AuditLib.cpp
 new file mode 100644
-index 00000000..1808660a
+index 00000000..b536752c
 --- /dev/null
 +++ b/AuditLibrary/AuditLib.cpp
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,107 @@
 +#include <link.h>
 +#include <stdio.h>
 +#include <time.h>
@@ -77,18 +77,24 @@ index 00000000..1808660a
 +    if (in_add && group_count < MAX_GROUP_LIBS) {
 +        group_libs[group_count++] = map->l_name;
 +    }
-+    fprintf(stderr,"la_objopen(): loading \"%s\"; lmid = %s; cookie=%p\n",
++    struct timespec curr_time;
++    clock_gettime(CLOCK_MONOTONIC, &curr_time);
++
++    fprintf(stderr,"la_objopen(): loading \"%s\"; lmid = %s; cookie=%p sec:%ld ns:%ld\n",
 +                   map->l_name,
 +                   (lmid == LM_ID_BASE) ?  "LM_ID_BASE" :
 +                   (lmid == LM_ID_NEWLM) ? "LM_ID_NEWLM" :
 +                   "???",
-+                   cookie);
++                   cookie,
++                   curr_time.tv_sec,
++                   curr_time.tv_nsec);
 +
 +    // We don't change binding behavior, so return 0
 +    //return 0;
 +     return LA_FLG_BINDTO | LA_FLG_BINDFROM;
 +}
 +
++#if 0
 +char *
 +       la_objsearch(const char *name, uintptr_t *cookie, unsigned int flag)
 +       {
@@ -104,6 +110,7 @@ index 00000000..1808660a
 +
 +           return (char*) name;
 +       }
++#endif
 diff --git a/AuditLibrary/CMakeLists.txt b/AuditLibrary/CMakeLists.txt
 new file mode 100644
 index 00000000..7de4ca17
