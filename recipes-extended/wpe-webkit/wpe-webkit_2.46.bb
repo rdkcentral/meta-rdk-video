@@ -1,25 +1,25 @@
 inherit features_check
-REQUIRED_DISTRO_FEATURES = "enable_libsoup3 kirkstone wpe-2.46"
+REQUIRED_DISTRO_FEATURES = "enable_libsoup3 wpe-2.46"
 
 PATCHTOOL = "git"
 
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r25"
+PR  = "r26"
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
 DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-# Tip of the branch on Nov 24, 2025
-SRCREV = "6654770fe8c7a05e9405ec54dee7fde0892df2be"
+# Tip of the branch on Dec 11, 2025
+SRCREV = "6b140c3eed5e0e9c21bcb67a20438c7ee1d20aba"
 
 BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.46"
 SRC_URI = "${BASE_URI}"
 
 # Drop after PR is accepted
-SRC_URI += "file://2.46/1584_GstQuirks_gst_init.patch"
+# - none -
 
 # Drop after westeros change is approved and released
 SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
@@ -113,7 +113,7 @@ EXTRA_OECMAKE += " \
 FILES:${PN} += " ${libdir}/wpe-webkit-*/injected-bundle/libWPEInjectedBundle.so"
 FILES:${PN}-web-inspector-plugin += " ${libdir}/wpe-webkit-*/libWPEWebInspectorResources.so"
 
-TUNE_CCARGS:remove = "-fno-omit-frame-pointer -fno-optimize-sibling-calls"
+TUNE_CCARGS:remove = "${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', '','-fno-omit-frame-pointer -fno-optimize-sibling-calls', d)}"
 TUNE_CCARGS:append = " -fno-delete-null-pointer-checks"
 
 WPE_WEBKIT_LTO ??= "-flto=auto"
