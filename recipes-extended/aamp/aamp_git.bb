@@ -9,9 +9,17 @@ PR ?= "r0"
 SRCREV_FORMAT = "aamp"
 
 inherit pkgconfig
+DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework"
+require ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', '', 'aamp-middleware.inc', d)}
 
-DEPENDS += "curl libdash libxml2 cjson readline player-interface"
-RDEPENDS:${PN} += "devicesettings player-interface"
+DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', ' player-interface', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', '-DCMAKE_EXTERNAL_PLAYER_INTERFACE_DEPENDENCIES=1', ' -DCMAKE_EXTERNAL_PLAYER_INTERFACE_DEPENDENCIES=0', d)}"
+
+RDEPENDS:${PN} += "devicesettings"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', ' player-interface', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', ' -DCMAKE_EXTERNAL_PLAYER_INTERFACE_DEPENDENCIES=1', ' -DCMAKE_EXTERNAL_PLAYER_INTERFACE_DEPENDENCIES=0', d)}"
+#DEPENDS += "curl libdash libxml2 cjson readline player-interface"
+#RDEPENDS:${PN} += "devicesettings player-interface"
 NO_RECOMMENDATIONS = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
