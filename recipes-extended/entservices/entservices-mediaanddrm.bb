@@ -22,6 +22,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-Add-a-new-metrics-punch-through-on-the-OCDM-framework-rdkservice.patch \
            ${@bb.utils.contains('DISTRO_FEATURES', 'wpe_r4_4','file://0003-R4.4.1-SystemAudioPlayer-compilation-error.patch','',d)} \
            file://0001-set-OCDM-process-thread-name.patch \
+           file://0002-OpenTelemetry-Logging.patch \
           "
           
 # Release version - 1.3.16
@@ -36,6 +37,9 @@ EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 
 DEPENDS += "wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
+
+DEPENDS += "opentelemetry-examples"
+RDEPENDS:${PN} += "opentelemetry-examples"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
@@ -145,4 +149,10 @@ PACKAGES =+ "${PN}-screencapture"
 FILES:${PN}-screencapture = "\
      ${libdir}/wpeframework/plugins/libWPEFrameworkScreenCapture.so \
      /etc/WPEFramework/plugins/ScreenCapture.json \
+"
+
+# Push -lotlp_logger into the shared/module linkers for all plugin .so builds
+EXTRA_OECMAKE += "\
+    -DCMAKE_SHARED_LINKER_FLAGS='-Wl,--hash-style=gnu -lotlp_logger' \
+    -DCMAKE_MODULE_LINKER_FLAGS='-Wl,--hash-style=gnu -lotlp_logger' \
 "

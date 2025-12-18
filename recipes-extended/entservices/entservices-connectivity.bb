@@ -10,6 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+           file://0002-OpenTelemetry-Logging.patch \
           "
 
 # Release version - 1.1.0
@@ -23,6 +24,9 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', 'wpa-supplicant', '', d)}"
 DEPENDS += "wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
+
+DEPENDS += "opentelemetry-examples"
+RDEPENDS:${PN} += "opentelemetry-examples"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
@@ -84,3 +88,9 @@ FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WP
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
+
+# Push -lotlp_logger into the shared/module linkers for all plugin .so builds
+EXTRA_OECMAKE += "\
+    -DCMAKE_SHARED_LINKER_FLAGS='-Wl,--hash-style=gnu -lotlp_logger' \
+    -DCMAKE_MODULE_LINKER_FLAGS='-Wl,--hash-style=gnu -lotlp_logger' \
+"
