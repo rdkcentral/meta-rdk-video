@@ -1,9 +1,9 @@
 diff --git a/AuditLibrary/AuditLib.cpp b/AuditLibrary/AuditLib.cpp
 new file mode 100644
-index 00000000..31de4516
+index 00000000..1d224af9
 --- /dev/null
 +++ b/AuditLibrary/AuditLib.cpp
-@@ -0,0 +1,221 @@
+@@ -0,0 +1,220 @@
 +#if 0
 +#include <link.h>
 +#include <stdio.h>
@@ -115,7 +115,6 @@ index 00000000..31de4516
 +       }
 +#endif
 +#else
-+#define _GNU_SOURCE
 +#include <link.h>
 +#include <unistd.h>
 +#include <fcntl.h>
