@@ -245,11 +245,13 @@ do_install() {
 	# For NetworkManager
 	install -d ${D}${sysconfdir}/NetworkManager
 	install -d ${D}${sysconfdir}/NetworkManager/conf.d
+    install -d ${D}${sysconfdir}/NetworkManager/dnsmasq.d
 	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d
 	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
 	install -m 0755 ${S}/lib/rdk/NM_Dispatcher.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d
 	install -m 0755 ${S}/lib/rdk/NM_preDown.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
+    install -m 0755 ${S}/etc/dnsmasq-dobby.conf ${D}${sysconfdir}/NetworkManager/dnsmasq.d/dnsmasq-dobby.conf
     install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
     install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
 }
@@ -311,3 +313,4 @@ FILES:${PN} += "${sbindir}/*"
 FILES:${PN} += " /HrvInitScripts/*"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/NM_Dispatcher.sh"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d/NM_preDown.sh"
+FILES:${PN} += "${sysconfdir}/NetworkManager/dnsmasq.d/dnsmasq-dobby.conf"
