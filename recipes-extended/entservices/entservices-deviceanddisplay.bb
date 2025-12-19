@@ -48,7 +48,7 @@ INCLUDE_DIRS = " \
     -I=${includedir}/WPEFramework/powercontroller \
     "
 
-CXXFLAGS += " -DPLATCO_BOOTTO_STANDBY"
+#CXXFLAGS += " -DPLATCO_BOOTTO_STANDBY"
 CXXFLAGS += " -DOFFLINE_MAINT_REBOOT"
 
 CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
