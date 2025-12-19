@@ -90,7 +90,5 @@ do_install:append() {
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
-FILES:${PN} = "${includedir}"
 
-INSANE_SKIP:${PN} += "libdir staticdev dev-so installed-vs-shipped"
 INSANE_SKIP:${PN}-dbg += "libdir"
