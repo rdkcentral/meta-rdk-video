@@ -16,9 +16,10 @@ Environment="TTS_USE_THUNDER_CLIENT=1"
 Environment="XDG_DATA_HOME=/opt/QT/home"
 Environment="FORCE_SVP=TRUE"
 Environment="FORCE_SAP=TRUE"
+Environment="LD_AUDIT=/usr/lib/wpeframework/plugins/libAuditLib.so"
 ExecStartPre=-/usr/bin/rdkLogMileStone WPE_FRAMEWORK_START
 SyslogIdentifier=WPEFramework
-ExecStart=LD_AUDIT=/usr/lib/wpeframework/plugins/libAuditLib.so /usr/bin/WPEFramework -b
+ExecStart=/usr/bin/WPEFramework -b
 # Manually adding PID file support. This is used by Thunder clients to know if
 # Thunder aka WPEFramework process is restarted. Please note if PIDFile name is changed
 # it will need corresponding code change in ThunderClientLibraries (power_controller) too.
