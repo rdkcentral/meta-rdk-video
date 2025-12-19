@@ -1,0 +1,32 @@
+From e7c1a1b9b6c94a7f8f2f4f2b3d7c9abc12345678 Mon Sep 17 00:00:00 2001
+From: Arjun Binu <arjun.binu@sky.uk>
+Date: Thu, 18 Dec 2025 12:08:00 +0000
+Subject: [PATCH] RDKEMW-11606: Disable AVOutput build in CMakeLists
+
+Remove the AVOutput add_subdirectory block so that the AVOutput
+plugin is not compiled in this recipe context. This is useful when
+the build is controlled via Yocto PACKAGECONFIG and we want to avoid
+CMake compiling AVOutput here.
+
+Signed-off-by: Arjun Binu <arjun.binu@sky.uk>
+---
+ CMakeLists.txt | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index fb33b50e..d0c0c0c0 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -39,9 +39,6 @@ if(PLUGIN_AVINPUT)
+     add_subdirectory(AVInput)
+ endif()
+
+-if(PLUGIN_AVOUTPUT)
+-    add_subdirectory(AVOutput)
+-endif()
+ 
+ if(PLUGIN_HDMICECSOURCE)
+     add_subdirectory(HdmiCecSource)
+-- 
+2.34.1
+
