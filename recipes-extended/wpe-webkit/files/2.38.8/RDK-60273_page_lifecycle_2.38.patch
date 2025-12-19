@@ -1,0 +1,1409 @@
+From a560a19fc1a751b505f9f8fc009dc430c1d4f52b Mon Sep 17 00:00:00 2001
+From: Miguel Gomez <magomez@igalia.com>
+Date: Mon, 10 Nov 2025 17:06:00 +0100
+Subject: [PATCH 1/8] Added API
+
+---
+ .../Scripts/Preferences/WebPreferences.yaml   |  28 +++
+ .../UIProcess/API/glib/WebKitSettings.cpp     | 110 ++++++++++
+ .../UIProcess/API/glib/WebKitWebView.cpp      | 199 ++++++++++++++++++
+ .../WebKit/UIProcess/API/wpe/WebKitSettings.h |  14 ++
+ .../WebKit/UIProcess/API/wpe/WebKitWebView.h  |  34 +++
+ 5 files changed, 385 insertions(+)
+
+diff --git a/Source/WTF/Scripts/Preferences/WebPreferences.yaml b/Source/WTF/Scripts/Preferences/WebPreferences.yaml
+index 18e7d6277005..37fabdbbfd90 100644
+--- a/Source/WTF/Scripts/Preferences/WebPreferences.yaml
++++ b/Source/WTF/Scripts/Preferences/WebPreferences.yaml
+@@ -1672,6 +1672,34 @@ PDFPluginEnabled:
+     WebKit:
+       default: true
+ 
++PageLifecycleAPIDestroyWindowOnFreeze:
++  type: bool
++  status: testable
++  category: dom
++  humanReadableName: "Page Lifecycle API destroy window on freeze"
++  humanReadableDescription: "Whether to destroy the native window on freeze"
++  defaultValue:
++    WebKitLegacy:
++      default: false
++    WebKit:
++      default: true
++    WebCore:
++      default: true
++
++PageLifecycleAPIEnabled:
++  type: bool
++  status: testable
++  category: dom
++  humanReadableName: "Page Lifecycle API"
++  humanReadableDescription: "Enable the Page Lifecycle API"
++  defaultValue:
++    WebKitLegacy:
++      default: false
++    WebKit:
++      default: true
++    WebCore:
++      default: true
++
+ PageVisibilityBasedProcessSuppressionEnabled:
+   type: bool
+   webcoreBinding: none
+diff --git a/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp b/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
+index 937b2be5f9a6..6538c825f352 100644
+--- a/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
++++ b/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
+@@ -189,6 +189,8 @@ enum {
+     PROP_ENABLE_ICE_CANDIDATE_FILTERING,
+     PROP_WEBRTC_UDP_PORTS_RANGE,
+     PROP_SCREEN_SUPPORTS_HDR,
++    PROP_ENABLE_PAGE_LIFECYCLE,
++    PROP_DESTROY_WINDOW_ON_FREEZE,
+     N_PROPERTIES,
+ };
+ 
+@@ -452,6 +454,12 @@ ALLOW_DEPRECATED_DECLARATIONS_END
+     case PROP_SCREEN_SUPPORTS_HDR:
+         webkit_settings_set_screen_supports_hdr(settings, g_value_get_boolean(value));
+         break;
++    case PROP_ENABLE_PAGE_LIFECYCLE:
++        webkit_settings_set_enable_page_lifecycle(settings, g_value_get_boolean(value));
++        break;
++    case PROP_DESTROY_WINDOW_ON_FREEZE:
++        webkit_settings_set_destroy_window_on_freeze(settings, g_value_get_boolean(value));
++        break;
+     default:
+         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, propId, paramSpec);
+         break;
+@@ -686,6 +694,12 @@ ALLOW_DEPRECATED_DECLARATIONS_END
+     case PROP_SCREEN_SUPPORTS_HDR:
+         g_value_set_boolean(value, webkit_settings_get_screen_supports_hdr(settings));
+         break;
++    case PROP_ENABLE_PAGE_LIFECYCLE:
++        g_value_set_boolean(value, webkit_settings_get_enable_page_lifecycle(settings));
++        break;
++    case PROP_DESTROY_WINDOW_ON_FREEZE:
++        g_value_set_boolean(value, webkit_settings_get_destroy_window_on_freeze(settings));
++        break;
+     default:
+         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, propId, paramSpec);
+         break;
+@@ -1827,6 +1841,32 @@ static void webkit_settings_class_init(WebKitSettingsClass* klass)
+         FALSE,
+         readWriteConstructParamFlags);
+ 
++     /**
++     * WebKitSettings:enable-page-lifecycle:
++     *
++     * Whether to enable the Page LifeCycle API.
++     *
++     */
++    sObjProperties[PROP_ENABLE_PAGE_LIFECYCLE] = g_param_spec_boolean(
++        "enable-page-lifecycle",
++        _("Enable Page Lifecycle"),
++        _("Whether to enable the Page Lifecycle API."),
++        TRUE,
++        readWriteConstructParamFlags);
++
++    /**
++     * WebKitSettings:destroy-window-on-freeze:
++     *
++     * Whether to destroy the native window on freeze.
++     *
++     */
++    sObjProperties[PROP_DESTROY_WINDOW_ON_FREEZE] = g_param_spec_boolean(
++        "destroy-window-on-freeze",
++        _("Destroy window on freeze"),
++        _("Whether to destroy the native window on freeze."),
++        TRUE,
++        readWriteConstructParamFlags);
++
+     g_object_class_install_properties(gObjectClass, N_PROPERTIES, sObjProperties);
+ }
+ 
+@@ -4604,3 +4644,73 @@ webkit_settings_set_screen_supports_hdr(WebKitSettings* settings, gboolean scree
+     priv->preferences->setScreenSupportsHDR(screenSupportsHDR);
+     g_object_notify_by_pspec(G_OBJECT(settings), sObjProperties[PROP_SCREEN_SUPPORTS_HDR]);
+ }
++
++/**
++ * webkit_settings_get_enable_page_lifecycle:
++ * @settings: a #WebKitSettings
++ *
++ * Get the #WebKitSettings:enable-page-lifecycle property.
++ *
++ * Returns: %TRUE If the native window should be destroyed when feezing or %FALSE otherwise.
++ */
++gboolean webkit_settings_get_enable_page_lifecycle(WebKitSettings* settings)
++{
++    g_return_val_if_fail(WEBKIT_IS_SETTINGS(settings), FALSE);
++
++    return settings->priv->preferences->pageLifecycleAPIEnabled();
++}
++
++/**
++ * webkit_settings_set_enable_page_lifecycle:
++ * @settings: a #WebKitSettings
++ * @enabled: Value to be set
++ *
++ * Set the #WebKitSettings:enable-page-lifecycle property.
++ */
++void webkit_settings_set_enable_page_lifecycle(WebKitSettings* settings, gboolean enable)
++{
++    g_return_if_fail(WEBKIT_IS_SETTINGS(settings));
++
++    WebKitSettingsPrivate* priv = settings->priv;
++    bool currentValue = priv->preferences->pageLifecycleAPIEnabled();
++    if (currentValue == enable)
++        return;
++
++    priv->preferences->setPageLifecycleAPIEnabled(enable);
++    g_object_notify(G_OBJECT(settings), "enable-page-lifecycle");
++}
++
++/**
++ * webkit_settings_get_destroy_window_on_freeze:
++ * @settings: a #WebKitSettings
++ *
++ * Get the #WebKitSettings:destroy-window-on-freeze property.
++ *
++ * Returns: %TRUE If the native window should be destroyed when feezing or %FALSE otherwise.
++ */
++gboolean webkit_settings_get_destroy_window_on_freeze(WebKitSettings* settings)
++{
++    g_return_val_if_fail(WEBKIT_IS_SETTINGS(settings), FALSE);
++
++    return settings->priv->preferences->pageLifecycleAPIDestroyWindowOnFreeze();
++}
++
++/**
++ * webkit_settings_set_destroy_window_on_freeze:
++ * @settings: a #WebKitSettings
++ * @enabled: Value to be set
++ *
++ * Set the #WebKitSettings:destroy-window-on-freeze property.
++ */
++void webkit_settings_set_destroy_window_on_freeze(WebKitSettings* settings, gboolean destroy)
++{
++    g_return_if_fail(WEBKIT_IS_SETTINGS(settings));
++
++    WebKitSettingsPrivate* priv = settings->priv;
++    bool currentValue = priv->preferences->pageLifecycleAPIDestroyWindowOnFreeze();
++    if (currentValue == destroy)
++        return;
++
++    priv->preferences->setPageLifecycleAPIDestroyWindowOnFreeze(destroy);
++    g_object_notify(G_OBJECT(settings), "destroy-window-on-freeze");
++}
+diff --git a/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp b/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp
+index 8a6a11bf5ad2..05aad75d2a91 100644
+--- a/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp
++++ b/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp
+@@ -328,6 +328,9 @@ struct _WebKitWebViewPrivate {
+     double textScaleFactor;
+ 
+     bool isWebProcessResponsive;
++
++    bool isWaitingForFreezeCallback;
++    bool isWaitingForResumeCallback;
+ };
+ 
+ static guint signals[LAST_SIGNAL] = { 0, };
+@@ -791,6 +794,9 @@ static void webkitWebViewConstructed(GObject* object)
+     }, webView);
+ 
+     priv->isWebProcessResponsive = true;
++
++    priv->isWaitingForFreezeCallback = false;
++    priv->isWaitingForResumeCallback = false;
+ }
+ 
+ static void webkitWebViewSetProperty(GObject* object, guint propId, const GValue* value, GParamSpec* paramSpec)
+@@ -5495,3 +5501,196 @@ pid_t webkit_web_view_get_web_process_identifier(WebKitWebView *webView)
+ 
+     return getPage(webView).processIdentifier();
+ }
++
++// Page LifeCycle states, ActivityState flags used to define them and transitions:
++//
++//          Active   IsFocused &&  IsVisible && !isSuspended()
++//           ^ |
++//           | |
++//     focus | | blur
++//           | |
++//           | v
++//         Passive  !IsFocused &&  IsVisible && !isSuspended()
++//           ^ |
++//           | |
++//      show | | hide
++//           | |
++//           | v
++//          Hidden   !IsFocused && !IsVisible && !isSuspended()
++//           ^ |
++//           | |
++//    resume | | freeze
++//           | |
++//           | v
++//          Frozen   !IsFocused && !IsVisible && isSuspended()
++//
++//
++// Unless overwritten by the API, the default initial values are IsFocused && IsVisible && !IsFrozen (so Active state).
++
++
++gboolean webkit_web_view_hide_plc(WebKitWebView *webView)
++{
++    g_return_val_if_fail(WEBKIT_IS_WEB_VIEW(webView), FALSE);
++
++    if (!webkit_settings_get_enable_page_lifecycle(webView->priv->settings.get()))
++        return FALSE;
++
++    auto state = webView->priv->view->viewState();
++    bool passive = !state.contains(WebCore::ActivityState::IsFocused) && state.contains(WebCore::ActivityState::IsVisible) && !getPage(webView).isSuspended();
++
++    if (!passive)
++        return FALSE;
++
++    state.remove(WebCore::ActivityState::IsVisible);
++    webView->priv->view->setViewState(state);
++
++    // Sleep for 100ms to allow the WebProcess to process the changes and finish the state transition.
++    WTF::sleep(100_ms);
++
++    return TRUE;
++}
++
++gboolean webkit_web_view_show_plc(WebKitWebView *webView)
++{
++    g_return_val_if_fail(WEBKIT_IS_WEB_VIEW(webView), FALSE);
++
++    if (!webkit_settings_get_enable_page_lifecycle(webView->priv->settings.get()))
++        return FALSE;
++
++    auto state = webView->priv->view->viewState();
++    bool hidden = !state.containsAny({ WebCore::ActivityState::IsFocused, WebCore::ActivityState::IsVisible }) && !getPage(webView).isSuspended();
++
++    if (!hidden)
++        return FALSE;
++
++    if (webView->priv->isWaitingForResumeCallback)
++        return FALSE;
++
++    state.add(WebCore::ActivityState::IsVisible);
++    webView->priv->view->setViewState(state);
++
++    // Sleep for 100ms to allow the WebProcess to process the changes and finish the state transition.
++    WTF::sleep(100_ms);
++
++    return TRUE;
++}
++
++gboolean webkit_web_view_focus_plc(WebKitWebView *webView)
++{
++    g_return_val_if_fail(WEBKIT_IS_WEB_VIEW(webView), FALSE);
++
++    if (!webkit_settings_get_enable_page_lifecycle(webView->priv->settings.get()))
++        return FALSE;
++
++    auto state = webView->priv->view->viewState();
++    bool passive = !state.contains(WebCore::ActivityState::IsFocused) && state.contains(WebCore::ActivityState::IsVisible) && !getPage(webView).isSuspended();
++
++    if (!passive)
++        return FALSE;
++
++    state.add(WebCore::ActivityState::IsFocused);
++    webView->priv->view->setViewState(state);
++
++    // Sleep for 100ms to allow the WebProcess to process the changes and finish the state transition.
++    WTF::sleep(100_ms);
++
++    return TRUE;
++}
++
++gboolean webkit_web_view_blur_plc(WebKitWebView *webView)
++{
++    g_return_val_if_fail(WEBKIT_IS_WEB_VIEW(webView), FALSE);
++
++    if (!webkit_settings_get_enable_page_lifecycle(webView->priv->settings.get()))
++        return FALSE;
++
++    auto state = webView->priv->view->viewState();
++    bool active = state.containsAll({ WebCore::ActivityState::IsFocused, WebCore::ActivityState::IsVisible }) && !getPage(webView).isSuspended();
++
++    if (!active)
++        return FALSE;
++
++    state.remove(WebCore::ActivityState::IsFocused);
++    webView->priv->view->setViewState(state);
++
++    // Sleep for 100ms to allow the WebProcess to process the changes and finish the state transition.
++    WTF::sleep(100_ms);
++
++    return TRUE;
++}
++
++gboolean webkit_web_view_freeze_plc(WebKitWebView *webView, GAsyncReadyCallback callback, gpointer userData)
++{
++    g_return_val_if_fail(WEBKIT_IS_WEB_VIEW(webView), FALSE);
++
++    if (!webkit_settings_get_enable_page_lifecycle(webView->priv->settings.get()))
++        return FALSE;
++
++    auto state = webView->priv->view->viewState();
++    bool hidden = !state.containsAny({ WebCore::ActivityState::IsFocused, WebCore::ActivityState::IsVisible }) && !getPage(webView).isSuspended();
++
++    if (!hidden)
++        return FALSE;
++
++    if (webView->priv->isWaitingForResumeCallback)
++        return FALSE;
++
++    webView->priv->isWaitingForFreezeCallback = true;
++    GRefPtr<GTask> task = adoptGRef(g_task_new(webView, NULL, callback, userData));
++    getPage(webView).suspend([task = WTFMove(task)](bool success) {
++        // Sleep for 100ms to allow the WebProcess to process the changes and finish the state transition.
++        WTF::sleep(100_ms);
++
++        WebKitWebView* webView = WEBKIT_WEB_VIEW(g_task_get_source_object(task.get()));
++        webView->priv->isWaitingForFreezeCallback = false;
++        g_task_return_boolean(task.get(), success);
++    });
++
++    return TRUE;
++}
++
++gboolean webkit_web_view_freeze_plc_finish(WebKitWebView* webView, GAsyncResult* result, GError** error)
++{
++    g_return_val_if_fail(WEBKIT_IS_WEB_VIEW(webView), FALSE);
++    g_return_val_if_fail(g_task_is_valid(result, webView), FALSE);
++
++    return g_task_propagate_boolean(G_TASK(result), error);
++}
++
++gboolean webkit_web_view_resume_plc(WebKitWebView *webView, GAsyncReadyCallback callback, gpointer userData)
++{
++    g_return_val_if_fail(WEBKIT_IS_WEB_VIEW(webView), FALSE);
++
++    if (!webkit_settings_get_enable_page_lifecycle(webView->priv->settings.get()))
++        return FALSE;
++
++    auto state = webView->priv->view->viewState();
++    bool frozen = !state.containsAny({ WebCore::ActivityState::IsFocused, WebCore::ActivityState::IsVisible }) && getPage(webView).isSuspended();
++
++    if (!frozen)
++        return FALSE;
++
++    if (webView->priv->isWaitingForFreezeCallback)
++        return FALSE;
++
++    webView->priv->isWaitingForResumeCallback = true;
++    GRefPtr<GTask> task = adoptGRef(g_task_new(webView, NULL, callback, userData));
++    getPage(webView).resume([task = WTFMove(task)](bool success) {
++        // Sleep for 100ms to allow the WebProcess to process the changes and finish the state transition.
++        WTF::sleep(100_ms);
++
++        WebKitWebView* webView = WEBKIT_WEB_VIEW(g_task_get_source_object(task.get()));
++        webView->priv->isWaitingForResumeCallback = false;
++        g_task_return_boolean(task.get(), success);
++    });
++
++    return TRUE;
++}
++
++gboolean webkit_web_view_resume_plc_finish(WebKitWebView* webView, GAsyncResult* result, GError** error)
++{
++    g_return_val_if_fail(WEBKIT_IS_WEB_VIEW(webView), FALSE);
++    g_return_val_if_fail(g_task_is_valid(result, webView), FALSE);
++
++    return g_task_propagate_boolean(G_TASK(result), error);
++}
+diff --git a/Source/WebKit/UIProcess/API/wpe/WebKitSettings.h b/Source/WebKit/UIProcess/API/wpe/WebKitSettings.h
+index 847d95318620..584dbbfe5473 100644
+--- a/Source/WebKit/UIProcess/API/wpe/WebKitSettings.h
++++ b/Source/WebKit/UIProcess/API/wpe/WebKitSettings.h
+@@ -554,6 +554,20 @@ WEBKIT_API void
+ webkit_settings_set_screen_supports_hdr                        (WebKitSettings* settings,
+                                                                 gboolean screenSupportsHDR);
+ 
++WEBKIT_API gboolean
++webkit_settings_get_enable_page_lifecycle                      (WebKitSettings* settings);
++
++WEBKIT_API void
++webkit_settings_set_enable_page_lifecycle                      (WebKitSettings* settings,
++                                                                gboolean enabled);
++
++WEBKIT_API gboolean
++webkit_settings_get_destroy_window_on_freeze                   (WebKitSettings* settings);
++
++WEBKIT_API void
++webkit_settings_set_destroy_window_on_freeze                   (WebKitSettings* settings,
++                                                                gboolean destroy_window);
++
+ G_END_DECLS
+ 
+ #endif /* WebKitSettings_h */
+diff --git a/Source/WebKit/UIProcess/API/wpe/WebKitWebView.h b/Source/WebKit/UIProcess/API/wpe/WebKitWebView.h
+index 74870ebe28bc..2b67de45a297 100644
+--- a/Source/WebKit/UIProcess/API/wpe/WebKitWebView.h
++++ b/Source/WebKit/UIProcess/API/wpe/WebKitWebView.h
+@@ -684,6 +684,40 @@ webkit_web_view_is_web_process_responsive_finish     (WebKitWebView
+ WEBKIT_API pid_t
+ webkit_web_view_get_web_process_identifier           (WebKitWebView             *web_view);
+ 
++
++WEBKIT_API gboolean
++webkit_web_view_hide_plc                             (WebKitWebView             *web_view);
++
++WEBKIT_API gboolean
++webkit_web_view_show_plc                             (WebKitWebView             *web_view);
++
++WEBKIT_API gboolean
++webkit_web_view_focus_plc                            (WebKitWebView             *web_view);
++
++WEBKIT_API gboolean
++webkit_web_view_blur_plc                             (WebKitWebView             *web_view);
++
++WEBKIT_API gboolean
++webkit_web_view_freeze_plc                           (WebKitWebView             *web_view,
++                                                      GAsyncReadyCallback       callback,
++                                                      gpointer                  user_data);
++
++WEBKIT_API gboolean
++webkit_web_view_freeze_plc_finish                    (WebKitWebView             *web_view,
++                                                      GAsyncResult              *result,
++                                                      GError                    **error);
++
++WEBKIT_API gboolean
++webkit_web_view_resume_plc                           (WebKitWebView             *web_view,
++                                                      GAsyncReadyCallback       callback,
++                                                      gpointer                  user_data);
++
++WEBKIT_API gboolean
++webkit_web_view_resume_plc_finish                    (WebKitWebView             *web_view,
++                                                      GAsyncResult              *result,
++                                                      GError                    **error);
++
++
+ G_END_DECLS
+ 
+ #endif
+-- 
+2.51.0
+
+
+From e024263ca1a504794ec239141dd06524366f3246 Mon Sep 17 00:00:00 2001
+From: Miguel Gomez <magomez@igalia.com>
+Date: Tue, 18 Nov 2025 09:53:21 +0100
+Subject: [PATCH 2/8] Implement hide event for normal and nonCompositedWebGL
+
+---
+ .../html/canvas/WebGLRenderingContextBase.cpp |  5 +-
+ .../html/canvas/WebGLRenderingContextBase.h   |  1 +
+ .../DrawingAreaCoordinatedGraphics.cpp        | 66 ++++++++++++-------
+ .../DrawingAreaCoordinatedGraphics.h          |  2 +
+ .../CoordinatedGraphics/LayerTreeHost.cpp     |  7 +-
+ .../CoordinatedGraphics/LayerTreeHost.h       |  2 +-
+ 6 files changed, 54 insertions(+), 29 deletions(-)
+
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+index bb227faa27a8..23832d98e38d 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+@@ -1211,8 +1211,11 @@ void WebGLRenderingContextBase::addActivityStateChangeObserverIfNecessary()
+ 
+     // We are only interested in visibility changes for contexts
+     // that are using the high-performance GPU.
++    // We also use the activityState changes when nonCompositedWebGL is enabled, but not
++    // if we're using PageLifecycle, as we don't hide to transparent there.
+     m_nonCompositedWebGLEnabled = canvas->document().frame()->settings().nonCompositedWebGLEnabled();
+-    if (!isHighPerformanceContext(m_context) && !m_nonCompositedWebGLEnabled)
++    m_usingPageLifecycle = canvas->document().frame()->settings().pageLifecycleAPIEnabled();
++    if (!isHighPerformanceContext(m_context) && (!m_nonCompositedWebGLEnabled || m_usingPageLifecycle))
+         return;
+ 
+     auto* page = canvas->document().page();
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.h b/Source/WebCore/html/canvas/WebGLRenderingContextBase.h
+index 973116f0888a..e0a2d0d1799d 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.h
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.h
+@@ -1206,6 +1206,7 @@ private:
+     Timer m_checkForContextLossHandlingTimer;
+     bool m_isSuspended { false };
+     bool m_nonCompositedWebGLEnabled { false };
++    bool m_usingPageLifecycle { false };
+ 
+ #if ENABLE(WEBXR)
+     bool m_isXRCompatible { false };
+diff --git a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphics.cpp b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphics.cpp
+index b2d10178a176..9613d1214a2c 100644
+--- a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphics.cpp
++++ b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphics.cpp
+@@ -57,6 +57,7 @@ DrawingAreaCoordinatedGraphics::DrawingAreaCoordinatedGraphics(WebPage& webPage,
+     , m_discardPreviousLayerTreeHostTimer(RunLoop::main(), this, &DrawingAreaCoordinatedGraphics::discardPreviousLayerTreeHost)
+     , m_supportsAsyncScrolling(parameters.store.getBoolValueForKey(WebPreferencesKey::threadedScrollingEnabledKey()))
+     , m_displayTimer(RunLoop::main(), this, &DrawingAreaCoordinatedGraphics::displayTimerFired)
++    , m_usingPageLifecycle(webPage.corePage()->settings().pageLifecycleAPIEnabled())
+ {
+ #if USE(GLIB_EVENT_LOOP)
+     m_discardPreviousLayerTreeHostTimer.setPriority(RunLoopSourcePriority::ReleaseUnusedResourcesTimer);
+@@ -398,34 +399,49 @@ RefPtr<DisplayRefreshMonitor> DrawingAreaCoordinatedGraphics::createDisplayRefre
+ 
+ void DrawingAreaCoordinatedGraphics::activityStateDidChange(OptionSet<ActivityState::Flag> changed, ActivityStateChangeID, CompletionHandler<void()>&& completionHandler)
+ {
+-    // We use calls to suspendPainting() and resumePainting() to stop the compositor loop and paint the content transparent
+-    // so nothing gets rendered. There are 2 exceptions to this that need to be handled separately:
+-    // - WebGL in nonCompositedWebGL: we're not using the compositor in this case. WebGLRenderingContextBase will observe the activity
+-    //   state changes and paint the content transparent when the view is suspended or hidden.
+-    // - MediaPlayer videoSink window when using the GStreamer holepunch: HTMLMediaElement will perform calls to the MediaPlayer
+-    //   to set an empty rectangle when it detects that the view has become hidden or suspended.
++    if (m_usingPageLifecycle) {
++        // Implementation for the Page Lifecycle events.
+ 
+-    // Handle hide/show functionality.
+-    if (changed & ActivityState::IsVisible && !m_isViewSuspended) {
+-        if (m_webPage.corePage()->isVisible())
+-            resumePainting();
+-        else
+-            suspendPainting();
+-    }
++        // Handle hide/show functionality.
++        if (changed & ActivityState::IsVisible) {
++            if (m_webPage.corePage()->isVisible())
++                resumePainting();
++            else
++                suspendPainting();
++        }
+ 
+-    // Handle suspend/resume functionality. Besides stopping the rendering, we stop active DOM objects and media playback.
+-    if (changed & ActivityState::IsInWindow) {
+-        if (m_isViewSuspended) {
+-            m_webPage.corePage()->resumeActiveDOMObjectsAndAnimations();
+-            m_webPage.corePage()->resumeAllMediaPlayback();
++    } else {
++        // Implementation for the old suspend/resume/hide/show functionality
++
++        // We use calls to suspendPainting() and resumePainting() to stop the compositor loop and paint the content transparent
++        // so nothing gets rendered. There are 2 exceptions to this that need to be handled separately:
++        // - WebGL in nonCompositedWebGL: we're not using the compositor in this case. WebGLRenderingContextBase will observe the activity
++        //   state changes and paint the content transparent when the view is suspended or hidden.
++        // - MediaPlayer videoSink window when using the GStreamer holepunch: HTMLMediaElement will perform calls to the MediaPlayer
++        //   to set an empty rectangle when it detects that the view has become hidden or suspended.
++
++        // Handle hide/show functionality.
++        if (changed & ActivityState::IsVisible && !m_isViewSuspended) {
+             if (m_webPage.corePage()->isVisible())
+                 resumePainting();
+-            m_isViewSuspended = false;
+-        } else {
+-            suspendPainting();
+-            m_webPage.corePage()->suspendAllMediaPlayback();
+-            m_webPage.corePage()->suspendActiveDOMObjectsAndAnimations();
+-            m_isViewSuspended = true;
++            else
++                suspendPainting();
++        }
++
++        // Handle suspend/resume functionality. Besides stopping the rendering, we stop active DOM objects and media playback.
++        if (changed & ActivityState::IsInWindow) {
++            if (m_isViewSuspended) {
++                m_webPage.corePage()->resumeActiveDOMObjectsAndAnimations();
++                m_webPage.corePage()->resumeAllMediaPlayback();
++                if (m_webPage.corePage()->isVisible())
++                    resumePainting();
++                m_isViewSuspended = false;
++            } else {
++                suspendPainting();
++                m_webPage.corePage()->suspendAllMediaPlayback();
++                m_webPage.corePage()->suspendActiveDOMObjectsAndAnimations();
++                m_isViewSuspended = true;
++            }
+         }
+     }
+ 
+@@ -631,7 +647,7 @@ void DrawingAreaCoordinatedGraphics::suspendPainting()
+         return;
+ 
+     if (m_layerTreeHost)
+-        m_layerTreeHost->pauseRendering();
++        m_layerTreeHost->pauseRendering(!m_usingPageLifecycle);
+     else
+         m_displayTimer.stop();
+ 
+diff --git a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphics.h b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphics.h
+index 2add860401ac..402a372c9877 100644
+--- a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphics.h
++++ b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphics.h
+@@ -165,6 +165,8 @@ private:
+     bool m_transientZoom { false };
+     WebCore::FloatPoint m_transientZoomInitialOrigin;
+ #endif
++
++    bool m_usingPageLifecycle { false };
+ };
+ 
+ } // namespace WebKit
+diff --git a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.cpp b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.cpp
+index 8bd4ac0a7f20..6c970be48a59 100644
+--- a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.cpp
++++ b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.cpp
+@@ -257,10 +257,13 @@ void LayerTreeHost::targetRefreshRateDidChange(uint32_t rate)
+     m_compositor->targetRefreshRateDidChange(rate);
+ }
+ 
+-void LayerTreeHost::pauseRendering()
++void LayerTreeHost::pauseRendering(bool toTransparent)
+ {
+     m_isSuspended = true;
+-    m_compositor->suspendToTransparent();
++    if (toTransparent)
++        m_compositor->suspendToTransparent();
++    else
++        m_compositor->suspend();
+ }
+ 
+ void LayerTreeHost::resumeRendering()
+diff --git a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.h b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.h
+index f06382c5b5d3..2516770c3d91 100644
+--- a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.h
++++ b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.h
+@@ -83,7 +83,7 @@ public:
+     void sizeDidChange(const WebCore::IntSize& newSize);
+     void targetRefreshRateDidChange(unsigned);
+ 
+-    void pauseRendering();
++    void pauseRendering(bool toTransparent = false);
+     void resumeRendering();
+ 
+     WebCore::GraphicsLayerFactory* graphicsLayerFactory();
+-- 
+2.51.0
+
+
+From f93c747c0c4dfc10ffe26abc4b85a62c1f7a12dc Mon Sep 17 00:00:00 2001
+From: Miguel Gomez <magomez@igalia.com>
+Date: Mon, 24 Nov 2025 15:41:27 +0100
+Subject: [PATCH 3/8] Implement launch on hidden for normal and
+ nonCompositedWebGL
+
+---
+ .../threadedcompositor/ThreadedCompositor.cpp | 13 +++++++++++
+ .../threadedcompositor/ThreadedCompositor.h   |  1 +
+ .../DrawingAreaCoordinatedGraphics.cpp        | 10 ++++++++
+ .../CoordinatedGraphics/LayerTreeHost.cpp     | 23 +++++++++++++++++++
+ .../CoordinatedGraphics/LayerTreeHost.h       |  3 +++
+ 5 files changed, 50 insertions(+)
+
+diff --git a/Source/WebKit/Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.cpp b/Source/WebKit/Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.cpp
+index 263daed146cd..903af1623490 100644
+--- a/Source/WebKit/Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.cpp
++++ b/Source/WebKit/Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.cpp
+@@ -173,6 +173,19 @@ void ThreadedCompositor::resume()
+     m_compositingRunLoop->scheduleUpdate();
+ }
+ 
++void ThreadedCompositor::renderSingleFrame()
++{
++    m_compositingRunLoop->performTaskSync([this, protectedThis = Ref { *this }] {
++        // This must be called with the RunLoop suspended.
++        if (m_suspendedCount <= 0)
++            return;
++
++        m_scene->setActive(true);
++        renderLayerTree();
++        m_scene->setActive(false);
++    });
++}
++
+ void ThreadedCompositor::setScaleFactor(float scale)
+ {
+     Locker locker { m_attributes.lock };
+diff --git a/Source/WebKit/Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.h b/Source/WebKit/Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.h
+index 13e0248f916d..2ac4e42ca3e7 100644
+--- a/Source/WebKit/Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.h
++++ b/Source/WebKit/Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.h
+@@ -81,6 +81,7 @@ public:
+     void suspend();
+     void suspendToTransparent();
+     void resume();
++    void renderSingleFrame();
+ 
+ private:
+     ThreadedCompositor(Client&, ThreadedDisplayRefreshMonitor::Client&, WebCore::PlatformDisplayID, const WebCore::IntSize&, float scaleFactor, WebCore::TextureMapper::PaintFlags, bool);
+diff --git a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphics.cpp b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphics.cpp
+index 9613d1214a2c..404dacf7aea6 100644
+--- a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphics.cpp
++++ b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphics.cpp
+@@ -82,6 +82,10 @@ DrawingAreaCoordinatedGraphics::DrawingAreaCoordinatedGraphics(WebPage& webPage,
+         m_webPage.corePage()->suspendActiveDOMObjectsAndAnimations();
+         m_isViewSuspended = true;
+     }
++
++    // Launch on hidden state situation.
++    if (m_usingPageLifecycle && !parameters.activityState.contains(ActivityState::IsVisible))
++        suspendPainting();
+ }
+ 
+ DrawingAreaCoordinatedGraphics::~DrawingAreaCoordinatedGraphics() = default;
+@@ -723,6 +727,12 @@ void DrawingAreaCoordinatedGraphics::enterAcceleratedCompositingMode(GraphicsLay
+ 
+     m_layerTreeHost->setRootCompositingLayer(graphicsLayer);
+ 
++    // We have entered AC mode and we have been set the root layer for the first time.
++    // If we're using Page Lifecycle then at this point the rendering is suspended and the
++    // view is in hidden state, and we need to produce a single frame.
++    if (m_usingPageLifecycle && m_isPaintingSuspended)
++        m_layerTreeHost->renderSingleFrameWhilePaused();
++
+     // Non-composited content will now be handled exclusively by the layer tree host.
+     m_dirtyRegion = WebCore::Region();
+     m_scrollRect = IntRect();
+diff --git a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.cpp b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.cpp
+index 6c970be48a59..b4b7ba88840f 100644
+--- a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.cpp
++++ b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.cpp
+@@ -56,6 +56,7 @@ LayerTreeHost::LayerTreeHost(WebPage& webPage)
+     , m_viewportController(webPage.size())
+     , m_layerFlushTimer(RunLoop::main(), this, &LayerTreeHost::layerFlushTimerFired)
+     , m_coordinator(webPage, *this)
++    , m_usingPageLifecycle(webPage.corePage()->settings().pageLifecycleAPIEnabled())
+ {
+ #if USE(GLIB_EVENT_LOOP)
+     m_layerFlushTimer.setPriority(RunLoopSourcePriority::LayerFlushTimer);
+@@ -170,6 +171,14 @@ void LayerTreeHost::layerFlushTimerFired()
+         m_webPage.drawingArea()->layerHostDidFlushLayers();
+         m_notifyAfterScheduledLayerFlush = false;
+     }
++
++    // If m_suspendAfterNextFrame is true, we were suspended but resumed to allow a single
++    // layerFlush. Force the compositor to render one frame and go back to suspension.
++    if (m_suspendAfterNextFlush) {
++        m_suspendAfterNextFlush = false;
++        m_isSuspended = true;
++        m_compositor->renderSingleFrame();
++    }
+ }
+ 
+ void LayerTreeHost::setRootCompositingLayer(GraphicsLayer* graphicsLayer)
+@@ -273,6 +282,20 @@ void LayerTreeHost::resumeRendering()
+     m_compositor->resume();
+ }
+ 
++void LayerTreeHost::renderSingleFrameWhilePaused()
++{
++    // This allows painting a single frame while the rendering has been paused without
++    // actually resuming it. This is only used on 2 cases when page lifecycle is enabled:
++    // - When launching the application on hidden state.
++    // - When resuming from suspension into hidden state.
++
++    if (!m_isSuspended || !m_usingPageLifecycle)
++        return;
++
++    m_isSuspended = false;
++    m_suspendAfterNextFlush = true;
++}
++
+ GraphicsLayerFactory* LayerTreeHost::graphicsLayerFactory()
+ {
+     return &m_coordinator;
+diff --git a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.h b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.h
+index 2516770c3d91..c0bc0ad531ef 100644
+--- a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.h
++++ b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.h
+@@ -85,6 +85,7 @@ public:
+ 
+     void pauseRendering(bool toTransparent = false);
+     void resumeRendering();
++    void renderSingleFrameWhilePaused();
+ 
+     WebCore::GraphicsLayerFactory* graphicsLayerFactory();
+ 
+@@ -220,6 +221,8 @@ private:
+     double m_transientZoomScale { 1 };
+     WebCore::FloatPoint m_transientZoomOrigin;
+ #endif
++    bool m_usingPageLifecycle { false };
++    bool m_suspendAfterNextFlush { false };
+ };
+ 
+ #if !USE(COORDINATED_GRAPHICS)
+-- 
+2.51.0
+
+
+From 77bfc23939904923bac6d2594f947be70bc70db2 Mon Sep 17 00:00:00 2001
+From: Miguel Gomez <magomez@igalia.com>
+Date: Mon, 1 Dec 2025 16:04:17 +0100
+Subject: [PATCH 4/8] Emit proper events when freezing and resuming
+
+---
+ Source/WebCore/dom/Document.cpp              | 20 +++++++++
+ Source/WebCore/dom/Document.h                |  5 +++
+ Source/WebCore/dom/Document.idl              |  3 ++
+ Source/WebCore/dom/EventNames.h              |  1 +
+ Source/WebCore/history/BackForwardCache.cpp  |  9 ++--
+ Source/WebCore/history/BackForwardCache.h    |  4 ++
+ Source/WebKit/WebProcess/WebPage/WebPage.cpp | 44 ++++++++++++++++++++
+ Source/WebKit/WebProcess/WebPage/WebPage.h   |  3 ++
+ 8 files changed, 85 insertions(+), 4 deletions(-)
+
+diff --git a/Source/WebCore/dom/Document.cpp b/Source/WebCore/dom/Document.cpp
+index 7c2531478be7..63e341ccda80 100644
+--- a/Source/WebCore/dom/Document.cpp
++++ b/Source/WebCore/dom/Document.cpp
+@@ -9245,6 +9245,26 @@ bool Document::lazyImageLoadingEnabled() const
+     return m_settings->lazyImageLoadingEnabled() && !m_quirks->shouldDisableLazyImageLoadingQuirk();
+ }
+ 
++// https://wicg.github.io/page-lifecycle/spec.html#freeze-steps
++void Document::freeze()
++{
++    if (m_frozen)
++        return;
++
++    m_frozen = true;
++    dispatchEvent(Event::create(eventNames().freezeEvent, Event::CanBubble::No, Event::IsCancelable::No));
++}
++
++// https://wicg.github.io/page-lifecycle/spec.html#resume-steps
++void Document::resume()
++{
++    if (!m_frozen)
++        return;
++
++    dispatchEvent(Event::create(eventNames().resumeEvent, Event::CanBubble::No, Event::IsCancelable::No));
++    m_frozen = false;
++}
++
+ } // namespace WebCore
+ 
+ #undef DOCUMENT_RELEASE_LOG
+diff --git a/Source/WebCore/dom/Document.h b/Source/WebCore/dom/Document.h
+index 59d8b98b4dad..667059b4d83a 100644
+--- a/Source/WebCore/dom/Document.h
++++ b/Source/WebCore/dom/Document.h
+@@ -1696,6 +1696,9 @@ public:
+     // This should be used over the settings lazy loading image flag due to a quirk, which may occur causing website images to fail to load properly.
+     bool lazyImageLoadingEnabled() const;
+ 
++    void freeze();
++    void resume();
++
+ protected:
+     enum ConstructionFlags { Synthesized = 1, NonRenderedPlaceholder = 1 << 1 };
+     WEBCORE_EXPORT Document(Frame*, const Settings&, const URL&, DocumentClasses = { }, unsigned constructionFlags = 0, ScriptExecutionContextIdentifier = { });
+@@ -2292,6 +2295,8 @@ private:
+     Vector<Function<void()>> m_whenIsVisibleHandlers;
+ 
+     WeakHashSet<Element> m_elementsWithPendingUserAgentShadowTreeUpdates;
++
++    bool m_frozen { false };
+ };
+ 
+ Element* eventTargetElementForDocument(Document*);
+diff --git a/Source/WebCore/dom/Document.idl b/Source/WebCore/dom/Document.idl
+index b5cc4978066a..b7a2e008ac09 100644
+--- a/Source/WebCore/dom/Document.idl
++++ b/Source/WebCore/dom/Document.idl
+@@ -94,6 +94,9 @@ typedef (HTMLScriptElement or SVGScriptElement) HTMLOrSVGScriptElement;
+ 
+     // Non standard: It has been dropped from Blink already.
+     RenderingContext? getCSSCanvasContext(DOMString contextId, DOMString name, long width, long height);
++
++    [EnabledBySetting=PageLifecycleAPIEnabled] attribute EventHandler onfreeze;
++    [EnabledBySetting=PageLifecycleAPIEnabled] attribute EventHandler onresume;
+ };
+ 
+ enum DocumentReadyState { "loading", "interactive", "complete" };
+diff --git a/Source/WebCore/dom/EventNames.h b/Source/WebCore/dom/EventNames.h
+index 3b94b67d2134..7eb3d7dae43d 100644
+--- a/Source/WebCore/dom/EventNames.h
++++ b/Source/WebCore/dom/EventNames.h
+@@ -130,6 +130,7 @@ namespace WebCore {
+     macro(focusin) \
+     macro(focusout) \
+     macro(formdata) \
++    macro(freeze) \
+     macro(gamepadconnected) \
+     macro(gamepaddisconnected) \
+     macro(gatheringstatechange) \
+diff --git a/Source/WebCore/history/BackForwardCache.cpp b/Source/WebCore/history/BackForwardCache.cpp
+index 37be18dcaa5b..b9bab8d5b972 100644
+--- a/Source/WebCore/history/BackForwardCache.cpp
++++ b/Source/WebCore/history/BackForwardCache.cpp
+@@ -403,7 +403,7 @@ static void destroyRenderTree(Frame& mainFrame)
+     }
+ }
+ 
+-static void firePageHideEventRecursively(Frame& frame)
++static void firePageHideEventRecursively(Frame& frame, bool usePageLifecycleEvents)
+ {
+     auto* document = frame.document();
+     if (!document)
+@@ -415,10 +415,11 @@ static void firePageHideEventRecursively(Frame& frame)
+     // https://html.spec.whatwg.org/multipage/browsers.html#unload-a-document
+     IgnoreOpensDuringUnloadCountIncrementer ignoreOpensDuringUnloadCountIncrementer(document);
+ 
+-    frame.loader().stopLoading(UnloadEventPolicy::UnloadAndPageHide);
++    UnloadEventPolicy eventPolicy = usePageLifecycleEvents ? UnloadEventPolicy::None : UnloadEventPolicy::UnloadAndPageHide;
++    frame.loader().stopLoading(eventPolicy);
+ 
+     for (RefPtr<Frame> child = frame.tree().firstChild(); child; child = child->tree().nextSibling())
+-        firePageHideEventRecursively(*child);
++        firePageHideEventRecursively(*child, usePageLifecycleEvents);
+ }
+ 
+ std::unique_ptr<CachedPage> BackForwardCache::trySuspendPage(Page& page, ForceSuspension forceSuspension)
+@@ -438,7 +439,7 @@ std::unique_ptr<CachedPage> BackForwardCache::trySuspendPage(Page& page, ForceSu
+         focusController->setFocusedFrame(&page.mainFrame());
+ 
+     // Fire the pagehide event in all frames.
+-    firePageHideEventRecursively(page.mainFrame());
++    firePageHideEventRecursively(page.mainFrame(), m_usePageLifecycleEvents);
+ 
+     destroyRenderTree(page.mainFrame());
+ 
+diff --git a/Source/WebCore/history/BackForwardCache.h b/Source/WebCore/history/BackForwardCache.h
+index 73e76e00b2a9..2b819e8413da 100644
+--- a/Source/WebCore/history/BackForwardCache.h
++++ b/Source/WebCore/history/BackForwardCache.h
+@@ -69,6 +69,8 @@ public:
+     void markPagesForCaptionPreferencesChanged();
+ #endif
+ 
++    void setUsePageLifecycleEvents(bool use) { m_usePageLifecycleEvents = use; }
++
+ private:
+     BackForwardCache();
+     ~BackForwardCache() = delete; // Make sure nobody accidentally calls delete -- WebCore does not delete singletons.
+@@ -87,6 +89,8 @@ private:
+     bool m_isInRemoveAllItemsForPage { false };
+ #endif
+ 
++    bool m_usePageLifecycleEvents { false };
++
+     friend class WTF::NeverDestroyed<BackForwardCache>;
+ };
+ 
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.cpp b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+index 95c445562118..4f32bbec260f 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.cpp
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+@@ -583,6 +583,7 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
+ #if ENABLE(APP_HIGHLIGHTS)
+     , m_appHighlightsVisible(parameters.appHighlightsVisible)
+ #endif
++    , m_resumeTimer(*this, &WebPage::resumeTimerFired)
+ {
+     ASSERT(m_identifier);
+     WEBPAGE_RELEASE_LOG(Loading, "constructor:");
+@@ -3774,21 +3775,60 @@ void WebPage::resumeActiveDOMObjectsAndAnimations()
+     m_page->resumeActiveDOMObjectsAndAnimations();
+ }
+ 
++enum class EventType { Freeze, Resume };
++
++static void fireFreezeOrResumeEvent(Page& page, EventType type)
++{
++    auto& mainFrame = page.mainFrame();
++    Vector<Ref<Frame>> childFrames;
++    for (auto* child = mainFrame.tree().traverseNextInPostOrder(CanWrap::Yes); child; child = child->tree().traverseNextInPostOrder(CanWrap::No))
++        childFrames.append(*child);
++
++    for (auto& child : childFrames) {
++        if (!child->tree().isDescendantOf(&mainFrame))
++            continue;
++        auto* document = child->document();
++        if (!document)
++            continue;
++
++        switch (type) {
++        case EventType::Freeze:
++            document->freeze();
++            break;
++        case EventType::Resume:
++            document->resume();
++            break;
++        default:
++            ASSERT_NOT_REACHED();
++        }
++    }
++}
++
+ void WebPage::suspend(CompletionHandler<void(bool)>&& completionHandler)
+ {
+     WEBPAGE_RELEASE_LOG(Loading, "suspend: m_page=%p", m_page.get());
+     if (!m_page)
+         return completionHandler(false);
+ 
++    // Before starting the suspension, notify the page so it can react to it.
++    fireFreezeOrResumeEvent(*m_page, EventType::Freeze);
++
+     freezeLayerTree(LayerTreeFreezeReason::PageSuspended);
+ 
++    BackForwardCache::singleton().setUsePageLifecycleEvents(true);
+     m_cachedPage = BackForwardCache::singleton().suspendPage(*m_page);
++    BackForwardCache::singleton().setUsePageLifecycleEvents(false);
+     ASSERT(m_cachedPage);
+     if (auto mainFrame = m_mainFrame->coreFrame())
+         mainFrame->loader().detachFromAllOpenedFrames();
+     completionHandler(true);
+ }
+ 
++void WebPage::resumeTimerFired()
++{
++    fireFreezeOrResumeEvent(*m_page, EventType::Resume);
++}
++
+ void WebPage::resume(CompletionHandler<void(bool)>&& completionHandler)
+ {
+     WEBPAGE_RELEASE_LOG(Loading, "resume: m_page=%p", m_page.get());
+@@ -3802,6 +3842,10 @@ void WebPage::resume(CompletionHandler<void(bool)>&& completionHandler)
+ 
+     cachedPage->restore(*m_page);
+     unfreezeLayerTree(LayerTreeFreezeReason::PageSuspended);
++
++    // After we have resumed, notify the page.
++    m_resumeTimer.startOneShot(0_s);
++
+     completionHandler(true);
+ }
+ 
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.h b/Source/WebKit/WebProcess/WebPage/WebPage.h
+index 9f6fb35f0f7b..4bf5580b346b 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.h
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.h
+@@ -2031,6 +2031,8 @@ private:
+     bool hasPendingEditorStateUpdate() const;
+     bool shouldAvoidComputingPostLayoutDataForEditorState() const;
+ 
++    void resumeTimerFired();
++
+     WebCore::PageIdentifier m_identifier;
+ 
+     std::unique_ptr<WebCore::Page> m_page;
+@@ -2509,6 +2511,7 @@ private:
+ #if ENABLE(IMAGE_ANALYSIS_ENHANCEMENTS)
+     WeakHashSet<WebCore::HTMLImageElement> m_elementsToExcludeFromRemoveBackground;
+ #endif
++    WebCore::Timer m_resumeTimer;
+ };
+ 
+ #if !PLATFORM(IOS_FAMILY)
+-- 
+2.51.0
+
+
+From 2e704e8793820dfe9c89ba4e740b1df49a70eced Mon Sep 17 00:00:00 2001
+From: Miguel Gomez <magomez@igalia.com>
+Date: Tue, 16 Dec 2025 10:30:36 +0100
+Subject: [PATCH 5/8] Remove the suspended flag if whe WebProcess crashes
+
+---
+ Source/WebKit/UIProcess/WebPageProxy.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Source/WebKit/UIProcess/WebPageProxy.cpp b/Source/WebKit/UIProcess/WebPageProxy.cpp
+index b70baa32dec8..4d46ac6d4308 100644
+--- a/Source/WebKit/UIProcess/WebPageProxy.cpp
++++ b/Source/WebKit/UIProcess/WebPageProxy.cpp
+@@ -8393,6 +8393,7 @@ void WebPageProxy::resetStateAfterProcessExited(ProcessTerminationReason termina
+ 
+     m_hasRunningProcess = false;
+     m_areActiveDOMObjectsAndAnimationsSuspended = false;
++    m_isSuspended = false;
+ #if ENABLE(SERVICE_WORKER)
+     m_isServiceWorkerPage = false;
+ #endif
+-- 
+2.51.0
+
+
+From ca08aa0b373314c270112af5c9c32c78b45dd17c Mon Sep 17 00:00:00 2001
+From: Miguel Gomez <magomez@igalia.com>
+Date: Tue, 16 Dec 2025 14:25:55 +0100
+Subject: [PATCH 6/8] Queue the execution of resume and remove the sleeps in
+ the API
+
+---
+ .../UIProcess/API/glib/WebKitWebView.cpp      | 18 ------------------
+ Source/WebKit/WebProcess/WebPage/WebPage.cpp  | 19 ++++++++++++++-----
+ Source/WebKit/WebProcess/WebPage/WebPage.h    |  4 ++++
+ 3 files changed, 18 insertions(+), 23 deletions(-)
+
+diff --git a/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp b/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp
+index 05aad75d2a91..b098ad0a8f6f 100644
+--- a/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp
++++ b/Source/WebKit/UIProcess/API/glib/WebKitWebView.cpp
+@@ -5544,9 +5544,6 @@ gboolean webkit_web_view_hide_plc(WebKitWebView *webView)
+     state.remove(WebCore::ActivityState::IsVisible);
+     webView->priv->view->setViewState(state);
+ 
+-    // Sleep for 100ms to allow the WebProcess to process the changes and finish the state transition.
+-    WTF::sleep(100_ms);
+-
+     return TRUE;
+ }
+ 
+@@ -5569,9 +5566,6 @@ gboolean webkit_web_view_show_plc(WebKitWebView *webView)
+     state.add(WebCore::ActivityState::IsVisible);
+     webView->priv->view->setViewState(state);
+ 
+-    // Sleep for 100ms to allow the WebProcess to process the changes and finish the state transition.
+-    WTF::sleep(100_ms);
+-
+     return TRUE;
+ }
+ 
+@@ -5591,9 +5585,6 @@ gboolean webkit_web_view_focus_plc(WebKitWebView *webView)
+     state.add(WebCore::ActivityState::IsFocused);
+     webView->priv->view->setViewState(state);
+ 
+-    // Sleep for 100ms to allow the WebProcess to process the changes and finish the state transition.
+-    WTF::sleep(100_ms);
+-
+     return TRUE;
+ }
+ 
+@@ -5613,9 +5604,6 @@ gboolean webkit_web_view_blur_plc(WebKitWebView *webView)
+     state.remove(WebCore::ActivityState::IsFocused);
+     webView->priv->view->setViewState(state);
+ 
+-    // Sleep for 100ms to allow the WebProcess to process the changes and finish the state transition.
+-    WTF::sleep(100_ms);
+-
+     return TRUE;
+ }
+ 
+@@ -5638,9 +5626,6 @@ gboolean webkit_web_view_freeze_plc(WebKitWebView *webView, GAsyncReadyCallback
+     webView->priv->isWaitingForFreezeCallback = true;
+     GRefPtr<GTask> task = adoptGRef(g_task_new(webView, NULL, callback, userData));
+     getPage(webView).suspend([task = WTFMove(task)](bool success) {
+-        // Sleep for 100ms to allow the WebProcess to process the changes and finish the state transition.
+-        WTF::sleep(100_ms);
+-
+         WebKitWebView* webView = WEBKIT_WEB_VIEW(g_task_get_source_object(task.get()));
+         webView->priv->isWaitingForFreezeCallback = false;
+         g_task_return_boolean(task.get(), success);
+@@ -5676,9 +5661,6 @@ gboolean webkit_web_view_resume_plc(WebKitWebView *webView, GAsyncReadyCallback
+     webView->priv->isWaitingForResumeCallback = true;
+     GRefPtr<GTask> task = adoptGRef(g_task_new(webView, NULL, callback, userData));
+     getPage(webView).resume([task = WTFMove(task)](bool success) {
+-        // Sleep for 100ms to allow the WebProcess to process the changes and finish the state transition.
+-        WTF::sleep(100_ms);
+-
+         WebKitWebView* webView = WEBKIT_WEB_VIEW(g_task_get_source_object(task.get()));
+         webView->priv->isWaitingForResumeCallback = false;
+         g_task_return_boolean(task.get(), success);
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.cpp b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+index 4f32bbec260f..8b5cd678b0a4 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.cpp
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+@@ -584,6 +584,7 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
+     , m_appHighlightsVisible(parameters.appHighlightsVisible)
+ #endif
+     , m_resumeTimer(*this, &WebPage::resumeTimerFired)
++    , m_suspendTimer(*this, &WebPage::suspendTimerFired)
+ {
+     ASSERT(m_identifier);
+     WEBPAGE_RELEASE_LOG(Loading, "constructor:");
+@@ -3804,12 +3805,8 @@ static void fireFreezeOrResumeEvent(Page& page, EventType type)
+     }
+ }
+ 
+-void WebPage::suspend(CompletionHandler<void(bool)>&& completionHandler)
++void WebPage::suspendTimerFired()
+ {
+-    WEBPAGE_RELEASE_LOG(Loading, "suspend: m_page=%p", m_page.get());
+-    if (!m_page)
+-        return completionHandler(false);
+-
+     // Before starting the suspension, notify the page so it can react to it.
+     fireFreezeOrResumeEvent(*m_page, EventType::Freeze);
+ 
+@@ -3821,9 +3818,21 @@ void WebPage::suspend(CompletionHandler<void(bool)>&& completionHandler)
+     ASSERT(m_cachedPage);
+     if (auto mainFrame = m_mainFrame->coreFrame())
+         mainFrame->loader().detachFromAllOpenedFrames();
++
++    auto completionHandler = std::exchange(m_suspendCompletionHandler, { });
+     completionHandler(true);
+ }
+ 
++void WebPage::suspend(CompletionHandler<void(bool)>&& completionHandler)
++{
++    WEBPAGE_RELEASE_LOG(Loading, "suspend: m_page=%p", m_page.get());
++    if (!m_page)
++        return completionHandler(false);
++
++    m_suspendCompletionHandler = WTFMove(completionHandler);
++    m_suspendTimer.startOneShot(0_ms);
++}
++
+ void WebPage::resumeTimerFired()
+ {
+     fireFreezeOrResumeEvent(*m_page, EventType::Resume);
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.h b/Source/WebKit/WebProcess/WebPage/WebPage.h
+index 4bf5580b346b..4711d85e7432 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.h
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.h
+@@ -2032,6 +2032,7 @@ private:
+     bool shouldAvoidComputingPostLayoutDataForEditorState() const;
+ 
+     void resumeTimerFired();
++    void suspendTimerFired();
+ 
+     WebCore::PageIdentifier m_identifier;
+ 
+@@ -2511,7 +2512,10 @@ private:
+ #if ENABLE(IMAGE_ANALYSIS_ENHANCEMENTS)
+     WeakHashSet<WebCore::HTMLImageElement> m_elementsToExcludeFromRemoveBackground;
+ #endif
++
+     WebCore::Timer m_resumeTimer;
++    WebCore::Timer m_suspendTimer;
++    CompletionHandler<void(bool)> m_suspendCompletionHandler;
+ };
+ 
+ #if !PLATFORM(IOS_FAMILY)
+-- 
+2.51.0
+
+
+From 34411ce202aa487b6de1ea3cc81645de41ef5529 Mon Sep 17 00:00:00 2001
+From: Miguel Gomez <magomez@igalia.com>
+Date: Tue, 16 Dec 2025 14:53:48 +0100
+Subject: [PATCH 7/8] On resume, invoke the completionHandler after the event
+ was emitted
+
+---
+ Source/WebKit/WebProcess/WebPage/WebPage.cpp | 9 ++++++---
+ Source/WebKit/WebProcess/WebPage/WebPage.h   | 1 +
+ 2 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.cpp b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+index 8b5cd678b0a4..f258b55f3016 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.cpp
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+@@ -3836,6 +3836,9 @@ void WebPage::suspend(CompletionHandler<void(bool)>&& completionHandler)
+ void WebPage::resumeTimerFired()
+ {
+     fireFreezeOrResumeEvent(*m_page, EventType::Resume);
++
++    auto completionHandler = std::exchange(m_resumeCompletionHandler, { });
++    completionHandler(true);
+ }
+ 
+ void WebPage::resume(CompletionHandler<void(bool)>&& completionHandler)
+@@ -3852,10 +3855,10 @@ void WebPage::resume(CompletionHandler<void(bool)>&& completionHandler)
+     cachedPage->restore(*m_page);
+     unfreezeLayerTree(LayerTreeFreezeReason::PageSuspended);
+ 
+-    // After we have resumed, notify the page.
++    // After we have resumed, schedule a call to notify the page and invoke
++    // the completionHandler.
++    m_resumeCompletionHandler = WTFMove(completionHandler);
+     m_resumeTimer.startOneShot(0_s);
+-
+-    completionHandler(true);
+ }
+ 
+ IntPoint WebPage::screenToRootView(const IntPoint& point)
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.h b/Source/WebKit/WebProcess/WebPage/WebPage.h
+index 4711d85e7432..77cd81f92b43 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.h
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.h
+@@ -2516,6 +2516,7 @@ private:
+     WebCore::Timer m_resumeTimer;
+     WebCore::Timer m_suspendTimer;
+     CompletionHandler<void(bool)> m_suspendCompletionHandler;
++    CompletionHandler<void(bool)> m_resumeCompletionHandler;
+ };
+ 
+ #if !PLATFORM(IOS_FAMILY)
+-- 
+2.51.0
+
+
+From bf4fdf7c0bc71c0e995b30bc9bf244f9d6fb910d Mon Sep 17 00:00:00 2001
+From: Miguel Gomez <magomez@igalia.com>
+Date: Wed, 17 Dec 2025 17:35:41 +0100
+Subject: [PATCH 8/8] Queue focus events instead of processing them immediately
+ in WebPage::setActivityState
+
+---
+ Source/WebKit/WebProcess/WebPage/WebPage.cpp | 24 ++++++++++++++++++++
+ Source/WebKit/WebProcess/WebPage/WebPage.h   |  6 +++++
+ 2 files changed, 30 insertions(+)
+
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.cpp b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+index f258b55f3016..97bee2fd31ad 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.cpp
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+@@ -585,6 +585,7 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
+ #endif
+     , m_resumeTimer(*this, &WebPage::resumeTimerFired)
+     , m_suspendTimer(*this, &WebPage::suspendTimerFired)
++    , m_setActivityStateTimer(*this, &WebPage::setActivityStateTimerFired)
+ {
+     ASSERT(m_identifier);
+     WEBPAGE_RELEASE_LOG(Loading, "constructor:");
+@@ -3625,9 +3626,32 @@ void WebPage::visibilityDidChange()
+ }
+ 
+ void WebPage::setActivityState(OptionSet<ActivityState::Flag> activityState, ActivityStateChangeID activityStateChangeID, CompletionHandler<void()>&& callback)
++{
++    // If this is a focus event, and the last event received was a show, there's the possibility that the visibilityChange
++    // event from the the show hasn't been dispatched yet. Instead of processing the focus event directly, schedule it
++    // so visiblityChange has a chance to be dispatched.
++    bool shouldSchedule = !m_activityState.contains(ActivityState::IsFocused) && activityState.contains(ActivityState::IsFocused) && m_lastEventReceivedIsShow;
++
++    m_lastEventReceivedIsShow = !m_activityState.contains(ActivityState::IsVisible) && activityState.contains(ActivityState::IsVisible);
++
++    m_activityStateParameter = WTFMove(activityState);
++    m_activityStateChangeIDParameter = activityStateChangeID;
++    m_activityStateCallbackParameter = WTFMove(callback);
++
++    if (shouldSchedule)
++        m_setActivityStateTimer.startOneShot(0_ms);
++    else
++        setActivityStateTimerFired();
++}
++
++void WebPage::setActivityStateTimerFired()
+ {
+     LOG_WITH_STREAM(ActivityState, stream << "WebPage " << identifier().toUInt64() << " setActivityState to " << activityState);
+ 
++    auto activityState = std::exchange(m_activityStateParameter, { });
++    auto activityStateChangeID = std::exchange(m_activityStateChangeIDParameter, 0);
++    auto callback = std::exchange(m_activityStateCallbackParameter, { });
++
+     auto changed = m_activityState ^ activityState;
+     m_activityState = activityState;
+ 
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.h b/Source/WebKit/WebProcess/WebPage/WebPage.h
+index 77cd81f92b43..9c6324725dbb 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.h
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.h
+@@ -2033,6 +2033,7 @@ private:
+ 
+     void resumeTimerFired();
+     void suspendTimerFired();
++    void setActivityStateTimerFired();
+ 
+     WebCore::PageIdentifier m_identifier;
+ 
+@@ -2517,6 +2518,11 @@ private:
+     WebCore::Timer m_suspendTimer;
+     CompletionHandler<void(bool)> m_suspendCompletionHandler;
+     CompletionHandler<void(bool)> m_resumeCompletionHandler;
++    WebCore::Timer m_setActivityStateTimer;
++    OptionSet<WebCore::ActivityState::Flag> m_activityStateParameter;
++    ActivityStateChangeID m_activityStateChangeIDParameter { 0 };
++    CompletionHandler<void()> m_activityStateCallbackParameter;
++    bool m_lastEventReceivedIsShow { false };
+ };
+ 
+ #if !PLATFORM(IOS_FAMILY)
+-- 
+2.51.0
+
