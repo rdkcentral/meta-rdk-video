@@ -3,9 +3,10 @@ DESCRIPTION = "This layer provides the Player Firebolt Interface library for Pla
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV ?= "1.0.0"
-PR ?= "r0"
+PV = "0.1.0"
+PR = "r0"
 
+SRCREV = "beeb93265f7c6f5690a40b9b87717ef1003beba8"
 
 inherit pkgconfig
 
