@@ -1,7 +1,6 @@
 SUMMARY = "ENTServices inputoutput plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
-BBCLASSEXTEND = "multilib:lib32"
 
 PV ?= "1.4.7"
 PR ?= "r0"
@@ -16,7 +15,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-inputoutput;${CMF_GITHUB_SRC_URI_SUFFI
 # Release version - 1.4.7
 SRCREV = "e7352198ba16282b9202301b2af723cedda7bfaa"
 
-PACKAGE_ARCH = "${TUNE_PKGARCH}"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
@@ -91,7 +90,7 @@ do_install:append() {
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
-FILES:${PN} = "${includedir}"
+FILES:${PN} += "${includedir}"
 
-INSANE_SKIP:${PN} += "libdir staticdev dev-so installed-vs-shipped"
+INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
