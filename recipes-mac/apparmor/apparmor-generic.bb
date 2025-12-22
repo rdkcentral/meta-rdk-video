@@ -21,6 +21,10 @@ do_install() {
 
     install -m 0755 ${S}/rdk-apparmor-profiles/apparmor_parse.sh ${D}${sysconfdir}/apparmor/apparmor_parse.sh
     install -m 0644 ${S}/rdk-apparmor-profiles/apparmor.service ${D}${systemd_system_unitdir}/apparmor.service
+
+    for i in ${S}/rdk-apparmor-profiles/generic_profiles/*; do
+        install -m 0644 "$i" ${D}${sysconfdir}/apparmor.d/
+    done
 }
 SYSTEMD_SERVICE:${PN}:append = " apparmor.service"
 FILES:${PN} += "${systemd_system_unitdir}/apparmor.service"
