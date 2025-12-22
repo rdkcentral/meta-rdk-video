@@ -21,7 +21,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
 DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
-RDEPENDS:${PN} += "wpeframework devicesettings"
+RDEPENDS:${PN} += "wpeframework"
 
 DEPENDS += " entservices-inputoutput"
 
