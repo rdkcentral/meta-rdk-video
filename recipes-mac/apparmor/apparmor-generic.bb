@@ -18,6 +18,7 @@ do_install() {
     # Our startup/init script
 
     install -d ${D}/etc/apparmor/
+    install -d ${D}${sysconfdir}/apparmor.d
 
     install -m 0755 ${S}/rdk-apparmor-profiles/apparmor_parse.sh ${D}${sysconfdir}/apparmor/apparmor_parse.sh
     install -m 0644 ${S}/rdk-apparmor-profiles/apparmor.service ${D}${systemd_system_unitdir}/apparmor.service
