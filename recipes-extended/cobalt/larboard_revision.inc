@@ -1,7 +1,7 @@
 LARBOARD_SRC_URI = "${CMF_GITHUB_ROOT}/larboard"
 
 # 24.lts.stable. March 13, 2025
-LARBOARD_SRCREV_24 ?= "10f8d522b8a26727bc03dfe1e3f619bad91df5c3"
+LARBOARD_SRCREV_24 ?= "be1833a79d939b12e7d903b87b39b3afcaa6be40"
 
 # develop. Nov 26, 2025
 LARBOARD_SRCREV_DEV ?= "1.0.3"
