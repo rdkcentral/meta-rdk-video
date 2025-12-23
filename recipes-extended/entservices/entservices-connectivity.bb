@@ -2,8 +2,8 @@ SUMMARY = "ENTServices Connectivity plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV = "1.3.0"
-PR = "r0"
+PV ?= "1.3.0"
+PR ?= "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig

@@ -2,9 +2,8 @@ SUMMARY = "PackageManager plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=c03d0e6d700b63b51bf8da6b61dac850"
 
-PV = "4.4.1"
-PR = "r0"
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+PR = "r1"
+PV = "${SRCREV}+git${SRCPV}"
 
 S = "${WORKDIR}/git"
 

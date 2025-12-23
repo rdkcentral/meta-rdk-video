@@ -6,10 +6,9 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 
-PV = "1.0.0"
-PR = "r0"
+PV ?= "1.0.0"
+PR ?= "r0"
 
-SRCREV = "29f81aa9d1c749221a606002a31d669b030028ad"
 SRC_URI = "${CMF_GITHUB_ROOT}/audiocapturemgr;${CMF_GITHUB_SRC_URI_SUFFIX};name=audiocapturemgr"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

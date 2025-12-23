@@ -12,8 +12,8 @@ EXTRA_OECMAKE += "-DCMAKE_SKIP_RPATH=ON "
 
 inherit cmake pythonnative
 
-PV = "1.0.1"
-PR = "r2"
+PV ?= "1.0.0"
+PR ?= "r0"
 
 S = "${WORKDIR}/git"
 
