@@ -59,17 +59,11 @@ PACKAGECONFIG ?= " monitor \
     usbdevice \
     usbmass_storage \
     usersettings \
-    ocicontainer \
-    runtimemanager \
+    ocicontainer \  
     messagecontrol \
     rdknativescript \
-    javascriptcore \
-    packagemanager \
-    lifecyclemanager \
-    storagemanager \
-    appmanager \
-    texttospeechmonitor \
-    preinstallmanager \
+    javascriptcore \          
+    texttospeechmonitor \    
     migration \
     appgateway \
     appnotifications \
@@ -79,8 +73,7 @@ PACKAGECONFIG ?= " monitor \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
     ${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' messagecontrol ', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \
-    downloadmanager \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \    
 "
 
 # TODO: As advised, 'ocicointainer' plugin has been modified to build unconditionally. It will be revisited in the upcoming sprint to control it via DISTRO_FEATURES."
