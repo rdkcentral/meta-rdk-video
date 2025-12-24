@@ -16,7 +16,7 @@ PR = "r0"
 
 require rialto_revision.inc
 
-SRCREV = "61f6aa83b2dd5abe40dae6a1b64d6c153f2a0eaa"
+SRCREV = "a7d53cdcf214e2a5b9bec8130352e69b045e30bf"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
