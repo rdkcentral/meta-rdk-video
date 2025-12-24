@@ -94,18 +94,19 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' -DTE
 ##################################################
 # BLE support BEGIN
 
-RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' bluez5', '', d)}"
+BLE_ENABLED      ??= "true"
 
-RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' bluetooth-mgr', '', d)}"
-DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' bluetooth-mgr', '', d)}"
-LDFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' -lBTMgr', '', d)}"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluez5 bluetooth-mgr', '', d)}"
 
-EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' -DBLE_ENABLED=ON', '', d)}"
-SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' file://2_bluetooth.conf', '', d)}"
-FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', '${systemd_unitdir}/system/ctrlm-main.service.d/2_bluetooth.conf', '', d)}"
+DEPENDS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluetooth-mgr', '', d)}"
+LDFLAGS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' -lBTMgr', '', d)}"
+
+EXTRA_OECMAKE:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' -DBLE_ENABLED=ON', ' -DBLE_ENABLED=OFF', d)}"
+SRC_URI:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' file://2_bluetooth.conf', '', d)}"
+FILES:${PN} += "${@bb.utils.contains('BLE_ENABLED', 'true', '${systemd_unitdir}/system/ctrlm-main.service.d/2_bluetooth.conf', '', d)}"
 
 #100 byte ADPCM coming from BLE remote needs to be decoded to PCM before sending to endpoint
-CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' -DAUDIO_DECODE', '', d)}"
+CXXFLAGS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' -DAUDIO_DECODE', '', d)}"
 
 # BLE Services Implementation
 BLE_SERVICES       ??= "false"
@@ -175,7 +176,7 @@ do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
 
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'true', 'false', d)}; then
+    if ${@bb.utils.contains('BLE_ENABLED', 'true', 'true', 'false', d)}; then
        install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
        install -m 0644 ${WORKDIR}/2_bluetooth.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
     fi
