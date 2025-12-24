@@ -26,6 +26,7 @@ ExecStartPost=-/bin/sh -c '/bin/echo ${MAINPID} > /tmp/wpeframework.pid'
 ExecStartPost=/bin/touch /tmp/wpeframeworkstarted
 ExecStop=/usr/bin/killall -9 WPEFramework
 ExecStopPost=/usr/bin/killall -9 WPEProcess
+OnFailure=/bin/sh -c 'if [ -f /opt/restartEPG.sh ]; then /bin/sh /opt/restartEPG.sh; fi'
 KillSignal=SIGKILL
 Restart=always
 
