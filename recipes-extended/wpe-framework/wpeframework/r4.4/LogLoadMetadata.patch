@@ -26,3 +26,22 @@ index fa723305..1fb7d56e 100644
  #endif
  
          _controller->Activate(PluginHost::IShell::STARTUP);
+diff --git a/Source/plugins/MetaData.h b/Source/plugins/MetaData.h
+index 206b4f6d..6f46f8bf 100644
+--- a/Source/plugins/MetaData.h
++++ b/Source/plugins/MetaData.h
+@@ -447,9 +447,14 @@ namespace Plugin {
+             , _precondition(precondition)
+             , _termination(termination)
+             , _control(control) {
++	    struct timespec ts;
++            clock_gettime(CLOCK_MONOTONIC, &ts);
++            printf("Start Time for Metadata Initializing %s = %llu ns\n", _Id.c_str(),  (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec);
+             ASSERT(Core::System::ROOT_META_DATA == nullptr);
+             Core::System::ROOT_META_DATA = this;
+             Core::ServiceAdministrator::Instance().Register(this, &_factory);
++            clock_gettime(CLOCK_MONOTONIC, &ts);
++            printf("End Time for Metadata Initializing %s = %llu ns\n", _Id.c_str(),  (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec);
+         }
+         ~Metadata() {
+             Core::ServiceAdministrator::Instance().Unregister(this, &_factory);
