@@ -26,23 +26,3 @@ index 1d62a76..5b0ef2b 100755
          for path in files:
 
              trackers.enum_tracker.Reset()
-diff --git a/ProxyStubGenerator/StubGenerator.py b/ProxyStubGenerator/StubGenerator.py
-index f66cd75..8977985 100755
---- a/ProxyStubGenerator/StubGenerator.py
-+++ b/ProxyStubGenerator/StubGenerator.py
-@@ -2850,6 +2850,15 @@ if __name__ == "__main__":
-         faces = []
-         skipped = []
-
-+        for infile in interface_files:
-+            with open(infile, "r") as file:
-+                content = file.read()
-+            # Replace the word
-+            modified_content = content.replace("WPEFramework", "Thunder")
-+            # Write to output file
-+            with open(infile, 'w') as file:
-+                file.write(modified_content)
-+
-         if interface_files:
-             if args.lua_code:
-                 name = "protocol-thunder-comrpc.data"
