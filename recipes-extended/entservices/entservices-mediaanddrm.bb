@@ -2,8 +2,8 @@ SUMMARY = "ENTServices Media and DRM plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=16cf2209d4e903e4d5dcd75089d7dfe2"
 
-PV ?= "1.3.7"
-PR ?= "r0"
+PV = "1.3.17"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -24,8 +24,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-set-OCDM-process-thread-name.patch \
           "
           
-# Release version - 1.3.13
-SRCREV = "d2cfa47bf46a6fa8722be79ad6e2bc0791307bee"
+# Release version - 1.3.17
+SRCREV = "14fc4d9ae1194f163699b94824e5ddc4e5b54e9a"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -72,7 +72,7 @@ PACKAGECONFIG ?= "  breakpadsupport \
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 
 # enable widevine and Playready4 opencdmi libs
-OPENCDM_DRMS ??= " ${@bb.utils.contains_any('DISTRO_FEATURES' , ['widevine_v16' , 'widevine_v18'], 'opencdmi_wv', '', d)} ${@bb.utils.contains('DISTRO_FEATURES' , 'playready4', 'opencdmi_pr4', '', d)}"
+OPENCDM_DRMS ??= " ${@bb.utils.contains_any('DISTRO_FEATURES' , ['widevine_v16' , 'widevine_v18'], 'opencdmi_wv', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['playready4' , 'playready4_6'], 'opencdmi_pr4', '', d)}"
 PACKAGECONFIG:append = " ${OPENCDM_DRMS}"
 PACKAGECONFIG:append = " systemaudioplayer"
 PACKAGECONFIG:append = " cryptography"
