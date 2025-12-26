@@ -19,9 +19,10 @@ SYSLOG-NG_SERVICE_ctrlm = "ctrlm-main.service"
 SYSLOG-NG_DESTINATION_ctrlm = "ctrlm_log.txt"
 SYSLOG-NG_LOGRATE_ctrlm = "medium"
 
-PV ?= "1.0.1"
-PR ?= "r0"
+PV = "1.1.7"
+PR = "r0"
 
+SRCREV = "4f688c6aca99e5c5d8674d4b3edc60fe97eb0633"
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-main"
 
 LOGROTATE_NAME="ctrlm_log"
