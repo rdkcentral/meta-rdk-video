@@ -5,7 +5,7 @@ LICENSE = "Apache-2.0 & BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=f36198fb804ffbe39b5b2c336ceef9f8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-PV = "4.2.0"
+PV = "4.2.1"
 PR = "r3"
 
 SRCREV = "9ebb60fd1a2c93a1aeaf3e8bc5c39f522ac8e8e9"
