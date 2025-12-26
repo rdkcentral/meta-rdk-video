@@ -9,8 +9,8 @@ SRC_URI += " \
     file://barton.zap \
     file://barton.matter \
     file://zzz_generated.tar.gz \
+    file://barton.cmake \
 "
-SRC_URI += "file://0001-installing-networkCommissioning-cluster.patch"
 
 MATTER_ZAP_FILE = "${WORKDIR}/barton.zap"
 MATTER_IDL_FILE = "${WORKDIR}/barton.matter"
