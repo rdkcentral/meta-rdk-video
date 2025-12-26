@@ -1,0 +1,27 @@
+From d150b7577f386f56e6ddd2e6e39d515f0801fecb Mon Sep 17 00:00:00 2001
+From: Tanuj <Tanuj_Sharma@comcast.com>
+Date: Fri, 26 Dec 2025 10:13:05 +0530
+Subject: [PATCH] installing networkCommissioning cluster
+
+---
+ recipes-matter/barton-matter/files/barton.cmake | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/recipes-matter/barton-matter/files/barton.cmake b/recipes-matter/barton-matter/files/barton.cmake
+index cd123a3..eaa19df 100644
+--- a/recipes-matter/barton-matter/files/barton.cmake
++++ b/recipes-matter/barton-matter/files/barton.cmake
+@@ -94,8 +94,9 @@ function(barton_build MATTER_CONF_DIR)
+ 
+     get_target_property(MATTER_INCLUDE_DIRECTORIES ${BARTON_MATTER_TARGET} INTERFACE_INCLUDE_DIRECTORIES)
+     list(APPEND MATTER_INCLUDE_DIRECTORIES "${MATTER_ROOT}/third_party/barton/zzz_generated/third_party/barton/barton/zap/app-templates")
++    list(APPEND MATTER_INCLUDE_DIRECTORIES "${MATTER_ROOT}/third_party/barton/zzz_generated/third_party/barton/barton/codegen/cpp-app/app")
+     list(APPEND MATTER_INCLUDE_DIRECTORIES "${MATTER_ROOT}/third_party/inipp/repo/inipp")
+-
++    
+     foreach(MATTER_INCLUDE_DIR ${MATTER_INCLUDE_DIRECTORIES})
+ 
+     # Some src/ directories have symbolic links that will break on install,
+-- 
+2.43.0
+
