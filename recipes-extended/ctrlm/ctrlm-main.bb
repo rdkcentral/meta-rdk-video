@@ -96,7 +96,8 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' -DTE
 
 BLE_ENABLED      ??= "true"
 
-RDEPENDS:${PN}:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluez5 bluetooth-mgr', '', d)}"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluez5', '', d)}"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluetooth-mgr', '', d)}"
 
 DEPENDS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluetooth-mgr', '', d)}"
 LDFLAGS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' -lBTMgr', '', d)}"
@@ -176,7 +177,7 @@ do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
 
-    if ${@bb.utils.contains('BLE_ENABLED', 'true', 'true', 'false', d)}; then
+    if [ "${BLE_ENABLED}" = "true" ]; then
        install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
        install -m 0644 ${WORKDIR}/2_bluetooth.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
     fi
