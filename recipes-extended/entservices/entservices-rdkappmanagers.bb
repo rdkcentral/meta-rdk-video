@@ -8,16 +8,12 @@ PR ?= "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "2c3620f6726f1a48fdea36606bfd73f8b496a351"
+SRCREV = "ecf0b85d84d460a412a047f49d1b592b67c3bb49"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
-DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
-EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
-
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_APPMANAGERS_DEBUG=OFF', '-DRDK_APPMANAGERS_DEBUG=ON', d)}"
 
@@ -25,14 +21,8 @@ DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
 
-CFLAGS  += " \
-    -I=${includedir}/rdk/halif/power-manager \
-    -I=${includedir}/rdk/halif/deepsleep-manager \
-    "
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
-
-CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
 # enable filtering for undefined interfaces and link local ip address notifications
@@ -43,9 +33,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " telemetrysupport \
-    ocicontainer \    
-    rdknativescript \
+PACKAGECONFIG ?= " telemetrysupport \   
     javascriptcore \
     runtimemanager \       
     packagemanager \
@@ -53,10 +41,7 @@ PACKAGECONFIG ?= " telemetrysupport \
     storagemanager \
     appmanager \    
     preinstallmanager \      
-    downloadmanager \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \
+    downloadmanager \   
 "
 
 inherit features_check
@@ -66,11 +51,6 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agen
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DPLUGIN_HIBERNATESUPPORT=ON -DPLUGIN_HIBERNATE_NATIVE_APPS_ON_SUSPENDED=ON','',d)}"
 
 # ----------------------------------------------------------------------------
-PACKAGECONFIG[ocicontainer]         = "-DPLUGIN_OCICONTAINER=ON, -DPLUGIN_OCICONTAINER=OFF, dobby entservices-apis systemd, dobby entservices-apis systemd"
-PACKAGECONFIG[ocicontainersec]      = "                        ,                          ,   omi,   omi"
-PACKAGECONFIG[rialtodac]            = "-DRIALTO_IN_DAC_FEATURE=ON,-DRIALTO_IN_DAC_FEATURE=OFF,rialto,rialto-servermanager-lib"
-PACKAGECONFIG[rdknativescript]      = "-DPLUGIN_NATIVEJS=ON,-DPLUGIN_NATIVEJS=OFF,rdknativescript,libuv"
-PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[telemetry]            = "-DPLUGIN_TELEMETRY=ON,,iarmbus iarmmgrs entservices-apis rfc rbus,iarmbus entservices-apis rfc rbus"
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON ${RUNTIMEMANAGER_PLUGIN_ARGS},-DPLUGIN_RUNTIME_MANAGER=OFF,entservices-apis,entservices-apis"
