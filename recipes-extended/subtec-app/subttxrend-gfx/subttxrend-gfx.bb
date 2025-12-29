@@ -12,7 +12,7 @@ DEPENDS:append = " virtual/egl "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "72ecd131bbd1ff569a62cb6df3928290e5a570d2"
+SRCREV = "cf0b02434d96e7d2368080362504fbd41b61655c"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-gfx"
 #
@@ -28,5 +28,6 @@ EXTRA_OECMAKE += "-DWITH_OPENGL=1"
 EXTRA_OECMAKE:append = " -DBUILD_RDK_REFERENCE=1"
 
 CXXFLAGS:append:kirkstone = " -fpermissive"
+CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'upstream_wayland_egl', ' -DUSE_UPSTREAM_WAYLAND', '', d)}"
 
 INSANE_SKIP:subttxrend-gfx := "file-rdeps"
