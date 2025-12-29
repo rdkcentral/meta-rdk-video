@@ -44,10 +44,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " telemetrysupport \
-    ocicontainer \
-    messagecontrol \
-    texttospeechmonitor \
-    appnotifications \
+    ocicontainer \    
     rdknativescript \
     javascriptcore \
     runtimemanager \       
