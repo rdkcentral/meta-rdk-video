@@ -39,6 +39,7 @@ PACKAGECONFIG ?= " javascriptcore \
     appmanager \    
     preinstallmanager \      
     downloadmanager \   
+    ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \ 
 "
 
 inherit features_check
@@ -68,15 +69,9 @@ PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
 RUNTIMEMANAGER_PLUGIN_ARGS         ?= " \
                                        -DPLUGIN_RUNTIME_APP_PORTAL=${RUNTIME_APP_PORTAL} \
 "
-RUNTIME_APP_PORTAL ?= "com.sky.as.apps"
-NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
-
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
-    -DSECAPI_LIB=sec_api \
-    -DPLUGIN_NATIVEJS=ON \
-    -DPLUGIN_NATIVEJS_CLIENTIDENTIFIER="${NATIVEJS_CLIENTIDENTIFIER}" \
 "
 
 # TBD - set SECAPI_LIB to hw secapi once RDK-12682 changes are available
