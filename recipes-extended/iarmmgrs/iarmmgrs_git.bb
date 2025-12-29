@@ -56,6 +56,7 @@ CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'enable_hdmiin_support'
 CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'enable_compositein_support', ' -DHAS_COMPOSITE_IN_SUPPORT ', '', d)}"
 CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'enable_spdif_support', ' -DHAS_SPDIF_SUPPORT ', '', d)}"
 CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'enable_headphone_support', ' -DHAS_HEADPHONE_SUPPORT ', '', d)}"
+CFLAGS:append = " -DENABLE_4K_RESOLUTION"
 
 LDFLAGS += "-lrfcapi -lz"
 
