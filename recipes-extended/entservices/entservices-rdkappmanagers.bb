@@ -31,8 +31,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " javascriptcore \
-    runtimemanager \       
+PACKAGECONFIG ?= " runtimemanager \       
     packagemanager \
     lifecyclemanager \
     storagemanager \
