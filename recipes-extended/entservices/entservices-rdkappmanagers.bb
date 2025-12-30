@@ -14,7 +14,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFI
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
-
+DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
+EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_APPMANAGERS_DEBUG=OFF', '-DRDK_APPMANAGERS_DEBUG=ON', d)}"
 
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
@@ -40,9 +41,6 @@ PACKAGECONFIG ?= " runtimemanager \
     downloadmanager \   
     ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \ 
 "
-
-inherit features_check
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
 
 # ----------------------------------------------------------------------------
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON ${RUNTIMEMANAGER_PLUGIN_ARGS},-DPLUGIN_RUNTIME_MANAGER=OFF,entservices-apis,entservices-apis"
@@ -72,19 +70,6 @@ EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
 "
-
-# TBD - set SECAPI_LIB to hw secapi once RDK-12682 changes are available
-EXTRA_OECMAKE += " \
-    -DBUILD_AMLOGIC=ON \
-    -DBUILD_LLAMA=ON \
-"
-
-# Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
-python () {
-    dri_device_name = d.getVar('DRI_DEVICE_NAME')
-    if dri_device_name:
-        d.appendVar('OECMAKE_CXX_FLAGS', ' -DDEFAULT_DEVICE=\'\\"{}\\"\' '.format(dri_device_name))
-}
 
 do_install:append() {
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
