@@ -44,7 +44,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 PACKAGECONFIG ?= " firmwareupdate \
     "
 
-PACKAGECONFIG[firmwareupdate]          = "-DPLUGIN_FIRMWAREUPDATE=ON,-DPLUGIN_FIRMWAREUPDATE=OFF,iarmmgrs,iarmbus,wpeframework-clientlibraries,entservices-apis"
+PACKAGECONFIG[firmwareupdate]          = "-DPLUGIN_FIRMWAREUPDATE=ON,-DPLUGIN_FIRMWAREUPDATE=OFF,iarmmgrs,iarmbus,wpeframework-clientlibraries"
 
 # ----------------------------------------------------------------------------
 
