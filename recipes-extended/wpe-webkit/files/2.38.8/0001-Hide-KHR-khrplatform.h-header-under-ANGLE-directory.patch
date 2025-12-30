@@ -1,0 +1,60 @@
+From 7461e699d2b2aaa17ca814fdbd57e112fd7a13c5 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Fri, 28 Feb 2025 16:40:52 +0100
+Subject: [PATCH] Hide KHR/khrplatform.h header under ANGLE directory
+
+ANGLE installs KHR/khrplatform.h header even if ANGLE is disabled.
+That makes other componets pick this header instead of vendor
+provided one
+
+Signed-off-by: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+---
+ Source/ThirdParty/ANGLE/CMakeLists.txt         | 2 +-
+ Source/ThirdParty/ANGLE/include/CMakeLists.txt | 9 +++++++--
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/Source/ThirdParty/ANGLE/CMakeLists.txt b/Source/ThirdParty/ANGLE/CMakeLists.txt
+index 902b2be4d880..6ac53a533509 100644
+--- a/Source/ThirdParty/ANGLE/CMakeLists.txt
++++ b/Source/ThirdParty/ANGLE/CMakeLists.txt
+@@ -124,7 +124,7 @@ WEBKIT_INCLUDE_CONFIG_FILES_IF_EXISTS()
+ add_subdirectory(include)
+ 
+ add_library(ANGLEFramework INTERFACE)
+-add_dependencies(ANGLEFramework GLSLANGHeaders ANGLEHeaders)
++add_dependencies(ANGLEFramework GLSLANGHeaders KHRHeaders ANGLEHeaders)
+ 
+ if (USE_ANGLE_EGL OR USE_ANGLE_WEBGL)
+     add_library(ANGLE ${ANGLE_LIBRARY_TYPE}
+diff --git a/Source/ThirdParty/ANGLE/include/CMakeLists.txt b/Source/ThirdParty/ANGLE/include/CMakeLists.txt
+index dcea392ddcdc..3846b8bae227 100644
+--- a/Source/ThirdParty/ANGLE/include/CMakeLists.txt
++++ b/Source/ThirdParty/ANGLE/include/CMakeLists.txt
+@@ -20,10 +20,9 @@ set(glslang_headers
+     GLSLANG/ShaderVars.h
+ )
+ 
+-set(ANGLE_PUBLIC_HEADERS ${khr_headers})
+-
+ if (USE_ANGLE_EGL)
+     list(APPEND ANGLE_PUBLIC_HEADERS
++        ${khr_headers}
+         ${egl_headers}
+         ${gles_headers}
+         ${gles2_headers}
+@@ -55,6 +54,12 @@ WEBKIT_COPY_FILES(GLSLANGHeaders
+     FLATTENED
+ )
+ 
++# needed by GLSLANGHeaders
++WEBKIT_COPY_FILES(KHRHeaders
++    DESTINATION ${ANGLE_FRAMEWORK_HEADERS_DIR}/ANGLE
++    FILES ${khr_headers}
++)
++
+ WEBKIT_COPY_FILES(ANGLEHeaders
+     DESTINATION ${ANGLE_FRAMEWORK_HEADERS_DIR}
+     FILES ${ANGLE_PUBLIC_HEADERS}
+-- 
+2.34.1
+
