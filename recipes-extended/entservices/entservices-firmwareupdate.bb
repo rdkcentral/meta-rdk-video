@@ -41,16 +41,10 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= "telemetrysupport \
-    firmwareupdate \
+PACKAGECONFIG ?= " firmwareupdate \
     "
 
-PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'whoami_enabled', 'whoami', '', d)}"
-
-
-PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[firmwareupdate]          = "-DPLUGIN_FIRMWAREUPDATE=ON,-DPLUGIN_FIRMWAREUPDATE=OFF,wpeframework-clientlibraries,"
-PACKAGECONFIG[whoami]        = "-DENABLE_WHOAMI=ON,-DENABLE_WHOAMI=OFF,"
+PACKAGECONFIG[firmwareupdate]          = "-DPLUGIN_FIRMWAREUPDATE=ON,-DPLUGIN_FIRMWAREUPDATE=OFF,iarmmgrs,iarmbus,wpeframework-clientlibraries,entservices-apis"
 
 # ----------------------------------------------------------------------------
 
