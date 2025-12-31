@@ -22,6 +22,11 @@ DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
 
+CFLAGS  += " \
+    -I=${includedir}/rdk/halif/power-manager \
+    -I=${includedir}/rdk/halif/deepsleep-manager \
+
+CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
 # enable filtering for undefined interfaces and link local ip address notifications
@@ -50,6 +55,7 @@ PACKAGECONFIG[storagemanager]       = "-DPLUGIN_STORAGE_MANAGER=ON,-DPLUGIN_STOR
 PACKAGECONFIG[appmanager]           = "-DPLUGIN_APPMANAGER=ON,-DPLUGIN_APPMANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[preinstallmanager]    = "-DPLUGIN_PREINSTALL_MANAGER=ON,-DPLUGIN_PREINSTALL_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[downloadmanager]      = "-DPLUGIN_DOWNLOADMANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_DOWNLOADMANAGER=OFF -DLIB_PACKAGE=OFF,entservices-apis curl virtual/libpackage,entservices-apis curl virtual/libpackage"
+PACKAGECONFIG[rialtodac]            = "-DRIALTO_IN_DAC_FEATURE=ON,-DRIALTO_IN_DAC_FEATURE=OFF,rialto,rialto-servermanager-lib"
 # ----------------------------------------------------------------------------
 
 PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
