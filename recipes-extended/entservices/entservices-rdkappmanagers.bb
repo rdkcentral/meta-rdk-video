@@ -50,15 +50,14 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " runtimemanager \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \    
-    packagemanager \
-    appmanager \
-    lifecyclemanager \
-    storagemanager \
-    erm \
-    preinstallmanager \
-"
+PACKAGECONFIG:append = " runtimemanager"
+PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)}"
+PACKAGECONFIG:append = " packagemanager"
+PACKAGECONFIG:append = " appmanager"
+PACKAGECONFIG:append = " lifecyclemanager"
+PACKAGECONFIG:append = " storagemanager"
+PACKAGECONFIG:append = " erm"
+PACKAGECONFIG:append = " preinstallmanager"
 
 # TODO: As advised, 'ocicointainer' plugin has been modified to build unconditionally. It will be revisited in the upcoming sprint to control it via DISTRO_FEATURES."
 #PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'DAC_SUPPORT', 'ocicontainer', '', d)}"
