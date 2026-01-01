@@ -10,7 +10,6 @@ inherit cmake pkgconfig
 
 SRCREV = "cdc08633bc299c509dc51fc2f2fc59b865e5906b"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
