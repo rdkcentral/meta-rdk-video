@@ -1,4 +1,4 @@
-SUMMARY = "ENTServices firmware update plugin"
+SUMMARY = "ENTServices firmware download plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
