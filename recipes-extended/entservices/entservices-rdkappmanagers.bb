@@ -50,9 +50,8 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= "
+PACKAGECONFIG ?= " runtimemanager \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \    
-    runtimemanager \
     packagemanager \
     appmanager \
     lifecyclemanager \
