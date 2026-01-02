@@ -3,7 +3,10 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=16cf2209d4e903e4d5dcd75089d7dfe2"
 
 PV = "1.3.17+git${SRCPV}"
-PR = "r1"
+PR = "r2"
+
+# Force rebuild for LinearPlaybackControl
+FORCE_REBUILD = "jan2_2026_linear"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
