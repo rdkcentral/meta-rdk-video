@@ -23,7 +23,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant p
 
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
 RDEPENDS:${PN} += "wpeframework"
-DEPENDS += "packager-headers"
+DEPENDS += "packager-headers yaml-cpp"
 
 CFLAGS  += " \
     -I=${includedir}/rdk/halif/power-manager \
