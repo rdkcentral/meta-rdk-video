@@ -5,10 +5,10 @@ LICENSE = "Apache-2.0 & BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=f36198fb804ffbe39b5b2c336ceef9f8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-PV = "4.2.0"
-PR = "r3"
+PV = "4.2.1"
+PR = "r0"
 
-SRCREV = "cd3c7556842ae4452a830f5bc7da51ba574a0d9f"
+SRCREV = "6ac5ec1965e730703611ef753839837e5e974ae5"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
@@ -245,13 +245,15 @@ do_install() {
 	# For NetworkManager
 	install -d ${D}${sysconfdir}/NetworkManager
 	install -d ${D}${sysconfdir}/NetworkManager/conf.d
+        install -d ${D}${sysconfdir}/NetworkManager/dnsmasq.d
 	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d
 	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
 	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-up.d
-	install -m 0755 ${S}/lib/rdk/NM_Dispatcher.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d
+        install -m 0755 ${S}/lib/rdk/NM_Dispatcher.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d
 	install -m 0755 ${S}/lib/rdk/NM_preDown.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
 	install -m 0755 ${S}/lib/rdk/NM_preUp.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-up.d
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
+        install -m 0755 ${S}/etc/dnsmasq-dobby.conf ${D}${sysconfdir}/NetworkManager/dnsmasq.d/dnsmasq-dobby.conf
             rm ${D}${base_libdir}/rdk/NM_Dispatcher.sh
             rm ${D}${base_libdir}/rdk/NM_preDown.sh
             rm ${D}${base_libdir}/rdk/NM_preUp.sh
