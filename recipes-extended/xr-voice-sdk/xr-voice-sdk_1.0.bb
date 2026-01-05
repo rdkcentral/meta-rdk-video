@@ -32,24 +32,11 @@ ENABLE_HTTP_SUPPORT    ?= "0"
 ENABLE_WS_SUPPORT      ?= "1"
 ENABLE_SDT_SUPPORT     ?= "0"
 
-XRSR_ALLOW_INPUT_FAILURE  ?= "0"
-
-XRSR_KEYWORD_PHRASE       ?= ""
-
-XRAUDIO_KWD_COMPONENT     ?= ""
-XRAUDIO_EOS_COMPONENT     ?= ""
-XRAUDIO_DGA_COMPONENT     ?= ""
-XRAUDIO_SDF_COMPONENT     ?= ""
-XRAUDIO_OVC_COMPONENT     ?= ""
-XRAUDIO_PPR_COMPONENT     ?= ""
-XRAUDIO_FFV_HAL_COMPONENT ?= ""
 XRAUDIO_RESOURCE_MGMT     ?= "0"
 XRAUDIO_USE_CURTAIL       ?= "0"
 
 XLOG_USE_CURTAIL          ?= "0"
 VSDK_DECODE_OPUS          ?= "1"
-
-DEPENDS:append = " ${XRAUDIO_KWD_COMPONENT} ${XRAUDIO_EOS_COMPONENT} ${XRAUDIO_DGA_COMPONENT} ${XRAUDIO_SDF_COMPONENT} ${XRAUDIO_OVC_COMPONENT} ${XRAUDIO_PPR_COMPONENT} ${XRAUDIO_FFV_HAL_COMPONENT}"
 
 DEPENDS:append = "${@ ' curl'    if (d.getVar('ENABLE_HTTP_SUPPORT', expand=False) == "1") else ''}"
 DEPENDS:append = "${@ ' nopoll'  if (d.getVar('ENABLE_WS_SUPPORT',   expand=False) == "1") else ''}"
@@ -81,10 +68,6 @@ EXTRA_OECMAKE:append = " -DSTAGING_BINDIR_NATIVE=${STAGING_BINDIR_NATIVE}"
 EXTRA_OECMAKE:append = "${@ ' -DHTTP_ENABLED=ON'    if (d.getVar('ENABLE_HTTP_SUPPORT', expand=False) == "1")  else ''}"
 EXTRA_OECMAKE:append = "${@ ' -DWS_ENABLED=ON -DWS_NOPOLL_PATCHES=ON' if (d.getVar('ENABLE_WS_SUPPORT',   expand=False) == "1")  else ''}"
 EXTRA_OECMAKE:append = "${@ ' -DSDT_ENABLED=ON'     if (d.getVar('ENABLE_SDT_SUPPORT',  expand=False) == "1")  else ''}"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm_mic_tap', ' -DMICROPHONE_TAP_ENABLED=ON', '', d)}"
-EXTRA_OECMAKE:append = "${@ ' -DXRSR_ALLOW_INPUT_FAILURE=ON'     if (d.getVar('XRSR_ALLOW_INPUT_FAILURE',  expand=False) == "1")  else ''}"
-
-EXTRA_OECMAKE:append = "${@' -DXRSR_KEYWORD_PHRASE=${XRSR_KEYWORD_PHRASE}' if (d.getVar('XRSR_KEYWORD_PHRASE', expand=False) != '') else ''}"
 
 EXTRA_OECMAKE:append = "${@' -DXRAUDIO_RESOURCE_MGMT=ON'   if (d.getVar('XRAUDIO_RESOURCE_MGMT', expand=False) == '1') else ''}"
 EXTRA_OECMAKE:append = "${@' -DXRAUDIO_CURTAIL_ENABLED=ON' if (d.getVar('XRAUDIO_USE_CURTAIL',   expand=False) == '1') else ''}"
@@ -98,12 +81,5 @@ EXTRA_OECMAKE:append = " -DXRAUDIO_CONFIG_JSON_OVC=${XRAUDIO_CONFIG_OVC}"
 EXTRA_OECMAKE:append = " -DXRAUDIO_CONFIG_JSON_PPR=${XRAUDIO_CONFIG_PPR}"
 EXTRA_OECMAKE:append = " -DXRAUDIO_CONFIG_JSON_SUB=${XRAUDIO_CONFIG_OEM_SUB}"
 EXTRA_OECMAKE:append = " -DXRAUDIO_CONFIG_JSON_ADD=${XRAUDIO_CONFIG_OEM_ADD}"
-
-EXTRA_OECMAKE:append = "${@' -DXRAUDIO_KWD_ENABLED=ON' if d.getVar('XRAUDIO_KWD_COMPONENT', True) else ''}"
-EXTRA_OECMAKE:append = "${@' -DXRAUDIO_EOS_ENABLED=ON' if d.getVar('XRAUDIO_EOS_COMPONENT', True) else ''}"
-EXTRA_OECMAKE:append = "${@' -DXRAUDIO_DGA_ENABLED=ON' if d.getVar('XRAUDIO_DGA_COMPONENT', True) else ''}"
-EXTRA_OECMAKE:append = "${@' -DXRAUDIO_SDF_ENABLED=ON' if d.getVar('XRAUDIO_SDF_COMPONENT', True) else ''}"
-EXTRA_OECMAKE:append = "${@' -DXRAUDIO_OVC_ENABLED=ON' if d.getVar('XRAUDIO_OVC_COMPONENT', True) else ''}"
-EXTRA_OECMAKE:append = "${@' -DXRAUDIO_PPR_ENABLED=ON' if d.getVar('XRAUDIO_PPR_COMPONENT', True) else ''}"
 
 EXTRA_OECMAKE:append = "${@' -DXLOG_CURTAIL_ENABLED=ON' if (d.getVar('XLOG_USE_CURTAIL', expand=False) == '1') else ''}"
