@@ -2,17 +2,14 @@ SUMMARY = "ENTServices Infra plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "3.16.0"
-PR = "r0"
+PV ?= "1.0.0"
+PR ?= "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "c0587d76355e53401ac8370c88b5b7c3415fbc4c"
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://rdkshell_post_startup.conf \
-           file://0001-Add-monitoring-of-cloned-callsigns.patch \
-           file://rdkservices.ini \
+SRCREV = "cdc08633bc299c509dc51fc2f2fc59b865e5906b"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
@@ -51,30 +48,14 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " monitor \
-    persistent_store \
-    resourcemanager \
-    sharedstorage \
-    telemetrysupport \
-    usbdevice \
-    usbmass_storage \
-    usersettings \
-    ocicontainer \  
-    messagecontrol \
-    rdknativescript \
-    javascriptcore \          
-    texttospeechmonitor \    
-    migration \
-    appgateway \
-    appnotifications \
-    fbsettings \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
-    ${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' messagecontrol ', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \    
-"
+PACKAGECONFIG:append = " runtimemanager"
+PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)}"
+PACKAGECONFIG:append = " packagemanager"
+PACKAGECONFIG:append = " appmanager"
+PACKAGECONFIG:append = " lifecyclemanager"
+PACKAGECONFIG:append = " storagemanager"
+PACKAGECONFIG:append = " erm"
+PACKAGECONFIG:append = " preinstallmanager"
 
 # TODO: As advised, 'ocicointainer' plugin has been modified to build unconditionally. It will be revisited in the upcoming sprint to control it via DISTRO_FEATURES."
 #PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'DAC_SUPPORT', 'ocicontainer', '', d)}"
@@ -188,12 +169,6 @@ python () {
 }
 
 do_install:append() {
-    install -d ${D}${sysconfdir}/rfcdefaults
-    install -m 0644 ${WORKDIR}/rdkshell_post_startup.conf ${D}${sysconfdir}
-    if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
-    then
-      install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
-    fi
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
