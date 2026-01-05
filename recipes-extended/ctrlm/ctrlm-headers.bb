@@ -2,14 +2,17 @@ DESCRIPTION = "Control Manager Headers"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-
 SECTION = "base"
 DEPENDS = ""
 
 include ctrlm.inc
 
-SRCREV = "a5109c82635bae5cf6a97f86bf1e43be051c5d5f"
+PACKAGE_ARCH             = "${MIDDLEWARE_ARCH}"
+PV                      := "${CTRLM_PV}"
+PR                      := "${CTRLM_PR}"
+SRCREV_pn-ctrlm-headers := "${CTRLM_SRCREV}"
+SRCREV_FORMAT            = "ctrlm-headers"
+
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-headers"
 
 S = "${WORKDIR}/git"

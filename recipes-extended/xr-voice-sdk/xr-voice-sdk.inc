@@ -1,0 +1,3 @@
+XR_VOICE_SDK_SRCREV = "TBD"
+XR_VOICE_SDK_PV     = "1.0.9"
+XR_VOICE_SDK_PR     = "r0"

@@ -19,10 +19,14 @@ SYSLOG-NG_SERVICE_ctrlm = "ctrlm-main.service"
 SYSLOG-NG_DESTINATION_ctrlm = "ctrlm_log.txt"
 SYSLOG-NG_LOGRATE_ctrlm = "medium"
 
-PV = "1.1.7"
-PR = "r0"
+include ctrlm.inc
 
-SRCREV = "4f688c6aca99e5c5d8674d4b3edc60fe97eb0633"
+PACKAGE_ARCH          = "${MIDDLEWARE_ARCH}"
+PV                   := "${CTRLM_PV}"
+PR                   := "${CTRLM_PR}"
+SRCREV_pn-ctrlm-main := "${CTRLM_SRCREV}"
+SRCREV_FORMAT         = "ctrlm-main"
+
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-main"
 
 LOGROTATE_NAME="ctrlm_log"
@@ -40,9 +44,6 @@ VERSION_TEST_TONES = "20220616"
 SRC_URI:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' ${RDK_ARTIFACTS_BASE_URL}/generic/components/yocto/ctrlm_factory/test_tones/test_tones_${VERSION_TEST_TONES}/2.1/test_tones_${VERSION_TEST_TONES}-2.1.tar.bz2;name=test_tones', '', d)}"
 SRC_URI[test_tones.md5sum]    = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', 'd9e7829785f011214ec948f417873825', '', d)}"
 SRC_URI[test_tones.sha256sum] = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', 'ef10d7174a8bc79aff71b30980cd1304a2a33cf10afc38049c13cb11d1a309cc', '', d)}"
-
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-SRCREV_FORMAT = "ctrlm-main"
 
 S = "${WORKDIR}/git"
 

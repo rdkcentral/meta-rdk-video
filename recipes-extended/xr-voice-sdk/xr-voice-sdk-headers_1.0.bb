@@ -5,12 +5,13 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.0.8"
-PR = "r0"
+include xr-voice-sdk.inc
 
-PACKAGE_ARCH  = "${MIDDLEWARE_ARCH}"
-SRCREV_FORMAT = "xr-voice-sdk"
-SRCREV = "945a67349170e61032c46fb12fe7d3c029f670a1"
+PACKAGE_ARCH                    = "${MIDDLEWARE_ARCH}"
+PV                             := "${XR_VOICE_SDK_PV}"
+PR                             := "${XR_VOICE_SDK_PR}"
+SRCREV_pn-xr-voice-sdk-headers := "${XR_VOICE_SDK_SRCREV}"
+SRCREV_FORMAT                   = "xr-voice-sdk"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/xr-voice-sdk;${CMF_GITHUB_SRC_URI_SUFFIX};name=xr-voice-sdk"
 
