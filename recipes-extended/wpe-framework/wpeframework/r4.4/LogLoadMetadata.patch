@@ -1,5 +1,5 @@
 diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
-index fa723305..1fb7d56e 100644
+index fa723305..c23c7ed2 100644
 --- a/Source/WPEFramework/PluginServer.cpp
 +++ b/Source/WPEFramework/PluginServer.cpp
 @@ -1093,8 +1093,12 @@ POP_WARNING()
@@ -12,7 +12,7 @@ index fa723305..1fb7d56e 100644
 +	struct timespec ts;
 +        clock_gettime(CLOCK_MONOTONIC, &ts);
 +        SYSLOG(Logging::Startup, (Core::Format(_T("Start of LoadMetadata: %llu"), (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec)));
-+        printf("Start of LoadMetadata: %llu", (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec);
++        printf("Start of LoadMetadata: %llu\n", (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec);
          while (iterator.Next() == true)
          {
              iterator->LoadMetadata();
@@ -22,12 +22,30 @@ index fa723305..1fb7d56e 100644
          }
 +        clock_gettime(CLOCK_MONOTONIC, &ts);
 +        SYSLOG(Logging::Startup, (Core::Format(_T("End of LoadMetadata: %llu"), (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec)));
-+        printf("End of LoadMetadata: %llu", (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec);
++        printf("End of LoadMetadata: %llu\n", (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec);
  #endif
  
          _controller->Activate(PluginHost::IShell::STARTUP);
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index 643c8450..17743bca 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -1811,7 +1811,13 @@ namespace PluginHost {
+             void LoadMetadata() {
+                 const string locator(PluginHost::Service::Configuration().Locator.Value());
+                 if (locator.empty() == false) {
++                    struct timespec ts, ts1;
++                    clock_gettime(CLOCK_MONOTONIC, &ts);
++                    printf("Start Time for LoadLibrary %s = %llu ns\n", locator.c_str(),  (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec);
+                     Core::Library loadedLib = LoadLibrary(locator);
++                    clock_gettime(CLOCK_MONOTONIC, &ts1);
++                    auto duration = (((uint64_t)ts1.tv_sec * 1000000000ULL + ts1.tv_nsec) - ((uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec)) / 1000000;
++                    printf("End Time for LoadLibrary %s = %llu ns Duration: %llu ms\n", locator.c_str(),  (uint64_t)ts1.tv_sec * 1000000000ULL + ts1.tv_nsec, duration);
+                     if (loadedLib.IsLoaded() == true) {
+                         Core::ServiceAdministrator::Instance().ReleaseLibrary(std::move(loadedLib));
+                     }
 diff --git a/Source/core/Library.cpp b/Source/core/Library.cpp
-index 00ee2e1f..ee6c7153 100644
+index 00ee2e1f..7b1aa188 100644
 --- a/Source/core/Library.cpp
 +++ b/Source/core/Library.cpp
 @@ -85,7 +85,13 @@ namespace Core {
@@ -39,7 +57,7 @@ index 00ee2e1f..ee6c7153 100644
 +        printf("Start Time for dlopen %s = %llu ns\n", fileName,  (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec);
          void* handle = dlopen(fileName, RTLD_LAZY);
 +        clock_gettime(CLOCK_MONOTONIC, &ts1);
-+        auto duration = (((uint64_t)ts1.tv_sec * 1000000000ULL + ts1.tv_nsec) - ((uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec) / 1000000);
++        auto duration = (((uint64_t)ts1.tv_sec * 1000000000ULL + ts1.tv_nsec) - ((uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec)) / 1000000;
 +        printf("End Time for dlopen %s = %llu ns Duration: %llu ms\n", fileName,  (uint64_t)ts1.tv_sec * 1000000000ULL + ts1.tv_nsec, duration);
  #endif
  #ifdef __WINDOWS__
