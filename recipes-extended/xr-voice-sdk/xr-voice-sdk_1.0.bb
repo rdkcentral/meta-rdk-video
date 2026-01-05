@@ -7,11 +7,11 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 include xr-voice-sdk.inc
 
-PACKAGE_ARCH            = "${MIDDLEWARE_ARCH}"
-PV                     := "${XR_VOICE_SDK_PV}"
-PR                     := "${XR_VOICE_SDK_PR}"
-SRCREV_pn-xr-voice-sdk := "${XR_VOICE_SDK_SRCREV}"
-SRCREV_FORMAT           = "xr-voice-sdk"
+PACKAGE_ARCH   = "${MIDDLEWARE_ARCH}"
+PV            := "${XR_VOICE_SDK_PV}"
+PR            := "${XR_VOICE_SDK_PR}"
+SRCREV        := "${XR_VOICE_SDK_SRCREV}"
+SRCREV_FORMAT  = "xr-voice-sdk"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/xr-voice-sdk;${CMF_GITHUB_SRC_URI_SUFFIX};name=xr-voice-sdk"
 

@@ -21,11 +21,11 @@ SYSLOG-NG_LOGRATE_ctrlm = "medium"
 
 include ctrlm.inc
 
-PACKAGE_ARCH          = "${MIDDLEWARE_ARCH}"
-PV                   := "${CTRLM_PV}"
-PR                   := "${CTRLM_PR}"
-SRCREV_pn-ctrlm-main := "${CTRLM_SRCREV}"
-SRCREV_FORMAT         = "ctrlm-main"
+PACKAGE_ARCH   = "${MIDDLEWARE_ARCH}"
+PV            := "${CTRLM_PV}"
+PR            := "${CTRLM_PR}"
+SRCREV        := "${CTRLM_SRCREV}"
+SRCREV_FORMAT  = "ctrlm-main"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-main"
 

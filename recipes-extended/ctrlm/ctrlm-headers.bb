@@ -7,11 +7,11 @@ DEPENDS = ""
 
 include ctrlm.inc
 
-PACKAGE_ARCH             = "${MIDDLEWARE_ARCH}"
-PV                      := "${CTRLM_PV}"
-PR                      := "${CTRLM_PR}"
-SRCREV_pn-ctrlm-headers := "${CTRLM_SRCREV}"
-SRCREV_FORMAT            = "ctrlm-headers"
+PACKAGE_ARCH   = "${MIDDLEWARE_ARCH}"
+PV            := "${CTRLM_PV}"
+PR            := "${CTRLM_PR}"
+SRCREV        := "${CTRLM_SRCREV}"
+SRCREV_FORMAT  = "ctrlm-headers"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-headers"
 
