@@ -8,6 +8,7 @@ S = "${WORKDIR}/git"
 SRCREV = "125b87e9dd639d333ea9915fb0b8e463a6adedfa"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 SRC_URI = "${CMF_GIT_ROOT}/rdk/components/generic/ermgr;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GIT_BRANCH}"
+SRC_URI += "file://01-essosResManager.diff"
 
 DEPENDS = "essos"
 inherit autotools pkgconfig systemd syslog-ng-config-gen
