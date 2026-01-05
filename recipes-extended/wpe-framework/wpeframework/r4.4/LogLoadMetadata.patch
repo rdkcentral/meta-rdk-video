@@ -26,15 +26,33 @@ index fa723305..1fb7d56e 100644
  #endif
  
          _controller->Activate(PluginHost::IShell::STARTUP);
+diff --git a/Source/core/Library.cpp b/Source/core/Library.cpp
+index 00ee2e1f..ee6c7153 100644
+--- a/Source/core/Library.cpp
++++ b/Source/core/Library.cpp
+@@ -85,7 +85,13 @@ namespace Core {
+         , _error()
+     {
+ #ifdef __LINUX__
++        struct timespec ts, ts1;
++        clock_gettime(CLOCK_MONOTONIC, &ts);
++        printf("Start Time for dlopen %s = %llu ns\n", fileName,  (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec);
+         void* handle = dlopen(fileName, RTLD_LAZY);
++        clock_gettime(CLOCK_MONOTONIC, &ts1);
++        auto duration = (((uint64_t)ts1.tv_sec * 1000000000ULL + ts1.tv_nsec) - ((uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec) / 1000000);
++        printf("End Time for dlopen %s = %llu ns Duration: %llu ms\n", fileName,  (uint64_t)ts1.tv_sec * 1000000000ULL + ts1.tv_nsec, duration);
+ #endif
+ #ifdef __WINDOWS__
+         HMODULE handle = ::LoadLibrary(fileName);
 diff --git a/Source/plugins/MetaData.h b/Source/plugins/MetaData.h
-index 206b4f6d..6f46f8bf 100644
+index 206b4f6d..fe718795 100644
 --- a/Source/plugins/MetaData.h
 +++ b/Source/plugins/MetaData.h
 @@ -447,9 +447,14 @@ namespace Plugin {
              , _precondition(precondition)
              , _termination(termination)
              , _control(control) {
-+	    struct timespec ts;
++            struct timespec ts;
 +            clock_gettime(CLOCK_MONOTONIC, &ts);
 +            printf("Start Time for Metadata Initializing %s = %llu ns\n", _Id.c_str(),  (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec);
              ASSERT(Core::System::ROOT_META_DATA == nullptr);
