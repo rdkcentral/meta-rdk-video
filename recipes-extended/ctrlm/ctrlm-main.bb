@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 SECTION = "base"
-DEPENDS = "sqlite3 curl rdkversion jansson glib-2.0 systemd iarmbus iarmmgrs breakpad util-linux devicesettings nopoll rfc libarchive safec-common-wrapper gperf-native xr-voice-sdk libsyswrapper xr-voice-sdk-headers"
+DEPENDS = "sqlite3 curl rdkversion jansson glib-2.0 systemd iarmbus iarmmgrs util-linux devicesettings nopoll rfc libarchive safec-common-wrapper gperf-native xr-voice-sdk libsyswrapper xr-voice-sdk-headers"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 RDEPENDS:${PN}:append = " devicesettings iarmbus"
@@ -12,20 +12,17 @@ PROVIDES = "ctrlm"
 RPROVIDES:${PN} = "ctrlm"
 
 
-inherit cmake pkgconfig ${@bb.utils.contains("DISTRO_FEATURES", "kirkstone", "python3native", "pythonnative", d)} syslog-ng-config-gen breakpad-wrapper breakpad-logmapper logrotate_config
-
-# Breakpad processname and logfile mapping
-BREAKPAD_LOGMAPPER_PROCLIST = "controlMgr"
-BREAKPAD_LOGMAPPER_LOGLIST = "ctrlm_log.txt"
+inherit cmake pkgconfig ${@bb.utils.contains("DISTRO_FEATURES", "kirkstone", "python3native", "pythonnative", d)} syslog-ng-config-gen logrotate_config
 
 SYSLOG-NG_FILTER = "ctrlm"
 SYSLOG-NG_SERVICE_ctrlm = "ctrlm-main.service"
 SYSLOG-NG_DESTINATION_ctrlm = "ctrlm_log.txt"
 SYSLOG-NG_LOGRATE_ctrlm = "medium"
 
-PV ?= "1.0.1"
-PR ?= "r0"
+PV = "1.1.7"
+PR = "r0"
 
+SRCREV = "4f688c6aca99e5c5d8674d4b3edc60fe97eb0633"
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-main"
 
 LOGROTATE_NAME="ctrlm_log"
@@ -61,7 +58,16 @@ inherit ${@bb.utils.contains('DISTRO_FEATURES', 'comcast-gperftools-heapcheck-wp
 
 inherit systemd coverity
 
-BREAKPAD_BIN = "controlMgr"
+# Breakpad Support
+BREAKPAD           ??= "true"
+inherit ${@bb.utils.contains('BREAKPAD', 'true', 'breakpad-wrapper breakpad-logmapper', '', d)}
+DEPENDS:append       = "${@bb.utils.contains('BREAKPAD', 'true', ' breakpad', '', d)}"
+EXTRA_OECMAKE:append = "${@bb.utils.contains('BREAKPAD', 'true', ' -DBREAKPAD=ON', ' -DBREAKPAD=OFF', d)}"
+BREAKPAD_BIN         = "controlMgr"
+
+# Breakpad processname and logfile mapping
+BREAKPAD_LOGMAPPER_PROCLIST = "controlMgr"
+BREAKPAD_LOGMAPPER_LOGLIST  = "ctrlm_log.txt"
 
 EXTRA_OECMAKE:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' -DUSE_SAFEC=ON', '', d)}"
 
@@ -89,18 +95,20 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' -DTE
 ##################################################
 # BLE support BEGIN
 
-RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' bluez5', '', d)}"
+BLE_ENABLED      ??= "true"
 
-RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' bluetooth-mgr', '', d)}"
-DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' bluetooth-mgr', '', d)}"
-LDFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' -lBTMgr', '', d)}"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluez5', '', d)}"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluetooth-mgr', '', d)}"
 
-EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' -DBLE_ENABLED=ON', '', d)}"
-SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' file://2_bluetooth.conf', '', d)}"
-FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', '${systemd_unitdir}/system/ctrlm-main.service.d/2_bluetooth.conf', '', d)}"
+DEPENDS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluetooth-mgr', '', d)}"
+LDFLAGS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' -lBTMgr', '', d)}"
+
+EXTRA_OECMAKE:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' -DBLE_ENABLED=ON', ' -DBLE_ENABLED=OFF', d)}"
+SRC_URI:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' file://2_bluetooth.conf', '', d)}"
+FILES:${PN} += "${@bb.utils.contains('BLE_ENABLED', 'true', '${systemd_unitdir}/system/ctrlm-main.service.d/2_bluetooth.conf', '', d)}"
 
 #100 byte ADPCM coming from BLE remote needs to be decoded to PCM before sending to endpoint
-CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' -DAUDIO_DECODE', '', d)}"
+CXXFLAGS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' -DAUDIO_DECODE', '', d)}"
 
 # BLE Services Implementation
 BLE_SERVICES       ??= "false"
@@ -118,12 +126,6 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('AUTH', 'true', ' -DAUTH_ENABLED=ON
 # Auth Activation Status Support
 AUTH_ACTIVATION_STATUS ?= "false"
 EXTRA_OECONF:append = "${@bb.utils.contains('AUTH_ACTIVATION_STATUS', 'true', ' -DAUTH_ACTIVACTION_STATUS', '', d)}"
-
-VOICE_KEYWORD_BEEP ??= "false"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('VOICE_KEYWORD_BEEP', 'true', ' -DVOICE_KEYWORD_BEEP=ON', '', d)}"
-
-# Enable breakpad
-EXTRA_OECMAKE:append = " -DBREAKPAD=ON"
 
 SUPPORT_VOICE_DEST_HTTP   ?= "false"
 SUPPORT_VOICE_DEST_ALSA   ?= "false"
@@ -158,7 +160,6 @@ EXTRA_OECMAKE:append = "${@ ' -DXRSR_SDT=ON' if (d.getVar('SUPPORT_VOICE_DEST_AL
 DEPENDS:append   = "${@ ' virtual-mic' if (d.getVar('SUPPORT_VOICE_DEST_ALSA',   expand=False) == "true") else ''}"
 
 EXTRA_OECMAKE:append = " -DCMAKE_SYSROOT=${RECIPE_SYSROOT} -DCMAKE_PROJECT_VERSION=${PV}"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm_mic_tap', ' -DMIC_TAP=ON', '', d)}"
 
 addtask ctrlm_config after do_configure before do_compile
 do_ctrlm_config() {
@@ -177,7 +178,7 @@ do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
 
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'true', 'false', d)}; then
+    if [ "${BLE_ENABLED}" = "true" ]; then
        install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
        install -m 0644 ${WORKDIR}/2_bluetooth.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
     fi

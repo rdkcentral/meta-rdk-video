@@ -9,6 +9,7 @@ DEPENDS = ""
 
 include ctrlm.inc
 
+SRCREV = "a5109c82635bae5cf6a97f86bf1e43be051c5d5f"
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-headers"
 
 S = "${WORKDIR}/git"
@@ -51,11 +52,6 @@ do_install() {
 
     # Advanced Secure Binding
     install -m 644 ${S}/src/asb/ctrlm_asb.h ${D}${includedir}/ctrlm_private
-
-    # IRDB Support
-    install -m 644 ${S}/src/irdb/ctrlm_irdb_interface.h ${D}${includedir}/ctrlm_private
-    install -m 644 ${S}/src/ipc/ctrlm_ipc_iarm.h ${D}${includedir}/ctrlm_private
-    install -m 644 ${S}/src/irdb/ctrlm_irdb_plugin.h ${D}${includedir}/ctrlm_private
 
     # Network Support
     install -m 644 ${S}/src/ctrlm.h ${D}${includedir}/ctrlm_private
