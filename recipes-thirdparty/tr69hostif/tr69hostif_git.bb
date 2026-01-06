@@ -4,7 +4,7 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=99e7c83e5e6f31c2cbb811e186972945"
 
-SRCREV = "93cacb57630004167adeddedd0d469aa14927e30"
+SRCREV = "9cdf11311e36400b8ed15d8389b3374e79d6a78c"
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
 PV = "1.2.8"
 PR = "r0"
