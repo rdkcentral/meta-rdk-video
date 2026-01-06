@@ -25,5 +25,6 @@ EXTRA_OECMAKE += "-DWITH_OPENGL=1"
 EXTRA_OECMAKE:append = " -DBUILD_RDK_REFERENCE=1"
 
 CXXFLAGS:append:kirkstone = " -fpermissive"
+CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'upstream_wayland_egl', ' -DUSE_UPSTREAM_WAYLAND', '', d)}"
 
 INSANE_SKIP:subttxrend-gfx := "file-rdeps"
