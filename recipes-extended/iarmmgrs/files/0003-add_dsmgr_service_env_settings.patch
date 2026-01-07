@@ -12,7 +12,7 @@ Index: git/conf/dsmgr.service
  Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/var/run/dbus/system_bus_socket
  Environment="XDG_RUNTIME_DIR=/tmp"
  Environment="HDMIIN_USE_ESSRMGR=1"
-+ExecStartPre=/bin/sh -c 'VOL_MAP_INI=`/usr/bin/panelIDConfig -v`;/bin/systemctl set-environment VOLUME_TABLE=$VOL_MAP_INI'
++ExecStartPre=/bin/sh -c 'DS_AUDIO_PARAM_MAP_INI=`/usr/bin/panelIDConfig -v`;/bin/systemctl set-environment DS_AUDIO_PARAM_MAP=$DS_AUDIO_PARAM_MAP_INI'
 +ExecStartPre=/bin/sh -c 'AUDIO_PROFILE_INI=`/usr/bin/panelIDConfig -r`;/bin/systemctl set-environment MS12_AUDIO_PROFILE=$AUDIO_PROFILE_INI'
  ExecStartPre=/bin/mkdir -p /opt/persistent/ds
  ExecStart=/usr/bin/dsMgrMain
