@@ -8,7 +8,6 @@ RequiresMountsFor=/opt/secure
 Type=notify
 EnvironmentFile=-/etc/default/westeros-env
 Environment="LD_LIBRARY_PATH=/usr/lib:/media/apps/netflix/usr/lib:/tmp/netflix/usr/lib:/media/apps/libcobalt/usr/lib:/tmp/libcobalt/usr/lib:/usr/lib/javascriptcore"
-Environment="LD_PRELOAD=/usr/lib/mediarite/libSafeSetenv.so"
 Environment="XDG_RUNTIME_DIR=/tmp"
 Environment="GST_REGISTRY=/opt/.gstreamer/registry.bin"
 Environment="GST_REGISTRY_UPDATE=no"
@@ -19,7 +18,7 @@ Environment="FORCE_SVP=TRUE"
 Environment="FORCE_SAP=TRUE"
 ExecStartPre=-/usr/bin/rdkLogMileStone WPE_FRAMEWORK_START
 SyslogIdentifier=WPEFramework
-ExecStart=/usr/bin/WPEFramework -b
+ExecStart=/bin/sh -c 'LD_PRELOAD="$LD_PRELOAD:/usr/lib/mediarite/libSafeSetenv.so"; export LD_PRELOAD; exec /usr/bin/WPEFramework -b'
 # Manually adding PID file support. This is used by Thunder clients to know if
 # Thunder aka WPEFramework process is restarted. Please note if PIDFile name is changed
 # it will need corresponding code change in ThunderClientLibraries (power_controller) too.
