@@ -22,7 +22,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_dis
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_APPMANAGERS_DEBUG=OFF', '-DRDK_APPMANAGERS_DEBUG=ON', d)}"
 
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
-RDEPENDS:${PN} += "wpeframework"
+RDEPENDS:${PN} += "wpeframework yaml-cpp"
 DEPENDS += "packager-headers yaml-cpp"
 
 CFLAGS  += " \
