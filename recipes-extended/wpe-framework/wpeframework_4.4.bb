@@ -169,7 +169,8 @@ do_install:append() {
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
-SYSTEMD_AUTO_ENABLE:${PN} = "disable"
+SYSTEMD_AUTO_ENABLE:pn-wpeframework = "mask"
+
 # ----------------------------------------------------------------------------
 
 PACKAGES =+ "${PN}-initscript"
