@@ -8,7 +8,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "4.2.1"
 PR = "r0"
 
-SRCREV = "6ac5ec1965e730703611ef753839837e5e974ae5"
+SRCREV = "28f2533af2b72465f5f57aed62da1f2b85b8cf94"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
@@ -317,3 +317,4 @@ FILES:${PN} += "${sbindir}/*"
 FILES:${PN} += " /HrvInitScripts/*"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/NM_Dispatcher.sh"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d/NM_preDown.sh"
+FILES:${PN} += "${sysconfdir}/NetworkManager/dnsmasq.d/dnsmasq-dobby.conf"
