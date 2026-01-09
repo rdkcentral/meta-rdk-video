@@ -47,12 +47,12 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 PACKAGECONFIG ?= " telemetrysupport \
     ocicontainer \
     rdknativescript \
-    runtimemanager \       
+    runtimemanager \
     packagemanager \
     lifecyclemanager \
     storagemanager \
-    appmanager \    
-    preinstallmanager \      
+    appmanager \
+    preinstallmanager \
     downloadmanager \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
