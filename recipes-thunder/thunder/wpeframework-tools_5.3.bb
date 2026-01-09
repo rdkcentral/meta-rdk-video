@@ -5,7 +5,7 @@ HOMEPAGE = "https://github.com/rdkcentral/ThunderTools"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=c3349dc67b2f8c28fc99b300eb39e3cc"
 
 TOOLCHAIN = "gcc"
-PR = "r3"
+PR = "r5"
 PV = "5.3.0"
 S = "${WORKDIR}/git"
 
@@ -14,7 +14,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderTools.git;protocol=https;branch=R5
 SRC_URI += "file://0001-Change-MODULE-PATH.patch \
             file://0002-Change-namspace-Proxystub-Json-Generator.patch \
             file://0003-Callsign-not-generated-Json-Generator.patch \
-            file://0004-namespace-generated-proxy-stubs.patch \
+            file://0004-Add-support-for-project-dir.patch \
             file://0005-jsongenerator_fallback_length_validation_fix.patch \
             "
 

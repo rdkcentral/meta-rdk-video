@@ -2,9 +2,7 @@
 From: Thamim Razith <tabbas651@cable.comcast.com>
 Date: Tue, 05 Dec 2025 10:53:28 +0000
 Subject: [PATCH] 0001-Change-MODULE-PATH.patch
-Reason for Change:In Thunder 5.3.0, the generated paths from JsonGenerator.py and StubGenerator.py were modified.
-To align with the RDK-E installation layout, we have updated the generated header paths to use the RDK-E install path instead of the current working directory.
-Reason for Change:In Thunder 5.3.0 , they modified the JsonGenerator.py,StubGenerator.py generated path 
+Reason for Change: On Yocto systems, the ThunderTool is built for native(x86) and the Thunder is built for device specific arch. So the install paths must be changed acordingly
 Upstream-Status: Comcast Changes
 Signed-off-by: Thamim Razith  <tabbas651@cable.comcast.com>
 *************************************************************************
