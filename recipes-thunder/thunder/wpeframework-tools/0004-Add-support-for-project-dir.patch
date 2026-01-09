@@ -6,6 +6,19 @@ Reason for Change: This patch is to add support for PROJECTDIR support to Thunde
 Upstream-Status: Comcast changes
 Signed-off-by: Karunakaran Amirthalingam <karunakaran_amirthalingam@cable.comcast.com>
 *****************************************************************************************************
+diff --git a/JsonGenerator/source/class_emitter.py b/JsonGenerator/source/class_emitter.py
+index 187a0a3..b7bdff6 100644
+--- a/JsonGenerator/source/class_emitter.py
++++ b/JsonGenerator/source/class_emitter.py
+@@ -251,8 +251,6 @@ def EmitEnumRegs(log, root, emit, header_file, if_file):
+     emit.Line("#include <core/Enumerate.h>")
+     emit.Line()
+
+-    emit.Line("#include \"definitions.h\"")
+-
+     if not config.NO_INCLUDES:
+         if if_file.endswith(".h"):
+             emit.Line("#include <%s%s>" % (config.CPP_INTERFACE_PATH, if_file))
 diff --git a/ProxyStubGenerator/StubGenerator.py b/ProxyStubGenerator/StubGenerator.py
 index e183af6..04a2498 100755
 --- a/ProxyStubGenerator/StubGenerator.py
