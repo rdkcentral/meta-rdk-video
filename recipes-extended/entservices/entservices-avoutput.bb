@@ -29,7 +29,7 @@ CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/halif/ds-hal/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
-CXXFLAGS += " -DDEVICE_TYPE=AVOutputTV "
+CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', ' -DDEVICE_TYPE=AVOutputTV', '', d)}"
 # enable filtering for undefined interfaces and link local ip address notifications
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
