@@ -21,7 +21,7 @@ DEPENDS:append = " safec-common-wrapper"
 
 PARALLEL_MAKE = ""
 DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal \
-         ermgr iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
+         essosrmgr iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
          deepsleep-manager-headers power-manager-headers wpeframework-clientlibraries"
 DEPENDS:append:client = " virtual/mfrlib"
 DEPENDS:append = " virtual/mfrlib"
