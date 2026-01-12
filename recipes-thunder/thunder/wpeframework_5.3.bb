@@ -95,15 +95,12 @@ FILES:${PN} += " \
     ${libdir}/thunder/proxystubs/ \
 "
 
-# Handle the /tmp directories
-FILES:${PN} += " \
-    /tmp \
-    /tmp/rdkservices \
-"
+FILES:${PN} += "/tmp/rdkservices"
 
 # ----------------------------------------------------------------------------
 
 INSANE_SKIP:${PN} += "dev-so"
+INSANE_SKIP:${PN} += "empty-dirs"
 INSANE_SKIP:${PN}-dbg += "dev-so"
 
 # ----------------------------------------------------------------------------
