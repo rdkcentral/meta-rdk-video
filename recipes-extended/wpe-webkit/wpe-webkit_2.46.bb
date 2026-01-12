@@ -52,6 +52,7 @@ SRC_URI += "file://2.46/comcast-WebRTC-keep-render-time-interpolation.patch"
 SRC_URI += "file://2.46/comcast-DELIA-59087-Disable-pausing-playback-for-buf.patch"
 SRC_URI += "file://2.46/comcast-RDKTV-28214-Quick-_exit.patch"
 #SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
+SRC_URI += "file://2.46/comcast-RDKEMW-9893-new-dtags-enable.patch"
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"
@@ -109,6 +110,9 @@ PACKAGECONFIG:append:toolchain-clang = " uselld"
 EXTRA_OECMAKE += " \
   -DPYTHON_EXECUTABLE=${STAGING_BINDIR_NATIVE}/python3-native/python3 \
 "
+WPE_LIB_RUNPATH ?= "\$ORIGIN/../../lib"
+EXTRA_OECMAKE:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe_webkit_enable_new_dtags_runpath', ' -DCMAKE_INSTALL_RPATH=${WPE_LIB_RUNPATH} -DLD_SUPPORTS_DISABLE_NEW_DTAGS=OFF', '', d)}"
+SYSROOT_DIRS:append = " ${libexecdir}"
 
 FILES:${PN} += " ${libdir}/wpe-webkit-*/injected-bundle/libWPEInjectedBundle.so"
 FILES:${PN}-web-inspector-plugin += " ${libdir}/wpe-webkit-*/libWPEWebInspectorResources.so"
