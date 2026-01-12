@@ -1,0 +1,41 @@
+*************************************************************************************************
+From: Thamim Razith Abbasali <tabbas651@cable.comcast.com>
+Date: Sun, 12 Jan 2026 10:49:57 +0000
+Subject: [PATCH] ConfigGenerator: Modify startmode logic to default to Deactivated
+Reason for Change: This patch modifies the ConfigGenerator to set startmode to 'Deactivated' when autostart is 'true'/'false' or when 
+autostart parameter is not declared, changing the default behavior from 'Activated' to 'Deactivated'
+Upstream-Status: Comcast changes
+Signed-off-by: Thamim Razith Abbasali <tabbas651@cable.comcast.com>
+*****************************************************************************************************
+diff --git a/ConfigGenerator/config_generator.py b/ConfigGenerator/config_generator.py
+index 2ba95bc..41ed9ad 100644
+--- a/ConfigGenerator/config_generator.py
++++ b/ConfigGenerator/config_generator.py
+@@ -215,13 +215,14 @@ if __name__ == "__main__":
+                 log.Error(f"Whitelisted Params not available")
+                 sys.exit(1)
+             isEmpty = True
++            autostart_found = False
+             for param in iconfig.__dict__:
+                 if param in params:
+                     # make sure backward compatible with old config
+                     if param == 'autostart':
+-                        if iconfig.__dict__[param] == 'true':
+-                            result.add('startmode', 'Activated')
+-                        else:
++                        autostart_found = True
++                        if iconfig.__dict__[param] in ['true', 'false']:
++                            # Always set startmode to Deactivated regardless of autostart value
+                             result.add('startmode', 'Deactivated')
+                     else:
+                         result.add(param, iconfig.__dict__[param])
+@@ -243,6 +244,9 @@ if __name__ == "__main__":
+                                       f"    return result\n"
+                                       f"******************************************************************")
+                             sys.exit(1)
++             # If autostart was not found, set default startmode to Deactivated
++            if not autostart_found:
++                result.add('startmode', 'Deactivated')
+             if isEmpty:
+                 log.Print("Empty Config File")
+         else:

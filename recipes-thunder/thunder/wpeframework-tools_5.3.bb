@@ -16,6 +16,7 @@ SRC_URI += "file://0001-Change-MODULE-PATH.patch \
             file://0003-Callsign-not-generated-Json-Generator.patch \
             file://0004-Add-support-for-project-dir.patch \
             file://0005-jsongenerator_fallback_length_validation_fix.patch \
+            file://0006-Autostart-startmode-deactivated.patch \
             "
 
 SRCREV = "R5.3.0"
