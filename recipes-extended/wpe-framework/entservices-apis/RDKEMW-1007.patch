@@ -3,7 +3,7 @@ new file mode 100644
 index 0000000..aabed49
 --- /dev/null
 +++ b/apis/AuthService/IAuthService.h
-@@ -0,0 +1,465 @@
+@@ -0,0 +1,485 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -63,6 +63,9 @@ index 0000000..aabed49
 +        // @param oldPartnerId old partner ID
 +        // @param newPartnerId new partner ID
 +        virtual void OnPartnerIdChanged(const string& oldPartnerId, const string& newPartnerId) = 0;
++        // @text onContentAccessTokenChanged
++        // @brief Indication for the clients that the Content Access Token is now changed so retrieve the token freshly
++        virtual void OnContentAccessTokenChanged() {};
 +    };
 +
 +    virtual uint32_t Register(IAuthService::INotification* notification /* @in */) = 0;
@@ -205,6 +208,23 @@ index 0000000..aabed49
 +    // @param SuccessMsgResult - out
 +    virtual uint32_t SetServiceAccessToken(const int32_t& status, const string& token, const uint32_t expires, SuccessMsgResult& setStat /* @out */) = 0;
 +    /**********************setServiceAccessToken() - end****************************/
++
++    /**********************setContentAccessToken() - start****************************/
++    // @text setContentAccessToken
++    // @brief Stores the content access token in the secured persistent location
++    // @param token - in - string
++    // @param expires - in - uint32_t
++    // @param status - out - bool
++    virtual Core::hresult SetContentAccessToken(const string& token /* @in */, const uint32_t expires /* @in */, bool& status /* @out */) = 0;
++    /**********************setContentAccessToken() - end***************************/
++
++    /**********************getContentAccessToken() - start****************************/
++    // @text getContentAccessToken
++    // @brief Retrieves the content access token from the secure persistent location
++    // @param token - out - string
++    // @param expires - out - uint32_t
++    virtual Core::hresult GetContentAccessToken(string& token /* @out */, uint32_t& expires /* @out */) = 0;
++    /**********************getContentAccessToken() - end****************************/
 +
 +    /**********************getServiceAccountId() - start****************************/
 +    struct EXTERNAL GetServiceAccountIdResult {
