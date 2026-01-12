@@ -4,13 +4,13 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0 & ISC"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=83a31d934b0cc2ab2d44a329445b4366"
 
-PV = "1.1.6"
+PV = "1.1.7"
 PR = "r0"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
-SRCREV = "96b4505d4c81ef912f9ff2ba554d45f2cab62835"
+SRCREV = "1d0ccfb5c75452df9c3f0c035fcf0740876be2f8"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
 #SRC_URI:append = " file://irmgr.diff"
