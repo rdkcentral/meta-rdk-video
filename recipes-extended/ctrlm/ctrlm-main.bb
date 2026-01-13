@@ -19,8 +19,13 @@ SYSLOG-NG_SERVICE_ctrlm = "ctrlm-main.service"
 SYSLOG-NG_DESTINATION_ctrlm = "ctrlm_log.txt"
 SYSLOG-NG_LOGRATE_ctrlm = "medium"
 
-PV ?= "1.0.1"
-PR ?= "r0"
+include ctrlm.inc
+
+PACKAGE_ARCH   = "${MIDDLEWARE_ARCH}"
+PV            := "${CTRLM_PV}"
+PR            := "${CTRLM_PR}"
+SRCREV        := "${CTRLM_SRCREV}"
+SRCREV_FORMAT  = "ctrlm-main"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-main"
 
@@ -39,9 +44,6 @@ VERSION_TEST_TONES = "20220616"
 SRC_URI:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' ${RDK_ARTIFACTS_BASE_URL}/generic/components/yocto/ctrlm_factory/test_tones/test_tones_${VERSION_TEST_TONES}/2.1/test_tones_${VERSION_TEST_TONES}-2.1.tar.bz2;name=test_tones', '', d)}"
 SRC_URI[test_tones.md5sum]    = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', 'd9e7829785f011214ec948f417873825', '', d)}"
 SRC_URI[test_tones.sha256sum] = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', 'ef10d7174a8bc79aff71b30980cd1304a2a33cf10afc38049c13cb11d1a309cc', '', d)}"
-
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-SRCREV_FORMAT = "ctrlm-main"
 
 S = "${WORKDIR}/git"
 
@@ -94,18 +96,20 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' -DTE
 ##################################################
 # BLE support BEGIN
 
-RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' bluez5', '', d)}"
+BLE_ENABLED      ??= "true"
 
-RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' bluetooth-mgr', '', d)}"
-DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' bluetooth-mgr', '', d)}"
-LDFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' -lBTMgr', '', d)}"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluez5', '', d)}"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluetooth-mgr', '', d)}"
 
-EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' -DBLE_ENABLED=ON', '', d)}"
-SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' file://2_bluetooth.conf', '', d)}"
-FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', '${systemd_unitdir}/system/ctrlm-main.service.d/2_bluetooth.conf', '', d)}"
+DEPENDS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluetooth-mgr', '', d)}"
+LDFLAGS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' -lBTMgr', '', d)}"
+
+EXTRA_OECMAKE:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' -DBLE_ENABLED=ON', ' -DBLE_ENABLED=OFF', d)}"
+SRC_URI:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' file://2_bluetooth.conf', '', d)}"
+FILES:${PN} += "${@bb.utils.contains('BLE_ENABLED', 'true', '${systemd_unitdir}/system/ctrlm-main.service.d/2_bluetooth.conf', '', d)}"
 
 #100 byte ADPCM coming from BLE remote needs to be decoded to PCM before sending to endpoint
-CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' -DAUDIO_DECODE', '', d)}"
+CXXFLAGS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' -DAUDIO_DECODE', '', d)}"
 
 # BLE Services Implementation
 BLE_SERVICES       ??= "false"
@@ -131,10 +135,7 @@ EXTRA_OECMAKE:append = "${@ ' -DXRSR_SDT=ON' if (d.getVar('SUPPORT_VOICE_DEST_AL
 EXTRA_OECMAKE:append = "${@ ' -DXRSR_HTTP=ON' if (d.getVar('SUPPORT_VOICE_DEST_HTTP', expand=False) == "true") else ''}"
 
 BUILD_FACTORY_TEST ??= "true"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' -DBUILD_FACTORY_TEST=ON', '', d)}"
-
-AUDIO_CONTROL         ?= "false"
-EXTRA_OECMAKE:append   = "${@bb.utils.contains('AUDIO_CONTROL', 'true', ' -DFACTORY_AUDIO_CONTROL=ON', '', d)}"
+EXTRA_OECMAKE:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' -DBUILD_FACTORY_TEST=ON', ' -DBUILD_FACTORY_TEST=OFF', d)}"
 
 export CTRLM_UTILS_JSON_TO_HEADER  = "${RECIPE_SYSROOT}/usr/include/vsdk_json_to_header.py"
 export CTRLM_UTILS_JSON_COMBINE    = "${RECIPE_SYSROOT}/usr/include/vsdk_json_combine.py"
@@ -162,20 +163,11 @@ addtask ctrlm_config after do_configure before do_compile
 do_ctrlm_config() {
 }
 
-FACTORY_AUDIO_PLAYBACK ?= "false"
-EXTRA_OECMAKE:append   = "${@bb.utils.contains('AUDIO_PLAYBACK', 'true', ' -DFACTORY_AUDIO_PLAYBACK=ON', '', d)}"
-
-CUSTOM_AUDIO_ANALYSIS_LIB ?= ""
-EXTRA_OECMAKE:append       = "${@ ' -DCUSTOM_AUDIO_ANALYSIS_LIB=${CUSTOM_AUDIO_ANALYSIS_LIB}' if (d.getVar('CUSTOM_AUDIO_ANALYSIS_LIB', expand=False) != "") else ''}"
-
-CUSTOM_AUTH_LIB      ?= ""
-EXTRA_OECMAKE:append  = "${@ ' -DCUSTOM_AUTH_LIB=${CUSTOM_AUTH_LIB}' if (d.getVar('CUSTOM_AUTH_LIB', expand=False) != "") else ''}"
-
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
 
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'true', 'false', d)}; then
+    if [ "${BLE_ENABLED}" = "true" ]; then
        install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
        install -m 0644 ${WORKDIR}/2_bluetooth.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
     fi

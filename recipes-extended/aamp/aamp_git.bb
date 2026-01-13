@@ -3,10 +3,11 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV ?= "2.0.2"
-PR ?= "r0"
+PV = "2.11.1"
+PR = "r0"
 
 SRCREV_FORMAT = "aamp"
+SRCREV_aamp = "d8f156574d4abf8be5dcc3bb75b190536b74e6e8"
 
 inherit pkgconfig
 
@@ -42,6 +43,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', '-DCMAKE_GST
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON ', '', d)}"
 
 EXTRA_OECMAKE += "  -DCMAKE_WPEFRAMEWORK_REQUIRED=1 "
+EXTRA_OECMAKE += "  -DCMAKE_DS_EVENT_SUPPORTED=1 "
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', ' -DCMAKE_RDK_SVP=1 ', '', d)}"
 
