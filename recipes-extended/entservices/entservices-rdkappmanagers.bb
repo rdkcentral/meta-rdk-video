@@ -8,7 +8,7 @@ PR ?= "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "d94957823897e96d329cf941247fd93ddaf61f0f"
+SRCREV = "cdc08633bc299c509dc51fc2f2fc59b865e5906b"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -43,17 +43,15 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
- 
 PACKAGECONFIG ?= " telemetrysupport \
     ocicontainer \
     rdknativescript \
-    javascriptcore \
-    runtimemanager \       
+    runtimemanager \
     packagemanager \
     lifecyclemanager \
     storagemanager \
-    appmanager \    
-    preinstallmanager \      
+    appmanager \
+    preinstallmanager \
     downloadmanager \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
