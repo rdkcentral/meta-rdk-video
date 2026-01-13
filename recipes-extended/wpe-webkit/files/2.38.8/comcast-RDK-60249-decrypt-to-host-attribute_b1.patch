@@ -1,0 +1,683 @@
+diff --git a/Source/WebCore/html/HTMLAttributeNames.in b/Source/WebCore/html/HTMLAttributeNames.in
+index d5a36a441d71..26c7d8b25d5c 100644
+--- a/Source/WebCore/html/HTMLAttributeNames.in
++++ b/Source/WebCore/html/HTMLAttributeNames.in
+@@ -115,6 +115,7 @@ data
+ datetime
+ declare
+ decoding
++decrypttohost
+ default
+ defer
+ dir
+diff --git a/Source/WebCore/html/HTMLMediaElement.cpp b/Source/WebCore/html/HTMLMediaElement.cpp
+index c253065abe85..d5084d6704cf 100644
+--- a/Source/WebCore/html/HTMLMediaElement.cpp
++++ b/Source/WebCore/html/HTMLMediaElement.cpp
+@@ -441,6 +441,7 @@ HTMLMediaElement::HTMLMediaElement(const QualifiedName& tagName, Document& docum
+     , m_muted(false)
+     , m_explicitlyMuted(false)
+     , m_initiallyMuted(false)
++    , m_decryptToHost(false)
+     , m_paused(true)
+     , m_seeking(false)
+     , m_seekRequested(false)
+@@ -4066,6 +4067,34 @@ void HTMLMediaElement::setMuted(bool muted)
+     schedulePlaybackControlsManagerUpdate();
+ }
+ 
++bool HTMLMediaElement::decryptToHost() const
++{
++    ALWAYS_LOG(LOGIDENTIFIER, "returning m_decryptToHost = ", m_decryptToHost);
++    return m_decryptToHost;
++}
++
++void HTMLMediaElement::setDecryptToHost(bool decryptToHost)
++{
++    ALWAYS_LOG(LOGIDENTIFIER, "called with value: ", decryptToHost);
++    
++    if (m_decryptToHost == decryptToHost) {
++        ALWAYS_LOG(LOGIDENTIFIER, "value unchanged, skipping");
++        return;
++    }
++    
++    m_decryptToHost = decryptToHost;
++    ALWAYS_LOG(LOGIDENTIFIER, "m_decryptToHost updated to: ", m_decryptToHost);
++
++    // Propagate the setting to the media player if available
++    if (RefPtr player = m_player) {
++        ALWAYS_LOG(LOGIDENTIFIER, "m_player exists, propagating to MediaPlayer");
++        player->setDecryptToHost(decryptToHost);
++        ALWAYS_LOG(LOGIDENTIFIER, "propagation completed");
++    } else {
++        ALWAYS_LOG(LOGIDENTIFIER, "m_player is null, will propagate when player is created");
++    }
++}
++
+ void HTMLMediaElement::setVolumeLocked(bool locked)
+ {
+     if (m_volumeLocked == locked)
+@@ -7136,10 +7165,26 @@ void HTMLMediaElement::createMediaPlayer() WTF_IGNORES_THREAD_SAFETY_ANALYSIS
+ #endif
+ 
+     m_player = MediaPlayer::create(*this);
+-    m_player->setBufferingPolicy(m_bufferingPolicy);
+-    m_player->setPreferredDynamicRangeMode(m_overrideDynamicRangeMode.value_or(preferredDynamicRangeMode(document().view())));
+-    m_player->setShouldDisableHDR(shouldDisableHDR());
+-    m_player->setMuted(effectiveMuted());
++    RefPtr player = m_player;
++    player->setBufferingPolicy(m_bufferingPolicy);
++    
++    // CRITICAL: Propagate decryptToHost attribute to newly created player
++    // This ensures attribute set before player creation takes effect
++    // (fixes timing issue where JS sets attribute before MediaPlayer exists)
++    ALWAYS_LOG(LOGIDENTIFIER, "checking if m_decryptToHost needs propagation: ", m_decryptToHost);
++    if (m_decryptToHost) {
++        ALWAYS_LOG(LOGIDENTIFIER, "m_decryptToHost is TRUE, propagating to new MediaPlayer");
++        ALWAYS_LOG(LOGIDENTIFIER, "calling player->setDecryptToHost(true)");
++        player->setDecryptToHost(m_decryptToHost);
++        ALWAYS_LOG(LOGIDENTIFIER, "propagation completed successfully");
++    } else {
++        ALWAYS_LOG(LOGIDENTIFIER, "m_decryptToHost is FALSE, no propagation needed (default SVP mode)");
++    }
++    
++    ALWAYS_LOG(LOGIDENTIFIER, "continuing with other player initialization");
++    player->setPreferredDynamicRangeMode(m_overrideDynamicRangeMode.value_or(preferredDynamicRangeMode(document().view())));
++    player->setShouldDisableHDR(shouldDisableHDR());
++    player->setMuted(effectiveMuted());
+     m_player->setPageIsVisible(!m_elementIsHidden);
+     m_player->setVisibleInViewport(isVisibleInViewport());
+     schedulePlaybackControlsManagerUpdate();
+diff --git a/Source/WebCore/html/HTMLMediaElement.h b/Source/WebCore/html/HTMLMediaElement.h
+index 80310ce1ea41..e532bafc51d2 100644
+--- a/Source/WebCore/html/HTMLMediaElement.h
++++ b/Source/WebCore/html/HTMLMediaElement.h
+@@ -330,6 +330,8 @@ public:
+     WEBCORE_EXPORT ExceptionOr<void> setVolume(double) override;
+     WEBCORE_EXPORT bool muted() const override;
+     WEBCORE_EXPORT void setMuted(bool) override;
++    WEBCORE_EXPORT bool decryptToHost() const;
++    WEBCORE_EXPORT void setDecryptToHost(bool);
+ 
+     bool volumeLocked() const { return m_volumeLocked; }
+     WEBCORE_EXPORT void setVolumeLocked(bool);
+@@ -1122,6 +1124,7 @@ private:
+     bool m_muted : 1;
+     bool m_explicitlyMuted : 1;
+     bool m_initiallyMuted : 1;
++    bool m_decryptToHost : 1;
+     bool m_paused : 1;
+     bool m_seeking : 1;
+     bool m_seekRequested : 1;
+diff --git a/Source/WebCore/html/HTMLMediaElement.idl b/Source/WebCore/html/HTMLMediaElement.idl
+index efc7b1d46100..b1c8cd0ad5d6 100644
+--- a/Source/WebCore/html/HTMLMediaElement.idl
++++ b/Source/WebCore/html/HTMLMediaElement.idl
+@@ -91,6 +91,7 @@ typedef (
+     attribute double volume;
+     attribute boolean muted;
+     [CEReactions=NotNeeded, Reflect=muted] attribute boolean defaultMuted;
++    attribute boolean decryptToHost;
+ 
+     // WebKit extensions
+     [CEReactions=NotNeede] attribute boolean webkitPreservesPitch;
+diff --git a/Source/WebCore/platform/graphics/MediaPlayer.cpp b/Source/WebCore/platform/graphics/MediaPlayer.cpp
+index ded5bf9bcd9e..434a576b1922 100644
+--- a/Source/WebCore/platform/graphics/MediaPlayer.cpp
++++ b/Source/WebCore/platform/graphics/MediaPlayer.cpp
+@@ -63,6 +63,8 @@
+ #if ENABLE(MEDIA_SOURCE)
+ #include "MediaPlayerPrivateGStreamerMSE.h"
+ #endif
++#include <wtf/HashMap.h>
++#include <wtf/NeverDestroyed.h>
+ #endif // USE(GSTREAMER)
+ 
+ #if USE(MEDIA_FOUNDATION)
+@@ -962,6 +964,101 @@ void MediaPlayer::setMuted(bool muted)
+     m_private->setMuted(muted);
+ }
+ 
++#if USE(GSTREAMER)
++// DECRYPT-TO-HOST rv2.7: Static registry to bypass broken vtable dispatch
++// The Yocto build system has a vtable bug where virtual function calls
++// resolve to base class implementation instead of derived class override.
++// This registry allows direct function calls to MediaPlayerPrivateGStreamer.
++
++static Lock& gstreamerRegistryLock()
++{
++    static NeverDestroyed<Lock> lock;
++    return lock;
++}
++
++static HashMap<MediaPlayer*, MediaPlayerPrivateGStreamer*>& gstreamerRegistry()
++{
++    static NeverDestroyed<HashMap<MediaPlayer*, MediaPlayerPrivateGStreamer*>> registry;
++    return registry;
++}
++
++void MediaPlayer::registerGStreamerPrivate(MediaPlayerPrivateGStreamer* gstPrivate)
++{
++    if (!gstPrivate) {
++        GST_WARNING("[DTH-rv2.10-REGISTRY] ERROR: Attempted to register nullptr GStreamer backend!");
++        return;
++    }
++    
++    Locker locker { gstreamerRegistryLock() };
++    GST_WARNING("[DTH-rv2.10-REGISTRY] Registering MediaPlayer=%p -> GStreamer=%p", this, gstPrivate);
++    gstreamerRegistry().set(this, gstPrivate);
++    GST_WARNING("[DTH-rv2.10-REGISTRY] Registry size after registration: %zu", gstreamerRegistry().size());
++    
++    // CRITICAL: Apply pending decryptToHost value if set before backend was created
++    // This handles race condition where JS sets attribute before GStreamer backend exists
++    if (m_decryptToHost) {
++        GST_WARNING("[DTH-rv2.10-REGISTRY] *** APPLYING PENDING decryptToHost=TRUE (set before backend existed) ***");
++        gstPrivate->setDecryptToHostDirect(m_decryptToHost);
++        GST_WARNING("[DTH-rv2.10-REGISTRY] Pending value applied successfully");
++    } else {
++        GST_WARNING("[DTH-rv2.10-REGISTRY] No pending value to apply (m_decryptToHost=FALSE)");
++    }
++}
++
++void MediaPlayer::unregisterGStreamerPrivate()
++{
++    Locker locker { gstreamerRegistryLock() };
++    GST_WARNING("[DTH-rv2.10-REGISTRY] Unregistering MediaPlayer=%p", this);
++    bool removed = gstreamerRegistry().remove(this);
++    GST_WARNING("[DTH-rv2.10-REGISTRY] Registry size after unregistration: %zu, removed=%s", 
++                gstreamerRegistry().size(), removed ? "true" : "false");
++}
++#endif
++
++bool MediaPlayer::decryptToHost() const
++{
++    GST_WARNING("[DTH-rv2.10-MediaPlayer] decryptToHost() getter called, returning: %s", m_decryptToHost ? "TRUE" : "FALSE");
++    return m_decryptToHost;
++}
++
++void MediaPlayer::setDecryptToHost(bool decryptToHost)
++{
++    GST_WARNING("[DTH-rv2.10-MediaPlayer] ============================================");
++    GST_WARNING("[DTH-rv2.10-MediaPlayer] setDecryptToHost() ENTERED with value: %s", decryptToHost ? "TRUE" : "FALSE");
++    GST_WARNING("[DTH-rv2.10-MediaPlayer] Current m_decryptToHost before update: %s", m_decryptToHost ? "TRUE" : "FALSE");
++    
++    if (m_decryptToHost == decryptToHost) {
++        GST_WARNING("[DTH-rv2.10-MediaPlayer] Value unchanged (already %s), but still propagating", decryptToHost ? "TRUE" : "FALSE");
++    }
++    
++    m_decryptToHost = decryptToHost;
++    GST_WARNING("[DTH-rv2.10-MediaPlayer] m_decryptToHost updated to: %s", m_decryptToHost ? "TRUE" : "FALSE");
++
++#if USE(GSTREAMER)
++    // BYPASS BROKEN VTABLE: Use registry for direct call instead of virtual dispatch
++    {
++        Locker locker { gstreamerRegistryLock() };
++        auto* gstPrivate = gstreamerRegistry().get(this);
++        
++        if (gstPrivate) {
++            GST_WARNING("[DTH-rv2.10-MediaPlayer] Found GStreamer=%p in registry for MediaPlayer=%p", gstPrivate, this);
++            GST_WARNING("[DTH-rv2.10-MediaPlayer] ***** CALLING DIRECT (BYPASSING VTABLE) *****");
++            
++            gstPrivate->setDecryptToHostDirect(decryptToHost);
++            
++            GST_WARNING("[DTH-rv2.10-MediaPlayer] Direct call completed successfully");
++        } else {
++            GST_WARNING("[DTH-rv2.10-MediaPlayer] GStreamer private not found in registry (backend not created yet)");
++            GST_WARNING("[DTH-rv2.10-MediaPlayer] Value stored in m_decryptToHost=%s, will apply when backend registers", decryptToHost ? "TRUE" : "FALSE");
++            GST_WARNING("[DTH-rv2.10-MediaPlayer] MediaPlayer=%p waiting for MediaPlayerPrivateGStreamer construction", this);
++        }
++    }
++#endif
++    
++    GST_WARNING("[DTH-rv2.10-MediaPlayer] setDecryptToHost() COMPLETED");
++    GST_WARNING("[DTH-rv2.10-MediaPlayer] ============================================");
++}
++
+ bool MediaPlayer::hasClosedCaptions() const
+ {
+     return m_private->hasClosedCaptions();
+diff --git a/Source/WebCore/platform/graphics/MediaPlayer.h b/Source/WebCore/platform/graphics/MediaPlayer.h
+index 906153000d43..e18590dd26c6 100644
+--- a/Source/WebCore/platform/graphics/MediaPlayer.h
++++ b/Source/WebCore/platform/graphics/MediaPlayer.h
+@@ -80,6 +80,11 @@ class MediaPlaybackTarget;
+ class MediaPlayer;
+ class MediaPlayerFactory;
+ class MediaPlayerPrivateInterface;
++
++#if USE(GSTREAMER)
++class MediaPlayerPrivateGStreamer;
++#endif
++
+ class MediaPlayerRequestInstallMissingPluginsCallback;
+ class MediaSourcePrivateClient;
+ class MediaStreamPrivate;
+@@ -464,6 +469,9 @@ public:
+     bool muted() const;
+     void setMuted(bool);
+ 
++    bool decryptToHost() const;
++    void setDecryptToHost(bool);
++
+     bool hasClosedCaptions() const;
+     void setClosedCaptionsVisible(bool closedCaptionsVisible);
+ 
+@@ -625,6 +633,8 @@ public:
+ #if USE(GSTREAMER)
+     void simulateAudioInterruption();
+     bool isGStreamerHolePunchingEnabled();
++    void registerGStreamerPrivate(MediaPlayerPrivateGStreamer*);
++    void unregisterGStreamerPrivate();
+ #endif
+ 
+     void beginSimulatedHDCPError();
+@@ -751,6 +761,7 @@ private:
+     bool m_visibleForCanvas { false };
+     bool m_visibleInViewport { false };
+     bool m_muted { false };
++    bool m_decryptToHost { false };
+     bool m_preservesPitch { true };
+     bool m_privateBrowsing { false };
+     bool m_shouldPrepareToRender { false };
+diff --git a/Source/WebCore/platform/graphics/MediaPlayerPrivate.h b/Source/WebCore/platform/graphics/MediaPlayerPrivate.h
+index eeac54b752c0..5e81503033f3 100644
+--- a/Source/WebCore/platform/graphics/MediaPlayerPrivate.h
++++ b/Source/WebCore/platform/graphics/MediaPlayerPrivate.h
+@@ -150,6 +150,8 @@ public:
+ 
+     virtual void setMuted(bool) { }
+ 
++    virtual void setDecryptToHost(bool) { }
++
+     virtual bool hasClosedCaptions() const { return false; }    
+     virtual void setClosedCaptionsVisible(bool) { }
+ 
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index 8c3a4994e5fe..b68eff2af041 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -224,10 +224,32 @@ MediaPlayerPrivateGStreamer::MediaPlayerPrivateGStreamer(MediaPlayer* player)
+ #if ENABLE(ENCRYPTED_MEDIA)
+     m_tracker = makeUnique<MediaPlayerGStreamerEncryptedPlayTracker>();
+ #endif
++
++    // DECRYPT-TO-HOST rv2.8: Register with MediaPlayer for direct calls
++    // This bypasses the broken vtable dispatch mechanism in Yocto build
++    GST_WARNING("[DTH-rv2.10-CTOR] MediaPlayerPrivateGStreamer=%p constructing, atomic flag initialized to: %s",
++                this, m_shouldEnableDecryptToHost.load() ? "TRUE" : "FALSE");
++    
++    if (m_player) {
++        GST_WARNING("[DTH-rv2.10-CTOR] MediaPlayerPrivateGStreamer=%p constructed for MediaPlayer=%p", 
++                    this, m_player);
++        GST_WARNING("[DTH-rv2.10-CTOR] Registering in global registry to bypass vtable bug");
++        m_player->registerGStreamerPrivate(this);
++        GST_WARNING("[DTH-rv2.10-CTOR] Registration completed, atomic flag now: %s",
++                    m_shouldEnableDecryptToHost.load() ? "TRUE" : "FALSE");
++    } else {
++        GST_WARNING("[DTH-rv2.10-CTOR] WARNING: m_player is null during construction!");
++    }
+ }
+ 
+ MediaPlayerPrivateGStreamer::~MediaPlayerPrivateGStreamer()
+ {
++    // DECRYPT-TO-HOST rv2.7: Unregister from MediaPlayer
++    if (m_player) {
++        GST_WARNING("[DTH-rv2.7-DTOR] Unregistering MediaPlayerPrivateGStreamer=%p", this);
++        m_player->unregisterGStreamerPrivate();
++    }
++
+     GST_DEBUG_OBJECT(pipeline(), "Disposing player");
+     m_isPlayerShuttingDown.store(true);
+ 
+@@ -1864,6 +1886,31 @@ void MediaPlayerPrivateGStreamer::setMuted(bool shouldMute)
+     configureMediaStreamAudioTracks();
+ }
+ 
++void MediaPlayerPrivateGStreamer::setDecryptToHost(bool decryptToHost)
++{
++    // This virtual function should NEVER be called due to vtable bug
++    // If you see this message, something is calling via vtable instead of registry
++    GST_WARNING("[DTH-rv2.10-VTABLE] !!!!! UNEXPECTED VTABLE CALL !!!!!");
++    GST_WARNING("[DTH-rv2.10-VTABLE] setDecryptToHost(%s) called via VIRTUAL dispatch", decryptToHost ? "TRUE" : "FALSE");
++    GST_WARNING("[DTH-rv2.10-VTABLE] This should not happen - registry bypass should be used instead");
++    GST_WARNING("[DTH-rv2.10-VTABLE] Forwarding to setDecryptToHostDirect() as fallback");
++    
++    setDecryptToHostDirect(decryptToHost);
++}
++
++void MediaPlayerPrivateGStreamer::setDecryptToHostDirect(bool decryptToHost)
++{
++    GST_WARNING("[DTH-rv2.10-DIRECT] ============================================");
++    GST_WARNING("[DTH-rv2.10-DIRECT] setDecryptToHostDirect() CALLED (registry bypass)");
++    GST_WARNING("[DTH-rv2.10-DIRECT] Input parameter: %s", decryptToHost ? "TRUE" : "FALSE");
++    GST_WARNING("[DTH-rv2.10-DIRECT] Current atomic value: %s", m_shouldEnableDecryptToHost.load() ? "TRUE" : "FALSE");
++    
++    m_shouldEnableDecryptToHost.store(decryptToHost);
++    
++    GST_WARNING("[DTH-rv2.10-DIRECT] Atomic updated to: %s", m_shouldEnableDecryptToHost.load() ? "TRUE" : "FALSE");
++    GST_WARNING("[DTH-rv2.10-DIRECT] ============================================");
++}
++
+ void MediaPlayerPrivateGStreamer::notifyPlayerOfMute()
+ {
+     if (!m_player || !m_volumeElement)
+@@ -2492,6 +2539,296 @@ void MediaPlayerPrivateGStreamer::configureElement(GstElement* element)
+ 
+     if (!g_strcmp0(G_OBJECT_TYPE_NAME(G_OBJECT(element)), "GstQueue2"))
+         g_object_set(G_OBJECT(element), "high-watermark", 0.10, nullptr);
++
++    // ============================================================================
++    // DECRYPT-TO-HOST rv2.10: v39-proven mechanism with registry bypass + h264parse fix
++    // ============================================================================
++    // KEY INSIGHT from v39: Thunder CDM recognizes "decrypt-to-host" field (not "host-memory-caps")
++    // STRATEGY: 
++    //   1. Inject on decryptor:sink (for OCDM)
++    //   2. Strip from AUDIO only (video goes through svppayload which handles it)
++    //   3. Force h264parse to convert AVC→byte-stream (fixes not-negotiated)
++    // ============================================================================
++    if (g_str_has_prefix(elementName.get(), "webkitmediathunderdecrypt")) {
++        GST_WARNING("[DTH-rv2.10] ============================================");
++        GST_WARNING("[DTH-rv2.10] DETECTED: webkitmediathunderdecrypt element!");
++        GST_WARNING("[DTH-rv2.10] Element: %s, Atomic flag: %s", 
++                   elementName.get(),
++                   m_shouldEnableDecryptToHost.load() ? "TRUE" : "FALSE");
++        
++        // ========================================================================
++        // STAGE 1: INJECTION at decryptor:sink (v39 proven approach)
++        // ========================================================================
++        GRefPtr<GstPad> sinkPad = adoptGRef(gst_element_get_static_pad(element, "sink"));
++        if (sinkPad) {
++            GST_WARNING("[DTH-rv2.10] Installing INJECTION probe on decryptor:sink");
++            
++            gst_pad_add_probe(sinkPad.get(), GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM,
++                [](GstPad* pad, GstPadProbeInfo* info, gpointer userData) -> GstPadProbeReturn {
++                    auto* self = static_cast<MediaPlayerPrivateGStreamer*>(userData);
++                    bool shouldEnable = self->m_shouldEnableDecryptToHost.load();
++                    
++                    if (!shouldEnable) return GST_PAD_PROBE_OK;
++                    
++                    GstEvent* event = GST_PAD_PROBE_INFO_EVENT(info);
++                    if (GST_EVENT_TYPE(event) != GST_EVENT_CAPS) return GST_PAD_PROBE_OK;
++                    
++                    GstCaps* caps = nullptr;
++                    gst_event_parse_caps(event, &caps);
++                    if (!caps) return GST_PAD_PROBE_OK;
++                    
++                    // Only inject for encrypted content (application/x-cenc)
++                    bool isCencCaps = false;
++                    for (guint i = 0; i < gst_caps_get_size(caps); i++) {
++                        GstStructure* structure = gst_caps_get_structure(caps, i);
++                        const gchar* name = gst_structure_get_name(structure);
++                        if (g_str_has_prefix(name, "application/x-cenc")) {
++                            isCencCaps = true;
++                            break;
++                        }
++                    }
++                    if (!isCencCaps) return GST_PAD_PROBE_OK;
++                    
++                    // Check if already has decrypt-to-host (idempotency)
++                    bool hasField = false;
++                    for (guint i = 0; i < gst_caps_get_size(caps); i++) {
++                        GstStructure* structure = gst_caps_get_structure(caps, i);
++                        if (gst_structure_has_field(structure, "decrypt-to-host")) {
++                            hasField = true;
++                            break;
++                        }
++                    }
++                    if (hasField) {
++                        GST_DEBUG_OBJECT(pad, "[DTH-rv2.10-INJECT] Field already present");
++                        return GST_PAD_PROBE_OK;
++                    }
++                    
++                    // INJECT decrypt-to-host=TRUE (v39 proven field name)
++                    GST_WARNING("[DTH-rv2.10-INJECT] ******** INJECTING decrypt-to-host=TRUE ********");
++                    
++                    GstCaps* modifiedCaps = gst_caps_copy(caps);
++                    for (guint i = 0; i < gst_caps_get_size(modifiedCaps); i++) {
++                        GstStructure* structure = gst_caps_get_structure(modifiedCaps, i);
++                        gst_structure_set(structure, "decrypt-to-host", G_TYPE_BOOLEAN, TRUE, nullptr);
++                    }
++                    
++                    GST_WARNING("[DTH-rv2.10-INJECT] Original: %" GST_PTR_FORMAT, caps);
++                    GST_WARNING("[DTH-rv2.10-INJECT] Modified: %" GST_PTR_FORMAT, modifiedCaps);
++                    GST_WARNING("[DTH-rv2.10-INJECT] >>> OCDM will use host memory <<<");
++                    
++                    GstEvent* newEvent = gst_event_new_caps(modifiedCaps);
++                    gst_caps_unref(modifiedCaps);
++                    gst_event_unref(event);
++                    GST_PAD_PROBE_INFO_DATA(info) = newEvent;
++                    
++                    return GST_PAD_PROBE_OK;
++                },
++                this, nullptr);
++            
++            GST_WARNING("[DTH-rv2.10] INJECTION probe installed on SINK pad");
++        }
++        
++        // ========================================================================
++        // STAGE 2: AUDIO STRIPPING at decryptor:src (VIDEO goes through svppayload)
++        // ========================================================================
++        GRefPtr<GstPad> srcPad = adoptGRef(gst_element_get_static_pad(element, "src"));
++        if (srcPad) {
++            GST_WARNING("[DTH-rv2.10] Installing AUDIO STRIPPING probes on decryptor:src");
++            
++            // CAPS EVENT probe: Strip decrypt-to-host from AUDIO only
++            gst_pad_add_probe(srcPad.get(), GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM,
++                [](GstPad* pad, GstPadProbeInfo* info, gpointer userData) -> GstPadProbeReturn {
++                    UNUSED_PARAM(pad);
++                    UNUSED_PARAM(userData);
++                    GstEvent* event = GST_PAD_PROBE_INFO_EVENT(info);
++                    if (GST_EVENT_TYPE(event) != GST_EVENT_CAPS) return GST_PAD_PROBE_OK;
++                    
++                    GstCaps* caps = nullptr;
++                    gst_event_parse_caps(event, &caps);
++                    if (!caps || gst_caps_is_empty(caps)) return GST_PAD_PROBE_OK;
++                    
++                    // Check if this is AUDIO
++                    bool isAudio = false;
++                    const gchar* mediaType = nullptr;
++                    for (guint i = 0; i < gst_caps_get_size(caps); i++) {
++                        GstStructure* structure = gst_caps_get_structure(caps, i);
++                        mediaType = gst_structure_get_name(structure);
++                        if (g_str_has_prefix(mediaType, "audio/")) {
++                            isAudio = true;
++                            break;
++                        }
++                    }
++                    if (!isAudio) return GST_PAD_PROBE_OK; // Video goes through svppayload
++                    
++                    // Check if stripping needed
++                    bool needsStripping = false;
++                    for (guint i = 0; i < gst_caps_get_size(caps); i++) {
++                        GstStructure* structure = gst_caps_get_structure(caps, i);
++                        if (gst_structure_has_field(structure, "decrypt-to-host")) {
++                            needsStripping = true;
++                            break;
++                        }
++                    }
++                    if (!needsStripping) return GST_PAD_PROBE_OK;
++                    
++                    // Strip decrypt-to-host from AUDIO
++                    GST_WARNING("[DTH-rv2.10-AUDIO-STRIP] Stripping decrypt-to-host from AUDIO (%s)", 
++                        mediaType ? mediaType : "unknown");
++                    
++                    GstCaps* strippedCaps = gst_caps_copy(caps);
++                    for (guint i = 0; i < gst_caps_get_size(strippedCaps); i++) {
++                        GstStructure* structure = gst_caps_get_structure(strippedCaps, i);
++                        gst_structure_remove_field(structure, "decrypt-to-host");
++                        gst_caps_set_features(strippedCaps, i, nullptr); // Force system memory
++                    }
++                    
++                    GstEvent* newEvent = gst_event_new_caps(strippedCaps);
++                    gst_caps_unref(strippedCaps);
++                    gst_event_unref(event);
++                    GST_PAD_PROBE_INFO_DATA(info) = newEvent;
++                    
++                    return GST_PAD_PROBE_OK;
++                },
++                nullptr, nullptr);
++            
++            // CAPS QUERY probe: Strip from AUDIO queries (prevents not-negotiated)
++            gst_pad_add_probe(srcPad.get(), GST_PAD_PROBE_TYPE_QUERY_DOWNSTREAM,
++                [](GstPad* pad, GstPadProbeInfo* info, gpointer userData) -> GstPadProbeReturn {
++                    GstQuery* query = GST_PAD_PROBE_INFO_QUERY(info);
++                    if (GST_QUERY_TYPE(query) != GST_QUERY_CAPS) return GST_PAD_PROBE_OK;
++                    
++                    // Let query propagate first
++                    if (!gst_pad_query_default(pad, GST_OBJECT_PARENT(pad), query)) {
++                        return GST_PAD_PROBE_OK;
++                    }
++                    
++                    GstCaps* caps = nullptr;
++                    gst_query_parse_caps_result(query, &caps);
++                    if (!caps || gst_caps_is_empty(caps)) return GST_PAD_PROBE_OK;
++                    
++                    // Check if AUDIO
++                    bool isAudio = false;
++                    for (guint i = 0; i < gst_caps_get_size(caps); i++) {
++                        GstStructure* structure = gst_caps_get_structure(caps, i);
++                        const gchar* mediaType = gst_structure_get_name(structure);
++                        if (g_str_has_prefix(mediaType, "audio/")) {
++                            isAudio = true;
++                            break;
++                        }
++                    }
++                    if (!isAudio) return GST_PAD_PROBE_OK;
++                    
++                    // Check if needs stripping
++                    bool needsStripping = false;
++                    for (guint i = 0; i < gst_caps_get_size(caps); i++) {
++                        GstStructure* structure = gst_caps_get_structure(caps, i);
++                        if (gst_structure_has_field(structure, "decrypt-to-host")) {
++                            needsStripping = true;
++                            break;
++                        }
++                    }
++                    if (!needsStripping) return GST_PAD_PROBE_OK;
++                    
++                    // Strip from query result
++                    GST_DEBUG_OBJECT(pad, "[DTH-rv2.10-AUDIO-QUERY] Stripping decrypt-to-host from AUDIO query");
++                    GstCaps* strippedCaps = gst_caps_copy(caps);
++                    for (guint i = 0; i < gst_caps_get_size(strippedCaps); i++) {
++                        GstStructure* structure = gst_caps_get_structure(strippedCaps, i);
++                        gst_structure_remove_field(structure, "decrypt-to-host");
++                        gst_caps_set_features(strippedCaps, i, nullptr);
++                    }
++                    
++                    gst_query_set_caps_result(query, strippedCaps);
++                    gst_caps_unref(strippedCaps);
++                    
++                    return GST_PAD_PROBE_HANDLED; // Query answered
++                },
++                nullptr, nullptr);
++            
++            GST_WARNING("[DTH-rv2.10] AUDIO STRIPPING probes installed (EVENT + QUERY)");
++        }
++        
++        GST_WARNING("[DTH-rv2.10] Decryptor configuration complete");
++        GST_WARNING("[DTH-rv2.10] ============================================");
++    }
++    
++    // ============================================================================
++    // STAGE 3: FORCE BYTE-STREAM at h264parse (FIX NOT-NEGOTIATED)
++    // ============================================================================
++    // PROBLEM: h264parse receives AVC format but stays in passthrough mode
++    // SOLUTION: Intercept caps query and force byte-stream format requirement
++    // This makes h264parse convert AVC → byte-stream for decoder
++    if (g_str_has_prefix(elementName.get(), "h264parse") ||
++        g_str_has_prefix(elementName.get(), "h265parse")) {
++        
++        GST_WARNING("[DTH-rv2.10-PARSER] ============================================");
++        GST_WARNING("[DTH-rv2.10-PARSER] Detected video parser: %s", elementName.get());
++        
++        GRefPtr<GstPad> srcPad = adoptGRef(gst_element_get_static_pad(element, "src"));
++        if (srcPad) {
++            GST_WARNING("[DTH-rv2.10-PARSER] Installing FORCE BYTE-STREAM probe on %s:src", elementName.get());
++            
++            gst_pad_add_probe(srcPad.get(), 
++                static_cast<GstPadProbeType>(GST_PAD_PROBE_TYPE_QUERY_DOWNSTREAM),
++                [](GstPad* pad, GstPadProbeInfo* info, gpointer userData) -> GstPadProbeReturn {
++                    
++                    GstQuery* query = GST_PAD_PROBE_INFO_QUERY(info);
++                    if (GST_QUERY_TYPE(query) != GST_QUERY_CAPS) return GST_PAD_PROBE_OK;
++                    
++                    // Let the query propagate to get downstream caps
++                    if (!gst_pad_query_default(pad, GST_OBJECT_PARENT(pad), query)) {
++                        return GST_PAD_PROBE_OK;
++                    }
++                    
++                    GstCaps* caps = nullptr;
++                    gst_query_parse_caps_result(query, &caps);
++                    if (!caps || gst_caps_is_empty(caps)) return GST_PAD_PROBE_OK;
++                    
++                    // Check if it's video caps
++                    bool isVideoCaps = false;
++                    for (guint i = 0; i < gst_caps_get_size(caps); i++) {
++                        GstStructure* structure = gst_caps_get_structure(caps, i);
++                        const gchar* mediaType = gst_structure_get_name(structure);
++                        if (g_str_has_prefix(mediaType, "video/")) {
++                            isVideoCaps = true;
++                            break;
++                        }
++                    }
++                    if (!isVideoCaps) return GST_PAD_PROBE_OK;
++                    
++                    // FORCE byte-stream: Modify caps to ONLY accept byte-stream format
++                    // This tricks h264parse into thinking downstream REQUIRES byte-stream
++                    GST_WARNING("[DTH-rv2.10-PARSER] Intercepted CAPS query - Forcing stream-format=byte-stream");
++                    
++                    GstCaps* forcedCaps = gst_caps_make_writable(gst_caps_copy(caps));
++                    
++                    // Set stream-format and alignment on all structures
++                    for (guint i = 0; i < gst_caps_get_size(forcedCaps); i++) {
++                        GstStructure* structure = gst_caps_get_structure(forcedCaps, i);
++                        gst_structure_set(structure, 
++                            "stream-format", G_TYPE_STRING, "byte-stream",
++                            "alignment", G_TYPE_STRING, "au",
++                            nullptr);
++                        
++                        // Remove codec_data (not needed for byte-stream)
++                        gst_structure_remove_field(structure, "codec_data");
++                    }
++                    
++                    // Update the query result with forced caps
++                    gst_query_set_caps_result(query, forcedCaps);
++                    gst_caps_unref(forcedCaps);
++                    
++                    GST_WARNING("[DTH-rv2.10-PARSER] Parser will now convert to byte-stream format");
++                    
++                    return GST_PAD_PROBE_HANDLED; // Query already answered
++                    
++                }, nullptr, nullptr);
++            
++            GST_WARNING("[DTH-rv2.10-PARSER] Force byte-stream probe installed");
++        }
++        
++        GST_WARNING("[DTH-rv2.10-PARSER] ============================================");
++    }
+ }
+ 
+ void MediaPlayerPrivateGStreamer::configureElementPlatformQuirks(GstElement* element)
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
+index 51163eeeda3b..a92024dbe865 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
+@@ -161,6 +161,10 @@ public:
+     void setVolume(float) final;
+     float volume() const final;
+     void setMuted(bool) final;
++    void setDecryptToHost(bool) final;
++    
++    // Direct call method to bypass broken vtable (called via registry)
++    void setDecryptToHostDirect(bool);
+     MediaPlayer::NetworkState networkState() const final;
+     MediaPlayer::ReadyState readyState() const final;
+     void setPageIsVisible(bool visible) final;
+@@ -593,6 +597,7 @@ private:
+     bool m_reportedPlaybackEOS { false };
+ 
+     Atomic<bool> m_isPlayerShuttingDown;
++    Atomic<bool> m_shouldEnableDecryptToHost { false };
+     GRefPtr<GstElement> m_textSink;
+     GUniquePtr<GstStructure> m_mediaLocations;
+     int m_mediaLocationCurrentIndex { 0 };
