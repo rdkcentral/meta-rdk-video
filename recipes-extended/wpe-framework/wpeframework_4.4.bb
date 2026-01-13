@@ -14,6 +14,7 @@ DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '
 
 PR = "r39"
 PV = "4.4.3"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
 
@@ -66,6 +67,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/RDKEMW-8889-Avoid-LoadMeta-On-Boot.patch \
             file://r4.4/0001-To-handle-truncated-UTF-code-on-parsing-empty-null-t.patch \
             file://r4.4/0002-Print-Log-Upon-Time-ComRPC-Timeout.patch \
+            file://r4.4/RDKEMW-10951_WPEFramework_Config_Override.patch \
            "
 
 S = "${WORKDIR}/git"
