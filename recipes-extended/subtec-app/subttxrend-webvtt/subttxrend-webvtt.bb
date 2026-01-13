@@ -13,7 +13,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRCREV = "72ecd131bbd1ff569a62cb6df3928290e5a570d2"
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
-SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-6213"
 S = "${WORKDIR}/git/subttxrend-webvtt"
 
 #
