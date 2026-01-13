@@ -27,6 +27,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-hdcpprofile.service \
     wpeframework-maintenancemanager.service \
     wpeframework-monitor.service \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'wpeframework-motiondetection.service', '', d)} \
     wpeframework-network.service \
     wpeframework-ocdm.service \
     wpeframework-persistentstore.service \
