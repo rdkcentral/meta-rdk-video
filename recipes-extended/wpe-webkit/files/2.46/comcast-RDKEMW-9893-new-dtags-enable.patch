@@ -1,0 +1,13 @@
+diff --git a/Source/cmake/OptionsCommon.cmake b/Source/cmake/OptionsCommon.cmake
+index b0936f0bd313..b272985ec8bf 100644
+--- a/Source/cmake/OptionsCommon.cmake
++++ b/Source/cmake/OptionsCommon.cmake
+@@ -99,7 +99,7 @@ if (LD_USAGE MATCHES "--gdb-index")
+     set(LD_SUPPORTS_GDB_INDEX TRUE)
+ endif ()
+ if (LD_USAGE MATCHES "--disable-new-dtags")
+-    set(LD_SUPPORTS_DISABLE_NEW_DTAGS TRUE)
++    option(LD_SUPPORTS_DISABLE_NEW_DTAGS "" ON)
+ endif ()
+ if (LD_USAGE MATCHES "--gc-sections")
+     set(LD_SUPPORTS_GC_SECTIONS TRUE)
