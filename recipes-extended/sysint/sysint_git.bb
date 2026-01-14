@@ -8,8 +8,8 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "4.2.1"
 PR = "r0"
 
-SRCREV = "5b56136c1a11d20d7051184b9b5589ee02734427"
-SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
+SRCREV = "6659899a242856737749b6e496819ee73454fc04"
+SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-9760;module=.;name=sysint"
 S = "${WORKDIR}/git"
 
 inherit systemd syslog-ng-config-gen logrotate_config
