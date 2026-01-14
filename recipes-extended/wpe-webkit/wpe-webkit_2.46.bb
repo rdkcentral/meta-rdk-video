@@ -109,12 +109,6 @@ PACKAGECONFIG:append:toolchain-clang = " uselld"
 EXTRA_OECMAKE += " \
   -DPYTHON_EXECUTABLE=${STAGING_BINDIR_NATIVE}/python3-native/python3 \
 "
-INSANE_SKIP:${PN} += "rpaths"
-WPE_LIB_RUNPATH ?= "\$ORIGIN/../../lib"
-EXTRA_OECMAKE:append = " -DCMAKE_INSTALL_RPATH=${WPE_LIB_RUNPATH}"
-SYSROOT_DIRS:append = " ${libexecdir}"
-EXTRA_OECMAKE:append = " -DCMAKE_SHARED_LINKER_FLAGS='${LDFLAGS}-Wl,--enable-new-dtags'"
-EXTRA_OECMAKE:append = " -DCMAKE_EXE_LINKER_FLAGS='${LDFLAGS}-Wl,--enable-new-dtags'"
 
 FILES:${PN} += " ${libdir}/wpe-webkit-*/injected-bundle/libWPEInjectedBundle.so"
 FILES:${PN}-web-inspector-plugin += " ${libdir}/wpe-webkit-*/libWPEWebInspectorResources.so"
