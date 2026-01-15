@@ -10,7 +10,7 @@ DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
 
 
-PR = "r1"
+PR = "r2"
 PV = "5.3.0"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R5_3;name=thunder"
@@ -18,7 +18,8 @@ SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R5_3;na
 SRCREV_thunder = "R5.3.0"
 
 SRC_URI += "file://thunder.service.in \
-            file://Backward-compatiblity-cmake-function-thunder-r4.patch \
+            file://0001-Backward-compatiblity-cmake-function-thunder-r4.patch \
+            file://0002-PersistentPath-thunder-r5.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -94,13 +95,9 @@ FILES:${PN}-dbg += "${libdir}/thunder/proxystubs/.debug/"
 FILES:${PN} += " \
     ${libdir}/thunder/proxystubs/ \
 "
-
-FILES:${PN} += "/tmp/rdkservices"
-
 # ----------------------------------------------------------------------------
 
 INSANE_SKIP:${PN} += "dev-so"
-INSANE_SKIP:${PN} += "empty-dirs"
 INSANE_SKIP:${PN}-dbg += "dev-so"
 
 # ----------------------------------------------------------------------------
