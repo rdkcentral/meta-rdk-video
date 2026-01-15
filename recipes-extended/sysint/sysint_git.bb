@@ -8,7 +8,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "4.2.1"
 PR = "r0"
 
-SRCREV = "5b56136c1a11d20d7051184b9b5589ee02734427"
+SRCREV = "c53e1cbf188f9b49af8c519a395df57085d2dd10"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
@@ -245,17 +245,17 @@ do_install() {
 	# For NetworkManager
 	install -d ${D}${sysconfdir}/NetworkManager
 	install -d ${D}${sysconfdir}/NetworkManager/conf.d
-    install -d ${D}${sysconfdir}/NetworkManager/dnsmasq.d
+        install -d ${D}${sysconfdir}/NetworkManager/dnsmasq.d
 	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d
 	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
-	install -m 0755 ${S}/lib/rdk/NM_Dispatcher.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d
+        install -m 0755 ${S}/lib/rdk/NM_Dispatcher.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d
 	install -m 0755 ${S}/lib/rdk/NM_preDown.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
-    install -m 0755 ${S}/etc/dnsmasq-dobby.conf ${D}${sysconfdir}/NetworkManager/dnsmasq.d/dnsmasq-dobby.conf
-        rm ${D}${base_libdir}/rdk/NM_Dispatcher.sh
-        rm ${D}${base_libdir}/rdk/NM_preDown.sh
-    install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
-    install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
+        install -m 0755 ${S}/etc/dnsmasq-dobby.conf ${D}${sysconfdir}/NetworkManager/dnsmasq.d/dnsmasq-dobby.conf
+            rm ${D}${base_libdir}/rdk/NM_Dispatcher.sh
+            rm ${D}${base_libdir}/rdk/NM_preDown.sh
+        install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
+        install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
 }
 
 do_install:append:rdkstb() {
