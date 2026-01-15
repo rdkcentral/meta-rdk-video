@@ -2,7 +2,7 @@
 From: Karunakaran Amirthalingam
 Date: Fri, 5 Dec 2025 10:49:57 +0000
 Subject: [PATCH] Backward-compatiblity-cmake-function-thunder-r4.patch
-Reason for Change: This patch helps to resolve the genearated cmakehelper function path and namespace issue 
+Reason for Change: This patch helps to resolve the generated cmakehelper function path and namespace issue 
 Upstream-Status: Comcast changes
 Signed-off-by: Karunakaran Amirthalingam <karunakaran_amirthalingam@cable.comcast.com>
 *****************************************************************************************************
