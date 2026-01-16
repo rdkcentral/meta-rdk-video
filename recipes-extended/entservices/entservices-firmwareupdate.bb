@@ -2,7 +2,7 @@ SUMMARY = "ENTServices firmware update plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
-PV = "1.8.1"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SU
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.8.1
+# Release version - 1.0.1
 SRCREV = "7f1bc6caf4a6ad4ffa45312cb479659b49522a71"
 
 
@@ -51,7 +51,6 @@ EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
-    -DDISABLE_SECAPI \
 "
 
 # Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
