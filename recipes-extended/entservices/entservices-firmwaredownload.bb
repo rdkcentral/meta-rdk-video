@@ -38,7 +38,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 PACKAGECONFIG ?= " firmwaredownload \
     "
 
-PACKAGECONFIG[firmwaredownload]          = "-DPLUGIN_FIRMWAREDOWNLOAD=ON,-DPLUGIN_FIRMWAREDOWNLOAD=OFF, wpeframework-clientlibraries"
+PACKAGECONFIG[firmwaredownload]          = "-DPLUGIN_FIRMWAREDOWNLOAD=ON,-DPLUGIN_FIRMWAREDOWNLOAD=OFF,wpeframework-clientlibraries"
 
 # ----------------------------------------------------------------------------
 
