@@ -4,8 +4,8 @@
 
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
-NTP_FILE="ntp_capture_$TIMESTAMP.pcap"
-DNS_FILE="dns_capture_$TIMESTAMP.pcap"
+NTP_FILE="/nvram/ntp_capture_$TIMESTAMP.pcap"
+DNS_FILE="/nvram/dns_capture_$TIMESTAMP.pcap"
 
 echo "Starting packet capture..."
 echo "NTP  -> $NTP_FILE"
