@@ -1,17 +1,17 @@
-From ad386154ca9cc3e9da2075b9859c811899db9efe Mon Sep 17 00:00:00 2001
+From 72660e1a62d4f5170ad8db9890ef524e6aa9790f Mon Sep 17 00:00:00 2001
 From: Tanuj <Tanuj_Sharma@comcast.com>
-Date: Wed, 14 Jan 2026 13:08:04 +0530
-Subject: [PATCH] Initializing NetworkCommissioning WiFi driver
+Date: Wed, 14 Jan 2026 12:56:28 +0530
+Subject: [PATCH] added support for network commissioning
 
 ---
- core/src/subsystems/matter/Matter.cpp | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ core/src/subsystems/matter/Matter.cpp | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
 
 diff --git a/core/src/subsystems/matter/Matter.cpp b/core/src/subsystems/matter/Matter.cpp
-index def83bc..90eb162 100644
+index ce9455d..8657e36 100644
 --- a/core/src/subsystems/matter/Matter.cpp
 +++ b/core/src/subsystems/matter/Matter.cpp
-@@ -78,6 +78,7 @@ extern "C" {
+@@ -80,6 +80,7 @@ extern "C" {
  #include <setup_payload/QRCodeSetupPayloadGenerator.h>
  #include <setup_payload/SetupPayload.h>
  #include <transport/SessionMessageDelegate.h>
@@ -19,19 +19,21 @@ index def83bc..90eb162 100644
  
  #include <lib/support/TestGroupData.h>
  
-@@ -146,6 +147,8 @@ namespace
-     std::unique_ptr<ThreadBorderRouterManagementDelegate> otbrDelegate;
+@@ -159,6 +160,10 @@ namespace
      std::optional<ThreadBorderRouterManagement::ServerInstance> threadBorderRouterManagementServer;
      EndpointId threadBorderRouterManagementServerEndpointId = UINT16_MAX;
+ #endif // ZCL_USING_THREAD_BORDER_ROUTER_MANAGEMENT_CLUSTER_SERVER
 +    chip::DeviceLayer::NetworkCommissioning::LinuxWiFiDriver * sLinuxWiFiDriver = nullptr;
 +    chip::app::Clusters::NetworkCommissioning::Instance * sNetworkCommissioningInstance = nullptr;
++
++
  } // namespace
  
  Matter::Matter() : groupDataProvider(kMaxGroupsPerFabric, kMaxGroupKeysPerFabric)
-@@ -1446,3 +1449,17 @@ void emberAfThreadBorderRouterManagementClusterInitCallback(EndpointId endpoint)
-         threadBorderRouterManagementServerEndpointId = endpoint;
+@@ -1468,3 +1473,17 @@ void emberAfThreadBorderRouterManagementClusterInitCallback(EndpointId endpoint)
      }
  }
+ #endif // ZCL_USING_THREAD_DIAGNOSTICS_CLUSTER_SERVER
 +
 +void emberAfNetworkCommissioningClusterInitCallback(EndpointId endpoint)
 +{

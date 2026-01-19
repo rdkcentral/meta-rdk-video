@@ -16,7 +16,7 @@ SRC_URI += "file://0001-puts-app-in-rootfs.patch"
 SRC_URI += "file://0001-change-default-dir.patch"
 SRC_URI += "file://0001-changing-storage-to-opt.patch"
 SRC_URI += "file://0001-matter-Add-Casting-Video-Client-driver.patch"
-SRC_URI += "file://0001-Initializing-NetworkCommissioning-WiFi-driver.patch"
+SRC_URI += "file://0001-added-support-for-network-commissioning.patch"
 #Enable the reference application
 EXTRA_OECMAKE:append = "${@' -DBCORE_BUILD_REFERENCE=ON' if 'BARTON_REFERENCE_APP' in d.getVar('DISTRO_FEATURES').split() else ' -DBCORE_BUILD_REFERENCE=OFF'}"
 EXTRA_OECMAKE:append = " -DBCORE_MATTER_DELEGATE_IMPLEMENTATIONS=${S}/core/src/subsystems/matter/delegates/dev/SelfSignedCertifierOperationalCredentialsIssuer.cpp"
