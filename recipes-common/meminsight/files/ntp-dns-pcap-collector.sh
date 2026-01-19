@@ -1,11 +1,16 @@
 #!/bin/sh
 
-#!/bin/bash
+source /etc/device.properties
 
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
-NTP_FILE="/nvram/ntp_capture_$TIMESTAMP.pcap"
-DNS_FILE="/nvram/dns_capture_$TIMESTAMP.pcap"
+if [ "$DEVICE_TYPE" = "broadband" ]; then
+    NTP_FILE="/nvram/ntp_capture_$TIMESTAMP.pcap"
+    DNS_FILE="/nvram/dns_capture_$TIMESTAMP.pcap"
+else
+    NTP_FILE="/opt/ntp_capture_$TIMESTAMP.pcap"
+    DNS_FILE="/opt/dns_capture_$TIMESTAMP.pcap"
+fi
 
 echo "Starting packet capture..."
 echo "NTP  -> $NTP_FILE"
