@@ -4,7 +4,8 @@ Before=systemd-timesyncd.service
 
 [Service]
 Type=simple
-ExecStart=/bin/sh -c '/lib/rdk/ntp-pktrate-collector.sh >> /tmp/pktrate.log'
+#ExecStart=/bin/sh -c '/lib/rdk/ntp-pktrate-collector.sh >> /tmp/pktrate.log' - pcap collected till sync 
+ExecStart= /bin/sh -c '/lib/rdk/ntp-dns-pcap-collector.sh' 
 
 [Install]
 WantedBy=multi-user.target
