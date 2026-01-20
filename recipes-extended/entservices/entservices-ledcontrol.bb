@@ -69,8 +69,6 @@ do_install:append() {
     fi
 }
 
-PACKAGES =+ "${PN}-test"
-
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
