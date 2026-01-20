@@ -7,6 +7,7 @@ PV ?= "2.0.2"
 PR ?= "r0"
 
 SRCREV_FORMAT = "aamp"
+SRCREV_aamp = "76ccd8362d29aea33508356dda1aa0bd6f7c29a4"
 
 inherit pkgconfig
 
