@@ -5,8 +5,8 @@ on:
     types: [closed]
     branches:
       - develop
-      - support/dunfell
       - 'support/*.*.*'
+      - 'support/*.*.*.*'
 
 jobs:
   call_auto_pr_workflow:
