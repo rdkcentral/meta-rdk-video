@@ -4,13 +4,14 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-PV = "1.2.2"
+PV = "1.2.3"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "33951501bd191918bb7afe5e1088a151970fa50a"
+SRCREV = "63d8ba8300659bf478c611173b95837e0498e05f"
+
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -58,7 +59,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-appmanager.service \
     wpeframework-appgateway.service \
     wpeframework-appnotifications.service \
-    wpeframework-fbsettings.service \
+    wpeframework-appgatewaycommon.service \
     wpeframework-downloadmanager.service \
     wpeframework-preinstallmanager.service \
     "
