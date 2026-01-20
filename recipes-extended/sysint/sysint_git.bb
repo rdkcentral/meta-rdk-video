@@ -8,7 +8,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "4.2.1"
 PR = "r1"
 
-SRCREV = "880d752d2a60ce9235d64aed41e5f7706f49d084"
+SRCREV = "2126ce39b67aafceee18d05bf8add3ce05dcc077"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
@@ -251,6 +251,7 @@ do_install() {
 	install -m 0755 ${S}/lib/rdk/NM_Dispatcher.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d
 	install -m 0755 ${S}/lib/rdk/NM_preDown.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
+        install -m 0755 ${S}/etc/99-default-link-local.conf ${D}${sysconfdir}/NetworkManager/conf.d/99-default-link-local.conf
     install -m 0755 ${S}/etc/dnsmasq-dobby.conf ${D}${sysconfdir}/NetworkManager/dnsmasq.d/dnsmasq-dobby.conf
         rm ${D}${base_libdir}/rdk/NM_Dispatcher.sh
         rm ${D}${base_libdir}/rdk/NM_preDown.sh
