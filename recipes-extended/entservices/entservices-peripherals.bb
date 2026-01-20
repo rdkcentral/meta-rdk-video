@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-peripherals;${CMF_GITHUB_SRC_URI_SUFFI
           "
 
 # Release version - 1.1.0
-SRCREV = "5a6bc5e66d563dba777c1ef1d0e67032cc7914a9"
+SRCREV = "6acb42e0fd706ecb361c8d7d3cc03fc453e08b29"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
