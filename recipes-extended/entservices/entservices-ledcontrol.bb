@@ -34,6 +34,7 @@ CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= "telemetrysupport \
+                  ledcontrol \
 "
 
 
