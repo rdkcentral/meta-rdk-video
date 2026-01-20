@@ -10,6 +10,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 inherit python3native cmake pkgconfig
 
 SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https;branch=R5_3;name=wpeframework-clientlibraries \
+           file://0001-PowerManagerClient-library-implementation.patch \
            "
 
 # Jan 15, 2026
@@ -63,7 +64,7 @@ PACKAGECONFIG[compositorclient] = "-DCOMPOSITORCLIENT=ON,-DCOMPOSITORCLIENT=OFF"
 PACKAGECONFIG[provisionproxy]   = "-DPROVISIONPROXY=ON,-DPROVISIONPROXY=OFF,libprovision"
 PACKAGECONFIG[securityagent]    = "-DSECURITYAGENT=ON, -DSECURITYAGENT=OFF"
 PACKAGECONFIG[cryptography]     = "-DCRYPTOGRAPHY=OFF, -DCRYPTOGRAPHY=OFF,"
-PACKAGECONFIG[powercontroller]     = "-DPOWERCONTROLLER=OFF, -DPOWERCONTROLLER=OFF,"
+PACKAGECONFIG[powercontroller]     = "-DPOWERCONTROLLER=ON, -DPOWERCONTROLLER=OFF,"
 
 # OCDM
 PACKAGECONFIG[opencdm]          = "-DCDMI=ON,-DCDMI=OFF,"
