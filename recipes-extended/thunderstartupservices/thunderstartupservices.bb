@@ -5,12 +5,12 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 PV = "1.2.3"
-PR = "r0"
+PR = "r1_Test"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "692a99ef2f2f2f4ba974cb23e6f837ca323e7293"
+SRCREV = "5082343e4753e3c92dcc5e3c48f7eb737a8b165f"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
