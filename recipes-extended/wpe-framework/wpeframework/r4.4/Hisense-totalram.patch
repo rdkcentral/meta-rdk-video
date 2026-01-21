@@ -1,0 +1,56 @@
+diff --git a/Source/core/SystemInfo.cpp b/Source/core/SystemInfo.cpp
+index de6705fe..6e21dcf4 100644
+--- a/Source/core/SystemInfo.cpp
++++ b/Source/core/SystemInfo.cpp
+@@ -166,9 +166,13 @@ namespace Core {
+ #else
+         struct sysinfo info;
+         sysinfo(&info);
++        std::cout << "[DEBUG][SystemInfo::SystemInfo] totalram=" << info.totalram
++                  << " mem_unit=" << info.mem_unit
++                  << " (bytes)=" << (unsigned long)info.totalram * info.mem_unit << std::endl;
+ 
+         m_uptime = info.uptime;
+         m_totalram = info.totalram;
++        m_memunit = info.mem_unit;
+         m_pageSize = static_cast<uint32_t>(sysconf(_SC_PAGESIZE));
+         m_freeram = info.freeram;
+         m_totalswap = info.totalswap;
+@@ -317,9 +321,13 @@ namespace Core {
+         struct sysinfo info;
+         sysinfo(&info);
+ 
++        std::cout << "[DEBUG][SystemInfo::UpdateRealtimeInfo] totalram=" << info.totalram
++                  << " mem_unit=" << info.mem_unit
++                  << " (bytes)=" << (unsigned long)info.totalram * info.mem_unit << std::endl;
+         m_uptime = info.uptime;
+         m_freeram = info.freeram;
+         m_totalram = info.totalram;
++        m_memunit = info.mem_unit;
+         m_totalswap = info.totalswap;
+         m_freeswap = info.freeswap;
+         m_cpuloadavg[0] = info.loads[0];
+diff --git a/Source/core/SystemInfo.h b/Source/core/SystemInfo.h
+index 8da350dd..b8319cce 100644
+--- a/Source/core/SystemInfo.h
++++ b/Source/core/SystemInfo.h
+@@ -87,6 +87,11 @@ namespace Core {
+             return m_totalram;
+         }
+ 
++	inline uint64_t GetMemUnit() const
++        {
++            return m_memunit;
++        }
++
+         inline uint32_t GetPageSize() const
+         {
+            return m_pageSize;
+@@ -214,6 +219,7 @@ namespace Core {
+         const string m_HostName;
+ 
+         uint64_t m_totalram;
++        uint64_t m_memunit;
+         uint32_t m_pageSize;
+         mutable uint32_t m_uptime;
+         mutable uint64_t m_freeram;
