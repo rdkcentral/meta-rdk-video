@@ -34,12 +34,14 @@ diff --git a/Source/core/SystemInfo.h b/Source/core/SystemInfo.h
 index 8da350dd..b8319cce 100644
 --- a/Source/core/SystemInfo.h
 +++ b/Source/core/SystemInfo.h
-@@ -87,6 +87,11 @@ namespace Core {
+@@ -87,6 +87,13 @@ namespace Core {
              return m_totalram;
          }
  
 +	inline uint64_t GetMemUnit() const
 +        {
++            // Returns the size in bytes of each memory unit reported by sysinfo() (mem_unit).
++            // Multiply GetTotalRam() by GetMemUnit() to obtain the total RAM in bytes.
 +            return m_memunit;
 +        }
 +
