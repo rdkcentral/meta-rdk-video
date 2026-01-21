@@ -52,6 +52,7 @@ index 8da350dd..b8319cce 100644
          const string m_HostName;
  
          uint64_t m_totalram;
++        // Size in bytes of each unit used for m_totalram; total RAM in bytes is m_totalram * m_memunit.
 +        uint64_t m_memunit;
          uint32_t m_pageSize;
          mutable uint32_t m_uptime;
