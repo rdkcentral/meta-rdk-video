@@ -35,7 +35,6 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-# More complicated plugins are moved separate includes
 # More complicated plugins are moved to separate includes
 PACKAGECONFIG ?= "telemetrysupport \
     frontpanel \
