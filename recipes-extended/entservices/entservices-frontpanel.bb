@@ -35,7 +35,7 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-# More complicated plugins are moved seperate includes
+# More complicated plugins are moved separate includes
 include include/remotecontrol.inc
 
 PACKAGECONFIG ?= "telemetrysupport \
