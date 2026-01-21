@@ -3,7 +3,11 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
 PV = "1.1.0"
+<<<<<<< HEAD
 PR = "r2"
+=======
+PR = "r1"
+>>>>>>> LED RDKEMW_11818
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
