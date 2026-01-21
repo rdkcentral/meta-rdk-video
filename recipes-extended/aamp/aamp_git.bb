@@ -7,7 +7,7 @@ PV = "2.11.1"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp = "d8f156574d4abf8be5dcc3bb75b190536b74e6e8"
+SRCREV_aamp = "629ae697706bf9376f4ac0407e4585fe0ee2dd5a"
 
 inherit pkgconfig
 
@@ -22,7 +22,7 @@ NO_RECOMMENDATIONS = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 #To be removed later, the AAMP_RELEASE_TAG_NAME is not using.
-AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
+AAMP_RELEASE_TAG_NAME ?= "2.9.0.7_VIPA"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
 
