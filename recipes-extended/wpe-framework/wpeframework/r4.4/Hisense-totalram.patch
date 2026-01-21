@@ -38,7 +38,7 @@ index 8da350dd..b8319cce 100644
              return m_totalram;
          }
  
-+	inline uint64_t GetMemUnit() const
++         inline uint64_t GetMemUnit() const
 +        {
 +            // Returns the size in bytes of each memory unit reported by sysinfo() (mem_unit).
 +            // Multiply GetTotalRam() by GetMemUnit() to obtain the total RAM in bytes.
