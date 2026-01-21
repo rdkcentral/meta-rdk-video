@@ -37,7 +37,6 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # More complicated plugins are moved separate includes
 # More complicated plugins are moved to separate includes
-include include/remotecontrol.inc
 PACKAGECONFIG ?= "telemetrysupport \
     frontpanel \
 "
