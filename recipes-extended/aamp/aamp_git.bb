@@ -3,11 +3,11 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV = "2.11.1"
+PV = "dev_sprint_25_2"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp = "c04e5023236a305fe9b4fcc7244a6642b76d2250"
+#SRCREV_aamp = "c04e5023236a305fe9b4fcc7244a6642b76d2250"
 
 inherit pkgconfig
 DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework"
