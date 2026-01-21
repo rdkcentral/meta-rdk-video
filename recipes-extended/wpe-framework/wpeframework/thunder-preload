@@ -1,0 +1,3 @@
+WESTEROS_SINK_USE_ESSRMGR=1
+AUDIO_SINK_USE_ESSRMGR=1
+LD_PRELOAD="/usr/lib/libVOutWrapper.so:/usr/lib/libjpu.so:/usr/lib/libvpu.so:/usr/lib/libwesteros_gl.so.0:/usr/lib/libwayland-client.so.0:/usr/lib/libwayland-egl.so.0:/usr/lib/mediarite/libSafeSetenv.so"
