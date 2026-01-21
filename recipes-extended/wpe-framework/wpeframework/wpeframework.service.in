@@ -11,6 +11,7 @@ Environment="LD_LIBRARY_PATH=/usr/lib:/media/apps/netflix/usr/lib:/tmp/netflix/u
 Environment="XDG_RUNTIME_DIR=/tmp"
 Environment="GST_REGISTRY=/opt/.gstreamer/registry.bin"
 Environment="GST_REGISTRY_UPDATE=no"
+Environment="GST_DEBUG_DUMP_DOT_DIR=/opt/"
 Environment="ENABLE_WEBKITBROWSER_PLUGIN_ACCESSIBILITY=1"
 Environment="TTS_USE_THUNDER_CLIENT=1"
 Environment="XDG_DATA_HOME=/opt/QT/home"
