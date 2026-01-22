@@ -1,14 +1,8 @@
 diff --git a/Source/core/SystemInfo.cpp b/Source/core/SystemInfo.cpp
-index de6705fe..6e21dcf4 100644
+index de6705fe..ddc6bf6e 100644
 --- a/Source/core/SystemInfo.cpp
 +++ b/Source/core/SystemInfo.cpp
-@@ -166,9 +166,13 @@ namespace Core {
- #else
-         struct sysinfo info;
-         sysinfo(&info);
-+        std::cout << "[DEBUG][SystemInfo::SystemInfo] totalram=" << info.totalram
-+                  << " mem_unit=" << info.mem_unit
-+                  << " (bytes)=" << (unsigned long)info.totalram * info.mem_unit << std::endl;
+@@ -169,6 +169,7 @@ namespace Core {
 
          m_uptime = info.uptime;
          m_totalram = info.totalram;
@@ -16,13 +10,7 @@ index de6705fe..6e21dcf4 100644
          m_pageSize = static_cast<uint32_t>(sysconf(_SC_PAGESIZE));
          m_freeram = info.freeram;
          m_totalswap = info.totalswap;
-@@ -317,9 +321,13 @@ namespace Core {
-         struct sysinfo info;
-         sysinfo(&info);
-
-+        std::cout << "[DEBUG][SystemInfo::UpdateRealtimeInfo] totalram=" << info.totalram
-+                  << " mem_unit=" << info.mem_unit
-+                  << " (bytes)=" << (unsigned long)info.totalram * info.mem_unit << std::endl;
+@@ -320,6 +321,7 @@ namespace Core {
          m_uptime = info.uptime;
          m_freeram = info.freeram;
          m_totalram = info.totalram;
