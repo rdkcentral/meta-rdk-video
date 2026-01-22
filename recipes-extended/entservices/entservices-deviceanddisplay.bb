@@ -2,8 +2,8 @@ SUMMARY = "ENTServices deviceanddisplay plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV = "3.9.4"
-PR = "r2"
+PV = "3.9.3"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
           "
 
 # Release version - 3.9.3
-SRCREV = "74010268f2d81732456e1e695ad98443c866b9e7"
+SRCREV = "8cafbe0550dbe4ea499da8f1300fac6fa293a6a2"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
