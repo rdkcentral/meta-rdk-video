@@ -133,6 +133,7 @@ SUPPORT_VOICE_DEST_ALSA   ?= "false"
 
 EXTRA_OECMAKE:append = "${@ ' -DXRSR_SDT=ON' if (d.getVar('SUPPORT_VOICE_DEST_ALSA', expand=False) == "true") else ''}"
 EXTRA_OECMAKE:append = "${@ ' -DXRSR_HTTP=ON' if (d.getVar('SUPPORT_VOICE_DEST_HTTP', expand=False) == "true") else ''}"
+DEPENDS:append   = "${@ ' virtual-mic' if (d.getVar('SUPPORT_VOICE_DEST_ALSA',   expand=False) == "true") else ''}"
 
 BUILD_FACTORY_TEST ??= "true"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' -DBUILD_FACTORY_TEST=ON', ' -DBUILD_FACTORY_TEST=OFF', d)}"
@@ -150,10 +151,6 @@ CTRLM_CONFIG_MAIN_ADD = "${S}/../ctrlm_config_main.add.json"
 CTRLM_CONFIG_MAIN_SUB = "${S}/../ctrlm_config_main.sub.json"
 
 EXTRA_OECMAKE:append  = " -DCTRLM_UTILS_JSON_COMBINE=${CTRLM_UTILS_JSON_COMBINE} -DCTRLM_UTILS_JSON_TO_HEADER=${CTRLM_UTILS_JSON_TO_HEADER} -DCTRLM_CONFIG_JSON_VSDK=${CTRLM_CONFIG_VSDK} -DCTRLM_CONFIG_JSON_CPC=${CTRLM_CONFIG_CPC} -DCTRLM_CONFIG_JSON_CPC_SUB=${CTRLM_CONFIG_CPC_SUB} -DCTRLM_CONFIG_JSON_CPC_ADD=${CTRLM_CONFIG_CPC_ADD} -DCTRLM_CONFIG_JSON_MAIN_ADD=${CTRLM_CONFIG_MAIN_ADD} -DCTRLM_CONFIG_JSON_MAIN_SUB=${CTRLM_CONFIG_MAIN_SUB}"
-EXTRA_OECMAKE:append = "${@ ' -DXRSR_HTTP=ON' if (d.getVar('SUPPORT_VOICE_DEST_HTTP', expand=False) == "true") else ''}"
-EXTRA_OECMAKE:append = "${@ ' -DXRSR_SDT=ON' if (d.getVar('SUPPORT_VOICE_DEST_ALSA', expand=False) == "true") else ''}"
-
-DEPENDS:append   = "${@ ' virtual-mic' if (d.getVar('SUPPORT_VOICE_DEST_ALSA',   expand=False) == "true") else ''}"
 
 EXTRA_OECMAKE:append = " -DCMAKE_SYSROOT=${RECIPE_SYSROOT} -DCMAKE_PROJECT_VERSION=${PV}"
 
