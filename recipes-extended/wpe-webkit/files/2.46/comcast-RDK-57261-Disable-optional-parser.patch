@@ -3,7 +3,7 @@ From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
 Date: Fri, 9 May 2025 13:46:54 +0200
 Subject: [PATCH] comcast - RDK-57261 - Disable optional parser
 
-This is a part of Dynamic decryptor insertion chnage.
+This is a part of Dynamic decryptor insertion change.
 Format parser in AppendPipeline created for clear
 content will not work with encrypted one. It throws
 not-negotiated error upon receiving encrypted caps
@@ -26,7 +26,7 @@ index ed4b119109d4..8f9812cfe77c 100644
      }
  
 +#if ENABLE(THUNDER)
-+    // Disable opitonal parser in AppendPipeline to support changeing caps to encrpyted ones
++    // Disable optional parser in AppendPipeline to support changing caps to encrypted ones
 +    // that are not supported by parser (x-cenc)
 +    elementClass = "identity";
 +#endif
