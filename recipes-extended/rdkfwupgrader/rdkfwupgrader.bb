@@ -38,10 +38,6 @@ S = "${WORKDIR}/git"
 
 inherit autotools pkgconfig coverity systemd
 
-do_install:append () {
-    install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${S}/rdkFwupdateMgr.service ${D}${systemd_unitdir}/system
-}
 SYSTEMD_SERVICE:${PN}:remove = " rdkfwupgrader.service rdkfwupgrader.path"
 
 FILES:${PN}:remove = " ${bindir}/rdkfwupgrader \
