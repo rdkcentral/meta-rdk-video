@@ -31,10 +31,20 @@ EXTRA_OECMAKE += " \
 
 # ----------------------------------------------------------------------------
 
+do_install:append() {
+    if ${@bb.utils.contains("DISTRO_FEATURES", "opencdm", "true", "false", d)}
+    then
+        install -m 0644 ${D}${includedir}/WPEFramework/interfaces/IDRM.h ${D}${includedir}/cdmi.h
+    fi
+}
+
+# ----------------------------------------------------------------------------
+
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/* ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN}-dev += "${libdir}/cmake/*"
 FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/"
+FILES:${PN} += "${includedir}/cdmi.h"
 
 INSANE_SKIP:${PN} += "dev-so"
 INSANE_SKIP:${PN}-dbg += "dev-so"

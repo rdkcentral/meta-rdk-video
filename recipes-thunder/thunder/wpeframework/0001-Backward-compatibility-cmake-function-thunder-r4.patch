@@ -1,7 +1,7 @@
 *************************************************************************************************
 From: Karunakaran Amirthalingam
 Date: Fri, 5 Dec 2025 10:49:57 +0000
-Subject: [PATCH] Backward-compatiblity-cmake-function-thunder-r4.patch
+Subject: [PATCH] Backward-compatibility-cmake-function-thunder-r4.patch
 Reason for Change: This patch helps to resolve the generated cmakehelper function path and namespace issue 
 Upstream-Status: Comcast changes
 Signed-off-by: Karunakaran Amirthalingam <karunakaran_amirthalingam@cable.comcast.com>
@@ -45,7 +45,7 @@ index af7f7de2..725ce0d3 100644
  }
  }
  
--// code to make (to some extend) old code whioch still uses the WPEFramework instead of Thunder still compile
+-// code to make (to some extend) old code which still uses the WPEFramework instead of Thunder still compile
 -
 -namespace WPEFramework {
 -    using namespace Thunder;

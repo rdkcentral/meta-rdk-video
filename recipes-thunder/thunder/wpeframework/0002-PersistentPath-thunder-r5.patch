@@ -1,3 +1,13 @@
+*************************************************************************************************
+From: Karunakaran Amirthalingam
+Date: Mon, 16 Jan 2026 10:49:57 +0000
+Subject: [PATCH] 0002-PersistentPath-thunder-r5.patch
+Reason for Change: This patch is to removed the persistent path explicit added in the cmakelist and create a persistent path in the Source code 
+it will helps to avoid to package the persistentpath in the wpeframework_5.3.bb file
+Upstream-Status: Comcast changes
+Signed-off-by: Karunakaran Amirthalingam <karunakaran_amirthalingam@cable.comcast.com>
+************************************************************************************************
+
 diff --git a/Source/Thunder/CMakeLists.txt b/Source/Thunder/CMakeLists.txt
 index 4b52c902..7e9686d3 100644
 --- a/Source/Thunder/CMakeLists.txt

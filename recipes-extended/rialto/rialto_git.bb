@@ -19,7 +19,6 @@ require rialto_revision.inc
 SRCREV = "4d930b26289dd6b5d3e3dfa0b877a9a9d2d38e74"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
-SRC_URI += "file://0002-Thunder-5.3.0-compilation-Error.patch"
 
 DEPENDS = "openssl jsoncpp protobuf protobuf-native"
 DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform "

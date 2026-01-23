@@ -2,7 +2,7 @@
 From: Thamim Razith <tabbas651@cable.comcast.com>
 Date: Tue, 05 Dec 2025 10:53:28 +0000
 Subject: [PATCH] 0001-Change-MODULE-PATH.patch
-Reason for Change: On Yocto systems, the ThunderTool is built for native(x86) and the Thunder is built for device specific arch. So the install paths must be changed acordingly
+Reason for Change: On Yocto systems, the ThunderTool is built for native(x86) and the Thunder is built for device specific arch. So the install paths must be changed accordingly
 Upstream-Status: Comcast Changes
 Signed-off-by: Thamim Razith  <tabbas651@cable.comcast.com>
 *************************************************************************

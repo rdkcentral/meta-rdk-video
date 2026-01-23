@@ -13,7 +13,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://0001-PowerManagerClient-library-implementation.patch \
            "
 
-# Jan 15, 2026
+# Jan 23, 2026
 SRCREV_wpeframework-clientlibraries = "R5.3.0"
 
 # ----------------------------------------------------------------------------
