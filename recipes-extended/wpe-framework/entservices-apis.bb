@@ -17,7 +17,7 @@ SRC_URI += "file://RDKEMW-1007.patch"
 
 
 # Tag 2.12.0
-SRCREV_entservices-apis = "eae01243d0ced2ea066b4bd0b5c5f501a30565f6"
+SRCREV_entservices-apis = "f28a0cd5c956277893d09c80f7906752fd36ff21"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
@@ -31,20 +31,10 @@ EXTRA_OECMAKE += " \
 
 # ----------------------------------------------------------------------------
 
-do_install:append() {
-    if ${@bb.utils.contains("DISTRO_FEATURES", "opencdm", "true", "false", d)}
-    then
-        install -m 0644 ${D}${includedir}/WPEFramework/interfaces/IDRM.h ${D}${includedir}/cdmi.h
-    fi
-}
-
-# ----------------------------------------------------------------------------
-
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/* ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN}-dev += "${libdir}/cmake/*"
 FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/"
-FILES:${PN} += "${includedir}/cdmi.h"
 
 INSANE_SKIP:${PN} += "dev-so"
 INSANE_SKIP:${PN}-dbg += "dev-so"
