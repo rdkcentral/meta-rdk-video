@@ -42,12 +42,11 @@ do_install:append () {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/rdkFwupdateMgr.service ${D}${systemd_unitdir}/system
 }
-SYSTEMD_SERVICE:${PN} += " rdkFwupdateMgr.service"
+SYSTEMD_SERVICE:${PN}:remove = " rdkfwupgrader.service rdkfwupgrader.path"
 
-FILES:${PN}+= " ${bindir}/rdkFwupdateMgr \
+FILES:${PN}:remove = " ${bindir}/rdkfwupgrader \
                  ${base_libdir}/rdk/rdkfwupgrader_start.sh \
                  ${base_libdir}/rdk/rdkfwupgrader_check_now.sh \
-                 ${systemd_unitdir}/system \
                  ${base_libdir}/rdk/rdkfwupgrader_abort_reboot.sh "
 
 INSANE_SKIP:${PN}:append = " installed-vs-shipped"
