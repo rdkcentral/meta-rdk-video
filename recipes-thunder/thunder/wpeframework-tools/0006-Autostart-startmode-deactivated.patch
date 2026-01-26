@@ -8,10 +8,10 @@ Upstream-Status: Comcast changes
 Signed-off-by: Thamim Razith Abbasali <tabbas651@cable.comcast.com>
 *****************************************************************************************************
 diff --git a/ConfigGenerator/config_generator.py b/ConfigGenerator/config_generator.py
-index 2ba95bc..41ed9ad 100644
+index 2ba95bc..6dd14cd 100644
 --- a/ConfigGenerator/config_generator.py
 +++ b/ConfigGenerator/config_generator.py
-@@ -215,13 +215,14 @@ if __name__ == "__main__":
+@@ -215,14 +215,14 @@ if __name__ == "__main__":
                  log.Error(f"Whitelisted Params not available")
                  sys.exit(1)
              isEmpty = True
@@ -19,23 +19,37 @@ index 2ba95bc..41ed9ad 100644
              for param in iconfig.__dict__:
                  if param in params:
                      # make sure backward compatible with old config
-                     if param == 'autostart':
+-                    if param == 'autostart':
 -                        if iconfig.__dict__[param] == 'true':
 -                            result.add('startmode', 'Activated')
 -                        else:
+-                            result.add('startmode', 'Deactivated')
++                    if param == 'autostart' or param == 'startmode':
 +                        autostart_found = True
-+                        if iconfig.__dict__[param] in ['true', 'false']:
-+                            # Always set startmode to Deactivated regardless of autostart value
-                             result.add('startmode', 'Deactivated')
++                        # Always set startmode to Deactivated regardless of autostart value
++                        result.add('startmode', 'Deactivated')
                      else:
                          result.add(param, iconfig.__dict__[param])
-@@ -243,6 +244,9 @@ if __name__ == "__main__":
+                     isEmpty = False
+@@ -243,6 +243,9 @@ if __name__ == "__main__":
                                        f"    return result\n"
                                        f"******************************************************************")
                              sys.exit(1)
-+             # If autostart was not found, set default startmode to Deactivated
++            # If autostart was not found, set default startmode to Deactivated
 +            if not autostart_found:
 +                result.add('startmode', 'Deactivated')
              if isEmpty:
                  log.Print("Empty Config File")
          else:
+diff --git a/cmake/FindConfigGenerator.cmake.in b/cmake/FindConfigGenerator.cmake.in
+index 2719214..9f5c6a9 100644
+--- a/cmake/FindConfigGenerator.cmake.in
++++ b/cmake/FindConfigGenerator.cmake.in
+@@ -235,8 +235,6 @@ if(CMAKE_VERSION VERSION_LESS 3.20.0 AND LEGACY_CONFIG_GENERATOR)
+                 if (NOT ${autostart} STREQUAL "")
+                     if (${autostart} STREQUAL "false")
+                         map_append(${plugin_config} startmode "Deactivated")
+-                    else()
+-                        map_append(${plugin_config} startmode "Activated")
+                     endif()
+                 endif()
