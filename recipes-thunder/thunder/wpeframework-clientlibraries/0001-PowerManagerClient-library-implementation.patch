@@ -19,7 +19,6 @@ interface changes for enhanced instance management and add operational state tra
 
 %% original patch: 0001-PowerManagerClient-library-implementation.patch
 ---
- .gitignore                                  |    2 +
  NOTICE                                      |    3 +-
  Source/CMakeLists.txt                       |    4 +
  Source/powercontroller/CMakeLists.txt       |   79 +
@@ -34,16 +33,6 @@ interface changes for enhanced instance management and add operational state tra
  create mode 100644 Source/powercontroller/power_controller.cpp
  create mode 100644 Source/powercontroller/power_controller.h
 
-Index: git/.gitignore
-===================================================================
---- git.orig/.gitignore
-+++ git/.gitignore
-@@ -39,3 +39,5 @@ Source/playerinfo/player_info/player_inf
- */*/*/*/*tests
- */*/generated
- */*/*/*/lib*.a
-+.cache
-+compile_commands.json
 Index: git/NOTICE
 ===================================================================
 --- git.orig/NOTICE
