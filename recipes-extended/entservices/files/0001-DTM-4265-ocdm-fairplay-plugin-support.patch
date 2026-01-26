@@ -1,0 +1,17 @@
+diff --git a/OpenCDMi/OCDM.conf.in b/OpenCDMi/OCDM.conf.in
+index b7045a5..460b90b 100644
+--- a/OpenCDMi/OCDM.conf.in
++++ b/OpenCDMi/OCDM.conf.in
+@@ -20,6 +20,12 @@ if boolean("@PLUGIN_OPENCDMI_CLEARKEY@"):
+     keysystem.add("designators", [ "org.chromium.externalclearkey", "org.w3.clearkey" ])
+     systems.append(keysystem)
+ 
++if boolean("@PLUGIN_OPENCDMI_FAIRPLAY@"):
++    keysystem = JSON()
++    keysystem.add("name", "CFairPlay")
++    keysystem.add("designators", [ "com.apple.fps"])
++    systems.append(keysystem)
++
+ 
+ if boolean("@PLUGIN_OPENCDMI_PLAYREADY@") or \
+     boolean("@PLUGIN_OPENCDMI_PLAYREADY_NEXUS@") or \

@@ -1,0 +1,281 @@
+diff --git a/Source/ocdm/open_cdm.cpp b/Source/ocdm/open_cdm.cpp
+index 5d189ae..7cd37a2 100644
+--- a/Source/ocdm/open_cdm.cpp
++++ b/Source/ocdm/open_cdm.cpp
+@@ -322,13 +322,16 @@ opencdm_construct_session(struct OpenCDMSystem* system,
+     OpenCDMSessionCallbacks* callbacks, void* userData,
+     struct OpenCDMSession** session)
+ {
++    printf("*********opencdm_construct_session******** \n");
++    printf("*********opencdm_construct_session******** \n");
+     ASSERT(system != nullptr);
+     ASSERT(session != nullptr);
+     OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
+ 
+     if ((system != nullptr) && (session != nullptr)) {
+         TRACE_L1("Creating a Session for %s", system->keySystem().c_str());
+-
++     printf("******8creating session for %s \n",system->keySystem().c_str());
++     printf("********Calling OpenCDMSession::CreateSession********** \n");
+         result = OpenCDMSession::CreateSession(system,
+                                             licenseType,
+                                             initDataType,
+@@ -337,6 +340,8 @@ opencdm_construct_session(struct OpenCDMSystem* system,
+                                             callbacks, userData,
+                                             session
+     );
++       printf("********returned OpenCDMSession::CreateSession********** \n");
++       printf("********returned OpenCDMSession::CreateSession********** \n");
+         TRACE_L1("Created a Session, result %p, %d", *session, result);
+     }
+ 
+@@ -682,6 +687,38 @@ OpenCDMError opencdm_session_decrypt_v2(struct OpenCDMSession* session,
+     return (result);
+ }
+ 
++//FPS decrypt.
++
++ OpenCDMError opencdm_session_decrypt_fps(struct OpenCDMSession* session,
++    uint32_t version,
++    uint64_t movieID,
++    uint64_t cryptorID,
++    uint32_t contentType,
++    uint8_t *buffer,
++    uint32_t bufferSize,
++    const FPS_SliceInfo* sliceInfoArray,
++    uint32_t sliceInfoArrayCount,
++    const uint8_t* iv,
++    void *returnData)
++{
++   
++    printf("********* In opencdm_session_decrypt_fps********** \n");
++    printf("********* In opencdm_session_decrypt_fps********** \n");
++
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++    ASSERT(session != nullptr);
++
++    if (session != nullptr) {
++        result = bufferSize > 0 ? static_cast<OpenCDMError>(session->Decrypt_fps(
++            version, movieID, cryptorID, contentType, buffer, bufferSize, sliceInfoArray, sliceInfoArrayCount, iv, returnData)) : OpenCDMError::ERROR_NONE;
++    }
++
++    printf("**********returned from opencdm_session_decrypt_fps********** \n");
++    printf("**********returned from opencdm_session_decrypt_fps********** \n");
++    return (result);
++}
++
++
+ /**
+  * \brief Get metrics associated with a DRM session.
+  *
+diff --git a/Source/ocdm/open_cdm.h b/Source/ocdm/open_cdm.h
+index ef8c03c..c7fee0b 100644
+--- a/Source/ocdm/open_cdm.h
++++ b/Source/ocdm/open_cdm.h
+@@ -150,6 +150,12 @@ typedef struct {
+     SubSampleInfo*     subSample;       // SubSample mapping - Repeating pair of Clear bytes and Encrypted Bytes representing each subsample.
+ } SampleInfo;
+ 
++//FPS
++typedef struct {
++    uint32_t offset;
++    uint32_t size;
++} FPS_SliceInfo;
++
+ // Provides information about the current stream
+ typedef struct {
+     uint16_t height;
+@@ -638,6 +644,21 @@ EXTERNAL OpenCDMError opencdm_session_decrypt_v2(struct OpenCDMSession* session,
+     const SampleInfo* sampleInfo,
+     const MediaProperties* streamProperties);
+ 
++
++//FPS decrypt api
++
++EXTERNAL OpenCDMError opencdm_session_decrypt_fps(struct OpenCDMSession* session,
++    uint32_t version,
++    uint64_t movieID,
++    uint64_t cryptorID,
++    uint32_t contentType,
++    uint8_t *buffer,
++    uint32_t bufferSize,
++    const FPS_SliceInfo* sliceInfoArray,
++    uint32_t sliceInfoArrayCount,
++    const uint8_t* iv,
++    void *returnData);
++
+ /**
+  * @brief Close the cached open connection if it exists.
+  *
+diff --git a/Source/ocdm/open_cdm_ext.cpp b/Source/ocdm/open_cdm_ext.cpp
+index a730528..391f7ea 100644
+--- a/Source/ocdm/open_cdm_ext.cpp
++++ b/Source/ocdm/open_cdm_ext.cpp
+@@ -501,3 +501,101 @@ OpenCDMError opencdm_system_ext_get_properties(struct PlayLevels* system, const
+      return result;
+     
+ }
++
++// Fairplay
++OpenCDMError opencdm_create_moviesession(struct OpenCDMSystem* system, uint32_t version, const uint8_t* cert, uint32_t certificatesize, const uint8_t* versionlist, uint32_t versionListSize, uint8_t* movieIdOut)
++{
++	ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->CreateMovieSession(keySystem, version, cert, certificatesize, versionlist, versionListSize, movieIdOut);
++    }
++    return result;
++}
++
++OpenCDMError opencdm_destroy_moviesession(struct OpenCDMSystem* system, uint32_t version, uint64_t movieId)
++{
++	ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->DestroyMovieSession(keySystem, version, movieId);
++    }
++    return result;
++}
++
++
++OpenCDMError opencdm_generate_challenge_with_version_list(struct OpenCDMSystem* system, uint32_t version, uint64_t movieId, const uint8_t* assetidData, uint32_t assetidSize, const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallengeBuffer, uint8_t* licenseSize, uint8_t* session)
++{
++    ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->GenerateChallengeWithVersionList(keySystem, version, movieId, assetidData, assetidSize, streamerChallengeData, streamerChallengeSize, cryptorId, licenseChallengeBuffer, licenseSize, session);
++    }
++    return result;
++}
++
++OpenCDMError opencdm_destroy_server_exchange(struct OpenCDMSystem* system, uint32_t version, uint8_t* session)
++{
++	ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->DestroyServerExchange(keySystem, version, session);
++    }
++    return result;
++}
++
++OpenCDMError opencdm_init_library(struct OpenCDMSystem* system)
++{
++    ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->InitLibrary(keySystem);
++    }
++    return result;
++}
++
++OpenCDMError opencdm_process_license(struct OpenCDMSystem* system, uint32_t version, uint8_t* session, const uint8_t* licenseData, uint32_t licenseDataSize, uint8_t* cryptoId)
++{
++    ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->ProcessLicense(keySystem, version, session, licenseData, licenseDataSize, cryptoId);
++    }
++    return result;
++}
+diff --git a/Source/ocdm/open_cdm_ext.h b/Source/ocdm/open_cdm_ext.h
+index 24a85e4..ee3ebc8 100644
+--- a/Source/ocdm/open_cdm_ext.h
++++ b/Source/ocdm/open_cdm_ext.h
+@@ -234,6 +234,14 @@ struct PlayLevels {
+  */
+ EXTERNAL OpenCDMError opencdm_system_ext_get_properties(struct PlayLevels* system, const char* propertiesJSONText);
+ 
++// Fairplay
++EXTERNAL OpenCDMError opencdm_create_moviesession(struct OpenCDMSystem* system, uint32_t version, const uint8_t * cert, uint32_t certificatesize, const uint8_t* versionlist, uint32_t versionListSize, uint8_t *movieIdOut);
++EXTERNAL OpenCDMError opencdm_destroy_moviesession(struct OpenCDMSystem* system, uint32_t version, uint64_t movieId);
++EXTERNAL OpenCDMError opencdm_generate_challenge_with_version_list(struct OpenCDMSystem* system, uint32_t version, uint64_t movieId, const uint8_t* assetidData, uint32_t assetidSize, const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallengeBuffer, uint8_t* licenseSize, uint8_t* session);
++EXTERNAL OpenCDMError opencdm_destroy_server_exchange(struct OpenCDMSystem* system, uint32_t version, uint8_t* session);
++EXTERNAL OpenCDMError opencdm_init_library(struct OpenCDMSystem* system);
++EXTERNAL OpenCDMError opencdm_process_license(struct OpenCDMSystem* system, uint32_t version, uint8_t* session, const uint8_t* licenseData, uint32_t licenseDataSize, uint8_t* cryptoId);
++
+ 
+ #ifdef __cplusplus
+ } // extern "C"
+diff --git a/Source/ocdm/open_cdm_impl.cpp b/Source/ocdm/open_cdm_impl.cpp
+index c57f073..b45c39f 100644
+--- a/Source/ocdm/open_cdm_impl.cpp
++++ b/Source/ocdm/open_cdm_impl.cpp
+@@ -81,30 +81,42 @@ static SessionPrivate SessionPvt;
+                             OpenCDMSessionCallbacks* callbacks, void* userData,
+                             struct OpenCDMSession** session)
+ {
++    printf("******inside OpenCDMSession::CreateSession********* \n");
++    printf("******inside OpenCDMSession::CreateSession********* \n");
+     OpenCDMError result(ERROR_INVALID_ACCESSOR);
+ 
+     ASSERT(system != nullptr);
+     ASSERT(session != nullptr);
+     if ((system != nullptr) && (session != nullptr)) {
++       printf("********calling new OpenCDMSession********* \n");
++       printf("********calling new OpenCDMSession********* \n");
+         *session = new OpenCDMSession(system, std::string(initDataType),
+                             initData, initDataLength, CDMData,
+                             CDMDataLength, licenseType, callbacks, userData);
++       printf("*********Created session ********* \n");
+ 
+         result = (*session != nullptr ? OpenCDMError::ERROR_NONE
+                                       : OpenCDMError::ERROR_INVALID_SESSION);
+ 
+         if(result == OpenCDMError::ERROR_NONE) {
++           printf("********Inside private session construction ********* \n");
++           printf("********Inside private session construction ********* \n");
+             OpenCDMError pvt_result(OpenCDMError::ERROR_METHOD_NOT_IMPLEMENTED);
+             pvt_result = SessionPvt.Construct(*session, (*session)->_pvtData);
++           printf("*******After Pvt session *********** \n");
++           printf("*******After Pvt session *********** \n");
+             if(pvt_result != OpenCDMError::ERROR_NONE && pvt_result != OpenCDMError::ERROR_METHOD_NOT_IMPLEMENTED)
+             {
+                 //Method is available but resulted in internal error. Not good for decryption.
++               printf("*******something is wrong ******** \n");
++               printf("*******something is wrong ******** \n");
+                 result = OpenCDMError::ERROR_INVALID_SESSION;
+                 (*session)->Release();
+                 *session = nullptr;
+             }
+         }
+     }
++    printf("*******End of OpenCDMSession::CreateSession************ \n");
+     return result;
+ }
+ 

@@ -1,0 +1,43 @@
+diff --git a/MediaSystem.cpp b/MediaSystem.cpp
+index 78b1e84..79795cb 100644
+--- a/MediaSystem.cpp
++++ b/MediaSystem.cpp
+@@ -57,6 +57,38 @@ public:
+ 
+         return CDMi_SUCCESS;
+     }
++
++    CDMi_RESULT InitLibrary(void)
++    {
++	    return CDMi_S_FALSE;
++    }
++
++    CDMi_RESULT CreateMovieSession(uint32_t version, const uint8_t * cert, uint32_t certificatesize, const uint32_t* versionlist, uint32_t versionListSize, uint64_t *movieIdOut)
++    {
++	    return CDMi_S_FALSE;
++    }
++
++    CDMi_RESULT DestroyMovieSession(uint32_t version, uint64_t movieId)
++    {
++        return CDMi_S_FALSE;
++    }
++
++    CDMi_RESULT GenerateChallengeWithVersionList(uint32_t version, uint64_t movieId,
++        const uint8_t* assetidData, uint32_t assetidSize,
++        const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptoId, uint8_t* licenseChallenge, uint8_t *licenseChallengeSize, uint8_t* session)
++    {
++        return CDMi_S_FALSE;
++    }
++
++    CDMi_RESULT DestroyServerExchange(uint32_t version, uint8_t* session)
++    {
++        return CDMi_S_FALSE;
++    }
++
++    CDMi_RESULT ProcessLicense(uint32_t version, uint8_t* session, const uint8_t* licenseData, uint32_t licenseDataSize, uint8_t* cryptoId)
++    {
++        return CDMi_S_FALSE;
++    }
+ };
+ 
+ static SystemFactoryType<ClearKey> g_instance({"video/x-h264", "audio/mpeg"});

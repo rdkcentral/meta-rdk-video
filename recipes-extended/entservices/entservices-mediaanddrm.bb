@@ -22,6 +22,9 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-Add-a-new-metrics-punch-through-on-the-OCDM-framework-rdkservice.patch \
            ${@bb.utils.contains('DISTRO_FEATURES', 'wpe_r4_4','file://0003-R4.4.1-SystemAudioPlayer-compilation-error.patch','',d)} \
            file://0001-set-OCDM-process-thread-name.patch \
+           file://0001-DTM-4265-ocdm-fairplay-plugin-support.patch \
+           file://0002-DTM-4265-ocdm-fairplay-plugin-support.patch \
+           file://rdkservices66.patch \
           "
           
 # Release version - 1.3.16
@@ -65,14 +68,14 @@ PACKAGECONFIG ?= "  breakpadsupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm',              'opencdmi', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'playready_nexus_svp',  'opencdmi_prnx_svp', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'widevine_nexus_svp',   'opencdmi_wv_svp', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'clearkey',             'opencdmi_ck', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'fairplay',   'opencdmi_fps', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
 "
 
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 
 # enable widevine and Playready4 opencdmi libs
-OPENCDM_DRMS ??= " ${@bb.utils.contains_any('DISTRO_FEATURES' , ['widevine_v16' , 'widevine_v18'], 'opencdmi_wv', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['playready4' , 'playready4_6'], 'opencdmi_pr4', '', d)}"
+OPENCDM_DRMS ??= " ${@bb.utils.contains_any('DISTRO_FEATURES' , ['widevine_v16' , 'widevine_v18'], 'opencdmi_wv', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['playready4' , 'playready4_6'], 'opencdmi_pr4', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['fairplay'], 'opencdmi_fps', '', d)}"
 PACKAGECONFIG:append = " ${OPENCDM_DRMS}"
 PACKAGECONFIG:append = " systemaudioplayer"
 PACKAGECONFIG:append = " cryptography"

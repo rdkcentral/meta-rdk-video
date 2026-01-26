@@ -1,0 +1,20 @@
+diff --git a/OpenCDMi/OCDM.config b/OpenCDMi/OCDM.config
+index 4e286ee3..42c38896 100644
+--- a/OpenCDMi/OCDM.config
++++ b/OpenCDMi/OCDM.config
+@@ -39,6 +39,15 @@ ans(keysystem)
+ map_append(${configuration} systems ${keysystem})
+ endif()
+ 
++if(PLUGIN_OPENCDMI_FAIRPLAY)
++map()
++    kv(name "CFairPlay")
++    kv(designators "___array___;com.apple.fps")
++end()
++ans(keysystem)
++map_append(${configuration} systems ${keysystem})
++endif()
++
+ if(PLUGIN_OPENCDMI_PLAYREADY OR PLUGIN_OPENCDMI_PLAYREADY_NEXUS OR PLUGIN_OPENCDMI_PLAYREADY_NEXUS_SVP OR PLUGIN_OPENCDMI_PLAYREADY_VGDRM)
+ map()
+     kv(name "PlayReady")
