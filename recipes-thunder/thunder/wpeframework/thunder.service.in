@@ -1,17 +1,12 @@
 [Unit]
-Description=Thunder RPC version-R5.3
-Wants= local-fs.target
-After= local-fs.target securemount.service
-RequiresMountsFor=/opt/secure
+Description=Thunder-R5.3
 
 [Service]
 Type=notify
 Environment="XDG_RUNTIME_DIR=/tmp"
-Environment="GST_REGISTRY=/opt/.gstreamer/registry.bin"
+Environment="GST_REGISTRY=/opt/.gstreamer/registry.bin" 
 Environment="GST_REGISTRY_UPDATE=no"
 ExecStart=/usr/bin/Thunder -b
-ExecStartPost=-/bin/sh -c '/bin/echo ${MAINPID} > /tmp/thunder.pid'
-KillSignal=SIGKILL
 Restart=always
 RestartSec=5
 
