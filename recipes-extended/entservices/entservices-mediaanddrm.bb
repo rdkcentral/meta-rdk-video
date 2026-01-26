@@ -22,6 +22,9 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-Add-a-new-metrics-punch-through-on-the-OCDM-framework-rdkservice.patch \
            ${@bb.utils.contains('DISTRO_FEATURES', 'wpe_r4_4','file://0003-R4.4.1-SystemAudioPlayer-compilation-error.patch','',d)} \
            file://0001-set-OCDM-process-thread-name.patch \
+           file://0001-DTM-4265-ocdm-fairplay-plugin-support.patch \
+           file://0002-DTM-4265-ocdm-fairplay-plugin-support.patch \
+           file://0003-DTM-4265-ocdm-fairplay-frameworkrpc-support.patch \
           "
           
 # Release version - 1.3.16
