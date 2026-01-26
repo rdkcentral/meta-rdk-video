@@ -1,4 +1,4 @@
-SUMMARY = "WPEFramework client libraries"
+SUMMARY = "Thunder client libraries"
 LICENSE = "Apache-2.0"
 HOMEPAGE = "https://github.com/rdkcentral/ThunderClientlibraries"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=847677038847363222ffb66cfa6406c2"
@@ -9,12 +9,12 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit python3native cmake pkgconfig
 
-SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https;branch=R5_3;name=wpeframework-clientlibraries \
+SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https;branch=R5_3;name=thunder-clientlibraries \
            file://0001-PowerManagerClient-library-implementation.patch \
            "
 
 # Jan 23, 2026
-SRCREV_wpeframework-clientlibraries = "R5.3.0"
+SRCREV_thunder-clientlibraries = "R5.3.0"
 
 # ----------------------------------------------------------------------------
 
@@ -30,10 +30,6 @@ DEPENDS = " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'compositor', '${WPE_COMPOSITOR_DEP}', '', d)} \
     gstreamer1.0 \
 "
-
-RDEPENDS:${PN}:append:dunfell = "${@bb.utils.contains('DISTRO_FEATURES', 'sage_svp', ' gst-svp-ext', '', d)}"
-RDEPENDS:${PN}:append:dunfell = "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', ' gst-svp-ext', '', d)}"
-RDEPENDS:${PN}:append:dunfell = " wpeframework rdkperf"
 
 #Cryptography library
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl','openssl', 'virtual/vendor-secapi2-adapter', d)}"
@@ -87,7 +83,7 @@ EXTRA_OECMAKE += " \
 # ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/*.so ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
+FILES:${PN} += "${libdir}/*.so ${datadir}/Thunder/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN}-dev += "${libdir}/cmake/*"
 
 INSANE_SKIP:${PN} += "dev-so"
