@@ -50,8 +50,6 @@ PACKAGECONFIG ?= " breakpadsupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systimemgr', 'systimemgrsupport', '', d)} \
 "
 
-DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
-
 PACKAGECONFIG:append = " displayinfo deviceinfo systemmode"
 PACKAGECONFIG:append = " erm"
 
