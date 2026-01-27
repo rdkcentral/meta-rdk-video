@@ -244,10 +244,6 @@ CFLAGS += "-DPLATCO_BOOTTO_STANDBY"
 CFLAGS += "-DENABLE_THERMAL_PROTECTION"
 CFLAGS += "-DUSE_WAKEUP_TIMER_EVT"
 
-SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' file://0001-set-debus-address-path-dsmgr-service.patch ', '',d)}"
-SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' file://0002-hdmi_in_essos_resmgr_env.patch ', '',d)}"
-SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' file://0003-add_dsmgr_service_env_settings.patch ', '',d)}"
-
 inherit syslog-ng-config-gen
 
 SYSLOG-NG_FILTER += "uimgr"
