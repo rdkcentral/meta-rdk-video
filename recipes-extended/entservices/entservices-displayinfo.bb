@@ -44,8 +44,7 @@ PACKAGECONFIG ?= " breakpadsupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systimemgr', 'systimemgrsupport', '', d)} \
 "
 
-PACKAGECONFIG:append = " displayinfo deviceinfo systemmode"
-PACKAGECONFIG:append = " erm"
+PACKAGECONFIG:append = " displayinfo"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
