@@ -1,0 +1,34 @@
+From c2902fd833ad6780d7770c3dc420246c3d2932b7 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Wed, 6 Feb 2019 18:10:03 -0500
+Subject: [PATCH] comcast - RDK-57915 - Increase html parser time limit
+
+Some apps (YouTube) use in-document (hash) navigation before
+WebKit fires 'loaded' event which inturn defers the event. In this
+case launch metric will account for loading of additional resources and
+report higher load time.
+
+Reason for change: Make load finish event more reliable
+Test Procedure: Smoke test of YouTube, Amazon Prime and other web apps startup
+Risks: Low
+Signed-off-by: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+---
+ Source/WebCore/html/parser/HTMLParserScheduler.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/html/parser/HTMLParserScheduler.cpp b/Source/WebCore/html/parser/HTMLParserScheduler.cpp
+index 909b17d7a677..69637333895e 100644
+--- a/Source/WebCore/html/parser/HTMLParserScheduler.cpp
++++ b/Source/WebCore/html/parser/HTMLParserScheduler.cpp
+@@ -41,7 +41,7 @@ namespace WebCore {
+ static Seconds parserTimeLimit(Page* page)
+ {
+     // Always yield after exceeding this.
+-    constexpr auto defaultParserTimeLimit = 500_ms;
++    constexpr auto defaultParserTimeLimit = 5_s;
+ 
+     // We're using the poorly named customHTMLTokenizerTimeDelay setting.
+     if (page && page->hasCustomHTMLTokenizerTimeDelay())
+-- 
+2.48.1
+
