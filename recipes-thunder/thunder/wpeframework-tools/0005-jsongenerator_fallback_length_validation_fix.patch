@@ -1,0 +1,30 @@
+*********************************************************************************************
+From: Thamim Razith <tabbas651@cable.comcast.com>
+Date: Tue, 24 Dec 2025 12:00:00 +0000
+Subject: [PATCH] 0001-jsongenerator_fallback_length_validation_fix.patch
+
+Reason for Change: In Thunder 5.3.0, the JsonGenerator rpc_emitter.py has a bug in the fallback length validation logic.
+When processing parameters with @length but no @maxlength annotation, the fallback code path incorrectly attempts to access maxlength_param[0] when maxlength_param is None, causing TypeError: 'NoneType' object is not subscriptable.
+
+The error occurs at line 1323 in the else branch of length validation logic where the code tries to use maxlength_param[0] but maxlength_param is None in this context. The comment "# fallback to @length" indicates the intended behavior should use length_param instead. This fix changes the fallback case to correctly use length_param[0] instead of maxlength_param[0], aligning with the fallback comment and matching the correct implementation found elsewhere in the codebase.This resolves compilation failures when processing interface files like IDisplayInfo.h that contain methods with @length annotations but no corresponding @maxlength annotations.
+Upstream-Status: Comcast Changes
+Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
+
+************************************************************************************
+diff --git a/JsonGenerator/source/rpc_emitter.py b/JsonGenerator/source/rpc_emitter.py
+index 74481b0..64e8212 100644
+--- a/JsonGenerator/source/rpc_emitter.py
++++ b/JsonGenerator/source/rpc_emitter.py
+@@ -1320,9 +1320,9 @@ def _EmitRpcCode(root, emit, ns, header_file, source_file, data_emitted):
+                         else:
+                             # fallback to @length
+                             alloca_param = size
+-                            conditions.check_set(maxlength_param[0])
+-                            conditions.check_not_null(maxlength_param[0])
+-                            if maxlength_param[0].size > 16:
++                            conditions.check_set(length_param[0])
++                            conditions.check_not_null(length_param[0])
++                            if length_param[0].size > 16:
+                                 conditions.extend("%s <= 0x100000" % size)
+
+                         emit.EnterBlock(conditions)
