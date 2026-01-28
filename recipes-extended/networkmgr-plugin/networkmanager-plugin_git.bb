@@ -19,7 +19,7 @@ S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/RDK-60375"
 
-SRCREV = "b6d6d20a684cd4b818525fb3620ab474c08eafe8"
+SRCREV = "e89b7d3936159aff9a85305c7052ca85819166ad"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
@@ -45,6 +45,12 @@ EXTRA_OECMAKE += " \
 
 CXXFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
 CFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
+
+do_install(){
+    install -d ${D}${sysconfdir}/NetworkManager
+    install -d ${D}${sysconfdir}/NetworkManager/conf.d
+    install -m 0755 ${S}/conf/99-default-link-local ${D}${sysconfdir}/NetworkManager/conf.d/99-default-link-local.conf
+}
 
 # Configure Logging for the Router Discovery Tool
 inherit syslog-ng-config-gen logrotate_config
