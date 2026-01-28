@@ -42,11 +42,8 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " telemetrysupport \
+                   systemmode \
 "
-
-
-PACKAGECONFIG:append = " systemmode"
-
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[systemmode] = "-DPLUGIN_SYSTEMMODE=ON,-DPLUGIN_SYSTEMMODE=OFF,"
 
@@ -72,7 +69,6 @@ do_install:append() {
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
     fi
 
-    install -m 0644 ${THISDIR}/files/displaysettings.ini ${D}${sysconfdir}/rfcdefaults/
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
