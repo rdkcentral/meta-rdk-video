@@ -46,7 +46,7 @@ PACKAGECONFIG ?= " telemetrysupport \
 "
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[systemmode] = "-DPLUGIN_SYSTEMMODE=ON,-DPLUGIN_SYSTEMMODE=OFF,entservices-api,entservices-api"
+PACKAGECONFIG[systemmode] = "-DPLUGIN_SYSTEMMODE=ON,-DPLUGIN_SYSTEMMODE=OFF,entservices-apis,entservices-apis"
 
 # ----------------------------------------------------------------------------
 
