@@ -2,8 +2,8 @@ SUMMARY = "ENTServices inputoutput plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV ?= "1.4.11"
-PR ?= "r0"
+PV = "1.10.1"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-inputoutput;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.6.6
-SRCREV = "a453b22876aa390988bd0e8545e9c863098f2fe3"
+# Release version - 1.10.1
+SRCREV = "feeb3ff5ce310f6bf5b5af24652284f0dbaa40d7"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -30,7 +30,6 @@ TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
-CXXFLAGS += " -DDEVICE_TYPE=AVOutputTV "
 # enable filtering for undefined interfaces and link local ip address notifications
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
@@ -46,12 +45,10 @@ PACKAGECONFIG ?= " breakpadsupport \
 "
 
 PACKAGECONFIG:append = " hdmicecsink "
-PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', ' avoutput', '', d)}"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[avinput]              = "-DPLUGIN_AVINPUT=ON,-DPLUGIN_AVINPUT=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal,iarmbus devicesettings"
-PACKAGECONFIG[avoutput]             = "-DPLUGIN_AVOUTPUT=ON -DAVOUTPUT_TV=true,,"
 PACKAGECONFIG[compositeinput]       = "-DPLUGIN_COMPOSITEINPUT=ON,-DPLUGIN_COMPOSITEINPUT=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal,iarmbus devicesettings"
 PACKAGECONFIG[hdcpprofile]          = "-DPLUGIN_HDCPPROFILE=ON,-DPLUGIN_HDCPPROFILE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal,iarmbus devicesettings"
 PACKAGECONFIG[hdmicec2]             = "-DPLUGIN_HDMICEC2=ON,-DPLUGIN_HDMICEC2=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader,iarmbus devicesettings hdmicec"
@@ -88,6 +85,5 @@ do_install:append() {
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
-
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"

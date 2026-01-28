@@ -1,33 +1,36 @@
-SUMMARY = "ENTServices runtime plugin"
+SUMMARY = "ENTServices firmware update plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
-PV = "1.2.0"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
-inherit cmake pkgconfig
+inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-runtime;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.2.0
-SRCREV = "5ab664b1c9875c2a2ad329ebcf9e966832d61c28"
+# Release version - 1.0.1
+SRCREV = "7f1bc6caf4a6ad4ffa45312cb479659b49522a71"
+
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
+
+EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 
 DEPENDS += "wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
+
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
-CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
 # enable filtering for undefined interfaces and link local ip address notifications
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
@@ -35,23 +38,12 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-RDEPENDS_${PN}:append = " webkitbrowser-plugin"
-
-include include/webkitbrowser.inc
-
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " breakpadsupport \
-    telemetrysupport \
-    ${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' performancemetrics ', ' tracecontrol ', d)} \
-"
+PACKAGECONFIG ?= " firmwareupdate \
+    "
 
-PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
-PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[performancemetrics]   = "-DPLUGIN_PERFORMANCEMETRICS=ON \
-                                       -DPLUGIN_PERFORMANCEMETRICS_LOGGER_IMPLEMENTATION=SYSLOG \
-                                       -DPLUGIN_PERFORMANCEMETRICS_WEBKITBROWSER_CLASSNAME=ON \
-                                      ,-DPLUGIN_PERFORMANCEMETRICS=OFF, entservices-apis,"
+PACKAGECONFIG[firmwareupdate]          = "-DPLUGIN_FIRMWAREUPDATE=ON,-DPLUGIN_FIRMWAREUPDATE=OFF,iarmmgrs wpeframework-clientlibraries,iarmbus"
 
 # ----------------------------------------------------------------------------
 
@@ -74,12 +66,15 @@ do_install:append() {
     then
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
     fi
+
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
     fi
 }
+
+# ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
