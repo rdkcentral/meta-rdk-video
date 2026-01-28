@@ -44,7 +44,6 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 PACKAGECONFIG ?= " telemetrysupport \
 "
 
-DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 
 PACKAGECONFIG:append = " systemmode"
 
