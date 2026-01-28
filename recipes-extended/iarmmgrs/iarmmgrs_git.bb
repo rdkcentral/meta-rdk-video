@@ -115,7 +115,11 @@ CFLAGS:remove = "-DRF4CE_GPMSO_API"
 # JIRA: XRE-6537.
 #
 #MADAN
-LDFLAGS += " -lpthread -lglib-2.0 -ldbus-1 -lIARMBus -lsystemd -lsecure_wrapper -lprivilege -ldl -lWPEFrameworkPowerController"
+LDFLAGS += " -lpthread -lglib-2.0 -ldbus-1 -lIARMBus -lsystemd -lsecure_wrapper -lprivilege -ldl"
+
+DISTRO_FEATURES_CHECK = "wpe_r5_3"
+LDFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_5_3', ' -lThunderPowerController', ' -lWPEFrameworkPowerController', d)}"
+
 CFLAGS += "-std=c++11 -fPIC -D_REENTRANT -Wall -I./include ${INCLUDE_DIRS}"
 
 CFLAGS:append:client = " -DMEDIA_CLIENT"
