@@ -69,10 +69,10 @@ breakpad_package_preprocess () {
     machine_dir="${@d.getVar('MACHINE', True)}"
 
     binary="$(readlink -m "${D}${libdir}/.debug/libaamp.so")"
-    bbnote "Dumping symbols from $binary -> ${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.sym"
+    bbnote "Dumping symbols from $binary -> ${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.so.sym"
 
     mkdir -p ${TMPDIR}/deploy/breakpad_symbols/$machine_dir
-    dump_syms "${binary}" > "${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.sym" || echo "dump_syms finished with errorlevel $?"
+    dump_syms "${binary}" > "${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.so.sym" || echo "dump_syms finished with errorlevel $?"
 }
 
 CXXFLAGS += "-DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 -I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
@@ -188,8 +188,11 @@ do_create_symbol_artifacts() {
         return 0
     fi
 
+    # Explicitly call breakpad_package_preprocess to generate symbols
+    breakpad_package_preprocess
+
     machine_dir="${MACHINE}"
-    symbol_file="${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.sym"
+    symbol_file="${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.so.sym"
 
     if [ ! -f "$symbol_file" ]; then
         bbwarn "Symbol file not found at $symbol_file, skipping symbol artifact creation"
