@@ -178,7 +178,7 @@ do_create_symbol_artifacts() {
     fi
 
     machine_dir="${MACHINE}"
-    symbol_file="${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.so.sym"
+    symbol_file="$YOCTO_BUILD_DIR/tmp/deploy/breakpad_symbols/libaamp.so.sym"
 
     if [ ! -f "$symbol_file" ]; then
         bbwarn "Symbol file not found at $symbol_file, skipping symbol artifact creation"
