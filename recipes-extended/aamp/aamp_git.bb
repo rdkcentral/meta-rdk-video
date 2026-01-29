@@ -7,7 +7,7 @@ PV = "2.11.1"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp = "4c41742ba749cbf9a38a05a6d29c2bfa88ff531d"
+SRCREV_aamp = "2fe613508ab99339d00979d4a7bdcf9b94386ada"
 
 inherit pkgconfig
 DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework"
