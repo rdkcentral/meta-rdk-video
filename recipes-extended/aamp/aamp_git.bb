@@ -7,13 +7,13 @@ PV = "2.11.1"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp = "2fe613508ab99339d00979d4a7bdcf9b94386ada"
+SRCREV_aamp = "4b91fa8b4c8691880c5dc6fbc6d9ca8ac92c4f04"
 
 inherit pkgconfig
 DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework"
 require ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', '', 'aamp-middleware.inc', d)}
 
-DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', ' player-interface-dev', '', d)}"
+DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', ' player-interface', '', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', '-DCMAKE_EXTERNAL_PLAYER_INTERFACE_DEPENDENCIES=1', ' -DCMAKE_EXTERNAL_PLAYER_INTERFACE_DEPENDENCIES=0', d)}"
 
 RDEPENDS:${PN} += "devicesettings"
