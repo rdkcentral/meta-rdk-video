@@ -65,12 +65,14 @@ FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
 
+#Generating symbol files using breakpad.
+#Will be removed once original location path of symbol files found
 breakpad_package_preprocess () {
     machine_dir="${@d.getVar('MACHINE', True)}"
 
     binary="$(readlink -m "${D}${libdir}/libaamp.so")"
-    
-    # Check if debug binary exists
+
+    # Check adeded to see if  binary (libaamp.so) exists
     if [ -f "${binary}" ]; then
         bbnote "Debug binary found at: ${binary} (size: $(stat -c%s "${binary}") bytes)"
     else
@@ -218,15 +220,7 @@ do_create_symbol_artifacts() {
     echo "Copying symbol file from $symbol_file"
     cp -v "$symbol_file" ${SYMBOL_FILES_DIR}/libaamp.so.sym
 
-    # Create symbol info file
-    SYMBOL_INFO_FILE="${SYMBOL_FILES_DIR}/symbols.info"
-    echo "DATE=${DATETIME}" > ${SYMBOL_INFO_FILE}
-    echo "OS_TYPE=${OS_TYPE}" >> ${SYMBOL_INFO_FILE}
-    echo "PLATFORM=${PLATFORM_PATH}" >> ${SYMBOL_INFO_FILE}
-    echo "MACHINE=${MACHINE}" >> ${SYMBOL_INFO_FILE}
-    echo "RDK_BRANCH=${PROJECT_BRANCH}" >> ${SYMBOL_INFO_FILE}
-    echo "AAMP_BRANCH=${AAMP_RELEASE_TAG_NAME}" >> ${SYMBOL_INFO_FILE}
-    echo "AAMP_SRC_REV=${SRCREV_aamp}" >> ${SYMBOL_INFO_FILE}
+
 
     # Package into symbol artifact
     echo "Packaging symbols into ${ARTIFACT_DIR}/${SYMBOLS_ARTIFACT_NAME}"
