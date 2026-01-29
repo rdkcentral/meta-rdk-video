@@ -68,7 +68,18 @@ INSANE_SKIP:${PN} = "dev-so"
 breakpad_package_preprocess () {
     machine_dir="${@d.getVar('MACHINE', True)}"
 
-    binary="$(readlink -m "${D}${libdir}/.debug/libaamp.so")"
+    binary="$(readlink -m "${D}${libdir}/libaamp.so")"
+    
+    # Check if debug binary exists
+    if [ -f "${binary}" ]; then
+        bbnote "Debug binary found at: ${binary} (size: $(stat -c%s "${binary}") bytes)"
+    else
+        bbwarn "Debug binary NOT found at: ${binary}"
+        bbnote "Checking directory contents: ${D}${libdir}/"
+        ls -la "${D}${libdir}/" || bbnote "Debug directory does not exist"
+        return 1
+    fi
+    
     bbnote "Dumping symbols from $binary -> ${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.so.sym"
 
     mkdir -p ${TMPDIR}/deploy/breakpad_symbols/$machine_dir
