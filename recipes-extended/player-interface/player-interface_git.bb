@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV = "0.1.0"
 PR = "r0"
 
-SRCREV = "f96a7c3e9f770e2c6c43cddeef791afd1c877ae6"
+SRCREV = "ac1c8ef18a7d7444288e6e12689544f3977fe89e"
 
 inherit pkgconfig
 
