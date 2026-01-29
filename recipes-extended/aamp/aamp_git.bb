@@ -101,6 +101,7 @@ DEPLOY_DIR_WGT = "${DEPLOY_DIR}/widgets"
 ARTIFACT_FILES_DIR = "${WORKDIR}/artifact-files"
 ARTIFACT_DIR = "${WORKDIR}/artifacts"
 ARTIFACT_NAME = "AAMP_${AAMP_ARTIFACTS_VERSION}.tgz"
+SYMBOLS_ARTIFACT_NAME = "AAMP_SYMBOLS.tar.gz"
 
 do_create_artifacts[cleandirs] = "${ARTIFACT_FILES_DIR} ${ARTIFACT_DIR}"
 do_create_artifacts[vardepsexclude] += "DATETIME"
@@ -170,6 +171,48 @@ do_create_artifacts() {
     cp ${ARTIFACT_DIR}/${ARTIFACT_NAME} ${DEPLOY_DIR_IMAGE}/AAMP_artifacts/
 }
 
+do_create_symbol_artifacts() {
+    if [ "${PLATFORM_PATH}" = "unknown" ]; then
+        echo "Skipping symbol artifact creation for unknown platform [MACHINE=${MACHINE}]"
+        return 0
+    fi
+
+    machine_dir="${MACHINE}"
+    symbol_file="${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.sym"
+
+    if [ ! -f "$symbol_file" ]; then
+        bbwarn "Symbol file not found at $symbol_file, skipping symbol artifact creation"
+        return 0
+    fi
+
+    # Create symbol artifacts directory
+    SYMBOL_FILES_DIR="${WORKDIR}/symbol-files"
+    mkdir -p ${SYMBOL_FILES_DIR}
+
+    # Copy the symbol file
+    echo "Copying symbol file from $symbol_file"
+    cp -v "$symbol_file" ${SYMBOL_FILES_DIR}/libaamp.so.sym
+
+    # Create symbol info file
+    SYMBOL_INFO_FILE="${SYMBOL_FILES_DIR}/symbols.info"
+    echo "DATE=${DATETIME}" > ${SYMBOL_INFO_FILE}
+    echo "OS_TYPE=${OS_TYPE}" >> ${SYMBOL_INFO_FILE}
+    echo "PLATFORM=${PLATFORM_PATH}" >> ${SYMBOL_INFO_FILE}
+    echo "MACHINE=${MACHINE}" >> ${SYMBOL_INFO_FILE}
+    echo "RDK_BRANCH=${PROJECT_BRANCH}" >> ${SYMBOL_INFO_FILE}
+    echo "AAMP_BRANCH=${AAMP_RELEASE_TAG_NAME}" >> ${SYMBOL_INFO_FILE}
+    echo "AAMP_SRC_REV=${SRCREV_aamp}" >> ${SYMBOL_INFO_FILE}
+
+    # Package into symbol artifact
+    echo "Packaging symbols into ${ARTIFACT_DIR}/${SYMBOLS_ARTIFACT_NAME}"
+    tar -cvzf ${ARTIFACT_DIR}/${SYMBOLS_ARTIFACT_NAME} -C ${SYMBOL_FILES_DIR} .
+
+    # Deploy symbol artifact to separate folder
+    mkdir -p ${DEPLOY_DIR_IMAGE}/AAMP_symbols
+    cp ${ARTIFACT_DIR}/${SYMBOLS_ARTIFACT_NAME} ${DEPLOY_DIR_IMAGE}/AAMP_symbols/
+    echo "Created symbol artifact: ${SYMBOLS_ARTIFACT_NAME}"
+}
+
 do_deploy_artifacts() {
     if [ -f ${ARTIFACT_DIR}/${ARTIFACT_NAME} ]; then
         mkdir -p ${DEPLOY_DIR_WGT}/AAMP_artifacts
@@ -178,7 +221,15 @@ do_deploy_artifacts() {
     else
         echo "Artifact not present! Skipping this operation [MACHINE=${MACHINE}]."
     fi
+
+    # Deploy symbol artifact to separate folder
+    if [ -f ${ARTIFACT_DIR}/${SYMBOLS_ARTIFACT_NAME} ]; then
+        mkdir -p ${DEPLOY_DIR_WGT}/AAMP_symbols
+        cp -v ${ARTIFACT_DIR}/${SYMBOLS_ARTIFACT_NAME} ${DEPLOY_DIR_WGT}/AAMP_symbols/
+        echo "Copied ${ARTIFACT_DIR}/${SYMBOLS_ARTIFACT_NAME} to ${DEPLOY_DIR_WGT}/AAMP_symbols"
+    fi
 }
 
 addtask do_create_artifacts after do_install before do_package
-addtask do_deploy_artifacts after do_create_artifacts before do_package
+addtask do_create_symbol_artifacts after do_create_artifacts before do_package
+addtask do_deploy_artifacts after do_create_symbol_artifacts before do_package
