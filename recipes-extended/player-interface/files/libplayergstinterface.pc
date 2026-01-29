@@ -1,9 +1,0 @@
-exec_prefix=/usr
-libdir=/usr/lib
-includedir=/usr/include 
- 
-Name: playergstinterface 
-Description: player gstreamer interfaces library 
-Version: 1.0 
-Libs: -L${libdir} -lplayergstinterface 
-Cflags: -I${includedir}

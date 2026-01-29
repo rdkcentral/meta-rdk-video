@@ -1,9 +1,0 @@
-exec_prefix=/usr
-libdir=/usr/lib
-includedir=/usr/include
-
-Name: EntosPlayerFireboltInterface
-Description: iarm rfc interfaces library
-Version: 1.0.0
-Libs: -L${libdir} -lplayerfbinterface
-Cflags: -I${includedir}
