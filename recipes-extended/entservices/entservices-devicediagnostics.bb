@@ -1,4 +1,4 @@
-SUMMARY = "ENTServices displayinfo plugin"
+SUMMARY = "ENTServices devicediagnostics plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displayinfo;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicediagnostics;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
@@ -45,7 +45,7 @@ PACKAGECONFIG ?= " breakpadsupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systimemgr', 'systimemgrsupport', '', d)} \
 "
 
-PACKAGECONFIG:append = " displayinfo"
+PACKAGECONFIG:append = " devicediagnostics"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
@@ -59,7 +59,7 @@ EXTRA_OECMAKE += " \
     -DSECAPI_LIB=sec_api \
 "
 
-# Check if DisplayInfo backend is defined.
+# Check if DeviceDiagnostics backend is defined.
 python () {
     machine_name = d.getVar('MACHINE')
     if 'raspberrypi4' in machine_name:
