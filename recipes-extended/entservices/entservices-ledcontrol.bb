@@ -22,7 +22,7 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
 DEPENDS += "wpeframework wpeframework-tools-native entservices-apis iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal "
-RDEPENDS:${PN} += "wpeframework iarmbus devicesettings entservices-apis""
+RDEPENDS:${PN} += "wpeframework iarmbus devicesettings entservices-apis"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
