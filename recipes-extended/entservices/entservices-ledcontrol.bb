@@ -14,15 +14,15 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-ledcontrol;${CMF_GITHUB_SRC_URI_SUFFIX
           "
 
 # Release version - 1.1.0
-SRCREV = "9b91a1e61610f5210166948da947e64e993afce8"
+SRCREV = "39b889ccac827d85e784c946f5e89eb310610ccd"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis iarmbus iarmmgrs devicesettings entservices-apis"
-RDEPENDS:${PN} += "wpeframework iarmbus devicesettings entservices-apis"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
+RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
