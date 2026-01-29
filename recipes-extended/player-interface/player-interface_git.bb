@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV = "0.1.0"
 PR = "r0"
 
-SRCREV = "c3310d25e08b33d7b42c1a6b9e7ce89a3e46294f"
+SRCREV = "f96a7c3e9f770e2c6c43cddeef791afd1c877ae6"
 
 inherit pkgconfig
 
@@ -57,18 +57,3 @@ CXXFLAGS += "-DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 -I${STAGING_DIR_TARGET}${inc
 CXXFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '', ' -lWPEFrameworkSecurityUtil ', d)}"
 EXTRA_OECMAKE += " -DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 "
 
-
-# SRC_URI += " file://libplayerfbinterface.pc"
-# SRC_URI += " file://libbaseconversion.pc"
-# SRC_URI += " file://libplayerlogmanager.pc"
-# SRC_URI += " file://libplayergstinterface.pc"
-# SRC_URI += " file://libsubtec.pc"
-
-# do_install:append() {
-#     install -d ${D}${libdir}/pkgconfig
-#     install -m0644 ${WORKDIR}/libplayerfbinterface.pc ${D}${libdir}/pkgconfig/
-#     install -m0644 ${WORKDIR}/libbaseconversion.pc ${D}${libdir}/pkgconfig/
-#     install -m0644 ${WORKDIR}/libplayerlogmanager.pc ${D}${libdir}/pkgconfig/
-#     install -m0644 ${WORKDIR}/libplayergstinterface.pc ${D}${libdir}/pkgconfig/
-#     install -m0644 ${WORKDIR}/libsubtec.pc ${D}${libdir}/pkgconfig/
-# }
