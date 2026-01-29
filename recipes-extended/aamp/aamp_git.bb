@@ -9,9 +9,9 @@ PR = "r0"
 SRCREV_FORMAT = "aamp"
 SRCREV_aamp = "d8f156574d4abf8be5dcc3bb75b190536b74e6e8"
 
-inherit pkgconfig
+inherit pkgconfig breakpad-wrapper
 
-DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline"
+DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline breakpad-native"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0  gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)}"
 RDEPENDS_${PN} +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 DEPENDS += " wpe-webkit"
@@ -64,6 +64,17 @@ FILES:${PN} +="${libdir}/gstreamer-1.0/lib*.so"
 FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
+
+breakpad_package_preprocess () {
+    machine_dir="${@d.getVar('MACHINE', True)}"
+
+    binary="$(readlink -m "${D}${libdir}/.debug/libaamp.so")"
+    bbnote "Dumping symbols from $binary -> ${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.sym"
+
+    mkdir -p ${TMPDIR}/deploy/breakpad_symbols/$machine_dir
+    dump_syms "${binary}" > "${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.sym" || echo "dump_syms finished with errorlevel $?"
+}
+
 CXXFLAGS += "-DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 -I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
 
 CXXFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '', ' -lWPEFrameworkSecurityUtil ', d)}"
@@ -178,7 +189,7 @@ do_create_symbol_artifacts() {
     fi
 
     machine_dir="${MACHINE}"
-    symbol_file="$YOCTO_BUILD_DIR/tmp/deploy/breakpad_symbols/libaamp.so.sym"
+    symbol_file="${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.sym"
 
     if [ ! -f "$symbol_file" ]; then
         bbwarn "Symbol file not found at $symbol_file, skipping symbol artifact creation"
