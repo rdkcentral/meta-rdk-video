@@ -13,7 +13,7 @@ inherit pkgconfig
 DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework"
 require ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', '', 'aamp-middleware.inc', d)}
 
-DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', ' player-interface', '', d)}"
+DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', ' player-interface-dev', '', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', '-DCMAKE_EXTERNAL_PLAYER_INTERFACE_DEPENDENCIES=1', ' -DCMAKE_EXTERNAL_PLAYER_INTERFACE_DEPENDENCIES=0', d)}"
 
 RDEPENDS:${PN} += "devicesettings"
