@@ -16,9 +16,10 @@ PR = "r0"
 
 require rialto_revision.inc
 
-SRCREV = "0ed11bd6fe434c1d727f4f4265578e91e4c13dbe"
-SRC_URI = "git://github.com/tabbas651/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
+SRCREV = "4d930b26289dd6b5d3e3dfa0b877a9a9d2d38e74"
+SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
+SRC_URI += "${@bb.utils.contains('DISTRO_FEATURES', 'thunder_r5',' file://0002-Thunder-5.3.0-compilation-Error.patch','',d)}"
 
 DEPENDS = "openssl jsoncpp protobuf protobuf-native"
 DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform "
