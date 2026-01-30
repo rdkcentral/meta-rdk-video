@@ -1,0 +1,20 @@
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index 650a2e1d..2a2cf9a9 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -1093,6 +1093,7 @@ POP_WARNING()
+         std::vector<PluginHost::ISubSystem::subsystem> externallyControlled;
+         ServiceMap::Iterator iterator(_services.Services());
+ 
++#if 0
+         // Load the metadata for the subsystem information..
+         while (iterator.Next() == true)
+         {
+@@ -1111,6 +1112,7 @@ POP_WARNING()
+                 }
+             }
+         }
++#endif
+ 
+         _controller->Activate(PluginHost::IShell::STARTUP);
+ 

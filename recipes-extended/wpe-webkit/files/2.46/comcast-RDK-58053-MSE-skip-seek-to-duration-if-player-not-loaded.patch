@@ -1,0 +1,88 @@
+From 3ff0f276dee0a2a58af4865897a3bc498bf13128 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Tue, 10 Jun 2025 14:40:10 +0200
+Subject: [PATCH] comcast - RDK-58053 - MSE skip seek to duration if player not
+ loaded
+
+The quirk is applied for all apps.
+
+RTLPlay, AfrolandTV, Hipstr - video playback in mini window doesn't start.
+They all uses the same videojs player that seeks to buffered.end()
+before starting the playback. That is interpreted by HTMLMediaElement
+as the end of video, triggering 'ended' event.
+
+See RDK-58053 for more details.
+
+Signed-off-by: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+
+%% original patch: comcast-RDK-58053-MSE-skip-seek-to-duration-if-player-not-loaded.patch
+---
+ Source/WebCore/html/HTMLMediaElement.cpp |  3 ++-
+ Source/WebCore/page/Quirks.cpp           | 18 ++++++++++++++++++
+ Source/WebCore/page/Quirks.h             |  2 ++
+ 3 files changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/html/HTMLMediaElement.cpp b/Source/WebCore/html/HTMLMediaElement.cpp
+index b92980c16f35..b8063111d2bc 100644
+--- a/Source/WebCore/html/HTMLMediaElement.cpp
++++ b/Source/WebCore/html/HTMLMediaElement.cpp
+@@ -4106,7 +4106,8 @@ ExceptionOr<void> HTMLMediaElement::setCurrentTimeForBindings(double time)
+         return Exception { ExceptionCode::InvalidStateError };
+ 
+     if (m_readyState == HAVE_NOTHING || !m_player) {
+-        m_defaultPlaybackStartPosition = MediaTime::createWithDouble(time);
++        if (!document().quirks().shouldNotChangePlaybackPositionOnPlayerStartup())
++            m_defaultPlaybackStartPosition = MediaTime::createWithDouble(time);
+         return { };
+     }
+ 
+diff --git a/Source/WebCore/page/Quirks.cpp b/Source/WebCore/page/Quirks.cpp
+index 3ac002b60c3f..a01f2ce81d80 100644
+--- a/Source/WebCore/page/Quirks.cpp
++++ b/Source/WebCore/page/Quirks.cpp
+@@ -1981,4 +1981,22 @@ bool Quirks::shouldBypassAudioFlushOnSampleReplacement() const
+ }
+ #endif
+ 
++bool Quirks::shouldNotChangePlaybackPositionOnPlayerStartup() const
++{
++    // RTLPlay app confuses itself by setting playback position to duration before starting playback.
++
++    if (!needsQuirks())
++        return false;
++
++    // Return true until Seek to Duration is properly fixed
++    return true;
++
++    if (!m_shouldNotChangePlaybackPositionOnPlayerStartupQuirk) {
++        auto domain = RegistrableDomain(m_document->url()).string();
++        m_shouldNotChangePlaybackPositionOnPlayerStartupQuirk = domain == "rtl.it"_s;
++    }
++
++    return *m_shouldNotChangePlaybackPositionOnPlayerStartupQuirk;
++}
++
+ }
+diff --git a/Source/WebCore/page/Quirks.h b/Source/WebCore/page/Quirks.h
+index 41b8c0474caf..eb537fa056fe 100644
+--- a/Source/WebCore/page/Quirks.h
++++ b/Source/WebCore/page/Quirks.h
+@@ -210,6 +210,7 @@ public:
+ #if ENABLE(MEDIA_SOURCE)
+     bool shouldBypassAudioFlushOnSampleReplacement() const;
+ #endif
++    bool shouldNotChangePlaybackPositionOnPlayerStartup() const;
+ 
+ private:
+     bool needsQuirks() const;
+@@ -290,6 +291,7 @@ private:
+ #if ENABLE(MEDIA_SOURCE)
+     mutable std::optional<bool> m_shouldBypassAudioFlushOnSampleReplacementQuirk;
+ #endif
++    mutable std::optional<bool> m_shouldNotChangePlaybackPositionOnPlayerStartupQuirk;
+ };
+ 
+ } // namespace WebCore
+-- 
+2.48.1
+

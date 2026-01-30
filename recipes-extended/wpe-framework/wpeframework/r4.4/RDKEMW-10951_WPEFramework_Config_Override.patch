@@ -1,0 +1,44 @@
+diff --git a/Source/WPEFramework/GenericConfig.cmake b/Source/WPEFramework/GenericConfig.cmake
+index be57d3e48..fe13af5dd 100644
+--- a/Source/WPEFramework/GenericConfig.cmake
++++ b/Source/WPEFramework/GenericConfig.cmake
+@@ -25,6 +25,7 @@ set(SOFT_KILL_CHECK_WAIT_TIME 10  CACHE STRING "Soft kill check waiting time")
+ set(HARD_KILL_CHECK_WAIT_TIME 4  CACHE STRING "Hard kill check waiting time")
+ set(PERSISTENT_PATH "/root" CACHE STRING "Persistent path")
+ set(DATA_PATH "${CMAKE_INSTALL_PREFIX}/share/${NAMESPACE}" CACHE STRING "Data path")
++set(CONFIG_PATH "/etc/WPEFramework/plugins" CACHE STRING "Config path")
+ set(SYSTEM_PATH "${CMAKE_INSTALL_PREFIX}/lib/${NAMESPACE_LIB}/plugins" CACHE STRING "System path")
+ set(WEBSERVER_PATH "/boot/www" CACHE STRING "Root path for the HTTP server")
+ set(WEBSERVER_PORT 8080 CACHE STRING "Port for the HTTP server")
+@@ -78,6 +79,7 @@ map_set(${CONFIG} hardkillcheckwaittime ${HARD_KILL_CHECK_WAIT_TIME})
+ map_set(${CONFIG} persistentpath ${PERSISTENT_PATH}/${NAMESPACE})
+ map_set(${CONFIG} volatilepath ${VOLATILE_PATH})
+ map_set(${CONFIG} datapath ${DATA_PATH})
++map_set(${CONFIG} configs ${CONFIG_PATH})
+ map_set(${CONFIG} systempath ${SYSTEM_PATH})
+ map_set(${CONFIG} proxystubpath ${PROXYSTUB_PATH})
+ map_set(${CONFIG} postmortempath ${POSTMORTEM_PATH})
+diff --git a/Source/WPEFramework/WPEFramework.conf.in b/Source/WPEFramework/WPEFramework.conf.in
+index d14d2ab35..93d6d631d 100644
+--- a/Source/WPEFramework/WPEFramework.conf.in
++++ b/Source/WPEFramework/WPEFramework.conf.in
+@@ -8,6 +8,7 @@ hardkillcheckwaittime = '@HARD_KILL_CHECK_WAIT_TIME@'
+ persistentpath = '@PERSISTENT_PATH@/@NAMESPACE@'
+ volatilepath = '@VOLATILE_PATH@'
+ datapath = '@DATA_PATH@'
++configs = '@CONFIG_PATH@'
+ systempath = '@SYSTEM_PATH@'
+ proxystubpath = '@PROXYSTUB_PATH@'
+ postmortempath = '@POSTMORTEM_PATH@'
+diff --git a/Source/WPEFramework/params.config b/Source/WPEFramework/params.config
+index e0fd44524..410c7f73a 100644
+--- a/Source/WPEFramework/params.config
++++ b/Source/WPEFramework/params.config
+@@ -7,6 +7,7 @@ idletime
+ softkillcheckwaittime
+ hardkillcheckwaittime
+ persistentpath
++configs
+ volatilepath
+ datapath
+ systempath
