@@ -56,12 +56,6 @@ do_install:append() {
                sed -i "s|response=|response=${NM_CONNECTIVITY_CHECK_RESPONSE}|g" ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
            fi
     fi
-    if [ "${MACHINE}" = "es1-rtk-xumo" ]; then
-          if [ -f ${D}${base_libdir}/rdk/startStunnel.sh ]; then
-                bbnote "Disabling SHORTS"
-               sed -i 's/`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable 2>&1 > \/dev\/null`/\"false\"/' ${D}${base_libdir}/rdk/startStunnel.sh
-          fi
-    fi
 }
 
 FILES:${PN} += "${sysconfdir}/udhcpc.vendor_specific"
