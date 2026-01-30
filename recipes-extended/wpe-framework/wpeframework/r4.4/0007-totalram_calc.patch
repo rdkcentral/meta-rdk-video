@@ -1,0 +1,42 @@
+diff --git a/Source/core/SystemInfo.cpp b/Source/core/SystemInfo.cpp
+index de6705fe..7e511357 100644
+--- a/Source/core/SystemInfo.cpp
++++ b/Source/core/SystemInfo.cpp
+@@ -317,6 +317,37 @@ namespace Core {
+         struct sysinfo info;
+         sysinfo(&info);
+ 
++	// Debug: write raw sysinfo + derived calculations once.
++        static bool wroteOnce = false;
++        if (wroteOnce == false) {
++            wroteOnce = true;
++
++            const long ps = sysconf(_SC_PAGESIZE);
++            const uint64_t pageSize = (ps > 0) ? static_cast<uint64_t>(ps) : 0;
++            const uint64_t memUnit = (info.mem_unit != 0) ? static_cast<uint64_t>(info.mem_unit) : 1;
++
++            const uint64_t totalByUnit = static_cast<uint64_t>(info.totalram) * memUnit;
++            const uint64_t freeByUnit  = static_cast<uint64_t>(info.freeram)  * memUnit;
++
++            const uint64_t totalByPage = (pageSize != 0) ? (static_cast<uint64_t>(info.totalram) * pageSize) : 0;
++            const uint64_t freeByPage  = (pageSize != 0) ? (static_cast<uint64_t>(info.freeram)  * pageSize) : 0;
++
++            std::ofstream out("/tmp/ram_calc.txt", std::ofstream::out | std::ofstream::trunc);
++            if (out.is_open() == true) {
++                out << "sysinfo.totalram(raw)=" << static_cast<uint64_t>(info.totalram) << "\n";
++                out << "sysinfo.freeram(raw)="  << static_cast<uint64_t>(info.freeram)  << "\n";
++                out << "sysinfo.totalswap(raw)=" << static_cast<uint64_t>(info.totalswap) << "\n";
++                out << "sysinfo.freeswap(raw)="  << static_cast<uint64_t>(info.freeswap)  << "\n";
++                out << "sysinfo.mem_unit=" << static_cast<uint64_t>(info.mem_unit) << "\n";
++                out << "pagesize=" << pageSize << "\n";
++                out << "totalram*mem_unit(bytes)=" << totalByUnit << "\n";
++                out << "freeram*mem_unit(bytes)="  << freeByUnit  << "\n";
++                out << "totalram*pagesize(bytes)=" << totalByPage << "\n";
++                out << "freeram*pagesize(bytes)="  << freeByPage  << "\n";
++                out.close();
++            }
++        }
++
+         m_uptime = info.uptime;
+         m_freeram = info.freeram;
+         m_totalram = info.totalram;
