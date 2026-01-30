@@ -251,6 +251,7 @@ do_deploy_artifacts() {
     fi
 }
 
+addtask do_create_symbol_artifacts after do_compile before do_install
 addtask do_create_artifacts after do_install before do_package
-addtask do_create_symbol_artifacts after do_create_artifacts before do_package
-addtask do_deploy_artifacts after do_create_symbol_artifacts before do_package
+#addtask do_create_symbol_artifacts after do_create_artifacts before do_package
+addtask do_deploy_artifacts after do_create_artifacts before do_package
