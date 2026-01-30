@@ -1,0 +1,27 @@
+From be7a62418facb0b459560559d55fd4161d6025e0 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Tue, 11 Jan 2022 21:07:17 +0000
+Subject: [PATCH 3/4] comcast - WKIT-553 - add video/ave mimetype for holepunch
+
+Signed-off-by: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+---
+ .../graphics/holepunch/MediaPlayerPrivateHolePunch.cpp         | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/graphics/holepunch/MediaPlayerPrivateHolePunch.cpp b/Source/WebCore/platform/graphics/holepunch/MediaPlayerPrivateHolePunch.cpp
+index 53eb47d196ff..a1368301dba2 100644
+--- a/Source/WebCore/platform/graphics/holepunch/MediaPlayerPrivateHolePunch.cpp
++++ b/Source/WebCore/platform/graphics/holepunch/MediaPlayerPrivateHolePunch.cpp
+@@ -114,7 +114,8 @@ static HashSet<String>& mimeTypeCache()
+         return cache;
+ 
+     const ASCIILiteral mimeTypes[] = {
+-        "video/holepunch"_s
++        "video/holepunch"_s,
++        "video/ave"_s
+     };
+ 
+     for (unsigned i = 0; i < (sizeof(mimeTypes) / sizeof(*mimeTypes)); ++i)
+-- 
+2.25.1
+
