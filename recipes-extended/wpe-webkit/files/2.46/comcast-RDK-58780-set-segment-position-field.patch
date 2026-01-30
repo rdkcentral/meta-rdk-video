@@ -1,0 +1,43 @@
+From 98ef0dc0664b509555ee57031e1ca53a8bc9cb9d Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Thu, 11 Sep 2025 10:18:40 +0200
+Subject: [PATCH] comcast - RDK-58780 - set segment position field
+
+---
+ .../graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp   | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+index bb8e1721354c..7247efb4d717 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+@@ -180,7 +180,7 @@ struct Stream : public ThreadSafeRefCountedAndCanMakeThreadSafeWeakPtr<Stream> {
+             : pendingInitialCaps(WTFMove(initialCaps))
+         {
+             gst_segment_init(&segment, GST_FORMAT_TIME);
+-            segment.start = segment.time = startTime;
++            segment.position = segment.start = segment.time = startTime;
+             segment.rate = rate;
+             ASSERT(pendingInitialCaps);
+         }
+@@ -698,7 +698,7 @@ static void webKitMediaSrcStreamFlush(Stream* stream, bool isSeekingFlush)
+         DataMutexLocker streamingMembers { stream->streamingMembersDataMutex };
+         streamingMembers->segment.base = 0;
+         streamingMembers->segment.rate = priv->rate;
+-        streamingMembers->segment.start = streamingMembers->segment.time = priv->startTime;
++        streamingMembers->segment.position = streamingMembers->segment.start = streamingMembers->segment.time = priv->startTime;
+     } else {
+         // In the case of non-seeking flushes we don't reset the timeline, so instead we need to increase the `base` field
+         // by however running time we're starting after the flush.
+@@ -715,7 +715,7 @@ static void webKitMediaSrcStreamFlush(Stream* stream, bool isSeekingFlush)
+                     GST_TIME_ARGS(pipelineStreamTime), streamTime.toString().ascii().data(), stream->source->priv->rate);
+                 streamingMembers->segment.base = pipelineRunningTime;
+                 streamingMembers->segment.rate = stream->source->priv->rate;
+-                streamingMembers->segment.start = streamingMembers->segment.time = static_cast<GstClockTime>(pipelineStreamTime);
++                streamingMembers->segment.position = streamingMembers->segment.start = streamingMembers->segment.time = static_cast<GstClockTime>(pipelineStreamTime);
+             }
+         }
+     }
+-- 
+2.48.1
+
