@@ -7,14 +7,14 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r27"
+PR  = "r28"
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
 DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 # Tip of the branch on Jan 21, 2026
-SRCREV = "f5afad2ea9fb8f82aa91b5f898224d2dbc109fec"
+SRCREV = "17c6284d1837b77894cd11e0c1475ce4a48551f1"
 
 BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.46"
 SRC_URI = "${BASE_URI}"
@@ -113,6 +113,10 @@ EXTRA_OECMAKE += " \
 
 FILES:${PN} += " ${libdir}/wpe-webkit-*/injected-bundle/libWPEInjectedBundle.so"
 FILES:${PN}-web-inspector-plugin += " ${libdir}/wpe-webkit-*/libWPEWebInspectorResources.so"
+
+WPE_LIB_RUNPATH ?= "\$ORIGIN/../../lib"
+EXTRA_OECMAKE:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe_webkit_enable_new_dtags_runpath', ' -DCMAKE_INSTALL_RPATH=${WPE_LIB_RUNPATH} -DDISABLE_NEW_DTAGS=OFF', '', d)}"
+SYSROOT_DIRS:append = " ${libexecdir}"
 
 TUNE_CCARGS:remove = "${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', '','-fno-omit-frame-pointer -fno-optimize-sibling-calls', d)}"
 TUNE_CCARGS:append = " -fno-delete-null-pointer-checks"

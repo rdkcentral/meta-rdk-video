@@ -139,6 +139,10 @@ EXTRA_OECMAKE += " \
 FILES:${PN} += " ${libdir}/wpe-webkit-*/injected-bundle/libWPEInjectedBundle.so"
 FILES:${PN}-web-inspector-plugin += " ${libdir}/wpe-webkit-*/libWPEWebInspectorResources.so"
 
+WPE_LIB_RUNPATH ?= "\$ORIGIN/../../lib"
+EXTRA_OECMAKE:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe_webkit_enable_new_dtags_runpath', ' -DCMAKE_INSTALL_RPATH=${WPE_LIB_RUNPATH} -DDISABLE_NEW_DTAGS=OFF', '', d)}"
+SYSROOT_DIRS:append = " ${libexecdir}"
+
 TUNE_CCARGS:remove = "-fno-omit-frame-pointer -fno-optimize-sibling-calls"
 TUNE_CCARGS:append = " -fno-delete-null-pointer-checks"
 
