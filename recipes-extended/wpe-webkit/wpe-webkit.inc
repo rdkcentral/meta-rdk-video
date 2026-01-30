@@ -157,3 +157,7 @@ do_install:append() {
        (cd ${B}; find . -name '*.dwo' -print0 | tar -czvf ${D}/usr/src/debug/${PN}-dwo.tgz --null -T -)
     fi
 }
+
+WPE_LIB_RUNPATH ?= "\$ORIGIN/../../lib"
+EXTRA_OECMAKE:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe_webkit_enable_new_dtags_runpath', ' -DCMAKE_INSTALL_RPATH=${WPE_LIB_RUNPATH} -DDISABLE_NEW_DTAGS=OFF', '', d)}"
+SYSROOT_DIRS:append = " ${libexecdir}"
