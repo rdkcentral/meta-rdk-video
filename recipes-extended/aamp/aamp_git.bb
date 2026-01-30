@@ -67,26 +67,26 @@ INSANE_SKIP:${PN} = "dev-so"
 
 #Generating symbol files using breakpad.
 #Will be removed once original location path of symbol files found
-breakpad_package_preprocess () {
-    machine_dir="${@d.getVar('MACHINE', True)}"
-
-    binary="$(readlink -m "${D}${libdir}/libaamp.so")"
-
-    # Check adeded to see if  binary (libaamp.so) exists
-    if [ -f "${binary}" ]; then
-        bbnote "Debug binary found at: ${binary} (size: $(stat -c%s "${binary}") bytes)"
-    else
-        bbwarn "Debug binary NOT found at: ${binary}"
-        bbnote "Checking directory contents: ${D}${libdir}/"
-        ls -la "${D}${libdir}/" || bbnote "Debug directory does not exist"
-        return 1
-    fi
-    
-    bbnote "Dumping symbols from $binary -> ${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.so.sym"
-
-    mkdir -p ${TMPDIR}/deploy/breakpad_symbols/$machine_dir
-    dump_syms "${binary}" > "${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.so.sym" || echo "dump_syms finished with errorlevel $?"
-}
+#breakpad_package_preprocess () {
+#    machine_dir="${@d.getVar('MACHINE', True)}"
+#
+#    binary="$(readlink -m "${D}${libdir}/libaamp.so")"
+#
+#    # Check adeded to see if  binary (libaamp.so) exists
+#    if [ -f "${binary}" ]; then
+#        bbnote "Debug binary found at: ${binary} (size: $(stat -c%s "${binary}") bytes)"
+#    else
+#        bbwarn "Debug binary NOT found at: ${binary}"
+#        bbnote "Checking directory contents: ${D}${libdir}/"
+#        ls -la "${D}${libdir}/" || bbnote "Debug directory does not exist"
+#        return 1
+#    fi
+#    
+#    bbnote "Dumping symbols from $binary -> ${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.so.sym"
+#
+#    mkdir -p ${TMPDIR}/deploy/breakpad_symbols/$machine_dir
+#    dump_syms "${binary}" > "${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.so.sym" || echo "dump_syms finished with errorlevel $?"
+#}
 
 CXXFLAGS += "-DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 -I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
 
@@ -202,9 +202,11 @@ do_create_symbol_artifacts() {
     fi
 
     # Explicitly call breakpad_package_preprocess to generate symbols
-    breakpad_package_preprocess
+    #breakpad_package_preprocess
 
     machine_dir="${MACHINE}"
+    bbnote "Checking directory contents: ${TMPDIR}/deploy/breakpad_symbols/$machine_dir/"
+    ls -la "${TMPDIR}/deploy/breakpad_symbols/$machine_dir/" || bbnote "symbol dir is empty"
     symbol_file="${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.so.sym"
 
     if [ ! -f "$symbol_file" ]; then
