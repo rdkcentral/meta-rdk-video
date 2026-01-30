@@ -10,7 +10,7 @@ PR = "r0"
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
-SRCREV = "96b4505d4c81ef912f9ff2ba554d45f2cab62835"
+SRCREV = "0d99bf3ae93de7796e9bb192e3e3516eb6234e89"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
 #SRC_URI:append = " file://irmgr.diff"
@@ -271,7 +271,8 @@ do_install:append(){
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiEraseAllData ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiSetCredentials ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiGetCredentials ${D}${bindir}
-
+        install -m 0755 ${S}/mfr/test_mfr/test_mfr_get_blocklist ${D}${bindir}
+        install -m 0755 ${S}/mfr/test_mfr/test_mfr_set_blocklist ${D}${bindir}
 }
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'ctrlm-headers', '', d)}"
