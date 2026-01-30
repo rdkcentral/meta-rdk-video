@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
 PV = "3.9.5"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
           "
 
 # Release version - 3.9.5
-SRCREV = "b16159ddf8c92c96db63eed25429a2527ba28816"
+SRCREV = "8cafbe0550dbe4ea499da8f1300fac6fa293a6a2"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
