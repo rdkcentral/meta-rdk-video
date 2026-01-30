@@ -2,16 +2,17 @@ SUMMARY = "C++ Firebolt: Transport layer"
 DESCRIPTION = "Recipe for building Transport layer for C++ Firebolt Clients"
 
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=b1e01b26bacfc2232046c90a330332b3"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 inherit cmake
 
-FIREBOLT_TRANSPORT_VERSION = "1.0.0-next.23"
+PV ?= "v1.0.0"
+FIREBOLT_CPP_TRANSPORT_SHA256 ?= "2ff666c266ec22f9ed7989b1c4d3a7c6c2df24a8880d8587179236ccfac24163"
 
-SRC_URI = "https://github.com/rdkcentral/firebolt-native-transport/releases/download/v${FIREBOLT_TRANSPORT_VERSION}/firebolt-native-transport-${FIREBOLT_TRANSPORT_VERSION}.tar.gz"
-SRC_URI[sha256sum] = "61bfb10f7f32c50ee926dae6f9c462e8a9148a043a907a46e2005eed61c7eadb"
+SRC_URI = "https://github.com/rdkcentral/firebolt-cpp-transport/releases/download/v${PV}/firebolt-cpp-transport-${PV}.tar.gz"
+SRC_URI[sha256sum] = "${FIREBOLT_CPP_TRANSPORT_SHA256}"
 
-S = "${WORKDIR}/firebolt-native-transport-${FIREBOLT_TRANSPORT_VERSION}"
+S = "${WORKDIR}/firebolt-cpp-transport-${PV}"
 
 DEPENDS = "nlohmann-json websocketpp boost"
 RDEPENDS:${PN} = "websocketpp boost-system"
