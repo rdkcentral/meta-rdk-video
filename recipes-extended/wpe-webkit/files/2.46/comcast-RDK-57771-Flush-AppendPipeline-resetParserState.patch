@@ -1,0 +1,32 @@
+From 77ff9d31bd410b65284b9aafb2fa20aa07f8d3bf Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Wed, 21 May 2025 11:40:25 +0200
+Subject: [PATCH] comcast - RDK-57771 - Flush AppendPipeline resetParserState
+
+Use "flush" approach to reset parser state in AppendPipeline.
+Our gstreamer 1.18 has all the required patches applied:
+https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/4101
+https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/4199
+and is ready for that despite version mismatch (<1.24)
+
+Signed-off-by: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+---
+ .../WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp  | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp
+index 8f9812cfe77c..edf68697b49c 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp
+@@ -642,7 +642,7 @@ void AppendPipeline::resetParserState()
+     // Flush approach requires these GStreamer patches, shipped in 1.24:
+     // https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/4101.
+     // https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/4199.
+-    if (webkitGstCheckVersion(1, 24, 0)) {
++    if (webkitGstCheckVersion(1, 24, 0) || true) {
+         GST_DEBUG_OBJECT(pipeline(), "Handling resetParserState() in AppendPipeline by flushing the pipeline");
+         gst_element_send_event(m_appsrc.get(), gst_event_new_flush_start());
+         gst_element_send_event(m_appsrc.get(), gst_event_new_flush_stop(true));
+-- 
+2.48.1
+
