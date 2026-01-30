@@ -1,0 +1,42 @@
+diff --git a/wrappers/CMakeLists.txt b/wrappers/CMakeLists.txt
+index 3be841fd..2085fcf6 100644
+--- a/wrappers/CMakeLists.txt
++++ b/wrappers/CMakeLists.txt
+@@ -48,9 +48,10 @@ endif()
+ if( NOT CMAKE_BUILD_FLAG STREQUAL "UnitTests" AND NOT CMAKE_BUILD_FLAG STREQUAL "ComponentTests" )
+     add_compile_definitions(WRAPPERS_ENABLED)
+
++    find_package(Thunder)
+     find_package( ocdm REQUIRED )
+-    find_package( WPEFrameworkCore REQUIRED )
+-    find_package( WPEFrameworkCOM REQUIRED )
++    find_package( ${NAMESPACE}Core REQUIRED )
++    find_package( ${NAMESPACE}COM REQUIRED )
+
+     set(WRAPPER_INCLUDES
+         ${OCdm_INCLUDE_DIRS}
+@@ -60,9 +61,10 @@ if( NOT CMAKE_BUILD_FLAG STREQUAL "UnitTests" AND NOT CMAKE_BUILD_FLAG STREQUAL
+
+     set(WRAPPER_LIBS
+         rdkgstreamerutils
++        rdkgstreamerutilsplatform
+         ocdm::ocdm
+-        WPEFrameworkCore::WPEFrameworkCore
+-        WPEFrameworkCOM::WPEFrameworkCOM
++        ${NAMESPACE}Core::${NAMESPACE}Core
++        ${NAMESPACE}COM::${NAMESPACE}COM
+         ${CMAKE_DL_LIBS})
+
+     set(WRAPPER_SOURCES
+diff --git a/wrappers/source/ThunderWrapper.cpp b/wrappers/source/ThunderWrapper.cpp
+index 4c15ca1f..2af8ad3a 100644
+--- a/wrappers/source/ThunderWrapper.cpp
++++ b/wrappers/source/ThunderWrapper.cpp
+@@ -19,6 +19,7 @@
+
+ #include "ThunderWrapper.h"
+ #include <core/Portability.h>
++#include <core/Errors.h>
+
+ namespace firebolt::rialto::wrappers
+ {
