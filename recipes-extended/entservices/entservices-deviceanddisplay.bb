@@ -58,7 +58,6 @@ CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB',
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    devicediagnostics \
     displaysettings framerate \
     systemservices userpreferences warehouse powermanager \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systimemgr', 'systimemgrsupport', '', d)} \
@@ -66,7 +65,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 
-PACKAGECONFIG:append = " displayinfo deviceinfo systemmode"
+PACKAGECONFIG:append = " deviceinfo systemmode"
 PACKAGECONFIG:append = " erm"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
