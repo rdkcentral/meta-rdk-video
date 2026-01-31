@@ -3,7 +3,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r12"
+PR  = "r13"
 
 # Temporary build fix
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
@@ -20,6 +20,8 @@ SRC_URI = "${BASE_URI}"
 SRC_URI += "file://2.38.2/1196.patch"
 SRC_URI += "file://2.38.6/1384.patch"
 SRC_URI += "file://2.38.7/1410.patch"
+
+SRC_URI += "file://2.38.8/memory_pressure_monitor_select_mode_no_fallback-UPDATED-22-01-2026.patch"
 
 # Drop after issue is addressed and a corresponding PR is merged
 SRC_URI += "file://2.38.8/1456-RDKTV-35082-Workaround-premature-finishSeek.patch"
