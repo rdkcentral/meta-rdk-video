@@ -9,9 +9,11 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit cmake pkgconfig systemd
 
+EXTRA_OECMAKE = "-DSCENESET_DEFAULT_APPNAME='${SCENESET_DEFAULT_APPNAME}'"
+
 DEPENDS += "wpeframework entservices-apis"
 
-SRCREV = "bd0bfe2c11788158b8025756d6b61f38304177a7"
+SRCREV = "47c66f7b369bc833e3a9c5fa8f52544519dd614f"
 SRC_URI = "${CMF_GITHUB_ROOT}/sceneset;${CMF_GITHUB_SRC_URI_SUFFIX};name=sceneset"
 SRCREV_FORMAT = "sceneset"
 
