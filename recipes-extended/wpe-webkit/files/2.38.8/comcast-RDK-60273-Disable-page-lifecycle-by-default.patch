@@ -1,0 +1,47 @@
+From d96b7636f09771826b0d052e30496d9e717ddcb4 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Tue, 23 Dec 2025 14:20:34 +0100
+Subject: [PATCH] comcast - RDK-60273 - Disable page lifecycle by default
+
+Disable PageLifecycleAPIEnabled settings by defualt.
+It modifies suspend behaviour, leaving the last rendered frame visible.
+As a result switching back to suspended app will blink that frame
+before showing actual splash screen.
+Can be enabled back in runtime with WebKit settings if needed.
+---
+ Source/WTF/Scripts/Preferences/WebPreferences.yaml  | 4 ++--
+ Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Source/WTF/Scripts/Preferences/WebPreferences.yaml b/Source/WTF/Scripts/Preferences/WebPreferences.yaml
+index 37fabdbbfd90..ade112016662 100644
+--- a/Source/WTF/Scripts/Preferences/WebPreferences.yaml
++++ b/Source/WTF/Scripts/Preferences/WebPreferences.yaml
+@@ -1696,9 +1696,9 @@ PageLifecycleAPIEnabled:
+     WebKitLegacy:
+       default: false
+     WebKit:
+-      default: true
++      default: false
+     WebCore:
+-      default: true
++      default: false
+ 
+ PageVisibilityBasedProcessSuppressionEnabled:
+   type: bool
+diff --git a/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp b/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
+index 6538c825f352..183c8b539dd4 100644
+--- a/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
++++ b/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
+@@ -1851,7 +1851,7 @@ static void webkit_settings_class_init(WebKitSettingsClass* klass)
+         "enable-page-lifecycle",
+         _("Enable Page Lifecycle"),
+         _("Whether to enable the Page Lifecycle API."),
+-        TRUE,
++        FALSE,
+         readWriteConstructParamFlags);
+ 
+     /**
+-- 
+2.51.0
+
