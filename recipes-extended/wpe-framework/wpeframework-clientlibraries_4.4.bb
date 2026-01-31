@@ -74,7 +74,7 @@ WPE_CDMI_ADAPTER_IMPL = "${@get_cdmi_adapter(d)}"
 PACKAGECONFIG ?= " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdm ${WPE_CDMI_ADAPTER_IMPL}', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'provisioning', 'provisionproxy', '', d)} \
-    securityagent \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'securityagent', d)} \
     cryptography \
     powercontroller \
     "
