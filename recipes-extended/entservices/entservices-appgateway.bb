@@ -9,6 +9,10 @@ SRCREV = "41b3ed691a11435690d985816e7d617d3369f20c"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
+#Announce as firebolt provider
+PROVIDES = "virtual/firebolt"
+RPROVIDES:${PN} = "virtual/firebolt"
+
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appgateway;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
