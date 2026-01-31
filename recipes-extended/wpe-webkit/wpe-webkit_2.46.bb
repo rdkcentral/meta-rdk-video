@@ -102,6 +102,7 @@ PACKAGECONFIG[westeros]     = ""
 PACKAGECONFIG:append = " webdriver remoteinspector releaselog accessibility speechsynthesis native_video webaudio woff2 externalholepunch"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'malloc_heap_breakdown', 'malloc_heap_breakdown', '', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-developer-mode', 'developermode tools', '', d)}"
+PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-cairo', 'cairo', '', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('BROWSER_MEMORYPROFILE', 'fhd', 'fhd', '', d)}"
 
 PACKAGECONFIG:append:aarch64 = " webassembly"
