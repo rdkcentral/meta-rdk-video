@@ -23,7 +23,6 @@ ExecStart=/usr/bin/WPEFramework -b
 # Thunder aka WPEFramework process is restarted. Please note if PIDFile name is changed
 # it will need corresponding code change in ThunderClientLibraries (power_controller) too.
 ExecStartPost=-/bin/sh -c '/bin/echo ${MAINPID} > /tmp/wpeframework.pid'
-ExecStartPost=/bin/touch /tmp/wpeframeworkstarted
 KillSignal=SIGKILL
 Restart=always
 RestartSec=5
