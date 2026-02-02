@@ -3,7 +3,7 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV = "2.11.1"
+PV = "2.11.0"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
