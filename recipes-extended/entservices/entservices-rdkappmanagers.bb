@@ -8,7 +8,7 @@ PR ?= "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "6e0b6b6726dfd73b6458e5a535c1d9e8bc79f375"
+SRCREV = "72ea6925432467411b7c10bba8bb2d9e9401766f"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -107,6 +107,7 @@ EXTRA_OECMAKE += " \
     -DSECAPI_LIB=sec_api \
     -DPLUGIN_NATIVEJS=ON \
     -DPLUGIN_NATIVEJS_CLIENTIDENTIFIER="${NATIVEJS_CLIENTIDENTIFIER}" \
+    -DAIMANAGERS_TELEMETRY_METRICS_SUPPORT=ON \
 "
 
 # TBD - set SECAPI_LIB to hw secapi once RDK-12682 changes are available
