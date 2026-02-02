@@ -2,16 +2,19 @@ SUMMARY = "C++ Firebolt Client"
 DESCRIPTION = "Recipe for building C++ Firebolt Client"
 
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=b1e01b26bacfc2232046c90a330332b3"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 inherit cmake
 
-FIREBOLT_CORE_VERSION = "1.8.0-next.32"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "https://github.com/rdkcentral/firebolt-apis/releases/download/v${FIREBOLT_CORE_VERSION}/firebolt-apis--native-core-${FIREBOLT_CORE_VERSION}.tar.gz"
-SRC_URI[sha256sum] = "df7cd17276e24d1659b1d8b531efaad2d64df6ee981d90d341fc530c83d1eefb"
+PV = "0.2.2"
+PR = "r0"
 
-S = "${WORKDIR}/firebolt-apis--native-core-${FIREBOLT_CORE_VERSION}"
+SRC_URI = "https://github.com/rdkcentral/firebolt-cpp-client/releases/download/v${PV}/firebolt-cpp-client-${PV}.tar.gz"
+SRC_URI[sha256sum] = "10681a6c5ad7274d05cb713ca267aaad70ca92057166b1733400d71353edef38"
+
+S = "${WORKDIR}/firebolt-cpp-client-${PV}"
 
 DEPENDS = "firebolt-cpp-transport nlohmann-json"
 RDEPENDS:${PN} = "firebolt-cpp-transport"
