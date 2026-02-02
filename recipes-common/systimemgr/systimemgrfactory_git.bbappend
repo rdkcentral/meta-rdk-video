@@ -1,6 +1,6 @@
 CXXFLAGS += " -I${PKG_CONFIG_SYSROOT_DIR}/${includedir}/rdk/iarmbus"
 
-EXTRA_OECONF:append = " --enable-iarm --enable-pwrmgrplugin --enable-debug"
+EXTRA_OECONF:append = " --enable-iarm --enable-debug"
 
 EXTRA_OECONF += "${@bb.utils.contains('DISTRO_FEATURES', 'tee_enabled', '--enable-tee', '', d)}"
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'tee_enabled', 'virtual/tee', '', d)}"
