@@ -28,8 +28,19 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit coverity
 
+# Enable Thunder COM-RPC plugin support
+EXTRA_OECONF = "--enable-thunder-plugin"
+
+# Thunder dependencies
+DEPENDS += "wpeframework"
+DEPENDS += "entservices-apis"
+
 CFLAGS += "-DSAFEC_DUMMY_API"
 CXXFLAGS += "-DSAFEC_DUMMY_API "
+
+# Enable Thunder COM-RPC preprocessor define
+CFLAGS += "-DUSE_WPE_THUNDER_PLUGIN"
+CXXFLAGS += "-DUSE_WPE_THUNDER_PLUGIN"
 
 #
 # ds-hal header should preceed ds/include 
@@ -50,12 +61,14 @@ INCLUDE_DIRS = " \
     -I${STAGING_DIR_TARGET}${includedir}/glib-2.0 \
     -I${STAGING_DIR_TARGET}${libdir}/glib-2.0/include \
     -I${STAGING_DIR_TARGET}${includedir}/logger \
+    -I${STAGING_INCDIR}/WPEFramework \
     "
 #-I${STAGING_DIR_TARGET}${includedir}/directfb
 
 # note: we really on 'make -e' to control LDFLAGS and CFLAGS from here. This is
 # far from ideal, but this is to workaround the current component Makefile
 LDFLAGS += "-lrdkloggers -lpthread -lglib-2.0 -L. -lIARMBus -ldl "
+LDFLAGS += "-lWPEFrameworkCore -lWPEFrameworkCOM"
 CFLAGS += "-fPIC -D_REENTRANT -Wall ${INCLUDE_DIRS}"
 CFLAGS += "-DRDK_DSHAL_NAME="\""libds-hal.so.0\""""
 CFLAGS += " -DYOCTO_BUILD"
@@ -66,6 +79,9 @@ CFLAGS += " -DDSMGR_LOGGER_ENABLED"
 CFLAGS += "-I${STAGING_INCDIR}/wdmp-c"
 CXXFLAGS += "-I${STAGING_INCDIR}/wdmp-c"
 LDFLAGS +="-lrfcapi"
+
+CFLAGS += "-fPIC -D_REENTRANT -Wall ${INCLUDE_DIRS}"
+CXXFLAGS += "-fPIC -D_REENTRANT -Wall ${INCLUDE_DIRS}"
 
 # Shared libs created by the RDK build aren't versioned, so we need
 # to force the .so files into the runtime package (and keep them
