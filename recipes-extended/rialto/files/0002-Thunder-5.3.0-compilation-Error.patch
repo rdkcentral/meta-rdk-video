@@ -1,12 +1,25 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index eb66410b..8ae7f359 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -20,6 +20,10 @@
+ cmake_minimum_required( VERSION 3.10 )
+ project( Rialto LANGUAGES C CXX VERSION 1.0.0 )
+
++find_package(WPEFramework NAMES WPEFramework Thunder)
++
++add_compile_options(-DUSE_THUNDER_R5)
++
+ # Preprocesser Variable
+ add_compile_definitions(PROJECT_VER_MAJOR="${PROJECT_VERSION_MAJOR}")
+ add_compile_definitions(PROJECT_VER_MINOR="${PROJECT_VERSION_MINOR}")
 diff --git a/wrappers/CMakeLists.txt b/wrappers/CMakeLists.txt
-index 3be841fd..2085fcf6 100644
+index 0fd368a9..ba12219e 100644
 --- a/wrappers/CMakeLists.txt
 +++ b/wrappers/CMakeLists.txt
-@@ -48,9 +48,10 @@ endif()
- if( NOT CMAKE_BUILD_FLAG STREQUAL "UnitTests" AND NOT CMAKE_BUILD_FLAG STREQUAL "ComponentTests" )
+@@ -49,8 +49,8 @@ if( NOT CMAKE_BUILD_FLAG STREQUAL "UnitTests" AND NOT CMAKE_BUILD_FLAG STREQUAL
      add_compile_definitions(WRAPPERS_ENABLED)
 
-+    find_package(Thunder)
      find_package( ocdm REQUIRED )
 -    find_package( WPEFrameworkCore REQUIRED )
 -    find_package( WPEFrameworkCOM REQUIRED )
@@ -15,11 +28,9 @@ index 3be841fd..2085fcf6 100644
 
      set(WRAPPER_INCLUDES
          ${OCdm_INCLUDE_DIRS}
-@@ -60,9 +61,10 @@ if( NOT CMAKE_BUILD_FLAG STREQUAL "UnitTests" AND NOT CMAKE_BUILD_FLAG STREQUAL
-
-     set(WRAPPER_LIBS
+@@ -62,8 +62,8 @@ if( NOT CMAKE_BUILD_FLAG STREQUAL "UnitTests" AND NOT CMAKE_BUILD_FLAG STREQUAL
          rdkgstreamerutils
-+        rdkgstreamerutilsplatform
+         rdkgstreamerutilsplatform
          ocdm::ocdm
 -        WPEFrameworkCore::WPEFrameworkCore
 -        WPEFrameworkCOM::WPEFrameworkCOM
@@ -29,14 +40,18 @@ index 3be841fd..2085fcf6 100644
 
      set(WRAPPER_SOURCES
 diff --git a/wrappers/source/ThunderWrapper.cpp b/wrappers/source/ThunderWrapper.cpp
-index 4c15ca1f..2af8ad3a 100644
+index 4c15ca1f..f3df6bda 100644
 --- a/wrappers/source/ThunderWrapper.cpp
 +++ b/wrappers/source/ThunderWrapper.cpp
-@@ -19,6 +19,7 @@
+@@ -18,7 +18,11 @@
+  */
 
  #include "ThunderWrapper.h"
++#ifndef USE_THUNDER_R5
  #include <core/Portability.h>
++#else
 +#include <core/Errors.h>
++#endif
 
  namespace firebolt::rialto::wrappers
  {
