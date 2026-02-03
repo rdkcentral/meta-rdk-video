@@ -2,13 +2,15 @@ SUMMARY = "ENTServices warehouse plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.0.0"
+PV = "3.9.5"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-warehouse;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-warehouse;${CMF_GITHUB_SRC_URI_SUFFIX}\
+    file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+    "
 
 SRCREV = "c961179f0700e75a02d973dcb26cdfb62451ee90"
 
@@ -54,19 +56,12 @@ EXTRA_OECMAKE += " \
 "
 
 do_install:append() {
-    install -d ${D}${sysconfdir}/rfcdefaults
-    if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
-    then
-      install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
-    fi
-
-        install -m 0644 ${THISDIR}/files/displaysettings.ini ${D}${sysconfdir}/rfcdefaults/
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f ! -name "PowerManager.json" | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
     fi
-}curl -H 'content-type:text/plain;' --data-binary '{"jsonrpc": "2.0", "id": 42, "method": "org.rdk.DisplaySettings.getAudioFormat"}' http://127.0.0.1:9998/jsonrpccurl -H 'content-type:text/plain;' --data-binary '{"jsonrpc": "2.0", "id": 42, "method": "org.rdk.DisplaySettings.getAudioFormat"}' http://127.0.0.1:9998/jsonrpc
+}
 
 # ----------------------------------------------------------------------------
 
