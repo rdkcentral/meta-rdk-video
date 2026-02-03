@@ -1,6 +1,6 @@
 SUMMARY = "ENTServices warehouse plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
 PV = "1.0.0"
 PR = "r0"
