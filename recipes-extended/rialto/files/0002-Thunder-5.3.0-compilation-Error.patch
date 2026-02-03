@@ -47,7 +47,7 @@ index 4c15ca1ff..a4af74926 100644
   */
 
  #include "ThunderWrapper.h"
-+#if defined(THUNDER_VERSION) && (THUNDER_VERSION >= 5)
++#if THUNDER_VERSION >= 5
 +#include <core/Errors.h>
 +#else
  #include <core/Portability.h>
