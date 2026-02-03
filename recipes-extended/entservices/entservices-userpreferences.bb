@@ -1,6 +1,6 @@
 SUMMARY = "ENTServices Userpreferences plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=2b44e3d2c435a4041b177a263573ffc7"
 
 PV = "1.0.0"
 PR = "r0"
