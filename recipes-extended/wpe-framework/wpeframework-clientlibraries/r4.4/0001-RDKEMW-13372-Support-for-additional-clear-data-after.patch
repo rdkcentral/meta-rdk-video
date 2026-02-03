@@ -1,0 +1,168 @@
+From afa763f3539a857559f2c09b8e27c3ef189f987a Mon Sep 17 00:00:00 2001
+From: Douglas Adler <douglas_adler2@comcast.com>
+Date: Mon, 2 Feb 2026 22:39:00 +0000
+Subject: [PATCH] DELIA-69776 : Support for additional clear data after
+ subsample map
+
+Reason for change: Some encoders add additional clear data after
+the subsample map.
+Test Procedure: Play TVOD "Violent Night" and observe log for decrypt
+errors
+Risks: Low
+
+Signed-off-by: Douglas Adler <douglas_adler2@comcast.com>
+---
+ Source/ocdm/adapter/rdk/open_cdm_adapter.cpp | 87 ++++++++++++++++++++
+ 1 file changed, 87 insertions(+)
+
+diff --git a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
+b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
+index 0460540..1ac0516 100644
+--- a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
++++ b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
+@@ -68,6 +68,78 @@ uint32_t opencdm_destruct_session_private(struct
+OpenCDMSession* session, void*
+     return (success ? 0 : 1);
+ }
+ 
++OpenCDMError extend_subsample_map(SubSampleInfo** subSampleInfoPtr,
+uint32_t& subSampleCount, uint32_t bufferSize, uint32_t totalBytes)
++{
++    SubSampleInfo* subSampleInfoPtrLocal = *subSampleInfoPtr;
++
++    RDKPerf perf_subsample(__FUNCTION__);
++
++    // Add an extra subsample(s) entry to account for the size mismatch
++    uint32_t additional_bytes = bufferSize - totalBytes;
++    uint32_t extra_subsamples = 0;
++    // Calculate how many extra subsamples are needed to fille 16bit
+clear data size
++    while (additional_bytes > 0) {
++        uint16_t clear_bytes = 0;
++        if (additional_bytes > 0xFFFF) {
++            clear_bytes = 0xFFFF;
++        } else {
++            clear_bytes = static_cast<uint16_t>(additional_bytes);
++        }
++        additional_bytes -= clear_bytes;
++        extra_subsamples += 1;
++    }
++    subSampleCount += extra_subsamples;
++    SubSampleInfo* tmp =
+reinterpret_cast<SubSampleInfo*>(realloc(subSampleInfoPtrLocal,
+subSampleCount * sizeof(SubSampleInfo)));
++    if(tmp != nullptr) {
++        subSampleInfoPtrLocal = tmp;
++        while(extra_subsamples > 1) {
++            // Fill in the extra subsample entries with max clear size
++            subSampleInfoPtrLocal[subSampleCount -
+extra_subsamples].clear_bytes = 0xFFFF;
++            subSampleInfoPtrLocal[subSampleCount -
+extra_subsamples].encrypted_bytes = 0;
++            extra_subsamples--;
++            totalBytes += 0xFFFF;
++        }
++        subSampleInfoPtrLocal[subSampleCount - 1].clear_bytes =
+bufferSize - totalBytes;
++        subSampleInfoPtrLocal[subSampleCount - 1].encrypted_bytes = 0;
++    } else {
++        RDKPerf perf_alloc_fail("SubsampleSizeFixAllocFail");
++        TRACE_L1("opencdm_gstreamer_session_decrypt_buffer: Memory
+allocation failed when adjusting subsample mapping.");
++
++        return ERROR_OUT_OF_MEMORY;
++    }
++
++    // Copy the newly allocated subsample info back to the caller
++    *subSampleInfoPtr = subSampleInfoPtrLocal;
++    return ERROR_NONE;
++}
++
++OpenCDMError validate_subsample_map(SubSampleInfo* subSampleInfoPtr,
+uint32_t subSampleCount, uint32_t frameSize, uint32_t totalMappedBytes)
++{
++    OpenCDMError retVal = ERROR_NONE;
++
++    if(frameSize == 0 || subSampleInfoPtr == nullptr || subSampleCount
+== 0) {
++        // Unable to fully validate the subsample map, but nothing to
+validate against
++        // return true and use the existing code path
++        return retVal;
++    }
++    if(frameSize == totalMappedBytes) {
++        // Perfect match, no need to adjust anything
++        retVal = ERROR_NONE;
++    }
++    else if(frameSize > totalMappedBytes) {
++        TRACE_L3("opencdm_gstreamer_session_decrypt_buffer: Subsample
+mapping size mismatch. FrameSize: %u, TotalBytes from SubsampleInfo:
+%u",
++                 frameSize, totalMappedBytes);
++        retVal = extend_subsample_map(&subSampleInfoPtr,
+subSampleCount, frameSize, totalMappedBytes);
++    }
++    else if(frameSize < totalMappedBytes) {
++        TRACE_L1("opencdm_gstreamer_session_decrypt_buffer: Subsample
+mapping size exceeds data size. FrameSize: %u, TotalBytes from
+SubsampleInfo: %u",
++                 frameSize, totalMappedBytes);
++        retVal = ERROR_INVALID_DECRYPT_BUFFER;
++    }
++
++    return retVal;
++}
++
+ OpenCDMError opencdm_gstreamer_session_decrypt(struct OpenCDMSession*
+session, GstBuffer* buffer, GstBuffer* subSample, const uint32_t
+subSampleCount,
+                                                 GstBuffer* IV,
+GstBuffer* keyID, uint32_t initWithLast15)
+ {
+@@ -409,6 +481,7 @@ OpenCDMError
+opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
+             //Create a SubSampleInfo Array with mapping
+             SubSampleInfo * subSampleInfoPtr = nullptr;
+             uint32_t total_encrypted_bytes = 0;
++            uint32_t total_mapped_bytes = 0;
+             if (subSample != nullptr) {
+                 GstByteReader* reader =
+gst_byte_reader_new(mappedSubSample, mappedSubSampleSize);
+                 subSampleInfoPtr =
+reinterpret_cast<SubSampleInfo*>(malloc(subSampleCount *
+sizeof(SubSampleInfo)));
+@@ -417,7 +490,21 @@ OpenCDMError
+opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
+                     gst_byte_reader_get_uint16_be(reader,
+&subSampleInfoPtr[position].clear_bytes);
+                     gst_byte_reader_get_uint32_be(reader,
+&subSampleInfoPtr[position].encrypted_bytes);
+                     total_encrypted_bytes +=
+subSampleInfoPtr[position].encrypted_bytes;
++                    total_mapped_bytes +=
+subSampleInfoPtr[position].clear_bytes +
+subSampleInfoPtr[position].encrypted_bytes;
++                }
++
++                // Validate that the subsample mapping matches the data
+size
++                result = validate_subsample_map(subSampleInfoPtr,
+subSampleCount, mappedDataSize, total_mapped_bytes);
++                if(result != ERROR_NONE) {
++                    TRACE_L1("opencdm_gstreamer_session_decrypt_buffer:
+Subsample map validation failed error = %lX", result);
++                    gst_buffer_unmap(buffer, &dataMap);
++                    gst_buffer_unmap(subSample, &sampleMap);
++                    gst_buffer_unmap(IV, &ivMap);
++                    gst_buffer_unmap(keyID, &keyIDMap);
++                    free(subSampleInfoPtr);
++                    goto exit;
+                 }
++
+                 gst_byte_reader_set_pos(reader, 0);
+                 gst_byte_reader_free(reader);
+             } else {
+-- 
+2.34.1
+
+
