@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-SRCREV = "${AUTOREV}"
+SRCREV = "2020fe1e17d5867dd2b8ed963a46c096d637b1db"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
