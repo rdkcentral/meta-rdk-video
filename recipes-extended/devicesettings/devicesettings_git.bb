@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 PV = "1.0.29"
 PR = "r0"
 
-SRCREV_devicesettings = "fdc41051567c374991e65d68683865aed78d75fb"
+SRCREV_devicesettings = "034e5db7c0a293816ddf68a64ca891a496d4d8ef"
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
 
 # devicesettings is not a 'generic' component, as some of its source
@@ -27,9 +27,6 @@ S = "${WORKDIR}/git"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit coverity
-
-# Enable Thunder COM-RPC plugin support
-EXTRA_OECONF = "--enable-thunder-plugin"
 
 # Thunder dependencies
 DEPENDS += "wpeframework"
@@ -103,6 +100,9 @@ do_compile() {
     # remove local version of hal since we use devicesettings-hal-headers,
     # and want to make sure we don't use this copy by error.
     rm -rf hal
+
+    # Export Thunder flag for Makefile's ifdef check
+    export USE_WPE_THUNDER_PLUGIN=y
 
     # and now the generic components
     oe_runmake -B -C ${S}/rpc/cli
