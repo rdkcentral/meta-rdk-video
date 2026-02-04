@@ -11,7 +11,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceinfo;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 # Release version - 3.9.5
-SRCREV = "039a2634bdb2e22cdbe55c8792aaa2dd927255a2"
+SRCREV = "1ea66be2a5bbd2e12012c7e3e43e8e51ad1dffc8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
