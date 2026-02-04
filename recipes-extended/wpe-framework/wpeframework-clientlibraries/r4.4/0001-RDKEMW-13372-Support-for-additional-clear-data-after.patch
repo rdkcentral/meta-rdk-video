@@ -1,8 +1,8 @@
 diff --git a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
-index 0460540..6d7ec1d 100644
+index 0460540..442c150 100644
 --- a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
 +++ b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
-@@ -68,6 +68,77 @@ uint32_t opencdm_destruct_session_private(struct OpenCDMSession* session, void*
+@@ -68,6 +68,81 @@ uint32_t opencdm_destruct_session_private(struct OpenCDMSession* session, void*
      return (success ? 0 : 1);
  }
  
@@ -11,6 +11,8 @@ index 0460540..6d7ec1d 100644
 +    SubSampleInfo* subSampleInfoPtrLocal = *subSampleInfoPtr;
 +
 +    RDKPerf perf_subsample(__FUNCTION__);
++    printf("VRN extend_subsample_map: BufferSize: %u, TotalBytes from SubsampleInfo: %u \n",
++             bufferSize, totalBytes);
 +
 +    // Add an extra subsample(s) entry to account for the size mismatch
 +    uint32_t additional_bytes = bufferSize - totalBytes;
@@ -26,6 +28,7 @@ index 0460540..6d7ec1d 100644
 +        additional_bytes -= clear_bytes;
 +        extra_subsamples += 1;
 +    }
++    printf("VRN extend_subsample_map: Extra Subsamples Needed: %u\n", extra_subsamples);
 +    uint32_t newSubSampleCount = *subSampleCount + extra_subsamples;
 +    SubSampleInfo* tmp = reinterpret_cast<SubSampleInfo*>(realloc(subSampleInfoPtrLocal, newSubSampleCount * sizeof(SubSampleInfo)));
 +    if(tmp != nullptr) {
@@ -42,10 +45,11 @@ index 0460540..6d7ec1d 100644
 +        subSampleInfoPtrLocal[*subSampleCount - 1].encrypted_bytes = 0;
 +    } else {
 +        RDKPerf perf_alloc_fail("SubsampleSizeFixAllocFail");
-+        TRACE_L1("opencdm_gstreamer_session_decrypt_buffer: Memory allocation failed when adjusting subsample mapping.");
++        printf("VRN opencdm_gstreamer_session_decrypt_buffer: Memory allocation failed when adjusting subsample mapping.\n");
 +
 +        return ERROR_OUT_OF_MEMORY;
 +    }
++    printf("VRN extend_subsample_map: New SubSampleCount: %u\n", *subSampleCount);
 +    *subSampleInfoPtr = subSampleInfoPtrLocal;
 +    return ERROR_NONE;
 +}
@@ -64,12 +68,12 @@ index 0460540..6d7ec1d 100644
 +        retVal = ERROR_NONE;
 +    }
 +    else if(frameSize > totalMappedBytes) {
-+        TRACE_L3("opencdm_gstreamer_session_decrypt_buffer: Subsample mapping size mismatch. FrameSize: %u, TotalBytes from SubsampleInfo: %u",
++        printf("VRN opencdm_gstreamer_session_decrypt_buffer: Subsample mapping size mismatch. FrameSize: %u, TotalBytes from SubsampleInfo: %u \n",
 +                 frameSize, totalMappedBytes);
 +        retVal = extend_subsample_map(subSampleInfoPtr, subSampleCount, frameSize, totalMappedBytes);
 +    }
 +    else if(frameSize < totalMappedBytes) {
-+        TRACE_L1("opencdm_gstreamer_session_decrypt_buffer: Subsample mapping size exceeds data size. FrameSize: %u, TotalBytes from SubsampleInfo: %u",
++        printf("VRN opencdm_gstreamer_session_decrypt_buffer: Subsample mapping size exceeds data size. FrameSize: %u, TotalBytes from SubsampleInfo: %u \n",
 +                 frameSize, totalMappedBytes);
 +        retVal = ERROR_INVALID_DECRYPT_BUFFER;
 +    }
@@ -80,7 +84,7 @@ index 0460540..6d7ec1d 100644
  OpenCDMError opencdm_gstreamer_session_decrypt(struct OpenCDMSession* session, GstBuffer* buffer, GstBuffer* subSample, const uint32_t subSampleCount,
                                                  GstBuffer* IV, GstBuffer* keyID, uint32_t initWithLast15)
  {
-@@ -409,6 +480,7 @@ OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
+@@ -409,6 +484,7 @@ OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
              //Create a SubSampleInfo Array with mapping
              SubSampleInfo * subSampleInfoPtr = nullptr;
              uint32_t total_encrypted_bytes = 0;
@@ -88,16 +92,17 @@ index 0460540..6d7ec1d 100644
              if (subSample != nullptr) {
                  GstByteReader* reader = gst_byte_reader_new(mappedSubSample, mappedSubSampleSize);
                  subSampleInfoPtr = reinterpret_cast<SubSampleInfo*>(malloc(subSampleCount * sizeof(SubSampleInfo)));
-@@ -417,7 +489,21 @@ OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
+@@ -417,7 +493,22 @@ OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
                      gst_byte_reader_get_uint16_be(reader, &subSampleInfoPtr[position].clear_bytes);
                      gst_byte_reader_get_uint32_be(reader, &subSampleInfoPtr[position].encrypted_bytes);
                      total_encrypted_bytes += subSampleInfoPtr[position].encrypted_bytes;
 +                    total_mapped_bytes += subSampleInfoPtr[position].clear_bytes + subSampleInfoPtr[position].encrypted_bytes;
                  }
-+
++                printf("VRN Calling validate_subsample_map MappedData SZ[%d]Total MB[%d]\n", mappedDataSize, total_mapped_bytes);
 +                // Validate that the subsample mapping matches the data size
 +                result = validate_subsample_map(&subSampleInfoPtr, &subSampleCount, mappedDataSize, total_mapped_bytes);
 +                if(result != ERROR_NONE) {
++                    printf("opencdm_gstreamer_session_decrypt_buffer: Subsample map validation failed error = %lX \n", result);
 +                    TRACE_L1("opencdm_gstreamer_session_decrypt_buffer: Subsample map validation failed error = %lX", result);
 +                    gst_buffer_unmap(buffer, &dataMap);
 +                    gst_buffer_unmap(subSample, &sampleMap);
