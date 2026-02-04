@@ -21,6 +21,7 @@ SRCREV_thunder = "19100433e5517c743738bb2a9ed8ce2f79c10eaf"
 
 SRC_URI += "file://wpeframework-init \
            file://wpeframework.service.in \
+           file://thunder-preload \
            file://r4.4/Library_version_matched_with_release_tag.patch \
            file://r4.4/Remove_versioning_for_executables.patch \
            file://r4.4/wpeframework_version.patch \
@@ -80,7 +81,7 @@ WPEFRAMEWORK_SYSTEM_PREFIX = "OE"
 WPEFRAMEWORK_PORT = "9998"
 WPEFRAMEWORK_BINDING = "127.0.0.1"
 WPEFRAMEWORK_IDLE_TIME = "0"
-WPEFRAMEWORK_THREADPOOL_COUNT ?= "16"
+WPEFRAMEWORK_THREADPOOL_COUNT ?= "32"
 WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
 
 
@@ -164,6 +165,8 @@ EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
+    install -d ${D}${sysconfdir}/default
+    install -m 0644 ${WORKDIR}/thunder-preload  ${D}${sysconfdir}/default/thunder-preload
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
@@ -174,6 +177,7 @@ PACKAGES =+ "${PN}-initscript"
 
 FILES:${PN}-initscript = "${sysconfdir}/init.d/wpeframework"
 
+FILES:${PN} += "${sysconfdir}/default/thunder-preload"
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/*.so ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN} += "${includedir}/cdmi.h"
