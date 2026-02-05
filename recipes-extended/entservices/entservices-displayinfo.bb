@@ -40,7 +40,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " telemetrysupport \
-    ${@bb.utils.contains('DISTRO_FEATURES', '', d)} \
+                   displayinfo \
 "
 
 PACKAGECONFIG:append = " displayinfo"
