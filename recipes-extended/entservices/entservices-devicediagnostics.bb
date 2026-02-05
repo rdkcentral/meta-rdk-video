@@ -41,7 +41,6 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= "telemetrysupport \
     devicediagnostics \
-    ${@bb.utils.contains('DISTRO_FEATURES', '', d)} \
 "
 
 PACKAGECONFIG:append = " erm"
