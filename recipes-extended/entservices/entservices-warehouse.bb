@@ -2,7 +2,7 @@ SUMMARY = "ENTServices warehouse plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "3.9.5"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -10,8 +10,9 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-warehouse;${CMF_GITHUB_SRC_URI_SUFFIX}\
     file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+    file://rdkservices.ini \
     "
-
+# Release version - 1.0.1
 SRCREV = "c961179f0700e75a02d973dcb26cdfb62451ee90"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -36,15 +37,12 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " breakpadsupport \
-    telemetrysupport \
+PACKAGECONFIG ?= " telemetrysupport \
     warehouse \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'systimemgr', 'systimemgrsupport', '', d)} \
 "
 
-PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON  -DUSE_DEVICESETTINGS=1,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs entservices-apis devicesettings virtual/vendor-devicesettings-hal,iarmbus entservices-apis devicesettings"
+PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc entservices-apis devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc entservices-apis devicesettings"
 
 # ----------------------------------------------------------------------------
 
@@ -55,6 +53,7 @@ EXTRA_OECMAKE += " \
 "
 
 do_install:append() {
+    install -d ${D}${sysconfdir}/rfcdefaults
     if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
     then
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
@@ -62,7 +61,7 @@ do_install:append() {
 
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
-            find ${D}/etc/WPEFramework/plugins/ -type f ! -name "PowerManager.json" | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
+            find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
     fi
 }
