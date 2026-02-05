@@ -53,7 +53,6 @@ EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
-    -DCOMCAST_CONFIG=ON \
 "
 
 # Check if DeviceInfo backend is defined.
