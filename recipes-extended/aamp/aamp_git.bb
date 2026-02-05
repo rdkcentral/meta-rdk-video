@@ -7,7 +7,7 @@ PV = "2.11.1"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp = "fbae8382e0595b1f3bb3fb7404a717106ad8fb52"
+SRCREV_aamp = "de6801526da276c74d53a0bc821b9aa558cb012a"
 
 DEPENDS += "curl libdash libxml2 cjson readline ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 
@@ -31,7 +31,7 @@ S = "${WORKDIR}/git"
 require aamp-common.inc
 require aamp-artifacts-version.inc
 
-EXTRA_OECMAKE += "  -DCMAKE_DS_EVENT_SUPPORTED=1 "
+EXTRA_OECMAKE += " -DCMAKE_DS_EVENT_SUPPORTED=1 "
 EXTRA_OECMAKE += " -DCMAKE_WPEWEBKIT_WATERMARK_JSBINDINGS=1 "
 
 #Ethan log is implemented by Dobby hence enabling it.
@@ -44,8 +44,6 @@ FILES:${PN} +="${libdir}/gstreamer-1.0/lib*.so"
 FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
-
-EXTRA_OECMAKE += " -DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 "
 
 CXXFLAGS += " -DAAMP_BUILD_INFO=${AAMP_RELEASE_TAG_NAME}" 
 
