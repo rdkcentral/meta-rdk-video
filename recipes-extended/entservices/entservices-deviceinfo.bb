@@ -1,8 +1,8 @@
 SUMMARY = "ENTServices deviceinfo plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
-PV = "3.9.5"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -10,8 +10,8 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceinfo;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-# Release version - 3.9.5
-SRCREV = "1ea66be2a5bbd2e12012c7e3e43e8e51ad1dffc8"
+# Release version - 1.0.1
+SRCREV = "77dafd4f70b8d575da4dcda9a685c2e3556c48bc"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
