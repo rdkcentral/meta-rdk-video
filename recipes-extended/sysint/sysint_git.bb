@@ -8,9 +8,10 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "4.2.3"
 PR = "r0"
 
-SRCREV = "c4207f9389bc75cb8765a07a8a9ff9505093b8b1"
-SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
+SRC_URI = "git://github.com/rdkcentral/sysint.git;protocol=https;branch=topic/RDKEMW-6140"
+SRCREV = "c4207f9389bc75cb8765a07a8a9ff9505093b8b1"
+
 
 inherit systemd syslog-ng-config-gen logrotate_config
 SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup update-device-details applications vitalprocess-info iptables mount_log reboot-reason messages zram"
