@@ -1,4 +1,3 @@
-inherit cmake
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', ' -DCMAKE_WPEWEBKIT_JSBINDINGS=1', '', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', ' -DCMAKE_SYSTEMD_JOURNAL=1', '', d)}"
 EXTRA_OECMAKE += " -DCMAKE_BUILD_TYPE=Debug"
