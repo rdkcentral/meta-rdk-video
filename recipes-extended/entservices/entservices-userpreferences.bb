@@ -1,6 +1,6 @@
 SUMMARY = "ENTServices Userpreferences plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=2b44e3d2c435a4041b177a263573ffc7"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
 PV = "1.0.0"
 PR = "r0"
@@ -14,7 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-userpreferences;${CMF_GITHUB_SRC_URI_S
           "
 
 # Release version - 1.0.0
-SRCREV = "012dbca122adac283a92b4b2cd169751b43771e8"
+SRCREV = "55880f480522c95c61759f5e8710f3d4f19dfdc4"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
