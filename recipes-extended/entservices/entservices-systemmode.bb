@@ -1,8 +1,8 @@
 SUMMARY = "ENTServices systemmode plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
-PV = "3.9.5"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -14,7 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-systemmode;${CMF_GITHUB_SRC_URI_SUFFIX
           "
 
 # Release version - 3.9.5
-SRCREV = "c9894dbca50c40a81bb1605ed30bcd4ea46a8ec3"
+SRCREV = "012d1072057e91b59b55b926f14bce70e2defdc1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
