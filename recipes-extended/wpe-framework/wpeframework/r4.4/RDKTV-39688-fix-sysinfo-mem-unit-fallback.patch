@@ -1,12 +1,12 @@
 diff --git a/Source/core/SystemInfo.cpp b/Source/core/SystemInfo.cpp
-index de6705fe..ef8d3fa7 100644
+index de6705fe..35d2f546 100644
 --- a/Source/core/SystemInfo.cpp
 +++ b/Source/core/SystemInfo.cpp
 @@ -167,12 +167,13 @@ namespace Core {
          struct sysinfo info;
          sysinfo(&info);
 
-+       const uint64_t unit = (info.mem_unit != 0) ? info.mem_unit : 1;
++        const uint64_t unit = (info.mem_unit != 0) ? info.mem_unit : 1;
          m_uptime = info.uptime;
 -        m_totalram = info.totalram;
 +        m_totalram = info.totalram * unit;
