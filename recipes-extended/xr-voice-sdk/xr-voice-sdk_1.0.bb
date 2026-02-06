@@ -65,6 +65,7 @@ do_clean_oem_config() {
 EXTRA_OECMAKE:append = " -DCMAKE_SYSROOT=${RECIPE_SYSROOT} -DCMAKE_PROJECT_VERSION=${PV}"
 EXTRA_OECMAKE:append = " -DSTAGING_BINDIR_NATIVE=${STAGING_BINDIR_NATIVE}"
 
+EXTRA_OECMAKE:append = " -DRDK_VERSION_ENABLED=ON"
 EXTRA_OECMAKE:append = "${@ ' -DHTTP_ENABLED=ON'    if (d.getVar('ENABLE_HTTP_SUPPORT', expand=False) == "1")  else ''}"
 EXTRA_OECMAKE:append = "${@ ' -DWS_ENABLED=ON -DWS_NOPOLL_PATCHES=ON' if (d.getVar('ENABLE_WS_SUPPORT',   expand=False) == "1")  else ''}"
 EXTRA_OECMAKE:append = "${@ ' -DSDT_ENABLED=ON'     if (d.getVar('ENABLE_SDT_SUPPORT',  expand=False) == "1")  else ''}"

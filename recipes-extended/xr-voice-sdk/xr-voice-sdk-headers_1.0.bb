@@ -66,7 +66,7 @@ do_install() {
    install -m 644 ${S}/scripts/vsdk_json_to_header.py  ${D}${includedir}
    install -m 644 ${S}/src/xr-logger/rdkx_logger_mw.h  ${D}${includedir}/rdkx_logger.h
 
-   ${S}/scripts/rdkx_logger_modules_to_c.py ${S}/src/xr-logger/rdkv/rdkx_logger_modules.json rdkx_logger_modules
+   ${S}/scripts/rdkx_logger_modules_to_c.py ${S}/src/xr-logger/rdkv/rdkx_logger_modules.json rdkx_logger_modules "mw"
    install -m 644 rdkx_logger_modules.h  ${D}${includedir}
 }
 
