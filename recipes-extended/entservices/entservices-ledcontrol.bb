@@ -14,7 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-ledcontrol;${CMF_GITHUB_SRC_URI_SUFFIX
           "
 
 # Release version - 1.1.0
-SRCREV = "ea784778db4f3a37fd47c5f2af0c13abf2142b5a"
+SRCREV = "9d2296298e1ba143674b7f177b8b866cc90838f3"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
