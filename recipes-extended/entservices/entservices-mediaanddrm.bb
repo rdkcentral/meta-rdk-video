@@ -14,8 +14,6 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
-           file://0001-rdkservices_cbcs_changes.patch \
-           file://0002-Adding-Support-For-R4.patch \
            ${@bb.utils.contains('DISTRO_FEATURES', 'wpe_r4_4','file://0003-R4.4.1-SystemAudioPlayer-compilation-error.patch','',d)} \
           "
           
@@ -55,9 +53,6 @@ include include/texttospeech.inc
 
 PACKAGECONFIG ?= "  breakpadsupport \
     telemetrysupport \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'playready_nexus_svp',  'opencdmi_prnx_svp', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'widevine_nexus_svp',   'opencdmi_wv_svp', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'clearkey',             'opencdmi_ck', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
 "
 
@@ -127,8 +122,4 @@ FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WP
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
 
-PACKAGES =+ "${PN}-screencapture"
-FILES:${PN}-screencapture = "\
-     ${libdir}/wpeframework/plugins/libWPEFrameworkScreenCapture.so \
-     /etc/WPEFramework/plugins/ScreenCapture.json \
-"
+
