@@ -33,7 +33,6 @@ TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'DOBBY_CONTAINERS', "dobby systemd","", d)}"
 
-EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'disable_provision_precondition_rdkm', ' -DPLUGIN_OPENCDMI_GENERIC=ON', '', d)}"
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
