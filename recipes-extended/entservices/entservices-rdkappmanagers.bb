@@ -113,6 +113,8 @@ EXTRA_OECMAKE += " \
     -DBUILD_LLAMA=ON \
 "
 
+EXTRA_OECMAKE:append = " -DWIDGET_PACKAGE_NAME=package.wgt"
+
 # Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
 python () {
     dri_device_name = d.getVar('DRI_DEVICE_NAME')
