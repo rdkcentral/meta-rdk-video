@@ -17,7 +17,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-screencapture;${CMF_GITHUB_SRC_URI_SUF
           "
           
 # Release version - 1.0.1
-SRCREV = "630392199bd8ada35f23821d104ec61a8e7ae52c"
+SRCREV = "54302d24233e8e8c8cae65973bd38807a313f890"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -50,9 +50,6 @@ PACKAGECONFIG ?= " telemetrysupport \
 
 # enable widevine and Playready4 opencdmi libs
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
-# Enable the RDKShell memcr feature support flags
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DPLUGIN_HIBERNATESUPPORT=ON -DPLUGIN_HIBERNATE_NATIVE_APPS_ON_SUSPENDED=ON','',d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains("BUILD_VARIANT", "debug", "-DPLUGIN_BUILD_TYPE=Debug", "-DPLUGIN_BUILD_TYPE=Release", d)}"
 
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[screencapture]        = "-DPLUGIN_SCREENCAPTURE=ON,-DPLUGIN_SCREENCAPTURE=OFF,entservices-apis curl libpng drm,entservices-apis curl libpng libdrm"
