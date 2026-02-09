@@ -155,9 +155,9 @@ do_install:append() {
     install -d ${D}${bindir}
     install -m 0755 ${S}/DSApp ${D}${bindir}/DSApp
     
-    if ${@bb.utils.contains('DISTRO_FEATURES' , 'RDKE_PLATFORM_TV', 'true', 'false', d)}; then
-        install -m 0755 ${S}/sample/hdmiIn ${D}${bindir}
-    fi
+#    if ${@bb.utils.contains('DISTRO_FEATURES' , 'RDKE_PLATFORM_TV', 'true', 'false', d)}; then
+#        install -m 0755 ${S}/sample/hdmiIn ${D}${bindir}
+#    fi
 
 }
 
