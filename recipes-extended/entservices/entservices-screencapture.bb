@@ -1,4 +1,4 @@
-SUMMARY = "ENTServices Media and DRM plugins"
+SUMMARY = "ENTServices ScreenCapture plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7df5a8706277b586ca000838046993d1"
 
