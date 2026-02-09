@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 PV = "1.0.29"
 PR = "r0"
 
-SRCREV_devicesettings = "b18f613e6043e7af68bf49ce58cbf9aebf4ea7e3"
+SRCREV_devicesettings = "e6d435d4c9e8338bf859e2efafac88d2239e0e82"
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
 
 # devicesettings is not a 'generic' component, as some of its source
@@ -111,7 +111,7 @@ do_compile() {
     oe_runmake -B -C ${S}/ds
 #To Build Test Samples under "sample/"
     export LDFLAGS="$LDFLAGS -L${S}/ds -lds -L${S}/rpc/cli -ldshalcli"
-    oe_runmake -B -C ${S}/sample
+    oe_runmake -B -C ${S}/sample dsapp
 }
 
 do_install() {
@@ -152,8 +152,10 @@ CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_spdif_support', ' -DH
 CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_headphone_support', ' -DHAS_HEADPHONE_SUPPORT ', '', d)}"
 
 do_install:append() {
+    install -d ${D}${bindir}
+    install -m 0755 ${S}/DSApp ${D}${bindir}/DSApp
+    
     if ${@bb.utils.contains('DISTRO_FEATURES' , 'RDKE_PLATFORM_TV', 'true', 'false', d)}; then
-        install -d ${D}${bindir}
         install -m 0755 ${S}/sample/hdmiIn ${D}${bindir}
     fi
 
