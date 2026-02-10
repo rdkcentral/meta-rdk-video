@@ -18,7 +18,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
           "
           
 # Release version - 1.4.0
-SRCREV = "5354e2f954b56eab89a2d90075d94d5249885468"
+SRCREV = "630392199bd8ada35f23821d104ec61a8e7ae52c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -46,20 +46,20 @@ CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # More complicated plugins are moved seperate includes
-include include/ocdm.inc
 include include/texttospeech.inc
 
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= "  breakpadsupport \
     telemetrysupport \
+    texttospeech \
     ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
 "
 
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 
+# enable widevine and Playready4 opencdmi libs
 PACKAGECONFIG:append = " systemaudioplayer"
-
 
 inherit features_check
 REQUIRED_DISTRO_FEATURES = "${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec', 'DOBBY_CONTAINERS', '', d)}"
@@ -119,5 +119,4 @@ FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WP
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
-
 
