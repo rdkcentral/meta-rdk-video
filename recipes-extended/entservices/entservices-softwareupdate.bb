@@ -2,7 +2,7 @@ SUMMARY = "ENTServices softwareupdate plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
-PV = "1.8.0"
+PV = "1.9.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -45,8 +45,6 @@ include include/maintenanceMgr.inc
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    firmwareupdate \
-    firmwaredownload \
     "
 
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'whoami_enabled', 'whoami', '', d)}"
@@ -55,8 +53,6 @@ PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'whoami_enabled
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[firmwareupdate]          = "-DPLUGIN_FIRMWAREUPDATE=ON,-DPLUGIN_FIRMWAREUPDATE=OFF,wpeframework-clientlibraries,"
-PACKAGECONFIG[firmwaredownload]     = "-DPLUGIN_FIRMWAREDOWNLOAD=ON,-DPLUGIN_FIRMWAREDOWNLOAD=OFF,,"
 PACKAGECONFIG[whoami]        = "-DENABLE_WHOAMI=ON,-DENABLE_WHOAMI=OFF,"
 
 # ----------------------------------------------------------------------------
