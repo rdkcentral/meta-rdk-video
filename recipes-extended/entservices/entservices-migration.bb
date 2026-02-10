@@ -37,8 +37,11 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= "migration"
+PACKAGECONFIG ?= "migration \
+                  telemetrysupport \"
 
+PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
+PACKAGECONFIG[telemetry]            = "-DPLUGIN_TELEMETRY=ON,,iarmbus iarmmgrs entservices-apis rfc rbus,iarmbus entservices-apis rfc rbus"
 PACKAGECONFIG[migration] = "-DPLUGIN_MIGRATION=ON,-DPLUGIN_MIGRATION=OFF,entservices-apis,entservices-apis"
 # ----------------------------------------------------------------------------
 
