@@ -1,7 +1,7 @@
-diff --git a/OpenCDMi/FrameworkRPC.cpp b/OpenCDMi/FrameworkRPC.cpp
+diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
 index 7095853..bb4254b 100644
---- a/OpenCDMi/FrameworkRPC.cpp
-+++ b/OpenCDMi/FrameworkRPC.cpp
+--- a/plugin/FrameworkRPC.cpp
++++ b/plugin/FrameworkRPC.cpp
 @@ -20,6 +20,7 @@
  #include <regex>
  #include <string>
