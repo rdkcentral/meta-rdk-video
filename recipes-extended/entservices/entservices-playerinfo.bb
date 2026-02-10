@@ -49,7 +49,6 @@ PACKAGECONFIG ?= "telemetrysupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
 "
 
-DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 
 PACKAGECONFIG:append = " playerinfo"
 
