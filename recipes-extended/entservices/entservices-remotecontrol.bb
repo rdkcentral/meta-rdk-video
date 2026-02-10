@@ -8,7 +8,10 @@ PR ?= "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-remotecontrol"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-remotecontrol;${CMF_GITHUB_SRC_URI_SUFFIX} \
+           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+           file://rdkservices.ini \
+          "
 
 # Release version - 1.0.0
 SRCREV = "57b2f8ffe915cf439798d058e22c53de0655024d"
@@ -32,7 +35,7 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-# More complicated plugins are moved seperate includes
+# More complicated plugins are moved separate includes
 include include/remotecontrol.inc
 
 PACKAGECONFIG = "iarmbus iarmmgrs ctrlm-headers,iarmbus ctrlm"
