@@ -1,6 +1,6 @@
 SUMMARY = "ENTServices Cryptography plugins"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=16cf2209d4e903e4d5dcd75089d7dfe2"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=e0be4633b6bc8df42eadad87f3e18a3a"
 
 PV = "1.4.0"
 PR = "r0"
