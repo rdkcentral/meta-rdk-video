@@ -1,4 +1,4 @@
-SUMMARY = "ENTServices ScreenCapture plugin"
+SUMMARY = "ENTServices screencapture plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7df5a8706277b586ca000838046993d1"
 
@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-screencapture;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://index.html \
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
@@ -46,10 +46,20 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " telemetrysupport \
-                 "
+    screencapture \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
+"
 
-# enable widevine and Playready4 opencdmi libs
+DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
+
+inherit features_check
+REQUIRED_DISTRO_FEATURES = "${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec', 'DOBBY_CONTAINERS', '', d)}"
+
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
+# Enable the RDKShell memcr feature support flags
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DPLUGIN_HIBERNATESUPPORT=ON -DPLUGIN_HIBERNATE_NATIVE_APPS_ON_SUSPENDED=ON','',d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains("BUILD_VARIANT", "debug", "-DPLUGIN_BUILD_TYPE=Debug", "-DPLUGIN_BUILD_TYPE=Release", d)}"
 
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[screencapture]        = "-DPLUGIN_SCREENCAPTURE=ON,-DPLUGIN_SCREENCAPTURE=OFF,entservices-apis curl libpng drm,entservices-apis curl libpng libdrm"
