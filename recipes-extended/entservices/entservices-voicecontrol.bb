@@ -35,7 +35,9 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-PACKAGECONFIG = "iarmbus iarmmgrs ctrlm-headers,iarmbus ctrlm"
+PACKAGECONFIG ?= "ctrlm"
+
+PACKAGECONFIG[ctrlm] = ",,iarmbus iarmmgrs control,iarmbus"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
@@ -63,8 +65,6 @@ do_install:append() {
         fi
     fi
 }
-
-PACKAGES =+ "${PN}-test"
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
