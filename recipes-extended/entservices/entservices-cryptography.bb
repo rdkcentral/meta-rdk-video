@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Cryptography plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e0be4633b6bc8df42eadad87f3e18a3a"
 
-PV = "1.4.0"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -56,6 +56,8 @@ PACKAGECONFIG:append = " cryptography"
 
 inherit features_check
 REQUIRED_DISTRO_FEATURES = "${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec', 'DOBBY_CONTAINERS', '', d)}"
+include include/ocdm.inc
+include include/texttospeech.inc
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
@@ -64,7 +66,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE',
 EXTRA_OECMAKE += "${@bb.utils.contains("BUILD_VARIANT", "debug", "-DPLUGIN_BUILD_TYPE=Debug", "-DPLUGIN_BUILD_TYPE=Release", d)}"
 
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[cryptography] = "-DPLUGIN_CRYPTOGRAPHY=ON,,entservices-apis, entservices-apis"
+PACKAGECONFIG[cryptography] = "-DPLUGIN_CRYPTOGRAPHY=ON,,entservices-apis wpeframework-clientlibraries, entservices-apis wpeframework-clientlibraries"
 
 # ----------------------------------------------------------------------------
 
