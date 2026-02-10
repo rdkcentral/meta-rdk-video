@@ -32,7 +32,7 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-PACKAGECONFIG = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'voicecontrol', '', d)}"
+PACKAGECONFIG = "iarmbus iarmmgrs ctrlm-headers,iarmbus ctrlm"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \

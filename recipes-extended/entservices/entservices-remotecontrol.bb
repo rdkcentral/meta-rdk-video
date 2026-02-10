@@ -35,7 +35,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 # More complicated plugins are moved seperate includes
 include include/remotecontrol.inc
 
-PACKAGECONFIG = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'remotecontrol', '', d)}"
+PACKAGECONFIG = "iarmbus iarmmgrs ctrlm-headers,iarmbus ctrlm"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
