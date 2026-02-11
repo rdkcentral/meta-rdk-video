@@ -11,7 +11,7 @@ SUMMARY = "Rialto"
 LICENSE  = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=327e572d11c37963726ba0b02d30cf2c"
 
-PV = "0.15.3"
+PV = "0.15.2"
 PR = "r0"
 
 require rialto_revision.inc
