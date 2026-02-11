@@ -137,6 +137,7 @@ do_create_artifacts() {
     if [ -d "${RECIPE_SYSROOT}${libdir}/gstreamer-1.0" ]; then
         echo "Copying .so files from ${RECIPE_SYSROOT}${libdir}/gstreamer-1.0/ to ${ARTIFACT_FILES_DIR}/${libdir}/gstreamer-1.0/"
         cp -Lv ${RECIPE_SYSROOT}${libdir}/gstreamer-1.0/libgstaamp.so ${RECIPE_SYSROOT}${libdir}/gstreamer-1.0/libgstsubtec*.so ${RECIPE_SYSROOT}${libdir}/gstreamer-1.0/libgstvipertransform.so ${ARTIFACT_FILES_DIR}/${libdir}/gstreamer-1.0/ 2>/dev/null || echo "No .so files in ${RECIPE_SYSROOT}${libdir}/gstreamer-1.0"
+    fi
 
     # Strip all binaries in the artifact-files directory
     echo "Stripping binaries in artifact-files directory..."
