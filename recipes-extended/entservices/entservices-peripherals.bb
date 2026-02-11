@@ -48,6 +48,8 @@ EXTRA_OECMAKE += " \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
     -DPLUGIN_LEDCONTROL=OFF \
+    -DPLUGIN_VOICECONTROL=OFF \
+    -DPLUGIN_REMOTECONTROL=OFF \
 "
 
 # Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
@@ -70,8 +72,6 @@ do_install:append() {
         fi
     fi
 }
-
-PACKAGES =+ "${PN}-test"
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
