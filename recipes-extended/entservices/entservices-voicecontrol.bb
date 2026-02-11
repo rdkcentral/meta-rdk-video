@@ -2,8 +2,8 @@ SUMMARY = "ENTServices voice control plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
-PV ?= "1.0.0"
-PR ?= "r0"
+PV = "1.0.0"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -35,7 +35,7 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-PACKAGECONFIG ?= "ctrlm"
+PACKAGECONFIG = "ctrlm"
 
 PACKAGECONFIG[ctrlm] = ",,iarmbus iarmmgrs control,iarmbus"
 
