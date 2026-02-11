@@ -8,12 +8,12 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_SUFFIX}\
-    file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
-    file://rdkservices.ini \
-    "
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
+           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+           file://rdkservices.ini \
+          "
 # Release version - 1.0.1
-SRCREV = "2020fe1e17d5867dd2b8ed963a46c096d637b1db"
+SRCREV = "03401f3a406802e11f5a69e551fbedfa65c61f69"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -39,10 +39,12 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " telemetrysupport \
+PACKAGECONFIG ?= " breakpadsupport \
+    telemetrysupport \
     displaysettings \
 "
 
+PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[displaysettings]      = "-DPLUGIN_DISPLAYSETTINGS=ON,-DPLUGIN_DISPLAYSETTINGS=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc devicesettings"
 
@@ -54,7 +56,6 @@ EXTRA_OECMAKE += " \
     -DSECAPI_LIB=sec_api \
 "
 
-# Check if DisplaySettings backend is defined.
 python () {
     machine_name = d.getVar('MACHINE')
     if 'raspberrypi4' in machine_name:
