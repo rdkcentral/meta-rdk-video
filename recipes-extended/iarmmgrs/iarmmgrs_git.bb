@@ -119,7 +119,7 @@ CFLAGS:remove = "-DRF4CE_GPMSO_API"
 # JIRA: XRE-6537.
 #
 #MADAN
-LDFLAGS += " -lpthread -lglib-2.0 -ldbus-1 -lIARMBus -lsystemd -lsecure_wrapper -lprivilege -ldl -lWPEFrameworkPowerController -ltelemetry"
+LDFLAGS += " -lpthread -lglib-2.0 -ldbus-1 -lIARMBus -lsystemd -lsecure_wrapper -lprivilege -ldl -lWPEFrameworkPowerController -ltelemetry_msgsender"
 CFLAGS += "-std=c++11 -fPIC -D_REENTRANT -Wall -I./include ${INCLUDE_DIRS}"
 
 CFLAGS:append:client = " -DMEDIA_CLIENT"
