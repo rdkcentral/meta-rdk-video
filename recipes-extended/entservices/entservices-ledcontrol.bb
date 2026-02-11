@@ -56,7 +56,8 @@ python () {
     # Add DS HAL headers include paths for LEDControl plugin
     # Support both old (rdk/ds-hal) and new (rdk/halif/ds-hal) header locations
     staging_incdir = d.getVar('STAGING_INCDIR')
-    d.appendVar('OECMAKE_CXX_FLAGS', ' -I{}/rdk/ds-hal -I{}/rdk/halif/ds-hal '.format(staging_incdir, staging_incdir))}
+    d.appendVar('OECMAKE_CXX_FLAGS', ' -I{}/rdk/ds-hal -I{}/rdk/halif/ds-hal '.format(staging_incdir, staging_incdir))
+}
 
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
