@@ -22,6 +22,9 @@ DEPENDS="json-c iarmbus rdk-logger virtual/vendor-devicesettings-hal devicesetti
 #RDEPENDS:${PN} += "directfb"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec ', " ", d)}"
 
+# Telemetry Support
+DEPENDS:append = " telemetry"
+
 S = "${WORKDIR}/git"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

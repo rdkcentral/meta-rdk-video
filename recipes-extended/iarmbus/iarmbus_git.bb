@@ -11,7 +11,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 PV = "1.0.3"
 PR = "r0"
 
-SRCREV_iarmbus = "c729eefc935ca2db461903fc10006de1d03002a6"
+SRCREV_iarmbus = "464973a6710837ff03120583da4efdbebf4ab759"
 SRCREV_FORMAT = "iarmbus"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmbus;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmbus"
 
@@ -23,9 +23,6 @@ LDFLAGS += "-lsystemd"
 DEPENDS="libxml2 dbus glib-2.0"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd', '', d)}"
-
-# Telemetry Support
-DEPENDS:append = " telemetry"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
