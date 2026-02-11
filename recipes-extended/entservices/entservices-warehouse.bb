@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-warehouse;${CMF_GITHUB_SRC_URI_SUFFIX}
     file://rdkservices.ini \
     "
 # Release version - 1.0.1
-SRCREV = "c961179f0700e75a02d973dcb26cdfb62451ee90"
+SRCREV = "a6fc19e8cac3f4de90e8d060851f8ca3aaa90cfd"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -37,10 +37,12 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " telemetrysupport \
+PACKAGECONFIG ?= " breakpadsupport \
+    telemetrysupport \
     warehouse \
 "
 
+PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc entservices-apis devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc entservices-apis devicesettings"
 
@@ -51,6 +53,11 @@ EXTRA_OECMAKE += " \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
 "
+python () {
+    machine_name = d.getVar('MACHINE')                                     
+    if 'raspberrypi4' in machine_name:                                     
+        d.appendVar('EXTRA_OECMAKE', ' -DBUILD_RPI=ON')
+}
 
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
