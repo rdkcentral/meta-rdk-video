@@ -14,7 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-userpreferences;${CMF_GITHUB_SRC_URI_S
           "
 
 # Release version - 1.0.1
-SRCREV = "55880f480522c95c61759f5e8710f3d4f19dfdc4"
+SRCREV = "91c0ccba429cc53ee31a1e9e2d04584caace169b"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -41,9 +41,11 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " telemetrysupport \
-                   userpreferences \
+PACKAGECONFIG ?= " breakpadsupport \
+    telemetrysupport \
+    userpreferences \
 "
+PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[userpreferences]      = "-DPLUGIN_USERPREFERENCES=ON,-DPLUGIN_USERPREFERENCES=OFF,glib-2.0,glib-2.0"
 
@@ -55,7 +57,6 @@ EXTRA_OECMAKE += " \
     -DSECAPI_LIB=sec_api \
 "
 
-# Check if DeviceInfo backend is defined.
 python () {
     machine_name = d.getVar('MACHINE')
     if 'raspberrypi4' in machine_name:
