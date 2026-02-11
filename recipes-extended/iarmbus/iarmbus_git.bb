@@ -25,9 +25,7 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd', '', d)}"
 
 # Telemetry Support
-TELEMETRY_SUPPORT  ??= "true"
-DEPENDS:append      = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' telemetry', '', d)}"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' -DTELEMETRY_SUPPORT=ON', '', d)}"
+DEPENDS:append = telemetry
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
