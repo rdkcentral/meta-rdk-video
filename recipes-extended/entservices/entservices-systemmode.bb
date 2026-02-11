@@ -14,7 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-systemmode;${CMF_GITHUB_SRC_URI_SUFFIX
           "
 
 # Release version - 1.0.1
-SRCREV = "012d1072057e91b59b55b926f14bce70e2defdc1"
+SRCREV = "9b8bb3f69a88345f0dc2046443f5d8df53b49b42"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -41,9 +41,11 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " telemetrysupport \
-                   systemmode \
+PACKAGECONFIG ?= " breakpadsupport \
+    telemetrysupport \
 "
+PACKAGECONFIG:append = "systemmode"
+PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[systemmode] = "-DPLUGIN_SYSTEMMODE=ON,-DPLUGIN_SYSTEMMODE=OFF,entservices-apis,entservices-apis"
 
