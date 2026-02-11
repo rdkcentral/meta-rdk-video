@@ -66,9 +66,6 @@ do_install() {
     # Try the normal cmake install, but don't fail if there are no install targets
     cd ${B}
     DESTDIR='${D}' cmake --build . --target install 2>/dev/null || true
-    
-    # Ensure the plugin directory exists even if empty
-    install -d ${D}${libdir}/wpeframework/plugins
 }
 
 do_install:append() {
@@ -76,6 +73,11 @@ do_install:append() {
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
+    fi
+    
+    # Remove empty directories if no plugins were built
+    if [ -d "${D}${libdir}/wpeframework/plugins" ] && [ -z "$(ls -A ${D}${libdir}/wpeframework/plugins)" ]; then
+        rm -rf ${D}${libdir}/wpeframework
     fi
 }
 
