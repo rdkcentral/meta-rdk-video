@@ -1,29 +1,21 @@
-From: Metro Team
-Date: Fri, 07 Feb 2024 11:07:28 +0000
-Subject: [PATCH] 001-PR1832-RDKTV-35315.patch
-
-Upstream-Status: Backport from Thunder R4_4 branch
-Signed-off-by: Thamim Razith <tabbas651@cable.comcast.com>
-Signed-off-by: Boopathi Vanavarayan <boopathi_vanavarayan@comcast.com>
----
 diff --git a/Source/com/Communicator.h b/Source/com/Communicator.h
-index b8716586c..a8db49e59 100644
+index d691d8a3c..152d1b006 100644
 --- a/Source/com/Communicator.h
 +++ b/Source/com/Communicator.h
-@@ -1059,14 +1059,14 @@ namespace RPC {
+@@ -1062,14 +1062,13 @@ namespace RPC {
                          observer++;
                      }
  
 -                    // Don't forget to close on our side as well, if it is not already closed....
 -                    index->second->Terminate();
- 
+-
                      // Release this entry, do not wait till it get's overwritten.
                      index->second->Release();
                      _connections.erase(index);
                      _adminLock.Unlock();
  
 +                    // Don't forget to close on our side as well, if it is not already closed....
-+                    index->second->Terminate();
++                    connection->Terminate();
                      connection->Release();
                  }
              }
