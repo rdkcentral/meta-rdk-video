@@ -7,7 +7,7 @@ PV = "2.11.1"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp = "0525c0a3b05681b773b3fd0482f47ad7439b0c27"
+SRCREV_aamp = "1aede00d3d30c6ab86d492c28e83ebbb630758b3"
 
 inherit pkgconfig
 
@@ -24,8 +24,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 #To be removed later, the AAMP_RELEASE_TAG_NAME is not using.
 AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
 
-#SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
-SRC_URI = "${CMF_GITHUB_ROOT}/aamp;nobranch=1;name=aamp"
+SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
 
 S = "${WORKDIR}/git"
 
