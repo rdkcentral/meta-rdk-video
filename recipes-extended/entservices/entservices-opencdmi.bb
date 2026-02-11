@@ -65,8 +65,6 @@ PACKAGECONFIG ?= " breakpadsupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
 "
 
-DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
-
 # enable widevine and Playready4 opencdmi libs
 OPENCDM_DRMS ??= " ${@bb.utils.contains_any('DISTRO_FEATURES' , ['widevine_v16' , 'widevine_v18'], 'opencdmi_wv', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['playready4' , 'playready4_6'], 'opencdmi_pr4', '', d)}"
 PACKAGECONFIG:append = " ${OPENCDM_DRMS}"
