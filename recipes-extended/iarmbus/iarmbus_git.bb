@@ -24,6 +24,11 @@ DEPENDS="libxml2 dbus glib-2.0"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd', '', d)}"
 
+# Telemetry Support
+TELEMETRY_SUPPORT  ??= "true"
+DEPENDS:append      = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' telemetry', '', d)}"
+EXTRA_OECMAKE:append = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' -DTELEMETRY_SUPPORT=ON', '', d)}"
+
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit autotools pkgconfig systemd coverity syslog-ng-config-gen logrotate_config
