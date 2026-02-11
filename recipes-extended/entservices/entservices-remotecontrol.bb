@@ -40,7 +40,7 @@ include include/remotecontrol.inc
 
 PACKAGECONFIG = "ctrlm"
 
-PACKAGECONFIG[ctrlm] = ",,iarmbus iarmmgrs control,iarmbus"
+PACKAGECONFIG[ctrlm] = ",,iarmbus iarmmgrs,iarmbus"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \

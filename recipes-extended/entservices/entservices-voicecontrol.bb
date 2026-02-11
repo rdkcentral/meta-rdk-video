@@ -37,7 +37,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG = "ctrlm"
 
-PACKAGECONFIG[ctrlm] = ",,iarmbus iarmmgrs control,iarmbus"
+PACKAGECONFIG[ctrlm] = ",,iarmbus iarmmgrs,iarmbus"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
