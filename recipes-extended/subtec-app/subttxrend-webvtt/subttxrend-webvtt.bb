@@ -11,7 +11,7 @@ DEPENDS = "subttxrend-common subttxrend-gfx"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "be7e6b521cfa0e2b685c77be2e2ae869ad21348e"
+SRCREV = "b93ee336e416991aadfb1f58c02307ca7e91477f"
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-webvtt"
