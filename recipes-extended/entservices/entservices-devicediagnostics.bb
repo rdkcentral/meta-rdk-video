@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicediagnostics;${CMF_GITHUB_SRC_URI
           "
 
 # Release version - 1.0.1
-SRCREV = "bc6922865ead418c8f6053eebd672e8121216949"
+SRCREV = "99951595ae7fe616d218e34940e3b2801bcff38a"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -39,12 +39,14 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= "telemetrysupport \
+PACKAGECONFIG ?= " breakpadsupport \
+    telemetrysupport \
     devicediagnostics \
 "
 
 PACKAGECONFIG:append = " erm"
 
+PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[devicediagnostics]    = "-DPLUGIN_DEVICEDIAGNOSTICS=ON,-DPLUGIN_DEVICEDIAGNOSTICS=OFF,curl entservices-apis,curl entservices-apis"
 PACKAGECONFIG[erm]                  = "-DBUILD_ENABLE_ERM=ON,-DBUILD_ENABLE_ERM=OFF,essos,essos"
@@ -57,7 +59,6 @@ EXTRA_OECMAKE += " \
     -DSECAPI_LIB=sec_api \
 "
 
-# Check if DeviceDiagnostics backend is defined.
 python () {
     machine_name = d.getVar('MACHINE')
     if 'raspberrypi4' in machine_name:
