@@ -14,7 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-framerate;${CMF_GITHUB_SRC_URI_SUFFIX}
           "
 
 # Release version - 1.0.1
-SRCREV = "0c878acef13d449d44b3ae9ee1cbe60f0e2f6cc9"
+SRCREV = "81fefdd0b7896a251da3d2e5d67eeaa9cb9b1f9a"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -40,12 +40,19 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " telemetrysupport \
-                   framerate \
+PACKAGECONFIG ?= " breakpadsupport \
+    telemetrysupport \
+    framerate \
 "
 
 
+PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
+
+
+
+
+
 PACKAGECONFIG[framerate]            = "-DPLUGIN_FRAMERATE=ON,-DPLUGIN_FRAMERATE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal procps,iarmbus devicesettings procps"
 
 # ----------------------------------------------------------------------------
