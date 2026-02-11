@@ -25,7 +25,7 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd', '', d)}"
 
 # Telemetry Support
-DEPENDS:append = telemetry
+DEPENDS:append = " telemetry"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
