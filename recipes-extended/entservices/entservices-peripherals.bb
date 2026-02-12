@@ -38,8 +38,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    remotecontrol \
-    voicecontrol \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'voicecontrol remotecontrol', '', d)} \
 "
 
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'motiondetection','',d)}"
