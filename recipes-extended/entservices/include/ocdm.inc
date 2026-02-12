@@ -15,3 +15,4 @@ PACKAGECONFIG[opencdmi_prnx_svp]  = "-DPLUGIN_OPENCDMI_PLAYREADY_NEXUS_SVP=ON,,,
 PACKAGECONFIG[opencdmi_vgrdm] = "-DPLUGIN_OPENCDMI_PLAYREADY_VGDRM=ON,,"
 PACKAGECONFIG[opencdmi_wv]    = "-DPLUGIN_OPENCDMI_WIDEVINE=ON,,,wpeframework-ocdm-widevine"
 PACKAGECONFIG[opencdmi_wv_svp]    = "-DPLUGIN_OPENCDMI_WIDEVINE=ON,,,wpeframework-ocdm-widevine-nexus-svp"
+PACKAGECONFIG[opencdmi_fps]    = "-DPLUGIN_OPENCDMI_FAIRPLAY=ON,,,wpeframework-ocdm-fairplay"
