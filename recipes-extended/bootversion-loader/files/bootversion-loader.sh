@@ -136,20 +136,20 @@ if [ "$current_bootType" == "BOOT_MIGRATION" ]; then
     if [ -d "$migrationDir" ]; then
         boottypeLog "changed the permission of $migrationDir by +x"
         chmod +x "$migrationDir"
-	else
-		boottypeLog "$migrationDir is not present"
+    else
+	boottypeLog "$migrationDir is not present"
     fi
 
     # Check if the file exists
     if [ -f "$migrationDSFile" ]; then
         boottypeLog "changed the permission of $migrationDSFile by +r"
         chmod +r "$migrationDSFile"
-	else
-		boottypeLog "$migrationDSFile is not present"
-		stat $migrationDSFile
+    else
+	boottypeLog "$migrationDSFile is not present"
+	stat $migrationDSFile
     fi
 else
-	boottypeLog "current_bootType is $current_bootType"
+    boottypeLog "current_bootType is $current_bootType"
 fi
 
 echo "COMPLETED" > $file_updateStatus
