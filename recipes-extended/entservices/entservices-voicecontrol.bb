@@ -21,8 +21,8 @@ TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis ctrlm-headers ctrlm"
-RDEPENDS:${PN} += "wpeframework"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis iarmbus iarmmgrs ctrlm-headers ctrlm"
+RDEPENDS:${PN} += "wpeframework iarmbus ctrlm"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -Wl,--as-needed "
 
@@ -34,10 +34,6 @@ CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
-
-PACKAGECONFIG = "ctrlm"
-
-PACKAGECONFIG[ctrlm] = ",,iarmbus iarmmgrs,iarmbus"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
