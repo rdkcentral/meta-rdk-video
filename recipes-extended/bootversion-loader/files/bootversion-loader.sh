@@ -146,7 +146,6 @@ if [ "$current_bootType" == "BOOT_MIGRATION" ]; then
         chmod +r "$migrationDSFile"
     else
 	boottypeLog "$migrationDSFile is not present"
-	stat $migrationDSFile
     fi
 else
     boottypeLog "current_bootType is $current_bootType"
