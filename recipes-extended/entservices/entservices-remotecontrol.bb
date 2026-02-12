@@ -35,8 +35,9 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-# More complicated plugins are moved to separate includes
 include include/remotecontrol.inc
+
+PACKAGECONFIG ?= ""
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
