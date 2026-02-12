@@ -1,6 +1,6 @@
 SUMMARY = "ENTServices firmware update plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 PV = "1.0.1"
 PR = "r0"
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SU
           "
 
 # Release version - 1.0.1
-SRCREV = "7f1bc6caf4a6ad4ffa45312cb479659b49522a71"
+SRCREV = "4dae188bbe9c58b250c686ef377260b3fa85e45b"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
