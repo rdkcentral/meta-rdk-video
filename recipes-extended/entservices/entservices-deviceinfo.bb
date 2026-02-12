@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceinfo;${CMF_GITHUB_SRC_URI_SUFFIX
           "
 
 # Release version - 1.0.1
-SRCREV = "b2f7515373e41d09f1e49b5df60d3026fc9a8d6c"
+SRCREV = "eba5d9fdad5a308cab3ab21a714aa9aa8427047c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
