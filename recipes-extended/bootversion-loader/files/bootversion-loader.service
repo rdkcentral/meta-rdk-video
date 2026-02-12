@@ -1,5 +1,6 @@
 [Unit]
 Description=Boot version loader for RDK
+After=ecfs-init.service
 
 [Service]
 Type=oneshot
