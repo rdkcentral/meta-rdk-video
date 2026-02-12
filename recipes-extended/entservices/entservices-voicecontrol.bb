@@ -21,7 +21,7 @@ TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis iarmbus iarmmgrs ctrlm-headers ctrlm"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis iarmbus iarmmgrs ctrlm-headers"
 RDEPENDS:${PN} += "wpeframework iarmbus ctrlm"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -Wl,--as-needed "
