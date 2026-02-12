@@ -16,8 +16,8 @@ PR = "r0"
 
 require rialto_revision.inc
 
-SRCREV = "293d0341671d7a0b7bed3cc67e8efb30a692d2d1"
-SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
+SRCREV = "e58b47be0a407aba328ef3d2d7cda84c996c6e1d"
+SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=FlushGstDebug"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
 DEPENDS = "openssl jsoncpp protobuf protobuf-native"
