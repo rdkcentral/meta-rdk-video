@@ -8,12 +8,12 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-xcast;${CMF_GITHUB_SRC_URI_SUFFIX};branch=RDKEMW-11899-entservices-xcast \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-xcast;${CMF_GITHUB_SRC_URI_SUFFIX};branch=RDKEMW-11899-entservices-xcast-v1 \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
 # Release version - 1.0.0
-SRCREV = "0d6896281d8ff68298d3917eabd149a1bad90cb0"
+SRCREV = "bb6d303ea04055ec54edcde7e0c564b4bfeec762"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
