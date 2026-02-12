@@ -35,6 +35,8 @@ SRC_URI += "file://2.38.8/1463_GStreamer-support-the-eotf-additional-MIME-type.p
 SRC_URI += "file://2.38.8/1467.patch"
 SRC_URI += "file://2.38.8/1608_MemoryPressureMonitor.patch"
 SRC_URI += "file://2.38.8/1614_Only-extend-first-sample-when-it-is-a-sync-sample.patch"
+SRC_URI += "file://2.38.8/1605_Enable-new-dtags_flags-in-wpe-webkit.patch"
+SRC_URI += "file://2.38.8/1611_Load-libWPEWebInspectorResources-from-widget.patch"
 
 # Drop after libwpe upgrade
 SRC_URI += "file://2.38.8/RDK-54304-Fix-build-with-an-older-libpwe.patch"
