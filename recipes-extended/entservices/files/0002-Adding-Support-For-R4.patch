@@ -2,10 +2,10 @@ From: Karunakaran A <Karunakaran_Amirthalingam@cable.comcast.com>
 Date: 19 May 2023 17:24:43 +0000
 Subject: [PATCH] rdkservice changes for R4 compilation
 ---
-Index: git/OpenCDMi/FrameworkRPC.cpp
+Index: git/plugin/FrameworkRPC.cpp
 ===================================================================
---- git.orig/OpenCDMi/FrameworkRPC.cpp
-+++ git/OpenCDMi/FrameworkRPC.cpp
+--- git.orig/plugin/FrameworkRPC.cpp
++++ git/plugin/FrameworkRPC.cpp
 @@ -665,8 +665,12 @@ namespace Plugin {
                      TRACE(Trace::Information, (_T("ResetOutputProtection! %p"), this));
                      _mediaKeySession->ResetOutputProtection();

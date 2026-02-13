@@ -1,24 +1,30 @@
-SUMMARY = "ENTServices Media and DRM plugins"
+SUMMARY = "ENTServices opencdmi plugins"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=16cf2209d4e903e4d5dcd75089d7dfe2"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=c03d0e6d700b63b51bf8da6b61dac850"
 
-PV = "1.4.0"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://index.html \
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
+           file://0003-set-OCDM-sharepath-to-tmp-OCDM.patch \
+           file://0001-RDK-31882-Add-GstCaps-parsing-in-OCDM-to-rdkservices.patch \
+           file://0001-add_gstcaps_forcobalt_mediatype.patch \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
-           ${@bb.utils.contains('DISTRO_FEATURES', 'wpe_r4_4','file://0003-R4.4.1-SystemAudioPlayer-compilation-error.patch','',d)} \
+           file://0001-rdkservices_cbcs_changes.patch \
+           file://0002-Adding-Support-For-R4.patch \
+           file://0001-Add-a-new-metrics-punch-through-on-the-OCDM-framework-rdkservice.patch \
+           file://0001-set-OCDM-process-thread-name.patch \
           "
           
-# Release version - 1.4.0
-SRCREV = "54962cc5e1cdedfce21bc2f60cff8af668244e40"
+# Release version - 1.0.1
+SRCREV = "23a155c0411289feff503305f0507f6bee356b45"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -46,31 +52,27 @@ CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # More complicated plugins are moved seperate includes
-include include/texttospeech.inc
+include include/ocdm.inc
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= "  breakpadsupport \
+PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    texttospeech \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm',              'opencdmi', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'playready_nexus_svp',  'opencdmi_prnx_svp', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'widevine_nexus_svp',   'opencdmi_wv_svp', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'clearkey',             'opencdmi_ck', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
 "
 
-DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
-
 # enable widevine and Playready4 opencdmi libs
-PACKAGECONFIG:append = " systemaudioplayer"
+OPENCDM_DRMS ??= " ${@bb.utils.contains_any('DISTRO_FEATURES' , ['widevine_v16' , 'widevine_v18'], 'opencdmi_wv', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['playready4' , 'playready4_6'], 'opencdmi_pr4', '', d)}"
+PACKAGECONFIG:append = " ${OPENCDM_DRMS}"
 
 inherit features_check
 REQUIRED_DISTRO_FEATURES = "${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec', 'DOBBY_CONTAINERS', '', d)}"
 
-EXTRA_OECMAKE += "-DDISABLE_GEOGRAPHY_TIMEZONE=ON"
-
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
-EXTRA_OECMAKE += " -DBUILD_ENABLE_DEVICE_MANUFACTURER_INFO=ON "
-EXTRA_OECMAKE += " -DBUILD_ENABLE_THERMAL_PROTECTION=ON "
-EXTRA_OECMAKE += " -DENABLE_SYSTEM_GET_STORE_DEMO_LINK=ON "
-EXTRA_OECMAKE += " -DBUILD_ENABLE_APP_CONTROL_AUDIOPORT_INIT=ON "
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
 # Enable the RDKShell memcr feature support flags
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DPLUGIN_HIBERNATESUPPORT=ON -DPLUGIN_HIBERNATE_NATIVE_APPS_ON_SUSPENDED=ON','',d)}"
@@ -78,7 +80,6 @@ EXTRA_OECMAKE += "${@bb.utils.contains("BUILD_VARIANT", "debug", "-DPLUGIN_BUILD
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[systemaudioplayer]    = "-DPLUGIN_SYSTEMAUDIOPLAYER=ON,,entservices-apis trower-base64 boost websocketpp wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app,entservices-apis trower-base64 wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app"
 
 # ----------------------------------------------------------------------------
 
@@ -109,8 +110,6 @@ do_install:append() {
     fi
 }
 
-PACKAGES =+ "${PN}-test"
-FILES:${PN}-test += "${bindir}/remoteControlTestClient ${bindir}/SystemAudioPlayerAPITest ${bindir}/TTSThunderAPITest"
 
 # ----------------------------------------------------------------------------
 
@@ -119,5 +118,4 @@ FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WP
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
-
 
