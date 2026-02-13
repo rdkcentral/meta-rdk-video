@@ -22,6 +22,8 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
+DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
+DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
@@ -52,6 +54,13 @@ PACKAGECONFIG[ocicontainersec]      = "                        ,                
 PACKAGECONFIG[rialtodac]            = "-DRIALTO_IN_DAC_FEATURE=ON,-DRIALTO_IN_DAC_FEATURE=OFF,rialto,rialto-servermanager-lib"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 # ----------------------------------------------------------------------------
+
+# Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
+python () {
+    dri_device_name = d.getVar('DRI_DEVICE_NAME')
+    if dri_device_name:
+        d.appendVar('OECMAKE_CXX_FLAGS', ' -DDEFAULT_DEVICE=\'\\"{}\\"\' '.format(dri_device_name))
+}
 
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
