@@ -18,7 +18,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
           "
           
 # Release version - 1.4.0
-SRCREV = "82e6bf2afd5e6afe42e53db0a468be28ce691b04"
+SRCREV = "8e2f68d8d98ea2836879ad8c47dcb6616c448773"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -53,7 +53,6 @@ include include/texttospeech.inc
 
 PACKAGECONFIG ?= "  breakpadsupport \
     telemetrysupport \
-    screencapture \
     texttospeech \
     ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
 "
@@ -62,7 +61,6 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 
 # enable widevine and Playready4 opencdmi libs
 PACKAGECONFIG:append = " systemaudioplayer"
-PACKAGECONFIG:append = " playerinfo"
 
 inherit features_check
 REQUIRED_DISTRO_FEATURES = "${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec', 'DOBBY_CONTAINERS', '', d)}"
@@ -81,8 +79,6 @@ EXTRA_OECMAKE += "${@bb.utils.contains("BUILD_VARIANT", "debug", "-DPLUGIN_BUILD
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[playerinfo]           = "-DPLUGIN_PLAYERINFO=ON -DUSE_DEVICESETTINGS=1,-DPLUGIN_PLAYERINFO=OFF,iarmbus iarmmgrs entservices-apis devicesettings virtual/vendor-devicesettings-hal gstreamer1.0,iarmbus entservices-apis devicesettings gstreamer1.0"
-PACKAGECONFIG[screencapture]        = "-DPLUGIN_SCREENCAPTURE=ON,-DPLUGIN_SCREENCAPTURE=OFF,entservices-apis curl libpng drm,entservices-apis curl libpng libdrm"
 PACKAGECONFIG[systemaudioplayer]    = "-DPLUGIN_SYSTEMAUDIOPLAYER=ON,,entservices-apis trower-base64 boost websocketpp wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app,entservices-apis trower-base64 wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app"
 PACKAGECONFIG[unifiedcasmanagement] = "-DPLUGIN_UNIFIEDCASMANAGEMENT=ON,,rmfgeneric, rmfgeneric"
 
@@ -126,8 +122,3 @@ FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WP
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
 
-PACKAGES =+ "${PN}-screencapture"
-FILES:${PN}-screencapture = "\
-     ${libdir}/wpeframework/plugins/libWPEFrameworkScreenCapture.so \
-     /etc/WPEFramework/plugins/ScreenCapture.json \
-"
