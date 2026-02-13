@@ -61,6 +61,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-appgatewaycommon.service \
     wpeframework-downloadmanager.service \
     wpeframework-preinstallmanager.service \
+    wpeframework-telemetrymetrics.service \
     "
 
 CONTROL_FILES = "\
