@@ -8,8 +8,7 @@ PR ?= "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "cdc08633bc299c509dc51fc2f2fc59b865e5906b"
-
+SRCREV = "d6aa16b67386e7619529d3580bbae5ddc295c683"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -23,7 +22,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant p
 
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
 RDEPENDS:${PN} += "wpeframework"
-DEPENDS += "packager-headers"
+DEPENDS += "packager-headers yaml-cpp"
 
 CFLAGS  += " \
     -I=${includedir}/rdk/halif/power-manager \
