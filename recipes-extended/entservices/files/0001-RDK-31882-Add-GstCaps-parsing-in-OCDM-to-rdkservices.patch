@@ -5,18 +5,18 @@ Subject: [PATCH] DELIA-57501 : Fix Warnings in RDKServices builds and enable
  warnings as errors
 
 ---
- OpenCDMi/CMakeLists.txt   |   1 +
- OpenCDMi/CapsParser.cpp   | 200 ++++++++++++++++++++++++++++++++++++++
- OpenCDMi/CapsParser.h     |  63 ++++++++++++
- OpenCDMi/FrameworkRPC.cpp |  23 ++++-
+ plugin/CMakeLists.txt   |   1 +
+ plugin/CapsParser.cpp   | 200 ++++++++++++++++++++++++++++++++++++++
+ plugin/CapsParser.h     |  63 ++++++++++++
+ plugin/FrameworkRPC.cpp |  23 ++++-
  4 files changed, 284 insertions(+), 3 deletions(-)
- create mode 100644 OpenCDMi/CapsParser.cpp
- create mode 100644 OpenCDMi/CapsParser.h
+ create mode 100644 plugin/CapsParser.cpp
+ create mode 100644 plugin/CapsParser.h
 
-diff --git a/OpenCDMi/CMakeLists.txt b/OpenCDMi/CMakeLists.txt
+diff --git a/plugin/CMakeLists.txt b/plugin/CMakeLists.txt
 index 406035f8..f8bbe409 100644
---- a/OpenCDMi/CMakeLists.txt
-+++ b/OpenCDMi/CMakeLists.txt
+--- a/plugin/CMakeLists.txt
++++ b/plugin/CMakeLists.txt
 @@ -42,6 +42,7 @@ add_library(${MODULE_NAME} SHARED
  add_library(${PLUGIN_OCDM_IMPLEMENTATION} SHARED
          CENCParser.cpp
@@ -25,11 +25,11 @@ index 406035f8..f8bbe409 100644
          Module.cpp)
  
  add_dependencies(${MODULE_NAME} ${PLUGIN_OCDM_IMPLEMENTATION})
-diff --git a/OpenCDMi/CapsParser.cpp b/OpenCDMi/CapsParser.cpp
+diff --git a/plugin/CapsParser.cpp b/plugin/CapsParser.cpp
 new file mode 100644
 index 00000000..e4a1a75e
 --- /dev/null
-+++ b/OpenCDMi/CapsParser.cpp
++++ b/plugin/CapsParser.cpp
 @@ -0,0 +1,200 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
@@ -231,11 +231,11 @@ index 00000000..e4a1a75e
 +        }
 +    }
 +}
-diff --git a/OpenCDMi/CapsParser.h b/OpenCDMi/CapsParser.h
+diff --git a/plugin/CapsParser.h b/plugin/CapsParser.h
 new file mode 100644
 index 00000000..9ad148dc
 --- /dev/null
-+++ b/OpenCDMi/CapsParser.h
++++ b/plugin/CapsParser.h
 @@ -0,0 +1,63 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
@@ -300,10 +300,10 @@ index 00000000..9ad148dc
 +        };
 +    }
 +}
-diff --git a/OpenCDMi/FrameworkRPC.cpp b/OpenCDMi/FrameworkRPC.cpp
+diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
 index 37a28d37..6fafd4b2 100644
---- a/OpenCDMi/FrameworkRPC.cpp
-+++ b/OpenCDMi/FrameworkRPC.cpp
+--- a/plugin/FrameworkRPC.cpp
++++ b/plugin/FrameworkRPC.cpp
 @@ -23,6 +23,7 @@
  
  #include "Module.h"
