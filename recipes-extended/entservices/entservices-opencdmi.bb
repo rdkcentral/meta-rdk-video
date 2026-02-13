@@ -24,7 +24,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
           "
           
 # Release version - 1.0.1
-SRCREV = "c21c5eab1be11be7a955c3ff0f26f77345cf9856"
+SRCREV = "23a155c0411289feff503305f0507f6bee356b45"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
