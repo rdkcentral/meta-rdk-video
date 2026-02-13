@@ -14,7 +14,7 @@ index ea87eee..45cce33 100755
  } // namespace Exchange
 diff --git a/apis/PluginAsyncStateControl/IPluginAsyncStateControl.h b/apis/PluginAsyncStateControl/IPluginAsyncStateControl.h
 new file mode 100644
-index 0000000..70f4c49
+index 0000000..5110636
 --- /dev/null
 +++ b/apis/PluginAsyncStateControl/IPluginAsyncStateControl.h
 @@ -0,0 +1,64 @@
@@ -40,7 +40,7 @@ index 0000000..70f4c49
 +#pragma once
 +#include "Module.h"
 +
-+namespace Thunder {
++namespace WPEFramework {
 +namespace Exchange {
 +
 +    struct EXTERNAL IPluginAsyncStateControl : virtual public Core::IUnknown {
@@ -67,13 +67,13 @@ index 0000000..70f4c49
 +
 +        // @brief Activate a plugin. Passed callbcak will be called on failure or success
 +        // @param callsign: callsign of plugin to activate
-+        // @param maxnumberretries: maximum number of retries to initialize the plugin (default used when not specified)
-+        // @param delay: delay to be used (in ms) between initialization retries (default used when not specified)
++        // @param maxnumberretries: maximum number of retries to initialize the plugin (default used when 0 is passed)
++        // @param delay: delay to be used (in ms) between initialization retries (default used when 0 is passed)
 +        // @param cb: callback interface called on success or failure
 +        // @retval ERROR_INPROGRESS Activation request is already in progress for this callsign
 +        // @retval ERROR_ILLEGAL_STATE Plugin with this callsign is in an invalid state for it to be able to be started (e.g. DESTROYED or UNAVAILABLE)
 +        // @retval ERROR_NOT_EXIST Plugin is unknown to Thunder (at this moment in case of Dynamic plugins)
-+        virtual Core::hresult Activate(const string& callsign, const Core::OptionalType<uint8_t>& maxnumberretries, const Core::OptionalType<uint16_t>& delay, IActivationCallback* const cb) = 0;
++        virtual Core::hresult Activate(const string& callsign, const uint8_t& maxnumberretries, const uint16_t& delay, IActivationCallback* const cb) = 0;
 +
 +        // @brief Abort a previously started Activate request
 +        // @retval ERROR_NOT_EXIST There is no ongoing activation request 
