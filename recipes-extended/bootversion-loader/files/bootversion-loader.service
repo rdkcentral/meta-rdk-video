@@ -1,5 +1,8 @@
 [Unit]
 Description=Boot version loader for RDK
+After=ecfs-init.service
+Wants=ecfs-init.service
+RequiresMountsFor=/opt/secure
 
 [Service]
 Type=oneshot
