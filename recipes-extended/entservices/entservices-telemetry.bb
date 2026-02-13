@@ -41,7 +41,6 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " telemetrysupport \
-    telemetry \
 "
 # ----------------------------------------------------------------------------
 
@@ -49,37 +48,11 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[telemetry]            = "-DPLUGIN_TELEMETRY=ON,,iarmbus iarmmgrs entservices-apis rfc rbus,iarmbus entservices-apis rfc rbus"
 # ----------------------------------------------------------------------------
 
-MONITOR_PLUGIN_ARGS                ?= " \
-                                       -DPLUGIN_WEBKITBROWSER_MEMORYLIMIT=614400 \
-                                       -DPLUGIN_YOUTUBE_MEMORYLIMIT=614400 \
-                                       -DPLUGIN_NETFLIX_MEMORYLIMIT=307200 \
-                                       -DPLUGIN_MONITOR_CLONED_APPS=ON -DPLUGIN_MONITOR_CLONED_APP_MEMORYLIMIT=657408 \
-                                       -DPLUGIN_MONITOR_SEARCH_AND_DISCOVERY_MEMORYLIMIT=888832 \
-                                       -DPLUGIN_MONITOR_NETFLIX_APP_MEMORYLIMIT=1048576 \
-"
-PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
-                                       -DADD_DAC_PARAMS=${@d.getVar('DAC_PARAMS')} \
-                                       -DPLUGIN_DAC_DB_PATH=${DAC_DB_PATH} \
-                                       -DPLUGIN_DAC_APP_PATH=${DAC_APP_PATH} \
-                                       -DPLUGIN_DAC_DATA_PATH=${DAC_DATA_PATH} \
-                                       -DPLUGIN_DAC_ANTN_FILE=${DAC_ANN_FILE} \
-                                       -DPLUGIN_DAC_ANTN_REGEX=${DAC_ANN_REGEX} \
-                                       -DPLUGIN_DAC_BUN_FIRM_COMP_KEY=${DAC_BUN_FIRM_COMP_KEY} \
-                                       -DPLUGIN_DAC_BUN_PLATNAME_OVERRIDE=${DAC_BUN_PLATNAME_OVERRIDE} \
-                                       -DPLUGIN_DAC_CONFIGURL=${DAC_CONFIGURL} \
-"
-RUNTIMEMANAGER_PLUGIN_ARGS         ?= " \
-                                       -DPLUGIN_RUNTIME_APP_PORTAL=${RUNTIME_APP_PORTAL} \
-"
-RUNTIME_APP_PORTAL ?= "com.sky.as.apps"
-NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
-    -DPLUGIN_NATIVEJS=ON \
-    -DPLUGIN_NATIVEJS_CLIENTIDENTIFIER="${NATIVEJS_CLIENTIDENTIFIER}" \
 "
 
 # TBD - set SECAPI_LIB to hw secapi once RDK-12682 changes are available
