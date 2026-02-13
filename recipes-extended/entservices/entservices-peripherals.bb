@@ -8,6 +8,8 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
+ALLOW_EMPTY:${PN} = "1"
+
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-peripherals;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
@@ -58,6 +60,17 @@ python () {
     dri_device_name = d.getVar('DRI_DEVICE_NAME')
     if dri_device_name:
         d.appendVar('OECMAKE_CXX_FLAGS', ' -DDEFAULT_DEVICE=\'\\"{}\\"\' '.format(dri_device_name))
+}
+
+do_install() {
+    # If CMakeLists.txt defines no install targets, cmake will have no install rules
+    # Try the install, but allow it to fail gracefully
+    cd ${B}
+    if [ -f cmake_install.cmake ] && grep -q "install" cmake_install.cmake; then
+        DESTDIR='${D}' cmake --build . --target install
+    else
+        bbwarn "No install targets found - this is expected when plugins are in separate recipes"
+    fi
 }
 
 do_install:append() {
