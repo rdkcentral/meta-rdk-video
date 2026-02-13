@@ -3,12 +3,10 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
 PV = "1.2.1"
-PR = "r1"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
-
-ALLOW_EMPTY:${PN} = "1"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-peripherals;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
@@ -62,23 +60,17 @@ python () {
         d.appendVar('OECMAKE_CXX_FLAGS', ' -DDEFAULT_DEVICE=\'\\"{}\\"\' '.format(dri_device_name))
 }
 
-do_install() {
-    # Handle case where no plugins are enabled (all moved to separate recipes)
-    # Try the normal cmake install, but don't fail if there are no install targets
-    cd ${B}
-    DESTDIR='${D}' cmake --build . --target install 2>/dev/null || true
-}
-
 do_install:append() {
+    install -d ${D}${sysconfdir}/rfcdefaults
+    if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
+    then
+      install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
+    fi
+
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
-    fi
-    
-    # Remove empty directories if no plugins were built
-    if [ -d "${D}${libdir}/wpeframework/plugins" ] && [ -z "$(ls -A ${D}${libdir}/wpeframework/plugins)" ]; then
-        rm -rf ${D}${libdir}/wpeframework
     fi
 }
 
