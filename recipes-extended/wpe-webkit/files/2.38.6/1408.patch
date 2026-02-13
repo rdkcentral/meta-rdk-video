@@ -1,0 +1,64 @@
+From 405a71c8ec7d09895f84ec2f4f5b6a23601fda17 Mon Sep 17 00:00:00 2001
+From: Filipe Norte <filipe.norte@sky.uk>
+Date: Tue, 24 Sep 2024 10:48:33 +0000
+Subject: [PATCH] Fix bmalloc hang with RT thread priorities
+When real time (RT) thread priorities are used for some of the
+gstreamer pipeline elements, we may run into a situation where
+several RT threads start spinning during a mutex acquisition
+process, leading to a system hang as most other threads won't
+be able to run.
+Sequence of events leading up to the hang:
+1. A web process thread acquires the mutex lock for the heap and is
+then involuntary descheduled, and does not run again
+2. vqueue:src (RT priority) enters the lockSlowCase and starts
+spinning in the while loop
+3. multiqueue0:src (instance 1, RT priority) enters the lockSlowCase
+and starts spinning in the while loop
+4. aqueue:src (RT priority) enters the lockSlowCase and starts
+spinning in the while loop
+5. multiqueue0:src (instance 2, RT priority) enters the lockSlowCase
+and starts spinning in the while loop
+Once stage 5 is hit, the box is hung as the only thing that can run
+on a CPU core is:
+1. one of the above RT threads (aqueue, vqueue, or multiqueue)
+2. any other RT thread with a priority equal or greater than the
+above RT threads
+3. any h/w irq
+The use of the usleep() will allow the low priority process to run
+and release the mutex lock, avoiding the hang
+Author of issue analysis and fix proposal: Steven Webster
+Reason for change: System hang with realtime priorities
+Test Procedure: Refer ticket
+Priority: P0
+Risks: None
+Signed-off-by: Filipe Norte <filipe.norte@sky.uk>
+---
+ Source/bmalloc/bmalloc/Mutex.cpp | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+diff --git a/Source/bmalloc/bmalloc/Mutex.cpp b/Source/bmalloc/bmalloc/Mutex.cpp
+index 3f57a0f7c349..757342e805f3 100644
+--- a/Source/bmalloc/bmalloc/Mutex.cpp
++++ b/Source/bmalloc/bmalloc/Mutex.cpp
+@@ -33,6 +33,8 @@
+ #endif
+ #include <thread>
+ 
++#include <unistd.h>
++
+ namespace bmalloc {
+ 
+ static inline void yield()
+@@ -41,7 +43,10 @@ static inline void yield()
+     constexpr mach_msg_timeout_t timeoutInMS = 1;
+     thread_switch(MACH_PORT_NULL, SWITCH_OPTION_DEPRESS, timeoutInMS);
+ #else
+-    sched_yield();
++    // The use of sched_yield() can lead to a system hang when real time
++    // thread priorities are used, so use sleep in the absence of a better
++    // alternative.
++    usleep(150);
+ #endif
+ }
+ 
+-- 
+2.43.0
