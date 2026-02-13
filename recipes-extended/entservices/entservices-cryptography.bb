@@ -17,7 +17,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-cryptography;${CMF_GITHUB_SRC_URI_SUFF
           "
           
 # Release version - 1.0.1
-SRCREV = "6146450444dd11b68203ca2da16534aa372d75f7"
+SRCREV = "e48d5651118322263863d25b0cb628182dfde7db"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
