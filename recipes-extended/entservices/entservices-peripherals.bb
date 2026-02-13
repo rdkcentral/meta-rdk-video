@@ -67,11 +67,10 @@ do_install() {
     # If CMakeLists.txt defines no install targets, cmake will have no install rules
     # Try the install, but allow it to fail gracefully
     cd ${B}
-    if [ -f cmake_install.cmake ] && grep -q "install" cmake_install.cmake; then
-        DESTDIR='${D}' cmake --build . --target install
-    else
+    DESTDIR='${D}' cmake --build . --target install 2>/dev/null || {
         bbwarn "No install targets found - this is expected when plugins are in separate recipes"
-    fi
+        true
+    }
 }
 
 do_install:append() {
