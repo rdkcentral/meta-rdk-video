@@ -7,7 +7,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = "cmake-native wpeframework-tools-native wpeframework"
 
 PV = "1.2.0"
-PR = "r1"
+PR = "r0"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderPluginActivator;protocol=https;branch=Thunder44PluginInitializerService;name=thunderpluginactivator"
 
