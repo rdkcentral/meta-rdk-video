@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=19a2b3c39737289f92c7991b16599360"
 include recipes-extended/wpe-framework/include/wpeframework-plugins.inc
 
 SRC_URI = "git://github.com/rdkcentral/widevine-rdk.git;${CMF_GITHUB_SRC_URI_SUFFIX}"
-SRCREV = "0f00ae523882e133e8f895f5c3fde067181946a5"
+SRCREV = "bf2e185ae8d3b4cc18303b45e946d484a734d986"
 
 # Platform configurations
 DEPENDS += " ${platform-widevine-depends}"
