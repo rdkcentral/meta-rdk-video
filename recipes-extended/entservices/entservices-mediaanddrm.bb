@@ -124,3 +124,8 @@ FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WP
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
 
+PACKAGES =+ "${PN}-screencapture"
+FILES:${PN}-screencapture = "\
+     ${libdir}/wpeframework/plugins/libWPEFrameworkScreenCapture.so \
+     /etc/WPEFramework/plugins/ScreenCapture.json \
+"
