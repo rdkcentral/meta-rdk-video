@@ -11,9 +11,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PROVIDES = "virtual/libpackage"
 RPROVIDES:${PN} = "virtual/libpackage"
 
-DEPENDS = "sqlite3 boost libarchive"
 DEPENDS += "packager-headers"
-RDEPENDS_${PN} = " sqlite3 boost libarchive"
 
 SRCREV = "53fea63b4fb6e5491364781dcdfd91bcc47397f8"
 SRC_URI = "${CMF_GITHUB_ROOT}/libpackage;${CMF_GITHUB_SRC_URI_SUFFIX};name=lisapack"
@@ -23,3 +21,13 @@ S = "${WORKDIR}/git"
 
 inherit cmake pkgconfig
 
+PACKAGECONFIG ?= " \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'enable_ralf', 'ralfsupport', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell', 'lisa', '', d)} \
+    "
+PACKAGECONFIG[ralfsupport]    = "-DENABLE_RALF_SUPPORT=ON -DDAC_APP_PATH=${DAC_APP_PATH}, -DENABLE_RALF_SUPPORT=OFF, ralf-utils jsoncpp, ralf-utils jsoncpp"
+PACKAGECONFIG[depcheck]    = "-DDISABLE_DEPENDENCY_CHECK=OFF, -DDISABLE_DEPENDENCY_CHECK=ON"
+PACKAGECONFIG[lisa]    = ",,sqlite3 boost libarchive,sqlite3 boost libarchive"
+
+
+EXTRA_OECMAKE:append = " -DRDK_PACKAGE_CERT_PATH=/etc/rdk/certs -DDAC_APP_PATH=${DAC_APP_PATH}"
