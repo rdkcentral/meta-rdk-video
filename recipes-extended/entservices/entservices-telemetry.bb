@@ -41,6 +41,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " telemetrysupport \
+    telemetry \
 "
 # ----------------------------------------------------------------------------
 
