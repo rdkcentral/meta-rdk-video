@@ -51,8 +51,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " monitor \
-    persistent_store \
+PACKAGECONFIG ?= " persistent_store \
     resourcemanager \
     sharedstorage \
     telemetrysupport \
@@ -60,7 +59,6 @@ PACKAGECONFIG ?= " monitor \
     usbmass_storage \
     usersettings \
     ocicontainer \  
-    messagecontrol \
     rdknativescript \
     javascriptcore \          
     texttospeechmonitor \    
@@ -68,7 +66,6 @@ PACKAGECONFIG ?= " monitor \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
-    ${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' messagecontrol ', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \    
 "
@@ -101,9 +98,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE',
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG[messagecontrol]       = "-DPLUGIN_MESSAGECONTROL=ON,-DPLUGIN_MESSAGECONTROL=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[erm]                  = "-DBUILD_ENABLE_ERM=ON,-DBUILD_ENABLE_ERM=OFF,essos,essos"
-PACKAGECONFIG[monitor]              = "-DPLUGIN_MONITOR=ON ${MONITOR_PLUGIN_ARGS},-DPLUGIN_MONITOR=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[ocicontainer]         = "-DPLUGIN_OCICONTAINER=ON, -DPLUGIN_OCICONTAINER=OFF, dobby entservices-apis systemd, dobby entservices-apis systemd"
 PACKAGECONFIG[ocicontainersec]      = "                        ,                          ,   omi,   omi"
 PACKAGECONFIG[persistent_store]     = "-DPLUGIN_PERSISTENTSTORE=ON,-DPLUGIN_PERSISTENTSTORE=OFF,sqlite3 entservices-apis iarmbus iarmmgrs protobuf,entservices-apis iarmbus"
@@ -135,13 +130,6 @@ PACKAGECONFIG[migration]            = "-DPLUGIN_MIGRATION=ON,-DPLUGIN_MIGRATION=
 PACKAGECONFIG[downloadmanager]      = "-DPLUGIN_DOWNLOADMANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_DOWNLOADMANAGER=OFF -DLIB_PACKAGE=OFF,entservices-apis curl virtual/libpackage,entservices-apis curl virtual/libpackage"
 # ----------------------------------------------------------------------------
 
-MONITOR_PLUGIN_ARGS                ?= " \
-                                       -DPLUGIN_WEBKITBROWSER_MEMORYLIMIT=614400 \
-                                       -DPLUGIN_YOUTUBE_MEMORYLIMIT=614400 \
-                                       -DPLUGIN_NETFLIX_MEMORYLIMIT=307200 \
-                                       -DPLUGIN_MONITOR_CLONED_APPS=ON -DPLUGIN_MONITOR_CLONED_APP_MEMORYLIMIT=657408 \
-                                       -DPLUGIN_MONITOR_SEARCH_AND_DISCOVERY_MEMORYLIMIT=888832 \
-                                       -DPLUGIN_MONITOR_NETFLIX_APP_MEMORYLIMIT=1048576 \
 "
 PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
                                        -DADD_DAC_PARAMS=${@d.getVar('DAC_PARAMS')} \
