@@ -16,10 +16,10 @@ S = "${WORKDIR}/git"
 PV = "2.0.2"
 PR = "r0"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};"
+SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;branch=topic/RDKEMW-13657;"
 
 #Release 2.0.2
-SRCREV = "e9292baafbdcf46250cdb8ba3cec6566be9509fe"
+SRCREV = "c28551fd63d12bc6eb27e1bfd5f0f25726344160"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -71,6 +71,7 @@ do_install() {
    cp -a ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
+   cp -a ${S}/src/jsc/modules/minified_linkedjsdom.js ${D}/home/root/modules/. 
 
    install -d ${D}/${libdir}
    cp -a ${B}/libJSRuntimeJSC.so ${D}/${libdir}
