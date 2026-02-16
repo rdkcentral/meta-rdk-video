@@ -1,6 +1,6 @@
-SUMMARY = "ENTServices messagecontrol plugin"
+SUMMARY = "ENTServices Monitor plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
 PV = "1.0.1"
 PR = "r0"
@@ -8,8 +8,9 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "e67da47f431dd5ab909541112c52975c17a3bc79"
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-messagecontrol;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRCREV = "e2523b6973d0a27133173576cf7769f0e5a1e2fb"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-monitor;${CMF_GITHUB_SRC_URI_SUFFIX} \
+           file://0001-Add-monitoring-of-cloned-callsigns.patch \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
@@ -41,9 +42,8 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " 
+PACKAGECONFIG ?= " monitor \
     telemetrysupport \
-    messagecontrol \
 "
 
 inherit features_check
@@ -52,16 +52,23 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agen
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG[messagecontrol]       = "-DPLUGIN_MESSAGECONTROL=ON,-DPLUGIN_MESSAGECONTROL=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[monitor]              = "-DPLUGIN_MONITOR=ON ${MONITOR_PLUGIN_ARGS},-DPLUGIN_MONITOR=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 # ----------------------------------------------------------------------------
+
+MONITOR_PLUGIN_ARGS                ?= " \
+                                       -DPLUGIN_WEBKITBROWSER_MEMORYLIMIT=614400 \
+                                       -DPLUGIN_YOUTUBE_MEMORYLIMIT=614400 \
+                                       -DPLUGIN_NETFLIX_MEMORYLIMIT=307200 \
+                                       -DPLUGIN_MONITOR_CLONED_APPS=ON -DPLUGIN_MONITOR_CLONED_APP_MEMORYLIMIT=657408 \
+                                       -DPLUGIN_MONITOR_SEARCH_AND_DISCOVERY_MEMORYLIMIT=888832 \
+                                       -DPLUGIN_MONITOR_NETFLIX_APP_MEMORYLIMIT=1048576 \
+"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
-    -DPLUGIN_NATIVEJS=ON \
-    -DPLUGIN_NATIVEJS_CLIENTIDENTIFIER="${NATIVEJS_CLIENTIDENTIFIER}" \
 "
 
 # TBD - set SECAPI_LIB to hw secapi once RDK-12682 changes are available
