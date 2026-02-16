@@ -46,7 +46,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " breakpadsupport \
-    telemetrysupport \    
+    telemetrysupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
 "
 
