@@ -1,8 +1,8 @@
-SUMMARY = "ENTServices Infra plugin"
+SUMMARY = "ENTServices usbdevice plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "3.18.2"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -10,7 +10,6 @@ inherit cmake pkgconfig
 
 SRCREV = "1072c68f869a45cbda3a6d5f75ad946b59ede038"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usbdevice;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
@@ -76,7 +75,6 @@ python () {
 
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
-    install -m 0644 ${WORKDIR}/rdkshell_post_startup.conf ${D}${sysconfdir}
     if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
     then
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
