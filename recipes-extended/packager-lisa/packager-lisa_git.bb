@@ -23,7 +23,7 @@ inherit cmake pkgconfig
 
 PACKAGECONFIG ?= " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_ralf', 'ralfsupport', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell', 'lisa', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'DAC_SUPPORT', 'lisa', '', d)} \
     "
 PACKAGECONFIG[ralfsupport]    = "-DENABLE_RALF_SUPPORT=ON -DDAC_APP_PATH=${DAC_APP_PATH}, -DENABLE_RALF_SUPPORT=OFF, ralf-utils jsoncpp, ralf-utils jsoncpp"
 PACKAGECONFIG[depcheck]    = "-DDISABLE_DEPENDENCY_CHECK=OFF, -DDISABLE_DEPENDENCY_CHECK=ON"
