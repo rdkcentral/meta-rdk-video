@@ -14,9 +14,9 @@ DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 # Tip of the branch on Feb 05, 2026
-SRCREV = "0e580742ac31c67cf2dd9298fafb64e2b7879683"
+SRCREV = "95ffb5e3218f893fcc42b7221f3983cadaba0e86"
 
-BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.46"
+BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=page_lifecycle_2.46"
 SRC_URI = "${BASE_URI}"
 
 # Drop after PR is accepted
