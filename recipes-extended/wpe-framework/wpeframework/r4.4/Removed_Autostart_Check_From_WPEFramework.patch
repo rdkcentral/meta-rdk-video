@@ -15,7 +15,7 @@ index 13fe9d59d..e2bcef7e4 100644
              return lhs->StartupOrder() < rhs->StartupOrder();
            });
 
-+#if 0
++#if 1
          for (auto service : configured_services)
          {
              if (service->State() != PluginHost::Service::state::UNAVAILABLE) {
