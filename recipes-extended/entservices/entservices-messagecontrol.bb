@@ -41,8 +41,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= "
-    telemetrysupport \
+PACKAGECONFIG ?= "telemetrysupport \
     messagecontrol \
 "
 
