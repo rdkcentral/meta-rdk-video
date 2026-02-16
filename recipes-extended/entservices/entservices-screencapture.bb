@@ -45,7 +45,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " breakpadsupport \ 
+PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
     screencapture \
     ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
