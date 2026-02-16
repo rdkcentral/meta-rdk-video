@@ -130,7 +130,6 @@ PACKAGECONFIG[migration]            = "-DPLUGIN_MIGRATION=ON,-DPLUGIN_MIGRATION=
 PACKAGECONFIG[downloadmanager]      = "-DPLUGIN_DOWNLOADMANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_DOWNLOADMANAGER=OFF -DLIB_PACKAGE=OFF,entservices-apis curl virtual/libpackage,entservices-apis curl virtual/libpackage"
 # ----------------------------------------------------------------------------
 
-"
 PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
                                        -DADD_DAC_PARAMS=${@d.getVar('DAC_PARAMS')} \
                                        -DPLUGIN_DAC_DB_PATH=${DAC_DB_PATH} \
