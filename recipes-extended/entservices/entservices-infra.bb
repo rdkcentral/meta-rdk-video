@@ -11,7 +11,6 @@ inherit cmake pkgconfig
 SRCREV = "${PV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkshell_post_startup.conf \
-           file://0001-Add-monitoring-of-cloned-callsigns.patch \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
