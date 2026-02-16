@@ -10,7 +10,6 @@ inherit cmake pkgconfig
 
 SRCREV = "f62f197b87b0b12407f3302410519b4903cb581a"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-telemetry;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
@@ -69,7 +68,6 @@ python () {
 
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
-    install -m 0644 ${WORKDIR}/rdkshell_post_startup.conf ${D}${sysconfdir}
     if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
     then
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
