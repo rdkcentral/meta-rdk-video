@@ -45,7 +45,6 @@ PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
 "
 
-DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 
 PACKAGECONFIG:append = " deviceinfo"
 
