@@ -2,7 +2,7 @@ SUMMARY = "ENTServices telemetry plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "3.18.2"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -26,7 +26,7 @@ DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
 
-TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
+TARGET_LDFLAGS += " -Wl,--no-as-needed -Wl,--as-needed "
 
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
@@ -41,7 +41,6 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " telemetrysupport \
-    telemetry \
 "
 # ----------------------------------------------------------------------------
 
@@ -86,7 +85,7 @@ do_install:append() {
 # ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/libWPEFrameworkTelemetry*.so ${libdir}/libWPEFrameworkTelemetry*.so ${datadir}/WPEFramework/*"
+FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
