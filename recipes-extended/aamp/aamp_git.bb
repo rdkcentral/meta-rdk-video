@@ -125,9 +125,18 @@ do_create_artifacts() {
     echo "Copying .so files from ${D}${libdir}/ to ${ARTIFACT_FILES_DIR}/${libdir}/"
     cp -Lv ${D}${libdir}/*.so ${ARTIFACT_FILES_DIR}/${libdir}/ 2>/dev/null || echo "No .so files in ${D}${libdir}/"
 
+    # Copy shared libraries from the Player Interface recipe sysroot directory with verbose output and error handling
+    echo "Copying Player-Interface .so files from ${RECIPE_SYSROOT}${libdir}/ to ${ARTIFACT_FILES_DIR}/${libdir}/"
+    cp -Lv ${RECIPE_SYSROOT}${libdir}/libplayer*.so ${RECIPE_SYSROOT}${libdir}/libsubtec*.so ${RECIPE_SYSROOT}${libdir}/libbaseconversion.so ${ARTIFACT_FILES_DIR}/${libdir}/ 2>/dev/null || echo "No .so files in ${RECIPE_SYSROOT}${libdir}/"
+
     if [ -d "${D}${libdir}/gstreamer-1.0" ]; then
         echo "Copying .so files from ${D}${libdir}/gstreamer-1.0/ to ${ARTIFACT_FILES_DIR}/${libdir}/gstreamer-1.0/"
         cp -Lv ${D}${libdir}/gstreamer-1.0/*.so ${ARTIFACT_FILES_DIR}/${libdir}/gstreamer-1.0/ 2>/dev/null || echo "No .so files in ${D}${libdir}/gstreamer-1.0/"
+    fi
+
+    if [ -d "${RECIPE_SYSROOT}${libdir}/gstreamer-1.0" ]; then
+        echo "Copying .so files from ${RECIPE_SYSROOT}${libdir}/gstreamer-1.0/ to ${ARTIFACT_FILES_DIR}/${libdir}/gstreamer-1.0/"
+        cp -Lv ${RECIPE_SYSROOT}${libdir}/gstreamer-1.0/libgstaamp.so ${RECIPE_SYSROOT}${libdir}/gstreamer-1.0/libgstsubtec*.so ${RECIPE_SYSROOT}${libdir}/gstreamer-1.0/libgstvipertransform.so ${ARTIFACT_FILES_DIR}/${libdir}/gstreamer-1.0/ 2>/dev/null || echo "No .so files in ${RECIPE_SYSROOT}${libdir}/gstreamer-1.0"
     fi
 
     # Strip all binaries in the artifact-files directory
