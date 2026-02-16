@@ -8,8 +8,8 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "1072c68f869a45cbda3a6d5f75ad946b59ede038"
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usbdevice;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRCREV = "bc2aecf6dfe787415fea8557df8ce0d2513e6a4c"
+SRC_URI = "${CMF_GITHUB_ROOT}/usbmassstorage;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkshell_post_startup.conf \
            file://0001-Add-monitoring-of-cloned-callsigns.patch \
            file://rdkservices.ini \
@@ -45,7 +45,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " usbdevice \
+PACKAGECONFIG ?= " usbmass_storage \
     telemetrysupport \
 "
 
@@ -56,7 +56,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agen
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[usbdevice]         = "-DPLUGIN_USBDEVICE=ON,-DPLUGIN_USBDEVICE=OFF,libusb1"
+PACKAGECONFIG[usbmass_storage]         = "-DPLUGIN_USB_MASS_STORAGE=ON,-DPLUGIN_USB_MASS_STORAGE=OFF,"
 
 # ----------------------------------------------------------------------------
 
