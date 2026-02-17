@@ -3,11 +3,11 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV = "2.11.1"
+PV = "2.11.11"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp = "4dd3257735439e22c86701845044a9ac94d03adf"
+SRCREV_aamp = "98b0ae9c836a6dfa2fa5a39f782b76291354b8a0"
 
 inherit pkgconfig
 
