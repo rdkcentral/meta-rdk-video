@@ -25,7 +25,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
           "
           
 # Release version - 1.4.0
-SRCREV = "630392199bd8ada35f23821d104ec61a8e7ae52c"
+SRCREV = "f4fa003b1547f41835969fac8960a5f379930b9f"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -99,7 +99,7 @@ PACKAGECONFIG[playerinfo]           = "-DPLUGIN_PLAYERINFO=ON -DUSE_DEVICESETTIN
 PACKAGECONFIG[screencapture]        = "-DPLUGIN_SCREENCAPTURE=ON,-DPLUGIN_SCREENCAPTURE=OFF,entservices-apis curl libpng drm,entservices-apis curl libpng libdrm"
 PACKAGECONFIG[systemaudioplayer]    = "-DPLUGIN_SYSTEMAUDIOPLAYER=ON,,entservices-apis trower-base64 boost websocketpp wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app,entservices-apis trower-base64 wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app"
 PACKAGECONFIG[cryptography] = "-DPLUGIN_CRYPTOGRAPHY=ON,,entservices-apis, entservices-apis"
-PACKAGECONFIG[unifiedcasmanagement] = "-DPLUGIN_UNIFIEDCASMANAGEMENT=ON,,entservices-apis ${@bb.utils.contains('BBFILE_COLLECTIONS', 'rdk-mediaframework', 'rmfgeneric', '', d)}, entservices-apis ${@bb.utils.contains('BBFILE_COLLECTIONS', 'rdk-mediaframework', 'rmfgeneric', '', d)}"
+PACKAGECONFIG[unifiedcasmanagement] = "-DPLUGIN_UNIFIEDCASMANAGEMENT=ON,,entservices-apis, entservices-apis" 
 
 # ----------------------------------------------------------------------------
 
