@@ -63,17 +63,6 @@ python () {
         d.appendVar('OECMAKE_CXX_FLAGS', ' -DDEFAULT_DEVICE=\'\\"{}\\"\' '.format(dri_device_name))
 }
 
-# Testing
-#do_install() {
-    # If CMakeLists.txt defines no install targets, cmake will have no install rules
-    # Try the install, but allow it to fail gracefully
-#    cd ${B}
-#    DESTDIR='${D}' cmake --build . --target install 2>/dev/null || {
-#        bbwarn "No install targets found - this is expected when plugins are in separate recipes"
-#        true
-#    }
-#}
-
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
     if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
