@@ -25,7 +25,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant p
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
-DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
+DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries boost boost-system boost-filesystem"
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
 
