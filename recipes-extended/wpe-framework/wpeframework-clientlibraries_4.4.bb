@@ -5,6 +5,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=847677038847363222ffb66cfa6406c2"
 
 PR = "r20"
 PV = "4.4.2"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit python3native cmake pkgconfig
 
@@ -73,7 +74,7 @@ WPE_CDMI_ADAPTER_IMPL = "${@get_cdmi_adapter(d)}"
 PACKAGECONFIG ?= " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdm ${WPE_CDMI_ADAPTER_IMPL}', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'provisioning', 'provisionproxy', '', d)} \
-    securityagent \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'securityagent', d)} \
     cryptography \
     powercontroller \
     "

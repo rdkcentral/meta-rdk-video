@@ -14,6 +14,7 @@ DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '
 
 PR = "r39"
 PV = "4.4.3"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
 
@@ -80,7 +81,7 @@ WPEFRAMEWORK_SYSTEM_PREFIX = "OE"
 WPEFRAMEWORK_PORT = "9998"
 WPEFRAMEWORK_BINDING = "127.0.0.1"
 WPEFRAMEWORK_IDLE_TIME = "0"
-WPEFRAMEWORK_THREADPOOL_COUNT ?= "16"
+WPEFRAMEWORK_THREADPOOL_COUNT ?= "32"
 WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
 
 
