@@ -38,7 +38,6 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'voicecontrol remotecontrol', '', d)} \
 "
 
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'motiondetection','',d)}"
@@ -46,8 +45,6 @@ PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[motiondetection]      = "-DPLUGIN_MOTION_DETECTION=ON,,virtual/vendor-motiondetector-hal virtual/vendor-fpdriverlib,virtual/vendor-motiondetector-hal virtual/vendor-fpdriverlib"
-PACKAGECONFIG[voicecontrol]         = ",, entservices-voicecontrol, entservices-voicecontrol"
-PACKAGECONFIG[remotecontrol]        = ",, entservices-remotecontrol, entservices-remotecontrol"
 PACKAGECONFIG[ledcontrol]           = "-DPLUGIN_LEDCONTROL=ON,-DPLUGIN_LEDCONTROL=OFF,iarmbus iarmmgrs devicesettings entservices-apis virtual/vendor-devicesettings-hal,iarmbus devicesettings entservices-apis"
 
 EXTRA_OECMAKE += " \
