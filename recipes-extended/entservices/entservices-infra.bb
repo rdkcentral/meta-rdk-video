@@ -58,12 +58,10 @@ PACKAGECONFIG ?= " monitor \
     usbdevice \
     usbmass_storage \
     usersettings \
-    ocicontainer \
     messagecontrol \
     rdknativescript \
     javascriptcore \          
     texttospeechmonitor \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
     ${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' messagecontrol ', '', d)} \
@@ -99,8 +97,6 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE',
 PACKAGECONFIG[messagecontrol]       = "-DPLUGIN_MESSAGECONTROL=ON,-DPLUGIN_MESSAGECONTROL=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[erm]                  = "-DBUILD_ENABLE_ERM=ON,-DBUILD_ENABLE_ERM=OFF,essos,essos"
 PACKAGECONFIG[monitor]              = "-DPLUGIN_MONITOR=ON ${MONITOR_PLUGIN_ARGS},-DPLUGIN_MONITOR=OFF,entservices-apis,entservices-apis"
-PACKAGECONFIG[ocicontainer]         = "-DPLUGIN_OCICONTAINER=ON, -DPLUGIN_OCICONTAINER=OFF, dobby entservices-apis systemd, dobby entservices-apis systemd"
-PACKAGECONFIG[ocicontainersec]      = "                        ,                          ,   omi,   omi"
 PACKAGECONFIG[cloudstore_us]        = "-DPLUGIN_CLOUDSTORE=ON -DPLUGIN_CLOUDSTORE_MODE=Local -DPLUGIN_CLOUDSTORE_URI=${CLOUD_STORE_URI},,entservices-apis iarmbus iarmmgrs rfc grpc grpc-native,entservices-apis iarmbus rfc"
 PACKAGECONFIG[cloudstore_eu]        = "-DPLUGIN_CLOUDSTORE=ON -DPLUGIN_CLOUDSTORE_MODE=Local -DPLUGIN_CLOUDSTORE_URI=${CLOUD_STORE_URI},,entservices-apis iarmbus iarmmgrs rfc grpc grpc-native,entservices-apis iarmbus rfc"
 PACKAGECONFIG[resourcemanager]      = "-DPLUGIN_RESOURCEMANAGER=ON,-DPLUGIN_RESOURCEMANAGER=OFF,"
