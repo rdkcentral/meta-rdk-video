@@ -1,5 +1,5 @@
-SUMMARY = "Middleware Player Interface layer for Player"
-DESCRIPTION = "This layer provides the Player Firebolt Interface library for Player integration."
+SUMMARY = "Middleware Player Interface library for Player"
+DESCRIPTION = "This component provides the Player Firebolt Interface library for Player integration."
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
