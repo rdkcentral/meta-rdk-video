@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Infra plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.0.0"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -10,6 +10,7 @@ inherit cmake pkgconfig
 
 SRCREV = "ac5c28e030efd51afdab4e8fb20ca963496a503f"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-persistentstore;${CMF_GITHUB_SRC_URI_SUFFIX} \
+           file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
@@ -44,15 +45,24 @@ PACKAGECONFIG ?= " persistent_store \
     telemetrysupport \  
 "
 
-inherit features_check
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
-
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG[persistent_store]     = "-DPLUGIN_PERSISTENTSTORE=ON,-DPLUGIN_PERSISTENTSTORE=OFF,sqlite3 entservices-apis iarmbus iarmmgrs protobuf,entservices-apis iarmbus"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 
 # ----------------------------------------------------------------------------
+
+EXTRA_OECMAKE += " \
+    -DBUILD_REFERENCE=${SRCREV} \
+    -DBUILD_SHARED_LIBS=ON \
+    -DSECAPI_LIB=sec_api \
+"
+
+# TBD - set SECAPI_LIB to hw secapi once RDK-12682 changes are available
+EXTRA_OECMAKE += " \
+    -DBUILD_AMLOGIC=ON \
+    -DBUILD_LLAMA=ON \
+"
 
 # Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
 python () {
@@ -62,6 +72,11 @@ python () {
 }
 
 do_install:append() {
+    install -d ${D}${sysconfdir}/rfcdefaults
+    if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
+    then
+      install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
+    fi
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
