@@ -161,5 +161,5 @@ fi
 # Configuring wpa_supplicant args for P2P control interface
 ### do_configure_p2p_wpa_args
 /bin/systemctl set-environment WPA_SUPP_CONF_FILE=$WPA_SUPP_CONF_FILE
-/bin/systemctl set-environment WPA_SUPP_ARGS="${WPA_P2P_SUPP_ARGS} -Dnl80211 -c $WPA_SUPP_CONF_FILE -i $WIFI_INTERFACE -P $WPA_SUPP_PID_FILE -t -U -u $LOG_LEVEL_STR"
+/bin/systemctl set-environment WPA_SUPP_ARGS="${WPA_P2P_SUPP_ARGS} -Dnl80211 -c $WPA_SUPP_CONF_FILE -i $WIFI_INTERFACE -P $WPA_SUPP_PID_FILE -t -u $LOG_LEVEL_STR"
 
