@@ -87,9 +87,9 @@ do_install:append() {
 # ----------------------------------------------------------------------------
 
 
-do_install:rpi() {
-    install -d ${D}${sysconfdir}/rfcdefaults
-}
+#do_install:rpi() {
+#    install -d ${D}${sysconfdir}/rfcdefaults
+#}
 
 # ----------------------------------------------------------------------------
 
