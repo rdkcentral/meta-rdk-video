@@ -8,7 +8,7 @@ PR ?= "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "80ab781d4823e99ae760fb544a10b0cdb8c5d278"
+SRCREV = "b9e51088bc933e39ad91c8935d566aec05abee0f"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -123,7 +123,7 @@ EXTRA_OECMAKE += " \
     -DBUILD_LLAMA=ON \
 "
 
-EXTRA_OECMAKE:append = " -DWIDGET_PACKAGE_NAME=package.wgt"
+EXTRA_OECMAKE:append = " -DENABLE_RALF_SUPPORT=ON"
 
 # Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
 python () {
