@@ -11,7 +11,7 @@ SUMMARY = "Rialto-gstreamer"
 LICENSE = "LGPL-2.1-only"
 LIC_FILES_CHKSUM = "file://COPYING.LGPL;md5=23c2a5e0106b99d75238986559bb5fc6"
 
-PV = "0.14.0"
+PV = "0.15.1"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
