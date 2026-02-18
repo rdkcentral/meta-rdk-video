@@ -14,6 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-Add-monitoring-of-cloned-callsigns.patch \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+           file://0002-OpenTelemetry-Logging-infra.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -32,6 +33,9 @@ DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
+
+DEPENDS += "opentelemetry-examples"
+RDEPENDS:${PN} += "opentelemetry-examples"
 
 CFLAGS  += " \
     -I=${includedir}/rdk/halif/power-manager \
@@ -202,3 +206,9 @@ FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WP
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
+
+# Push -lotlp_logger into the shared/module linkers for all plugin .so builds
+EXTRA_OECMAKE += "\
+    -DCMAKE_SHARED_LINKER_FLAGS='-Wl,--hash-style=gnu -lotlp_logger' \
+    -DCMAKE_MODULE_LINKER_FLAGS='-Wl,--hash-style=gnu -lotlp_logger' \
+"
