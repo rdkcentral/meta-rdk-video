@@ -36,7 +36,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 include include/remotecontrol.inc
 
-PACKAGECONFIG ?= "remotecontrol"
+PACKAGECONFIG ?= ""
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
