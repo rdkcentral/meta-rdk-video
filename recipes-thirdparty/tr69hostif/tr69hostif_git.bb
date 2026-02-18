@@ -4,10 +4,11 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=99e7c83e5e6f31c2cbb811e186972945"
 
-SRCREV = "c9706ae0969ff5f713ad2747f986834dd5589a0c"
+SRCREV = "4a3ef83dbb2fe8f39e4a6edd0c6a28461d83d235"
+
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
-PV = "1.2.8"
-PR = "r1"
+PV = "1.3.3"
+PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 S = "${WORKDIR}/git"
 
