@@ -86,6 +86,13 @@ do_install:append() {
 
 # ----------------------------------------------------------------------------
 
+
+do_install:rpi() {
+    install -d ${D}${sysconfdir}/rfcdefaults
+}
+
+# ----------------------------------------------------------------------------
+
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
