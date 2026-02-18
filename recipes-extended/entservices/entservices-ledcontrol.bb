@@ -1,4 +1,4 @@
-SUMMARY = "ENTServices peripherals plugin"
+SUMMARY = "ENTServices ledcontrol plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
