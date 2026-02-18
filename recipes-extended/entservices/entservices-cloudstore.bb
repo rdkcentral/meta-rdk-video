@@ -77,19 +77,13 @@ python () {
 
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
+    if [ "${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)}" = "true" ] \
+   && [ "${MACHINE}" != "rpi" ]; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
     fi
 }
-
-# ----------------------------------------------------------------------------
-
-
-#do_install:rpi() {
-#    install -d ${D}${sysconfdir}/rfcdefaults
-#}
 
 # ----------------------------------------------------------------------------
 
