@@ -1,19 +1,20 @@
-SUMMARY = "ENTServices peripherals plugin"
+SUMMARY = "ENTServices ledcontrol plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.2.2"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-peripherals;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-ledcontrol;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+           file://rdkservices.ini \
           "
 
-# Release version - 1.2.2
-SRCREV = "6e7177263ee8ed12982f7877418a73c7e504fbf1"
+# Release version - 1.0.1
+SRCREV = "e4d538e81c125d20b927a04975436b7ee89d295d"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -26,7 +27,6 @@ RDEPENDS:${PN} += "wpeframework"
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
-CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
 # enable filtering for undefined interfaces and link local ip address notifications
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
@@ -34,21 +34,14 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-# More complicated plugins are moved seperate includes
-include include/remotecontrol.inc
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'voicecontrol remotecontrol', '', d)} \
-"
+    ledcontrol \
+   "
 
-PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'motiondetection','',d)}"
-
-PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[motiondetection]      = "-DPLUGIN_MOTION_DETECTION=ON,,virtual/vendor-motiondetector-hal virtual/vendor-fpdriverlib,virtual/vendor-motiondetector-hal virtual/vendor-fpdriverlib"
-PACKAGECONFIG[voicecontrol]         = "-DPLUGIN_VOICECONTROL=ON,-DPLUGIN_VOICECONTROL=OFF,iarmbus iarmmgrs ctrlm-headers,iarmbus ctrlm"
-PACKAGECONFIG[remotecontrol]        = "-DPLUGIN_REMOTECONTROL=ON,-DPLUGIN_REMOTECONTROL=OFF,iarmbus iarmmgrs ctrlm-headers,iarmbus ctrlm"
+PACKAGECONFIG[ledcontrol]           = "-DPLUGIN_LEDCONTROL=ON,,iarmbus iarmmgrs devicesettings entservices-apis virtual/vendor-devicesettings-hal,iarmbus devicesettings entservices-apis"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
@@ -77,11 +70,9 @@ do_install:append() {
     fi
 }
 
-PACKAGES =+ "${PN}-test"
-FILES:${PN}-test += "${bindir}/remoteControlTestClient"
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
-INSANE_SKIP:${PN} += "libdir staticdev dev-so"
+INSANE_SKIP:${PN} += "libdir staticdev dev-so dev-deps"
 INSANE_SKIP:${PN}-dbg += "libdir"
