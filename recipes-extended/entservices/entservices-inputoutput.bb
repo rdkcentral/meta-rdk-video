@@ -40,6 +40,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 CXXFLAGS  += " \
     -I=${includedir}/rdk/halif/power-manager \
     -I=${includedir}/rdk/halif/deepsleep-manager \
+    -I=${includedir}/rdk/iarmmgrs-hal/" \
 "
 
 INCLUDE_DIRS = " \
