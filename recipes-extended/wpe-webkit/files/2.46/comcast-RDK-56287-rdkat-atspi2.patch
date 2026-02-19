@@ -46,7 +46,7 @@ index ff543f944a32..50399c5d9b0e 100644
  
  #if USE(ATSPI)
 -    AccessibilityAtspi::singleton().connect(parameters.accessibilityBusAddress, parameters.accessibilityBusName);
-+    // Enable RDKAT to process WebKit event into real speach (if TTS enabled)
++    // Enable RDKAT to process WebKit event into real speech (if TTS enabled)
 +    WTFLogAlways("Enable RDKAT processing for WPE.");
 +
 +    WebCore::AXObjectCache::enableAccessibility();
