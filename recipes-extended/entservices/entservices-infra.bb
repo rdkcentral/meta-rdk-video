@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
 PV ?= "1.4.4.4"
-PR ?= "r0"
+PR ?= "r1_Test"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -17,7 +17,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
 # Release version - 1.4.4.4
-SRCREV = "fe76f86df8fa62137c9c3438d6518d2746d5fc99"
+SRCREV = "b022681105cf109960fb845f83a0f20a621676cc"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
