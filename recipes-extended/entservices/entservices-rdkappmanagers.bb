@@ -53,7 +53,7 @@ PACKAGECONFIG ?= " telemetrysupport \
     appmanager \
     preinstallmanager \
     downloadmanager \
-    rdkwindowmanager \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'rdkwindowmanager', " rdkwindowmanager ", "", d)} \
     telemetrymetrics \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
