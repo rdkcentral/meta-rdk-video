@@ -9,9 +9,9 @@ PR = "r0"
 SRCREV_FORMAT = "aamp"
 SRCREV_aamp = "d8f156574d4abf8be5dcc3bb75b190536b74e6e8"
 
-inherit pkgconfig
+inherit pkgconfig breakpad-wrapper
 
-DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline"
+DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline breakpad-native"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0  gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)}"
 RDEPENDS_${PN} +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 DEPENDS += " wpe-webkit"
@@ -64,6 +64,30 @@ FILES:${PN} +="${libdir}/gstreamer-1.0/lib*.so"
 FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
+
+#Generating symbol files using breakpad.
+#Will be removed once original location path of symbol files found
+#breakpad_package_preprocess () {
+#    machine_dir="${@d.getVar('MACHINE', True)}"
+#
+#    binary="$(readlink -m "${D}${libdir}/libaamp.so")"
+#
+#    # Check adeded to see if  binary (libaamp.so) exists
+#    if [ -f "${binary}" ]; then
+#        bbnote "Debug binary found at: ${binary} (size: $(stat -c%s "${binary}") bytes)"
+#    else
+#        bbwarn "Debug binary NOT found at: ${binary}"
+#        bbnote "Checking directory contents: ${D}${libdir}/"
+#        ls -la "${D}${libdir}/" || bbnote "Debug directory does not exist"
+#        return 1
+#    fi
+#    
+#    bbnote "Dumping symbols from $binary -> ${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.so.sym"
+#
+#    mkdir -p ${TMPDIR}/deploy/breakpad_symbols/$machine_dir
+#    dump_syms "${binary}" > "${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.so.sym" || echo "dump_syms finished with errorlevel $?"
+#}
+
 CXXFLAGS += "-DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 -I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
 
 CXXFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '', ' -lWPEFrameworkSecurityUtil ', d)}"
@@ -101,6 +125,7 @@ DEPLOY_DIR_WGT = "${DEPLOY_DIR}/widgets"
 ARTIFACT_FILES_DIR = "${WORKDIR}/artifact-files"
 ARTIFACT_DIR = "${WORKDIR}/artifacts"
 ARTIFACT_NAME = "AAMP_${AAMP_ARTIFACTS_VERSION}.tgz"
+SYMBOLS_ARTIFACT_NAME = "AAMP_SYMBOLS.tar.gz"
 
 do_create_artifacts[cleandirs] = "${ARTIFACT_FILES_DIR} ${ARTIFACT_DIR}"
 do_create_artifacts[vardepsexclude] += "DATETIME"
@@ -170,6 +195,45 @@ do_create_artifacts() {
     cp ${ARTIFACT_DIR}/${ARTIFACT_NAME} ${DEPLOY_DIR_IMAGE}/AAMP_artifacts/
 }
 
+do_create_symbol_artifacts() {
+    if [ "${PLATFORM_PATH}" = "unknown" ]; then
+        echo "Skipping symbol artifact creation for unknown platform [MACHINE=${MACHINE}]"
+        return 0
+    fi
+
+    # Explicitly call breakpad_package_preprocess to generate symbols
+    #breakpad_package_preprocess
+
+    machine_dir="${MACHINE}"
+    bbnote "Checking directory contents: ${TMPDIR}/deploy/breakpad_symbols/$machine_dir/"
+    ls -la "${TMPDIR}/deploy/breakpad_symbols/$machine_dir/" || bbnote "symbol dir is empty"
+    symbol_file="${TMPDIR}/deploy/breakpad_symbols/$machine_dir/libaamp.so.sym"
+
+    if [ ! -f "$symbol_file" ]; then
+        bbwarn "Symbol file not found at $symbol_file, skipping symbol artifact creation"
+        return 0
+    fi
+
+    # Create symbol artifacts directory
+    SYMBOL_FILES_DIR="${WORKDIR}/symbol-files"
+    mkdir -p ${SYMBOL_FILES_DIR}
+
+    # Copy the symbol file
+    echo "Copying symbol file from $symbol_file"
+    cp -v "$symbol_file" ${SYMBOL_FILES_DIR}/libaamp.so.sym
+
+
+
+    # Package into symbol artifact
+    echo "Packaging symbols into ${ARTIFACT_DIR}/${SYMBOLS_ARTIFACT_NAME}"
+    tar -cvzf ${ARTIFACT_DIR}/${SYMBOLS_ARTIFACT_NAME} -C ${SYMBOL_FILES_DIR} .
+
+    # Deploy symbol artifact to separate folder
+    mkdir -p ${DEPLOY_DIR_IMAGE}/AAMP_symbols
+    cp ${ARTIFACT_DIR}/${SYMBOLS_ARTIFACT_NAME} ${DEPLOY_DIR_IMAGE}/AAMP_symbols/
+    echo "Created symbol artifact: ${SYMBOLS_ARTIFACT_NAME}"
+}
+
 do_deploy_artifacts() {
     if [ -f ${ARTIFACT_DIR}/${ARTIFACT_NAME} ]; then
         mkdir -p ${DEPLOY_DIR_WGT}/AAMP_artifacts
@@ -178,7 +242,16 @@ do_deploy_artifacts() {
     else
         echo "Artifact not present! Skipping this operation [MACHINE=${MACHINE}]."
     fi
+
+    # Deploy symbol artifact to separate folder
+    if [ -f ${ARTIFACT_DIR}/${SYMBOLS_ARTIFACT_NAME} ]; then
+        mkdir -p ${DEPLOY_DIR_WGT}/AAMP_symbols
+        cp -v ${ARTIFACT_DIR}/${SYMBOLS_ARTIFACT_NAME} ${DEPLOY_DIR_WGT}/AAMP_symbols/
+        echo "Copied ${ARTIFACT_DIR}/${SYMBOLS_ARTIFACT_NAME} to ${DEPLOY_DIR_WGT}/AAMP_symbols"
+    fi
 }
 
+addtask do_create_symbol_artifacts after do_compile before do_install
 addtask do_create_artifacts after do_install before do_package
+#addtask do_create_symbol_artifacts after do_create_artifacts before do_package
 addtask do_deploy_artifacts after do_create_artifacts before do_package
