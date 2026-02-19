@@ -23,7 +23,7 @@ EXTRA_OECMAKE += " -DCMAKE_WPEFRAMEWORK_REQUIRED=1 "
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'sec_manager', ' -DCMAKE_USE_SECMANAGER=1 ', '', d)}"
 
-CXXFLAGS += "-I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
+CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
 
 LDFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '', ' -lWPEFrameworkSecurityUtil ', d)}"
 
