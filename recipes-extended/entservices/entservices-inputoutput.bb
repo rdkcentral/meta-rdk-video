@@ -37,6 +37,11 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
+INCLUDE_DIRS = " \
+    -I=${includedir}/rdk/halif/power-manager \
+    -I=${includedir}/WPEFramework/powercontroller \
+    "
+
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
     avinput \
@@ -53,10 +58,10 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[avinput]              = "-DPLUGIN_AVINPUT=ON,-DPLUGIN_AVINPUT=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal,iarmbus devicesettings"
 PACKAGECONFIG[avoutput]             = "-DPLUGIN_AVOUTPUT=ON -DAVOUTPUT_TV=true,,"
 PACKAGECONFIG[compositeinput]       = "-DPLUGIN_COMPOSITEINPUT=ON,-DPLUGIN_COMPOSITEINPUT=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal,iarmbus devicesettings"
-PACKAGECONFIG[hdcpprofile]          = "-DPLUGIN_HDCPPROFILE=ON,-DPLUGIN_HDCPPROFILE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal,iarmbus devicesettings"
+PACKAGECONFIG[hdcpprofile]          = "-DPLUGIN_HDCPPROFILE=ON,-DPLUGIN_HDCPPROFILE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal,iarmbus devicesettings"
 PACKAGECONFIG[hdmicec2]             = "-DPLUGIN_HDMICEC2=ON,-DPLUGIN_HDMICEC2=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader,iarmbus devicesettings hdmicec"
-PACKAGECONFIG[hdmicecsink]          = "-DPLUGIN_HDMICECSINK=ON,-DPLUGIN_HDMICECSINK=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader,iarmbus devicesettings hdmicec"
-PACKAGECONFIG[hdmicecsource]        = "-DPLUGIN_HDMICECSOURCE=ON,-DPLUGIN_HDMICECSOURCE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader,iarmbus devicesettings hdmicec"
+PACKAGECONFIG[hdmicecsink]          = "-DPLUGIN_HDMICECSINK=ON,-DPLUGIN_HDMICECSINK=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal,iarmbus devicesettings hdmicec"
+PACKAGECONFIG[hdmicecsource]        = "-DPLUGIN_HDMICECSOURCE=ON,-DPLUGIN_HDMICECSOURCE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal,iarmbus devicesettings hdmicec"
 PACKAGECONFIG[hdmiinput]            = "-DPLUGIN_HDMIINPUT=ON,-DPLUGIN_HDMIINPUT=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal,iarmbus devicesettings"
 
 EXTRA_OECMAKE += " \
