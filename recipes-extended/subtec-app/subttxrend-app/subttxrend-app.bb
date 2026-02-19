@@ -12,9 +12,13 @@ DEPENDS:append = " virtual/egl "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-CFLAGS += " -fprofile-generate=/opt/logs "
-CXXFLAGS += " -fprofile-generate=/opt/logs "
-LDFLAGS += " -fprofile-generate=/opt/logs "
+#CFLAGS += " -fprofile-generate=/opt/logs "
+#CXXFLAGS += " -fprofile-generate=/opt/logs "
+#LDFLAGS += " -fprofile-generate=/opt/logs "
+
+CFLAGS += " -Wno-error=missing-profile -fprofile-correction -fprofile-use=/mnt/jenkins/workspace/TV-US-Middleware-Build/rdke/middleware/generic/meta-rdk-video/recipes-extended/subtec-app/subttxrend-app/fdo_gcd_file/ "
+CXXFLAGS += " -Wno-error=missing-profile -fprofile-correction -fprofile-use=/mnt/jenkins/workspace/TV-US-Middleware-Build/rdke/middleware/generic/meta-rdk-video/recipes-extended/subtec-app/subttxrend-app/fdo_gcd_file/ "
+LDFLAGS += " -Wno-error=missing-profile -fprofile-correction -fprofile-use=/mnt/jenkins/workspace/TV-US-Middleware-Build/rdke/middleware/generic/meta-rdk-video/recipes-extended/subtec-app/subttxrend-app/fdo_gcd_file/ "
 
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-app"
