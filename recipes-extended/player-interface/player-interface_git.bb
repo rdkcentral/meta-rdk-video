@@ -45,6 +45,6 @@ FILES:${PN} +="${libdir}/gstreamer-1.0/lib*.so"
 FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
-CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
+CXXFLAGS += "-I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
 
 LDFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '', ' -lWPEFrameworkSecurityUtil ', d)}"
