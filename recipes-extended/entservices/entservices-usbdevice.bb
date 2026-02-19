@@ -59,6 +59,11 @@ PACKAGECONFIG[usbdevice]         = "-DPLUGIN_USBDEVICE=ON,-DPLUGIN_USBDEVICE=OFF
 # ----------------------------------------------------------------------------
 
 
+EXTRA_OECMAKE += " \
+    -DBUILD_REFERENCE=${SRCREV} \
+    -DBUILD_SHARED_LIBS=ON \
+    -DSECAPI_LIB=sec_api \
+
 
 # TBD - set SECAPI_LIB to hw secapi once RDK-12682 changes are available
 EXTRA_OECMAKE += " \
