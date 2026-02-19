@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-casting;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
 # Release version - 1.0.11
-SRCREV = "648e1f39d8c2729bc3c6a7ef3ee1464ea4ca279a"
+SRCREV = "19c943774e920b7c53bc486e760ba95c8346e0d6"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -35,6 +35,10 @@ CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
+
+CXXFLAGS  += " \
+    -I=${includedir}/rdk/iarmmgrs-hal \
+"
 
 # ----------------------------------------------------------------------------
 
