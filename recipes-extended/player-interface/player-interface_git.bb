@@ -42,7 +42,7 @@ PACKAGES = "${PN} ${PN}-dev ${PN}-dbg"
 FILES:${PN} += "${libdir}/lib*.so"
 FILES:${PN} += "${libdir}/player-interface/lib*.so"
 FILES:${PN} += "${libdir}/gstreamer-1.0/lib*.so"
-FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
+FILES:${PN}-dbg += "${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
 CXXFLAGS += "-I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
