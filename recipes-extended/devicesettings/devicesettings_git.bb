@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 PV = "1.0.29"
 PR = "r0"
 
-SRCREV_devicesettings = "edc8c70b9a8853e99ae364eb50ea85de131ac109"
+SRCREV_devicesettings = "7419b2c0f64994bb19072bbf86ac653d2c4b0447"
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
 
 # devicesettings is not a 'generic' component, as some of its source
@@ -58,7 +58,7 @@ INCLUDE_DIRS = " \
 
 # note: we really on 'make -e' to control LDFLAGS and CFLAGS from here. This is
 # far from ideal, but this is to workaround the current component Makefile
-LDFLAGS += "-lrdkloggers -lpthread -lglib-2.0 -L. -lIARMBus -ldl "
+LDFLAGS += "-lrdkloggers -lpthread -lglib-2.0 -L. -lIARMBus -ldl -ltelemetry_msgsender"
 CFLAGS += "-fPIC -D_REENTRANT -Wall ${INCLUDE_DIRS}"
 CFLAGS += "-DRDK_DSHAL_NAME="\""libds-hal.so.0\""""
 CFLAGS += " -DYOCTO_BUILD"
