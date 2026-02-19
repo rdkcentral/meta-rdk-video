@@ -47,7 +47,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # Enable usersettings plugin from entservices-infra with persistent_store dependency
 PACKAGECONFIG ?= " usersettings \
-    persistent_store \
+    telemetrysupport \
 "
 
 inherit features_check
@@ -55,7 +55,6 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agen
 
 # ----------------------------------------------------------------------------
 # Define plugin configurations
-PACKAGECONFIG[persistent_store]     = "-DPLUGIN_PERSISTENTSTORE=ON,-DPLUGIN_PERSISTENTSTORE=OFF,sqlite3 entservices-apis iarmbus iarmmgrs protobuf,entservices-apis iarmbus"
 PACKAGECONFIG[usersettings]         = "-DPLUGIN_USERSETTINGS=ON,-DPLUGIN_USERSETTINGS=OFF,"
 # ----------------------------------------------------------------------------
 
@@ -79,6 +78,7 @@ python () {
 }
 
 do_install:append() {
+    install -d ${D}${sysconfdir}/rfcdefaults
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
