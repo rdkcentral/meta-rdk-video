@@ -40,8 +40,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " monitor \
-    sharedstorage \
+PACKAGECONFIG ?= " sharedstorage \
     telemetrysupport \
 "
 
