@@ -7,7 +7,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r29"
+PR  = "r30"
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
 DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
