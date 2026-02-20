@@ -9,7 +9,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "bc2aecf6dfe787415fea8557df8ce0d2513e6a4c"
+SRCREV = "42a4a5fee96300c33e6e5833d374cb99f0fcfb58"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usbmassstorage;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
