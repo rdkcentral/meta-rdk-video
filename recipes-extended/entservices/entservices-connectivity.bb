@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFF
           "
 
 # Release version - 1.1.0
-SRCREV = "a86c2c0e6ab13054d771e4dabbb4185b7aa1b24c"
+SRCREV = "3e712dd782648bf56c5c2aa42ef3ae1f7e7049f7"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
