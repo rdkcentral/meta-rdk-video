@@ -53,7 +53,6 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 PACKAGECONFIG ?= " resourcemanager \
     telemetrysupport \
     usbdevice \
-    usbmass_storage \
     rdknativescript \
     javascriptcore \          
     texttospeechmonitor \    
@@ -78,14 +77,10 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE',
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG[erm]                  = "-DBUILD_ENABLE_ERM=ON,-DBUILD_ENABLE_ERM=OFF,essos,essos"
-PACKAGECONFIG[monitor]              = "-DPLUGIN_MONITOR=ON ${MONITOR_PLUGIN_ARGS},-DPLUGIN_MONITOR=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[resourcemanager]      = "-DPLUGIN_RESOURCEMANAGER=ON,-DPLUGIN_RESOURCEMANAGER=OFF,"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[telemetry]            = "-DPLUGIN_TELEMETRY=ON,,iarmbus iarmmgrs entservices-apis rfc rbus,iarmbus entservices-apis rfc rbus"
 PACKAGECONFIG[usbaccess]            = "-DPLUGIN_USBACCESS=ON,-DPLUGIN_USBACCESS=OFF,iarmbus iarmmgrs udev,iarmbus udev"
-PACKAGECONFIG[usbdevice]         = "-DPLUGIN_USBDEVICE=ON,-DPLUGIN_USBDEVICE=OFF,libusb1"
-PACKAGECONFIG[usbmass_storage]         = "-DPLUGIN_USB_MASS_STORAGE=ON,-DPLUGIN_USB_MASS_STORAGE=OFF,"
-PACKAGECONFIG[usersettings]         = "-DPLUGIN_USERSETTINGS=ON,-DPLUGIN_USERSETTINGS=OFF,"
 PACKAGECONFIG[analytics]            = "-DPLUGIN_ANALYTICS=ON,-DPLUGIN_ANALYTICS=OFF, entservices-apis, entservices-apis"
 PACKAGECONFIG[rdkshell]             = "-DPLUGIN_RDKSHELL=ON,-DPLUGIN_RDKSHELL=OFF,rdkshell entservices-apis,rdkshell entservices-apis"
 PACKAGECONFIG[rialtodac]            = "-DRIALTO_IN_DAC_FEATURE=ON,-DRIALTO_IN_DAC_FEATURE=OFF,rialto,rialto-servermanager-lib"
