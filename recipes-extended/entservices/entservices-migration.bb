@@ -45,6 +45,12 @@ PACKAGECONFIG ?= "migration \
                   telemetrysupport \
                 "
 
+inherit features_check
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
+
+
+# ----------------------------------------------------------------------------
+
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[migration] = "-DPLUGIN_MIGRATION=ON,-DPLUGIN_MIGRATION=OFF,entservices-apis,entservices-apis"
 # ----------------------------------------------------------------------------
