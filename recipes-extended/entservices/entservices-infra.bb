@@ -17,7 +17,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
 # Release version - 1.4.4.4
-SRCREV = "b022681105cf109960fb845f83a0f20a621676cc"
+SRCREV = "a01ff1f7810ff4f2a8484700d546f8395fca7e8c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -48,6 +48,10 @@ CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
+
+CXXFLAGS  += " \
+    -I=${includedir}/rdk/iarmmgrs-hal \
+"
 
 # ----------------------------------------------------------------------------
 
