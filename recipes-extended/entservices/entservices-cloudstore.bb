@@ -57,7 +57,7 @@ PACKAGECONFIG ?= "telemetrysupport"
 
 PACKAGECONFIG[cloudstore_us]        = "-DPLUGIN_CLOUDSTORE=ON -DPLUGIN_CLOUDSTORE_MODE=Local -DPLUGIN_CLOUDSTORE_URI=${CLOUD_STORE_URI},,entservices-apis iarmbus iarmmgrs rfc grpc grpc-native,entservices-apis iarmbus rfc"
 PACKAGECONFIG[cloudstore_eu]        = "-DPLUGIN_CLOUDSTORE=ON -DPLUGIN_CLOUDSTORE_MODE=Local -DPLUGIN_CLOUDSTORE_URI=${CLOUD_STORE_URI},,entservices-apis iarmbus iarmmgrs rfc grpc grpc-native,entservices-apis iarmbus rfc"
-PACKAGECONFIG[telemetrysupport]     = ",,,"
+PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 
 # ----------------------------------------------------------------------------
 
