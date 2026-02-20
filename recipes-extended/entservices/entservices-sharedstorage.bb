@@ -41,7 +41,6 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " monitor \
-    persistent_store \
     sharedstorage \
     telemetrysupport \
 "
