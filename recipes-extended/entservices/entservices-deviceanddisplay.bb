@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
           "
 
 # Release version - 3.1.17-hotfix.2
-SRCREV = "2f02f30a91192cfd2eac4de69a9b126bbfc8fc1c"
+SRCREV = "c3a053fb1b0ec2d564ba11dba1668fcb2030d11a"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
