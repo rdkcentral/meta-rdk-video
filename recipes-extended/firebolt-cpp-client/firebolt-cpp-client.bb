@@ -8,11 +8,11 @@ inherit cmake
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-PV = "0.3.0"
+PV = "0.4.0"
 PR = "r0"
 
 SRC_URI = "https://github.com/rdkcentral/firebolt-cpp-client/releases/download/v${PV}/firebolt-cpp-client-${PV}.tar.gz"
-SRC_URI[sha256sum] = "64eeeb6dd30ad6c12934946b3b55340675075c4a604df25de1d29ecfa07b8ddd"
+SRC_URI[sha256sum] = "882ae584465afc6205e54869668795ab2ff290d41ac843ca11613da45776662c"
 
 S = "${WORKDIR}/firebolt-cpp-client-${PV}"
 
