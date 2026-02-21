@@ -1,0 +1,68 @@
+diff --git a/Source/core/SystemInfo.cpp b/Source/core/SystemInfo.cpp
+index de6705fe..f7b075c8 100644
+--- a/Source/core/SystemInfo.cpp
++++ b/Source/core/SystemInfo.cpp
+@@ -317,6 +317,63 @@ namespace Core {
+         struct sysinfo info;
+         sysinfo(&info);
+ 
++	 // Debug: write raw sysinfo + derived calculations once.
++        {
++            static std::atomic<bool> wroteOnce{false};
++            bool expected = false;
++            if (wroteOnce.compare_exchange_strong(expected, true)) {
++
++                const long ps = sysconf(_SC_PAGESIZE);
++                const uint64_t pageSize = (ps > 0) ? static_cast<uint64_t>(ps) : 0;
++                const uint64_t memUnit  = (info.mem_unit != 0) ? static_cast<uint64_t>(info.mem_unit) : 1;
++
++                const uint64_t totalByUnit = static_cast<uint64_t>(info.totalram) * memUnit;
++                const uint64_t freeByUnit  = static_cast<uint64_t>(info.freeram)  * memUnit;
++
++                // For comparison only (sysinfo values are scaled by mem_unit on Linux).
++                const uint64_t totalByPage = (pageSize != 0) ? (static_cast<uint64_t>(info.totalram) * pageSize) : 0;
++                const uint64_t freeByPage  = (pageSize != 0) ? (static_cast<uint64_t>(info.freeram)  * pageSize) : 0;
++
++                const char* outPath = nullptr;
++                if (access("/run", W_OK) == 0) outPath = "/run/ram_calc.txt";
++                else if (access("/var/tmp", W_OK) == 0) outPath = "/var/tmp/ram_calc.txt";
++                else if (access("/tmp", W_OK) == 0) outPath = "/tmp/ram_calc.txt";
++
++                if (outPath != nullptr) {
++                    int fd = open(outPath, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0644);
++                    if (fd >= 0) {
++                        char buf[1024];
++                        const int n = std::snprintf(buf, sizeof(buf),
++                            "sysinfo.totalram(raw)=%" PRIu64 "\n"
++                            "sysinfo.freeram(raw)=%"  PRIu64 "\n"
++                            "sysinfo.totalswap(raw)=%" PRIu64 "\n"
++                            "sysinfo.freeswap(raw)=%"  PRIu64 "\n"
++                            "sysinfo.mem_unit=%" PRIu64 "\n"
++                            "pagesize=%" PRIu64 "\n"
++                            "totalram*mem_unit(bytes)=%" PRIu64 "\n"
++                            "freeram*mem_unit(bytes)=%"  PRIu64 "\n"
++                            "totalram*pagesize(bytes)=%" PRIu64 "\n"
++                            "freeram*pagesize(bytes)=%"  PRIu64 "\n",
++                            static_cast<uint64_t>(info.totalram),
++                            static_cast<uint64_t>(info.freeram),
++                            static_cast<uint64_t>(info.totalswap),
++                            static_cast<uint64_t>(info.freeswap),
++                            memUnit,
++                            pageSize,
++                            totalByUnit,
++                            freeByUnit,
++                            totalByPage,
++                            freeByPage
++                        );
++
++                        if (n > 0) {
++                            (void)write(fd, buf, static_cast<size_t>(n)); // best-effort
++                        }
++                        close(fd);
++                    }
++                }
++            }
++        }
+         m_uptime = info.uptime;
+         m_freeram = info.freeram;
+         m_totalram = info.totalram;
