@@ -9,15 +9,15 @@ PR = "r0"
 SRCREV_FORMAT = "aamp"
 SRCREV_aamp = "02a15dd762addfc9b742e550e6b2d12f73b05d30"
 
-inherit pkgconfig
+DEPENDS += "curl libdash libxml2 cjson readline ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 
-DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline"
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0  gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)}"
-RDEPENDS_${PN} +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
-DEPENDS += " wpe-webkit"
-DEPENDS += " wpeframework-clientlibraries"
-RDEPENDS:${PN} += "devicesettings"
-DEPENDS:append = " virtual/vendor-gst-drm-plugins essos "
+RDEPENDS:${PN} += "devicesettings ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
+
+inherit pkgconfig
+inherit cmake
+require ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', '', 'aamp-middleware.inc', d)}
+
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', ' -DCMAKE_EXTERNAL_PLAYER_INTERFACE_DEPENDENCIES=1', ' -DCMAKE_EXTERNAL_PLAYER_INTERFACE_DEPENDENCIES=0', d)}"
 NO_RECOMMENDATIONS = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -28,33 +28,13 @@ SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
 
 S = "${WORKDIR}/git"
 
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)}"
-
-DEPENDS:append = " virtual/vendor-secapi2-adapter "
-
 require aamp-common.inc
 require aamp-artifacts-version.inc
 
-PACKAGECONFIG:append = " playready widevine clearkey"
-
-DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
-EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', '-DCMAKE_GST_SUBTEC_ENABLED=1 ', '', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON ', '', d)}"
-
-EXTRA_OECMAKE += "  -DCMAKE_WPEFRAMEWORK_REQUIRED=1 "
-EXTRA_OECMAKE += "  -DCMAKE_DS_EVENT_SUPPORTED=1 "
-
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', ' -DCMAKE_RDK_SVP=1 ', '', d)}"
-
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'sec_manager', ' -DCMAKE_USE_SECMANAGER=1 ', '', d)}"
+EXTRA_OECMAKE += " -DCMAKE_DS_EVENT_SUPPORTED=1 "
 EXTRA_OECMAKE += " -DCMAKE_WPEWEBKIT_WATERMARK_JSBINDINGS=1 "
 
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)}"
-
 #Ethan log is implemented by Dobby hence enabling it.
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 PACKAGES = "${PN} ${PN}-dev ${PN}-dbg"
 
 FILES:${PN} += "${libdir}/lib*.so"
@@ -64,12 +44,8 @@ FILES:${PN} +="${libdir}/gstreamer-1.0/lib*.so"
 FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
-CXXFLAGS += "-DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 -I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
 
-CXXFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '', ' -lWPEFrameworkSecurityUtil ', d)}"
-EXTRA_OECMAKE += " -DCMAKE_LIGHTTPD_AUTHSERVICE_DISABLE=1 "
-
-CXXFLAGS += " -DAAMP_BUILD_INFO=${AAMP_RELEASE_TAG_NAME}" 
+CXXFLAGS += " -DAAMP_BUILD_INFO=${AAMP_RELEASE_TAG_NAME}"
 
 #required for specific products but for now distro is available only for UK 
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', ' -DENABLE_USE_SINGLE_PIPELINE=1', '', d)}"
