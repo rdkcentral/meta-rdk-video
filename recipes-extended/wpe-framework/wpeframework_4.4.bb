@@ -12,7 +12,7 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r39"
+PR = "r40"
 PV = "4.4.3"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
@@ -65,6 +65,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/rdkemw-124-Link-Breakpad-wrapper.patch \
             file://r4.4/Revert_PR-665_support_JSON_Parsing.patch \
             file://r4.4/RDKEMW-8889-Avoid-LoadMeta-On-Boot.patch \
+            file://r4.4/RDKEMW-13752_apply_sysinfo_mem_unit.patch \
            "
 
 S = "${WORKDIR}/git"
