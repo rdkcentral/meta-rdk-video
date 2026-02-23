@@ -1,12 +1,12 @@
 diff --git a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
-index d0c19cc..e57e132 100644
+index 0460540..801a879 100644
 --- a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
 +++ b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
 @@ -228,6 +228,78 @@ OpenCDMError opencdm_gstreamer_session_decrypt(struct OpenCDMSession* session, G
      return (result);
  }
  
-+OpenCDMError extend_subsample_map(SubSampleInfo** subSampleInfoPtr, uint32_t* subSampleCount, uint32_t bufferSize, uint32_t totalBytes)
++OpenCDMError extend_subsample_map(SubSampleInfo** subSampleInfoPtr, unsigned int* subSampleCount, uint32_t bufferSize, uint32_t totalBytes)
 +{
 +    SubSampleInfo* subSampleInfoPtrLocal = *subSampleInfoPtr;
 +
@@ -15,7 +15,7 @@ index d0c19cc..e57e132 100644
 +    // Add an extra subsample(s) entry to account for the size mismatch
 +    uint32_t additional_bytes = bufferSize - totalBytes;
 +    uint32_t extra_subsamples = 0;
-+    // Calculate how many extra subsamples are needed to file 16bit clear data size
++    // Calculate how many extra subsamples are needed to fit 16bit clear data size
 +    while (additional_bytes > 0) {
 +        uint16_t clear_bytes = 0;
 +        if (additional_bytes > 0xFFFF) {
@@ -51,13 +51,13 @@ index d0c19cc..e57e132 100644
 +    return ERROR_NONE;
 +}
 +
-+OpenCDMError validate_subsample_map(SubSampleInfo** subSampleInfoPtr, uint32_t* subSampleCount, uint32_t frameSize, uint32_t totalMappedBytes)
++OpenCDMError validate_subsample_map(SubSampleInfo** subSampleInfoPtr, unsigned int* subSampleCount, uint32_t frameSize, uint32_t totalMappedBytes)
 +{
 +    OpenCDMError retVal = ERROR_NONE;
 +
 +    if(frameSize == 0 || subSampleInfoPtr == nullptr || *subSampleInfoPtr == nullptr || subSampleCount == nullptr || *subSampleCount == 0) {
 +        // Unable to fully validate the subsample map, but nothing to validate against
-+        // return true and use the existing code path
++        // return ERROR_NONE and use the existing code path
 +        return retVal;
 +    }
 +    if(frameSize == totalMappedBytes) {
@@ -81,7 +81,7 @@ index d0c19cc..e57e132 100644
  OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* session, GstBuffer* buffer, GstCaps* caps) {
  
      OpenCDMError result (ERROR_INVALID_SESSION);
-@@ -404,6 +476,7 @@ OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
+@@ -409,6 +481,7 @@ OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
              //Create a SubSampleInfo Array with mapping
              SubSampleInfo * subSampleInfoPtr = nullptr;
              uint32_t total_encrypted_bytes = 0;
@@ -89,7 +89,7 @@ index d0c19cc..e57e132 100644
              if (subSample != nullptr) {
                  GstByteReader* reader = gst_byte_reader_new(mappedSubSample, mappedSubSampleSize);
                  subSampleInfoPtr = reinterpret_cast<SubSampleInfo*>(malloc(subSampleCount * sizeof(SubSampleInfo)));
-@@ -412,6 +485,18 @@ OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
+@@ -417,6 +490,19 @@ OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
                      gst_byte_reader_get_uint16_be(reader, &subSampleInfoPtr[position].clear_bytes);
                      gst_byte_reader_get_uint32_be(reader, &subSampleInfoPtr[position].encrypted_bytes);
                      total_encrypted_bytes += subSampleInfoPtr[position].encrypted_bytes;
@@ -104,6 +104,7 @@ index d0c19cc..e57e132 100644
 +                    gst_buffer_unmap(IV, &ivMap);
 +                    gst_buffer_unmap(keyID, &keyIDMap);
 +                    free(subSampleInfoPtr);
++                    gst_byte_reader_free(reader);
 +                    goto exit;
                  }
                  gst_byte_reader_set_pos(reader, 0);
