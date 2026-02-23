@@ -42,7 +42,7 @@ index 0460540..801a879 100644
 +        subSampleInfoPtrLocal[*subSampleCount - 1].encrypted_bytes = 0;
 +    } else {
 +        RDKPerf perf_alloc_fail("SubsampleSizeFixAllocFail");
-+        TRACE_L1("opencdm_gstreamer_session_decrypt_buffer: Memory allocation failed when adjusting subsample mapping.");
++        TRACE_L1("extend_subsample_map: Memory allocation failed when adjusting subsample mapping.");
 +
 +        return ERROR_OUT_OF_MEMORY;
 +    }
