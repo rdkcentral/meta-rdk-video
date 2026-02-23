@@ -17,7 +17,7 @@ SRC_URI += "file://RDKEMW-1007.patch"
 
 
 # Topic astestsuite
-SRCREV_entservices-apis = "a9535e5dfd5618780f847c51b04e4bdeb74748f8"
+SRCREV_entservices-apis = "b236b58c818efb80ab67d8730af5b73f430f6121"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
