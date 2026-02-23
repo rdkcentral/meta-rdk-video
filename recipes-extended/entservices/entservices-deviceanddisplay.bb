@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_
           "
 
 # Release version - 3.9.7
-SRCREV = "f0b74080126c1a504728a8312d74dd0d5b12d829"
+SRCREV = "59a11e993620df1da1c4e31b7116c9f67297fe8a"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
