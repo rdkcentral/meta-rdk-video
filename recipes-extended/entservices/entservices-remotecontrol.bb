@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-remotecontrol;${CMF_GITHUB_SRC_URI_SUF
           "
 
 # Release version - 1.0.0
-SRCREV = "f8f96e49209d8e958dd72ab010b12a75f11ba68a"
+SRCREV = "8f9a34d8e7fd7e1e67db41db5bf14649147f53fd"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
