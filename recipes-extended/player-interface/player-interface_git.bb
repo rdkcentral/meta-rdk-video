@@ -34,7 +34,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_dis
 
 EXTRA_OECMAKE += " -DCMAKE_WPEFRAMEWORK_REQUIRED=1"
 
-EXTRA_OECMAKE += " -DCMAKE_TELEMETRY_2_0_REQUIRED=1 " 
+EXTRA_OECMAKE += " -DCMAKE_TELEMETRY_2_0_REQUIRED=1 "
 DEPENDS += " telemetry"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'sec_manager', ' -DCMAKE_USE_SECMANAGER=1 ', '', d)}"
 
