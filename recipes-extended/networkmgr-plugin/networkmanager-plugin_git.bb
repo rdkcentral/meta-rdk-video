@@ -17,9 +17,9 @@ PR = "r0"
 PV = "v2.0.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=main"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/RDK-55826"
 
-SRCREV = "4dee56e98fd7006c65c693d0b5fdaada6b070f92"
+SRCREV = "186f0d80fbedc3667deae937cc38c3d0012d49fb"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
@@ -41,6 +41,7 @@ EXTRA_OECMAKE += " \
                 -DUSE_TELEMETRY=ON \
                 -DENABLE_ROUTER_DISCOVERY_TOOL=ON \
                 -DENABLE_MIGRATION_MFRMGR_SUPPORT=ON \
+                -DUSE_TELEMETRY=ON \
                 "
 
 CXXFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
