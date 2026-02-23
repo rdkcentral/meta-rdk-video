@@ -1,12 +1,12 @@
-SUMMARY = "Middleware Player Interface layer for Player"
-DESCRIPTION = "This layer provides the Player Firebolt Interface library for Player integration."
+SUMMARY = "Middleware Player Interface library"
+DESCRIPTION = "This component provides the Player Firebolt Interface library for Player integration."
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
 PV = "0.1.0"
 PR = "r0"
 
-SRCREV = "7c20fb01355e24ed4988110cb25f04562eb7a2b4"
+SRCREV = "aaa77d4732dd169bba74b8349479d4b96350cd97"
 
 inherit pkgconfig
 inherit cmake
@@ -31,11 +31,11 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', '-DCMAKE_GST_SUBTEC_ENABLED=1 ', '', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON ', '', d)}"
 
-EXTRA_OECMAKE += " -DCMAKE_WPEFRAMEWORK_REQUIRED=1 "
+
+EXTRA_OECMAKE += " -DCMAKE_WPEFRAMEWORK_REQUIRED=1"
 
 EXTRA_OECMAKE += " -DCMAKE_TELEMETRY_2_0_REQUIRED=1 " 
 DEPENDS += " telemetry"
-
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'sec_manager', ' -DCMAKE_USE_SECMANAGER=1 ', '', d)}"
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', ' -DCMAKE_RDK_SVP=1 ', '', d)}"
@@ -44,10 +44,10 @@ PACKAGES = "${PN} ${PN}-dev ${PN}-dbg"
 
 FILES:${PN} += "${libdir}/lib*.so"
 FILES:${PN} += "${libdir}/player-interface/lib*.so"
-FILES:${PN} +="${libdir}/gstreamer-1.0/lib*.so"
-FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
+FILES:${PN} += "${libdir}/gstreamer-1.0/lib*.so"
+FILES:${PN}-dbg += "${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
-CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
+CXXFLAGS += "-I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
 
 LDFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '', ' -lWPEFrameworkSecurityUtil ', d)}"
