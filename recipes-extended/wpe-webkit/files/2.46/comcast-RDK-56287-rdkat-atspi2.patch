@@ -1,6 +1,6 @@
-From 3058f828ba49733c85c12985c691647b5cbd3f5c Mon Sep 17 00:00:00 2001
-From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
-Date: Tue, 10 Jun 2025 09:25:51 +0200
+From 1d2a217ee9156f5b4bb9c37bec7306624bebc635 Mon Sep 17 00:00:00 2001
+From: Filipe Norte <filipe_norte@comcast.com>
+Date: Thu, 12 Feb 2026 10:19:27 +0000
 Subject: [PATCH] comcast - RDK-56287 - TTS support using AT-SPI2
 
 ATK support removed from newer wpe-webkit version
@@ -8,8 +8,8 @@ ATK support removed from newer wpe-webkit version
 Signed-off-by: Filipe Norte <filipe_norte@comcast.com>
 ---
  Source/WebCore/PlatformWPE.cmake                 |  4 ++++
- Source/WebKit/WebProcess/glib/WebProcessGLib.cpp | 14 +++++++++++++-
- 2 files changed, 17 insertions(+), 1 deletion(-)
+ Source/WebKit/WebProcess/glib/WebProcessGLib.cpp | 16 +++++++++++++++-
+ 2 files changed, 19 insertions(+), 1 deletion(-)
 
 diff --git a/Source/WebCore/PlatformWPE.cmake b/Source/WebCore/PlatformWPE.cmake
 index d133eae89473..f4c115a561d1 100644
@@ -27,7 +27,7 @@ index d133eae89473..f4c115a561d1 100644
      set(WebCore_AtspiInterfaceFiles
          ${WEBCORE_DIR}/accessibility/atspi/xml/Accessible.xml
 diff --git a/Source/WebKit/WebProcess/glib/WebProcessGLib.cpp b/Source/WebKit/WebProcess/glib/WebProcessGLib.cpp
-index ff543f944a32..03502c6b565c 100644
+index ff543f944a32..50399c5d9b0e 100644
 --- a/Source/WebKit/WebProcess/glib/WebProcessGLib.cpp
 +++ b/Source/WebKit/WebProcess/glib/WebProcessGLib.cpp
 @@ -100,6 +100,10 @@
@@ -41,13 +41,15 @@ index ff543f944a32..03502c6b565c 100644
  #define RELEASE_LOG_SESSION_ID (m_sessionID ? m_sessionID->toUInt64() : 0)
  #define WEBPROCESS_RELEASE_LOG(channel, fmt, ...) RELEASE_LOG(channel, "%p - [sessionID=%" PRIu64 "] WebProcess::" fmt, this, RELEASE_LOG_SESSION_ID, ##__VA_ARGS__)
  #define WEBPROCESS_RELEASE_LOG_ERROR(channel, fmt, ...) RELEASE_LOG_ERROR(channel, "%p - [sessionID=%" PRIu64 "] WebProcess::" fmt, this, RELEASE_LOG_SESSION_ID, ##__VA_ARGS__)
-@@ -231,7 +235,15 @@ void WebProcess::platformInitializeWebProcess(WebProcessCreationParameters& para
+@@ -231,7 +235,17 @@ void WebProcess::platformInitializeWebProcess(WebProcessCreationParameters& para
  #endif
  
  #if USE(ATSPI)
 -    AccessibilityAtspi::singleton().connect(parameters.accessibilityBusAddress, parameters.accessibilityBusName);
-+    // Enable RDKAT to process WebKit event into real speach (if TTS enabled)
-+    WTFLogAlways("Enable RDKAT processing for WPE");
++    // Enable RDKAT to process WebKit event into real speech (if TTS enabled)
++    WTFLogAlways("Enable RDKAT processing for WPE.");
++
++    WebCore::AXObjectCache::enableAccessibility();
 +
 +    const char * address = RDKAT_Initialize();
 +
@@ -59,5 +61,5 @@ index ff543f944a32..03502c6b565c 100644
  
      if (parameters.disableFontHintingForTesting)
 -- 
-2.48.1
+2.43.0
 
