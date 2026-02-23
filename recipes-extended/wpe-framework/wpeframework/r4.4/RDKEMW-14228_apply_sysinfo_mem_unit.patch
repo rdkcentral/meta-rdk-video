@@ -1,3 +1,13 @@
+From: nanimatta <your-email@domain>
+Date: 2026-02-19
+Subject: [PATCH] SystemInfo: scale sysinfo RAM/swap values using mem_unit
+
+Linux sysinfo() reports totalram/freeram/totalswap/freeswap in units of
+mem_unit. Multiply by mem_unit to report correct byte values.
+
+Upstream-Status: Pending
+Signed-off-by: nanimatta <your-email@domain>
+-----
 diff --git a/Source/core/SystemInfo.cpp b/Source/core/SystemInfo.cpp
 index de6705fe..eacde9e0 100644
 --- a/Source/core/SystemInfo.cpp
