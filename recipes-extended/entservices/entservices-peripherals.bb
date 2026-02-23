@@ -13,11 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-peripherals;${CMF_GITHUB_SRC_URI_SUFFI
           "
 
 # Release version - 1.2.2
-<<<<<<< feature/RDKEMW-12197
-SRCREV = "2c8d9f62068893dd8257e5ad98190724da622e03"
-=======
-SRCREV = "6e7177263ee8ed12982f7877418a73c7e504fbf1"
->>>>>>> develop
+SRCREV = "f9c3b2e17dd64291ec297097f9d28101c1f7fc7b"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -47,12 +43,7 @@ PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[motiondetection]      = "-DPLUGIN_MOTION_DETECTION=ON,,virtual/vendor-motiondetector-hal virtual/vendor-fpdriverlib,virtual/vendor-motiondetector-hal virtual/vendor-fpdriverlib"
-<<<<<<< feature/RDKEMW-12197
 PACKAGECONFIG[ledcontrol]           = "-DPLUGIN_LEDCONTROL=ON,,iarmbus iarmmgrs devicesettings entservices-apis virtual/vendor-devicesettings-hal,iarmbus devicesettings entservices-apis"
-=======
-PACKAGECONFIG[voicecontrol]         = "-DPLUGIN_VOICECONTROL=ON,-DPLUGIN_VOICECONTROL=OFF,iarmbus iarmmgrs ctrlm-headers,iarmbus ctrlm"
-PACKAGECONFIG[remotecontrol]        = "-DPLUGIN_REMOTECONTROL=ON,-DPLUGIN_REMOTECONTROL=OFF,iarmbus iarmmgrs ctrlm-headers,iarmbus ctrlm"
->>>>>>> develop
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
