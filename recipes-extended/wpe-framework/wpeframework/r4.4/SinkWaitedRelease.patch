@@ -1,0 +1,55 @@
+diff --git a/Source/core/Services.h b/Source/core/Services.h
+index 36a8eabe..eff3a541 100644
+--- a/Source/core/Services.h
++++ b/Source/core/Services.h
+@@ -30,6 +30,7 @@
+ #include "Trace.h"
+ #include "Proxy.h"
+ #include "SystemInfo.h"
++#include "Thread.h"
+ 
+ #include "WarningReportingControl.h"
+ #include "WarningReportingCategories.h"
+@@ -242,6 +243,22 @@ namespace Core {
+             return (Core::ERROR_NONE);
+         }
+ 
++         uint32_t WaitReleased(const uint32_t timeout = Core::infinite)
++        {
++            uint32_t result = Core::ERROR_NONE;
++            uint64_t now = Core::Time::Now().Ticks() / Core::Time::TicksPerMillisecond;
++            uint8_t count = 0;
++            while (_referenceCount > 0) {
++                    Core::Thread::Yield(count, 100);
++                    if (( timeout != Core::infinite ) && ( (Core::Time::Now().Ticks() / Core::Time::TicksPerMillisecond) - now > timeout )) {
++                        result = Core::ERROR_TIMEDOUT;
++                        break;
++                    }
++            };
++
++            return result;
++        }
++
+     private:
+         mutable uint32_t _referenceCount;
+     };
+diff --git a/Source/core/Thread.h b/Source/core/Thread.h
+index 01ec620f..a565441a 100644
+--- a/Source/core/Thread.h
++++ b/Source/core/Thread.h
+@@ -224,6 +224,15 @@ namespace Core {
+         }
+         static ::ThreadId ThreadId();
+ 
++        static void Yield(uint8_t& count, const uint32_t sleepTimeMs = 1) {
++            if (count < 50) {
++                std::this_thread::yield();
++                ++count;
++            } else {
++                SleepMs(sleepTimeMs);
++                count = 0;
++            }
++        }
+         template <typename STORAGETYPE>
+         static STORAGETYPE& GetContext()
+         {
