@@ -23,14 +23,14 @@ EXTRA_OEMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disa
 #libsoup3 not compatible with gdial
 DEPENDS:append =  " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', ' libsoup-3.0 ', ' libsoup-2.4 ', d)}"
 #DEPENDS:append = " libsoup-2.4"
-DEPENDS:append = " gssdp_1.6"
+DEPENDS:append = " gssdp-1.6"
 DEPENDS:append = " cmake-native"
 EXTRANATIVEPATH += "cmake-native"
 
 CFLAGS += "-fcommon"
 
 
-DEPENDS += "gssdp openssl c-ares curl util-linux glib-2.0 cmake-native wpeframework wpeframework-clientlibraries entservices-apis iarmmgrs"
+DEPENDS += "openssl c-ares curl util-linux glib-2.0 cmake-native wpeframework wpeframework-clientlibraries entservices-apis iarmmgrs"
 
 inherit logrotate_config pkgconfig
 
