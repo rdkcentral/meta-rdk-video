@@ -9,6 +9,7 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig features_check
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-remotecontrol;${CMF_GITHUB_SRC_URI_SUFFIX} \
+           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://rdkservices.ini \
           "
 
