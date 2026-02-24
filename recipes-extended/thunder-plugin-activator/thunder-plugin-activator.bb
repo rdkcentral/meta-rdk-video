@@ -11,7 +11,7 @@ PR = "r1"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderPluginActivator;protocol=https;branch=PIS_Test_4.4;name=thunderpluginactivator"
 
-SRCREV = "5e89d315390d3c57c5a656680900db645ead5ca1"
+SRCREV = "44fa94548207b5d68b09790c0d544a665e45fee6"
 
 S = "${WORKDIR}/git"
 
