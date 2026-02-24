@@ -1,4 +1,4 @@
-From: nanimatta <Nancharayya_Matta@comcast.com>>
+From: nanimatta <Nancharayya_Matta@comcast.com>
 Date: 2026-02-19
 Subject: [PATCH] SystemInfo: scale sysinfo RAM/swap values using mem_unit
 
@@ -6,7 +6,7 @@ Linux sysinfo() reports totalram/freeram/totalswap/freeswap in units of
 mem_unit. Multiply by mem_unit to report correct byte values.
 
 Upstream-Status: Merged[PR-2057]
-Signed-off-by: nanimatta <Nancharayya_Matta@comcast.com>>
+Signed-off-by: nanimatta <Nancharayya_Matta@comcast.com>
 
 diff --git a/Source/core/SystemInfo.cpp b/Source/core/SystemInfo.cpp
 index de6705fe..eacde9e0 100644
