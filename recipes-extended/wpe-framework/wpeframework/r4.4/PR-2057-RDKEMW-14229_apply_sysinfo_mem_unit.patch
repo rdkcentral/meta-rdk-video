@@ -11,7 +11,7 @@ Signed-off-by: nanimatta <Nancharayya_Matta@comcast.com>
 diff --git a/Source/core/SystemInfo.cpp b/Source/core/SystemInfo.cpp
 index de6705fe..eacde9e0 100644
 --- a/Source/core/SystemInfo.cpp
-+++ b/Source/core/SystemInfo.cppExpand commentComment on lines R11 to R14Resolved
++++ b/Source/core/SystemInfo.cpp
 @@ -167,12 +167,13 @@ namespace Core {
          struct sysinfo info;
          sysinfo(&info);
