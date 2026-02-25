@@ -58,6 +58,6 @@ elif [[ "$log_line" =~ "ERROR" ]]; then
 fi
 
 /bin/systemctl set-environment WPA_P2P_SUPP_CONF_FILE=$WPA_P2P_SUPP_CONF_FILE
-/bin/systemctl set-environment WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_CTRL_INTERFACE -t -U $LOG_LEVEL_STR"
+/bin/systemctl set-environment WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_CTRL_INTERFACE -t $LOG_LEVEL_STR"
 
 exit 0

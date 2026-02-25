@@ -3,7 +3,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r13"
+PR  = "r15"
 
 # Temporary build fix
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
@@ -34,6 +34,9 @@ SRC_URI += "file://2.38.8/1448_Added-API-to-get-and-set-screen-supports-HDR-sett
 SRC_URI += "file://2.38.8/1463_GStreamer-support-the-eotf-additional-MIME-type.patch"
 SRC_URI += "file://2.38.8/1467.patch"
 SRC_URI += "file://2.38.8/1608_MemoryPressureMonitor.patch"
+SRC_URI += "file://2.38.8/1614_Only-extend-first-sample-when-it-is-a-sync-sample.patch"
+SRC_URI += "file://2.38.8/1605_Enable-new-dtags_flags-in-wpe-webkit.patch"
+SRC_URI += "file://2.38.8/1611_Load-libWPEWebInspectorResources-from-widget.patch"
 
 # Drop after libwpe upgrade
 SRC_URI += "file://2.38.8/RDK-54304-Fix-build-with-an-older-libpwe.patch"

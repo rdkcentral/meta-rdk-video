@@ -1,0 +1,45 @@
+From 2047ee4cb6adf1d8f1c68c30dce4bc1c07fc1764 Mon Sep 17 00:00:00 2001
+From: Darko Lulic <Darko_Lulic@comcast.com>
+Date: Wed, 21 Jan 2026 15:10:09 +0000
+Subject: [PATCH] RDKEMW-9893: set option to enable new dtags.
+
+---
+ Source/cmake/OptionsCommon.cmake | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/Source/cmake/OptionsCommon.cmake b/Source/cmake/OptionsCommon.cmake
+index 98a65ac0a0c84..e742570346936 100644
+--- a/Source/cmake/OptionsCommon.cmake
++++ b/Source/cmake/OptionsCommon.cmake
+@@ -71,6 +71,15 @@ else ()
+     set(LD_SUPPORTS_THIN_ARCHIVES FALSE)
+     set(LD_SUPPORTS_DISABLE_NEW_DTAGS FALSE)
+ endif ()
++
++if (LD_SUPPORTS_DISABLE_NEW_DTAGS)
++    set(DISABLE_NEW_DTAGS_DEFAULT ON)
++else ()
++    set(DISABLE_NEW_DTAGS_DEFAULT OFF)
++endif ()
++
++option(DISABLE_NEW_DTAGS "Disable new dtags" ${DISABLE_NEW_DTAGS_DEFAULT})
++
+ unset(LD_VERSION)
+ message(STATUS "Linker variant in use: ${LD_VARIANT} ")
+ message(STATUS "  Linker supports thin archives - ${LD_SUPPORTS_THIN_ARCHIVES}")
+@@ -112,10 +121,14 @@ message(STATUS "  Archiver supports thin archives - ${AR_SUPPORTS_THIN_ARCHIVES}
+ # passing the option DT_RUNPATH is used, which can be overriden by the value
+ # of LD_LIBRARY_PATH set in the environment, resulting in unexpected behaviour
+ # for developers.
+-if (LD_SUPPORTS_DISABLE_NEW_DTAGS)
++if (DISABLE_NEW_DTAGS)
+     string(APPEND CMAKE_EXE_LINKER_FLAGS " -Wl,--disable-new-dtags")
+     string(APPEND CMAKE_SHARED_LINKER_FLAGS " -Wl,--disable-new-dtags")
+     string(APPEND CMAKE_MODULE_LINKER_FLAGS " -Wl,--disable-new-dtags")
++else ()
++    string(APPEND CMAKE_EXE_LINKER_FLAGS " -Wl,--enable-new-dtags")
++    string(APPEND CMAKE_SHARED_LINKER_FLAGS " -Wl,--enable-new-dtags")
++    string(APPEND CMAKE_MODULE_LINKER_FLAGS " -Wl,--enable-new-dtags")
+ endif ()
+ 
+ # Prefer thin archives by default if they can be both created by the

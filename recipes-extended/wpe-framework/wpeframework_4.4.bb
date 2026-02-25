@@ -12,7 +12,7 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r39"
+PR = "r40"
 PV = "4.4.3"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -68,6 +68,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/0001-To-handle-truncated-UTF-code-on-parsing-empty-null-t.patch \
             file://r4.4/0002-Print-Log-Upon-Time-ComRPC-Timeout.patch \
             file://r4.4/RDKEMW-10951_WPEFramework_Config_Override.patch \
+            file://r4.4/PR-2057-RDKEMW-14228_apply_sysinfo_mem_unit.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -81,7 +82,7 @@ WPEFRAMEWORK_SYSTEM_PREFIX = "OE"
 WPEFRAMEWORK_PORT = "9998"
 WPEFRAMEWORK_BINDING = "127.0.0.1"
 WPEFRAMEWORK_IDLE_TIME = "0"
-WPEFRAMEWORK_THREADPOOL_COUNT ?= "16"
+WPEFRAMEWORK_THREADPOOL_COUNT ?= "32"
 WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
 
 
