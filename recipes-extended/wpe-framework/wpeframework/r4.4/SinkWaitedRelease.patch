@@ -53,3 +53,29 @@ index 01ec620f..a565441a 100644
          template <typename STORAGETYPE>
          static STORAGETYPE& GetContext()
          {
+diff --git a/Source/core/WorkerPool.h b/Source/core/WorkerPool.h
+index ea68bc1a..8843ff14 100644
+--- a/Source/core/WorkerPool.h
++++ b/Source/core/WorkerPool.h
+@@ -363,12 +363,15 @@ POP_WARNING()
+             uint32_t result(_timer.Revoke(Timer(this, job)) ? Core::ERROR_NONE : Core::ERROR_UNKNOWN_KEY);
+ 
+             uint32_t report = _threadPool.Revoke(job, waitTime);
+-
+-            if (report == Core::ERROR_UNKNOWN_KEY) {
+-                report = _external.Completed(job, waitTime);
+-                
+-                if ( (report != Core::ERROR_UNKNOWN_KEY) && (result == Core::ERROR_UNKNOWN_KEY) ) {
+-                    result = report;
++            if (_joined == Thread::ThreadId()) {
++                result = Core::ERROR_NONE;
++            }
++            else {
++                if (report == Core::ERROR_UNKNOWN_KEY) {
++                    report = _external.Completed(job, waitTime);
++                    if ( (report != Core::ERROR_UNKNOWN_KEY) && (result == Core::ERROR_UNKNOWN_KEY) ) {
++                        result = report;
++                    }
+                 }
+             }
+ 
