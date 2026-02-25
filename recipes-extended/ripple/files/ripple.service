@@ -1,7 +1,7 @@
 [Unit]
 Description=Firebolt reference implementation
-Requires= wpeframework.service wpeframework-system.service wpeframework-powermanager.service wpeframework-persistentstore.service wpeframework-network.service wpeframework-displaysettings.service wpeframework-system.service wpeframework-usersettings.service wpeframework-texttospeech.service wpeframework-hdcpprofile.service
-After=wpeframework.service wpeframework-system.service wpeframework-powermanager.service wpeframework-persistentstore.service wpeframework-network.service wpeframework-displaysettings.service wpeframework-system.service wpeframework-usersettings.service wpeframework-texttospeech.service wpeframework-hdcpprofile.service
+Requires=pwrmgr.service wpeframework.service wpeframework-system.service wpeframework-persistentstore.service wpeframework-network.service wpeframework-displaysettings.service wpeframework-system.service wpeframework-usersettings.service wpeframework-texttospeech.service wpeframework-hdcpprofile.service
+After=pwrmgr.service wpeframework.service wpeframework-system.service wpeframework-persistentstore.service wpeframework-network.service wpeframework-displaysettings.service wpeframework-system.service wpeframework-usersettings.service wpeframework-texttospeech.service wpeframework-hdcpprofile.service
 
 [Service]
 Type=notify
