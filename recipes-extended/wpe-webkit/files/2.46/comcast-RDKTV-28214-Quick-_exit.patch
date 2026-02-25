@@ -1,0 +1,138 @@
+From 200770d562f505ae539edbdf7cfa2b13cfb87c75 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Thu, 10 Oct 2024 13:35:19 +0200
+Subject: [PATCH] comcast - RDKTV-28214 - Quick _exit
+
+For both WPEWebProcess and WPENetworkProcess:
+1) Call std::quick_exit/_exit() just before main() function return to avoid crashes
+   in exit handlers and static objects destructions.
+   _exit() func terminates a process immediately without any clean up.
+2) Override default "exit()" func from libc with local one that will do
+   _exit() (exit() is called explicitly in some cases in WebKit code).
+
+We had number of crashes during browser shutdown. They were
+happening after returning from main() function inside WPEWebProcess:
+1) RDK-43089 Crash on destroying EGLContext after deleting native window
+   inside wpe-backend-rdk
+2) RDKTV-26066 wpe EGLBackend was destroyed before EGLTarget
+   (static window context in non composited webgl).
+3) CVTE-281 - Platform display was destroyed before noncomposited webgl
+   global window context. This happens when WebPage was not closed
+   before exiting from app (e.g. by calling exit(0) explicitly).
+4) LLAMA-12832: Crash on release WPEFramework singletons
+   (OCDM and TextToSpeech serivces)
+5) RDKTV-28214 Use after free on shutdown
+
+Most of the issues should have been fixed already, beside 3)
+so we still need to drop the web process before main() func return;
+
+The same happens for WPENetworkProcess:
+1) LLAMA-15430: Crash in glib-networking/openssl caused by async
+   handshake thread still running after OPENSSL cleaned up its resources
+
+Signed-off-by: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+---
+ .../NetworkProcess/soup/NetworkProcessMainSoup.cpp |  5 ++++-
+ Source/WebKit/PlatformWPE.cmake                    |  2 ++
+ Source/WebKit/Shared/ExitOverride.cpp              | 13 +++++++++++++
+ Source/WebKit/Shared/ExitOverride.h                | 14 ++++++++++++++
+ Source/WebKit/WebProcess/wpe/WebProcessMainWPE.cpp |  5 ++++-
+ 5 files changed, 37 insertions(+), 2 deletions(-)
+ create mode 100644 Source/WebKit/Shared/ExitOverride.cpp
+ create mode 100644 Source/WebKit/Shared/ExitOverride.h
+
+diff --git a/Source/WebKit/NetworkProcess/soup/NetworkProcessMainSoup.cpp b/Source/WebKit/NetworkProcess/soup/NetworkProcessMainSoup.cpp
+index dc26ae7acb81..1f8cda31bbf1 100644
+--- a/Source/WebKit/NetworkProcess/soup/NetworkProcessMainSoup.cpp
++++ b/Source/WebKit/NetworkProcess/soup/NetworkProcessMainSoup.cpp
+@@ -61,9 +61,12 @@ public:
+     }
+ };
+ 
++#include "ExitOverride.h"
+ int NetworkProcessMain(int argc, char** argv)
+ {
+-    return AuxiliaryProcessMain<NetworkProcessMainSoup>(argc, argv);
++    QuickExitAfterScope _exit; // Skip running exit handlers after main func returns.
++    _exit.status = AuxiliaryProcessMain<NetworkProcessMainSoup>(argc, argv);
++    return _exit.status;
+ }
+ 
+ } // namespace WebKit
+diff --git a/Source/WebKit/PlatformWPE.cmake b/Source/WebKit/PlatformWPE.cmake
+index d848b5919641..15a400f3a260 100644
+--- a/Source/WebKit/PlatformWPE.cmake
++++ b/Source/WebKit/PlatformWPE.cmake
+@@ -88,10 +88,12 @@ add_custom_command(
+ 
+ list(APPEND WebProcess_SOURCES
+     WebProcess/EntryPoint/unix/WebProcessMain.cpp
++    Shared/ExitOverride.cpp
+ )
+ 
+ list(APPEND NetworkProcess_SOURCES
+     NetworkProcess/EntryPoint/unix/NetworkProcessMain.cpp
++    Shared/ExitOverride.cpp
+ )
+ 
+ list(APPEND GPUProcess_SOURCES
+diff --git a/Source/WebKit/Shared/ExitOverride.cpp b/Source/WebKit/Shared/ExitOverride.cpp
+new file mode 100644
+index 000000000000..763dda95aba3
+--- /dev/null
++++ b/Source/WebKit/Shared/ExitOverride.cpp
+@@ -0,0 +1,13 @@
++
++// Implement custom exit() function that calls _exit() immediately
++// to avoid running exit handlers and static destructors.
++// This overrides default exit() function from stdlib.h.
++
++#include "ExitOverride.h"
++
++void exit(int status) {
++    {
++        QuickExitAfterScope _exit(status);
++    }
++}
++
+diff --git a/Source/WebKit/Shared/ExitOverride.h b/Source/WebKit/Shared/ExitOverride.h
+new file mode 100644
+index 000000000000..a67e4ccb081c
+--- /dev/null
++++ b/Source/WebKit/Shared/ExitOverride.h
+@@ -0,0 +1,14 @@
++
++#ifndef _EXIT_OVERRIDES_H_
++#define _EXIT_OVERRIDES_H_
++
++#include <cstdlib>
++
++struct QuickExitAfterScope {
++    QuickExitAfterScope(int status = 0) : status(status) {}
++    [[noreturn]] ~QuickExitAfterScope() { std::quick_exit(status); }
++    int status = 0;
++};
++
++#endif // _EXIT_OVERRIDES_H_
++
+diff --git a/Source/WebKit/WebProcess/wpe/WebProcessMainWPE.cpp b/Source/WebKit/WebProcess/wpe/WebProcessMainWPE.cpp
+index 3d4a611d830a..bf9fbd6851b9 100644
+--- a/Source/WebKit/WebProcess/wpe/WebProcessMainWPE.cpp
++++ b/Source/WebKit/WebProcess/wpe/WebProcessMainWPE.cpp
+@@ -86,9 +86,12 @@ public:
+     }
+ };
+ 
++#include "ExitOverride.h"
+ int WebProcessMain(int argc, char** argv)
+ {
+-    return AuxiliaryProcessMain<WebProcessMainWPE>(argc, argv);
++    QuickExitAfterScope _exit; // Skip running exit handlers after main func returns.
++    _exit.status = AuxiliaryProcessMain<WebProcessMainWPE>(argc, argv);
++    return _exit.status;
+ }
+ 
+ } // namespace WebKit
+-- 
+2.48.1
+

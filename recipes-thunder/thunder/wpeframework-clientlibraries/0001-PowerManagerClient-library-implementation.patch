@@ -1,0 +1,2558 @@
+From 96cf5315ea63c5f4a26564492ae62d783434b49f Mon Sep 17 00:00:00 2001
+From: Shrinivas Kamath <skamath@synamedia.com>
+Date: Wed, 6 Aug 2025 05:25:12 +0000
+Subject: [PATCH] PowerController (PowerManager plugin client) implementation
+
+update copyright in cmake file
+
+dsmgr testing complete
+
+interface changes for enhanced instance management and add operational state tracking
+
+- PowerManager Init & Term, avoids crash if API(s) are called after
+  `Dispose` (older API now removed)
+- Introduced isOperational and it's state change callback
+- PowerModePreChange & Thunder restart handling
+- Adapt to IPowerManager interface changes
+- Remove client instance counting in powercontroller
+- Align PowerManager WakeupSrcConfiguration API's with SystemService plugin
+
+%% original patch: 0001-PowerManagerClient-library-implementation.patch
+---
+ NOTICE                                      |    3 +-
+ Source/CMakeLists.txt                       |    4 +
+ Source/powercontroller/CMakeLists.txt       |   79 +
+ Source/powercontroller/Module.cpp           |   22 +
+ Source/powercontroller/Module.h             |   33 +
+ Source/powercontroller/power_controller.cpp | 1969 +++++++++++++++++++
+ Source/powercontroller/power_controller.h   |  405 ++++
+ 8 files changed, 2441 insertions(+), 1 deletion(-)
+ create mode 100644 Source/powercontroller/CMakeLists.txt
+ create mode 100644 Source/powercontroller/Module.cpp
+ create mode 100644 Source/powercontroller/Module.h
+ create mode 100644 Source/powercontroller/power_controller.cpp
+ create mode 100644 Source/powercontroller/power_controller.h
+
+Index: git/NOTICE
+===================================================================
+--- git.orig/NOTICE
++++ git/NOTICE
+@@ -31,4 +31,5 @@ Licensed under the MIT License
+ Copyright (C) 2015,2019 Metrological
+ Licensed under the BSD-2 License
+
+-
++Copyright 2025 RDK Management
++Licensed under the Apache License, Version 2.0
+Index: git/Source/CMakeLists.txt
+===================================================================
+--- git.orig/Source/CMakeLists.txt
++++ git/Source/CMakeLists.txt
+@@ -62,3 +62,7 @@ endif()
+ if(CRYPTOGRAPHY)
+     add_subdirectory(cryptography)
+ endif()
++
++if(POWERCONTROLLER)
++    add_subdirectory(powercontroller)
++endif()
+Index: git/Source/powercontroller/CMakeLists.txt
+===================================================================
+--- /dev/null
++++ git/Source/powercontroller/CMakeLists.txt
+@@ -0,0 +1,79 @@
++# If not stated otherwise in this file or this component's LICENSE file the
++# following copyright and licenses apply:
++#
++# Copyright 2025 RDK Management
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++# http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++cmake_minimum_required(VERSION 3.3)
++
++find_package(WPEFramework)
++
++project(PowerController)
++
++project_version(4.4.1)
++
++set(TARGET ${NAMESPACE}${PROJECT_NAME})
++
++message("Setup ${TARGET} v${PROJECT_VERSION}")
++
++find_package(${NAMESPACE}Core REQUIRED)
++find_package(${NAMESPACE}COM REQUIRED)
++find_package(CompileSettingsDebug CONFIG REQUIRED)
++
++set(PUBLIC_HEADERS "power_controller.h")
++
++add_library(${TARGET}  SHARED
++    Module.cpp
++    power_controller.cpp
++)
++
++target_link_libraries(${TARGET}
++        PRIVATE
++          ${NAMESPACE}Core::${NAMESPACE}Core
++          ${NAMESPACE}COM::${NAMESPACE}COM
++          CompileSettingsDebug::CompileSettingsDebug
++        )
++
++set_target_properties(${TARGET} PROPERTIES
++        CXX_STANDARD 11
++        CXX_STANDARD_REQUIRED YES
++        FRAMEWORK FALSE
++        PUBLIC_HEADER "${PUBLIC_HEADERS}" # specify the public headers
++        VERSION ${PROJECT_VERSION}
++        SOVERSION ${PROJECT_VERSION_MAJOR}
++        )
++
++target_include_directories( ${TARGET}
++        PUBLIC
++          $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
++          $<INSTALL_INTERFACE:include>
++        )
++
++install(
++        TARGETS ${TARGET}  EXPORT ${TARGET}Targets  # for downstream dependencies
++        ARCHIVE DESTINATION lib COMPONENT libs      # static lib
++        LIBRARY DESTINATION lib COMPONENT libs      # shared lib
++        RUNTIME DESTINATION bin COMPONENT libs      # binaries
++        FRAMEWORK DESTINATION bin COMPONENT libs    # for mac
++        PUBLIC_HEADER DESTINATION include/${NAMESPACE}/powercontroller COMPONENT devel   # headers for mac (note the different component -> different package)
++        INCLUDES DESTINATION include/${NAMESPACE}/powercontroller # headers
++)
++
++InstallCMakeConfig(
++        TARGETS ${TARGET})
++
++InstallPackageConfig(
++        TARGETS ${TARGET}
++        DESCRIPTION "communications channel abstraction for powermanager plugin")
++
+Index: git/Source/powercontroller/Module.cpp
+===================================================================
+--- /dev/null
++++ git/Source/powercontroller/Module.cpp
+@@ -0,0 +1,22 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2025 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "Module.h"
++
++MODULE_NAME_DECLARATION(BUILD_REFERENCE)
+Index: git/Source/powercontroller/Module.h
+===================================================================
+--- /dev/null
++++ git/Source/powercontroller/Module.h
+@@ -0,0 +1,33 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2025 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#pragma once
++
++#ifndef MODULE_NAME
++#define MODULE_NAME ClientLibrary_PowerManager
++#endif
++
++#include <com/com.h>
++#include <core/core.h>
++#include <messaging/messaging.h>
++
++#if defined(__WINDOWS__) && defined(POWERMANAGER_EXPORTS)
++#undef EXTERNAL
++#define EXTERNAL EXTERNAL_EXPORT
++#endif
+Index: git/Source/powercontroller/power_controller.cpp
+===================================================================
+--- /dev/null
++++ git/Source/powercontroller/power_controller.cpp
+@@ -0,0 +1,1942 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2025 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++// std includes
++#include <algorithm>
++#include <functional>
++#include <iostream>
++#include <list>
++#include <thread>
++#include <type_traits>
++
++#include <sys/inotify.h>
++#include <sys/syscall.h>
++
++// Thunder includes
++#include <interfaces/IPowerManager.h>
++#include <plugins/Types.h>
++
++#include "power_controller.h"
++
++#define ENABLE_LOGGING
++
++#ifdef ENABLE_LOGGING
++#define LOGINFO(fmt, ...)                                                                                                                                                 \
++    do {                                                                                                                                                                  \
++        fprintf(stdout, "[PowerController][%d] INFO  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fflush(stdout);                                                                                                                                                   \
++    } while (0)
++#define LOGWARN(fmt, ...)                                                                                                                                                 \
++    do {                                                                                                                                                                  \
++        fprintf(stdout, "[PowerController][%d] WARN  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fflush(stdout);                                                                                                                                                   \
++    } while (0)
++#define LOGERR(fmt, ...)                                                                                                                                                  \
++    do {                                                                                                                                                                  \
++        fprintf(stderr, "[PowerController][%d] ERROR [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fflush(stderr);                                                                                                                                                   \
++    } while (0)
++#else
++#define LOGINFO(fmt, ...)
++#define LOGWARN(fmt, ...)
++#define LOGERR(fmt, ...)
++#endif
++
++using namespace WPEFramework;
++using PowerState = WPEFramework::Exchange::IPowerManager::PowerState;
++using WakeupSrcType = WPEFramework::Exchange::IPowerManager::WakeupSrcType;
++using WakeupReason = WPEFramework::Exchange::IPowerManager::WakeupReason;
++using SystemMode = WPEFramework::Exchange::IPowerManager::SystemMode;
++using ThermalTemperature = WPEFramework::Exchange::IPowerManager::ThermalTemperature;
++
++namespace /*unnamed*/ {
++
++const std::unordered_map<PowerState, PowerController_PowerState_t>& powerStateMap()
++{
++    static const std::unordered_map<PowerState, PowerController_PowerState_t> map = {
++        { PowerState::POWER_STATE_UNKNOWN, POWER_STATE_UNKNOWN },
++        { PowerState::POWER_STATE_OFF, POWER_STATE_OFF },
++        { PowerState::POWER_STATE_STANDBY, POWER_STATE_STANDBY },
++        { PowerState::POWER_STATE_ON, POWER_STATE_ON },
++        { PowerState::POWER_STATE_STANDBY_LIGHT_SLEEP, POWER_STATE_STANDBY_LIGHT_SLEEP },
++        { PowerState::POWER_STATE_STANDBY_DEEP_SLEEP, POWER_STATE_STANDBY_DEEP_SLEEP },
++    };
++
++    return map;
++}
++
++PowerController_PowerState_t convert(const PowerState from)
++{
++    auto& map = powerStateMap();
++    auto it = map.find(from);
++    return (it != map.end()) ? it->second : POWER_STATE_UNKNOWN;
++}
++
++PowerState convert(const PowerController_PowerState_t from)
++{
++    auto& map = powerStateMap();
++
++    for (const auto& kv : map) {
++        if (kv.second == from) {
++            return kv.first;
++        }
++    }
++    return PowerState::POWER_STATE_UNKNOWN;
++}
++
++const std::unordered_map<WakeupReason, PowerController_WakeupReason_t>& wakeupReasonMap()
++{
++    static const std::unordered_map<WakeupReason, PowerController_WakeupReason_t> map = {
++        { WakeupReason::WAKEUP_REASON_UNKNOWN, WAKEUP_REASON_UNKNOWN },
++        { WakeupReason::WAKEUP_REASON_IR, WAKEUP_REASON_IR },
++        { WakeupReason::WAKEUP_REASON_BLUETOOTH, WAKEUP_REASON_BLUETOOTH },
++        { WakeupReason::WAKEUP_REASON_RF4CE, WAKEUP_REASON_RF4CE },
++        { WakeupReason::WAKEUP_REASON_GPIO, WAKEUP_REASON_GPIO },
++        { WakeupReason::WAKEUP_REASON_LAN, WAKEUP_REASON_LAN },
++        { WakeupReason::WAKEUP_REASON_WIFI, WAKEUP_REASON_WIFI },
++        { WakeupReason::WAKEUP_REASON_TIMER, WAKEUP_REASON_TIMER },
++        { WakeupReason::WAKEUP_REASON_FRONTPANEL, WAKEUP_REASON_FRONTPANEL },
++        { WakeupReason::WAKEUP_REASON_WATCHDOG, WAKEUP_REASON_WATCHDOG },
++        { WakeupReason::WAKEUP_REASON_SOFTWARERESET, WAKEUP_REASON_SOFTWARERESET },
++        { WakeupReason::WAKEUP_REASON_THERMALRESET, WAKEUP_REASON_THERMALRESET },
++        { WakeupReason::WAKEUP_REASON_WARMRESET, WAKEUP_REASON_WARMRESET },
++        { WakeupReason::WAKEUP_REASON_COLDBOOT, WAKEUP_REASON_COLDBOOT },
++        { WakeupReason::WAKEUP_REASON_STRAUTHFAIL, WAKEUP_REASON_STRAUTHFAIL },
++        { WakeupReason::WAKEUP_REASON_CEC, WAKEUP_REASON_CEC },
++        { WakeupReason::WAKEUP_REASON_PRESENCE, WAKEUP_REASON_PRESENCE },
++        { WakeupReason::WAKEUP_REASON_VOICE, WAKEUP_REASON_VOICE },
++    };
++    return map;
++}
++
++PowerController_WakeupReason_t convert(const WakeupReason from)
++{
++    auto& map = wakeupReasonMap();
++    auto it = map.find(from);
++    return (it != map.end()) ? it->second : WAKEUP_REASON_UNKNOWN;
++}
++
++WakeupReason convert(const PowerController_WakeupReason_t from)
++{
++    auto& map = wakeupReasonMap();
++
++    for (const auto& kv : map) {
++        if (kv.second == from) {
++            return kv.first;
++        }
++    }
++    return WakeupReason::WAKEUP_REASON_UNKNOWN;
++}
++
++const std::unordered_map<PowerController_SystemMode_t, SystemMode>& systemModeMap()
++{
++    static const std::unordered_map<PowerController_SystemMode_t, SystemMode> map = {
++        { SYSTEM_MODE_UNKNOWN, SystemMode::SYSTEM_MODE_UNKNOWN },
++        { SYSTEM_MODE_NORMAL, SystemMode::SYSTEM_MODE_NORMAL },
++        { SYSTEM_MODE_EAS, SystemMode::SYSTEM_MODE_EAS },
++        { SYSTEM_MODE_WAREHOUSE, SystemMode::SYSTEM_MODE_WAREHOUSE },
++    };
++    return map;
++}
++
++SystemMode convert(const PowerController_SystemMode_t from)
++{
++    auto& map = systemModeMap();
++    auto it = map.find(from);
++    return (it != map.end()) ? it->second : SystemMode::SYSTEM_MODE_UNKNOWN;
++}
++
++const std::unordered_map<ThermalTemperature, PowerController_ThermalTemperature_t>& thermalTemperatureMap()
++{
++    static const std::unordered_map<ThermalTemperature, PowerController_ThermalTemperature_t> map = {
++        { ThermalTemperature::THERMAL_TEMPERATURE_UNKNOWN, THERMAL_TEMPERATURE_UNKNOWN },
++        { ThermalTemperature::THERMAL_TEMPERATURE_NORMAL, THERMAL_TEMPERATURE_NORMAL },
++        { ThermalTemperature::THERMAL_TEMPERATURE_HIGH, THERMAL_TEMPERATURE_HIGH },
++        { ThermalTemperature::THERMAL_TEMPERATURE_CRITICAL, THERMAL_TEMPERATURE_CRITICAL },
++    };
++    return map;
++}
++
++PowerController_ThermalTemperature_t convert(const ThermalTemperature from)
++{
++    auto& map = thermalTemperatureMap();
++    auto it = map.find(from);
++    return (it != map.end()) ? it->second : THERMAL_TEMPERATURE_UNKNOWN;
++}
++
++static constexpr const TCHAR callSign[] = _T("org.rdk.PowerManager");
++
++// Templated Callback list avoid code duplication, for individual callback types
++// This class expects mechanism to register / unregister for individual & unique notifications with PowerManager
++// via RegisterNotificationLocked and UnregisterNotificationLocked methods. To be implemented in PowerController (i,e PARENT)
++template <typename CallbackType, typename PARENT>
++class CallbackList : public std::list<CallbackType> {
++    PARENT& _parent;
++    bool _registered;
++
++public:
++    CallbackList(PARENT& parent)
++        : _parent(parent)
++        , _registered(false)
++    {
++    }
++
++    // Locked method expected to be called from locked context
++    uint32_t RegisterCallbackLocked(typename CallbackType::Type callback, void* userdata)
++    {
++        uint32_t result = Core::ERROR_ALREADY_CONNECTED;
++
++        auto it = std::find_if(this->begin(), this->end(), [&callback](const CallbackType& cb) {
++            return cb.callback == callback;
++        });
++
++        if (it == this->end()) {
++            this->emplace_back(callback, userdata);
++            result = Core::ERROR_NONE;
++            RegisterNotificationLocked();
++        }
++
++        return result;
++    }
++
++    // Locked method expected to be called from locked context
++    uint32_t UnRegisterCallbackLocked(typename CallbackType::Type callback)
++    {
++        uint32_t result = Core::ERROR_ALREADY_RELEASED;
++
++        auto it = std::find_if(this->begin(), this->end(), [&callback](const CallbackType& cb) {
++            return cb.callback == callback;
++        });
++
++        if (it != this->end()) {
++            this->erase(it);
++            result = Core::ERROR_NONE;
++            UnregisterNotificationLocked(false);
++        }
++
++        return result;
++    }
++
++    // Locked method expected to be called from locked context
++    inline void RegisterNotificationLocked()
++    {
++        if (!_registered && !this->empty() && _parent.IsActivatedLocked()) {
++            _registered = _parent.template RegisterNotificationLocked<CallbackType>();
++        }
++    }
++
++    // Locked method expected to be called from locked context
++    // @param forced A boolean indicating whether to forcefully unregister from notification
++    //               regardless of the callback list's state / unregister status.
++    //               This is required to handle PowerManager restart scenarios.
++    inline void UnregisterNotificationLocked(const bool forced)
++    {
++        if (_registered && _parent.IsActivatedLocked() && (forced || this->empty())) {
++            bool unregistered = _parent.template UnregisterNotificationLocked<CallbackType>();
++
++            // ---------------------------------------
++            // | forced | unregistered | _registered |
++            // |--------|--------------|-------------|
++            // |   0    |       0      |      1      |
++            // |   0    |       1      |      0      |
++            // |   1    |       0      |      0      |
++            // |   1    |       1      |      0      |
++            // ---------------------------------------
++            _registered = !forced && !unregistered;
++        }
++    }
++};
++
++struct OperationalStateChangeCb {
++    using Type = PowerController_OperationalStateChangeCb;
++    Type callback;
++    void* userdata;
++
++    OperationalStateChangeCb(Type cb, void* ud)
++        : callback(cb)
++        , userdata(ud)
++    {
++    }
++};
++
++struct NetworkStandbyModeChangedCb {
++    using Type = PowerController_NetworkStandbyModeChangedCb;
++    Type callback;
++    void* userdata;
++
++    NetworkStandbyModeChangedCb(Type cb, void* ud)
++        : callback(cb)
++        , userdata(ud)
++    {
++    }
++};
++
++struct PowerModePreChangedCb {
++    using Type = PowerController_PowerModePreChangeCb;
++    Type callback;
++    void* userdata;
++
++    PowerModePreChangedCb(Type cb, void* ud)
++        : callback(cb)
++        , userdata(ud)
++    {
++    }
++};
++
++struct PowerModeChangedCb {
++    using Type = PowerController_PowerModeChangedCb;
++    Type callback;
++    void* userdata;
++
++    PowerModeChangedCb(Type cb, void* ud)
++        : callback(cb)
++        , userdata(ud)
++    {
++    }
++};
++
++struct DeepSleepTimeoutCb {
++    using Type = PowerController_DeepSleepTimeoutCb;
++    Type callback;
++    void* userdata;
++
++    DeepSleepTimeoutCb(Type cb, void* ud)
++        : callback(cb)
++        , userdata(ud)
++    {
++    }
++};
++
++struct ThermalModeChangedCb {
++    using Type = PowerController_ThermalModeChangedCb;
++    Type callback;
++    void* userdata;
++
++    ThermalModeChangedCb(Type cb, void* ud)
++        : callback(cb)
++        , userdata(ud)
++    {
++    }
++};
++
++struct RebootBeginCb {
++    using Type = PowerController_RebootBeginCb;
++    Type callback;
++    void* userdata;
++
++    RebootBeginCb(Type cb, void* ud)
++        : callback(cb)
++        , userdata(ud)
++    {
++    }
++};
++
++#define INVALID_PID (-1)
++#define INVALID_FD (-1)
++#define POLL_TIMEOUT (2000)
++
++using PIDFileChangedCb = std::function<void(const int pid)>;
++
++class PIDFileMonitor {
++    const std::string _pidFile; // pid file path `/tmp/wpeframework.pid`
++    const std::string _processName; // process name extracted from pid file `wpeframework`
++    PIDFileChangedCb _callback; // callback to notify PID file changes
++
++    int _fd; // inotify fd
++    int _wd; // inotify watch descriptor
++    int _pid; // current PID
++
++    bool _running; // current running state
++    volatile std::atomic<bool> _shutdown; // thread shutdown flag
++
++    std::unique_ptr<std::thread> _thread; // thread to monitor PID file changes
++
++    std::string parseProcessName(const std::string& pidFile)
++    {
++        std::string processName;
++
++        // Find the last '/' and '.pid'
++        size_t slash = pidFile.find_last_of('/');
++        size_t dot = pidFile.find_last_of('.');
++
++        if (slash != std::string::npos && dot != std::string::npos && dot > slash) {
++            processName = pidFile.substr(slash + 1, dot - slash - 1);
++        }
++
++        return processName;
++    }
++
++    char* trim(char* str)
++    {
++        char* end;
++
++        // Trim leading space
++        while (isspace((unsigned char)*str))
++            str++;
++
++        // If the string is empty, return it
++        if (*str == '\0')
++            return str;
++
++        // Trim trailing space
++        end = str + strlen(str) - 1;
++        while (end > str && isspace((unsigned char)*end))
++            end--;
++
++        // Null-terminate the string
++        *(end + 1) = '\0';
++
++        return str;
++    }
++
++    int parsePID(char* buf, size_t maxSz)
++    {
++        long pid = INVALID_PID;
++        char* end = nullptr;
++
++        do {
++            // if buf is empty, avoid parsing
++            if (strnlen(buf, maxSz) == 0) {
++                LOGERR("empty buffer");
++                break;
++            }
++
++            // trim leading/trailing spaces
++            buf = trim(buf);
++
++            // reset errno, strtol sets errno on failure
++            errno = 0;
++
++            // read as base 10
++            pid = strtol(buf, &end, 10);
++
++            if (errno) {
++                LOGERR("strtol failed, err: %s", strerror(errno));
++                pid = INVALID_PID;
++                break;
++            }
++
++            if (!pid) {
++                // strtol returns 0 if no valid conversion could be performed
++                LOGERR("strtol failed, no valid conversion");
++                pid = INVALID_PID;
++            }
++        } while (false);
++
++        return (int)pid;
++    }
++
++    int readPID()
++    {
++        constexpr size_t maxSz = 64;
++        int pid = INVALID_PID;
++
++        FILE* file = fopen(_pidFile.c_str(), "r");
++
++        do {
++            // Open the file in read mode
++            if (nullptr == file) {
++                LOGERR("%s open failed, err: %s", _pidFile.c_str(), strerror(errno));
++                break;
++            }
++
++            // Read file content (only first line)
++            char buffer[maxSz] = { 0 };
++
++            if (nullptr == fgets(buffer, maxSz, file) && !feof(file)) {
++                LOGERR("%s read failed, err: %s", _pidFile.c_str(), strerror(errno));
++                break;
++            }
++
++            // Convert the file content to an integer
++            pid = parsePID(buffer, maxSz);
++
++        } while (false);
++
++        if (nullptr != file) {
++            fclose(file);
++        }
++
++        LOGINFO("%s PID: %d", _pidFile.c_str(), pid);
++
++        return pid;
++    }
++
++    int handle_inotify_event(int fd)
++    {
++        // buffer to read 10 inotify events at a time
++        constexpr size_t maxSz = 10 * (sizeof(struct inotify_event) + 16);
++
++        /* Some systems cannot read integer variables if they are not
++           properly aligned. On other systems, incorrect alignment may
++           decrease performance. Hence, the buffer used for reading from
++           the inotify file descriptor should have the same alignment as
++           struct inotify_event. */
++
++        char buffer[maxSz]
++            __attribute__((aligned(__alignof__(struct inotify_event))));
++        const struct inotify_event* event;
++        ssize_t bytesRead;
++
++        /* Loop while events can be read from inotify file descriptor. */
++        for (;;) {
++
++            /* Read some events. */
++            bytesRead = read(fd, buffer, sizeof(buffer));
++            if (bytesRead == -1 && errno != EAGAIN) {
++                LOGERR("read failed, err: %s", strerror(errno));
++                return bytesRead; // error
++            }
++
++            if (bytesRead <= 0)
++                break;
++
++            /* Loop over all events in the buffer. */
++            for (char* ptr = buffer; ptr < buffer + bytesRead;
++                ptr += sizeof(struct inotify_event) + event->len) {
++
++                event = (const struct inotify_event*)ptr;
++
++                if (event->mask & IN_CLOSE_WRITE) {
++                    _pid = readPID();
++
++                    LOGINFO("inotify event IN_CLOSE_WRITE, PID: %d", _pid);
++
++                    ASSERT(INVALID_PID != _pid);
++
++                    if (INVALID_PID != _pid) {
++                        _callback(_pid);
++                    }
++                }
++            }
++        }
++        return bytesRead;
++    }
++
++    void monitorThread()
++    {
++        ASSERT(INVALID_PID != _pid);
++
++        LOGINFO("started, pid file: %s", _pidFile.c_str());
++
++        do {
++
++            _fd = inotify_init1(IN_NONBLOCK);
++
++            if (_fd < 0) {
++                LOGERR("inotify_init failed, err: %s", strerror(errno));
++                _fd = INVALID_FD;
++                break;
++            }
++
++            _wd = inotify_add_watch(_fd, _pidFile.c_str(), IN_CLOSE_WRITE);
++
++            if (_wd < 0) {
++                LOGERR("inotify_add_watch failed, err: %s", strerror(errno));
++                _wd = INVALID_FD;
++                break;
++            }
++
++            struct pollfd pfd = { .fd = _fd, .events = POLLIN };
++
++            while (!_shutdown) {
++
++                int poll_res = poll(&pfd, 1, POLL_TIMEOUT);
++
++                if (poll_res == -1) {
++                    if (errno == EINTR)
++                        continue;
++
++                    LOGERR("FATAL poll failed, Err[%s], fd[%d], wd[%d]", strerror(errno), _fd, _wd);
++                    break;
++                } else if (poll_res == 0) {
++                    // timedout
++                    continue;
++                } else {
++                    if (pfd.revents & POLLIN) {
++                        /* Inotify events are available. */
++                        handle_inotify_event(_fd);
++                    }
++                }
++            }
++        } while (false);
++
++        if (INVALID_FD != _wd) {
++            close(_wd);
++            _wd = INVALID_FD;
++        }
++        if (INVALID_FD != _fd) {
++            close(_fd);
++            _fd = INVALID_FD;
++        }
++        LOGINFO("exiting\n");
++    }
++
++public:
++    PIDFileMonitor(const std::string& pidFile, PIDFileChangedCb callback)
++        : _pidFile(pidFile)
++        , _processName(parseProcessName(pidFile))
++        , _callback(std::move(callback))
++        , _fd(INVALID_FD)
++        , _wd(INVALID_FD)
++        , _pid(INVALID_PID)
++        , _shutdown(false)
++        , _thread(nullptr)
++    {
++    }
++
++    inline bool Running() const
++    {
++        return _thread && _thread->joinable();
++    }
++
++    void Run()
++    {
++        // ensure valid pid file & pid before starting monitor thread
++        if (INVALID_PID == _pid) {
++            _pid = readPID();
++        }
++
++        if (!_shutdown && !Running()) {
++            _thread = std::unique_ptr<std::thread>(new std::thread(std::bind(&PIDFileMonitor::monitorThread, this)));
++        }
++    }
++
++    int PID()
++    {
++        if (INVALID_PID == _pid) {
++            _pid = readPID();
++        }
++        return _pid;
++    }
++
++    ~PIDFileMonitor()
++    {
++        LOGINFO("destructor");
++
++        _shutdown = true;
++
++        if (_thread) {
++            if (_thread->joinable()) {
++                _thread->join();
++            }
++            _thread.reset();
++        }
++    }
++
++    PIDFileMonitor(const PIDFileMonitor&) = delete;
++    PIDFileMonitor& operator=(const PIDFileMonitor&) = delete;
++};
++
++class PowerController : public RPC::SmartInterfaceType<Exchange::IPowerManager> {
++private:
++    using BaseClass = RPC::SmartInterfaceType<Exchange::IPowerManager>;
++    using OperationalStateChangeCallbacks = CallbackList<OperationalStateChangeCb, PowerController>;
++    using PowerModePreChangeCallbacks = CallbackList<PowerModePreChangedCb, PowerController>;
++    using PowerModeChangedCallbacks = CallbackList<PowerModeChangedCb, PowerController>;
++    using DeepSleepTimeoutCallbacks = CallbackList<DeepSleepTimeoutCb, PowerController>;
++    using NetworkStandbyModeChangedCallbacks = CallbackList<NetworkStandbyModeChangedCb, PowerController>;
++    using ThermalModeChangedCallbacks = CallbackList<ThermalModeChangedCb, PowerController>;
++    using RebootBeginCallbacks = CallbackList<RebootBeginCb, PowerController>;
++
++    class Notification : public Exchange::IPowerManager::IRebootNotification,
++                         public Exchange::IPowerManager::IModeChangedNotification,
++                         public Exchange::IPowerManager::IModePreChangeNotification,
++                         public Exchange::IPowerManager::IDeepSleepTimeoutNotification,
++                         public Exchange::IPowerManager::INetworkStandbyModeChangedNotification,
++                         public Exchange::IPowerManager::IThermalModeChangedNotification {
++    private:
++        PowerController& _parent;
++
++    public:
++        Notification(PowerController& parent)
++            : _parent(parent)
++        {
++        }
++
++        Notification(const Notification&) = delete; // Delete copy constructor
++        Notification& operator=(const Notification&) = delete; // Delete copy assignment operator
++
++        Notification(Notification&&) = delete; // Delete move constructor
++        Notification& operator=(Notification&&) = delete; // Delete move assignment operator
++
++        virtual void OnPowerModeChanged(const PowerState currentState, const PowerState newState) override
++        {
++            _parent.NotifyPowerModeChanged(currentState, newState);
++        }
++
++        virtual void OnPowerModePreChange(const PowerState currentState, const PowerState newState, const int transactionId, const int stateChangeAfter) override
++        {
++            _parent.NotifyPowerModePreChange(currentState, newState, transactionId, stateChangeAfter);
++        }
++
++        virtual void OnDeepSleepTimeout(const int wakeupTimeout) override
++        {
++            _parent.NotifyDeepSleepTimeout(wakeupTimeout);
++        }
++
++        virtual void OnNetworkStandbyModeChanged(const bool enabled) override
++        {
++            _parent.NotifyNetworkStandbyModeChanged(enabled);
++        }
++
++        virtual void OnThermalModeChanged(const ThermalTemperature currentThermalLevel, const ThermalTemperature newThermalLevel, const float currentTemperature) override
++        {
++            _parent.NotifyThermalModeChanged(currentThermalLevel, newThermalLevel, currentTemperature);
++        }
++
++        virtual void OnRebootBegin(const string& rebootReasonCustom, const string& rebootReasonOther, const string& rebootRequestor) override
++        {
++            _parent.NotifyRebootBegin(rebootReasonCustom, rebootReasonOther, rebootRequestor);
++        }
++
++        BEGIN_INTERFACE_MAP(Notification)
++        INTERFACE_ENTRY(Exchange::IPowerManager::IRebootNotification)
++        INTERFACE_ENTRY(Exchange::IPowerManager::IModePreChangeNotification)
++        INTERFACE_ENTRY(Exchange::IPowerManager::IModeChangedNotification)
++        INTERFACE_ENTRY(Exchange::IPowerManager::IDeepSleepTimeoutNotification)
++        INTERFACE_ENTRY(Exchange::IPowerManager::INetworkStandbyModeChangedNotification)
++        INTERFACE_ENTRY(Exchange::IPowerManager::IThermalModeChangedNotification)
++        END_INTERFACE_MAP
++
++        template <typename T>
++        inline T* baseInterface()
++        {
++            static_assert(std::is_base_of<T, Notification>(), "base type mismatch");
++            return static_cast<T*>(this);
++        }
++    };
++
++    PowerController()
++        : BaseClass()
++        , _powerManagerInterface(nullptr)
++        , _powerManagerNotification(*this)
++        , _operationalStateChangeCallbacks(*this)
++        , _powerModePreChangeCallbacks(*this)
++        , _powerModeChangedCallbacks(*this)
++        , _deepSleepTimeoutCallbacks(*this)
++        , _networkStandbyModeChangedCallbacks(*this)
++        , _thermalModeChangedCallbacks(*this)
++        , _rebootBeginCallbacks(*this)
++        , _pidMonitor("/tmp/wpeframework.pid", std::bind(&PowerController::pidChangedCb, this, std::placeholders::_1))
++        , _pid(INVALID_PID)
++        , _connected(false)
++        , _shutdown(false)
++    {
++        (void)Connect();
++    }
++
++    ~PowerController()
++    {
++        _shutdown = true;
++        (void)Disconnect(); /* Internally it will Close destroys _powerManagerInterface too */
++    }
++
++    void pidChangedCb(const int pid)
++    {
++        LOGINFO("Thunder OLD PID: %d, NEW PID: %d", _pid, pid);
++
++        if (_pid != pid) {
++            Disconnect();
++            Connect();
++            _pid = pid;
++        }
++    }
++
++    virtual void Operational(const bool upAndRunning) override
++    {
++        LOGINFO("callsign: (%s), running: %d", callSign, upAndRunning);
++
++        _apiLock.Lock();
++
++        // avoid misleading log during shutdown
++        if ((upAndRunning && _shutdown) || !_shutdown) {
++            LOGINFO("callsign: (%s), running: %d", callSign, upAndRunning);
++        }
++
++        if (upAndRunning) {
++            // Communicatior opened && PowerManager is Activated
++            if (nullptr == _powerManagerInterface) {
++                _powerManagerInterface = BaseClass::Interface();
++                if (_powerManagerInterface != nullptr) {
++                    RegisterNotificationsLocked();
++                    LOGINFO("Established COM-RPC connection with PowerManager plugin");
++                } else {
++                    // Internal error powerManager is running, but QueryInterface failed for it ?
++                    LOGERR("Failed to Establish COM-RPC connection with PowerManager plugin");
++                }
++            }
++        } else {
++            // PowerManager is Deactivated || Communicator closed
++            if (nullptr != _powerManagerInterface) {
++                UnregisterNotificationsLocked();
++                _powerManagerInterface->Release();
++                _powerManagerInterface = nullptr;
++            } else {
++                LOGERR("Unexpected, powerManager just deactivated, but interface already null ?");
++            }
++        }
++        _apiLock.Unlock();
++
++        _callbackLock.Lock();
++        // avoid notifying operational state changed if shuting down because of Term
++        if (!_shutdown) {
++            for (auto& cb : _operationalStateChangeCallbacks) {
++                cb.callback(upAndRunning, cb.userdata);
++            }
++        }
++        _callbackLock.Unlock();
++    }
++
++    // Locked method expected to be called from locked context
++    void RegisterNotificationsLocked()
++    {
++        _powerModeChangedCallbacks.RegisterNotificationLocked();
++        _powerModePreChangeCallbacks.RegisterNotificationLocked();
++        _deepSleepTimeoutCallbacks.RegisterNotificationLocked();
++        _networkStandbyModeChangedCallbacks.RegisterNotificationLocked();
++        _thermalModeChangedCallbacks.RegisterNotificationLocked();
++        _rebootBeginCallbacks.RegisterNotificationLocked();
++    }
++
++    // Locked method expected to be called from locked context
++    void UnregisterNotificationsLocked()
++    {
++        _powerModeChangedCallbacks.UnregisterNotificationLocked(true);
++        _powerModePreChangeCallbacks.UnregisterNotificationLocked(true);
++        _deepSleepTimeoutCallbacks.UnregisterNotificationLocked(true);
++        _networkStandbyModeChangedCallbacks.UnregisterNotificationLocked(true);
++        _thermalModeChangedCallbacks.UnregisterNotificationLocked(true);
++        _rebootBeginCallbacks.UnregisterNotificationLocked(true);
++    }
++
++    inline bool isConnected() const
++    {
++        return _connected;
++    }
++
++public:
++    // Locked method expected to be called from locked context
++    inline bool IsActivatedLocked() const
++    {
++        return (nullptr != _powerManagerInterface);
++    }
++
++    uint32_t Connect()
++    {
++        uint32_t status = Core::ERROR_NONE;
++
++        LOGINFO("Entering ...");
++        _apiLock.Lock();
++        try {
++            do {
++                if (!isConnected()) {
++                    LOGINFO("Opening COM-RPC channel ...");
++                    uint32_t res = BaseClass::Open(RPC::CommunicationTimeOut, BaseClass::Connector(), callSign);
++                    if (Core::ERROR_NONE == res) {
++                        LOGINFO("COM-RPC channel opened successfully");
++                        _connected = true;
++                        if (!_pidMonitor.Running()) {
++                            // read pid file once to get initial PID
++                            _pid = _pidMonitor.PID();
++                            _pidMonitor.Run();
++                        }
++                    }
++                    else {
++                        LOGWARN("COM-RPC channel open failed with status[%u]. Is Thunder running ?", res);
++                        status = Core::ERROR_UNAVAILABLE;
++                        break;
++                    }
++                }
++                else {
++                    LOGINFO("COM-RPC channel already open");
++                }
++
++                if (nullptr == _powerManagerInterface) {
++                    LOGWARN("PowerManager plugin is not activated yet");
++                    status = Core::ERROR_NOT_EXIST;
++                }
++            } while (false);
++        }
++        catch (const std::exception& ex) {
++            LOGERR("Exception in PowerController::Connect [%s]", ex.what());
++            status = Core::ERROR_GENERAL;
++        }
++        catch (...) {
++            LOGERR("Unknown exception in PowerController::Connect");
++            status = Core::ERROR_GENERAL;
++        }
++        _apiLock.Unlock();
++
++        LOGINFO("Exiting... status[%u]", status);
++
++        return status;
++    }
++
++    uint32_t Disconnect()
++    {
++        uint32_t status = Core::ERROR_GENERAL;
++
++        LOGINFO("Entering ...");
++
++        _apiLock.Lock();
++
++        if (isConnected()) {
++            LOGINFO("Closing COM-RPC channel ...");
++            status = BaseClass::Close(Core::infinite);
++            if (Core::ERROR_NONE != status) {
++                LOGERR("COM-RPC channel close failed, status: %u", status);
++            }
++            else {
++                LOGINFO("COM-RPC channel closed");
++            }
++            _connected = false;
++        }
++
++        _apiLock.Unlock();
++
++        LOGINFO("Exiting ... status[%u]", status);
++
++        return status;
++    }
++
++    // Locked method expected to be called from locked context (take care in specializations too)
++    template <typename CallbackType>
++    bool RegisterNotificationLocked()
++    {
++        // static_assert(std::false_type::value, "Specialization required for CallbackType");
++        return false;
++    }
++
++    // Locked method expected to be called from locked context (take care in specializations too)
++    template <typename CallbackType>
++    bool UnregisterNotificationLocked()
++    {
++        // static_assert(std::false_type::value, "Specialization required for CallbackType");
++        return false;
++    }
++
++    static void Init()
++    {
++        LOGINFO("Entering ...");
++        _apiLock.Lock();
++        if (nullptr == _instance) {
++            _instance = new PowerController();
++            if (nullptr == _instance) {
++                LOGERR("PowerController::Init failed, out of memory ?");
++            }
++        }
++        _apiLock.Unlock();
++        LOGINFO("Exiting ...");
++    }
++
++    static void Term()
++    {
++        LOGINFO("Entering ...");
++        _apiLock.Lock();
++        if (nullptr != _instance) {
++            delete _instance;
++            _instance = nullptr;
++        }
++        _apiLock.Unlock();
++        LOGINFO("Exiting ...");
++    }
++
++    static PowerController* Instance()
++    {
++        return _instance;
++    }
++
++    Core::hresult GetPowerState(PowerController_PowerState_t* currentState, PowerController_PowerState_t* previousState)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        PowerState currentState_ = PowerState::POWER_STATE_UNKNOWN;
++        PowerState previousState_ = PowerState::POWER_STATE_UNKNOWN;
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->GetPowerState(currentState_, previousState_);
++        }
++        LOGINFO("result[%d], Prev[%d], Current[%d]", result, previousState_, currentState_);
++
++        _apiLock.Unlock();
++
++        if (Core::ERROR_NONE == result) {
++            *currentState = convert(currentState_);
++            *previousState = convert(previousState_);
++        }
++
++        return result;
++    }
++
++    Core::hresult SetPowerState(const int keyCode, const PowerController_PowerState_t powerState, const char* reason)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        PowerState powerState_ = convert(powerState);
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->SetPowerState(keyCode, powerState_, reason);
++        }
++        LOGINFO("result[%d], keyCode[%d], powerState[%d], reason[%s]", result, keyCode, powerState_, reason);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult GetThermalState(float* currentTemperature)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        if (nullptr == currentTemperature) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->GetThermalState(*currentTemperature);
++        }
++        LOGINFO("result[%d], currentTemperature[%f]", result, *currentTemperature);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult SetTemperatureThresholds(float high, float critical)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->SetTemperatureThresholds(high, critical);
++        }
++        LOGINFO("result[%d], high[%f], critical[%f]", result, high, critical);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult GetTemperatureThresholds(float* high, float* critical)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        if (nullptr == high || nullptr == critical) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->GetTemperatureThresholds(*high, *critical);
++        }
++        LOGINFO("result[%d], high[%f], critical[%f]", result, *high, *critical);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult SetOvertempGraceInterval(const int graceInterval)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->SetOvertempGraceInterval(graceInterval);
++        }
++        LOGINFO("result[%d], graceInterval[%d]", result, graceInterval);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult GetOvertempGraceInterval(int* graceInterval)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        if (nullptr == graceInterval) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->GetOvertempGraceInterval(*graceInterval);
++        }
++        LOGINFO("result[%d], graceInterval[%d]", result, *graceInterval);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult SetDeepSleepTimer(const int timeOut)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->SetDeepSleepTimer(timeOut);
++        }
++        LOGINFO("result[%d], timeOut[%d]", result, timeOut);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult GetLastWakeupReason(PowerController_WakeupReason_t* wakeupReason)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++        WakeupReason wakeupReason_ = WakeupReason::WAKEUP_REASON_UNKNOWN;
++
++        if (nullptr == wakeupReason) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->GetLastWakeupReason(wakeupReason_);
++        }
++        LOGINFO("result[%d], wakeupReason[%d]", result, wakeupReason_);
++
++        _apiLock.Unlock();
++
++        if (Core::ERROR_NONE == result) {
++            *wakeupReason = convert(wakeupReason_);
++        }
++
++        return result;
++    }
++
++    Core::hresult GetLastWakeupKeyCode(int* keycode)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        if (nullptr == keycode) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            _powerManagerInterface->GetLastWakeupKeyCode(*keycode);
++        }
++        LOGINFO("result[%d], keycode[%d]", result, *keycode);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult Reboot(const char* rebootRequestor, const char* rebootReasonCustom, const char* rebootReasonOther)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        if (nullptr == rebootRequestor || nullptr == rebootReasonCustom || nullptr == rebootReasonOther) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->Reboot(rebootRequestor, rebootReasonCustom, rebootReasonOther);
++        }
++        LOGINFO("result[%d], rebootRequestor[%s], rebootReasonCustom[%s], rebootReasonOther[%s]", result, rebootRequestor, rebootReasonCustom, rebootReasonOther);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult SetNetworkStandbyMode(const bool standbyMode)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->SetNetworkStandbyMode(standbyMode);
++        }
++        LOGINFO("result[%d], standbyMode[%d]", result, standbyMode);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++    Core::hresult GetNetworkStandbyMode(bool* standbyMode)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        if (nullptr == standbyMode) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->GetNetworkStandbyMode(*standbyMode);
++        }
++        LOGINFO("result[%d], standbyMode[%d]", result, *standbyMode);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult GetPowerStateBeforeReboot(PowerController_PowerState_t* powerStateBeforeReboot)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++        PowerState powerStateBeforeReboot_ = PowerState::POWER_STATE_UNKNOWN;
++
++        if (nullptr == powerStateBeforeReboot) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->GetPowerStateBeforeReboot(powerStateBeforeReboot_);
++        }
++        LOGINFO("result[%d], powerStateBeforeReboot[%d]", result, powerStateBeforeReboot_);
++
++        _apiLock.Unlock();
++
++        if (Core::ERROR_NONE == result) {
++            *powerStateBeforeReboot = convert(powerStateBeforeReboot_);
++        }
++
++        return result;
++    }
++
++    Core::hresult AddPowerModePreChangeClient(const std::string& clientName, uint32_t& clientId)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->AddPowerModePreChangeClient(clientName, clientId);
++        }
++        LOGINFO("result[%d], clientName[%s], clientId[%d]", result, clientName.c_str(), clientId);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult RemovePowerModePreChangeClient(const uint32_t clientId)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->RemovePowerModePreChangeClient(clientId);
++        }
++        LOGINFO("result[%d], clientId[%d]", result, clientId);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult DelayPowerModeChangeBy(const uint32_t clientId, const int transactionId, const int delay)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->DelayPowerModeChangeBy(clientId, transactionId, delay);
++        }
++        LOGINFO("result[%d], clientId[%d], transactionId[%d], delay[%d]", result, clientId, transactionId, delay);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    Core::hresult PowerModePreChangeComplete(const uint32_t clientId, const int transactionId)
++    {
++        Core::hresult result = Core::ERROR_UNAVAILABLE;
++
++        _apiLock.Lock();
++
++        if (_powerManagerInterface) {
++            result = _powerManagerInterface->PowerModePreChangeComplete(clientId, transactionId);
++        }
++        LOGINFO("result[%d], clientId[%d], transactionId[%d]", result, clientId, transactionId);
++
++        _apiLock.Unlock();
++
++        return result;
++    }
++
++    void NotifyPowerModeChanged(const PowerState currentState, const PowerState newState)
++    {
++        PowerController_PowerState_t currentState_ = convert(currentState);
++        PowerController_PowerState_t newState_ = convert(newState);
++        _callbackLock.Lock();
++
++        for (auto& cb : _powerModeChangedCallbacks) {
++            cb.callback(currentState_, newState_, cb.userdata);
++        }
++
++        _callbackLock.Unlock();
++    }
++
++    void NotifyPowerModePreChange(const PowerState currentState, const PowerState newState, const int transactionId, const int stateChangeAfter)
++    {
++        PowerController_PowerState_t currentState_ = convert(currentState);
++        PowerController_PowerState_t newState_ = convert(newState);
++        _callbackLock.Lock();
++
++        for (auto& cb : _powerModePreChangeCallbacks) {
++            cb.callback(currentState_, newState_, transactionId, stateChangeAfter, cb.userdata);
++        }
++
++        _callbackLock.Unlock();
++    }
++
++    void NotifyDeepSleepTimeout(const int wakeupTimeout)
++    {
++        _callbackLock.Lock();
++
++        for (auto& cb : _deepSleepTimeoutCallbacks) {
++            cb.callback(wakeupTimeout, cb.userdata);
++        }
++
++        _callbackLock.Unlock();
++    }
++
++    void NotifyNetworkStandbyModeChanged(const bool enabled)
++    {
++        _callbackLock.Lock();
++
++        for (auto& cb : _networkStandbyModeChangedCallbacks) {
++            cb.callback(enabled, cb.userdata);
++        }
++
++        _callbackLock.Unlock();
++    }
++
++    void NotifyThermalModeChanged(const ThermalTemperature currentThermalLevel, const ThermalTemperature newThermalLevel, const float currentTemperature)
++    {
++        PowerController_ThermalTemperature_t currentThermalLevel_ = convert(currentThermalLevel);
++        PowerController_ThermalTemperature_t newThermalLevel_ = convert(newThermalLevel);
++
++        _callbackLock.Lock();
++
++        for (auto& cb : _thermalModeChangedCallbacks) {
++            cb.callback(currentThermalLevel_, newThermalLevel_, currentTemperature, cb.userdata);
++        }
++
++        _callbackLock.Unlock();
++    }
++
++    void NotifyRebootBegin(const string& rebootReasonCustom, const string& rebootReasonOther, const string& rebootRequestor)
++    {
++        _callbackLock.Lock();
++
++        for (auto& cb : _rebootBeginCallbacks) {
++            cb.callback(rebootReasonCustom.c_str(), rebootReasonOther.c_str(), rebootRequestor.c_str(), cb.userdata);
++        }
++
++        _callbackLock.Unlock();
++    }
++
++    // Generic template function for callback register
++    template <typename CallbackType, typename PARENT>
++    Core::hresult RegisterCallback(CallbackList<CallbackType, PARENT>& callbacklist, typename CallbackType::Type callback, void* userdata)
++    {
++        Core::hresult result = Core::ERROR_INVALID_PARAMETER;
++
++        ASSERT(nullptr != callback);
++
++        if (nullptr != callback) {
++            _callbackLock.Lock();
++
++            result = callbacklist.RegisterCallbackLocked(callback, userdata);
++
++            _callbackLock.Unlock();
++        }
++
++        return result;
++    }
++
++    // Generic template function for callback unregister
++    template <typename CallbackType, typename PARENT>
++    Core::hresult UnRegisterCallback(CallbackList<CallbackType, PARENT>& callbacklist, typename CallbackType::Type callback)
++    {
++        Core::hresult result = Core::ERROR_INVALID_PARAMETER;
++
++        ASSERT(nullptr != callback);
++
++        if (nullptr != callback) {
++            _callbackLock.Lock();
++
++            result = callbacklist.UnRegisterCallbackLocked(callback);
++
++            _callbackLock.Unlock();
++        }
++
++        return (result);
++    }
++
++    Core::hresult RegisterOperationalStateChangedCallback(PowerController_OperationalStateChangeCb callback, void* userdata)
++    {
++        return RegisterCallback(_operationalStateChangeCallbacks, callback, userdata);
++    }
++
++    Core::hresult UnRegisterOperationalStateChangedCallback(PowerController_OperationalStateChangeCb callback)
++    {
++        return UnRegisterCallback(_operationalStateChangeCallbacks, callback);
++    }
++
++    Core::hresult RegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback, void* userdata)
++    {
++        return RegisterCallback(_powerModeChangedCallbacks, callback, userdata);
++    }
++
++    Core::hresult UnRegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback)
++    {
++        return UnRegisterCallback(_powerModeChangedCallbacks, callback);
++    }
++
++    Core::hresult RegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback, void* userdata)
++    {
++        return RegisterCallback(_powerModePreChangeCallbacks, callback, userdata);
++    }
++
++    Core::hresult UnRegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback)
++    {
++        return UnRegisterCallback(_powerModePreChangeCallbacks, callback);
++    }
++
++    Core::hresult RegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback, void* userdata)
++    {
++        return RegisterCallback(_deepSleepTimeoutCallbacks, callback, userdata);
++    }
++
++    Core::hresult UnRegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback)
++    {
++        return UnRegisterCallback(_deepSleepTimeoutCallbacks, callback);
++    }
++
++    Core::hresult RegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback, void* userdata)
++    {
++        return RegisterCallback(_networkStandbyModeChangedCallbacks, callback, userdata);
++    }
++
++    Core::hresult UnRegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback)
++    {
++        return UnRegisterCallback(_networkStandbyModeChangedCallbacks, callback);
++    }
++
++    Core::hresult RegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback, void* userdata)
++    {
++        return RegisterCallback(_thermalModeChangedCallbacks, callback, userdata);
++    }
++
++    Core::hresult UnRegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback)
++    {
++        return UnRegisterCallback(_thermalModeChangedCallbacks, callback);
++    }
++
++    Core::hresult RegisterRebootBeginCallback(PowerController_RebootBeginCb callback, void* userdata)
++    {
++        return RegisterCallback(_rebootBeginCallbacks, callback, userdata);
++    }
++
++    Core::hresult UnRegisterRebootBeginCallback(PowerController_RebootBeginCb callback)
++    {
++        return UnRegisterCallback(_rebootBeginCallbacks, callback);
++    }
++
++private:
++    static PowerController* _instance;
++    static Core::CriticalSection _apiLock;
++    static Core::CriticalSection _callbackLock;
++
++    Exchange::IPowerManager* _powerManagerInterface; // remote PowerManager plugin interface
++    Core::Sink<Notification> _powerManagerNotification;
++
++    // containers for notification registertion
++    OperationalStateChangeCallbacks _operationalStateChangeCallbacks;
++    PowerModeChangedCallbacks _powerModeChangedCallbacks;
++    PowerModePreChangeCallbacks _powerModePreChangeCallbacks;
++    DeepSleepTimeoutCallbacks _deepSleepTimeoutCallbacks;
++    NetworkStandbyModeChangedCallbacks _networkStandbyModeChangedCallbacks;
++    ThermalModeChangedCallbacks _thermalModeChangedCallbacks;
++    RebootBeginCallbacks _rebootBeginCallbacks;
++
++    PIDFileMonitor _pidMonitor;
++    int _pid;
++    bool _connected;
++    bool _shutdown;
++};
++template <>
++bool PowerController::RegisterNotificationLocked<OperationalStateChangeCb>()
++{
++    // Operational state change notification is managed by SmartInterfaceType
++    return true;
++}
++
++template <>
++bool PowerController::RegisterNotificationLocked<PowerModePreChangedCb>()
++{
++    return Core::ERROR_NONE == _powerManagerInterface->Register(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IModePreChangeNotification>());
++}
++
++template <>
++bool PowerController::RegisterNotificationLocked<PowerModeChangedCb>()
++{
++    return Core::ERROR_NONE == _powerManagerInterface->Register(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IModeChangedNotification>());
++}
++
++template <>
++bool PowerController::RegisterNotificationLocked<DeepSleepTimeoutCb>()
++{
++    return Core::ERROR_NONE == _powerManagerInterface->Register(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IDeepSleepTimeoutNotification>());
++}
++
++template <>
++bool PowerController::RegisterNotificationLocked<NetworkStandbyModeChangedCb>()
++{
++    return Core::ERROR_NONE == _powerManagerInterface->Register(_powerManagerNotification.baseInterface<Exchange::IPowerManager::INetworkStandbyModeChangedNotification>());
++}
++
++template <>
++bool PowerController::RegisterNotificationLocked<ThermalModeChangedCb>()
++{
++    return Core::ERROR_NONE == _powerManagerInterface->Register(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IThermalModeChangedNotification>());
++}
++
++template <>
++bool PowerController::RegisterNotificationLocked<RebootBeginCb>()
++{
++    return Core::ERROR_NONE == _powerManagerInterface->Register(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IRebootNotification>());
++}
++
++template <>
++bool PowerController::UnregisterNotificationLocked<OperationalStateChangeCb>()
++{
++    // Operational state change notification is managed by SmartInterfaceType
++    return true;
++}
++
++template <>
++bool PowerController::UnregisterNotificationLocked<PowerModePreChangedCb>()
++{
++    return Core::ERROR_NONE == _powerManagerInterface->Unregister(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IModePreChangeNotification>());
++}
++
++template <>
++bool PowerController::UnregisterNotificationLocked<PowerModeChangedCb>()
++{
++    return Core::ERROR_NONE == _powerManagerInterface->Unregister(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IModeChangedNotification>());
++}
++
++template <>
++bool PowerController::UnregisterNotificationLocked<DeepSleepTimeoutCb>()
++{
++    return Core::ERROR_NONE == _powerManagerInterface->Unregister(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IDeepSleepTimeoutNotification>());
++}
++
++template <>
++bool PowerController::UnregisterNotificationLocked<NetworkStandbyModeChangedCb>()
++{
++    return Core::ERROR_NONE == _powerManagerInterface->Unregister(_powerManagerNotification.baseInterface<Exchange::IPowerManager::INetworkStandbyModeChangedNotification>());
++}
++
++template <>
++bool PowerController::UnregisterNotificationLocked<ThermalModeChangedCb>()
++{
++    return Core::ERROR_NONE == _powerManagerInterface->Unregister(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IThermalModeChangedNotification>());
++}
++
++template <>
++bool PowerController::UnregisterNotificationLocked<RebootBeginCb>()
++{
++    return Core::ERROR_NONE == _powerManagerInterface->Unregister(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IRebootNotification>());
++}
++
++} // nameless namespace
++
++/* static */ PowerController* PowerController::_instance = nullptr;
++/* static */ Core::CriticalSection PowerController::_apiLock;
++/* static */ Core::CriticalSection PowerController::_callbackLock;
++
++extern "C" {
++
++void PowerController_Init()
++{
++    PowerController::Init();
++}
++
++void PowerController_Term()
++{
++    PowerController::Term();
++}
++
++uint32_t PowerController_Connect()
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->Connect();
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_Disconnect()
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->Disconnect();
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++bool PowerController_IsOperational()
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->IsOperational();
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_GetPowerState(PowerController_PowerState_t* currentState, PowerController_PowerState_t* previousState)
++{
++    ASSERT(nullptr != currentState);
++    ASSERT(nullptr != previousState);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetPowerState(currentState, previousState);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_SetPowerState(const int keyCode, const PowerController_PowerState_t powerstate, const char* reason)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->SetPowerState(keyCode, powerstate, reason);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_GetThermalState(float* currentTemperature)
++{
++    ASSERT(nullptr != currentTemperature);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetThermalState(currentTemperature);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_SetTemperatureThresholds(float high, float critical)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->SetTemperatureThresholds(high, critical);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_GetTemperatureThresholds(float* high, float* critical)
++{
++    ASSERT(nullptr != high);
++    ASSERT(nullptr != critical);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetTemperatureThresholds(high, critical);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_SetOvertempGraceInterval(const int graceInterval)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->SetOvertempGraceInterval(graceInterval);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_GetOvertempGraceInterval(int* graceInterval /* @out */)
++{
++    ASSERT(nullptr != graceInterval);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetOvertempGraceInterval(graceInterval);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_SetDeepSleepTimer(const int timeOut)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->SetDeepSleepTimer(timeOut);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_GetLastWakeupReason(PowerController_WakeupReason_t* wakeupReason)
++{
++    ASSERT(nullptr != wakeupReason);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetLastWakeupReason(wakeupReason);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_GetLastWakeupKeyCode(int* keycode)
++{
++    ASSERT(nullptr != keycode);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetLastWakeupKeyCode(keycode);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_Reboot(const char* rebootRequestor, const char* rebootReasonCustom, const char* rebootReasonOther)
++{
++    ASSERT(nullptr != rebootRequestor);
++    ASSERT(nullptr != rebootReasonCustom);
++    ASSERT(nullptr != rebootReasonOther);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->Reboot(rebootRequestor, rebootReasonCustom, rebootReasonOther);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_SetNetworkStandbyMode(const bool standbyMode)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->SetNetworkStandbyMode(standbyMode);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_GetNetworkStandbyMode(bool* standbyMode)
++{
++    ASSERT(standbyMode != nullptr);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetNetworkStandbyMode(standbyMode);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_GetPowerStateBeforeReboot(PowerController_PowerState_t* powerStateBeforeReboot)
++{
++    ASSERT(nullptr != powerStateBeforeReboot);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->GetPowerStateBeforeReboot(powerStateBeforeReboot);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_AddPowerModePreChangeClient(const char* clientName, uint32_t* clientId)
++{
++    ASSERT(nullptr != clientName);
++    ASSERT(nullptr != clientId);
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->AddPowerModePreChangeClient(clientName, *clientId);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_RemovePowerModePreChangeClient(const uint32_t clientId)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RemovePowerModePreChangeClient(clientId);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_DelayPowerModeChangeBy(const uint32_t clientId, const int transactionId, const int delayPeriod)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->DelayPowerModeChangeBy(clientId, transactionId, delayPeriod);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_PowerModePreChangeComplete(const uint32_t clientId, const int transactionId)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->PowerModePreChangeComplete(clientId, transactionId);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_RegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback, void* userdata)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterOperationalStateChangedCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_UnRegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterOperationalStateChangedCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_RegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback, void* userdata)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterPowerModeChangedCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_UnRegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterPowerModeChangedCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_RegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback, void* userdata)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterPowerModePreChangeCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_UnRegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterPowerModePreChangeCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_RegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback, void* userdata)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterDeepSleepTimeoutCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_UnRegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterDeepSleepTimeoutCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_RegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback, void* userdata)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterNetworkStandbyModeChangedCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_UnRegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterNetworkStandbyModeChangedCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_RegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback, void* userdata)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterThermalModeChangedCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_UnRegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterThermalModeChangedCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_RegisterRebootBeginCallback(PowerController_RebootBeginCb callback, void* userdata)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->RegisterRebootBeginCallback(callback, userdata);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++uint32_t PowerController_UnRegisterRebootBeginCallback(PowerController_RebootBeginCb callback)
++{
++    PowerController *instance = PowerController::Instance();
++    if (instance) {
++        return instance->UnRegisterRebootBeginCallback(callback);
++    }
++    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
++}
++
++} // extern "C"
+Index: git/Source/powercontroller/power_controller.h
+===================================================================
+--- /dev/null
++++ git/Source/powercontroller/power_controller.h
+@@ -0,0 +1,398 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2025 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++#ifndef POWERMANAGER_CLIENT_H
++#define POWERMANAGER_CLIENT_H
++
++#include <stdbool.h>
++#include <stdint.h>
++
++#undef EXTERNAL
++#if defined(WIN32) || defined(_WINDOWS) || defined (__CYGWIN__) || defined(_WIN64)
++#ifdef DEVICEINFO_EXPORTS
++#define EXTERNAL __declspec(dllexport)
++#else
++#define EXTERNAL __declspec(dllimport)
++#pragma comment(lib, "deviceinfo.lib")
++#endif
++#else
++#define EXTERNAL __attribute__((visibility("default")))
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++typedef enum PowerController_PowerState {
++    POWER_STATE_UNKNOWN = 0 /* UNKNOWN */,
++    POWER_STATE_OFF = 1 /* OFF */,
++    POWER_STATE_STANDBY = 2 /* STANDBY */,
++    POWER_STATE_ON = 3 /* ON */,
++    POWER_STATE_STANDBY_LIGHT_SLEEP = 4 /* LIGHT_SLEEP */,
++    POWER_STATE_STANDBY_DEEP_SLEEP = 5 /* DEEP_SLEEP */
++} PowerController_PowerState_t;
++
++typedef enum PowerController_ThermalTemperature {
++    THERMAL_TEMPERATURE_UNKNOWN = 0 /* UNKNOWN Thermal Temperature */,
++    THERMAL_TEMPERATURE_NORMAL = 1 /* Normal Thermal Temperature */,
++    THERMAL_TEMPERATURE_HIGH = 2 /* High Thermal Temperature */,
++    THERMAL_TEMPERATURE_CRITICAL = 4 /* Critial Thermal Temperature */
++} PowerController_ThermalTemperature_t;
++
++typedef enum PowerController_WakeupReason {
++    WAKEUP_REASON_UNKNOWN = 0 /* UNKNOWN */,
++    WAKEUP_REASON_IR = 1 /* IR */,
++    WAKEUP_REASON_BLUETOOTH = 2 /* BLUETOOTH */,
++    WAKEUP_REASON_RF4CE = 3 /* RF4CE */,
++    WAKEUP_REASON_GPIO = 4 /* GPIO */,
++    WAKEUP_REASON_LAN = 5 /* LAN */,
++    WAKEUP_REASON_WIFI = 6 /* WIFI */,
++    WAKEUP_REASON_TIMER = 7 /* TIMER */,
++    WAKEUP_REASON_FRONTPANEL = 8 /* FRONTPANEL */,
++    WAKEUP_REASON_WATCHDOG = 9 /* WATCHDOG */,
++    WAKEUP_REASON_SOFTWARERESET = 10 /* SOFTWARERESET */,
++    WAKEUP_REASON_THERMALRESET = 11 /* THERMALRESET */,
++    WAKEUP_REASON_WARMRESET = 12 /* WARMRESET */,
++    WAKEUP_REASON_COLDBOOT = 13 /* COLDBOOT */,
++    WAKEUP_REASON_STRAUTHFAIL = 14 /* STR_AUTH_FAIL */,
++    WAKEUP_REASON_CEC = 15 /* CEC */,
++    WAKEUP_REASON_PRESENCE = 16 /* PRESENCE */,
++    WAKEUP_REASON_VOICE = 17 /* VOICE */
++} PowerController_WakeupReason_t;
++
++typedef enum PowerController_SystemMode {
++    SYSTEM_MODE_UNKNOWN = 0 /* UNKNOWN */,
++    SYSTEM_MODE_NORMAL = 1 /* NORMAL */,
++    SYSTEM_MODE_EAS = 2 /* EAS */,
++    SYSTEM_MODE_WAREHOUSE = 3 /* WAREHOUSE */
++} PowerController_SystemMode_t;
++
++#define POWER_CONTROLLER_ERROR_NONE 0
++#define POWER_CONTROLLER_ERROR_GENERAL 1
++#define POWER_CONTROLLER_ERROR_UNAVAILABLE 2
++#define POWER_CONTROLLER_ERROR_NOT_EXIST 43
++
++/**
++ * @brief Initializes the Power Controller.
++ *
++ * This function creates an instance of the PowerManager plugin client interface and increments the client instance count.
++ *
++ * @details
++ * - If the Power Controller instance does not already exist, it will be created.
++ * - After Init, & before making any PowerController request client needs to ensure
++ *   - Power Manager plugin is activated and operational via `PowerController_IsOperational`.
++ *   - If not operational, clients can use this Connect API to establish COM-RPC connection with the Power Manager plugin.
++ *   - If there us any failure in Connect all PowerController requests will fail with `POWER_CONTROLLER_ERROR_UNAVAILABLE` (Except for callback register / unregister APIs).
++ *
++ * @see PowerController_Term
++ */
++EXTERNAL void PowerController_Init();
++
++/**
++ * @brief PowerController attempts to connect to the Power Manager plugin.
++ *
++ * This function connects to the Power Manager plugin.
++ *
++ * @details
++ * - This function is used to connect to the Power Manager plugin.
++ * - Before making any PowerController request client needs to ensure
++ *   - Power Manager plugin is activated and operational via `PowerController_IsOperational`.
++ *   - If not operational, clients can use this Connect API to establish COM-RPC connection with the Power Manager plugin.
++ *   - If there us any failure in Connect all PowerController requests will fail with `POWER_CONTROLLER_ERROR_UNAVAILABLE` (Except for callback register / unregister APIs).
++ * - In case of failure this API should be called again with brief delay.
++ *
++ * @return `POWER_CONTROLLER_ERROR_NONE` on success.
++ * @return `POWER_CONTROLLER_ERROR_UNAVAILABLE` if Thunder RPC server is not running / error establishing RPC communication channel.
++ * @return `POWER_CONTROLLER_ERROR_NOT_EXIST` if the PowerManager plugin is not activated yet.
++ */
++EXTERNAL uint32_t PowerController_Connect();
++
++/**
++ * @brief Disconnects from the Power Manager plugin via COMRPC.
++ *
++ * This function terminates the RPC connection to the Power Manager plugin
++ * using the Thunder COMRPC mechanism. It should be called when the client
++ * no longer needs to communicate with the Power Manager, or as part of
++ * cleanup during shutdown.
++ *
++ * @note After calling this function, any subsequent attempt to send requests
++ *       to the Power Manager plugin will fail until a new connection is established
++ *       using `PowerController_Connect`.
++ *
++ * @return POWER_CONTROLLER_ERROR_NONE
++ *         Successfully disconnected from the Power Manager plugin.
++ * @return POWER_CONTROLLER_ERROR_UNAVAILABLE
++ *         Failed to disconnect because the Thunder RPC server is not running,
++ *         or there was an error in the underlying RPC communication channel.
++ * @return POWER_CONTROLLER_ERROR_NOT_EXIST
++ *         The Power Manager plugin is not active or was never connected.
++ */
++EXTERNAL uint32_t PowerController_Disconnect();
++
++/**
++ * @brief Terminates the Power Controller.
++ *
++ * This function decrements client instance count attempts to delete Power Controller instance
++ *
++ * @details
++ * - The controller instance is destroyed, and all associated resources are released (PowerManager plugin client instance).
++ * - Ensure that this function is called once for every call to `PowerController_Init`.
++ *
++ * @see PowerController_Init
++ */
++EXTERNAL void PowerController_Term();
++
++/**
++ * @brief Checks if the Power Manager plugin is active & operational
++ *
++ * This function determines whether the Power Manager interface is operational and ready to handle requests.
++ * It can be used to verify the availability of the Power Manager client before initiating operations that depend on it.
++ *
++ * IMPORTANT - This is the first function that should be called after `PowerController_Init`.
++ *
++ * @return `true` if the Power Manager interface is active and operational, otherwise `false`.
++ *
++ * @details
++ * - Use this function to confirm the operational status of the Power Manager plugin.
++ * - Calling this function is NOT MANDATORY but optional
++ * - Clients can register for notifications about state changes using `PowerController_RegisterOperationalStateChangeCallback`.
++ * - If the Power Manager interface is not active, subsequent Power Manager operations will fail with the error `POWER_CONTROLLER_ERROR_UNAVAILABLE`.
++ * - Therefore in failure cases, clients can use `PowerController_Connect` to establish COM-RPC connection with the Power Manager plugin.
++ *
++ * @see PowerController_RegisterOperationalStateChangeCallback
++ */
++EXTERNAL bool PowerController_IsOperational();
++
++/** Gets the Power State.*/
++// @text getPowerState
++// @brief Get Power State
++// @param powerState: Get current power state
++EXTERNAL uint32_t PowerController_GetPowerState(PowerController_PowerState_t* currentState /* @out */, PowerController_PowerState_t* previousState /* @out */);
++
++/** Sets Power State . */
++// @text setPowerState
++// @brief Set Power State
++// @param keyCode: NA for most platfroms, to be depricated
++// @param powerState: Set power to this state
++// @param reason: null terminated string stating reason for for state change
++EXTERNAL uint32_t PowerController_SetPowerState(const int keyCode /* @in */, const PowerController_PowerState_t powerstate /* @in */, const char* reason /* @in */);
++
++/** Gets the current Thermal state.*/
++// @text getThermalState
++// @brief Get Current Thermal State (temperature)
++// @param currentTemperature: current temperature
++EXTERNAL uint32_t PowerController_GetThermalState(float* currentTemperature /* @out */);
++
++/** Sets the Temperature Thresholds.*/
++// @text setTemperatureThresholds
++// @brief Set Temperature Thresholds
++// @param high: high threshold
++// @param critical : critical threshold
++EXTERNAL uint32_t PowerController_SetTemperatureThresholds(float high /* @in */, float critical /* @in */);
++
++/** Gets the current Temperature Thresholds.*/
++// @text getTemperatureThresholds
++// @brief Get Temperature Thresholds
++// @param high: high threshold
++// @param critical : critical threshold
++EXTERNAL uint32_t PowerController_GetTemperatureThresholds(float* high /* @out */, float* critical /* @out */);
++
++/** Sets the current Temperature Grace interval.*/
++// @property
++// @text PowerController_SetOvertempGraceInterval
++// @brief Set Temperature Thresholds
++// @param graceInterval: interval in secs?
++EXTERNAL uint32_t PowerController_SetOvertempGraceInterval(const int graceInterval /* @in */);
++
++/** Gets the grace interval for over-temperature.*/
++// @property
++// @text PowerController_GetOvertempGraceInterval
++// @brief Get Temperature Grace interval
++// @param graceInterval: interval in secs?
++EXTERNAL uint32_t PowerController_GetOvertempGraceInterval(int* graceInterval /* @out */);
++
++/** Set Deep Sleep Timer for later wakeup */
++// @property
++// @text setDeepSleepTimer
++// @brief Set Deep sleep timer for timeOut period
++// @param timeOut: deep sleep timeout
++EXTERNAL uint32_t PowerController_SetDeepSleepTimer(const int timeOut /* @in */);
++
++/** Get Last Wakeup reason */
++// @property
++// @text getLastWakeupReason
++// @brief Get Last Wake up reason
++// @param wakeupReason: wake up reason
++EXTERNAL uint32_t PowerController_GetLastWakeupReason(PowerController_WakeupReason_t* wakeupReason /* @out */);
++
++/** Get Last Wakeup key code */
++// @property
++// @text getLastWakeupKeyCode
++// @brief Get the key code that can be used for wakeup
++// @param keycode: Key code for wakeup
++EXTERNAL uint32_t PowerController_GetLastWakeupKeyCode(int* keycode /* @out */);
++
++/** Request Reboot with PowerManager */
++// @text reboot
++// @brief Reboot device
++// @param rebootRequestor: null terminated string identifier for the entity requesting the reboot.
++// @param rebootReasonCustom: custom-defined reason for the reboot, provided as a null terminated string.
++// @param rebootReasonOther: null terminated string describing any other reasons for the reboot.
++EXTERNAL uint32_t PowerController_Reboot(const char* rebootRequestor /* @in */, const char* rebootReasonCustom /* @in */, const char* rebootReasonOther /* @in */);
++
++/** Set Network Standby Mode */
++// @property
++// @text setNetworkStandbyMode
++// @brief Set the standby mode for Network
++// @param standbyMode: Network standby mode
++EXTERNAL uint32_t PowerController_SetNetworkStandbyMode(const bool standbyMode /* @in */);
++
++/** Get Network Standby Mode */
++// @text getNetworkStandbyMode
++// @brief Get the standby mode for Network
++// @param standbyMode: Network standby mode
++EXTERNAL uint32_t PowerController_GetNetworkStandbyMode(bool* standbyMode /* @out */);
++
++/** Get Power State before last reboot */
++// @text PowerController_GetPowerStateBeforeReboot
++// @brief Get Power state before last reboot
++// @param powerStateBeforeReboot: power state
++EXTERNAL uint32_t PowerController_GetPowerStateBeforeReboot(PowerController_PowerState_t* powerStateBeforeReboot /* @out */);
++
++/** Engage a client in power mode change operation. */
++// @text PowerController_AddPowerModePreChangeClient
++// @brief - Register a client to engage in power mode state changes.
++//        - When `PowerModePreChange` event is received, then added client should call either
++//          - `PowerModePreChangeComplete` API to inform power manager that this client has completed its pre-change operation.
++//          - Or `DelayPowerModeChangeBy` API to delay the power mode change.
++//        - If the client does not call `PowerModePreChangeComplete` API, the power mode change will complete
++//        after the maximum delay `stateChangeAfter` seconds (as received in `OnPowerModePreChange` event).
++//        - Clients are required to re-register if the PowerManager plugin restarts. Therefore, it is essential for clients to register
++//        for operational state changes using `PowerController_RegisterOperationalStateChangeCallback`.
++//
++//        IMPORTANT: ** IT'S A BUG IF CLIENT `Unregister` FROM `IModePreChangeNotification` BEFORE DISENGAGING ITSELF **
++//                   always make sure to call `RemovePowerModePreChangeClient` before calling `Unregister` from `IModePreChangeNotification`.
++//
++// @param clientName: Name of the client as null terminated string
++// @param clientId: Unique identifier for the client to be used while acknowledging the pre-change operation (`PowerModePreChangeComplete`)
++//                  or to delay the power mode change (`DelayPowerModeChangeBy`)
++EXTERNAL uint32_t PowerController_AddPowerModePreChangeClient(const char *clientName /* @in */, uint32_t* clientId /* @out */);
++
++/** Disengage a client from the power mode change operation. */
++// @text PowerController_RemovePowerModePreChangeClient
++// @brief Removes a registered client from participating in power mode pre-change operations.
++//        NOTE client will still continue to receive pre-change notifications.
++// @param clientId: Unique identifier for the client. See `AddPowerModePreChangeClient`
++EXTERNAL uint32_t PowerController_RemovePowerModePreChangeClient(const uint32_t clientId /* @in */);
++
++/** Power prechange activity completed */
++// @text PowerController_PowerModePreChangeComplete
++// @brief Pre power mode handling complete for given client and transation id
++// @param clientId: Unique identifier for the client, as received in AddPowerModePreChangeClient
++// @param transactionId: transaction id as received in OnPowerModePreChange
++EXTERNAL uint32_t PowerController_PowerModePreChangeComplete(const uint32_t clientId /* @in */, const int transactionId /* @in */);
++
++/** Delay Powermode change by given time */
++// @text PowerController_DelayPowerModeChangeBy
++// @brief Delay Powermode change by given time. If different clients provide different values of delay, then the maximum of these values is used.
++// @param clientId: Unique identifier for the client, as received in AddPowerModePreChangeClient
++// @param transactionId: transaction id as received in OnPowerModePreChange
++// @param delayPeriod: delay in seconds
++EXTERNAL uint32_t PowerController_DelayPowerModeChangeBy(const uint32_t clientId /* @in */, const int transactionId /* @in */, const int delayPeriod /* @in */);
++
++/* Callback data types for event notifications from power manager plugin */
++// @brief Operational state changed event
++// @param isOperational: true if PowerManager plugin is activated, false otherwise
++// @param userdata: opaque data, client can use it to have context to callbacks
++typedef void (*PowerController_OperationalStateChangeCb)(bool isOperational, void* userdata);
++
++// @brief Power mode changed
++// @param currentState: Current Power State
++// @param newState: New Power State
++// @param userdata: opaque data, client can use it to have context to callbacks
++typedef void (*PowerController_PowerModeChangedCb)(const PowerController_PowerState_t currentState, const PowerController_PowerState_t newState, void* userdata);
++
++// @brief Power mode Pre-change event
++// @param currentState: Current Power State
++// @param newState: Changing power state to this New Power State
++// @param transactionId: transactionId to be used when invoking prePowerChangeComplete() / delayPowerModeChangeBy API
++// @param stateChangeAfter: seconds after which the actual power mode will be applied.
++// @param userdata: opaque data, client can use it to have context to callbacks
++typedef void (*PowerController_PowerModePreChangeCb)(const PowerController_PowerState_t currentState, const PowerController_PowerState_t newState, const int transactionId, const int stateChangeAfter, void* userdata);
++
++// @brief Deep sleep timeout event
++// @param wakeupTimeout: Deep sleep wakeup timeout in seconds
++// @param userdata: opaque data, client can use it to have context to callbacks
++typedef void (*PowerController_DeepSleepTimeoutCb)(const int wakeupTimeout, void* userdata);
++
++// @brief Network Standby Mode changed event - only on XIone
++// @param enabled: network standby enabled or disabled
++// @param userdata: opaque data, client can use it to have context to callbacks
++typedef void (*PowerController_NetworkStandbyModeChangedCb)(const bool enabled, void* userdata);
++
++// @brief Thermal Mode changed event
++// @param currentThermalLevel: current thermal level
++// @param newThermalLevel: new thermal level
++// @param currentTemperature: current temperature
++// @param userdata: opaque data, client can use it to have context to callbacks
++typedef void (*PowerController_ThermalModeChangedCb)(const PowerController_ThermalTemperature_t currentThermalLevel, const PowerController_ThermalTemperature_t newThermalLevel, const float currentTemperature, void* userdata);
++
++// @brief Reboot begin event
++// @param rebootReasonCustom: Reboot reason custom
++// @param rebootReasonOther: Reboot reason other
++// @param rebootRequestor: Reboot requested by
++// @param userdata: opaque data, client can use it to have context to callbacks
++typedef void (*PowerController_RebootBeginCb)(const char* rebootReasonCustom, const char* rebootReasonOther, const char* rebootRequestor, void* userdata);
++
++/* Type defines for callbacks / notifications */
++/* userdata in all callbacks are opaque, clients can use it to have context to callbacks */
++
++/** Register for PowerManager plugin operational state change event callback, for initial state use `PowerController_IsOperational` call */
++EXTERNAL uint32_t PowerController_RegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback, void* userdata);
++/** UnRegister (previously registered) PowerManager plugin operational state change event callback */
++EXTERNAL uint32_t PowerController_UnRegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback);
++/** Register for PowerMode changed callback */
++EXTERNAL uint32_t PowerController_RegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback, void* userdata);
++/** UnRegister (previously registered) PowerMode changed callback */
++EXTERNAL uint32_t PowerController_UnRegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback);
++/** Register for PowerMode pre-change callback */
++EXTERNAL uint32_t PowerController_RegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback, void* userdata);
++/** UnRegister (previously registered) PowerMode pre-change callback */
++EXTERNAL uint32_t PowerController_UnRegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback);
++/** Register for PowerMode pre-change callback */
++EXTERNAL uint32_t PowerController_RegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback, void* userdata);
++/** UnRegister (previously registered) DeepSleep Timeout callback */
++EXTERNAL uint32_t PowerController_UnRegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback);
++/** Register for Network Standby Mode changed event - only on XIone */
++EXTERNAL uint32_t PowerController_RegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback, void* userdata);
++/** UnRegister (previously registered) Network Standby Mode changed callback */
++EXTERNAL uint32_t PowerController_UnRegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback);
++/** Register for Thermal Mode changed event callback */
++EXTERNAL uint32_t PowerController_RegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback, void* userdata);
++/** UnRegister (previously registered) Thermal Mode changed event callback */
++EXTERNAL uint32_t PowerController_UnRegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback);
++/** Register for reboot start event callback */
++EXTERNAL uint32_t PowerController_RegisterRebootBeginCallback(PowerController_RebootBeginCb callback, void* userdata);
++/** UnRegister (previously registered) reboot start event callback */
++EXTERNAL uint32_t PowerController_UnRegisterRebootBeginCallback(PowerController_RebootBeginCb callback);
++
++#ifdef __cplusplus
++}; // extern "C"
++#endif
++
++#endif // POWERMANAGER_CLIENT_H
+

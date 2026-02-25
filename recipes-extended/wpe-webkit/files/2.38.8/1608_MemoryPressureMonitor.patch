@@ -1,0 +1,341 @@
+From fa5a363642cb0484486c96814ba3de1bcec1f6db Mon Sep 17 00:00:00 2001
+From: Miguel Gomez <magomez@igalia.com>
+Date: Mon, 2 Feb 2026 09:29:10 +0100
+Subject: [PATCH] MemoryPressureMonitor: allow selecting the source of the
+ memory measurements
+
+---
+ .../API/APIProcessPoolConfiguration.cpp       |  1 +
+ .../API/APIProcessPoolConfiguration.h         |  5 ++
+ .../UIProcess/API/glib/WebKitWebContext.cpp   | 38 ++++++++++
+ .../UIProcess/API/wpe/WebKitWebContext.h      | 20 +++++
+ Source/WebKit/UIProcess/WebProcessPool.cpp    |  1 +
+ .../UIProcess/linux/MemoryPressureMonitor.cpp | 76 +++++++++++++------
+ .../UIProcess/linux/MemoryPressureMonitor.h   |  8 ++
+ 7 files changed, 125 insertions(+), 24 deletions(-)
+
+diff --git a/Source/WebKit/UIProcess/API/APIProcessPoolConfiguration.cpp b/Source/WebKit/UIProcess/API/APIProcessPoolConfiguration.cpp
+index 9ca4df53b2f5..7bba178831b7 100644
+--- a/Source/WebKit/UIProcess/API/APIProcessPoolConfiguration.cpp
++++ b/Source/WebKit/UIProcess/API/APIProcessPoolConfiguration.cpp
+@@ -80,6 +80,7 @@ Ref<ProcessPoolConfiguration> ProcessPoolConfiguration::copy()
+ #if PLATFORM(GTK) || PLATFORM(WPE)
+     copy->m_memoryPressureHandlerConfiguration = this->m_memoryPressureHandlerConfiguration;
+     copy->m_serviceWorkerMemoryPressureHandlerConfiguration = this->m_serviceWorkerMemoryPressureHandlerConfiguration;
++    copy->m_memoryPressureMonitorMode = this->m_memoryPressureMonitorMode;
+ #endif
+ #if HAVE(AUDIT_TOKEN)
+     copy->m_presentingApplicationProcessToken = this->m_presentingApplicationProcessToken;
+diff --git a/Source/WebKit/UIProcess/API/APIProcessPoolConfiguration.h b/Source/WebKit/UIProcess/API/APIProcessPoolConfiguration.h
+index 7327d66e7779..e5194b41591a 100644
+--- a/Source/WebKit/UIProcess/API/APIProcessPoolConfiguration.h
++++ b/Source/WebKit/UIProcess/API/APIProcessPoolConfiguration.h
+@@ -27,6 +27,7 @@
+ 
+ #include "APIObject.h"
+ #include "CacheModel.h"
++#include "MemoryPressureMonitor.h"
+ #include "WebsiteDataStore.h"
+ #include <wtf/MemoryPressureHandler.h>
+ #include <wtf/ProcessID.h>
+@@ -162,6 +163,9 @@ public:
+ 
+     void setServiceWorkerMemoryPressureHandlerConfiguration(const MemoryPressureHandler::Configuration& configuration) { m_serviceWorkerMemoryPressureHandlerConfiguration = configuration; }
+     const std::optional<MemoryPressureHandler::Configuration>& serviceWorkerMemoryPressureHandlerConfiguration() const { return m_serviceWorkerMemoryPressureHandlerConfiguration; }
++
++    void setMemoryPressureMonitorMode(WebKit::MemoryPressureMonitor::Mode mode) { m_memoryPressureMonitorMode = mode; }
++    WebKit::MemoryPressureMonitor::Mode memoryPressureMonitorMode() { return m_memoryPressureMonitorMode; }
+ #endif
+ 
+     void setTimeZoneOverride(const WTF::String& timeZoneOverride) { m_timeZoneOverride = timeZoneOverride; }
+@@ -205,6 +209,7 @@ private:
+ #if PLATFORM(GTK) || PLATFORM(WPE)
+     std::optional<MemoryPressureHandler::Configuration> m_memoryPressureHandlerConfiguration;
+     std::optional<MemoryPressureHandler::Configuration> m_serviceWorkerMemoryPressureHandlerConfiguration;
++    WebKit::MemoryPressureMonitor::Mode m_memoryPressureMonitorMode { WebKit::MemoryPressureMonitor::Mode::Higher };
+ #endif
+ #if HAVE(AUDIT_TOKEN)
+     std::optional<audit_token_t> m_presentingApplicationProcessToken;
+diff --git a/Source/WebKit/UIProcess/API/glib/WebKitWebContext.cpp b/Source/WebKit/UIProcess/API/glib/WebKitWebContext.cpp
+index 9d193a706cbe..06a52ec55df4 100644
+--- a/Source/WebKit/UIProcess/API/glib/WebKitWebContext.cpp
++++ b/Source/WebKit/UIProcess/API/glib/WebKitWebContext.cpp
+@@ -27,6 +27,7 @@
+ #include "APIProcessPoolConfiguration.h"
+ #include "APIString.h"
+ #include "LegacyGlobalSettings.h"
++#include "MemoryPressureMonitor.h"
+ #include "NetworkProcessMessages.h"
+ #include "TextChecker.h"
+ #include "TextCheckerState.h"
+@@ -35,6 +36,7 @@
+ #include "WebKitAutomationSessionPrivate.h"
+ #include "WebKitDownloadClient.h"
+ #include "WebKitDownloadPrivate.h"
++#include "WebKitEnumTypes.h"
+ #include "WebKitFaviconDatabasePrivate.h"
+ #include "WebKitGeolocationManagerPrivate.h"
+ #include "WebKitInitialize.h"
+@@ -131,6 +133,7 @@ enum {
+     PROP_MEMORY_PRESSURE_SETTINGS,
+     PROP_TIME_ZONE_OVERRIDE,
+     PROP_SERVICE_WORKER_MEMORY_PRESSURE_SETTINGS,
++    PROP_MEMORY_PRESSURE_MONITOR_MODE,
+     N_PROPERTIES,
+ };
+ 
+@@ -250,6 +253,7 @@ struct _WebKitWebContextPrivate {
+ 
+     WebKitMemoryPressureSettings* memoryPressureSettings;
+     WebKitMemoryPressureSettings* serviceWorkerMemoryPressureSettings;
++    WebKitMemoryPressureMonitorMode memoryPressureMonitorMode;
+ 
+     CString timeZoneOverride;
+ };
+@@ -406,6 +410,9 @@ static void webkitWebContextSetProperty(GObject* object, guint propID, const GVa
+             context->priv->timeZoneOverride = timeZone;
+         break;
+     }
++    case PROP_MEMORY_PRESSURE_MONITOR_MODE:
++        context->priv->memoryPressureMonitorMode = static_cast<WebKitMemoryPressureMonitorMode>(g_value_get_enum(value));
++        break;
+     default:
+         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, propID, paramSpec);
+     }
+@@ -442,6 +449,21 @@ static void webkitWebContextConstructed(GObject* object)
+         // Once the settings have been passed to the ProcessPoolConfiguration, we don't need them anymore so we can free them.
+         g_clear_pointer(&priv->serviceWorkerMemoryPressureSettings, webkit_memory_pressure_settings_free);
+     }
++
++    switch(priv->memoryPressureMonitorMode) {
++    case WEBKIT_MEMORY_PRESSURE_MONITOR_MODE_SYSTEM:
++        configuration.setMemoryPressureMonitorMode(MemoryPressureMonitor::Mode::System);
++        break;
++    case WEBKIT_MEMORY_PRESSURE_MONITOR_MODE_CONTAINER:
++        configuration.setMemoryPressureMonitorMode(MemoryPressureMonitor::Mode::Container);
++        break;
++    case WEBKIT_MEMORY_PRESSURE_MONITOR_MODE_HIGHER:
++        configuration.setMemoryPressureMonitorMode(MemoryPressureMonitor::Mode::Higher);
++        break;
++    default:
++        g_assert_not_reached();
++    }
++
+     configuration.setTimeZoneOverride(String::fromUTF8(priv->timeZoneOverride.data(), priv->timeZoneOverride.length()));
+ 
+     if (!priv->websiteDataManager)
+@@ -620,6 +642,22 @@ static void webkit_web_context_class_init(WebKitWebContextClass* webContextClass
+             WEBKIT_TYPE_MEMORY_PRESSURE_SETTINGS,
+             static_cast<GParamFlags>(WEBKIT_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+ 
++    /**
++     * WebKitWebContext:memory-pressure-mode:
++     *
++     * Which source of measurements will the MemoryPressureMonitor use to calculate the used memory.
++     *
++     * Since: 2.38
++     */
++    sObjProperties[PROP_MEMORY_PRESSURE_MONITOR_MODE] =
++        g_param_spec_enum(
++            "memory-pressure-monitor-mode",
++            _("MemoryPressureMonitor mode"),
++            _("Whether the MemoryPressureMonitor will take measures from the system memory, the container or both"),
++            WEBKIT_TYPE_MEMORY_PRESSURE_MONITOR_MODE,
++            WEBKIT_MEMORY_PRESSURE_MONITOR_MODE_HIGHER,
++            static_cast<GParamFlags>(WEBKIT_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
++
+     /**
+      * WebKitWebContext:time-zone-override:
+      *
+diff --git a/Source/WebKit/UIProcess/API/wpe/WebKitWebContext.h b/Source/WebKit/UIProcess/API/wpe/WebKitWebContext.h
+index ee71f7690f93..3c17e85aae96 100644
+--- a/Source/WebKit/UIProcess/API/wpe/WebKitWebContext.h
++++ b/Source/WebKit/UIProcess/API/wpe/WebKitWebContext.h
+@@ -88,6 +88,26 @@ typedef enum {
+     WEBKIT_PROCESS_MODEL_MULTIPLE_SECONDARY_PROCESSES,
+ } WebKitProcessModel;
+ 
++/**
++ * WebKitMemoryPressureMonitorMode:
++ * @WEBKIT_MEMORY_PRESSURE_MONITOR_MODE_SYSTEM: calculate
++ * the percentage of used memory based only on system memory polling.
++ * @WEBKIT_MEMORY_PRESSURE_MONITOR_MODE_CONTAINER: calculate
++ * the percentage of used memory based on the usage reported by the container.
++ * @WEBKIT_MEMORY_PRESSURE_MONITOR_MODE_HIGHER: calculate
++ * the percentage of used memory as the higher of the values reported by the
++ * the system memory and the container.
++ *
++ * Enum values used for determining the MemoryPressureMonitor source of data.
++ *
++ * Since: 2.38
++ */
++typedef enum {
++    WEBKIT_MEMORY_PRESSURE_MONITOR_MODE_SYSTEM,
++    WEBKIT_MEMORY_PRESSURE_MONITOR_MODE_CONTAINER,
++    WEBKIT_MEMORY_PRESSURE_MONITOR_MODE_HIGHER,
++} WebKitMemoryPressureMonitorMode;
++
+ /**
+  * WebKitURISchemeRequestCallback:
+  * @request: the #WebKitURISchemeRequest
+diff --git a/Source/WebKit/UIProcess/WebProcessPool.cpp b/Source/WebKit/UIProcess/WebProcessPool.cpp
+index 17dbdae0b1ae..f7cacf613507 100644
+--- a/Source/WebKit/UIProcess/WebProcessPool.cpp
++++ b/Source/WebKit/UIProcess/WebProcessPool.cpp
+@@ -240,6 +240,7 @@ WebProcessPool::WebProcessPool(API::ProcessPoolConfiguration& configuration)
+     platformInitialize();
+ 
+ #if OS(LINUX)
++    MemoryPressureMonitor::singleton().setMode(m_configuration->memoryPressureMonitorMode());
+     MemoryPressureMonitor::singleton().start();
+ #endif
+ 
+diff --git a/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.cpp b/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.cpp
+index 6a33acf0b1f0..f36f52df45f9 100644
+--- a/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.cpp
++++ b/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.cpp
+@@ -244,7 +244,7 @@ static CString getCgroupControllerPath(FILE* cgroupControllerFile, const char* c
+ }
+ 
+ 
+-static int systemMemoryUsedAsPercentage(FILE* memInfoFile, FILE* zoneInfoFile, CGroupMemoryController* memoryController)
++static int systemMemoryUsedAsPercentage(FILE* memInfoFile, FILE* zoneInfoFile)
+ {
+     if (!memInfoFile || fseek(memInfoFile, 0, SEEK_SET))
+         return -1;
+@@ -287,21 +287,29 @@ static int systemMemoryUsedAsPercentage(FILE* memInfoFile, FILE* zoneInfoFile, C
+         return -1;
+ 
+     int memoryUsagePercentage = ((memoryTotal - memoryAvailable) * 100) / memoryTotal;
+-    LOG_VERBOSE(MemoryPressure, "MemoryPressureMonitor::memory: real (memory total=%zu MB) (memory available=%zu MB) (memory usage percentage=%d MB)", memoryTotal, memoryAvailable, memoryUsagePercentage);
+-    if (memoryController->isActive()) {
+-        memoryTotal = memoryController->getMemoryTotalWithCgroup();
+-        size_t memoryUsage = memoryController->getMemoryUsageWithCgroup();
+-        if (memoryTotal != notSet && memoryUsage != notSet) {
+-            int memoryUsagePercentageWithCgroup = 100 * ((float) memoryUsage / (float) memoryTotal);
+-            LOG_VERBOSE(MemoryPressure, "MemoryPressureMonitor::memory: cgroup (memory total=%zu bytes) (memory usage=%zu bytes) (memory usage percentage=%d bytes)", memoryTotal, memoryUsage, memoryUsagePercentageWithCgroup);
+-            if (memoryUsagePercentageWithCgroup > memoryUsagePercentage)
+-                memoryUsagePercentage = memoryUsagePercentageWithCgroup;
+-        }
+-    }
+-    LOG_VERBOSE(MemoryPressure, "MemoryPressureMonitor::memory: memoryUsagePercentage (%d)", memoryUsagePercentage);
++    LOG_VERBOSE(MemoryPressure, "MemoryPressureMonitor: memory real (memory total=%zu MB) (memory available=%zu MB) (memory usage percentage=%d MB)", memoryTotal, memoryAvailable, memoryUsagePercentage);
++
+     return memoryUsagePercentage;
+ }
+ 
++static int containerMemoryUsedAsPercentage(CGroupMemoryController* memoryController)
++{
++    if (!memoryController->isActive())
++        return -1;
++
++    size_t memoryTotal = memoryController->getMemoryTotalWithCgroup();
++    size_t memoryUsage = memoryController->getMemoryUsageWithCgroup();
++
++    if (memoryTotal == notSet || memoryUsage == notSet)
++        return -1;
++
++    int memoryUsagePercentageWithCgroup = 100 * ((float) memoryUsage / (float) memoryTotal);
++    LOG_VERBOSE(MemoryPressure, "MemoryPressureMonitor: memory cgroup (memory total=%zu bytes) (memory usage=%zu bytes) (memory usage percentage=%d bytes)", memoryTotal, memoryUsage, memoryUsagePercentageWithCgroup);
++
++    return memoryUsagePercentageWithCgroup;
++}
++
++
+ static inline Seconds pollIntervalForUsedMemoryPercentage(int usedPercentage)
+ {
+     // Use a different poll interval depending on the currently memory used,
+@@ -352,30 +360,50 @@ void MemoryPressureMonitor::start()
+ 
+     m_started = true;
+ 
+-    Thread::create("MemoryPressureMonitor", [] {
++    Thread::create("MemoryPressureMonitor", [mode = m_mode] {
+         FileHandle memInfoFile, zoneInfoFile, cgroupControllerFile;
+         CGroupMemoryController memoryController = CGroupMemoryController();
+         Seconds pollInterval = s_maxPollingInterval;
+         while (true) {
+             sleep(pollInterval);
+ 
+-            // Cannot operate without this one, retry opening on the next iteration after sleeping.
+-            if (!tryOpeningForUnbufferedReading(memInfoFile, s_procMeminfo))
+-                continue;
++            int usedPercentage = -1;
++            if (mode == Mode::Container || mode == Mode::Higher) {
++                tryOpeningForUnbufferedReading(cgroupControllerFile, s_procSelfCgroup);
++
++                CString cgroupMemoryControllerPath = getCgroupControllerPath(cgroupControllerFile.get(), "memory");
++                memoryController.setMemoryControllerPath(cgroupMemoryControllerPath);
++
++                usedPercentage = containerMemoryUsedAsPercentage(&memoryController);
++
++                // Warn only if we weren't able to get the data and we're in container mode, where it's
++                // expected to work.
++                if (usedPercentage == -1 && mode == Mode::Container)
++                    WTFLogAlways("MemoryPressureMonitor: failed to get the memory usage using cgroup");
++            }
+ 
+-            // The monitor can work without these two, but it will be more precise if thy are eventually opened: keep trying.
+-            tryOpeningForUnbufferedReading(zoneInfoFile, s_procZoneinfo);
+-            tryOpeningForUnbufferedReading(cgroupControllerFile, s_procSelfCgroup);
++            if (mode == Mode::System || mode == Mode::Higher) {
++                // Cannot operate without this one, retry opening on the next iteration after sleeping.
++                if (!tryOpeningForUnbufferedReading(memInfoFile, s_procMeminfo))
++                    continue;
++
++                tryOpeningForUnbufferedReading(zoneInfoFile, s_procZoneinfo);
++
++                int systemUsedPercentage = systemMemoryUsedAsPercentage(memInfoFile.get(), zoneInfoFile.get());
++
++                if (systemUsedPercentage == -1)
++                    WTFLogAlways("MemoryPressureMonitor: failed to get the memory usage using real memory");
++
++                usedPercentage = std::max(usedPercentage, systemUsedPercentage);
++            }
+ 
+-            CString cgroupMemoryControllerPath = getCgroupControllerPath(cgroupControllerFile.get(), "memory");
+-            memoryController.setMemoryControllerPath(cgroupMemoryControllerPath);
+-            int usedPercentage = systemMemoryUsedAsPercentage(memInfoFile.get(), zoneInfoFile.get(), &memoryController);
+             if (usedPercentage == -1) {
+-                WTFLogAlways("Failed to get the memory usage");
++                WTFLogAlways("MemoryPressureMonitor: failed to get the memory usage using any method");
+                 pollInterval = s_maxPollingInterval;
+                 continue;
+             }
+ 
++            LOG_VERBOSE(MemoryPressure, "MemoryPressureMonitor: memoryUsagePercentage (%d)", usedPercentage);
+             if (usedPercentage >= s_memoryPresurePercentageThreshold) {
+                 bool isCritical = (usedPercentage >= s_memoryPresurePercentageThresholdCritical);
+                 RunLoop::main().dispatch([isCritical] {
+diff --git a/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.h b/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.h
+index 14bfdc1c49bf..298688e534f1 100644
+--- a/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.h
++++ b/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.h
+@@ -41,9 +41,16 @@ class MemoryPressureMonitor {
+     WTF_MAKE_NONCOPYABLE(MemoryPressureMonitor);
+     friend NeverDestroyed<MemoryPressureMonitor>;
+ public:
++    enum class Mode : uint8_t {
++        System,
++        Container,
++        Higher
++    };
++
+     static MemoryPressureMonitor& singleton();
+     void start();
+     static bool disabled();
++    void setMode(Mode mode) { m_mode = mode; }
+ 
+     ~MemoryPressureMonitor();
+ 
+@@ -51,6 +58,7 @@ private:
+     MemoryPressureMonitor() = default;
+     bool m_started { false };
+     static bool s_disabled;
++    Mode m_mode { Mode::Higher };
+ };
+ 
+ class CGroupMemoryController {
+-- 
+2.51.0
+

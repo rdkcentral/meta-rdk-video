@@ -1,0 +1,42 @@
+*************************************************************************************************
+From: Karunakaran Amirthalingam
+Date: Mon, 16 Jan 2026 10:49:57 +0000
+Subject: [PATCH] 0002-PersistentPath-thunder-r5.patch
+Reason for Change: This patch is to removed the persistent path explicit added in the cmakelist and create a persistent path in the Source code 
+it will helps to avoid to package the persistentpath in the wpeframework_5.3.bb file
+Upstream-Status: Comcast changes
+Signed-off-by: Karunakaran Amirthalingam <karunakaran_amirthalingam@cable.comcast.com>
+************************************************************************************************
+
+diff --git a/Source/Thunder/CMakeLists.txt b/Source/Thunder/CMakeLists.txt
+index 4b52c902..7e9686d3 100644
+--- a/Source/Thunder/CMakeLists.txt
++++ b/Source/Thunder/CMakeLists.txt
+@@ -107,11 +107,6 @@ install(
+         FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT ${NAMESPACE}_Runtime
+ )
+ 
+-install(DIRECTORY
+-    DESTINATION ${PERSISTENT_PATH} COMPONENT ${NAMESPACE}_Runtime
+-    DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_WRITE GROUP_EXECUTE
+-)
+-
+ add_subdirectory(scripts)
+ 
+ include(GenericConfig.cmake)
+diff --git a/Source/Thunder/PluginHost.cpp b/Source/Thunder/PluginHost.cpp
+index 6e72ed8d..5708497b 100644
+--- a/Source/Thunder/PluginHost.cpp
++++ b/Source/Thunder/PluginHost.cpp
+@@ -662,6 +662,11 @@ POP_WARNING()
+ 
+         if (_config != nullptr) {
+ 
++            if(!_config->PersistentPath().empty())
++            {
++                Core::Directory(_config->PersistentPath().c_str()).Create();
++            }
++
+             if (_config->Process().IsSet() == true) {
+ 
+                 Core::ProcessCurrent myself;
