@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV = "0.1.0"
 PR = "r0"
 
-SRCREV = "89d2b1b81cfe4707443257a132524b98a47bbc79"
+SRCREV = "3811706fd355cb4a959d26e871ed5d1ef3dd8161"
 
 inherit pkgconfig
 inherit cmake
@@ -19,7 +19,7 @@ NO_RECOMMENDATIONS = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/middleware-player-interface;${CMF_GITHUB_SRC_URI_SUFFIX};name=player-interface;branch=develop"
+SRC_URI = "${CMF_GITHUB_ROOT}/middleware-player-interface;${CMF_GITHUB_SRC_URI_SUFFIX};name=player-interface;branch=feature/RDKEMW-12785"
 S = "${WORKDIR}/git"
 
 require player-interface-common.inc
