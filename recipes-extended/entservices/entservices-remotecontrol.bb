@@ -9,12 +9,11 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig features_check
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-remotecontrol;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://rdkservices.ini \
           "
 
 # Release version - 1.0.0
-SRCREV = "9b9917426d5cc8705e1251b2a1c5b1f9ff5cd99e"
+SRCREV = "53ca0d499eb79934ac6d7fa84da298f9772114fd"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"

@@ -9,12 +9,11 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig features_check
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-voicecontrol;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://rdkservices.ini \
           "
 
 # Release version - 1.0.0
-SRCREV = "979f5c9279c49084a1774f94d4353245dc3b161d"
+SRCREV = "6b5b64e4984834c296117ed845081ad2f20862ce"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
