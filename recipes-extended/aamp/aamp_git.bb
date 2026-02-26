@@ -3,11 +3,13 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV = "2.11.1"
-PR = "r0"
+PV ?= "3.2.0"
+PR ?= "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp = "527709270a3540217e5dd8d0daa03888e39e03f9"
+
+SRCREV_aamp ="9fbf652f903f44ec5428643a558338a7d0572a99"
+
 
 DEPENDS += "curl libdash libxml2 cjson readline ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 
