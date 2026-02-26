@@ -1,0 +1,908 @@
+From f289b6725a514c7224bea0ae45adca7a2fc4d8b3 Mon Sep 17 00:00:00 2001
+From: Sharma <tsharm493@apac.comcast.com>
+Date: Thu, 26 Feb 2026 14:15:25 +0530
+Subject: [PATCH] added brightness level and color change feature
+
+---
+ .../matter/MatterLightDeviceDriver.cpp        | 436 +++++++++++++++---
+ .../matter/MatterLightDeviceDriver.h          |  24 +-
+ .../matter/clusters/ColorControl.cpp          | 173 +++++++
+ .../matter/clusters/ColorControl.h            | 112 +++++
+ 4 files changed, 671 insertions(+), 74 deletions(-)
+ create mode 100644 core/deviceDrivers/matter/clusters/ColorControl.cpp
+ create mode 100644 core/deviceDrivers/matter/clusters/ColorControl.h
+
+diff --git a/core/deviceDrivers/matter/MatterLightDeviceDriver.cpp b/core/deviceDrivers/matter/MatterLightDeviceDriver.cpp
+index bb03eaf..d17cce4 100644
+--- a/core/deviceDrivers/matter/MatterLightDeviceDriver.cpp
++++ b/core/deviceDrivers/matter/MatterLightDeviceDriver.cpp
+@@ -30,6 +30,8 @@
+ 
+ #include "MatterDriverFactory.h"
+ #include "MatterLightDeviceDriver.h"
++#include "clusters/ColorControl.h"
++#include "clusters/LevelControl.h"
+ #include "clusters/OnOff.h"
+ 
+ extern "C" {
+@@ -37,7 +39,10 @@ extern "C" {
+ #include <device/deviceModelHelper.h>
+ #include <deviceServicePrivate.h>
+ #include <icLog/logging.h>
++#include <inttypes.h>
+ #include <resourceTypes.h>
++#include <stdio.h>
++#include <stdlib.h>
+ #include <subsystems/zigbee/zigbeeCommonIds.h>
+ }
+ 
+@@ -151,6 +156,80 @@ void MatterLightDeviceDriver::OnOffReadComplete(std::string &deviceUuid, bool is
+     delete readContext;
+ }
+ 
++void MatterLightDeviceDriver::CurrentLevelChanged(const std::string &deviceUuid, uint8_t level, void *asyncContext)
++{
++    icDebug();
++
++    char levelStr[8];
++    snprintf(levelStr, sizeof(levelStr), "%u", level);
++    updateResource(deviceUuid.c_str(), LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_CURRENT_LEVEL, levelStr, nullptr);
++}
++
++void MatterLightDeviceDriver::CurrentLevelReadComplete(const std::string &deviceUuid,
++                                                       uint8_t level,
++                                                       void *asyncContext)
++{
++    icDebug();
++
++    auto readContext = static_cast<ClusterReadContext *>(asyncContext);
++
++    char levelStr[8];
++    snprintf(levelStr, sizeof(levelStr), "%u", level);
++
++    if (readContext->initialResourceValues)
++    {
++        initialResourceValuesPutEndpointValue(
++            readContext->initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_CURRENT_LEVEL, levelStr);
++    }
++    else
++    {
++        *readContext->value = strdup(levelStr);
++    }
++
++    OnDeviceWorkCompleted(readContext->driverContext, true);
++
++    delete readContext;
++}
++
++void MatterLightDeviceDriver::ColorXYChanged(const std::string &deviceUuid,
++                                             uint16_t colorX,
++                                             uint16_t colorY,
++                                             void *asyncContext)
++{
++    icDebug();
++
++    char colorStr[16];
++    snprintf(colorStr, sizeof(colorStr), "%" PRIu16 ",%" PRIu16, colorX, colorY);
++    updateResource(deviceUuid.c_str(), LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_COLOR, colorStr, nullptr);
++}
++
++void MatterLightDeviceDriver::ColorXYReadComplete(const std::string &deviceUuid,
++                                                  uint16_t colorX,
++                                                  uint16_t colorY,
++                                                  void *asyncContext)
++{
++    icDebug();
++
++    auto readContext = static_cast<ClusterReadContext *>(asyncContext);
++
++    char colorStr[16];
++    snprintf(colorStr, sizeof(colorStr), "%" PRIu16 ",%" PRIu16, colorX, colorY);
++
++    if (readContext->initialResourceValues)
++    {
++        initialResourceValuesPutEndpointValue(
++            readContext->initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_COLOR, colorStr);
++    }
++    else
++    {
++        *readContext->value = strdup(colorStr);
++    }
++
++    OnDeviceWorkCompleted(readContext->driverContext, true);
++
++    delete readContext;
++}
++
+ void MatterLightDeviceDriver::SynchronizeDevice(std::forward_list<std::promise<bool>> &promises,
+                                                 const std::string &deviceId,
+                                                 chip::Messaging::ExchangeManager &exchangeMgr,
+@@ -169,30 +248,69 @@ void MatterLightDeviceDriver::FetchInitialResourceValues(std::forward_list<std::
+                                                          chip::Messaging::ExchangeManager &exchangeMgr,
+                                                          const chip::SessionHandle &sessionHandle)
+ {
+-    bool result = false;
+-
+     icDebug();
+ 
+-    auto server = static_cast<OnOff *>(GetAnyServerById(deviceId, ON_OFF_CLUSTER_ID));
++    // --- OnOff (mandatory) ---
++    auto onOffServer = static_cast<OnOff *>(GetAnyServerById(deviceId, ON_OFF_CLUSTER_ID));
+ 
+-    if (server == nullptr)
++    if (onOffServer == nullptr)
+     {
+         icError("OnOff cluster not present on device %s!", deviceId.c_str());
+         FailOperation(promises);
+         return;
+     }
+ 
+-    promises.emplace_front();
+-    auto &readPromise = promises.front();
+-    auto readContext = new ClusterReadContext {};
+-    readContext->driverContext = &readPromise;
+-    readContext->initialResourceValues = initialResourceValues;
+-    AssociateStoredContext(&readPromise);
++    {
++        promises.emplace_front();
++        auto &readPromise = promises.front();
++        auto readContext = new ClusterReadContext {};
++        readContext->driverContext = &readPromise;
++        readContext->initialResourceValues = initialResourceValues;
++        AssociateStoredContext(&readPromise);
++
++        if (!onOffServer->GetOnOff(readContext, exchangeMgr, sessionHandle))
++        {
++            AbandonDeviceWork(readPromise);
++            delete readContext;
++        }
++    }
++
++    // --- LevelControl (optional) ---
++    auto levelServer =
++        static_cast<LevelControl *>(GetAnyServerById(deviceId, chip::app::Clusters::LevelControl::Id));
++    if (levelServer != nullptr)
++    {
++        promises.emplace_front();
++        auto &readPromise = promises.front();
++        auto readContext = new ClusterReadContext {};
++        readContext->driverContext = &readPromise;
++        readContext->initialResourceValues = initialResourceValues;
++        AssociateStoredContext(&readPromise);
++
++        if (!levelServer->GetCurrentLevel(readContext, exchangeMgr, sessionHandle))
++        {
++            AbandonDeviceWork(readPromise);
++            delete readContext;
++        }
++    }
+ 
+-    if (!server->GetOnOff(readContext, exchangeMgr, sessionHandle))
++    // --- ColorControl (optional) ---
++    auto colorServer =
++        static_cast<ColorControl *>(GetAnyServerById(deviceId, chip::app::Clusters::ColorControl::Id));
++    if (colorServer != nullptr)
+     {
+-        AbandonDeviceWork(readPromise);
+-        delete readContext;
++        promises.emplace_front();
++        auto &readPromise = promises.front();
++        auto readContext = new ClusterReadContext {};
++        readContext->driverContext = &readPromise;
++        readContext->initialResourceValues = initialResourceValues;
++        AssociateStoredContext(&readPromise);
++
++        if (!colorServer->GetColorXY(readContext, exchangeMgr, sessionHandle))
++        {
++            AbandonDeviceWork(readPromise);
++            delete readContext;
++        }
+     }
+ }
+ 
+@@ -211,27 +329,69 @@ bool MatterLightDeviceDriver::RegisterResources(icDevice *device, icInitialResou
+                                      RESOURCE_MODE_READWRITEABLE | RESOURCE_MODE_EMIT_EVENTS | RESOURCE_MODE_DYNAMIC,
+                                      CACHING_POLICY_ALWAYS) != nullptr;
+ 
+-    auto *resource = static_cast<icDeviceResource *>(calloc(1, sizeof(icDeviceResource)));
+-    resource->id = strdup(LIGHT_PROFILE_RESOURCE_IS_ON);
+-    resource->endpointId = strdup(LIGHT_ENDPOINT);
+-    resource->deviceUuid = strdup(device->uuid);
++    // isOn resource (mandatory)
++    {
++        auto *resource = static_cast<icDeviceResource *>(calloc(1, sizeof(icDeviceResource)));
++        resource->id = strdup(LIGHT_PROFILE_RESOURCE_IS_ON);
++        resource->endpointId = strdup(LIGHT_ENDPOINT);
++        resource->deviceUuid = strdup(device->uuid);
++
++        const char *initialValue =
++            initialResourceValuesGetEndpointValue(initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_IS_ON);
++        if (initialValue)
++        {
++            resource->value = strdup(initialValue);
++        }
++        else
++        {
++            result = false;
++        }
++        resource->type = strdup(RESOURCE_TYPE_BOOLEAN);
++        resource->mode = RESOURCE_MODE_READWRITEABLE | RESOURCE_MODE_DYNAMIC | RESOURCE_MODE_DYNAMIC_CAPABLE |
++                         RESOURCE_MODE_EMIT_EVENTS | RESOURCE_MODE_LAZY_SAVE_NEXT;
++        resource->cachingPolicy = CACHING_POLICY_ALWAYS;
++        linkedListAppend(endpoint->resources, resource);
++    }
+ 
+-    const char *initialValue =
+-        initialResourceValuesGetEndpointValue(initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_IS_ON);
+-    if (initialValue)
++    // currentLevel resource (registered when LevelControl cluster was discovered)
+     {
+-        resource->value = strdup(
+-            initialResourceValuesGetEndpointValue(initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_IS_ON));
++        const char *initialLevel = initialResourceValuesGetEndpointValue(
++            initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_CURRENT_LEVEL);
++        if (initialLevel)
++        {
++            auto *resource = static_cast<icDeviceResource *>(calloc(1, sizeof(icDeviceResource)));
++            resource->id = strdup(LIGHT_PROFILE_RESOURCE_CURRENT_LEVEL);
++            resource->endpointId = strdup(LIGHT_ENDPOINT);
++            resource->deviceUuid = strdup(device->uuid);
++            resource->value = strdup(initialLevel);
++            resource->type = strdup(RESOURCE_TYPE_LIGHT_LEVEL);
++            resource->mode = RESOURCE_MODE_READWRITEABLE | RESOURCE_MODE_DYNAMIC |
++                             RESOURCE_MODE_DYNAMIC_CAPABLE | RESOURCE_MODE_EMIT_EVENTS |
++                             RESOURCE_MODE_LAZY_SAVE_NEXT;
++            resource->cachingPolicy = CACHING_POLICY_ALWAYS;
++            linkedListAppend(endpoint->resources, resource);
++        }
+     }
+-    else
++
++    // colorXY resource (registered when ColorControl cluster was discovered)
+     {
+-        result = false;
++        const char *initialColor = initialResourceValuesGetEndpointValue(
++            initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_COLOR);
++        if (initialColor)
++        {
++            auto *resource = static_cast<icDeviceResource *>(calloc(1, sizeof(icDeviceResource)));
++            resource->id = strdup(LIGHT_PROFILE_RESOURCE_COLOR);
++            resource->endpointId = strdup(LIGHT_ENDPOINT);
++            resource->deviceUuid = strdup(device->uuid);
++            resource->value = strdup(initialColor);
++            resource->type = strdup(RESOURCE_TYPE_CIE_1931_COLOR);
++            resource->mode = RESOURCE_MODE_READWRITEABLE | RESOURCE_MODE_DYNAMIC |
++                             RESOURCE_MODE_DYNAMIC_CAPABLE | RESOURCE_MODE_EMIT_EVENTS |
++                             RESOURCE_MODE_LAZY_SAVE_NEXT;
++            resource->cachingPolicy = CACHING_POLICY_ALWAYS;
++            linkedListAppend(endpoint->resources, resource);
++        }
+     }
+-    resource->type = strdup(RESOURCE_TYPE_BOOLEAN);
+-    resource->mode = RESOURCE_MODE_READWRITEABLE | RESOURCE_MODE_DYNAMIC | RESOURCE_MODE_DYNAMIC_CAPABLE |
+-                     RESOURCE_MODE_EMIT_EVENTS | RESOURCE_MODE_LAZY_SAVE_NEXT;
+-    resource->cachingPolicy = CACHING_POLICY_ALWAYS;
+-    linkedListAppend(endpoint->resources, resource);
+ 
+     return result;
+ }
+@@ -243,37 +403,89 @@ void MatterLightDeviceDriver::ReadResource(std::forward_list<std::promise<bool>>
+                                            chip::Messaging::ExchangeManager &exchangeMgr,
+                                            const chip::SessionHandle &sessionHandle)
+ {
+-    bool asyncCleanup = false;
+-
+     icDebug("%s", resource->id);
+ 
+-    if (resource->endpointId == nullptr || stringCompare(resource->id, LIGHT_PROFILE_RESOURCE_IS_ON, false) != 0)
++    if (resource->endpointId == nullptr)
+     {
+         FailOperation(promises);
+         return;
+     }
+ 
+-    auto server = static_cast<OnOff *>(GetAnyServerById(deviceId, ON_OFF_CLUSTER_ID));
+-
+-    if (server == nullptr)
++    if (stringCompare(resource->id, LIGHT_PROFILE_RESOURCE_IS_ON, false) == 0)
+     {
+-        icError("OnOff cluster not present on device %s!", deviceId.c_str());
+-        FailOperation(promises);
+-        return;
++        auto server = static_cast<OnOff *>(GetAnyServerById(deviceId, ON_OFF_CLUSTER_ID));
++        if (server == nullptr)
++        {
++            icError("OnOff cluster not present on device %s!", deviceId.c_str());
++            FailOperation(promises);
++            return;
++        }
++
++        promises.emplace_front();
++        auto &readPromise = promises.front();
++        auto readContext = new ClusterReadContext {};
++        readContext->driverContext = &readPromise;
++        readContext->value = value;
++        AssociateStoredContext(&readPromise);
++
++        if (!server->GetOnOff(readContext, exchangeMgr, sessionHandle))
++        {
++            AbandonDeviceWork(readPromise);
++            delete readContext;
++        }
+     }
++    else if (stringCompare(resource->id, LIGHT_PROFILE_RESOURCE_CURRENT_LEVEL, false) == 0)
++    {
++        auto server =
++            static_cast<LevelControl *>(GetAnyServerById(deviceId, chip::app::Clusters::LevelControl::Id));
++        if (server == nullptr)
++        {
++            icError("LevelControl cluster not present on device %s!", deviceId.c_str());
++            FailOperation(promises);
++            return;
++        }
++
++        promises.emplace_front();
++        auto &readPromise = promises.front();
++        auto readContext = new ClusterReadContext {};
++        readContext->driverContext = &readPromise;
++        readContext->value = value;
++        AssociateStoredContext(&readPromise);
+ 
+-    promises.emplace_front();
+-    auto &readPromise = promises.front();
+-    auto readContext = new ClusterReadContext {};
+-    readContext->driverContext = &readPromise;
+-    readContext->value = value;
++        if (!server->GetCurrentLevel(readContext, exchangeMgr, sessionHandle))
++        {
++            AbandonDeviceWork(readPromise);
++            delete readContext;
++        }
++    }
++    else if (stringCompare(resource->id, LIGHT_PROFILE_RESOURCE_COLOR, false) == 0)
++    {
++        auto server =
++            static_cast<ColorControl *>(GetAnyServerById(deviceId, chip::app::Clusters::ColorControl::Id));
++        if (server == nullptr)
++        {
++            icError("ColorControl cluster not present on device %s!", deviceId.c_str());
++            FailOperation(promises);
++            return;
++        }
+ 
+-    AssociateStoredContext(&readPromise);
++        promises.emplace_front();
++        auto &readPromise = promises.front();
++        auto readContext = new ClusterReadContext {};
++        readContext->driverContext = &readPromise;
++        readContext->value = value;
++        AssociateStoredContext(&readPromise);
+ 
+-    if (!server->GetOnOff(readContext, exchangeMgr, sessionHandle))
++        if (!server->GetColorXY(readContext, exchangeMgr, sessionHandle))
++        {
++            AbandonDeviceWork(readPromise);
++            delete readContext;
++        }
++    }
++    else
+     {
+-        AbandonDeviceWork(readPromise);
+-        delete readContext;
++        icError("Unknown resource id '%s' on device %s", resource->id, deviceId.c_str());
++        FailOperation(promises);
+     }
+ }
+ 
+@@ -285,46 +497,118 @@ bool MatterLightDeviceDriver::WriteResource(std::forward_list<std::promise<bool>
+                                             chip::Messaging::ExchangeManager &exchangeMgr,
+                                             const chip::SessionHandle &sessionHandle)
+ {
+-    bool asyncCleanup = false;
+-
+     icDebug("%s = %s", resource->id, newValue);
+ 
+-    bool shouldUpdateResource = true;
+-
+-    if (resource->endpointId == nullptr || stringCompare(resource->id, LIGHT_PROFILE_RESOURCE_IS_ON, false) != 0)
++    if (resource->endpointId == nullptr || newValue == nullptr)
+     {
+         FailOperation(promises);
+         return false;
+     }
+ 
+-    auto server = static_cast<OnOff *>(GetAnyServerById(deviceId, ON_OFF_CLUSTER_ID));
+-
+-    if (server == nullptr)
++    if (stringCompare(resource->id, LIGHT_PROFILE_RESOURCE_IS_ON, false) == 0)
+     {
+-        icError("OnOff cluster not present on device %s!", deviceId.c_str());
+-        FailOperation(promises);
+-        return false;
+-    }
++        // ---- OnOff: value is "true" or "false" ----
++        auto server = static_cast<OnOff *>(GetAnyServerById(deviceId, ON_OFF_CLUSTER_ID));
++        if (server == nullptr)
++        {
++            icError("OnOff cluster not present on device %s!", deviceId.c_str());
++            FailOperation(promises);
++            return false;
++        }
+ 
+-    bool on;
++        bool on;
++        if (!stringToBoolStrict(newValue, &on))
++        {
++            icError("Invalid isOn value: %s", newValue);
++            FailOperation(promises);
++            return false;
++        }
+ 
+-    if (!stringToBoolStrict(newValue, &on))
++        promises.emplace_front();
++        auto &setPromise = promises.front();
++        AssociateStoredContext(&setPromise);
++
++        if (!server->SetOnOff(&setPromise, on, exchangeMgr, sessionHandle))
++        {
++            AbandonDeviceWork(setPromise);
++        }
++
++        return true;
++    }
++    else if (stringCompare(resource->id, LIGHT_PROFILE_RESOURCE_CURRENT_LEVEL, false) == 0)
+     {
+-        icError("Invalid arguments");
+-        FailOperation(promises);
+-        return false;
++        // ---- LevelControl: value is decimal uint8 string "0".."254" ----
++        auto server =
++            static_cast<LevelControl *>(GetAnyServerById(deviceId, chip::app::Clusters::LevelControl::Id));
++        if (server == nullptr)
++        {
++            icError("LevelControl cluster not present on device %s!", deviceId.c_str());
++            FailOperation(promises);
++            return false;
++        }
++
++        char *endptr = nullptr;
++        unsigned long levelVal = strtoul(newValue, &endptr, 10);
++        if (endptr == newValue || *endptr != '\0' || levelVal > 254)
++        {
++            icError("Invalid level value: %s (must be 0-254)", newValue);
++            FailOperation(promises);
++            return false;
++        }
++
++        promises.emplace_front();
++        auto &setPromise = promises.front();
++        AssociateStoredContext(&setPromise);
++
++        if (!server->MoveToLevel(&setPromise,
++                                  static_cast<uint8_t>(levelVal),
++                                  exchangeMgr,
++                                  sessionHandle))
++        {
++            AbandonDeviceWork(setPromise);
++        }
++
++        return true;
+     }
++    else if (stringCompare(resource->id, LIGHT_PROFILE_RESOURCE_COLOR, false) == 0)
++    {
++        // ---- ColorControl: value is "X,Y" where X,Y are CIE 1931 uint16 (0-65279) ----
++        auto server =
++            static_cast<ColorControl *>(GetAnyServerById(deviceId, chip::app::Clusters::ColorControl::Id));
++        if (server == nullptr)
++        {
++            icError("ColorControl cluster not present on device %s!", deviceId.c_str());
++            FailOperation(promises);
++            return false;
++        }
++
++        uint16_t colorX = 0;
++        uint16_t colorY = 0;
++        if (sscanf(newValue, "%" SCNu16 ",%" SCNu16, &colorX, &colorY) != 2)
++        {
++            icError("Invalid colorXY value: %s (expected \"X,Y\" where X,Y are 0-65279)", newValue);
++            FailOperation(promises);
++            return false;
++        }
++
++        promises.emplace_front();
++        auto &setPromise = promises.front();
++        AssociateStoredContext(&setPromise);
+ 
+-    promises.emplace_front();
+-    auto &setPromise = promises.front();
+-    AssociateStoredContext(&setPromise);
++        // transitionTime 0 = immediate transition
++        if (!server->MoveToColor(&setPromise, colorX, colorY, 0, exchangeMgr, sessionHandle))
++        {
++            AbandonDeviceWork(setPromise);
++        }
+ 
+-    if (!server->SetOnOff(&setPromise, on, exchangeMgr, sessionHandle))
++        return true;
++    }
++    else
+     {
+-        AbandonDeviceWork(setPromise);
++        icError("Unknown resource id '%s' on device %s", resource->id, deviceId.c_str());
++        FailOperation(promises);
++        return false;
+     }
+-
+-    return shouldUpdateResource;
+ }
+ 
+ std::unique_ptr<MatterCluster> MatterLightDeviceDriver::MakeCluster(std::string const &deviceUuid,
+@@ -334,7 +618,15 @@ std::unique_ptr<MatterCluster> MatterLightDeviceDriver::MakeCluster(std::string
+     switch (clusterId)
+     {
+         case ON_OFF_CLUSTER_ID:
+-            return std::make_unique<OnOff>((OnOff::EventHandler *) this, deviceUuid, endpointId);
++            return std::make_unique<OnOff>(static_cast<OnOff::EventHandler *>(this), deviceUuid, endpointId);
++
++        case chip::app::Clusters::LevelControl::Id:
++            return std::make_unique<LevelControl>(
++                static_cast<LevelControl::EventHandler *>(this), deviceUuid, endpointId);
++
++        case chip::app::Clusters::ColorControl::Id:
++            return std::make_unique<ColorControl>(
++                static_cast<ColorControl::EventHandler *>(this), deviceUuid, endpointId);
+ 
+         default:
+             return nullptr;
+diff --git a/core/deviceDrivers/matter/MatterLightDeviceDriver.h b/core/deviceDrivers/matter/MatterLightDeviceDriver.h
+index 302b2f6..ece0098 100644
+--- a/core/deviceDrivers/matter/MatterLightDeviceDriver.h
++++ b/core/deviceDrivers/matter/MatterLightDeviceDriver.h
+@@ -28,25 +28,45 @@
+ #pragma once
+ 
+ #include "MatterDeviceDriver.h"
++#include "clusters/ColorControl.h"
++#include "clusters/LevelControl.h"
+ #include "clusters/OnOff.h"
+ #include "matter/clusters/MatterCluster.h"
+ 
+ namespace barton
+ {
+     class MatterLightDeviceDriver : public MatterDeviceDriver,
+-                                    OnOff::EventHandler
++                                    public OnOff::EventHandler,
++                                    public LevelControl::EventHandler,
++                                    public ColorControl::EventHandler
+     {
+     public:
+         MatterLightDeviceDriver();
+ 
+         bool ClaimDevice(DiscoveredDeviceDetails *details) override;
+ 
+-        // OnOff cluster callbacks
++        // MatterCluster::EventHandler overrides (shared across all cluster event handler bases)
+         void CommandCompleted(void *context, bool success) override { OnDeviceWorkCompleted(context, success); };
+         void WriteRequestCompleted(void *context, bool success) override { OnDeviceWorkCompleted(context, success); };
++
++        // OnOff cluster callbacks
+         void OnOffChanged(std::string &deviceUuid, bool on, void *asyncContext) override;
+         void OnOffReadComplete(std::string &deviceUuid, bool isOn, void *asyncContext) override;
+ 
++        // LevelControl cluster callbacks
++        void CurrentLevelChanged(const std::string &deviceUuid, uint8_t level, void *asyncContext) override;
++        void CurrentLevelReadComplete(const std::string &deviceUuid, uint8_t level, void *asyncContext) override;
++
++        // ColorControl cluster callbacks
++        void ColorXYChanged(const std::string &deviceUuid,
++                            uint16_t colorX,
++                            uint16_t colorY,
++                            void *asyncContext) override;
++        void ColorXYReadComplete(const std::string &deviceUuid,
++                                 uint16_t colorX,
++                                 uint16_t colorY,
++                                 void *asyncContext) override;
++
+     protected:
+         void SynchronizeDevice(std::forward_list<std::promise<bool>> &promises,
+                                const std::string &deviceId,
+diff --git a/core/deviceDrivers/matter/clusters/ColorControl.cpp b/core/deviceDrivers/matter/clusters/ColorControl.cpp
+new file mode 100644
+index 0000000..63aa855
+--- /dev/null
++++ b/core/deviceDrivers/matter/clusters/ColorControl.cpp
+@@ -0,0 +1,173 @@
++//------------------------------ tabstop = 4 ----------------------------------
++//
++// If not stated otherwise in this file or this component's LICENSE file the
++// following copyright and licenses apply:
++//
++// Copyright 2024 Comcast Cable Communications Management, LLC
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++// http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++//
++// SPDX-License-Identifier: Apache-2.0
++//
++//------------------------------ tabstop = 4 ----------------------------------
++
++#define LOG_TAG     "ColorControlCluster"
++#define logFmt(fmt) "(%s): " fmt, __func__
++
++extern "C" {
++#include <icLog/logging.h>
++}
++
++#include "ColorControl.h"
++#include "app-common/zap-generated/ids/Attributes.h"
++#include "app-common/zap-generated/ids/Clusters.h"
++#include "app/BufferedReadCallback.h"
++#include "app/InteractionModelEngine.h"
++
++namespace barton
++{
++    void ColorControl::OnAttributeChanged(chip::app::ClusterStateCache *cache,
++                                          const chip::app::ConcreteAttributePath &path)
++    {
++        using namespace chip::app::Clusters::ColorControl;
++
++        if (path.mClusterId != chip::app::Clusters::ColorControl::Id)
++        {
++            icTrace("Unexpected cluster");
++            return;
++        }
++
++        if (path.mAttributeId != Attributes::CurrentX::Id && path.mAttributeId != Attributes::CurrentY::Id)
++        {
++            icTrace("Unexpected attribute");
++            return;
++        }
++
++        // Read both X and Y from the cache whenever either changes so the callback
++        // always receives a consistent chromaticity pair.
++        uint16_t colorX = 0;
++        uint16_t colorY = 0;
++        CHIP_ERROR errX = CHIP_NO_ERROR;
++        CHIP_ERROR errY = CHIP_NO_ERROR;
++
++        {
++            chip::app::ConcreteAttributePath pathX(endpointId, Id, Attributes::CurrentX::Id);
++            Attributes::CurrentX::TypeInfo::DecodableType valueX;
++            errX = cache->Get<Attributes::CurrentX::TypeInfo>(pathX, valueX);
++            if (errX == CHIP_NO_ERROR)
++            {
++                colorX = valueX;
++            }
++            else
++            {
++                icError("Failed to decode CurrentX attribute: %s", errX.AsString());
++                return;
++            }
++        }
++
++        {
++            chip::app::ConcreteAttributePath pathY(endpointId, Id, Attributes::CurrentY::Id);
++            Attributes::CurrentY::TypeInfo::DecodableType valueY;
++            errY = cache->Get<Attributes::CurrentY::TypeInfo>(pathY, valueY);
++            if (errY == CHIP_NO_ERROR)
++            {
++                colorY = valueY;
++            }
++            else
++            {
++                icError("Failed to decode CurrentY attribute: %s", errY.AsString());
++                return;
++            }
++        }
++
++        static_cast<ColorControl::EventHandler *>(eventHandler)->ColorXYChanged(deviceId, colorX, colorY, nullptr);
++    }
++
++    bool ColorControl::GetColorXY(void *context,
++                                   const chip::Messaging::ExchangeManager &exchangeMgr,
++                                   const chip::SessionHandle &sessionHandle)
++    {
++        icDebug();
++
++        std::shared_ptr<chip::app::ClusterStateCache> cache;
++        if (!(cache = clusterStateCacheRef.lock()))
++        {
++            icError("Failed to get color XY because the cluster state cache expired or was never set");
++            return false;
++        }
++
++        using namespace chip::app::Clusters::ColorControl;
++
++        uint16_t colorX = 0;
++        uint16_t colorY = 0;
++
++        {
++            chip::app::ConcreteAttributePath pathX(endpointId, Id, Attributes::CurrentX::Id);
++            Attributes::CurrentX::TypeInfo::DecodableType valueX;
++            CHIP_ERROR errX = cache->Get<Attributes::CurrentX::TypeInfo>(pathX, valueX);
++            if (errX != CHIP_NO_ERROR)
++            {
++                icError("Failed to decode CurrentX attribute: %s", errX.AsString());
++                return false;
++            }
++            colorX = valueX;
++        }
++
++        {
++            chip::app::ConcreteAttributePath pathY(endpointId, Id, Attributes::CurrentY::Id);
++            Attributes::CurrentY::TypeInfo::DecodableType valueY;
++            CHIP_ERROR errY = cache->Get<Attributes::CurrentY::TypeInfo>(pathY, valueY);
++            if (errY != CHIP_NO_ERROR)
++            {
++                icError("Failed to decode CurrentY attribute: %s", errY.AsString());
++                return false;
++            }
++            colorY = valueY;
++        }
++
++        static_cast<ColorControl::EventHandler *>(eventHandler)->ColorXYReadComplete(deviceId, colorX, colorY, context);
++        return true;
++    }
++
++    bool ColorControl::MoveToColor(void *context,
++                                    uint16_t colorX,
++                                    uint16_t colorY,
++                                    uint16_t transitionTime,
++                                    const chip::Messaging::ExchangeManager &exchangeMgr,
++                                    const chip::SessionHandle &sessionHandle)
++    {
++        icDebug();
++
++        // TODO: const_cast will go away with Matter 1.1+
++        auto commandSender =
++            new chip::app::CommandSender(this, const_cast<chip::Messaging::ExchangeManager *>(&exchangeMgr));
++
++        chip::app::CommandPathParams commandPath(endpointId,
++                                                 0, /* not used */
++                                                 chip::app::Clusters::ColorControl::Id,
++                                                 chip::app::Clusters::ColorControl::Commands::MoveToColor::Id,
++                                                 chip::app::CommandPathFlags::kEndpointIdValid);
++
++        chip::app::Clusters::ColorControl::Commands::MoveToColor::Type data;
++        data.colorX = colorX;
++        data.colorY = colorY;
++        data.transitionTime = transitionTime;
++        data.optionsMask.SetRaw(0);
++        data.optionsOverride.SetRaw(0);
++
++        commandSender->AddRequestData(commandPath, data);
++
++        // hand off the commandSender to the base class
++        return SendCommand(commandSender, sessionHandle, context);
++    }
++} // namespace barton
+diff --git a/core/deviceDrivers/matter/clusters/ColorControl.h b/core/deviceDrivers/matter/clusters/ColorControl.h
+new file mode 100644
+index 0000000..b67d62a
+--- /dev/null
++++ b/core/deviceDrivers/matter/clusters/ColorControl.h
+@@ -0,0 +1,112 @@
++//------------------------------ tabstop = 4 ----------------------------------
++//
++// If not stated otherwise in this file or this component's LICENSE file the
++// following copyright and licenses apply:
++//
++// Copyright 2024 Comcast Cable Communications Management, LLC
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++// http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++//
++// SPDX-License-Identifier: Apache-2.0
++//
++//------------------------------ tabstop = 4 ----------------------------------
++
++#pragma once
++
++#include "MatterCluster.h"
++#include "app/BufferedReadCallback.h"
++#include "lib/core/DataModelTypes.h"
++#include <cstdint>
++#include <mutex>
++#include <string>
++
++namespace barton
++{
++    /**
++     * @brief Matter Color Control cluster driver-side implementation.
++     *
++     * Supports CIE 1931 XY chromaticity color model via the MoveToColor command.
++     * X and Y values are in the range [0, 65279] matching the Matter SDK scale
++     * (uint16_t, 65536 = 1.0 in CIE space).
++     */
++    class ColorControl : public MatterCluster
++    {
++    public:
++        ColorControl(EventHandler *handler, const std::string deviceId, chip::EndpointId endpointId) :
++            MatterCluster(handler, deviceId, endpointId)
++        {
++        }
++
++        /**
++         * @brief Base EventHandler with ColorControl cluster-specific callbacks.
++         */
++        class EventHandler : public MatterCluster::EventHandler
++        {
++        public:
++            /**
++             * @brief Called when a subscribed CurrentX/CurrentY attribute change is received.
++             * @param deviceUuid   UUID of the device.
++             * @param colorX       CIE X coordinate [0, 65279].
++             * @param colorY       CIE Y coordinate [0, 65279].
++             * @param asyncContext Opaque async context pointer.
++             */
++            virtual void ColorXYChanged(const std::string &deviceUuid,
++                                        uint16_t colorX,
++                                        uint16_t colorY,
++                                        void *asyncContext) {};
++
++            /**
++             * @brief Called when a read of CurrentX/CurrentY completes successfully.
++             * @param deviceUuid   UUID of the device.
++             * @param colorX       CIE X coordinate [0, 65279].
++             * @param colorY       CIE Y coordinate [0, 65279].
++             * @param asyncContext Opaque async context pointer.
++             */
++            virtual void ColorXYReadComplete(const std::string &deviceUuid,
++                                             uint16_t colorX,
++                                             uint16_t colorY,
++                                             void *asyncContext) {};
++        };
++
++        /**
++         * @brief Read the current CIE XY color from the cluster state cache.
++         * @param context         Opaque async context pointer passed back in the callback.
++         * @param exchangeMgr     Matter exchange manager (unused for cache reads).
++         * @param sessionHandle   Session handle (unused for cache reads).
++         * @return true if the read succeeded synchronously via the cache.
++         */
++        bool GetColorXY(void *context,
++                        const chip::Messaging::ExchangeManager &exchangeMgr,
++                        const chip::SessionHandle &sessionHandle);
++
++        /**
++         * @brief Send a MoveToColor command to the device.
++         * @param context         Opaque async context pointer passed back in the callback.
++         * @param colorX          Target CIE X coordinate [0, 65279].
++         * @param colorY          Target CIE Y coordinate [0, 65279].
++         * @param transitionTime  Transition time in 1/10th seconds (0 = immediate).
++         * @param exchangeMgr     Matter exchange manager.
++         * @param sessionHandle   Session handle.
++         * @return true if the command was enqueued successfully.
++         */
++        bool MoveToColor(void *context,
++                         uint16_t colorX,
++                         uint16_t colorY,
++                         uint16_t transitionTime,
++                         const chip::Messaging::ExchangeManager &exchangeMgr,
++                         const chip::SessionHandle &sessionHandle);
++
++        void OnAttributeChanged(chip::app::ClusterStateCache *cache,
++                                const chip::app::ConcreteAttributePath &path) override;
++    };
++} // namespace barton
+-- 
+2.50.0.windows.1
+
