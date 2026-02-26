@@ -2,7 +2,7 @@ SUMMARY = "ENTServices avinput plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.0.1"
+PV = "1.0.3"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avinput;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.0.1
-SRCREV = "266ab24064c67552623f9295eb71f4b936bf7dad"
+# Release version - 1.0.3
+SRCREV = "8fd5521ee26b10ccd76cf1b34514859dea5522df"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
