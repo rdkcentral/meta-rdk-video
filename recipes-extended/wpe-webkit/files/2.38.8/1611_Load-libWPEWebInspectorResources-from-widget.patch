@@ -1,0 +1,30 @@
+From 69ce745c25f2aaa7d8720969a72cdf4dcbed0137 Mon Sep 17 00:00:00 2001
+From: Darko Lulic <Darko_Lulic@comcast.com>
+Date: Thu, 5 Feb 2026 10:23:54 +0000
+Subject: [PATCH] RDKEMW-9893: Load libWPEWebInspectorResources from launcher
+ widget.
+
+---
+ .../inspector/remote/glib/RemoteInspectorUtils.cpp       | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/Source/JavaScriptCore/inspector/remote/glib/RemoteInspectorUtils.cpp b/Source/JavaScriptCore/inspector/remote/glib/RemoteInspectorUtils.cpp
+index 31ff5ac70c112..ecf052bed3155 100644
+--- a/Source/JavaScriptCore/inspector/remote/glib/RemoteInspectorUtils.cpp
++++ b/Source/JavaScriptCore/inspector/remote/glib/RemoteInspectorUtils.cpp
+@@ -43,7 +43,14 @@ GRefPtr<GBytes> backendCommands()
+     static bool moduleLoaded = false;
+ 
+     if (!moduleLoaded) {
+-        GModule* resourcesModule = g_module_open(PKGLIBDIR G_DIR_SEPARATOR_S "libWPEWebInspectorResources.so", G_MODULE_BIND_LAZY);
++        const char* libDir = PKGLIBDIR;
++        GUniquePtr<char> tmp;
++        if (const char* path = g_getenv("WEBKIT_INJECTED_BUNDLE_PATH"); path && g_file_test(path, G_FILE_TEST_IS_DIR)) {
++            tmp.reset(g_build_filename(path, "..", nullptr));
++            libDir = tmp.get();
++        }
++        GUniquePtr<char> bundleFilename(g_build_filename(libDir, "libWPEWebInspectorResources.so", nullptr));
++        GModule* resourcesModule = g_module_open(bundleFilename.get(), G_MODULE_BIND_LAZY);
+         if (!resourcesModule) {
+             WTFLogAlways("Error loading libWPEWebInspectorResources.so: %s", g_module_error());
+             return nullptr;
