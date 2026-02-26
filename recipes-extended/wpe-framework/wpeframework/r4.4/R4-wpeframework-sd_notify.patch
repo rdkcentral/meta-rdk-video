@@ -31,23 +31,3 @@ Index: git/Source/WPEFramework/PluginServer.cpp
      }
  
      void Server::Close()
-diff --git a/Source/WPEFramework/CMakeLists.txt b/Source/WPEFramework/CMakeLists.txt
-index 431e617f..5b34b720 100644
---- a/Source/WPEFramework/CMakeLists.txt
-+++ b/Source/WPEFramework/CMakeLists.txt
-@@ -84,6 +84,15 @@ else()
-             )
- endif ()
- 
-+find_package(Systemd)
-+if (SYSTEMD_FOUND)
-+    target_link_libraries( ${TARGET}
-+            PRIVATE
-+            Systemd::Systemd
-+            )
-+    SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DSYSTEMD_FOUND")
-+endif()
-+
- set_target_properties(${TARGET} PROPERTIES
-         CXX_STANDARD 11
-         CXX_STANDARD_REQUIRED YES

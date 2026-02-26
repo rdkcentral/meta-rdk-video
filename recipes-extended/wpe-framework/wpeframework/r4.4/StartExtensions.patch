@@ -1,0 +1,94 @@
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index fa723305..4b329f69 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -1169,6 +1169,20 @@ POP_WARNING()
+         SYSLOG(Logging::Startup, (_T("Notify that WPEFramework Systemd Service is Ready")));
+         sd_notify(0, "READY=1");
+ #endif /* SYSTEMD_FOUND */
++        for (auto service : configured_services)
++        {
++            if (service->State() != PluginHost::Service::state::UNAVAILABLE) {
++                if (service->Extension() == true && service->Startup() == PluginHost::IShell::startup::ACTIVATED ) {
++                    SYSLOG(Logging::Startup, (_T("Activating Extension [%s]:[%s]"),
++                        service->ClassName().c_str(), service->Callsign().c_str()));
++                    service->Activate(PluginHost::IShell::STARTUP);
++                }
++                else {
++                    SYSLOG(Logging::Startup, (_T("Activation of Extension [%s]:[%s] delayed, autostart is false"),
++                        service->ClassName().c_str(), service->Callsign().c_str()));
++                }
++            }
++        }
+     }
+ 
+     void Server::Close()
+diff --git a/Source/plugins/Configuration.h b/Source/plugins/Configuration.h
+index de193193..7638154a 100644
+--- a/Source/plugins/Configuration.h
++++ b/Source/plugins/Configuration.h
+@@ -221,6 +221,7 @@ namespace Plugin {
+             , StartupOrder(50)
+             , Startup(PluginHost::IShell::startup::DEACTIVATED)
+             , Communicator()
++            , Extension(false)
+         {
+             Add(_T("callsign"), &Callsign);
+             Add(_T("locator"), &Locator);
+@@ -238,6 +239,7 @@ namespace Plugin {
+             Add(_T("startuporder"), &StartupOrder);
+             Add(_T("startmode"), &Startup);
+             Add(_T("communicator"), &Communicator);
++            Add(_T("extension"), &Extension);
+         }
+         Config(const Config& copy)
+             : Core::JSON::Container()
+@@ -257,6 +259,7 @@ namespace Plugin {
+             , StartupOrder(copy.StartupOrder)
+             , Startup(copy.Startup)
+             , Communicator(copy.Communicator)
++            , Extension(copy.Extension)
+         {
+             Add(_T("callsign"), &Callsign);
+             Add(_T("locator"), &Locator);
+@@ -274,6 +277,7 @@ namespace Plugin {
+             Add(_T("startuporder"), &StartupOrder);
+             Add(_T("startmode"), &Startup);
+             Add(_T("communicator"), &Communicator);
++            Add(_T("extension"), &Extension);
+         }
+         ~Config() override = default;
+ 
+@@ -295,7 +299,7 @@ namespace Plugin {
+             StartupOrder = RHS.StartupOrder;
+             Startup = RHS.Startup;
+             Communicator = RHS.Communicator;
+-
++            Extension = RHS.Extension;
+             return (*this);
+         }
+ 
+@@ -328,6 +332,7 @@ namespace Plugin {
+         Core::JSON::DecUInt32 StartupOrder;
+         Core::JSON::EnumType<PluginHost::IShell::startup> Startup;
+         Core::JSON::String Communicator;
++        Core::JSON::Boolean Extension;
+ 
+         static Core::NodeId IPV4UnicastNode(const string& ifname);
+ 
+diff --git a/Source/plugins/Service.h b/Source/plugins/Service.h
+index 935fc32c..5e140864 100644
+--- a/Source/plugins/Service.h
++++ b/Source/plugins/Service.h
+@@ -315,6 +315,11 @@ namespace PluginHost {
+         {
+             return (_config.Configuration().StartupOrder.Value());
+         }
++
++        bool Extension() const
++        {
++            return (_config.Configuration().Extension.Value());
++        }
+         inline bool IsActive() const
+         {
+             return (_state == ACTIVATED);

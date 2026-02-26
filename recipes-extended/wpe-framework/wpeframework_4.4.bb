@@ -69,6 +69,9 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/0002-Print-Log-Upon-Time-ComRPC-Timeout.patch \
             file://r4.4/RDKEMW-10951_WPEFramework_Config_Override.patch \
             file://r4.4/PR-2057-RDKEMW-14228_apply_sysinfo_mem_unit.patch \
+            file://r4.4/WorkerPoolRevoke_fix.patch \
+            file://r4.4/WaitedRelease.patch \
+            file://r4.4/StartExtensions.patch \
            "
 
 S = "${WORKDIR}/git"
