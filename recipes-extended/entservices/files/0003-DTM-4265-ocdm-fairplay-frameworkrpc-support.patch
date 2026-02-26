@@ -1,0 +1,140 @@
+diff --git a/OpenCDMi/FrameworkRPC.cpp b/OpenCDMi/FrameworkRPC.cpp
+index 70958538..fa8ba3b0 100644
+--- a/OpenCDMi/FrameworkRPC.cpp
++++ b/OpenCDMi/FrameworkRPC.cpp
+@@ -799,6 +799,135 @@ namespace Plugin {
+                 return result;
+             }
+ 
++            Exchange::OCDM_RESULT InitLibrary(const std::string& keySystem) const override
++            {
++                Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++
++                CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                if (system != nullptr)
++                {
++                    CDMi::CDMi_RESULT mediasystem_return = system->InitLibrary();
++                    if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                    {
++                        result = Exchange::OCDM_SUCCESS;
++                    }
++                    else
++                    {
++                        result = Exchange::OCDM_S_FALSE;
++                    }
++                }
++
++                return result;
++            }
++
++            Exchange::OCDM_RESULT GenerateChallengeWithVersionList(const std::string& keySystem, uint32_t version, uint64_t movieId, const uint8_t* assetidData, uint32_t assetidSize, const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallenge, uint8_t* licenseChallengeSize, uint8_t* session) const override
++            {
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++
++                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                    if (system != nullptr) {
++
++                        CDMi::CDMi_RESULT mediasystem_return = system->GenerateChallengeWithVersionList(version, movieId, assetidData, assetidSize, streamerChallengeData, streamerChallengeSize, cryptorId, licenseChallenge, licenseChallengeSize, session);
++
++                        if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                        {
++                            result = Exchange::OCDM_SUCCESS;
++                        }
++                        else
++                        {
++                            result = Exchange::OCDM_S_FALSE;
++                        }
++                    }
++
++                    return result;
++            }
++
++            Exchange::OCDM_RESULT CreateMovieSession(const std::string& keySystem,
++                uint32_t version,
++                const uint8_t* cert,
++                uint32_t certificatesize,
++                const uint8_t* versionlist,
++                uint32_t versionListSize,
++                uint8_t *movieIdOut) const override
++                {
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++
++                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                    if (system != nullptr) {
++                        // if alignment is not guaranteed, we need to copy the data
++                        // Assume versionListSize is the number of uint32_t elements
++                        std::vector<uint32_t> versionlist32(versionListSize);
++                        memcpy(versionlist32.data(), versionlist, versionListSize * sizeof(uint32_t));
++                        const uint32_t* versionlist_converted = versionlist32.data();
++
++                        CDMi::CDMi_RESULT mediasystem_return = system->CreateMovieSession(version, cert, certificatesize, versionlist_converted, versionListSize, reinterpret_cast<uint64_t*>(movieIdOut));
++                        if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                        {
++                            result = Exchange::OCDM_SUCCESS;
++                        }
++                        else
++                        {
++                            result = Exchange::OCDM_S_FALSE;
++                        }
++                    }
++
++                    return result;
++                }
++
++           Exchange::OCDM_RESULT DestroyMovieSession(const std::string& keySystem, uint32_t version, uint64_t movieId) const override 
++           {
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                    if (system != nullptr) {
++                        CDMi::CDMi_RESULT mediasystem_return = system->DestroyMovieSession(version, movieId);
++                        if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                        {
++                            result = Exchange::OCDM_SUCCESS;
++                        }
++                        else
++                        {
++                            result = Exchange::OCDM_S_FALSE;
++                        }
++                    }
++
++                    return result;
++            }
++
++            Exchange::OCDM_RESULT DestroyServerExchange(const std::string& keySystem, uint32_t version, uint8_t* session) const override
++            {
++                Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++                CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                if (system != nullptr) {
++                    CDMi::CDMi_RESULT mediasystem_return = system->DestroyServerExchange(version, session);
++                    if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                    {
++                        result = Exchange::OCDM_SUCCESS;
++                    } else {
++                        result = Exchange::OCDM_S_FALSE;
++                    }
++                }
++                return result;
++            }
++
++           Exchange::OCDM_RESULT ProcessLicense(const std::string& keySystem, uint32_t version, uint8_t *session, const uint8_t *licenseData, uint32_t licenseDataSize, uint8_t *cryptoId) const override
++           {
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                    if (system != nullptr) {
++                        CDMi::CDMi_RESULT mediasystem_return = system->ProcessLicense(version, session, licenseData, licenseDataSize, cryptoId);
++                        if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                        {
++                            result = Exchange::OCDM_SUCCESS;
++                        }
++                        else
++                        {
++                            result = Exchange::OCDM_S_FALSE;
++                        }
++                    }
++
++                    return result;
++            }
++
+             Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& bufferSize, uint8_t buffer[]) const override {
+                 Exchange::OCDM_RESULT result = Exchange::OCDM_KEYSYSTEM_NOT_SUPPORTED;
+ 

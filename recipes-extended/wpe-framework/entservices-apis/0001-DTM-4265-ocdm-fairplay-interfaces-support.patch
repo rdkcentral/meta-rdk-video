@@ -1,0 +1,44 @@
+diff --git a/apis/OpenCDMi/IDRM.h b/apis/OpenCDMi/IDRM.h
+index a34454a..37e013f 100644
+--- a/apis/OpenCDMi/IDRM.h
++++ b/apis/OpenCDMi/IDRM.h
+@@ -446,6 +446,16 @@ public:
+     virtual CDMi_RESULT DestroyMediaKeySession(
+         IMediaKeySession* f_piMediaKeySession)
+         = 0;
++
++    // fairplay
++    virtual CDMi_RESULT CreateMovieSession(uint32_t version, const uint8_t* cert, uint32_t certificatesize, const uint32_t* versionlist, uint32_t versionListSize, uint64_t* movieIdOut) = 0;
++    virtual CDMi_RESULT DestroyMovieSession(uint32_t version, uint64_t movieId) = 0;
++    virtual CDMi_RESULT GenerateChallengeWithVersionList(uint32_t version, uint64_t movieId,
++        const uint8_t* assetidData, uint32_t assetidSize,
++        const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallengeBuffer, uint8_t *licenseSize, uint8_t *session) = 0;
++    virtual CDMi_RESULT DestroyServerExchange(uint32_t version, uint8_t* session) = 0;
++    virtual CDMi_RESULT ProcessLicense(uint32_t version, uint8_t *session, const uint8_t *licenseData, uint32_t licenseDataSize, uint8_t *cryptoId) = 0;
++    virtual CDMi_RESULT InitLibrary() = 0;
+ };
+ 
+ // IMediaKeySession defines the MediaKeySessionExt interface.
+diff --git a/apis/OpenCDMi/IOCDM.h b/apis/OpenCDMi/IOCDM.h
+index 5d3fe8c..54d5acf 100644
+--- a/apis/OpenCDMi/IOCDM.h
++++ b/apis/OpenCDMi/IOCDM.h
+@@ -191,6 +191,18 @@ struct IAccessorOCDM : virtual public Core::IUnknown {
+     // Provides keysystem-specific metadata
+     virtual OCDM_RESULT Metadata(const std::string& keySystem, std::string& metadata /* @out */) const = 0;
+ 
++    // fairplay
++    virtual OCDM_RESULT CreateMovieSession(const string& keySystem, uint32_t version, const uint8_t* cert /* @in @length:certificateLength */, uint32_t certificateLength, const uint8_t* versionlist /* @in @length:versionListSize */, uint32_t versionListSize, uint8_t* movieIdOut /* @out @length:8 */) const = 0;
++    virtual OCDM_RESULT DestroyMovieSession(const string& keySystem, uint32_t version, uint64_t movieId) const = 0;
++    virtual OCDM_RESULT GenerateChallengeWithVersionList(const string& keySystem, uint32_t version, uint64_t movieId,
++        const uint8_t* assetidData /* @in @length:assetidSize */, uint32_t assetidSize,
++        const uint8_t* streamerChallengeData /* @in @length:streamerChallengeSize */, uint32_t streamerChallengeSize,
++        uint64_t cryptorId, uint8_t* licenseChallengeBuffer /* @out @length:12000 */, uint8_t *licenseSize /* @out @length:4 */, uint8_t *session /* @out @length:4 */) const = 0;
++    virtual OCDM_RESULT DestroyServerExchange(const string& keySystem, uint32_t version, uint8_t* session /* @in @length:4 */) const = 0;
++    virtual OCDM_RESULT InitLibrary(const string& keySystem) const = 0;
++    virtual OCDM_RESULT ProcessLicense(const string& keySystem, uint32_t version, uint8_t* session /* @in @length:4 */, const uint8_t* licenseData /* @in @length:licenseDataSize */, uint32_t licenseDataSize, uint8_t *cryptoId /* @out @length:8 */) const = 0;
++
++
+     // Provides keysystem-specific metricdata
+     virtual OCDM_RESULT Metricdata(
+         const std::string& keySystem,
