@@ -11,7 +11,7 @@ PR = "r0"
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
-SRCREV = "0223e8afc6d4fcda29e6300313d1dc0b5ba5279d"
+SRCREV = "6f591ad535774c5acc7f7f99736571e228c60d9a"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
 #SRC_URI:append = " file://irmgr.diff"
@@ -19,6 +19,9 @@ S = "${WORKDIR}/git"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 DEPENDS:append = " safec-common-wrapper"
+
+# Telemetry Support
+DEPENDS:append = " telemetry"
 
 PARALLEL_MAKE = ""
 DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal \
@@ -116,7 +119,7 @@ CFLAGS:remove = "-DRF4CE_GPMSO_API"
 # JIRA: XRE-6537.
 #
 #MADAN
-LDFLAGS += " -lpthread -lglib-2.0 -ldbus-1 -lIARMBus -lsystemd -lsecure_wrapper -lprivilege -ldl -lWPEFrameworkPowerController"
+LDFLAGS += " -lpthread -lglib-2.0 -ldbus-1 -lIARMBus -lsystemd -lsecure_wrapper -lprivilege -ldl -lWPEFrameworkPowerController -ltelemetry_msgsender"
 CFLAGS += "-std=c++11 -fPIC -D_REENTRANT -Wall -I./include ${INCLUDE_DIRS}"
 
 CFLAGS:append:client = " -DMEDIA_CLIENT"
