@@ -4,13 +4,13 @@ Date: Wed, 13 Sep 2023 10:59:38 +0000
 Subject: [PATCH] Add a new metrics punch through on the OCDM framework
 
 ---
- OpenCDMi/FrameworkRPC.cpp | 29 +++++++++++++++++++++++++++++
+ plugin/FrameworkRPC.cpp | 29 +++++++++++++++++++++++++++++
  1 file changed, 29 insertions(+)
 
-diff --git a/OpenCDMi/FrameworkRPC.cpp b/OpenCDMi/FrameworkRPC.cpp
+diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
 index 2e64995e..2448e697 100644
---- a/OpenCDMi/FrameworkRPC.cpp
-+++ b/OpenCDMi/FrameworkRPC.cpp
+--- a/plugin/FrameworkRPC.cpp
++++ b/plugin/FrameworkRPC.cpp
 @@ -637,6 +637,18 @@ namespace Plugin {
                      return (_cencData.Status());
                  }

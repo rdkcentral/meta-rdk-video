@@ -5,6 +5,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=847677038847363222ffb66cfa6406c2"
 
 PR = "r20"
 PV = "4.4.2"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit python3native cmake pkgconfig
 
@@ -28,8 +29,8 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-Implement-IPersistent-interface-for-RPC-Vault.patch \
            file://r4.4/0001-SecAPI-Re-acquire-sec-handle-after-flush.patch \
            file://r4.4/0001-DELIA-64727-Prealloc-secure-memory-before-decrypt.patch \
-           file://r4.4/0001-PowerManagerClient-library-implementation.patch \
            file://r4.4/0001-RDKEMW-7064-Dont-decrypt-fake-buffer-is-revoke-has-b.patch \
+           file://r4.4/0001-PowerManagerClient-library-implementation.patch \
            "
 
 # Oct 17, 2023
@@ -73,7 +74,7 @@ WPE_CDMI_ADAPTER_IMPL = "${@get_cdmi_adapter(d)}"
 PACKAGECONFIG ?= " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdm ${WPE_CDMI_ADAPTER_IMPL}', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'provisioning', 'provisionproxy', '', d)} \
-    securityagent \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'securityagent', d)} \
     cryptography \
     powercontroller \
     "

@@ -5,7 +5,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${COREBASE}/../generic/tdk/generic/LICENSE;md5=160f54cb11e918adefb9060de75d725d"
 
 SRC_URI = "${CMF_GIT_ROOT}/rdkv/tools/tdkv;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GIT_BRANCH};name=tdk"
-SRCREV_tdk = "${AUTOREV}"
+SRCREV_tdk = "b05d3991d362bf03c4d267c0ba7eac4b806f74f3"
 
 SRC_URI += " \
     file://tdk_service.patch \

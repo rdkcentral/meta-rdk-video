@@ -5,7 +5,7 @@ SRC_URI = "${CMF_GIT_ROOT}/rdk/components/generic/streamfs_fcc;protocol=${CMF_GI
 
 # Modify these as desired
 PV = "1.0+git${SRCPV}"
-SRCREV = "${AUTOREV}"
+SRCREV = "71af748f66c1aac362255c818fe6217c626e9eb0"
 
 S = "${WORKDIR}/git"
 

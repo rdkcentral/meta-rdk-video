@@ -1,0 +1,256 @@
+From 84319f63aa7b41a11eaa590e415bc0939ec4db9c Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Mon, 8 Sep 2025 14:41:09 +0200
+Subject: [PATCH 1/3] Support Dolby Vision codecs
+
+Some applications (like AppleTV+) explicitly checks MSE for DV codecs support
+and select proper stream based on that. Browser needs to report that
+Dolby vision codecs are supported.
+
+List 'dvhe' and 'dvh1' codecs in GStreamer registry scanner
+but make sure they are exposed only if platform screen supports HDR.
+
+WPEPlatform provides screen properties throuhg ScreenManager.
+When disabled, use fake screen properties with HDR support based on page settings.
+
+For WPE port only.
+---
+ Source/WebCore/platform/PlatformScreen.cpp    |  5 +++--
+ .../gstreamer/GStreamerRegistryScanner.cpp    | 20 +++++++++++++++++++
+ Source/WebKit/WebProcess/WebPage/WebPage.cpp  | 19 ++++++++++++++++++
+ 3 files changed, 42 insertions(+), 2 deletions(-)
+
+diff --git a/Source/WebCore/platform/PlatformScreen.cpp b/Source/WebCore/platform/PlatformScreen.cpp
+index ba50b688ab6d..258804c9a25e 100644
+--- a/Source/WebCore/platform/PlatformScreen.cpp
++++ b/Source/WebCore/platform/PlatformScreen.cpp
+@@ -26,9 +26,10 @@
+ #include "config.h"
+ #include "PlatformScreen.h"
+ 
+-#if PLATFORM(COCOA)
++#if PLATFORM(COCOA) || PLATFORM(WPE)
+ 
+ #include "ScreenProperties.h"
++#include <wtf/NeverDestroyed.h>
+ 
+ namespace WebCore {
+ 
+@@ -71,4 +72,4 @@ const ScreenData* screenData(PlatformDisplayID screenDisplayID)
+ 
+ } // namespace WebCore
+ 
+-#endif // PLATFORM(COCOA)
++#endif // PLATFORM(COCOA) || PLATFORM(WPE)
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index 92bd67dc10ca..6c9767ee3818 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -41,6 +41,11 @@
+ #include "VideoEncoderPrivateGStreamer.h"
+ #endif
+ 
++#if PLATFORM(WPE)
++#include "PlatformScreen.h"
++#include "ScreenProperties.h"
++#endif // PLATFORM(WPE)
++
+ namespace WebCore {
+ 
+ GST_DEBUG_CATEGORY_STATIC(webkit_media_gst_registry_scanner_debug);
+@@ -433,6 +438,10 @@ void GStreamerRegistryScanner::initializeDecoders(const GStreamerRegistryScanner
+         m_decoderCodecMap.add(AtomString("x-h265"_s), h265DecoderAvailable);
+         m_decoderCodecMap.add(AtomString("hvc1*"_s), h265DecoderAvailable);
+         m_decoderCodecMap.add(AtomString("hev1*"_s), h265DecoderAvailable);
++#if PLATFORM(WPE)
++        m_decoderCodecMap.add(AtomString("dvhe*"_s), h265DecoderAvailable);
++        m_decoderCodecMap.add(AtomString("dvh1*"_s), h265DecoderAvailable);
++#endif // PLATFORM(WPE)
+     }
+ 
+     if (shouldAddMP4Container) {
+@@ -670,11 +679,22 @@ GStreamerRegistryScanner::CodecLookupResult GStreamerRegistryScanner::isCodecSup
+     size_t slashIndex = codec.find('/');
+     String codecName = slashIndex != notFound ? codec.substring(slashIndex + 1) : codec;
+ 
++#if PLATFORM(WPE)
++    bool supportsDVHCodec = false;
++    auto* scrData = screenData(primaryScreenDisplayID());
++    if (scrData && scrData->screenSupportsHighDynamicRange)
++        supportsDVHCodec = true;
++#endif // PLATFORM(WPE)
++
+     CodecLookupResult result;
+     if (codecName.startsWith("avc1"_s))
+         result = isAVC1CodecSupported(configuration, codecName, shouldCheckForHardwareUse);
+     else if (codecName.startsWith("hev1"_s) || codecName.startsWith("hvc1"_s))
+         result = isHEVCCodecSupported(configuration, codecName, shouldCheckForHardwareUse);
++#if PLATFORM(WPE)
++    else if ((codecName.startsWith("dvhe"_s) || codecName.startsWith("dvh1"_s)) && !supportsDVHCodec)
++        result = { false, nullptr };
++#endif // PLATFORM(WPE)
+     else {
+         auto& codecMap = configuration == Configuration::Decoding ? m_decoderCodecMap : m_encoderCodecMap;
+         for (const auto& [codecId, lookupResult] : codecMap) {
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.cpp b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+index f6937139abb6..7513daefe4a6 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.cpp
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+@@ -424,6 +424,11 @@ static void SetMediaVolume(void *data, float volume) {
+ #endif
+ #endif
+ 
++#if PLATFORM(WPE) && !ENABLE(WPE_PLATFORM)
++#include <WebCore/PlatformScreen.h>
++#include <WebCore/ScreenProperties.h>
++#endif // PLATFORM(WPE) && !ENABLE(WPE_PLATFORM)
++
+ namespace WebKit {
+ using namespace JSC;
+ using namespace WebCore;
+@@ -4316,6 +4321,20 @@ void WebPage::updatePreferences(const WebPreferencesStore& store)
+ #endif
+ 
+     m_page->settingsDidChange();
++
++#if PLATFORM(WPE) && !ENABLE(WPE_PLATFORM)
++    // On WPE, we don't have a way to get screen properties from the system, so
++    // we fake them here based on the settings.
++    auto* currentScreenData = WebCore::screenData(primaryScreenDisplayID());
++    if (!currentScreenData || currentScreenData->screenSupportsHighDynamicRange != settings.screenSupportsHDR()) {
++        WebCore::ScreenData data;
++        data.screenSupportsHighDynamicRange = settings.screenSupportsHDR();
++        WebCore::ScreenProperties props;
++        props.primaryDisplayID = 1; // Fake display ID
++        props.screenDataMap.add(props.primaryDisplayID, WTFMove(data));
++        WebCore::setScreenProperties(props);
++    }
++#endif // PLATFORM(WPE) && !ENABLE(WPE_PLATFORM
+ }
+ 
+ #if ENABLE(DATA_DETECTION)
+-- 
+2.48.1
+
+
+From d594a198993634beca192b75078de569301f9429 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Tue, 9 Sep 2025 16:37:48 +0200
+Subject: [PATCH 2/3] Filter HDR content in MediaCapabilities querry
+
+Improve MediaCapabilites decoding support:
+1) Filter HDR related fields if screen doesn't support HDR.
+2) Both video and audio needs to be supported
+3) Include codecs check into the supported result
+---
+ .../gstreamer/GStreamerRegistryScanner.cpp    | 32 ++++++++++++++++---
+ 1 file changed, 27 insertions(+), 5 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index 6c9767ee3818..90fa9b101de0 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -916,7 +916,6 @@ const char* GStreamerRegistryScanner::configurationNameForLogging(Configuration
+ 
+ GStreamerRegistryScanner::RegistryLookupResult GStreamerRegistryScanner::isConfigurationSupported(Configuration configuration, const MediaConfiguration& mediaConfiguration) const
+ {
+-    bool isSupported = false;
+     bool isUsingHardware = false;
+     const char* configLogString = configurationNameForLogging(configuration);
+ 
+@@ -927,11 +926,33 @@ GStreamerRegistryScanner::RegistryLookupResult GStreamerRegistryScanner::isConfi
+             videoConfiguration.width, videoConfiguration.height,
+             videoConfiguration.bitrate, videoConfiguration.framerate);
+ 
++#if PLATFORM(WPE)
++        auto* scrData = screenData(primaryScreenDisplayID());
++        if (!scrData || !scrData->screenSupportsHighDynamicRange) {
++            // Check HDR metadata field
++            if (videoConfiguration.hdrMetadataType.has_value()) {
++                return { false, false, nullptr };
++            }
++            // Transfer function (EOTF)
++            if (videoConfiguration.transferFunction.has_value()) {
++                auto tf = videoConfiguration.transferFunction.value();
++                // compare to your enum values for PQ/HLG; adjust names if different
++                if (tf == TransferFunction::PQ || tf == TransferFunction::HLG) {
++                    return { false, false, nullptr };
++                }
++            }
++        }
++#endif // PLATFORM(WPE)
+         auto contentType = ContentType(videoConfiguration.contentType);
+-        isSupported = isContainerTypeSupported(configuration, contentType.containerType());
++        if (!isContainerTypeSupported(configuration, contentType.containerType()))
++            return { false, false, nullptr };
++
+         auto codecs = contentType.codecs();
+-        if (!codecs.isEmpty())
++        if (!codecs.isEmpty()) {
++            if (!areAllCodecsSupported(configuration, codecs, false))
++                return { false, false, nullptr };
+             isUsingHardware = areAllCodecsSupported(configuration, codecs, true);
++        }
+     }
+ 
+     if (mediaConfiguration.audio) {
+@@ -940,10 +961,11 @@ GStreamerRegistryScanner::RegistryLookupResult GStreamerRegistryScanner::isConfi
+             audioConfiguration.contentType.utf8().data(), audioConfiguration.channels.utf8().data(),
+             audioConfiguration.bitrate.value_or(0), audioConfiguration.samplerate.value_or(0));
+         auto contentType = ContentType(audioConfiguration.contentType);
+-        isSupported = isContainerTypeSupported(configuration, contentType.containerType());
++        if (!isContainerTypeSupported(configuration, contentType.containerType()))
++            return { false, false, nullptr };
+     }
+ 
+-    return { isSupported, isUsingHardware, nullptr };
++    return { true, isUsingHardware, nullptr };
+ }
+ 
+ #if USE(GSTREAMER_WEBRTC)
+-- 
+2.48.1
+
+
+From f9448af1957d19b0231cf2619020301d6e724cac Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Mon, 22 Sep 2025 09:46:49 +0200
+Subject: [PATCH 3/3] Set default value of ScreenSupportsHDR WebKit setting
+
+Base it on ENABLE_HDR build option
+---
+ Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp | 2 +-
+ Source/cmake/OptionsWPE.cmake                       | 7 +++++++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp b/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
+index a9d484bcdb49..25f31b5fabf7 100644
+--- a/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
++++ b/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
+@@ -1824,7 +1824,7 @@ static void webkit_settings_class_init(WebKitSettingsClass* klass)
+         "screen-supports-hdr",
+         _("Screen supports HDR"),
+         _("Does screen support HDR."),
+-        FALSE,
++        ENABLE_HDR,
+         readWriteConstructParamFlags);
+ 
+     g_object_class_install_properties(gObjectClass, N_PROPERTIES, sObjProperties);
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+index 77d3a0a57b09..9cbc55b11dd1 100644
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -452,3 +452,10 @@ endif()
+ if (USE_WPEWEBKIT_PLATFORM_BROADCOM)
+   add_definitions(-DBROADCOM_PLATFORM=1)
+ endif()
++
++if (ENABLE_HDR)
++  add_definitions(-DENABLE_HDR=1)
++else()
++  add_definitions(-DENABLE_HDR=0)
++endif()
++
+-- 
+2.48.1
+

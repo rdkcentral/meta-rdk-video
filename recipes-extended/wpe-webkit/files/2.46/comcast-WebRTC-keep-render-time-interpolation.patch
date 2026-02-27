@@ -1,0 +1,25 @@
+From 7dc141370c3b4971d631086d6a919aa58b6e1197 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Tue, 26 Mar 2024 18:54:04 +0000
+Subject: [PATCH] WebRTC: keep render time interpolation
+
+---
+ .../Source/webrtc/modules/video_coding/timing/timing.cc         | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/ThirdParty/libwebrtc/Source/webrtc/modules/video_coding/timing/timing.cc b/Source/ThirdParty/libwebrtc/Source/webrtc/modules/video_coding/timing/timing.cc
+index 735f6328d8b6..e52259deb946 100644
+--- a/Source/ThirdParty/libwebrtc/Source/webrtc/modules/video_coding/timing/timing.cc
++++ b/Source/ThirdParty/libwebrtc/Source/webrtc/modules/video_coding/timing/timing.cc
+@@ -195,7 +195,7 @@ void VCMTiming::SetLastDecodeScheduledTimestamp(
+ 
+ Timestamp VCMTiming::RenderTimeInternal(uint32_t frame_timestamp,
+                                         Timestamp now) const {
+-  if (UseLowLatencyRendering()) {
++  if (false && UseLowLatencyRendering()) {
+     // Render as soon as possible or with low-latency renderer algorithm.
+     return Timestamp::Zero();
+   }
+-- 
+2.25.1
+

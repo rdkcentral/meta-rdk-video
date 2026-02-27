@@ -4,16 +4,14 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d7a8c87b0741f248c5139ca80a783231"
 
-PV ?= "3.0.0"
-PR ?= "r0"
 S = "${WORKDIR}/git"
 
+PV = "1.0.2"
+PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;protocol=${CMF_GIT_PROTOCOL};branch=develop"
-
-# Aug 06, 2025
-SRCREV = "3202ca6bbf15d9567f3ab746ba37ce7eccd18c85"
+SRCREV = "48461dc2b8a21975cc598c4956a9fd5c621482a8"
+SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
@@ -34,7 +32,7 @@ CFLAGS += "-fcommon"
 
 DEPENDS += "gssdp openssl c-ares curl util-linux glib-2.0 cmake-native wpeframework wpeframework-clientlibraries entservices-apis iarmmgrs"
 
-inherit logrotate_config
+inherit logrotate_config pkgconfig
 
 LOGROTATE_NAME="xdial"
 LOGROTATE_LOGNAME_xdial="xdial.log"

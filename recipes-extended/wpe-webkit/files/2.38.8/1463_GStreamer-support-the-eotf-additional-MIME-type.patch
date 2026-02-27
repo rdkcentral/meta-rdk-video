@@ -1,0 +1,47 @@
+From b5cf513170734642190775ec0c4bad02068b809c Mon Sep 17 00:00:00 2001
+From: Przemyslaw Gorszkowski <pgorszkowski@igalia.com>
+Date: Fri, 14 Feb 2025 02:06:14 -0800
+Subject: [PATCH] [GTK][WPE][GStreamer] support the 'eotf' additional MIME type
+ parameter by isSupportedType https://bugs.webkit.org/show_bug.cgi?id=287560
+
+Reviewed by Philippe Normand.
+
+MediaSource.isSupportedType method must support the 'eotf' additional MIME type parameter and support the following values:
+* 'bt709', indicating ITU-R BT.1886 support
+* 'smpte2084', to indicate SMPTE 2084 EOTF support
+* 'arib-std-b67', to indicate ARIB STD-B67 support
+
+to be compliant with "YouTube TV HTML5 Technical Requirements"
+(defined in point 16.3.1 of https://developers.google.com/youtube/devices/living-room/files/pdf-guides/YouTube_TV_HTML5_Technical_Requirements_2018.pdf).
+
+* Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp:
+(WebCore::GStreamerRegistryScanner::isContentTypeSupported const):
+
+Canonical link: https://commits.webkit.org/290396@main
+---
+ .../graphics/gstreamer/GStreamerRegistryScanner.cpp      | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index 3b48bb561437..8a396d2fc3f9 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -778,6 +778,15 @@ MediaPlayerEnums::SupportsType GStreamerRegistryScanner::isContentTypeSupported(
+         if (!isCodecSupported(configuration, codec, requiresHardwareSupport))
+             return SupportsType::IsNotSupported;
+     }
++
++    // The 'eotf' additional mime-type parameter must be supported to be compliant with
++    // "YouTube TV HTML5 Technical Requirements"
++    // (point 16.3.1 from https://developers.google.com/youtube/devices/living-room/files/pdf-guides/YouTube_TV_HTML5_Technical_Requirements_2018.pdf).
++    const auto eotf = contentType.parameter("eotf"_s);
++    if (!eotf.isEmpty()) {
++        if (eotf != "bt709"_s && eotf != "smpte2084"_s && eotf != "arib-std-b67"_s)
++            return SupportsType::IsNotSupported;
++    }
+     return SupportsType::IsSupported;
+ }
+ 
+-- 
+2.48.1
+

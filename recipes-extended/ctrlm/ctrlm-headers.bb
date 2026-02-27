@@ -2,12 +2,16 @@ DESCRIPTION = "Control Manager Headers"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-
 SECTION = "base"
 DEPENDS = ""
 
 include ctrlm.inc
+
+PACKAGE_ARCH   = "${MIDDLEWARE_ARCH}"
+PV            := "${CTRLM_PV}"
+PR            := "${CTRLM_PR}"
+SRCREV        := "${CTRLM_SRCREV}"
+SRCREV_FORMAT  = "ctrlm-headers"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-headers"
 
@@ -43,21 +47,14 @@ do_install() {
 
     install -d ${D}${includedir}/ctrlm_private
     install -m 644 ${S}/src/ctrlm_vendor_network_factory.h ${D}${includedir}/ctrlm_private
-    install -m 644 ${S}/src/ctrlm_voice_packet_analysis.h ${D}${includedir}/ctrlm_private
     install -m 644 ${S}/src/ctrlm_log.h ${D}${includedir}/ctrlm_private
 
     # Authorization Support
     install -m 644 ${S}/src/auth/ctrlm_auth.h ${D}${includedir}/ctrlm_private
-    install -m 644 ${S}/src/auth/ctrlm_hal_certificate.h ${D}${includedir}/ctrlm_private
     install -m 644 ${S}/src/factory/ctrlm_fta_platform.h ${D}${includedir}/ctrlm_private
 
     # Advanced Secure Binding
     install -m 644 ${S}/src/asb/ctrlm_asb.h ${D}${includedir}/ctrlm_private
-
-    # IRDB Support
-    install -m 644 ${S}/src/irdb/ctrlm_irdb_interface.h ${D}${includedir}/ctrlm_private
-    install -m 644 ${S}/src/ipc/ctrlm_ipc_iarm.h ${D}${includedir}/ctrlm_private
-    install -m 644 ${S}/src/irdb/ctrlm_irdb_plugin.h ${D}${includedir}/ctrlm_private
 
     # Network Support
     install -m 644 ${S}/src/ctrlm.h ${D}${includedir}/ctrlm_private

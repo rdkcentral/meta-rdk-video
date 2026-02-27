@@ -1,0 +1,65 @@
+**************************************************************************
+From: Thamim Razith <tabbas651@cable.comcast.com>
+Date: Tue, 05 Dec 2025 10:53:28 +0000
+Subject: [PATCH] 0001-Change-MODULE-PATH.patch
+Reason for Change: On Yocto systems, the ThunderTool is built for native(x86) and the Thunder is built for device specific arch. So the install paths must be changed accordingly
+Upstream-Status: Comcast Changes
+Signed-off-by: Thamim Razith  <tabbas651@cable.comcast.com>
+*************************************************************************
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d41de94..9250f71 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -27,8 +27,11 @@ else()
+     set(NAMESPACE Thunder)
+ endif()
+
+-set(GENERATOR_INSTALL_PATH "${CMAKE_INSTALL_INCLUDEDIR}/${NAMESPACE}" CACHE PATH "Location to install the generators.")
+-set(GENERATOR_MODULE_INSTALL_PATH "${GENERATOR_INSTALL_PATH}/Modules" CACHE INTERNAL "Location where to install the generator cmake modules")
++set(GENERATOR_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/sbin" CACHE PATH "Location to install the generators.")
++
++find_path(GENERATOR_MODULE_INSTALL_PATH CMake.cmake PATHS
++            "/usr/share/cmake-${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}/Modules/"
++         )
+
+ option(PROXYSTUB_GENERATOR_ENABLE_SECURITY "Globally enable security checks in proxystubs" OFF)
+ option(PROXYSTUB_GENERATOR_ENABLE_COHERENCY "Globally enable frame coherency checks in proxystubs" OFF)
+diff --git a/cmake/FindConfigGenerator.cmake.in b/cmake/FindConfigGenerator.cmake.in
+index 2719214..e637dc0 100644
+--- a/cmake/FindConfigGenerator.cmake.in
++++ b/cmake/FindConfigGenerator.cmake.in
+@@ -31,7 +31,7 @@ macro(IncludeConfig)
+ endmacro()
+ endif(CMAKE_VERSION VERSION_LESS 3.20.0 AND LEGACY_CONFIG_GENERATOR)
+
+-set(CONFIG_GENERATOR_PATH "${CMAKE_CURRENT_LIST_DIR}/../ConfigGenerator")
++set(CONFIG_GENERATOR_PATH "@GENERATOR_INSTALL_PATH@/ConfigGenerator")
+ set(CONFIG_GENERATOR "${CONFIG_GENERATOR_PATH}/config_generator.py")
+ set(CONFIG_COMPARE "${CONFIG_GENERATOR_PATH}/config_compare.py")
+
+diff --git a/cmake/FindJsonGenerator.cmake.in b/cmake/FindJsonGenerator.cmake.in
+index 8f91ce4..cbfe04e 100644
+--- a/cmake/FindJsonGenerator.cmake.in
++++ b/cmake/FindJsonGenerator.cmake.in
+@@ -19,7 +19,7 @@ if(NOT PYTHON_EXECUTABLE)
+     find_package(Python3 3.5 REQUIRED QUIET)
+ endif()
+
+-set(JSON_GENERATOR "${CMAKE_CURRENT_LIST_DIR}/../JsonGenerator/JsonGenerator.py")
++set(JSON_GENERATOR "@GENERATOR_INSTALL_PATH@/JsonGenerator/JsonGenerator.py")
+
+ function(JsonGenerator)
+     if (NOT JSON_GENERATOR)
+diff --git a/cmake/FindProxyStubGenerator.cmake.in b/cmake/FindProxyStubGenerator.cmake.in
+index 1615b79..36c12f5 100644
+--- a/cmake/FindProxyStubGenerator.cmake.in
++++ b/cmake/FindProxyStubGenerator.cmake.in
+@@ -19,7 +19,7 @@ if(NOT PYTHON_EXECUTABLE)
+     find_package(Python3 3.5 REQUIRED QUIET)
+ endif()
+
+-set(PROXYSTUB_GENERATOR "${CMAKE_CURRENT_LIST_DIR}/../ProxyStubGenerator/StubGenerator.py")
++set(PROXYSTUB_GENERATOR "@GENERATOR_INSTALL_PATH@/ProxyStubGenerator/StubGenerator.py")
+
+ function(ProxyStubGenerator)
+     if (NOT PROXYSTUB_GENERATOR)

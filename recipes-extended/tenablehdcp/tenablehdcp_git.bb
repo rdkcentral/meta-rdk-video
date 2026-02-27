@@ -10,7 +10,7 @@ PR = "r0"
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI = "${CMF_GIT_ROOT}/rdk/components/generic/rmf_tools/tenableHDCP;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GIT_BRANCH}"
-SRCREV = "${AUTOREV}"
+SRCREV ?= "d44c7438284fc36c774f6fc3fbd322698fe5ee71"
 
 S = "${WORKDIR}/git"
 

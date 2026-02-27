@@ -5,8 +5,10 @@ LICENSE = "Apache-2.0 & BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=f36198fb804ffbe39b5b2c336ceef9f8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-PV = "1.0"
+PV = "4.3.1"
+PR = "r0"
 
+SRCREV = "4a29ec2760d7193648d01f47dde641db4c24b3ff"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
@@ -102,9 +104,6 @@ do_install() {
         install -m 0644 ${S}/systemd_units/disk-threshold-check.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/disk-threshold-check.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/reboot-reason-logger.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-counter.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-counter.timer ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-notifier@.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/iptables.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/update-device-details.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/update-reboot-info.path ${D}${systemd_unitdir}/system
@@ -117,9 +116,6 @@ do_install() {
         install -m 0644 ${S}/systemd_units/disk-threshold-check.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/disk-threshold-check.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/reboot-reason-logger.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-counter.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-counter.timer ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-notifier@.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/iptables.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/update-device-details.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/update-reboot-info.path ${D}${systemd_unitdir}/system
@@ -128,8 +124,6 @@ do_install() {
         install -m 0644 ${S}/systemd_units/restart-parodus.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/oops-dump.service ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/restart-timesyncd.service ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/restart-timesyncd.path ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-event.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/ntp-event.path ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/dropbear.service ${D}${systemd_unitdir}/system
@@ -137,6 +131,7 @@ do_install() {
         install -m 0644 ${S}/systemd_units/network-connection-stats.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/NM_Bootstrap.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/zram.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/notify-network-ready.service ${D}${systemd_unitdir}/system
 
 
 	install -m 0644 ${S}/systemd_units/network-up.path ${D}${systemd_unitdir}/system
@@ -250,13 +245,18 @@ do_install() {
 	# For NetworkManager
 	install -d ${D}${sysconfdir}/NetworkManager
 	install -d ${D}${sysconfdir}/NetworkManager/conf.d
+    install -d ${D}${sysconfdir}/NetworkManager/dnsmasq.d
 	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d
 	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
 	install -m 0755 ${S}/lib/rdk/NM_Dispatcher.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d
 	install -m 0755 ${S}/lib/rdk/NM_preDown.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
 	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
+    install -m 0755 ${S}/etc/dnsmasq-dobby.conf ${D}${sysconfdir}/NetworkManager/dnsmasq.d/dnsmasq-dobby.conf
+        rm ${D}${sysconfdir}/dnsmasq-dobby.conf
         rm ${D}${base_libdir}/rdk/NM_Dispatcher.sh
         rm ${D}${base_libdir}/rdk/NM_preDown.sh
+    install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
+    install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
 }
 
 do_install:append:rdkstb() {
@@ -284,9 +284,6 @@ SYSTEMD_SERVICE:${PN} += "minidump-secure-upload.path"
 SYSTEMD_SERVICE:${PN} += "dropbear.service"
 SYSTEMD_SERVICE:${PN} += "disk-threshold-check.timer"
 SYSTEMD_SERVICE:${PN} += "reboot-reason-logger.service"
-SYSTEMD_SERVICE:${PN} += "reboot-counter.service"
-SYSTEMD_SERVICE:${PN} += "reboot-counter.timer"
-SYSTEMD_SERVICE:${PN} += "reboot-notifier@.service"
 SYSTEMD_SERVICE:${PN} += "iptables.service"
 SYSTEMD_SERVICE:${PN} += "update-device-details.service"
 SYSTEMD_SERVICE:${PN} += "oops-dump.service"
@@ -295,7 +292,6 @@ SYSTEMD_SERVICE:${PN} += "update-reboot-info.service"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.path"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.service"
 SYSTEMD_SERVICE:${PN} += "gstreamer-cleanup.service"
-SYSTEMD_SERVICE:${PN} += "restart-timesyncd.path"
 SYSTEMD_SERVICE:${PN} += "ntp-event.service"
 SYSTEMD_SERVICE:${PN} += "ntp-event.path"
 SYSTEMD_SERVICE:${PN} += "network-connection-stats.service"
@@ -309,7 +305,7 @@ SYSTEMD_SERVICE:${PN} += "ntp-time-sync-event.service"
 SYSTEMD_SERVICE:${PN} += "ntp-time-sync.timer"
 SYSTEMD_SERVICE:${PN} += "system-time-set.path"
 SYSTEMD_SERVICE:${PN} += "system-time-event.service"
-
+SYSTEMD_SERVICE:${PN} += "notify-network-ready.service"
 FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
 FILES:${PN} += "${base_libdir}/rdk/*"
@@ -322,3 +318,4 @@ FILES:${PN} += "${sbindir}/*"
 FILES:${PN} += " /HrvInitScripts/*"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/NM_Dispatcher.sh"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d/NM_preDown.sh"
+FILES:${PN} += "${sysconfdir}/NetworkManager/dnsmasq.d/dnsmasq-dobby.conf"

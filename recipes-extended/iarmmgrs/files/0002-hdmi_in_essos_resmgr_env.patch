@@ -9,7 +9,7 @@ Index: git/conf/dsmgr.service
 ===================================================================
 --- git.orig/conf/dsmgr.service
 +++ git/conf/dsmgr.service
-@@ -24,6 +24,8 @@ OnFailure=reboot-notifier@%i.service
+@@ -24,6 +24,8 @@
  [Service]
  Type=notify
  Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/var/run/dbus/system_bus_socket

@@ -1,4 +1,4 @@
-From 8af1da7acbc0e1874c500f2f69e4cd94e2663623 Mon Sep 17 00:00:00 2001
+From 96cf5315ea63c5f4a26564492ae62d783434b49f Mon Sep 17 00:00:00 2001
 From: Shrinivas Kamath <skamath@synamedia.com>
 Date: Wed, 6 Aug 2025 05:25:12 +0000
 Subject: [PATCH] PowerController (PowerManager plugin client) implementation
@@ -15,6 +15,7 @@ interface changes for enhanced instance management and add operational state tra
 - PowerModePreChange & Thunder restart handling
 - Adapt to IPowerManager interface changes
 - Remove client instance counting in powercontroller
+- Align PowerManager WakeupSrcConfiguration API's with SystemService plugin
 
 %% original patch: 0001-PowerManagerClient-library-implementation.patch
 ---
@@ -24,29 +25,29 @@ interface changes for enhanced instance management and add operational state tra
  Source/powercontroller/CMakeLists.txt       |   79 +
  Source/powercontroller/Module.cpp           |   22 +
  Source/powercontroller/Module.h             |   33 +
- Source/powercontroller/power_controller.cpp | 1982 +++++++++++++++++++
- Source/powercontroller/power_controller.h   |  436 ++++
- 8 files changed, 2560 insertions(+), 1 deletion(-)
+ Source/powercontroller/power_controller.cpp | 1969 +++++++++++++++++++
+ Source/powercontroller/power_controller.h   |  405 ++++
+ 8 files changed, 2441 insertions(+), 1 deletion(-)
  create mode 100644 Source/powercontroller/CMakeLists.txt
  create mode 100644 Source/powercontroller/Module.cpp
  create mode 100644 Source/powercontroller/Module.h
  create mode 100644 Source/powercontroller/power_controller.cpp
  create mode 100644 Source/powercontroller/power_controller.h
 
-diff --git a/.gitignore b/.gitignore
-index 9ed30d6..1d22f62 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -39,3 +39,5 @@ Source/playerinfo/player_info/player_info
+Index: git/.gitignore
+===================================================================
+--- git.orig/.gitignore
++++ git/.gitignore
+@@ -39,3 +39,5 @@ Source/playerinfo/player_info/player_inf
  */*/*/*/*tests
  */*/generated
  */*/*/*/lib*.a
 +.cache
 +compile_commands.json
-diff --git a/NOTICE b/NOTICE
-index fd4f8ed..f0bbef9 100644
---- a/NOTICE
-+++ b/NOTICE
+Index: git/NOTICE
+===================================================================
+--- git.orig/NOTICE
++++ git/NOTICE
 @@ -31,4 +31,5 @@ Licensed under the MIT License
  Copyright (C) 2015,2019 Metrological
  Licensed under the BSD-2 License
@@ -54,10 +55,10 @@ index fd4f8ed..f0bbef9 100644
 -
 +Copyright 2025 RDK Management
 +Licensed under the Apache License, Version 2.0
-diff --git a/Source/CMakeLists.txt b/Source/CMakeLists.txt
-index af7578a..4cc4cb1 100644
---- a/Source/CMakeLists.txt
-+++ b/Source/CMakeLists.txt
+Index: git/Source/CMakeLists.txt
+===================================================================
+--- git.orig/Source/CMakeLists.txt
++++ git/Source/CMakeLists.txt
 @@ -58,3 +58,7 @@ endif()
  if(LOCALTRACER)
      add_subdirectory(localtracer)
@@ -66,11 +67,10 @@ index af7578a..4cc4cb1 100644
 +if(POWERCONTROLLER)
 +    add_subdirectory(powercontroller)
 +endif()
-diff --git a/Source/powercontroller/CMakeLists.txt b/Source/powercontroller/CMakeLists.txt
-new file mode 100644
-index 0000000..786bffc
+Index: git/Source/powercontroller/CMakeLists.txt
+===================================================================
 --- /dev/null
-+++ b/Source/powercontroller/CMakeLists.txt
++++ git/Source/powercontroller/CMakeLists.txt
 @@ -0,0 +1,79 @@
 +# If not stated otherwise in this file or this component's LICENSE file the
 +# following copyright and licenses apply:
@@ -151,11 +151,10 @@ index 0000000..786bffc
 +        TARGETS ${TARGET}
 +        DESCRIPTION "communications channel abstraction for powermanager plugin")
 +
-diff --git a/Source/powercontroller/Module.cpp b/Source/powercontroller/Module.cpp
-new file mode 100644
-index 0000000..e924dc3
+Index: git/Source/powercontroller/Module.cpp
+===================================================================
 --- /dev/null
-+++ b/Source/powercontroller/Module.cpp
++++ git/Source/powercontroller/Module.cpp
 @@ -0,0 +1,22 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
@@ -179,11 +178,10 @@ index 0000000..e924dc3
 +#include "Module.h"
 +
 +MODULE_NAME_DECLARATION(BUILD_REFERENCE)
-diff --git a/Source/powercontroller/Module.h b/Source/powercontroller/Module.h
-new file mode 100644
-index 0000000..c9c1321
+Index: git/Source/powercontroller/Module.h
+===================================================================
 --- /dev/null
-+++ b/Source/powercontroller/Module.h
++++ git/Source/powercontroller/Module.h
 @@ -0,0 +1,33 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
@@ -218,12 +216,11 @@ index 0000000..c9c1321
 +#undef EXTERNAL
 +#define EXTERNAL EXTERNAL_EXPORT
 +#endif
-diff --git a/Source/powercontroller/power_controller.cpp b/Source/powercontroller/power_controller.cpp
-new file mode 100644
-index 0000000..6772e8e
+Index: git/Source/powercontroller/power_controller.cpp
+===================================================================
 --- /dev/null
-+++ b/Source/powercontroller/power_controller.cpp
-@@ -0,0 +1,1982 @@
++++ git/Source/powercontroller/power_controller.cpp
+@@ -0,0 +1,1942 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -265,17 +262,17 @@ index 0000000..6772e8e
 +#ifdef ENABLE_LOGGING
 +#define LOGINFO(fmt, ...)                                                                                                                                                 \
 +    do {                                                                                                                                                                  \
-+        fprintf(stdout, "[%d] INFO  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fprintf(stdout, "[PowerController][%d] INFO  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
 +        fflush(stdout);                                                                                                                                                   \
 +    } while (0)
 +#define LOGWARN(fmt, ...)                                                                                                                                                 \
 +    do {                                                                                                                                                                  \
-+        fprintf(stdout, "[%d] WARN  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fprintf(stdout, "[PowerController][%d] WARN  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
 +        fflush(stdout);                                                                                                                                                   \
 +    } while (0)
 +#define LOGERR(fmt, ...)                                                                                                                                                  \
 +    do {                                                                                                                                                                  \
-+        fprintf(stderr, "[%d] ERROR [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fprintf(stderr, "[PowerController][%d] ERROR [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
 +        fflush(stderr);                                                                                                                                                   \
 +    } while (0)
 +#else
@@ -324,43 +321,6 @@ index 0000000..6772e8e
 +        }
 +    }
 +    return PowerState::POWER_STATE_UNKNOWN;
-+}
-+
-+const std::unordered_map<WakeupSrcType, PowerController_WakeupSrcType_t>& wakeupSrcTypeMap()
-+{
-+    static const std::unordered_map<WakeupSrcType, PowerController_WakeupSrcType_t> map = {
-+        { WakeupSrcType::WAKEUP_SRC_UNKNOWN, WAKEUP_SRC_UNKNOWN },
-+        { WakeupSrcType::WAKEUP_SRC_VOICE, WAKEUP_SRC_VOICE },
-+        { WakeupSrcType::WAKEUP_SRC_PRESENCEDETECTED, WAKEUP_SRC_PRESENCEDETECTED },
-+        { WakeupSrcType::WAKEUP_SRC_BLUETOOTH, WAKEUP_SRC_BLUETOOTH },
-+        { WakeupSrcType::WAKEUP_SRC_RF4CE, WAKEUP_SRC_RF4CE },
-+        { WakeupSrcType::WAKEUP_SRC_WIFI, WAKEUP_SRC_WIFI },
-+        { WakeupSrcType::WAKEUP_SRC_IR, WAKEUP_SRC_IR },
-+        { WakeupSrcType::WAKEUP_SRC_POWERKEY, WAKEUP_SRC_POWERKEY },
-+        { WakeupSrcType::WAKEUP_SRC_TIMER, WAKEUP_SRC_TIMER },
-+        { WakeupSrcType::WAKEUP_SRC_CEC, WAKEUP_SRC_CEC },
-+        { WakeupSrcType::WAKEUP_SRC_LAN, WAKEUP_SRC_LAN },
-+    };
-+    return map;
-+}
-+
-+PowerController_WakeupSrcType_t convert(const WakeupSrcType from)
-+{
-+    auto& map = wakeupSrcTypeMap();
-+    auto it = map.find(from);
-+    return (it != map.end()) ? it->second : WAKEUP_SRC_UNKNOWN;
-+}
-+
-+WakeupSrcType convert(const PowerController_WakeupSrcType_t from)
-+{
-+    auto& map = wakeupSrcTypeMap();
-+
-+    for (const auto& kv : map) {
-+        if (kv.second == from) {
-+            return kv.first;
-+        }
-+    }
-+    return WakeupSrcType::WAKEUP_SRC_UNKNOWN;
 +}
 +
 +const std::unordered_map<WakeupReason, PowerController_WakeupReason_t>& wakeupReasonMap()
@@ -826,7 +786,7 @@ index 0000000..6772e8e
 +                    if (errno == EINTR)
 +                        continue;
 +
-+                    std::cerr << "FATAL poll failed, err: " << strerror(errno) << ", fd: " << _fd << ", wd: " << _wd << "\n";
++                    LOGERR("FATAL poll failed, Err[%s], fd[%d], wd[%d]", strerror(errno), _fd, _wd);
 +                    break;
 +                } else if (poll_res == 0) {
 +                    // timedout
@@ -842,11 +802,13 @@ index 0000000..6772e8e
 +
 +        if (INVALID_FD != _wd) {
 +            close(_wd);
++            _wd = INVALID_FD;
 +        }
 +        if (INVALID_FD != _fd) {
 +            close(_fd);
++            _fd = INVALID_FD;
 +        }
-+        std::cout << "monitorThread: exiting\n";
++        LOGINFO("exiting\n");
 +    }
 +
 +public:
@@ -889,7 +851,7 @@ index 0000000..6772e8e
 +
 +    ~PIDFileMonitor()
 +    {
-+        std::cout << "PIDMonitor destructor\n";
++        LOGINFO("destructor");
 +
 +        _shutdown = true;
 +
@@ -1006,13 +968,12 @@ index 0000000..6772e8e
 +    ~PowerController()
 +    {
 +        _shutdown = true;
-+        /* Close destroys _powerManagerInterface too */
-+        BaseClass::Close(Core::infinite);
++        (void)Disconnect(); /* Internally it will Close destroys _powerManagerInterface too */
 +    }
 +
 +    void pidChangedCb(const int pid)
 +    {
-+        std::cout << "Thunder OLD PID: " << _pid << ", NEW PID: " << pid << "\n";
++        LOGINFO("Thunder OLD PID: %d, NEW PID: %d", _pid, pid);
 +
 +        if (_pid != pid) {
 +            Disconnect();
@@ -1029,7 +990,7 @@ index 0000000..6772e8e
 +
 +        // avoid misleading log during shutdown
 +        if ((upAndRunning && _shutdown) || !_shutdown) {
-+            std::cout << "PowerController::Operational (" << callSign << ") " << upAndRunning << std::endl;
++            LOGINFO("callsign: (%s), running: %d", callSign, upAndRunning);
 +        }
 +
 +        if (upAndRunning) {
@@ -1038,10 +999,10 @@ index 0000000..6772e8e
 +                _powerManagerInterface = BaseClass::Interface();
 +                if (_powerManagerInterface != nullptr) {
 +                    RegisterNotificationsLocked();
-+                    std::cout << "PowerController successfully established COM-RPC connection with PowerManager plugin\n";
++                    LOGINFO("Established COM-RPC connection with PowerManager plugin");
 +                } else {
 +                    // Internal error powerManager is running, but QueryInterface failed for it ?
-+                    std::cerr << "PowerController failed to establish COM-RPC connection with PowerManager plugin\n";
++                    LOGERR("Failed to Establish COM-RPC connection with PowerManager plugin");
 +                }
 +            }
 +        } else {
@@ -1103,38 +1064,50 @@ index 0000000..6772e8e
 +    uint32_t Connect()
 +    {
 +        uint32_t status = Core::ERROR_NONE;
-+        std::string errMsg = "";
 +
++        LOGINFO("Entering ...");
 +        _apiLock.Lock();
-+
-+        do {
-+            if (!isConnected()) {
-+                uint32_t res = BaseClass::Open(RPC::CommunicationTimeOut, BaseClass::Connector(), callSign);
-+                if (Core::ERROR_NONE == res) {
-+                    _connected = true;
-+                    if (!_pidMonitor.Running()) {
-+                        // read pid file once to get initial PID
-+                        _pid = _pidMonitor.PID();
-+                        _pidMonitor.Run();
++        try {
++            do {
++                if (!isConnected()) {
++                    LOGINFO("Opening COM-RPC channel ...");
++                    uint32_t res = BaseClass::Open(RPC::CommunicationTimeOut, BaseClass::Connector(), callSign);
++                    if (Core::ERROR_NONE == res) {
++                        LOGINFO("COM-RPC channel opened successfully");
++                        _connected = true;
++                        if (!_pidMonitor.Running()) {
++                            // read pid file once to get initial PID
++                            _pid = _pidMonitor.PID();
++                            _pidMonitor.Run();
++                        }
 +                    }
-+                } else {
-+                    errMsg = "COM-RPC channel open failed. Is Thunder running ?";
-+                    status = Core::ERROR_UNAVAILABLE;
-+                    break;
++                    else {
++                        LOGWARN("COM-RPC channel open failed with status[%u]. Is Thunder running ?", res);
++                        status = Core::ERROR_UNAVAILABLE;
++                        break;
++                    }
 +                }
-+            } else {
-+                errMsg = "COM-RPC channel already open";
-+            }
++                else {
++                    LOGINFO("COM-RPC channel already open");
++                }
 +
-+            if (nullptr == _powerManagerInterface) {
-+                errMsg = "PowerManager plugin is not activated yet";
-+                status = Core::ERROR_NOT_EXIST;
-+            }
-+        } while (false);
-+
++                if (nullptr == _powerManagerInterface) {
++                    LOGWARN("PowerManager plugin is not activated yet");
++                    status = Core::ERROR_NOT_EXIST;
++                }
++            } while (false);
++        }
++        catch (const std::exception& ex) {
++            LOGERR("Exception in PowerController::Connect [%s]", ex.what());
++            status = Core::ERROR_GENERAL;
++        }
++        catch (...) {
++            LOGERR("Unknown exception in PowerController::Connect");
++            status = Core::ERROR_GENERAL;
++        }
 +        _apiLock.Unlock();
 +
-+        std::cout << "PowerController::Connect (" << callSign << ") status: " << status << ", errMsg: \"" << errMsg << "\"" << std::endl;
++        LOGINFO("Exiting... status[%u]", status);
 +
 +        return status;
 +    }
@@ -1142,22 +1115,26 @@ index 0000000..6772e8e
 +    uint32_t Disconnect()
 +    {
 +        uint32_t status = Core::ERROR_GENERAL;
-+        bool close = false;
++
++        LOGINFO("Entering ...");
 +
 +        _apiLock.Lock();
 +
 +        if (isConnected()) {
-+            close = true;
++            LOGINFO("Closing COM-RPC channel ...");
++            status = BaseClass::Close(Core::infinite);
++            if (Core::ERROR_NONE != status) {
++                LOGERR("COM-RPC channel close failed, status: %u", status);
++            }
++            else {
++                LOGINFO("COM-RPC channel closed");
++            }
 +            _connected = false;
 +        }
 +
 +        _apiLock.Unlock();
 +
-+        if (close) {
-+            status = BaseClass::Close(Core::infinite);
-+        }
-+
-+        std::cout << "PowerController::disconnect\n";
++        LOGINFO("Exiting ... status[%u]", status);
 +
 +        return status;
 +    }
@@ -1180,21 +1157,28 @@ index 0000000..6772e8e
 +
 +    static void Init()
 +    {
++        LOGINFO("Entering ...");
 +        _apiLock.Lock();
 +        if (nullptr == _instance) {
 +            _instance = new PowerController();
++            if (nullptr == _instance) {
++                LOGERR("PowerController::Init failed, out of memory ?");
++            }
 +        }
 +        _apiLock.Unlock();
++        LOGINFO("Exiting ...");
 +    }
 +
 +    static void Term()
 +    {
++        LOGINFO("Entering ...");
 +        _apiLock.Lock();
 +        if (nullptr != _instance) {
 +            delete _instance;
 +            _instance = nullptr;
 +        }
 +        _apiLock.Unlock();
++        LOGINFO("Exiting ...");
 +    }
 +
 +    static PowerController* Instance()
@@ -1214,6 +1198,7 @@ index 0000000..6772e8e
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetPowerState(currentState_, previousState_);
 +        }
++        LOGINFO("result[%d], Prev[%d], Current[%d]", result, previousState_, currentState_);
 +
 +        _apiLock.Unlock();
 +
@@ -1236,6 +1221,7 @@ index 0000000..6772e8e
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->SetPowerState(keyCode, powerState_, reason);
 +        }
++        LOGINFO("result[%d], keyCode[%d], powerState[%d], reason[%s]", result, keyCode, powerState_, reason);
 +
 +        _apiLock.Unlock();
 +
@@ -1246,11 +1232,16 @@ index 0000000..6772e8e
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
++        if (nullptr == currentTemperature) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetThermalState(*currentTemperature);
 +        }
++        LOGINFO("result[%d], currentTemperature[%f]", result, *currentTemperature);
 +
 +        _apiLock.Unlock();
 +
@@ -1266,6 +1257,7 @@ index 0000000..6772e8e
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->SetTemperatureThresholds(high, critical);
 +        }
++        LOGINFO("result[%d], high[%f], critical[%f]", result, high, critical);
 +
 +        _apiLock.Unlock();
 +
@@ -1276,11 +1268,16 @@ index 0000000..6772e8e
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
++        if (nullptr == high || nullptr == critical) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetTemperatureThresholds(*high, *critical);
 +        }
++        LOGINFO("result[%d], high[%f], critical[%f]", result, *high, *critical);
 +
 +        _apiLock.Unlock();
 +
@@ -1296,6 +1293,7 @@ index 0000000..6772e8e
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->SetOvertempGraceInterval(graceInterval);
 +        }
++        LOGINFO("result[%d], graceInterval[%d]", result, graceInterval);
 +
 +        _apiLock.Unlock();
 +
@@ -1306,11 +1304,16 @@ index 0000000..6772e8e
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
++        if (nullptr == graceInterval) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetOvertempGraceInterval(*graceInterval);
 +        }
++        LOGINFO("result[%d], graceInterval[%d]", result, *graceInterval);
 +
 +        _apiLock.Unlock();
 +
@@ -1326,6 +1329,7 @@ index 0000000..6772e8e
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->SetDeepSleepTimer(timeOut);
 +        }
++        LOGINFO("result[%d], timeOut[%d]", result, timeOut);
 +
 +        _apiLock.Unlock();
 +
@@ -1337,11 +1341,16 @@ index 0000000..6772e8e
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +        WakeupReason wakeupReason_ = WakeupReason::WAKEUP_REASON_UNKNOWN;
 +
++        if (nullptr == wakeupReason) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetLastWakeupReason(wakeupReason_);
 +        }
++        LOGINFO("result[%d], wakeupReason[%d]", result, wakeupReason_);
 +
 +        _apiLock.Unlock();
 +
@@ -1356,11 +1365,16 @@ index 0000000..6772e8e
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
++        if (nullptr == keycode) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            _powerManagerInterface->GetLastWakeupKeyCode(*keycode);
 +        }
++        LOGINFO("result[%d], keycode[%d]", result, *keycode);
 +
 +        _apiLock.Unlock();
 +
@@ -1371,11 +1385,16 @@ index 0000000..6772e8e
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
++        if (nullptr == rebootRequestor || nullptr == rebootReasonCustom || nullptr == rebootReasonOther) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->Reboot(rebootRequestor, rebootReasonCustom, rebootReasonOther);
 +        }
++        LOGINFO("result[%d], rebootRequestor[%s], rebootReasonCustom[%s], rebootReasonOther[%s]", result, rebootRequestor, rebootReasonCustom, rebootReasonOther);
 +
 +        _apiLock.Unlock();
 +
@@ -1391,6 +1410,7 @@ index 0000000..6772e8e
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->SetNetworkStandbyMode(standbyMode);
 +        }
++        LOGINFO("result[%d], standbyMode[%d]", result, standbyMode);
 +
 +        _apiLock.Unlock();
 +
@@ -1400,58 +1420,16 @@ index 0000000..6772e8e
 +    {
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +
++        if (nullptr == standbyMode) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetNetworkStandbyMode(*standbyMode);
 +        }
-+
-+        _apiLock.Unlock();
-+
-+        return result;
-+    }
-+
-+    Core::hresult SetWakeupSrcConfig(const int powerMode, const int wakeSrcType, int config)
-+    {
-+        Core::hresult result = Core::ERROR_UNAVAILABLE;
-+
-+        _apiLock.Lock();
-+
-+        if (_powerManagerInterface) {
-+            result = _powerManagerInterface->SetWakeupSrcConfig(powerMode, wakeSrcType, config);
-+        }
-+
-+        _apiLock.Unlock();
-+
-+        return result;
-+    }
-+
-+    Core::hresult GetWakeupSrcConfig(int& powerMode, int& srcType, int& config)
-+    {
-+        Core::hresult result = Core::ERROR_UNAVAILABLE;
-+
-+        _apiLock.Lock();
-+
-+        if (_powerManagerInterface) {
-+            result = _powerManagerInterface->GetWakeupSrcConfig(powerMode, srcType, config);
-+        }
-+
-+        _apiLock.Unlock();
-+
-+        return result;
-+    }
-+
-+    Core::hresult SetSystemMode(const PowerController_SystemMode_t currentMode, const PowerController_SystemMode_t newMode)
-+    {
-+        Core::hresult result = Core::ERROR_UNAVAILABLE;
-+        SystemMode currentMode_ = convert(currentMode);
-+        SystemMode newMode_ = convert(newMode);
-+
-+        _apiLock.Lock();
-+
-+        if (_powerManagerInterface) {
-+            result = _powerManagerInterface->SetSystemMode(currentMode_, newMode_);
-+        }
++        LOGINFO("result[%d], standbyMode[%d]", result, *standbyMode);
 +
 +        _apiLock.Unlock();
 +
@@ -1463,11 +1441,16 @@ index 0000000..6772e8e
 +        Core::hresult result = Core::ERROR_UNAVAILABLE;
 +        PowerState powerStateBeforeReboot_ = PowerState::POWER_STATE_UNKNOWN;
 +
++        if (nullptr == powerStateBeforeReboot) {
++            return Core::ERROR_BAD_REQUEST;
++        }
++
 +        _apiLock.Lock();
 +
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->GetPowerStateBeforeReboot(powerStateBeforeReboot_);
 +        }
++        LOGINFO("result[%d], powerStateBeforeReboot[%d]", result, powerStateBeforeReboot_);
 +
 +        _apiLock.Unlock();
 +
@@ -1487,6 +1470,7 @@ index 0000000..6772e8e
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->AddPowerModePreChangeClient(clientName, clientId);
 +        }
++        LOGINFO("result[%d], clientName[%s], clientId[%d]", result, clientName.c_str(), clientId);
 +
 +        _apiLock.Unlock();
 +
@@ -1502,6 +1486,7 @@ index 0000000..6772e8e
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->RemovePowerModePreChangeClient(clientId);
 +        }
++        LOGINFO("result[%d], clientId[%d]", result, clientId);
 +
 +        _apiLock.Unlock();
 +
@@ -1517,6 +1502,7 @@ index 0000000..6772e8e
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->DelayPowerModeChangeBy(clientId, transactionId, delay);
 +        }
++        LOGINFO("result[%d], clientId[%d], transactionId[%d], delay[%d]", result, clientId, transactionId, delay);
 +
 +        _apiLock.Unlock();
 +
@@ -1532,6 +1518,7 @@ index 0000000..6772e8e
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->PowerModePreChangeComplete(clientId, transactionId);
 +        }
++        LOGINFO("result[%d], clientId[%d], transactionId[%d]", result, clientId, transactionId);
 +
 +        _apiLock.Unlock();
 +
@@ -2001,36 +1988,6 @@ index 0000000..6772e8e
 +    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +}
 +
-+uint32_t PowerController_SetWakeupSrcConfig(const int powerMode, const int wakeSrcType, int config)
-+{
-+    PowerController *instance = PowerController::Instance();
-+    if (instance) {
-+        return instance->SetWakeupSrcConfig(powerMode, wakeSrcType, config);
-+    }
-+    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+}
-+
-+uint32_t PowerController_GetWakeupSrcConfig(int* powerMode, int* srcType, int* config)
-+{
-+    ASSERT(nullptr != powerMode);
-+    ASSERT(nullptr != srcType);
-+    ASSERT(nullptr != config);
-+    PowerController *instance = PowerController::Instance();
-+    if (instance) {
-+        return instance->GetWakeupSrcConfig(*powerMode, *srcType, *config);
-+    }
-+    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+}
-+
-+uint32_t PowerController_SetSystemMode(const PowerController_SystemMode_t currentMode, const PowerController_SystemMode_t newMode)
-+{
-+    PowerController *instance = PowerController::Instance();
-+    if (instance) {
-+        return instance->SetSystemMode(currentMode, newMode);
-+    }
-+    return POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+}
-+
 +uint32_t PowerController_GetPowerStateBeforeReboot(PowerController_PowerState_t* powerStateBeforeReboot)
 +{
 +    ASSERT(nullptr != powerStateBeforeReboot);
@@ -2206,12 +2163,11 @@ index 0000000..6772e8e
 +}
 +
 +} // extern "C"
-diff --git a/Source/powercontroller/power_controller.h b/Source/powercontroller/power_controller.h
-new file mode 100644
-index 0000000..52979fb
+Index: git/Source/powercontroller/power_controller.h
+===================================================================
 --- /dev/null
-+++ b/Source/powercontroller/power_controller.h
-@@ -0,0 +1,436 @@
++++ git/Source/powercontroller/power_controller.h
+@@ -0,0 +1,398 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -2267,21 +2223,6 @@ index 0000000..52979fb
 +    THERMAL_TEMPERATURE_HIGH = 2 /* High Thermal Temperature */,
 +    THERMAL_TEMPERATURE_CRITICAL = 4 /* Critial Thermal Temperature */
 +} PowerController_ThermalTemperature_t;
-+
-+typedef enum PowerController_WakeupSrcType {
-+    WAKEUP_SRC_UNKNOWN          = 0         /* UNKNOWN */,
-+    WAKEUP_SRC_VOICE            = 1         /* VOICE */,
-+    WAKEUP_SRC_PRESENCEDETECTED = 1 << 1    /* PRESENCEDETECTED */,
-+    WAKEUP_SRC_BLUETOOTH        = 1 << 2    /* BLUETOOTH */,
-+    WAKEUP_SRC_WIFI             = 1 << 3    /* WIFI */,
-+    WAKEUP_SRC_IR               = 1 << 4    /* IR */,
-+    WAKEUP_SRC_POWERKEY         = 1 << 5    /* POWERKEY */,
-+    WAKEUP_SRC_TIMER            = 1 << 6    /* TIMER */,
-+    WAKEUP_SRC_CEC              = 1 << 7    /* CEC */,
-+    WAKEUP_SRC_LAN              = 1 << 8    /* LAN */,
-+    WAKEUP_SRC_RF4CE            = 1 << 9    /* RF4CE */,
-+    WAKEUP_SRC_MAX              = 1 << 10
-+} PowerController_WakeupSrcType_t;
 +
 +typedef enum PowerController_WakeupReason {
 +    WAKEUP_REASON_UNKNOWN = 0 /* UNKNOWN */,
@@ -2497,29 +2438,6 @@ index 0000000..52979fb
 +// @param standbyMode: Network standby mode
 +EXTERNAL uint32_t PowerController_GetNetworkStandbyMode(bool* standbyMode /* @out */);
 +
-+/** Set Wakeup source configuration */
-+// @text setWakeupSrcConfig
-+// @brief Set the source configuration for device wakeup
-+// @param powerMode: power mode
-+// @param wakeSrcType: source type
-+// @param config: config
-+EXTERNAL uint32_t PowerController_SetWakeupSrcConfig(const int powerMode /* @in */, const int wakeSrcType /* @in */, int config /* @in */);
-+
-+/** Get Wakeup source configuration */
-+// @text getWakeupSrcConfig
-+// @brief Get the source configuration for device wakeup
-+// @param powerMode: power mode
-+// @param srcType: source type
-+// @param config: config
-+EXTERNAL uint32_t PowerController_GetWakeupSrcConfig(int* powerMode /* @out */, int* srcType /* @out */, int* config /* @out */);
-+
-+/** Initiate System mode change */
-+// @text PowerController_SetSystemMode
-+// @brief System mode change
-+// @param oldMode: current mode
-+// @param newMode: new mode
-+EXTERNAL uint32_t PowerController_SetSystemMode(const PowerController_SystemMode_t currentMode /* @in */, const PowerController_SystemMode_t newMode /* @in */);
-+
 +/** Get Power State before last reboot */
 +// @text PowerController_GetPowerStateBeforeReboot
 +// @brief Get Power state before last reboot
@@ -2648,6 +2566,3 @@ index 0000000..52979fb
 +#endif
 +
 +#endif // POWERMANAGER_CLIENT_H
--- 
-2.37.7
-

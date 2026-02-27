@@ -12,8 +12,9 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r39"
+PR = "r40"
 PV = "4.4.3"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
 
@@ -21,7 +22,6 @@ SRCREV_thunder = "19100433e5517c743738bb2a9ed8ce2f79c10eaf"
 
 SRC_URI += "file://wpeframework-init \
            file://wpeframework.service.in \
-           file://network_manager_migration.conf \
            file://r4.4/Library_version_matched_with_release_tag.patch \
            file://r4.4/Remove_versioning_for_executables.patch \
            file://r4.4/wpeframework_version.patch \
@@ -64,6 +64,11 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/Jsonrpc_dynamic_error_handling.patch \
             file://r4.4/PR-1923-RDKEMW-6261-to-improve-system-shutdown-time-upon-R4.4.3.patch \
             file://r4.4/rdkemw-124-Link-Breakpad-wrapper.patch \
+            file://r4.4/RDKEMW-8889-Avoid-LoadMeta-On-Boot.patch \
+            file://r4.4/0001-To-handle-truncated-UTF-code-on-parsing-empty-null-t.patch \
+            file://r4.4/0002-Print-Log-Upon-Time-ComRPC-Timeout.patch \
+            file://r4.4/RDKEMW-10951_WPEFramework_Config_Override.patch \
+            file://r4.4/PR-2057-RDKEMW-14228_apply_sysinfo_mem_unit.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -77,7 +82,7 @@ WPEFRAMEWORK_SYSTEM_PREFIX = "OE"
 WPEFRAMEWORK_PORT = "9998"
 WPEFRAMEWORK_BINDING = "127.0.0.1"
 WPEFRAMEWORK_IDLE_TIME = "0"
-WPEFRAMEWORK_THREADPOOL_COUNT ?= "16"
+WPEFRAMEWORK_THREADPOOL_COUNT ?= "32"
 WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
 
 
@@ -161,9 +166,6 @@ EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
-
-    install -d ${D}${systemd_unitdir}/system/wpeframework.service.d
-    install -m 0644 ${WORKDIR}/network_manager_migration.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
