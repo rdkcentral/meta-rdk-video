@@ -20,7 +20,6 @@ DEPENDS:append = " rdk-logger libparodus parodus virtual/vendor-devicesettings-h
 
 DEPENDS += " python-lxml-native"
 DEPENDS:append = " python3-lxml-native"
-DEPENDS += "commonutilities"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetooth-mgr', '',d)}"
 RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetooth-mgr', '',d)}"
@@ -87,7 +86,7 @@ CXXFLAGS += " -Wall -Werror -Wno-cpp"
 
 DEPENDS += " rbus "
 
-LDFLAGS:append = " -lrbus -lfwutils"
+LDFLAGS:append = " -lrbus"
 CXXFLAGS:append = " -I${includedir}/rbus "
 
 RDEPENDS:${PN} += "devicesettings bash libsoup"
