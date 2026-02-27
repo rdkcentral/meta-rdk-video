@@ -92,3 +92,17 @@ index 935fc32c..5e140864 100644
          inline bool IsActive() const
          {
              return (_state == ACTIVATED);
+diff --git a/Source/com/Ids.h b/Source/com/Ids.h
+index 2c910bff..0af1d6b8 100644
+--- a/Source/com/Ids.h
++++ b/Source/com/Ids.h
+@@ -74,7 +74,8 @@ namespace RPC {
+         ID_COMREQUEST_NOTIFICATION      = (ID_OFFSET_INTERNAL + 0x003D),
+         ID_SYSTEM_METADATA              = (ID_OFFSET_INTERNAL + 0x003E),
+ 
+-        ID_EXTERNAL_INTERFACE_OFFSET    = (ID_OFFSET_INTERNAL + 0x0040),
++        ID_EXTENSIONS_INTERFACE_OFFSET    = (ID_OFFSET_INTERNAL + 0x0040),
++        ID_EXTERNAL_INTERFACE_OFFSET    = (ID_OFFSET_INTERNAL + 0x1000),
+        ID_EXTERNAL_CC_INTERFACE_OFFSET = (0xCC00) // ends on 0xDFFF
+     };
+ }
