@@ -9,7 +9,7 @@ S = "${WORKDIR}/wpeframework-extensions"
 inherit cmake pkgconfig
 
 BRANCH ?= "dev/thunder-extensions"
-SRCREV ?= "9345507088ab7a590646be9e3e3c26092e496736"
+SRCREV ?= "9235f81c00475cc96cfc63ed082ef5949a1e3ca1"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderNanoServices.git;protocol=ssh;branch=${BRANCH};destsuffix=wpeframework-extensions"
 
@@ -36,7 +36,11 @@ EXTRA_OECMAKE += " \
 # ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/* ${sysconfdir}/WPEFramework/plugins/*.json"
+FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/wpeframework/proxystubs/*.so.* ${libdir}/*.so ${datadir}/WPEFramework/* ${sysconfdir}/WPEFramework/plugins/*.json"
+
+FILES:${PN}-dev += "\
+    ${libdir}/wpeframework/proxystubs/*.so \
+"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
