@@ -86,7 +86,7 @@ CXXFLAGS += " -Wall -Werror -Wno-cpp"
 
 DEPENDS += " rbus "
 
-LDFLAGS:append = " -lrbus"
+LDFLAGS:append = " -lrbus "
 CXXFLAGS:append = " -I${includedir}/rbus "
 
 RDEPENDS:${PN} += "devicesettings bash libsoup"
