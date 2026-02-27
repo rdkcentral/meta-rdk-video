@@ -13,7 +13,6 @@ SRCREV ?= "${AUTOREV}"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderNanoServices.git;protocol=ssh;branch=${BRANCH};destsuffix=wpeframework-extensions"
 
-S = "${WORKDIR}/git"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 
