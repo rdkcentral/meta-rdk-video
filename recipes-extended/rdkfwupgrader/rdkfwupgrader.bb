@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=70514b59ff7b36bbbc30d093c6814d8e"
 
 # To have a possibility to override SRC_URI later, we are introducing the following workaround:
-PV = "1.5.0"
+PV = "1.5.2"
 PR = "r1"
 
 SRCREV_rdkfw = "d70a6cefe25eaa458f68daf89394c61119ba2390"
