@@ -1,32 +1,34 @@
-SUMMARY = "ENTServices Connectivity plugin"
+SUMMARY = "ENTServices framerate plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.4.0"
+PV = "1.1.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-framerate;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+           file://rdkservices.ini \
           "
 
-# Release version - 1.4.0
-SRCREV = "60c34011663e8ac1bb2791d0ee11428b132a21a2"
+# Release version - 1.1.0
+SRCREV = "6bb38038f654de41a4e57c6eb8d1425ce15a1ccd"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', 'wpa-supplicant', '', d)}"
+EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
+
 DEPENDS += "wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
-CXXFLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '-I${STAGING_DIR_TARGET}${includedir}/wpa-supplicant/', '', d)}"
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
@@ -40,17 +42,15 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'bluetoothcontrol', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', 'wifimanager network', '', d)} \
+    framerate \
 "
 
-PACKAGECONFIG:remove = "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', 'wifimanager network', '', d)}"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[bluetoothcontrol]     = "-DPLUGIN_BLUETOOTH=ON -DPLUGIN_BLUETOOTH_AUTOSTART=true,-DPLUGIN_BLUETOOTH=OFF,iarmbus iarmmgrs bluetooth-mgr,bluez5 iarmbus bluetooth-mgr"
-PACKAGECONFIG[network]              = "-DPLUGIN_NETWORK=ON,-DPLUGIN_NETWORK=OFF,iarmbus iarmmgrs rfc,iarmbus rfc netsrvmgr"
-PACKAGECONFIG[wifimanager]          = "-DPLUGIN_WIFIMANAGER=ON,-DPLUGIN_WIFIMANAGER=OFF,netsrvmgr iarmbus iarmmgrs,iarmbus wpa-supplicant"
+PACKAGECONFIG[framerate]            = "-DPLUGIN_FRAMERATE=ON,-DPLUGIN_FRAMERATE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal procps,iarmbus devicesettings procps"
+
+# ----------------------------------------------------------------------------
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
@@ -58,11 +58,11 @@ EXTRA_OECMAKE += " \
     -DSECAPI_LIB=sec_api \
 "
 
-# Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
+# Check if DisplayInfo backend is defined.
 python () {
-    dri_device_name = d.getVar('DRI_DEVICE_NAME')
-    if dri_device_name:
-        d.appendVar('OECMAKE_CXX_FLAGS', ' -DDEFAULT_DEVICE=\'\\"{}\\"\' '.format(dri_device_name))
+    machine_name = d.getVar('MACHINE')
+    if 'raspberrypi4' in machine_name:
+        d.appendVar('EXTRA_OECMAKE', ' -DBUILD_RPI=ON')
 }
 
 do_install:append() {
@@ -78,6 +78,8 @@ do_install:append() {
         fi
     fi
 }
+
+# ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
