@@ -1,0 +1,12 @@
+diff --git a/HdmiCecSource/HdmiCecSourceImplementation.h b/HdmiCecSource/HdmiCecSourceImplementation.h
+index 1080f36..37b73c3 100644
+--- a/HdmiCecSource/HdmiCecSourceImplementation.h
++++ b/HdmiCecSource/HdmiCecSourceImplementation.h
+@@ -328,6 +328,7 @@ namespace WPEFramework {
+             private:
+                 mutable Core::CriticalSection _adminLock;
+                 std::list<Exchange::IHdmiCecSource::INotification*> _hdmiCecSourceNotifications;
++		bool _exceptionOccurred;
+ 
+         public:
+             Core::hresult SetEnabled(const bool &enabled, HdmiCecSourceSuccess &success) override;
