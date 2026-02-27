@@ -2,7 +2,7 @@ SUMMARY = "ENTServices warehouse plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.0.1"
+PV = "1.0.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-warehouse;${CMF_GITHUB_SRC_URI_SUFFIX}
     file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
     file://rdkservices.ini \
     "
-# Release version - 1.0.1
-SRCREV = "d1a542835d95bfa9d77202c7733bd656495e9248"
+# Release version - 1.0.2
+SRCREV = "1ad8c9042886fd41140d6492ef4f5c0fb68e9577"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
