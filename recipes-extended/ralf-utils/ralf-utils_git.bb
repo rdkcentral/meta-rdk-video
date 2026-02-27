@@ -22,3 +22,6 @@ EXTRA_OECMAKE:append = " -DRALF_UTILS_BUILD_TOOLS:BOOL=OFF -DRALF_UTILS_BUILD_UN
 
 inherit cmake pkgconfig
 
+# To skip if distro_feature is disabled 
+ANY_OF_DISTRO_FEATURES = "enable_ralf"
+
