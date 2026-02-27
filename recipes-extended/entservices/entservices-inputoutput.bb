@@ -27,6 +27,12 @@ RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
+CFLAGS:append = " -g3 -O0 -fno-omit-frame-pointer -fno-inline -fvar-tracking-assignments"
+CXXFLAGS:append = " -g3 -O0 -fno-omit-frame-pointer -fno-inline -fvar-tracking-assignments"
+
+INHIBIT_PACKAGE_STRIP = "1"
+INHIBIT_SYSROOT_STRIP = "1"
+
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
