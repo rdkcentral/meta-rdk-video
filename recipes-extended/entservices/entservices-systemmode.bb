@@ -2,7 +2,7 @@ SUMMARY = "ENTServices systemmode plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
-PV = "1.0.1"
+PV = "1.1.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-systemmode;${CMF_GITHUB_SRC_URI_SUFFIX
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.1
-SRCREV = "ec71ce947822a9bc5e8ded01cf09364f7e1c7e40"
+# Release version - 1.1.0
+SRCREV = "717bab3fc6641b190ee158ecb0a28af531bb54c1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
