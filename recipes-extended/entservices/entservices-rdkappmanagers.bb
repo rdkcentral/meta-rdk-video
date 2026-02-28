@@ -8,7 +8,7 @@ PR ?= "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "d7689a1e6de2da238ae38cebc02c867992b35cf3"
+SRCREV = "aac2c967ac918f156d97dc9f9a7a8ded08a99d4d"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -55,6 +55,7 @@ PACKAGECONFIG ?= " telemetrysupport \
     downloadmanager \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkwindowmanager', ' rdkwindowmanager ', '', d)} \
     telemetrymetrics \
+    rdkappmanagers \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \
@@ -84,6 +85,7 @@ PACKAGECONFIG[preinstallmanager]    = "-DPLUGIN_PREINSTALL_MANAGER=ON ${PREINSTA
 PACKAGECONFIG[downloadmanager]      = "-DPLUGIN_DOWNLOADMANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_DOWNLOADMANAGER=OFF -DLIB_PACKAGE=OFF,entservices-apis curl virtual/libpackage,entservices-apis curl virtual/libpackage"
 PACKAGECONFIG[rdkwindowmanager]     = "-DPLUGIN_RDK_WINDOW_MANAGER=ON,-DPLUGIN_RDK_WINDOW_MANAGER=OFF,rdkwindowmanager entservices-apis,rdkwindowmanager entservices-apis"
 PACKAGECONFIG[telemetrymetrics]     = "-DPLUGIN_TELEMETRYMETRICS=ON,-DPLUGIN_TELEMETRYMETRICS=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[rdkappmanagers]       = "-DPLUGIN_RDKAPPMANAGERS=ON,-DPLUGIN_RDKAPPMANAGERS=OFF,entservices-apis,entservices-apis"
 # ----------------------------------------------------------------------------
 
 PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
