@@ -18,7 +18,6 @@ SRC_URI = "${BASE_URI}"
 
 # Drop after a PR is approved or different fix is available in wpe-2.38 branch
 SRC_URI += "file://2.38.2/1196.patch"
-SRC_URI += "file://2.38.6/1384.patch"
 SRC_URI += "file://2.38.7/1410.patch"
 
 # Drop after issue is addressed and a corresponding PR is merged
@@ -37,6 +36,7 @@ SRC_URI += "file://2.38.8/1608_MemoryPressureMonitor.patch"
 SRC_URI += "file://2.38.8/1614_Only-extend-first-sample-when-it-is-a-sync-sample.patch"
 SRC_URI += "file://2.38.8/1605_Enable-new-dtags_flags-in-wpe-webkit.patch"
 SRC_URI += "file://2.38.8/1611_Load-libWPEWebInspectorResources-from-widget.patch"
+SRC_URI += "file://2.38.8/1626_Video_decoding_limit.patch"
 
 # Drop after libwpe upgrade
 SRC_URI += "file://2.38.8/RDK-54304-Fix-build-with-an-older-libpwe.patch"
@@ -123,7 +123,7 @@ PACKAGECONFIG[malloc_heap_breakdown] = "-DENABLE_MALLOC_HEAP_BREAKDOWN=ON,-DENAB
 PACKAGECONFIG[pdfjs]             = "-DENABLE_PDFJS=ON,-DENABLE_PDFJS=OFF,,"
 PACKAGECONFIG[instantratechange] = "-DENABLE_INSTANT_RATE_CHANGE=ON,-DENABLE_INSTANT_RATE_CHANGE=OFF,"
 PACKAGECONFIG[logs]              = "-DENABLE_LOGS=ON,,"
-PACKAGECONFIG[fhd]               = "-DVIDEO_DECODING_LIMIT=1920x1080@60,,"
+PACKAGECONFIG[fhd]               = "-DVIDEO_DECODING_LIMIT=1920x1080@60,-DVIDEO_DECODING_LIMIT=3840x2160@60,"
 
 PACKAGECONFIG:append = " vp9_hdr breakpad native_video woff2 serviceworker"
 PACKAGECONFIG:append = " webcrypto webdriver remoteinspector releaselog accessibility speechsynthesis webaudio instantratechange"

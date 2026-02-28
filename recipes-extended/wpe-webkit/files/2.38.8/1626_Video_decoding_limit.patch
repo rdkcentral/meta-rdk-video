@@ -1,0 +1,515 @@
+From 61498ea1c8312a09153f13abb488f6bcd6d27496 Mon Sep 17 00:00:00 2001
+From: Przemyslaw Gorszkowski <pgorszkowski@igalia.com>
+Date: Wed, 26 Apr 2023 01:16:32 -0700
+Subject: [PATCH 1/4] [GStreamer] refactor video decoder limit customization
+ https://bugs.webkit.org/show_bug.cgi?id=248961
+
+Reviewed by Philippe Normand.
+
+Moved the same functionality to one place - from
+MediaPlayerPrivateGStreamerMSE::supportsType to
+GStreamerRegistryScanner::isContentTypeSupported.
+
+* Source/WebCore/platform/GStreamer.cmake:
+* Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp:
+(videoDecoderLimitsDefaults):
+(WebCore::GStreamerRegistryScanner::isContentTypeSupported const):
+* Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp:
+(WebCore::MediaPlayerPrivateGStreamerMSE::supportsType):
+(videoDecoderLimitsDefaults): Deleted.
+
+Canonical link: https://commits.webkit.org/263408@main
+---
+ Source/WebCore/platform/GStreamer.cmake       |  2 +-
+ .../gstreamer/GStreamerRegistryScanner.cpp    | 98 +++++++++++++++++--
+ .../mse/MediaPlayerPrivateGStreamerMSE.cpp    | 97 ------------------
+ 3 files changed, 90 insertions(+), 107 deletions(-)
+
+diff --git a/Source/WebCore/platform/GStreamer.cmake b/Source/WebCore/platform/GStreamer.cmake
+index 14541acd646e..be938528dfac 100644
+--- a/Source/WebCore/platform/GStreamer.cmake
++++ b/Source/WebCore/platform/GStreamer.cmake
+@@ -170,7 +170,7 @@ if (ENABLE_VIDEO OR ENABLE_WEB_AUDIO)
+ 
+     if (VIDEO_DECODING_LIMIT)
+         # Specify video decoding limits.
+-        set_source_files_properties(platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp PROPERTIES COMPILE_DEFINITIONS VIDEO_DECODING_LIMIT="${VIDEO_DECODING_LIMIT}")
++        set_source_files_properties(platform/graphics/gstreamer/GStreamerRegistryScanner.cpp PROPERTIES COMPILE_DEFINITIONS VIDEO_DECODING_LIMIT="${VIDEO_DECODING_LIMIT}")
+     endif ()
+ endif ()
+ 
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index d2c9fcff8c18..db7368b3488f 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -41,6 +41,63 @@
+ #include "VideoEncoderPrivateGStreamer.h"
+ #endif
+ 
++namespace {
++struct VideoDecodingLimits {
++    unsigned mediaMaxWidth = 0;
++    unsigned mediaMaxHeight = 0;
++    unsigned mediaMaxFrameRate = 0;
++    VideoDecodingLimits(unsigned mediaMaxWidth, unsigned mediaMaxHeight, unsigned mediaMaxFrameRate)
++        : mediaMaxWidth(mediaMaxWidth)
++        , mediaMaxHeight(mediaMaxHeight)
++        , mediaMaxFrameRate(mediaMaxFrameRate)
++    {
++    }
++};
++}
++
++#ifdef VIDEO_DECODING_LIMIT
++static std::optional<VideoDecodingLimits> videoDecoderLimitsDefaults()
++{
++    // VIDEO_DECODING_LIMIT should be in format: WIDTHxHEIGHT@FRAMERATE.
++    String videoDecodingLimit(String::fromUTF8(VIDEO_DECODING_LIMIT));
++
++    if (videoDecodingLimit.isEmpty())
++        return { };
++
++    Vector<String> entries;
++
++    // Extract frame rate part from the VIDEO_DECODING_LIMIT: WIDTHxHEIGHT@FRAMERATE.
++    videoDecodingLimit.split('@', [&entries](StringView item) {
++        entries.append(item.toString());
++    });
++
++    if (entries.size() != 2)
++        return { };
++
++    auto frameRate = parseIntegerAllowingTrailingJunk<unsigned>(entries[1]);
++
++    if (!frameRate.has_value())
++        return { };
++
++    const auto widthAndHeight = entries[0].split('x');
++
++    if (widthAndHeight.size() != 2)
++        return { };
++
++    const auto width = parseIntegerAllowingTrailingJunk<unsigned>(widthAndHeight[0]);
++
++    if (!width.has_value())
++        return { };
++
++    const auto height = parseIntegerAllowingTrailingJunk<unsigned>(widthAndHeight[1]);
++
++    if (!height.has_value())
++        return { };
++
++    return { VideoDecodingLimits(width.value(), height.value(), frameRate.value()) };
++}
++#endif
++
+ namespace WebCore {
+ 
+ GST_DEBUG_CATEGORY_STATIC(webkit_media_gst_registry_scanner_debug);
+@@ -50,11 +107,6 @@ GST_DEBUG_CATEGORY_STATIC(webkit_media_gst_registry_scanner_debug);
+ // AAC supports up to 96 channels.
+ #define MEDIA_MAX_AAC_CHANNELS 96
+ 
+-// Assume hardware video decoding acceleration up to 8K@60fps for the generic case. Some embedded platforms might want to tune this.
+-#define MEDIA_MAX_WIDTH 7680.0f
+-#define MEDIA_MAX_HEIGHT 4320.0f
+-#define MEDIA_MAX_FRAMERATE 60.0f
+-
+ static bool singletonInitialized = false;
+ 
+ bool GStreamerRegistryScanner::singletonWasInitialized()
+@@ -705,6 +757,21 @@ bool GStreamerRegistryScanner::supportsFeatures(const String& features) const
+ 
+ MediaPlayerEnums::SupportsType GStreamerRegistryScanner::isContentTypeSupported(Configuration configuration, const ContentType& contentType, const Vector<ContentType>& contentTypesRequiringHardwareSupport) const
+ {
++    static std::optional<VideoDecodingLimits> videoDecodingLimits;
++#ifdef VIDEO_DECODING_LIMIT
++    static std::once_flag onceFlag;
++    if (configuration == Configuration::Decoding) {
++        std::call_once(onceFlag, [] {
++            videoDecodingLimits = videoDecoderLimitsDefaults();
++            if (!videoDecodingLimits) {
++                GST_WARNING("Parsing VIDEO_DECODING_LIMIT failed");
++                ASSERT_NOT_REACHED();
++                return;
++            }
++        });
++    }
++#endif
++
+     using SupportsType = MediaPlayerEnums::SupportsType;
+ 
+     const auto& containerType = contentType.containerType().convertToASCIILowercase();
+@@ -714,10 +781,23 @@ MediaPlayerEnums::SupportsType GStreamerRegistryScanner::isContentTypeSupported(
+     int channels = parseInteger<int>(contentType.parameter("channels"_s)).value_or(1);
+     String features = contentType.parameter("features"_s);
+     if (channels > MEDIA_MAX_AAC_CHANNELS || channels <= 0
+-        || !(features.isEmpty() || supportsFeatures(features))
+-        || parseInteger<unsigned>(contentType.parameter("width"_s)).value_or(0) > MEDIA_MAX_WIDTH
+-        || parseInteger<unsigned>(contentType.parameter("height"_s)).value_or(0) > MEDIA_MAX_HEIGHT
+-        || parseInteger<unsigned>(contentType.parameter("framerate"_s)).value_or(0) > MEDIA_MAX_FRAMERATE)
++        || !(features.isEmpty() || supportsFeatures(features)))
++        return SupportsType::IsNotSupported;
++
++    bool ok;
++    float width = contentType.parameter("width"_s).toFloat(&ok);
++    if (!ok)
++        width = 0;
++    float height = contentType.parameter("height"_s).toFloat(&ok);
++    if (!ok)
++        height = 0;
++
++    if (videoDecodingLimits && (width > videoDecodingLimits->mediaMaxWidth || height > videoDecodingLimits->mediaMaxHeight))
++        return SupportsType::IsNotSupported;
++
++    float frameRate = contentType.parameter("framerate"_s).toFloat(&ok);
++    // Limit frameRate only in case of highest supported resolution.
++    if (ok && videoDecodingLimits && width == videoDecodingLimits->mediaMaxWidth && height == videoDecodingLimits->mediaMaxHeight && frameRate > videoDecodingLimits->mediaMaxFrameRate)
+         return SupportsType::IsNotSupported;
+ 
+     const auto& codecs = contentType.codecs();
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
+index 813811a58c95..ec8b46fd2056 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
+@@ -56,73 +56,6 @@
+ #include <wtf/text/AtomStringHash.h>
+ #include <wtf/text/StringToIntegerConversion.h>
+ 
+-namespace {
+-struct VideoDecodingLimits {
+-    unsigned mediaMaxWidth = 0;
+-    unsigned mediaMaxHeight = 0;
+-    unsigned mediaMaxFrameRate = 0;
+-    VideoDecodingLimits(unsigned mediaMaxWidth, unsigned mediaMaxHeight, unsigned mediaMaxFrameRate)
+-        : mediaMaxWidth(mediaMaxWidth)
+-        , mediaMaxHeight(mediaMaxHeight)
+-        , mediaMaxFrameRate(mediaMaxFrameRate)
+-        {
+-        }
+-};
+-}
+-
+-#ifdef VIDEO_DECODING_LIMIT
+-static std::optional<VideoDecodingLimits> videoDecoderLimitsDefaults()
+-{
+-    // VIDEO_DECODING_LIMIT should be in format: WIDTHxHEIGHT@FRAMERATE.
+-    String videoDecodingLimit(String::fromUTF8(VIDEO_DECODING_LIMIT));
+-
+-    if (videoDecodingLimit.isEmpty())
+-        return { };
+-
+-    Vector<String> entries;
+-
+-    // Extract frame rate part from the VIDEO_DECODING_LIMIT: WIDTHxHEIGHT@FRAMERATE.
+-    videoDecodingLimit.split('@', [&entries](StringView item) {
+-        entries.append(item.toString());
+-    });
+-
+-    if (entries.size() != 2)
+-        return { };
+-
+-    auto frameRate = parseIntegerAllowingTrailingJunk<unsigned>(entries[1]);
+-
+-    if (!frameRate.has_value())
+-        return { };
+-
+-    String widthAndHeight = entries[0];
+-    entries.clear();
+-
+-    // Extract WIDTH and HEIGHT from: WIDTHxHEIGHT.
+-    widthAndHeight.split('x', [&entries](StringView item) {
+-        entries.append(item.toString());
+-    });
+-
+-    if (entries.size() != 2)
+-        return { };
+-
+-    auto width = parseIntegerAllowingTrailingJunk<unsigned>(entries[0]);
+-
+-    if (!width.has_value())
+-        return { };
+-
+-    auto height = parseIntegerAllowingTrailingJunk<unsigned>(entries[1]);
+-
+-    if (!height.has_value())
+-        return { };
+-
+-    return { VideoDecodingLimits(width.value(), height.value(), frameRate.value()) };
+-}
+-#endif
+-
+-// We shouldn't accept media that the player can't actually play.
+-// AAC supports up to 96 channels.
+-#define MEDIA_MAX_AAC_CHANNELS 96
+-
+ static const char* dumpReadyState(WebCore::MediaPlayer::ReadyState readyState)
+ {
+     switch (readyState) {
+@@ -521,36 +454,6 @@ MediaPlayer::SupportsType MediaPlayerPrivateGStreamerMSE::supportsType(const Med
+         return result;
+     }
+ 
+-    unsigned channels = parseIntegerAllowingTrailingJunk<unsigned>(parameters.type.parameter("channels"_s)).value_or(0);
+-    if (channels > MEDIA_MAX_AAC_CHANNELS)
+-        return result;
+-
+-    bool ok;
+-    float width = parameters.type.parameter("width"_s).toFloat(&ok);
+-    if (!ok)
+-        width = 0;
+-    float height = parameters.type.parameter("height"_s).toFloat(&ok);
+-    if (!ok)
+-        height = 0;
+-
+-    static std::optional<VideoDecodingLimits> videoDecodingLimits;
+-#ifdef VIDEO_DECODING_LIMIT
+-    static std::once_flag onceFlag;
+-    std::call_once(onceFlag, [] {
+-        videoDecodingLimits = videoDecoderLimitsDefaults();
+-        if (!videoDecodingLimits)
+-            GST_WARNING("Parsing VIDEO_DECODING_LIMIT failed");
+-    });
+-#endif
+-
+-    if (videoDecodingLimits && (width > videoDecodingLimits->mediaMaxWidth || height > videoDecodingLimits->mediaMaxHeight))
+-        return result;
+-
+-    float frameRate = parameters.type.parameter("framerate"_s).toFloat(&ok);
+-    // Limit frameRate only in case of highest supported resolution.
+-    if (ok && videoDecodingLimits && width == videoDecodingLimits->mediaMaxWidth && height == videoDecodingLimits->mediaMaxHeight && frameRate > videoDecodingLimits->mediaMaxFrameRate)
+-        return result;
+-
+     registerWebKitGStreamerElements();
+ 
+     GST_DEBUG("Checking mime-type \"%s\"", parameters.type.raw().utf8().data());
+-- 
+2.51.0
+
+
+From 060f917594376a470db97e5995b478d963436b02 Mon Sep 17 00:00:00 2001
+From: Olivier Blin <olivier.blin@softathome.com>
+Date: Fri, 17 Nov 2023 02:57:53 -0800
+Subject: [PATCH 2/4] [GStreamer] Avoid using decoding limits for all
+ configurations https://bugs.webkit.org/show_bug.cgi?id=264941
+
+Reviewed by Philippe Normand.
+
+When VIDEO_DECODING_LIMIT support is enabled, after a first call of
+isContentTypeSupported() with Configuration::Decoding, the video
+limits are remembered in a static variable.
+
+They were then used for all subsequent isContentTypeSupported() calls,
+regardless of the configuration.
+
+This should be limited to Configuration::Decoding.
+
+* Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp:
+(WebCore::GStreamerRegistryScanner::isContentTypeSupported const):
+
+Canonical link: https://commits.webkit.org/270877@main
+---
+ .../graphics/gstreamer/GStreamerRegistryScanner.cpp      | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index db7368b3488f..c79b54997e19 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -757,18 +757,21 @@ bool GStreamerRegistryScanner::supportsFeatures(const String& features) const
+ 
+ MediaPlayerEnums::SupportsType GStreamerRegistryScanner::isContentTypeSupported(Configuration configuration, const ContentType& contentType, const Vector<ContentType>& contentTypesRequiringHardwareSupport) const
+ {
+-    static std::optional<VideoDecodingLimits> videoDecodingLimits;
++    VideoDecodingLimits* videoDecodingLimits = nullptr;
+ #ifdef VIDEO_DECODING_LIMIT
++    static std::optional<VideoDecodingLimits> videoDecodingLimitsDefaults;
+     static std::once_flag onceFlag;
+     if (configuration == Configuration::Decoding) {
+         std::call_once(onceFlag, [] {
+-            videoDecodingLimits = videoDecoderLimitsDefaults();
+-            if (!videoDecodingLimits) {
++            videoDecodingLimitsDefaults = videoDecoderLimitsDefaults();
++            if (!videoDecodingLimitsDefaults) {
+                 GST_WARNING("Parsing VIDEO_DECODING_LIMIT failed");
+                 ASSERT_NOT_REACHED();
+                 return;
+             }
+         });
++        if (videoDecodingLimitsDefaults)
++            videoDecodingLimits = &*videoDecodingLimitsDefaults;
+     }
+ #endif
+ 
+-- 
+2.51.0
+
+
+From 30a2934424770a4104036c41e59dd7b99630604a Mon Sep 17 00:00:00 2001
+From: Filipe Norte <filipe_norte@comcast.com>
+Date: Tue, 29 Jul 2025 02:15:54 -0700
+Subject: [PATCH 3/4] [GStreamer] Fix content type frame rate limit
+ https://bugs.webkit.org/show_bug.cgi?id=296572
+
+Reviewed by Philippe Normand.
+
+Decoder limits are set by a build configuration in the form of
+widthxheight@framerate. However, framerate limit is only considered when
+the width and height are the ones in the build config. If the actual
+requested resolution is different, no framerate limit is ever
+considered.
+
+See: https://github.com/WebPlatformForEmbedded/WPEWebKit/pull/1547
+
+This change introduces a behavior where limits where considered for each
+variable independently. While not ideal, as lower resolutions might
+support higher frame rates, and the way the build config ties
+semantically the framerate to the resolution specified, an alternative
+fix would require either an absolute max rate to be specified, or
+possibly different sets of resolution + framerate limits, which might be
+overkill to this purpose.
+
+Original autor: Filipe Norte <filipe_norte@comcast.com>
+
+* Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp:
+(WebCore::GStreamerRegistryScanner::isContentTypeSupported const): Limit framerate even when the dimensions are smaller than the max limit set for them.
+
+Canonical link: https://commits.webkit.org/297974@main
+---
+ .../graphics/gstreamer/GStreamerRegistryScanner.cpp    | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index c79b54997e19..e9e77311944f 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -795,12 +795,12 @@ MediaPlayerEnums::SupportsType GStreamerRegistryScanner::isContentTypeSupported(
+     if (!ok)
+         height = 0;
+ 
+-    if (videoDecodingLimits && (width > videoDecodingLimits->mediaMaxWidth || height > videoDecodingLimits->mediaMaxHeight))
+-        return SupportsType::IsNotSupported;
+-
+     float frameRate = contentType.parameter("framerate"_s).toFloat(&ok);
+-    // Limit frameRate only in case of highest supported resolution.
+-    if (ok && videoDecodingLimits && width == videoDecodingLimits->mediaMaxWidth && height == videoDecodingLimits->mediaMaxHeight && frameRate > videoDecodingLimits->mediaMaxFrameRate)
++    if (!ok)
++        frameRate = 0;
++
++    if (videoDecodingLimits && (width > videoDecodingLimits->mediaMaxWidth || height > videoDecodingLimits->mediaMaxHeight
++        || frameRate > videoDecodingLimits->mediaMaxFrameRate))
+         return SupportsType::IsNotSupported;
+ 
+     const auto& codecs = contentType.codecs();
+-- 
+2.51.0
+
+
+From 83cf3898c260b27808ed964c71f7ed7d934774bf Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Thu, 26 Feb 2026 13:34:29 +0100
+Subject: [PATCH 4/4] Expose VIDEO_DECODING_LIMIT through env variable
+
+WEBKIT_GST_VIDEO_DECODING_LIMIT can now be set in runtime
+and it takes precedence over compile time definition VIDEO_DECODING_LIMIT.
+---
+ .../gstreamer/GStreamerRegistryScanner.cpp    | 61 ++++++++++++-------
+ 1 file changed, 38 insertions(+), 23 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index e9e77311944f..f473f06d49e6 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -53,20 +53,16 @@ struct VideoDecodingLimits {
+     {
+     }
+ };
+-}
+ 
+-#ifdef VIDEO_DECODING_LIMIT
+-static std::optional<VideoDecodingLimits> videoDecoderLimitsDefaults()
++// Parses a video decoding limit string in format WIDTHxHEIGHT@FRAMERATE.
++static std::optional<VideoDecodingLimits> parseVideoDecodingLimit(const String& videoDecodingLimit)
+ {
+-    // VIDEO_DECODING_LIMIT should be in format: WIDTHxHEIGHT@FRAMERATE.
+-    String videoDecodingLimit(String::fromUTF8(VIDEO_DECODING_LIMIT));
+-
+     if (videoDecodingLimit.isEmpty())
+         return { };
+ 
+     Vector<String> entries;
+ 
+-    // Extract frame rate part from the VIDEO_DECODING_LIMIT: WIDTHxHEIGHT@FRAMERATE.
++    // Extract frame rate part: WIDTHxHEIGHT@FRAMERATE.
+     videoDecodingLimit.split('@', [&entries](StringView item) {
+         entries.append(item.toString());
+     });
+@@ -96,7 +92,40 @@ static std::optional<VideoDecodingLimits> videoDecoderLimitsDefaults()
+ 
+     return { VideoDecodingLimits(width.value(), height.value(), frameRate.value()) };
+ }
++
++// Returns the active VideoDecodingLimits, resolved once at first call.
++// WEBKIT_GST_VIDEO_DECODING_LIMIT env var takes precedence over the compile-time VIDEO_DECODING_LIMIT.
++// Format for both: WIDTHxHEIGHT@FRAMERATE (e.g. "1920x1080@30").
++static VideoDecodingLimits* resolveVideoDecodingLimits()
++{
++    static std::optional<VideoDecodingLimits> limits;
++    static std::once_flag onceFlag;
++    std::call_once(onceFlag, [] {
++        if (const char* envLimit = g_getenv("WEBKIT_GST_VIDEO_DECODING_LIMIT")) {
++            GST_DEBUG("WEBKIT_GST_VIDEO_DECODING_LIMIT env var is set: %s", envLimit);
++            limits = parseVideoDecodingLimit(String::fromUTF8(envLimit));
++            if (!limits)
++                GST_WARNING("Parsing WEBKIT_GST_VIDEO_DECODING_LIMIT env var failed: %s", envLimit);
++        }
++#ifdef VIDEO_DECODING_LIMIT
++        if (!limits) {
++            GST_DEBUG("VIDEO_DECODING_LIMIT compile-time definition is set: %s", VIDEO_DECODING_LIMIT);
++            limits = parseVideoDecodingLimit(String::fromUTF8(VIDEO_DECODING_LIMIT));
++            if (!limits) {
++                GST_WARNING("Parsing VIDEO_DECODING_LIMIT failed: %s", VIDEO_DECODING_LIMIT);
++                ASSERT_NOT_REACHED();
++            }
++        }
+ #endif
++        if (limits) {
++            GST_DEBUG("Video decoding limits: max width=%u, max height=%u, max frame rate=%u",
++                limits->mediaMaxWidth, limits->mediaMaxHeight, limits->mediaMaxFrameRate);
++        }
++    });
++    return limits ? &*limits : nullptr;
++}
++
++} // namespace
+ 
+ namespace WebCore {
+ 
+@@ -758,22 +787,8 @@ bool GStreamerRegistryScanner::supportsFeatures(const String& features) const
+ MediaPlayerEnums::SupportsType GStreamerRegistryScanner::isContentTypeSupported(Configuration configuration, const ContentType& contentType, const Vector<ContentType>& contentTypesRequiringHardwareSupport) const
+ {
+     VideoDecodingLimits* videoDecodingLimits = nullptr;
+-#ifdef VIDEO_DECODING_LIMIT
+-    static std::optional<VideoDecodingLimits> videoDecodingLimitsDefaults;
+-    static std::once_flag onceFlag;
+-    if (configuration == Configuration::Decoding) {
+-        std::call_once(onceFlag, [] {
+-            videoDecodingLimitsDefaults = videoDecoderLimitsDefaults();
+-            if (!videoDecodingLimitsDefaults) {
+-                GST_WARNING("Parsing VIDEO_DECODING_LIMIT failed");
+-                ASSERT_NOT_REACHED();
+-                return;
+-            }
+-        });
+-        if (videoDecodingLimitsDefaults)
+-            videoDecodingLimits = &*videoDecodingLimitsDefaults;
+-    }
+-#endif
++    if (configuration == Configuration::Decoding)
++        videoDecodingLimits = resolveVideoDecodingLimits();
+ 
+     using SupportsType = MediaPlayerEnums::SupportsType;
+ 
+-- 
+2.51.0
+
