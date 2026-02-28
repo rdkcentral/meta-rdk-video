@@ -10,7 +10,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "a07c8d282b90eb763fba2b027df6e468b83f2e18"
+SRCREV = "f66ae43bdaec95ed7bb0046646ca15d9c649c30d"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -27,6 +27,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-hdcpprofile.service \
     wpeframework-maintenancemanager.service \
     wpeframework-monitor.service \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'wpeframework-motiondetection.service', '', d)} \
     wpeframework-network.service \
     wpeframework-ocdm.service \
     wpeframework-persistentstore.service \
@@ -42,6 +43,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-voicecontrol.service \
     wpeframework-wifi.service \
     wpeframework-xcast.service \
+    wpeframework-userpreferences.service \
     wpeframework-usersettings.service \
     wpeframework-usbdevice.service \
     wpeframework-usbmassstorage.service \
