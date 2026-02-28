@@ -13,13 +13,13 @@ inherit cmake pkgconfig perlnative ${@bb.utils.contains("DISTRO_FEATURES", "kirk
 
 S = "${WORKDIR}/git"
 
-PV = "2.0.2"
+PV = "2.0.3"
 PR = "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};"
 
-#Release 2.0.2
-SRCREV = "e9292baafbdcf46250cdb8ba3cec6566be9509fe"
+#Release 2.0.3
+SRCREV = "8ae59eff3b967bc773d5bff2f8b68b9d9a94dbc9"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -71,6 +71,7 @@ do_install() {
    cp -a ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
+   cp -a ${S}/src/jsc/modules/minified_linkedjsdom.js ${D}/home/root/modules/. 
 
    install -d ${D}/${libdir}
    cp -a ${B}/libJSRuntimeJSC.so ${D}/${libdir}
