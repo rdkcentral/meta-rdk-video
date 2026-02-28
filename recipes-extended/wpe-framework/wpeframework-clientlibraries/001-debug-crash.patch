@@ -1,0 +1,88 @@
+diff --git a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
+index 0460540..ae9ca34 100644
+--- a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
++++ b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
+@@ -231,6 +231,7 @@ OpenCDMError opencdm_gstreamer_session_decrypt(struct OpenCDMSession* session, G
+ OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* session, GstBuffer* buffer, GstCaps* caps) {
+ 
+     OpenCDMError result (ERROR_INVALID_SESSION);
++    printf("opencdm_gstreamer_session_decrypt_buffer: Entered\n");
+ 
+     if (session != nullptr) {
+ 
+@@ -472,6 +473,7 @@ OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
+                 }
+ 
+                 GstPerf* ocdm_perf = new GstPerf("opencdm_session_decrypt_v2");
++                printf("opencdm_gstreamer_session_decrypt_buffer: Calling opencdm_session_decrypt_v2\n");
+                 result = opencdm_session_decrypt_v2(session,
+                                                     svpData,
+                                                     dataBlockSize,
+diff --git a/Source/ocdm/open_cdm.cpp b/Source/ocdm/open_cdm.cpp
+index 65e337d..d03b403 100644
+--- a/Source/ocdm/open_cdm.cpp
++++ b/Source/ocdm/open_cdm.cpp
+@@ -672,6 +672,7 @@ OpenCDMError opencdm_session_decrypt_v2(struct OpenCDMSession* session,
+ 
+     OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
+     ASSERT(session != nullptr);
++    printf("opencdm_session_decrypt_v2 called with encryptedLength=%u\n", encryptedLength);
+ 
+     if (session != nullptr) {
+         uint32_t initWithLast15 = 0;
+diff --git a/Source/ocdm/open_cdm.h b/Source/ocdm/open_cdm.h
+index ef8c03c..2fc694a 100644
+--- a/Source/ocdm/open_cdm.h
++++ b/Source/ocdm/open_cdm.h
+@@ -73,6 +73,18 @@
+ #endif
+ #endif
+ 
++#define TRACE_L2(fmt, ...)                                                    \
++    do {                                                                      \
++        printf("[TRACE_L2] %s:%d:%s(): " fmt "\n",                            \
++               __FILE__, __LINE__, __func__, ##__VA_ARGS__);                  \
++    } while (0)
++
++#define TRACE_L1(fmt, ...)                                                    \
++    do {                                                                      \
++        printf("[TRACE_L1] %s:%d:%s(): " fmt "\n",                            \
++               __FILE__, __LINE__, __func__, ##__VA_ARGS__);                  \
++    } while (0)
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
+index fb9ce2a..5ec9543 100644
+--- a/Source/ocdm/open_cdm_impl.h
++++ b/Source/ocdm/open_cdm_impl.h
+@@ -476,7 +476,9 @@ private:
+             // two
+             // different processes, start using the administartion space to share a
+             // lock.
++            printf("VRN OpenCDMSession::DataExchange::Decrypt acquiring lock %p\n", this);
+             _systemLock.Lock();
++            printf("VRN OpenCDMSession::DataExchange::Decrypt acquired lock %p\n", this);
+ 
+             _busy = true;
+ 
+@@ -535,7 +537,9 @@ private:
+ 
+             _busy = false;
+ 
++            printf("VRN OpenCDMSession::DataExchange::Decrypt releasing lock %p\n", this);
+             _systemLock.Unlock();
++            printf("VRN OpenCDMSession::DataExchange::Decrypt released lock %p\n", this);
+ 
+             return (ret);
+         }
+@@ -705,6 +709,7 @@ public:
+         uint32_t initWithLast15,
+         const ::MediaProperties* properties)
+     {
++        printf("VRN OpenCDMSession::Decrypt called %p\n", this);
+         uint32_t result = OpenCDMError::ERROR_INVALID_DECRYPT_BUFFER;
+ 
+         // lazy create decryptbuffer
+
