@@ -8,7 +8,7 @@ PR ?= "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "d7689a1e6de2da238ae38cebc02c867992b35cf3"
+SRCREV = "7f818dfe72635ba6eb2eefd5fe2bbbb96406a2ce"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -81,22 +81,15 @@ PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LI
 PACKAGECONFIG[storagemanager]       = "-DPLUGIN_STORAGE_MANAGER=ON,-DPLUGIN_STORAGE_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[appmanager]           = "-DPLUGIN_APPMANAGER=ON,-DPLUGIN_APPMANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[preinstallmanager]    = "-DPLUGIN_PREINSTALL_MANAGER=ON ${PREINSTALLMANAGER_PLUGIN_ARGS},-DPLUGIN_PREINSTALL_MANAGER=OFF,entservices-apis,entservices-apis"
-PACKAGECONFIG[downloadmanager]      = "-DPLUGIN_DOWNLOADMANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_DOWNLOADMANAGER=OFF -DLIB_PACKAGE=OFF,entservices-apis curl virtual/libpackage,entservices-apis curl virtual/libpackage"
+PACKAGECONFIG[downloadmanager]      = "-DPLUGIN_DOWNLOADMANAGER=ON ${DOWNLOADMANAGER_PLUGIN_ARGS} -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_DOWNLOADMANAGER=OFF -DLIB_PACKAGE=OFF,entservices-apis curl virtual/libpackage,entservices-apis curl virtual/libpackage"
 PACKAGECONFIG[rdkwindowmanager]     = "-DPLUGIN_RDK_WINDOW_MANAGER=ON,-DPLUGIN_RDK_WINDOW_MANAGER=OFF,rdkwindowmanager entservices-apis,rdkwindowmanager entservices-apis"
 PACKAGECONFIG[telemetrymetrics]     = "-DPLUGIN_TELEMETRYMETRICS=ON,-DPLUGIN_TELEMETRYMETRICS=OFF,entservices-apis,entservices-apis"
 # ----------------------------------------------------------------------------
 
 PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
-                                       -DADD_DAC_PARAMS=${@d.getVar('DAC_PARAMS')} \
-                                       -DPLUGIN_DAC_DB_PATH=${DAC_DB_PATH} \
-                                       -DPLUGIN_DAC_APP_PATH=${DAC_APP_PATH} \
-                                       -DPLUGIN_DAC_DATA_PATH=${DAC_DATA_PATH} \
-                                       -DPLUGIN_DAC_ANTN_FILE=${DAC_ANN_FILE} \
-                                       -DPLUGIN_DAC_ANTN_REGEX=${DAC_ANN_REGEX} \
-                                       -DPLUGIN_DAC_BUN_FIRM_COMP_KEY=${DAC_BUN_FIRM_COMP_KEY} \
-                                       -DPLUGIN_DAC_BUN_PLATNAME_OVERRIDE=${DAC_BUN_PLATNAME_OVERRIDE} \
-                                       -DPLUGIN_DAC_CONFIGURL=${DAC_CONFIGURL} \
+                                       -DPLUGIN_PACKAGEMANAGER_DOWNLOAD_DIR=${APP_DOWNLOAD_DIRECTORY} \
 "
+
 RUNTIMEMANAGER_PLUGIN_ARGS         ?= " \
                                        -DPLUGIN_RUNTIME_APP_PORTAL=${RUNTIME_APP_PORTAL} \
 "
@@ -104,8 +97,14 @@ RUNTIMEMANAGER_PLUGIN_ARGS         ?= " \
 PREINSTALLMANAGER_PLUGIN_ARGS         ?= " \
                                        -DPLUGIN_PREINSTALL_MANAGER_APP_PREINSTALL_DIRECTORY=${APP_PREINSTALL_DIRECTORY} \
 "
+
+DOWNLOADMANAGER_PLUGIN_ARGS         ?= " \
+                                       -DPLUGIN_DOWNLOADMANAGER_DOWNLOAD_DIR=${APP_DOWNLOAD_DIRECTORY} \
+"
+
 RUNTIME_APP_PORTAL ?= "com.sky.as.apps"
 APP_PREINSTALL_DIRECTORY ?= "/opt/preinstall"
+APP_DOWNLOAD_DIRECTORY ?= "/opt/CDL"
 NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
 
 EXTRA_OECMAKE += " \
