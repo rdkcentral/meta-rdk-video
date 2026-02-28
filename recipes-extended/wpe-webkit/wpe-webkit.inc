@@ -98,6 +98,7 @@ RDEPS_VIDEO = " \
     gstreamer1.0-plugins-good-soup \
     gstreamer1.0-plugins-bad-opusparse \
     gstreamer1.0-plugins-good-matroska \
+    gstreamer1.0-plugins-bad-subenc \
 "
 
 RDEPS_WEBAUDIO = " \
