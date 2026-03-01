@@ -1,19 +1,19 @@
-From f289b6725a514c7224bea0ae45adca7a2fc4d8b3 Mon Sep 17 00:00:00 2001
+From 7daef2144fb3fb4c2a51f4039ca24a19e6141dd4 Mon Sep 17 00:00:00 2001
 From: Sharma <tsharm493@apac.comcast.com>
 Date: Thu, 26 Feb 2026 14:15:25 +0530
 Subject: [PATCH] added brightness level and color change feature
 
 ---
- .../matter/MatterLightDeviceDriver.cpp        | 436 +++++++++++++++---
+ .../matter/MatterLightDeviceDriver.cpp        | 460 +++++++++++++++---
  .../matter/MatterLightDeviceDriver.h          |  24 +-
  .../matter/clusters/ColorControl.cpp          | 173 +++++++
  .../matter/clusters/ColorControl.h            | 112 +++++
- 4 files changed, 671 insertions(+), 74 deletions(-)
+ 4 files changed, 695 insertions(+), 74 deletions(-)
  create mode 100644 core/deviceDrivers/matter/clusters/ColorControl.cpp
  create mode 100644 core/deviceDrivers/matter/clusters/ColorControl.h
 
 diff --git a/core/deviceDrivers/matter/MatterLightDeviceDriver.cpp b/core/deviceDrivers/matter/MatterLightDeviceDriver.cpp
-index bb03eaf..d17cce4 100644
+index bb03eaf..32da761 100644
 --- a/core/deviceDrivers/matter/MatterLightDeviceDriver.cpp
 +++ b/core/deviceDrivers/matter/MatterLightDeviceDriver.cpp
 @@ -30,6 +30,8 @@
@@ -117,7 +117,7 @@ index bb03eaf..d17cce4 100644
  void MatterLightDeviceDriver::SynchronizeDevice(std::forward_list<std::promise<bool>> &promises,
                                                  const std::string &deviceId,
                                                  chip::Messaging::ExchangeManager &exchangeMgr,
-@@ -169,30 +248,69 @@ void MatterLightDeviceDriver::FetchInitialResourceValues(std::forward_list<std::
+@@ -169,30 +248,83 @@ void MatterLightDeviceDriver::FetchInitialResourceValues(std::forward_list<std::
                                                           chip::Messaging::ExchangeManager &exchangeMgr,
                                                           const chip::SessionHandle &sessionHandle)
  {
@@ -159,6 +159,10 @@ index bb03eaf..d17cce4 100644
 +    }
 +
 +    // --- LevelControl (optional) ---
++    // The cluster state cache may not be warm yet (first commissioning before the subscription
++    // delivers any reports). Attempt a cache read; if it fails, seed a default value of "0"
++    // so that RegisterResources still creates the resource. The actual value will arrive
++    // shortly via CurrentLevelChanged() → updateResource() once the wildcard subscription fires.
 +    auto levelServer =
 +        static_cast<LevelControl *>(GetAnyServerById(deviceId, chip::app::Clusters::LevelControl::Id));
 +    if (levelServer != nullptr)
@@ -172,6 +176,10 @@ index bb03eaf..d17cce4 100644
 +
 +        if (!levelServer->GetCurrentLevel(readContext, exchangeMgr, sessionHandle))
 +        {
++            // Cache miss — seed a default so the resource is still registered.
++            icInfo("LevelControl cache not yet warm for %s; seeding default level=0", deviceId.c_str());
++            initialResourceValuesPutEndpointValue(
++                initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_CURRENT_LEVEL, "0");
 +            AbandonDeviceWork(readPromise);
 +            delete readContext;
 +        }
@@ -179,6 +187,8 @@ index bb03eaf..d17cce4 100644
  
 -    if (!server->GetOnOff(readContext, exchangeMgr, sessionHandle))
 +    // --- ColorControl (optional) ---
++    // Same rationale as LevelControl above: seed a neutral white (D65 ~ 20054,21140) if the
++    // cache is cold so the resource is created and populated by the first subscription report.
 +    auto colorServer =
 +        static_cast<ColorControl *>(GetAnyServerById(deviceId, chip::app::Clusters::ColorControl::Id));
 +    if (colorServer != nullptr)
@@ -194,13 +204,17 @@ index bb03eaf..d17cce4 100644
 +
 +        if (!colorServer->GetColorXY(readContext, exchangeMgr, sessionHandle))
 +        {
++            // Cache miss — seed D65 daylight white as a neutral default.
++            icInfo("ColorControl cache not yet warm for %s; seeding default colorXY=20054,21140", deviceId.c_str());
++            initialResourceValuesPutEndpointValue(
++                initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_COLOR, "20054,21140");
 +            AbandonDeviceWork(readPromise);
 +            delete readContext;
 +        }
      }
  }
  
-@@ -211,27 +329,69 @@ bool MatterLightDeviceDriver::RegisterResources(icDevice *device, icInitialResou
+@@ -211,27 +343,79 @@ bool MatterLightDeviceDriver::RegisterResources(icDevice *device, icInitialResou
                                       RESOURCE_MODE_READWRITEABLE | RESOURCE_MODE_EMIT_EVENTS | RESOURCE_MODE_DYNAMIC,
                                       CACHING_POLICY_ALWAYS) != nullptr;
  
@@ -235,19 +249,25 @@ index bb03eaf..d17cce4 100644
 -    const char *initialValue =
 -        initialResourceValuesGetEndpointValue(initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_IS_ON);
 -    if (initialValue)
-+    // currentLevel resource (registered when LevelControl cluster was discovered)
++    // currentLevel resource — register whenever LevelControl is in the device's server list,
++    // regardless of whether a cache-warm initial value was obtained.  The subscription wildcard
++    // will deliver the real value almost immediately after commissioning via CurrentLevelChanged().
      {
 -        resource->value = strdup(
 -            initialResourceValuesGetEndpointValue(initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_IS_ON));
-+        const char *initialLevel = initialResourceValuesGetEndpointValue(
-+            initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_CURRENT_LEVEL);
-+        if (initialLevel)
++        bool hasLevelControl =
++            !FindServerEndpoints(device->uuid, chip::app::Clusters::LevelControl::Id).empty();
++        if (hasLevelControl)
 +        {
++            const char *initialLevel = initialResourceValuesGetEndpointValue(
++                initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_CURRENT_LEVEL);
++
 +            auto *resource = static_cast<icDeviceResource *>(calloc(1, sizeof(icDeviceResource)));
 +            resource->id = strdup(LIGHT_PROFILE_RESOURCE_CURRENT_LEVEL);
 +            resource->endpointId = strdup(LIGHT_ENDPOINT);
 +            resource->deviceUuid = strdup(device->uuid);
-+            resource->value = strdup(initialLevel);
++            // Use actual initial value when available; fall back to "0" — subscription will correct it.
++            resource->value = strdup(initialLevel ? initialLevel : "0");
 +            resource->type = strdup(RESOURCE_TYPE_LIGHT_LEVEL);
 +            resource->mode = RESOURCE_MODE_READWRITEABLE | RESOURCE_MODE_DYNAMIC |
 +                             RESOURCE_MODE_DYNAMIC_CAPABLE | RESOURCE_MODE_EMIT_EVENTS |
@@ -258,18 +278,22 @@ index bb03eaf..d17cce4 100644
      }
 -    else
 +
-+    // colorXY resource (registered when ColorControl cluster was discovered)
++    // colorXY resource — register whenever ColorControl is in the device's server list.
++    // Default is D65 daylight white (20054,21140); corrected by the first subscription report.
      {
 -        result = false;
-+        const char *initialColor = initialResourceValuesGetEndpointValue(
-+            initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_COLOR);
-+        if (initialColor)
++        bool hasColorControl =
++            !FindServerEndpoints(device->uuid, chip::app::Clusters::ColorControl::Id).empty();
++        if (hasColorControl)
 +        {
++            const char *initialColor = initialResourceValuesGetEndpointValue(
++                initialResourceValues, LIGHT_ENDPOINT, LIGHT_PROFILE_RESOURCE_COLOR);
++
 +            auto *resource = static_cast<icDeviceResource *>(calloc(1, sizeof(icDeviceResource)));
 +            resource->id = strdup(LIGHT_PROFILE_RESOURCE_COLOR);
 +            resource->endpointId = strdup(LIGHT_ENDPOINT);
 +            resource->deviceUuid = strdup(device->uuid);
-+            resource->value = strdup(initialColor);
++            resource->value = strdup(initialColor ? initialColor : "20054,21140");
 +            resource->type = strdup(RESOURCE_TYPE_CIE_1931_COLOR);
 +            resource->mode = RESOURCE_MODE_READWRITEABLE | RESOURCE_MODE_DYNAMIC |
 +                             RESOURCE_MODE_DYNAMIC_CAPABLE | RESOURCE_MODE_EMIT_EVENTS |
@@ -286,7 +310,7 @@ index bb03eaf..d17cce4 100644
  
      return result;
  }
-@@ -243,37 +403,89 @@ void MatterLightDeviceDriver::ReadResource(std::forward_list<std::promise<bool>>
+@@ -243,37 +427,89 @@ void MatterLightDeviceDriver::ReadResource(std::forward_list<std::promise<bool>>
                                             chip::Messaging::ExchangeManager &exchangeMgr,
                                             const chip::SessionHandle &sessionHandle)
  {
@@ -394,7 +418,7 @@ index bb03eaf..d17cce4 100644
      }
  }
  
-@@ -285,46 +497,118 @@ bool MatterLightDeviceDriver::WriteResource(std::forward_list<std::promise<bool>
+@@ -285,46 +521,118 @@ bool MatterLightDeviceDriver::WriteResource(std::forward_list<std::promise<bool>
                                              chip::Messaging::ExchangeManager &exchangeMgr,
                                              const chip::SessionHandle &sessionHandle)
  {
@@ -537,7 +561,7 @@ index bb03eaf..d17cce4 100644
  }
  
  std::unique_ptr<MatterCluster> MatterLightDeviceDriver::MakeCluster(std::string const &deviceUuid,
-@@ -334,7 +618,15 @@ std::unique_ptr<MatterCluster> MatterLightDeviceDriver::MakeCluster(std::string
+@@ -334,7 +642,15 @@ std::unique_ptr<MatterCluster> MatterLightDeviceDriver::MakeCluster(std::string
      switch (clusterId)
      {
          case ON_OFF_CLUSTER_ID:
