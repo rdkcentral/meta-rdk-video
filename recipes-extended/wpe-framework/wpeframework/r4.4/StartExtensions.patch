@@ -1,28 +1,3 @@
-diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
-index fa723305..4b329f69 100644
---- a/Source/WPEFramework/PluginServer.cpp
-+++ b/Source/WPEFramework/PluginServer.cpp
-@@ -1169,6 +1169,20 @@ POP_WARNING()
-         SYSLOG(Logging::Startup, (_T("Notify that WPEFramework Systemd Service is Ready")));
-         sd_notify(0, "READY=1");
- #endif /* SYSTEMD_FOUND */
-+        for (auto service : configured_services)
-+        {
-+            if (service->State() != PluginHost::Service::state::UNAVAILABLE) {
-+                if (service->Extension() == true && service->Startup() == PluginHost::IShell::startup::ACTIVATED ) {
-+                    SYSLOG(Logging::Startup, (_T("Activating Extension [%s]:[%s]"),
-+                        service->ClassName().c_str(), service->Callsign().c_str()));
-+                    service->Activate(PluginHost::IShell::STARTUP);
-+                }
-+                else {
-+                    SYSLOG(Logging::Startup, (_T("Activation of Extension [%s]:[%s] delayed, autostart is false"),
-+                        service->ClassName().c_str(), service->Callsign().c_str()));
-+                }
-+            }
-+        }
-     }
- 
-     void Server::Close()
 diff --git a/Source/plugins/Configuration.h b/Source/plugins/Configuration.h
 index de193193..7638154a 100644
 --- a/Source/plugins/Configuration.h
@@ -106,3 +81,42 @@ index 2c910bff..0af1d6b8 100644
         ID_EXTERNAL_CC_INTERFACE_OFFSET = (0xCC00) // ends on 0xDFFF
      };
  }
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index fa723305..d5ce7a38 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -1169,6 +1169,22 @@ POP_WARNING()
+         SYSLOG(Logging::Startup, (_T("Notify that WPEFramework Systemd Service is Ready")));
+         sd_notify(0, "READY=1");
+ #endif /* SYSTEMD_FOUND */
++        for (auto service : configured_services)
++        {
++            if (service->State() != PluginHost::Service::state::UNAVAILABLE) {
++                if (service->Extension() == true ) {
++                    if (service->Startup() == PluginHost::IShell::startup::ACTIVATED ) {
++                    SYSLOG(Logging::Startup, (_T("Activating Extension [%s]:[%s]"),
++                        service->ClassName().c_str(), service->Callsign().c_str()));
++                    service->Activate(PluginHost::IShell::STARTUP);
++                    }
++                    else {
++                        SYSLOG(Logging::Startup, (_T("Activation of Extension [%s]:[%s] delayed, autostart is false"),
++                            service->ClassName().c_str(), service->Callsign().c_str()));
++                    }
++                }
++            }
++        }
+     }
+ 
+     void Server::Close()
+diff --git a/Source/WPEFramework/Config.h b/Source/WPEFramework/Config.h
+index ab6b16c4..4ebead5d 100644
+--- a/Source/WPEFramework/Config.h
++++ b/Source/WPEFramework/Config.h
+@@ -981,6 +981,7 @@ POP_WARNING()
+
+             SYSLOG(Logging::Startup, (_T("Accessor: %s"), _URL.c_str()));
+             SYSLOG(Logging::Startup, (_T("Interface IP: %s"), hostaddress.c_str()));
++            SYSLOG(Logging::Startup, (_T("ThreadPool Count: %u"), THREADPOOL_COUNT));
+
+         }
+
