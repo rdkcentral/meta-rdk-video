@@ -1,7 +1,8 @@
 [Unit]
 Description=Boot version loader for RDK
 After=ecfs-init.service local-fs.target
-Wants=ecfs-init.service local-fs.target
+Wants=local-fs.target
+Requires=ecfs-init.service
 RequiresMountsFor=/opt/secure
 
 [Service]

@@ -37,18 +37,18 @@ boottypeLog() {
 
 # ensure /opt is mounted before accessing boot version files
 if ! mountpoint -q /opt 2>/dev/null; then
-    boottypeLog "/opt is not mounted; aborting bootversion-loader"
+    echo "`/bin/timestamp`: $0: /opt is not mounted; aborting bootversion-loader" >&2
     exit 1
 fi
 
 # ensure /opt/secure is mounted before accessing boot version files
 if ! mountpoint -q /opt/secure 2>/dev/null; then
-    boottypeLog "/opt/secure is not mounted; aborting bootversion-loader"
+    echo "`/bin/timestamp`: $0: /opt/secure is not mounted; aborting bootversion-loader" >&2
     exit 1
 fi
 
 if ! mountpoint -q /tmp 2>/dev/null; then
-    boottypeLog "/tmp is not mounted; aborting bootversion-loader"
+    echo "`/bin/timestamp`: $0: /tmp is not mounted; aborting bootversion-loader" >&2
     exit 1
 fi
 
@@ -122,7 +122,7 @@ fi
 # verify that FW_Class values are one of the expected strings
 for val in "$v_FW_Class" "$s1_FW_Class"; do
     case "$val" in
-        rdke|rdkv)
+        FW_CLASS:rdke|FW_CLASS:rdkv)
             ;; # good
         *)
             boottypeLog "unexpected FW_Class value '$val'; aborting"
