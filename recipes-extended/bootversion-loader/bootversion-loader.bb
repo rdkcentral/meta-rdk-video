@@ -21,7 +21,7 @@ do_install:append () {
     install -m 0644 ${WORKDIR}/bootversion-loader.service ${D}/lib/systemd/system/bootversion-loader.service
     install -d ${D}/lib/rdk
     if [ "${XUMOTV_MIGRATION_ENTOS}" = "yes" ]; then
-        install -m 0755 ${WORKDIR}/boot_FSR.sh ${D}/lib/rdk/boot_FSR.sh
+        install -m 0755 ${WORKDIR}/boot_FSR.sh ${D}/lib/rdk/bootversion-loader.sh
     fi
 }
 
