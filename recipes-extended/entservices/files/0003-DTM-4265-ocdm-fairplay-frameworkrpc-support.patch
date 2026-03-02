@@ -1,8 +1,101 @@
 diff --git a/OpenCDMi/FrameworkRPC.cpp b/OpenCDMi/FrameworkRPC.cpp
-index 70958538..fa8ba3b0 100644
+index 7095853..7f78edc 100644
 --- a/OpenCDMi/FrameworkRPC.cpp
 +++ b/OpenCDMi/FrameworkRPC.cpp
-@@ -799,6 +799,135 @@ namespace Plugin {
+@@ -286,7 +286,7 @@ namespace Plugin {
+                     DataExchange& operator=(const DataExchange&) = delete;
+ 
+                 public:
+-                    DataExchange(CDMi::IMediaKeySession* mediaKeys, const string& name, const uint32_t defaultSize)
++                        DataExchange(CDMi::IMediaKeySession* mediaKeys, const string& name, const uint32_t defaultSize)
+                         : Exchange::DataExchange(name, defaultSize)
+                         , Core::Thread(Core::Thread::DefaultStackSize(), _T("DRMSessionThread"))
+                         , _mediaKeys(mediaKeys)
+@@ -297,6 +297,7 @@ namespace Plugin {
+                         Core::Thread::Run();
+                         TRACE(Trace::Information, (_T("Constructing buffer server side: %p - %s"), this, name.c_str()));
+                     }
++
+                     ~DataExchange()
+                     {
+                         TRACE(Trace::Information, (_T("Destructing buffer server side: %p - %s"), this, Exchange::DataExchange::Name().c_str()));
+@@ -312,16 +313,57 @@ namespace Plugin {
+                 private:
+                     virtual uint32_t Worker() override
+                     {
+-
+-                        while (IsRunning() == true) {
+-
+-                            uint32_t clearContentSize = 0;
+-                            uint8_t* clearContent = nullptr;
+-
+-                            RequestConsume(Core::infinite);
+-
+-                            if (IsRunning() == true) {
+-                                uint8_t *payloadBuffer = Buffer();
++			if(strcmp(_mediaKeys->GetKeySystem(),"com.apple.fps") == 0 )
++			{
++			     printf("****** FPS  Worker Thread started ******** \n");
++			     printf("****** FPS  Worker Thread started ******** \n");
++			     //Prepare for the FPS decryption..
++                             // Retrieve all FPS params from Adminstrative buffer.
++			     //
++			     while (IsRunning() == true)
++			     {
++				printf("*****Inside the while loop ***** \n");
++				RequestConsume(Core::infinite);
++
++			        if (IsRunning() == true)
++                                {
++				    printf("*******Getting the payload buffer****** \n");
++				    uint8_t *payloadBuffer = Buffer();
++                                    printf("*****calling FPS decrypt****** \n");
++                                     int cr = _mediaKeys->Decrypt(
++                                        FPSMovieId(),
++                                        FPSCryptorId(),
++                                        FPSContentType(),
++					payloadBuffer,
++					BytesWritten(),
++                                        FPSSliceInfoArray(),
++					FPSSliceInfoArrayCoun(),
++                                        nullptr,
++                                        FPSSvpOut());
++                           
++			            // Store the status we have for the other side.
++                                    Status(static_cast<uint32_t>(cr));
++                                    printf("******So far good ***** \n");
++                                   // Whatever the result, we are done with the buffer..
++                                    Consumed();
++				}
++    
++			     }
++			}
++		       else
++		       {	       
++			       printf("*****WV worker thread staretd******* \n");
++			       printf("*****WV worker thread staretd******* \n");
++
++                            while (IsRunning() == true) {
++
++                              uint32_t clearContentSize = 0;
++                              uint8_t* clearContent = nullptr;
++
++                              RequestConsume(Core::infinite);
++
++                                if (IsRunning() == true) {
++                                 uint8_t *payloadBuffer = Buffer();
+ 
+                                 CDMi::SampleInfo sampleInfo;
+                                 sampleInfo.scheme = static_cast<CDMi::EncryptionScheme>(EncScheme());
+@@ -367,6 +409,7 @@ namespace Plugin {
+                                 Consumed();
+                             }
+                         }
++		    }
+ 
+                         return (Core::infinite);
+                     }
+@@ -799,6 +842,135 @@ namespace Plugin {
                  return result;
              }
  
@@ -138,3 +231,68 @@ index 70958538..fa8ba3b0 100644
              Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& bufferSize, uint8_t buffer[]) const override {
                  Exchange::OCDM_RESULT result = Exchange::OCDM_KEYSYSTEM_NOT_SUPPORTED;
  
+@@ -834,41 +1006,51 @@ namespace Plugin {
+                 Exchange::ISession*& session) override
+             {
+                  CDMi::IMediaKeys *system = _parent.KeySystem(keySystem);
+-
++                 printf("**********rdk services CreateSession************ \n");
++                 printf("**********rdk services CreateSession************ \n");
++                 printf("**********the Key system = %s ****** \n",keySystem.c_str());
++                 printf("**********rdk services CreateSession************ \n");
+                  session = nullptr;
+                  if (system != nullptr)
+                  {
+                      CDMi::IMediaKeySession *sessionInterface = nullptr;
+-                     CommonEncryptionData keyIds(initData, initDataLength);
++                    // CommonEncryptionData keyIds(initData, initDataLength);
+ 
+                      // OKe we got a buffer machanism to transfer the raw data, now create
+                      // the session.
++		     printf("*******calling Plugin CreateMediaKeySession******** \n");
+                      if (system->CreateMediaKeySession(keySystem, licenseType,
+                                         initDataType.c_str(), initData, initDataLength,
+                                         CDMData, CDMDataLength, &sessionInterface) == 0)
+                      {
++			  printf("*********CreateMediaKeySession return successfully ******** \n");
++			  printf("*******The session Interface = %p \n",sessionInterface);
+                          if (sessionInterface != nullptr)
+                          {
++                                 printf("**********After rdkservices CreateMediaKeySession***** \n");
+                                  SessionImplementation *newEntry = 
+                                     Core::Service<SessionImplementation>::Create<SessionImplementation>(this,
+                                                  keySystem, sessionInterface,
+-                                                callback, &keyIds);
++                                                callback, nullptr);
+ 
+                                  session = newEntry;
++                                 printf("****All is well ******** \n");
+                                  sessionId = newEntry->SessionId();
+ 
+                                  _adminLock.Lock();
+ 
+                                  _sessionList.push_front(newEntry);
++                                 printf("********All is well 2********* \n");
+                                 
+-                                if(false == keyIds.IsEmpty())
++                                /*if(false == keyIds.IsEmpty())
+                                 {
++                                    printf("*********Should not be here ******** \n");
+                                     CommonEncryptionData::Iterator index(keyIds.Keys());
+                                     while (index.Next() == true) {
+                                         const CommonEncryptionData::KeyId& entry(index.Current());
+                                         callback->OnKeyStatusUpdate( entry.Id(), entry.Length(), Exchange::ISession::StatusPending);
+                                     }
+-                                }
++                                }*/
+                                 _adminLock.Unlock();
+                          }
+                      }
+@@ -877,6 +1059,7 @@ namespace Plugin {
+                  if (session == nullptr) {
+                      TRACE(Trace::Error, (_T("Could not create a DRM session! [%d]"), __LINE__));
+                  }
++                 printf("*********return from the rdkservices CreateSession********* \n");
+ 
+                  return (session != nullptr ? Exchange::OCDM_RESULT::OCDM_SUCCESS : Exchange::OCDM_RESULT::OCDM_S_FALSE);
+             }
