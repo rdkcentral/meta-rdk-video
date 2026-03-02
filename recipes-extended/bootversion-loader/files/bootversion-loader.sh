@@ -35,6 +35,33 @@ boottypeLog() {
     echo "`/bin/timestamp`: $0: $*" >> $BOOTTYPE_LOG_FILE
 }
 
+# ensure /opt is mounted before accessing boot version files
+if ! mountpoint -q /opt 2>/dev/null; then
+    boottypeLog "/opt is not mounted; aborting bootversion-loader"
+    exit 1
+fi
+
+# ensure /opt/secure is mounted before accessing boot version files
+if ! mountpoint -q /opt/secure 2>/dev/null; then
+    boottypeLog "/opt/secure is not mounted; aborting bootversion-loader"
+    exit 1
+fi
+
+if ! mountpoint -q /tmp 2>/dev/null; then
+    boottypeLog "/tmp is not mounted; aborting bootversion-loader"
+    exit 1
+fi
+
+PLATFORM_FILE="/etc/migration/boot_FSR.platform"
+if [ -f "$PLATFORM_FILE" ]; then
+    file_platform="$(tr -d '\r' < "$PLATFORM_FILE" | tr -d ' \t\n')"
+    boottypeLog "Running the boot_FSR script for $file_platform devices"
+else
+    boottypeLog "Exiting since this script is not intended for this platform"
+    echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
+    exit 0
+fi
+
 #bootversion backup 
 if [ -e "$file_updateStatus" ]; then
      status=$(<"$file_updateStatus")
@@ -86,6 +113,24 @@ s1_imagename=$(grep -m 1 "imagename" $file_bootversion)
 s1_version=$(grep -m 1 "VERSION" $file_bootversion)
 s1_FW_Class=$(grep -m 1 "FW_CLASS" $file_bootversion)
 
+# ensure slot data is non-empty before comparing
+if [ -z "$s1_FW_Class" ] || [ -z "$s1_version" ] || [ -z "$s1_imagename" ]; then
+    boottypeLog "slot1 information missing or empty; aborting"
+    exit 1
+fi
+
+# verify that FW_Class values are one of the expected strings
+for val in "$v_FW_Class" "$s1_FW_Class"; do
+    case "$val" in
+        rdke|rdkv)
+            ;; # good
+        *)
+            boottypeLog "unexpected FW_Class value '$val'; aborting"
+            exit 1
+            ;;
+    esac
+done
+
 #copy slot information
      # s1 = v
      echo "$v_imagename" > $file_bootversion
@@ -119,7 +164,7 @@ else
      elif [ "$MigrationStatus" == "MIGRATION_COMPLETED" ] || [ "$MigrationStatus" == "NOT_NEEDED" ]; then
 	     if [ "$v_version" == "$s1_version" ]; then
 	         echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
-	    	 boottypeLog "BOOT_NORMAL since Version is equal and MigrationStatus is MIGRATION_COMPLETED"
+	    	 boottypeLog "BOOT_NORMAL since Version is equal and MigrationStatus is $MigrationStatus"
 	     else
 	         echo "BOOT_TYPE=BOOT_UPDATE" > $file_bootType
 	         boottypeLog "BOOT_UPDATE since Version is not equal"
