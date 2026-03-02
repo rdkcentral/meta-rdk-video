@@ -146,6 +146,10 @@ WPE_WEBKIT_LTO ??= "-flto=auto -fno-fat-lto-objects"
 TARGET_CFLAGS += "${WPE_WEBKIT_LTO}"
 TARGET_LDFLAGS += "${WPE_WEBKIT_LTO}"
 
+CFLAGS += " -fprofile-generate=/tmp "
+CXXFLAGS += " -fprofile-generate=/tmp "
+LDFLAGS += " -fprofile-generate=/tmp "
+
 def wk_use_ccache(bb,d):
     if d.getVar('CCACHE_DISABLED', True) == "1":
        return "NO"
