@@ -1,15 +1,15 @@
---- a/Source/core/WorkerPool.h  2026-03-02 14:02:08.952084214 +0000
-+++ b/Source/core/WorkerPool.h  2026-03-02 14:05:40.203628409 +0000
+--- a/Source/core/WorkerPool.h  2026-03-02 15:22:41.681308655 +0000
++++ b/Source/core/WorkerPool.h  2026-03-02 15:26:18.768978587 +0000
 @@ -365,10 +365,14 @@
              uint32_t report = _threadPool.Revoke(job, waitTime);
 
              if (report == Core::ERROR_UNKNOWN_KEY) {
 -                report = _external.Completed(job, waitTime);
--
+-                
 -                if ( (report != Core::ERROR_UNKNOWN_KEY) && (result == Core::ERROR_UNKNOWN_KEY) ) {
 -                    result = report;
-+                if (_joined == Thread::ThreadId() && _external.Executing(job) == true ) {
-+                    result == Core::ERROR_NONE;
++                if ( _joined == Thread::ThreadId()) {
++                    result = Core::ERROR_NONE;
 +                } else {
 +                    report = _external.Completed(job, waitTime);
 +
@@ -19,25 +19,3 @@
                  }
              }
 
---- a/Source/core/ThreadPool.h  2026-03-02 14:05:57.067911347 +0000
-+++ b/Source/core/ThreadPool.h  2026-03-02 14:08:22.770355809 +0000
-@@ -403,6 +403,10 @@
-                            _adminLock.Unlock();
-                 }
-             }
-+            uint32_t Executing (const ProxyType<IDispatch>& job) const {
-+                Core::SafeSyncType<Core::CriticalSection> lock(_adminLock);
-+                return (_currentRequest.IsValid() && _currentRequest == job);
-+            }
-             uint32_t Completed (const ProxyType<IDispatch>& job, const uint32_t waitTime) {
-                 uint32_t result = ERROR_UNKNOWN_KEY;
-
-@@ -635,7 +639,7 @@
-                 while ((result == ERROR_UNKNOWN_KEY) && (index != _units.end())) {
-                     // If we are the running job, no need to revoke ourselves, I guess we know what we are doing :-)
-                     // and we would cause a deadlock if we are waiting for our selves to complete :-)
--                    if (index->Id() == Thread::ThreadId()) {
-+                    if (index->Id() == Thread::ThreadId() && index->Me().Executing(job) == true) {
-                         result = ERROR_NONE;
-                     }
-                     else {
