@@ -4,14 +4,14 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-DEPENDS = "cmake-native wpeframework-tools-native wpeframework"
+DEPENDS = "cmake-native wpeframework-tools-native wpeframework wpeframework-extensions"
 
 PV = "1.2.0"
 PR = "r0"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderPluginActivator;protocol=https;branch=PIS_Test_4.4;name=thunderpluginactivator"
 
-SRCREV = "3b5f10a8c540606d2da56305e5b369e49a0f0e68"
+SRCREV = "787438d633ca36b959d3d70a34512588b8d6736a"
 
 S = "${WORKDIR}/git"
 
