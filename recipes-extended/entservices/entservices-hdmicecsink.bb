@@ -14,7 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsink;${CMF_GITHUB_SRC_URI_SUFFI
           "
 
 # Release version - 1.0.3
-SRCREV = "dc061e024a91a324a4d58da240470b84674d3059"
+SRCREV = "88909fd49fdcee4422918e0e082e91bf841a0d96"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
