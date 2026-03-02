@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-peripherals;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.2.2
-SRCREV = "f9c3b2e17dd64291ec297097f9d28101c1f7fc7b"
+# Release version - 1.4.0
+SRCREV = "147c937576c517127b9a03c966f326a01de1e9ee"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -43,7 +43,6 @@ PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[motiondetection]      = "-DPLUGIN_MOTION_DETECTION=ON,,virtual/vendor-motiondetector-hal virtual/vendor-fpdriverlib,virtual/vendor-motiondetector-hal virtual/vendor-fpdriverlib"
-PACKAGECONFIG[ledcontrol]           = "-DPLUGIN_LEDCONTROL=ON,,iarmbus iarmmgrs devicesettings entservices-apis virtual/vendor-devicesettings-hal,iarmbus devicesettings entservices-apis"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
