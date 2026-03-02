@@ -19,8 +19,8 @@ python __anonymous() {
 do_install:append () {
     install -d ${D}/lib/systemd/system
     install -m 0644 ${WORKDIR}/bootversion-loader.service ${D}/lib/systemd/system/bootversion-loader.service
-    install -d ${D}/lib/rdk
     if [ "${XUMOTV_MIGRATION_ENTOS}" = "yes" ]; then
+        install -d ${D}/lib/rdk
         install -m 0755 ${WORKDIR}/bootversion-loader.sh ${D}/lib/rdk/bootversion-loader.sh
     fi
 }
