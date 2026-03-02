@@ -3,7 +3,7 @@ Description=Boot version loader for RDK
 After=ecfs-init.service local-fs.target
 Wants=local-fs.target
 Requires=ecfs-init.service
-RequiresMountsFor=/opt/secure
+RequiresMountsFor=/opt/secure /opt /tmp
 
 [Service]
 Type=oneshot

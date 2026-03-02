@@ -140,7 +140,7 @@ done
      echo "$s1_imagename" >> $file_bootversion
      echo "$s1_version" >> $file_bootversion
      echo "$s1_FW_Class" >> $file_bootversion
-     boottypeLog "Updated slot information(s1 from current image, s2 from previous slot)"
+     boottypeLog "Updated slot information (Slot1 from current image, Slot2 from previous slot)"
      boottypeLog "Slot1 - imagename: $v_imagename, version: $v_version, FW_Class: $v_FW_Class"
      boottypeLog "Slot2 - imagename: $s1_imagename, version: $s1_version, FW_Class: $s1_FW_Class"
 
