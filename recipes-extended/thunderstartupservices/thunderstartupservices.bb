@@ -53,7 +53,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkwindowmanager',' wpeframework-rdkwindowmanager.service', '', d)} \
     wpeframework-lifecyclemanager.service \
     wpeframework-runtimemanager.service \
-    wpeframework-storagemanager.service \
+    wpeframework-appstoragemanager.service \
     wpeframework-packagemanager.service \
     wpeframework-appmanager.service \
     wpeframework-appgateway.service \
