@@ -1,26 +1,46 @@
 diff --git a/Source/core/WorkerPool.h b/Source/core/WorkerPool.h
-index ea68bc1a..8668208a 100644
+index ea68bc1a..d6e09b7f 100644
 --- a/Source/core/WorkerPool.h
 +++ b/Source/core/WorkerPool.h
-@@ -363,12 +363,15 @@ POP_WARNING()
-             uint32_t result(_timer.Revoke(Timer(this, job)) ? Core::ERROR_NONE : Core::ERROR_UNKNOWN_KEY);
- 
+@@ -365,10 +365,14 @@ POP_WARNING()
              uint32_t report = _threadPool.Revoke(job, waitTime);
--
--            if (report == Core::ERROR_UNKNOWN_KEY) {
+ 
+             if (report == Core::ERROR_UNKNOWN_KEY) {
 -                report = _external.Completed(job, waitTime);
 -                
 -                if ( (report != Core::ERROR_UNKNOWN_KEY) && (result == Core::ERROR_UNKNOWN_KEY) ) {
 -                    result = report;
-+            if (report == ERROR_UNKNOWN_KEY){
-+                if (_joined == Thread::ThreadId()) {
-+                    // We are trying to revoke a job from the current thread, this is not allowed, return an error.
++                if ( _joined == Thread::ThreadId() && _external.Executing(job) == true) {
 +                    result = Core::ERROR_NONE;
-+                } else {
++                }
++                else {
 +                    report = _external.Completed(job, waitTime);
 +                    if ( (report != Core::ERROR_UNKNOWN_KEY) && (result == Core::ERROR_UNKNOWN_KEY) ) {
 +                        result = report;
 +                    }
                  }
              }
+diff --git a/Source/core/ThreadPool.h b/Source/core/ThreadPool.h
+index 1287ae98..897aa24f 100644
+--- a/Source/core/ThreadPool.h
++++ b/Source/core/ThreadPool.h
+@@ -403,6 +403,10 @@ POP_WARNING()
+ 		            _adminLock.Unlock();
+                 }
+             }
++            uint32_t Executing (const ProxyType<IDispatch>& job) const {
++                Core::SafeSyncType<Core::CriticalSection> lock(_adminLock);
++                return (_currentRequest.IsValid() && _currentRequest == job); 
++            }
+             uint32_t Completed (const ProxyType<IDispatch>& job, const uint32_t waitTime) {
+                 uint32_t result = ERROR_UNKNOWN_KEY;
  
+@@ -635,7 +639,7 @@ POP_WARNING()
+                 while ((result == ERROR_UNKNOWN_KEY) && (index != _units.end())) {
+                     // If we are the running job, no need to revoke ourselves, I guess we know what we are doing :-)
+                     // and we would cause a deadlock if we are waiting for our selves to complete :-)
+-                    if (index->Id() == Thread::ThreadId()) {
++                    if (index->Id() == Thread::ThreadId() && index->Me().Executing(job) == true) {
+                         result = ERROR_NONE;
+                     }
+                     else {
