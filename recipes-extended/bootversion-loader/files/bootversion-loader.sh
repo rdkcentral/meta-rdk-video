@@ -55,7 +55,7 @@ fi
 PLATFORM_FILE="/etc/migration/boot_FSR.platform"
 if [ -f "$PLATFORM_FILE" ]; then
     file_platform="$(tr -d '\r' < "$PLATFORM_FILE" | tr -d ' \t\n')"
-    boottypeLog "Running the boot_FSR script for $file_platform devices"
+    boottypeLog "Running the bootversion-loader script for $file_platform devices"
 else
     boottypeLog "Exiting since this script is not intended for this platform"
     echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
