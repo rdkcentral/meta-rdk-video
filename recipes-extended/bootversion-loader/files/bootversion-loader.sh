@@ -123,7 +123,8 @@ fi
 for val in "$v_FW_Class" "$s1_FW_Class"; do
     case "$val" in
         FW_CLASS:rdke|FW_CLASS:rdkv)
-            ;; # good
+			boottypeLog "FW_Class validation passed: '$val' is valid"
+            ;;
         *)
             boottypeLog "unexpected FW_Class value '$val'; aborting"
             exit 1
