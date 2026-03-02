@@ -58,7 +58,13 @@ if [ -f "$PLATFORM_FILE" ]; then
     boottypeLog "Running the bootversion-loader script for $file_platform devices"
 else
     boottypeLog "Exiting since this script is not intended for this platform"
-    echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
+	if [ ! -e "$file_bootversion" ]; then
+		echo "BOOT_TYPE=BOOT_INIT" > $file_bootType
+		boottypeLog "BOOT_INIT is set since $file_bootversion is not present"
+	else
+    	echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
+		boottypeLog "BOOT_NORMAL is set since $file_bootversion is present"
+	fi
     exit 0
 fi
 
