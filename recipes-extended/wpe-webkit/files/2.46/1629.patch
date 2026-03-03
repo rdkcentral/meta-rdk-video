@@ -1,18 +1,18 @@
-From 206e2b987503bbfcf089c8e51ffbbbf8380f2ee4 Mon Sep 17 00:00:00 2001
+From bfbdaec0846d9a488ed74d792c3a98bb0a095596 Mon Sep 17 00:00:00 2001
 From: Gurdal Oruklu <gurdal_oruklu@comcast.com>
-Date: Wed, 30 Jul 2025 01:14:11 +0000
-Subject: [PATCH] comcast - set low-latency-mode westeros-sink property
+Date: Mon, 2 Mar 2026 20:02:13 -0800
+Subject: [PATCH] [GStreamer][WesterosQuirk] set low-latency-mode  property
 
-Signed-off-by: Gurdal Oruklu <gurdal_oruklu@comcast.com>
+Amlogic uses "low-latency-mode"  Westeros sink property instead of "immediate-mode" for lowest latency.
 ---
- .../platform/gstreamer/GStreamerQuirkWesteros.cpp   | 13 ++++++++++---
- 1 file changed, 10 insertions(+), 3 deletions(-)
+ .../platform/gstreamer/GStreamerQuirkWesteros.cpp     | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
 diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp b/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
-index 76d8f28389bd4..1aeb5c2817d15 100644
+index c7f62b7e33b82..223fb7c759156 100644
 --- a/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
 +++ b/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
-@@ -86,9 +86,16 @@ void GStreamerQuirkWesteros::configureElement(GstElement* element, const OptionS
+@@ -85,9 +85,14 @@ void GStreamerQuirkWesteros::configureElement(GstElement* element, const OptionS
      if (!characteristics.contains(ElementRuntimeCharacteristics::IsMediaStream))
          return;
  
@@ -21,17 +21,12 @@ index 76d8f28389bd4..1aeb5c2817d15 100644
 -        g_object_set(element, "immediate-output", TRUE, nullptr);
 +    if (!g_strcmp0(G_OBJECT_TYPE_NAME(G_OBJECT(element)), "GstWesterosSink")){
 +        if(gstObjectHasProperty(element, "low-latency-mode")) {
-+
-+            g_object_set(element, "low-latency-mode", TRUE, NULL);
 +            GST_INFO("Enable 'low-latency-mode' in WesterosSink");
++            g_object_set(element, "low-latency-mode", TRUE, nullptr);
 +        } else if (gstObjectHasProperty(element, "immediate-output")) {
-+            g_object_set(element, "immediate-output", TRUE, NULL);
 +            GST_INFO("Enable 'immediate-output' in WesterosSink");
++            g_object_set(element, "immediate-output", TRUE, nullptr);
 +        }
-+
      }
  }
  
--- 
-2.25.1
-
