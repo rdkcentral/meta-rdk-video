@@ -31,6 +31,9 @@ do_install:append() {
     install -m 0644 ${WORKDIR}/timeZone_offset_map ${D}${sysconfdir}/timeZone_offset_map
     install -d ${D}${systemd_unitdir}/system/systemd-timesyncd.service.d
     install -m 644 ${WORKDIR}/timesyncd-update.conf ${D}${systemd_unitdir}/system/systemd-timesyncd.service.d
+    if [ -f "${D}${systemd_unitdir}/system/systemd-timesyncd.service" ]; then
+       sed -i '/^\[Unit\]/a ConditionPathExists=!/opt/chronyd_enabled' ${D}${systemd_unitdir}/system/systemd-timesyncd.service
+    fi
 
     if [ "${DOBBY_ENABLED}" = "true" ]; then
         echo "DOBBY_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
