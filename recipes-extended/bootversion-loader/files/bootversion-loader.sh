@@ -35,23 +35,6 @@ boottypeLog() {
     echo "`/bin/timestamp`: $0: $*" >> $BOOTTYPE_LOG_FILE
 }
 
-# ensure /opt is mounted before accessing boot version files
-if ! mountpoint -q /opt 2>/dev/null; then
-    echo "`/bin/timestamp`: $0: /opt is not mounted; aborting bootversion-loader" >&2
-    exit 1
-fi
-
-# ensure /opt/secure is mounted before accessing boot version files
-if ! mountpoint -q /opt/secure 2>/dev/null; then
-    echo "`/bin/timestamp`: $0: /opt/secure is not mounted; aborting bootversion-loader" >&2
-    exit 1
-fi
-
-if ! mountpoint -q /tmp 2>/dev/null; then
-    echo "`/bin/timestamp`: $0: /tmp is not mounted; aborting bootversion-loader" >&2
-    exit 1
-fi
-
 PLATFORM_FILE="/etc/migration/boot_FSR.platform"
 if [ -f "$PLATFORM_FILE" ]; then
     file_platform="$(tr -d '\r' < "$PLATFORM_FILE" | tr -d ' \t\n')"
