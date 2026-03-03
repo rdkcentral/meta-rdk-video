@@ -70,6 +70,7 @@ CONTROL_FILES = "\
 
 do_install() {
     install -d ${D}${systemd_system_unitdir}
+    FINAL_SERVICES=""
 
     for y in ${CONTROL_FILES}; do
         install -m 0644 ${S}/${y} ${D}${systemd_system_unitdir}
@@ -78,16 +79,20 @@ do_install() {
     done
 
     for x in ${THUNDER_STARTUP_SERVICES}; do
-        install -m 0644 ${S}/${x} ${D}${systemd_system_unitdir}
-        install -d ${D}${sysconfdir}/systemd/system/${x}.requires
-        ln -sf ${systemd_system_unitdir}/wpeframework.service ${D}${sysconfdir}/systemd/system/${x}.requires/wpeframework.service
+        if [ -f "${S}/${x}" ]; then
+            install -m 0644 ${S}/${x} ${D}${systemd_system_unitdir}
+            install -d ${D}${sysconfdir}/systemd/system/${x}.requires
+            ln -sf ${systemd_system_unitdir}/wpeframework.service ${D}${sysconfdir}/systemd/system/${x}.requires/wpeframework.service
+            FINAL_SERVICES="${FINAL_SERVICES} ${x}"
+        else
+            bbwarn "Skipping missing service file: ${S}/${x}"
+        fi
     done
 
     # Adding final THUNDER_STARTUP_SERVICES into the Requires= line of the target
-    FINAL_SERVICES="$(echo "${THUNDER_STARTUP_SERVICES}" | tr '\n' ' ')"
     TARGET_FILE="${D}${systemd_system_unitdir}/wpeframework-services.target"
 
-    if grep -q "^Requires=" "$TARGET_FILE"; then
+    if [ -n "${FINAL_SERVICES}" ] && grep -q "^Requires=" "$TARGET_FILE"; then
         # Append to existing Requires= line
         sed -i "/^Requires=/ s|$| ${FINAL_SERVICES}|" "$TARGET_FILE"
     fi
@@ -122,10 +127,12 @@ do_install:append() {
     for x in ${THUNDER_STARTUP_SERVICES}; do
         SERVICE_FILE="${SERVICE_DIR}/${x}"
 
-        # --- Normalize Description ---
-        # Converts: "Description=WPEFramework SystemMode Initialiser"
-        # To:      "Description=WPE SystemMode"
-        sed -i 's/^Description=WPEFramework \(.*\) Initialiser$/Description=WPE \1/' "$SERVICE_FILE"
+        if [ -f "$SERVICE_FILE" ]; then
+            # --- Normalize Description ---
+            # Converts: "Description=WPEFramework SystemMode Initialiser"
+            # To:      "Description=WPE SystemMode"
+            sed -i 's/^Description=WPEFramework \(.*\) Initialiser$/Description=WPE \1/' "$SERVICE_FILE"
+        fi
     done
 }
 
