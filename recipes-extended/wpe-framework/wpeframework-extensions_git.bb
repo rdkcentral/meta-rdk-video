@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PV = "1.0.0"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/wpeframework-extensions"
 inherit cmake pkgconfig
@@ -38,25 +38,33 @@ EXTRA_OECMAKE += " \
 
 # ----------------------------------------------------------------------------
 
-
+# Blank FILES_SOLIBSDEV so the solib auto-assignment doesn't interfere;
+# ${libdir}/* below catches everything under libdir recursively.
 FILES_SOLIBSDEV = ""
 
-FILES:${PN} += "${libdir}/* ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc ${datadir}/WPEFramework/*"
-FILES:${PN}-dev += "${libdir}/cmake/*"
-FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/ ${libdir}/wpeframework/plugins/.debug/"
-
-INSANE_SKIP:${PN} += "libdir staticdev dev-so"
-INSANE_SKIP:${PN}-dbg += "libdir"
-
-
-FILES:${PN}-dev += " \
-    ${includedir}/WPEFramework/extensions \
+FILES:${PN} += " \
+    ${libdir}/* \
+    ${datadir}/WPEFramework/* \
+    ${sysconfdir}/WPEFramework/plugins/*.json \
 "
 
-# Ensure the namelink .so is always present for linker use (CMake NAMELINK_COMPONENT
-# can cause it to be skipped when cmake class installs only the Runtime component).
-do_install:append() {
-    # Re-run install for the Development component to capture the namelink
-    cmake --install ${B} --prefix ${D}${prefix} --component WPEFramework_Development
-}
+# Headers installed by interfaces/CMakeLists.txt to
+# ${includedir}/WPEFramework/extensions — assign them to ${PN}-dev.
+# Listing the directory (no trailing /*) causes BitBake to recursively
+# include all files inside it.
+FILES:${PN}-dev += " \
+    ${includedir}/WPEFramework/extensions \
+    ${libdir}/cmake/* \
+"
+
+FILES:${PN}-dbg += " \
+    ${libdir}/wpeframework/proxystubs/.debug/ \
+    ${libdir}/wpeframework/plugins/.debug/ \
+"
+
+# dev-so: .so namelinks are intentionally in ${PN} (pulled in via ${libdir}/*)
+# libdir: libraries installed to non-standard libdir subdirs
+# staticdev: no separate static lib package needed
+INSANE_SKIP:${PN} += "libdir staticdev dev-so"
+INSANE_SKIP:${PN}-dbg += "libdir"
 
