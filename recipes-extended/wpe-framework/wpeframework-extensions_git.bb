@@ -19,6 +19,10 @@ TOOLCHAIN = "gcc"
 DEPENDS += "wpeframework wpeframework-tools-native "
 RDEPENDS:${PN} += "wpeframework"
 
+# Explicitly stage the proxystubs subdir and headers into the sysroot so that
+# recipes which DEPEND on this recipe can find libWPEFrameworkExtensionsMarshalling.
+SYSROOT_DIRS:append = " ${libdir}/wpeframework/proxystubs ${includedir}/WPEFramework/extensions"
+
 CXXFLAGS += " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 PLUGIN_MAXPARALLEL ?= "8"
@@ -39,7 +43,15 @@ FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/wpeframework/proxy
 
 FILES:${PN}-dev += "\
     ${libdir}/wpeframework/proxystubs/*.so \
+    ${includedir}/WPEFramework/extensions \
 "
+
+# Ensure the namelink .so is always present for linker use (CMake NAMELINK_COMPONENT
+# can cause it to be skipped when cmake class installs only the Runtime component).
+do_install:append() {
+    # Re-run install for the Development component to capture the namelink
+    cmake --install ${B} --prefix ${D}${prefix} --component WPEFramework_Development
+}
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
