@@ -1,0 +1,14 @@
+[Unit]
+Description=RDK DAB Adapter
+After=wpeframework.service mosquitto.service iptables.service sky-asproxy.service sky-appsservice-gateway.service
+Requires=wpeframework.service mosquitto.service sky-asproxy.service sky-appsservice-gateway.service
+
+[Service]
+ExecStartPre=/bin/sleep 10
+ExecStartPre=/usr/sbin/iptables -v -I INPUT -p tcp --dport 1883 -j ACCEPT
+ExecStopPost=/usr/sbin/iptables -v -D INPUT -p tcp --dport 1883 -j ACCEPT
+ExecStart=-/usr/bin/DAB
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
