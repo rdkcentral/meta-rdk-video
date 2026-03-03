@@ -38,22 +38,17 @@ EXTRA_OECMAKE += " \
 
 # ----------------------------------------------------------------------------
 
-# Tell OE's packaging machinery where the solib namelink (.so) lives so it is
-# correctly assigned to ${PN}-dev.  Blanking FILES_SOLIBSDEV intercepts .so
-# files before normal FILES assignment runs, causing unshipped-file QA errors.
-FILES_SOLIBSDEV = "${libdir}/wpeframework/proxystubs/*.so"
 
-# Runtime package: versioned shared libs (.so.*) and plugin .so files
-# (plugin .so files are dlopen'd at runtime, not linked, hence dev-so skip)
-FILES:${PN} += " \
-    ${libdir}/wpeframework/plugins/*.so \
-    ${libdir}/wpeframework/proxystubs/*.so.* \
-    ${datadir}/WPEFramework/* \
-    ${sysconfdir}/WPEFramework/plugins/*.json \
-"
+FILES_SOLIBSDEV = ""
 
-# Dev package: namelink (handled via FILES_SOLIBSDEV above) + headers.
-# Use directory path (no trailing /*) so BitBake matches recursively.
+FILES:${PN} += "${libdir}/* ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc ${datadir}/WPEFramework/*"
+FILES:${PN}-dev += "${libdir}/cmake/*"
+FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/ ${libdir}/wpeframework/plugins/.debug/"
+
+INSANE_SKIP:${PN} += "libdir staticdev dev-so"
+INSANE_SKIP:${PN}-dbg += "libdir"
+
+
 FILES:${PN}-dev += " \
     ${includedir}/WPEFramework/extensions \
 "
@@ -65,5 +60,3 @@ do_install:append() {
     cmake --install ${B} --prefix ${D}${prefix} --component WPEFramework_Development
 }
 
-INSANE_SKIP:${PN} += "libdir staticdev dev-so"
-INSANE_SKIP:${PN}-dbg += "libdir"
