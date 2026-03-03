@@ -7,13 +7,13 @@ Date: Tue, 25 May 2021 17:18:55 +0000
 Subject: [PATCH] 0001-add_gstcaps_forcobalt_mediatype.patch
 
 ---
- OpenCDMi/CapsParser.cpp | 4 ++++
+ plugin/CapsParser.cpp | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/OpenCDMi/CapsParser.cpp b/OpenCDMi/CapsParser.cpp
+diff --git a/plugin/CapsParser.cpp b/plugin/CapsParser.cpp
 index 7d77cff..4ebdd3d 100644
---- a/OpenCDMi/CapsParser.cpp
-+++ b/OpenCDMi/CapsParser.cpp
+--- a/plugin/CapsParser.cpp
++++ b/plugin/CapsParser.cpp
 @@ -111,12 +111,16 @@ namespace WPEFramework {
                  if(_lastHash != info_hash) {
                      LOG(eTrace, "Got a new info string %s hash = %ld\n", infoStr.c_str(), info_hash);
