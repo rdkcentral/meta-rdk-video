@@ -81,17 +81,6 @@ index 2c910bff..0af1d6b8 100644
         ID_EXTERNAL_CC_INTERFACE_OFFSET = (0xCC00) // ends on 0xDFFF
      };
  }
-diff --git a/Source/WPEFramework/Config.h b/Source/WPEFramework/Config.h
-index ab6b16c4..4ebead5d 100644
---- a/Source/WPEFramework/Config.h
-+++ b/Source/WPEFramework/Config.h
-@@ -981,6 +981,7 @@ POP_WARNING()
-
-             SYSLOG(Logging::Startup, (_T("Accessor: %s"), _URL.c_str()));
-             SYSLOG(Logging::Startup, (_T("Interface IP: %s"), hostaddress.c_str()));
-+            SYSLOG(Logging::Startup, (_T("ThreadPool Count: %u"), THREADPOOL_COUNT));
-
-         }
 --- a/Source/WPEFramework/PluginServer.cpp	2026-03-03 01:17:33.451584386 +0000
 +++ b/Source/WPEFramework/PluginServer.cpp	2026-03-03 01:20:31.510567940 +0000
 @@ -1148,6 +1148,22 @@
@@ -117,3 +106,13 @@ index ab6b16c4..4ebead5d 100644
  
  #if 0
          for (auto service : configured_services)
+--- a/Source/WPEFramework/Config.h	2026-03-03 01:46:08.920332331 +0000
++++ b/Source/WPEFramework/Config.h	2026-03-03 01:47:03.141240866 +0000
+@@ -981,6 +981,7 @@
+ 
+             SYSLOG(Logging::Startup, (_T("Accessor: %s"), _URL.c_str()));
+             SYSLOG(Logging::Startup, (_T("Interface IP: %s"), hostaddress.c_str()));
++            SYSLOG(Logging::Startup, (_T("ThreadPool Count: %u"), THREADPOOL_COUNT));
+ 
+         }
+ 
