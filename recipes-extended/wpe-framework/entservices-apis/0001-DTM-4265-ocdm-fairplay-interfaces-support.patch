@@ -1,7 +1,7 @@
-diff --git a/interfaces/IContentDecryption.h b/interfaces/IContentDecryption.h
-index c7de450..21d1003 100644
---- a/interfaces/IContentDecryption.h
-+++ b/interfaces/IContentDecryption.h
+diff --git a/apis/OpenCDMi/IContentDecryption.h b/apis/OpenCDMi/IContentDecryption.h
+index dec0647..37ab798 100644
+--- a/apis/OpenCDMi/IContentDecryption.h
++++ b/apis/OpenCDMi/IContentDecryption.h
 @@ -73,6 +73,14 @@ namespace Exchange {
              uint16_t StreamHeight;
              uint16_t StreamWidth;
@@ -25,26 +25,32 @@ index c7de450..21d1003 100644
              Administration* admin = reinterpret_cast<Administration*>(AdministrationBuffer());
              admin->SubSampleLength = 0;
              admin->IVLength = 0;
-@@ -112,6 +121,18 @@ namespace Exchange {
+@@ -112,6 +121,24 @@ namespace Exchange {
              admin->StreamHeight = 0;
              admin->StreamWidth = 0;
              admin->StreamType = 0;
-+	    admin->fps_version = 0;
-+	    admin->fps_movieID = 0;
-+	    admin->fps_cryptorID = 0;
-+	    admin->fps_contentType = 0;
-+	    admin->fps_sliceInfo[0].offset = 0;
++            admin->fps_version = 0;
++            admin->fps_movieID = 0;
++            admin->fps_cryptorID = 0;
++            admin->fps_contentType = 0;
++            admin->fps_sliceInfo[0].offset = 0;
 +            admin->fps_sliceInfo[0].size   = 0;
 +
 +            admin->fps_sliceInfo[1].offset = 0;
 +            admin->fps_sliceInfo[1].size   = 0;
 +
-+	    admin->fps_sliceInfoArrayCount = 0;
-+	    admin->fps_svpout = nullptr;
++            admin->fps_sliceInfo[2].offset = 0;
++            admin->fps_sliceInfo[2].size   = 0;
++
++            admin->fps_sliceInfo[3].offset = 0;
++            admin->fps_sliceInfo[3].size   = 0;
++
++            admin->fps_sliceInfoArrayCount = 0;
++            admin->fps_svpout = nullptr;
          }
          void Status(uint32_t status)
          {
-@@ -238,6 +259,110 @@ namespace Exchange {
+@@ -238,6 +265,115 @@ namespace Exchange {
              VERIFY(length <= 16);
              return (length > 0 ? &admin->KeyId[1] : nullptr);
          }
@@ -106,15 +112,19 @@ index c7de450..21d1003 100644
 +            return (admin->fps_contentType);
 +        }
 +
-+        void SetFPSSliceInfoArray(const uint16_t sliceinfocount, const CDMi::Cdmi_FPSSliceInfo sliceInfo[])
++       void SetFPSSliceInfoArray(const uint32_t sliceinfocount, const CDMi::Cdmi_FPSSliceInfo sliceInfo[])
 +        {
 +            printf("############SetFPSSliceInfoArray() called with count %u##############\n", sliceinfocount);
 +            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_sliceInfoArrayCount = sliceinfocount;
 +            for (uint8_t index = 0; index < sliceinfocount; index++)
 +            {
 +                admin->fps_sliceInfo[index].offset = sliceInfo[index].offset;
 +                admin->fps_sliceInfo[index].size = sliceInfo[index].size;
++                printf("### sliceInfoArray Count %d Index %d offset %u size %u \n", admin->fps_sliceInfoArrayCount, index, sliceInfo[index].offset, sliceInfo[index].size);fflush(stdout);
++                printf("### sliceInfoArray Count %d Index %d offset %u size %u \n", admin->fps_sliceInfoArrayCount, index, admin->fps_sliceInfo[index].offset, admin->fps_sliceInfo[index].size);fflush(stdout);
 +            }
++            printf("########The sliceInfo =%p###### \n",&(admin->fps_sliceInfo[0]));fflush(stdout);
 +        }
 +
 +        const CDMi::Cdmi_FPSSliceInfo *FPSSliceInfoArray() const
@@ -138,63 +148,56 @@ index c7de450..21d1003 100644
 +            return (admin->fps_sliceInfoArrayCount);
 +        }
 +
-+	void SetFPSSvpOut(void *ptr)
-+        {
++        void SetFPSSvpOut(void *ptr)
++        { 
 +            printf("############SetFPSSvpOut() called ################ \n");
++            printf("########svp out = %p ###### \n",ptr);fflush(stdout);
 +            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
 +            admin->fps_svpout = ptr;
-+        }
-+       
-+	void * FPSSvpOut(void)
++             printf("########admin->fps_svpout = %p ###### \n",admin->fps_svpout);fflush(stdout);
++        } 
++
++        void * FPSSvpOut(void)
 +        {
 +            printf("###########FPSSvpOut() called ################ \n");
 +            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
 +            return (admin->fps_svpout);
 +        }
-+
      };
  }
  }
-diff --git a/interfaces/IDRM.h b/interfaces/IDRM.h
-index a34454a..701d07b 100644
---- a/interfaces/IDRM.h
-+++ b/interfaces/IDRM.h
+diff --git a/apis/OpenCDMi/IDRM.h b/apis/OpenCDMi/IDRM.h
+index a34454a..4a49207 100644
+--- a/apis/OpenCDMi/IDRM.h
++++ b/apis/OpenCDMi/IDRM.h
 @@ -268,6 +268,12 @@ typedef struct {
      SubSampleInfo*     subSample;       // SubSample mapping - Repeating pair of Clear bytes and Encrypted Bytes representing each subsample.
  } SampleInfo;
  
 +//FPS
 +typedef struct {
-+  uint32_t offset;
-+  uint32_t size;
++    uint32_t offset;
++    uint32_t size;
 +} Cdmi_FPSSliceInfo;
 +
  // IStreamProperties to provide information about the current stream
  class IStreamProperties {
  public:
-@@ -383,6 +389,21 @@ PUSH_WARNING(DISABLE_WARNING_DEPRECATED_USE)
+@@ -383,6 +389,13 @@ PUSH_WARNING(DISABLE_WARNING_DEPRECATED_USE)
  POP_WARNING()
      }
  
-+    virtual CDMi_RESULT Decrypt(
-+                               uint64_t MovieId,
-+                               uint64_t CryptorId,
-+                               uint32_t ContentType,
-+                               uint8_t *encryptedData,
-+                               uint32_t encryptedDataSize,
-+                               const Cdmi_FPSSliceInfo *FPSSliceInfoArray,
-+                               uint32_t FPSSliceInfoArrayCount,
-+                               uint8_t *iv,
-+                               void *svpout)
++    virtual CDMi_RESULT Decrypt(uint64_t MovieId,uint64_t CryptorId, uint32_t ContentTyp, uint8_t *encryptedData, uint32_t encryptedDataSize, const Cdmi_FPSSliceInfo *FPSSliceInfoArray,uint32_t FPSSliceInfoArrayCount, uint8_t *iv, void *svpout)
 +    {
++	    printf("******IDRM::Base Decrypt******** \n");fflush(stdout);
++	    printf("******IDRM::Base Decrypt******** \n");fflush(stdout);
 +	    return (CDMi_METHOD_NOT_IMPLEMENTED);
 +    }
-+
 +
      virtual CDMi_RESULT ReleaseClearContent(
          const uint8_t* f_pbSessionKey,
          uint32_t f_cbSessionKey,
-@@ -446,6 +467,16 @@ public:
+@@ -446,6 +459,16 @@ public:
      virtual CDMi_RESULT DestroyMediaKeySession(
          IMediaKeySession* f_piMediaKeySession)
          = 0;
@@ -211,14 +214,14 @@ index a34454a..701d07b 100644
  };
  
  // IMediaKeySession defines the MediaKeySessionExt interface.
-diff --git a/interfaces/IOCDM.h b/interfaces/IOCDM.h
-index 25bbe20..600cc83 100644
---- a/interfaces/IOCDM.h
-+++ b/interfaces/IOCDM.h
+diff --git a/apis/OpenCDMi/IOCDM.h b/apis/OpenCDMi/IOCDM.h
+index 5d3fe8c..007e6ec 100644
+--- a/apis/OpenCDMi/IOCDM.h
++++ b/apis/OpenCDMi/IOCDM.h
 @@ -191,6 +191,17 @@ struct IAccessorOCDM : virtual public Core::IUnknown {
      // Provides keysystem-specific metadata
      virtual OCDM_RESULT Metadata(const std::string& keySystem, std::string& metadata /* @out */) const = 0;
-
+ 
 +    // fairplay
 +    virtual OCDM_RESULT CreateMovieSession(const string& keySystem, uint32_t version, const uint8_t* cert /* @in @length:certificateLength */, uint32_t certificateLength, const uint8_t* versionlist /* @in @length:versionListSize */, uint32_t versionListSize, uint8_t* movieIdOut /* @out @length:8 */) const = 0;
 +    virtual OCDM_RESULT DestroyMovieSession(const string& keySystem, uint32_t version, uint64_t movieId) const = 0;
