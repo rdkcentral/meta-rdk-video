@@ -202,7 +202,7 @@ if [ "$current_bootType" == "BOOT_MIGRATION" ]; then
         boottypeLog "$migrationDSFile is not present"
     fi
 else
-    boottypeLog "current_bootType is $current_bootType"
+    boottypeLog "current_bootType is $current_bootType hence no need to change the permission of migration datastore"
 fi
 
 echo "COMPLETED" > $file_updateStatus
