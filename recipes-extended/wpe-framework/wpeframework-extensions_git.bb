@@ -38,20 +38,24 @@ EXTRA_OECMAKE += " \
 
 # ----------------------------------------------------------------------------
 
-FILES_SOLIBSDEV = ""
-# *.so.* captures versioned runtime soname (e.g. libWPEFrameworkExtensionsMarshalling.so.5)
-# *.so   captures the unversioned namelink - kept in ${PN} because dev-so is in INSANE_SKIP
+# Tell OE's packaging machinery where the solib namelink (.so) lives so it is
+# correctly assigned to ${PN}-dev.  Blanking FILES_SOLIBSDEV intercepts .so
+# files before normal FILES assignment runs, causing unshipped-file QA errors.
+FILES_SOLIBSDEV = "${libdir}/wpeframework/proxystubs/*.so"
+
+# Runtime package: versioned shared libs (.so.*) and plugin .so files
+# (plugin .so files are dlopen'd at runtime, not linked, hence dev-so skip)
 FILES:${PN} += " \
     ${libdir}/wpeframework/plugins/*.so \
-    ${libdir}/wpeframework/proxystubs/*.so \
     ${libdir}/wpeframework/proxystubs/*.so.* \
-    ${libdir}/*.so \
     ${datadir}/WPEFramework/* \
     ${sysconfdir}/WPEFramework/plugins/*.json \
 "
 
+# Dev package: namelink (handled via FILES_SOLIBSDEV above) + headers.
+# Use directory path (no trailing /*) so BitBake matches recursively.
 FILES:${PN}-dev += " \
-    ${includedir}/WPEFramework/extensions/* \
+    ${includedir}/WPEFramework/extensions \
 "
 
 # Ensure the namelink .so is always present for linker use (CMake NAMELINK_COMPONENT
