@@ -92,13 +92,12 @@ index ab6b16c4..4ebead5d 100644
 +            SYSLOG(Logging::Startup, (_T("ThreadPool Count: %u"), THREADPOOL_COUNT));
 
          }
---- a/Source/WPEFramework/PluginServer.cpp      2026-03-02 22:38:13.707577584 +0000
-+++ b/Source/WPEFramework/PluginServer.cpp      2026-03-02 22:39:51.225206125 +0000
-@@ -1148,7 +1148,22 @@
+--- a/Source/WPEFramework/PluginServer.cpp	2026-03-03 01:17:33.451584386 +0000
++++ b/Source/WPEFramework/PluginServer.cpp	2026-03-03 01:20:31.510567940 +0000
+@@ -1148,6 +1148,22 @@
            {
              return lhs->StartupOrder() < rhs->StartupOrder();
            });
--
 +        for (auto service : configured_services)
 +        {
 +            if (service->State() != PluginHost::Service::state::UNAVAILABLE) {
@@ -115,6 +114,6 @@ index ab6b16c4..4ebead5d 100644
 +                }
 +            }
 +        }
+ 
  #if 0
          for (auto service : configured_services)
-         {
