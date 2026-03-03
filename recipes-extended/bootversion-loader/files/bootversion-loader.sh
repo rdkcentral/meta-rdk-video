@@ -35,6 +35,39 @@ boottypeLog() {
     echo "`/bin/timestamp`: $0: $*" >> $BOOTTYPE_LOG_FILE
 }
 
+# ensure /opt is mounted before accessing boot version files
+if ! mountpoint -q /opt 2>/dev/null; then
+    echo "`/bin/timestamp`: $0: /opt is not mounted; aborting bootversion-loader" >&2
+    exit 1
+fi
+
+# ensure /opt/secure is mounted before accessing boot version files
+if ! mountpoint -q /opt/secure 2>/dev/null; then
+    echo "`/bin/timestamp`: $0: /opt/secure is not mounted; aborting bootversion-loader" >&2
+    exit 1
+fi
+
+if ! mountpoint -q /tmp 2>/dev/null; then
+    echo "`/bin/timestamp`: $0: /tmp is not mounted; aborting bootversion-loader" >&2
+    exit 1
+fi
+
+PLATFORM_FILE="/etc/migration/boot_FSR.platform"
+if [ -f "$PLATFORM_FILE" ]; then
+    file_platform="$(tr -d '\r' < "$PLATFORM_FILE" | tr -d ' \t\n')"
+    boottypeLog "Running the bootversion-loader script for $file_platform devices"
+else
+    boottypeLog "Exiting since this script is not intended for this platform"
+    if [ ! -e "$file_bootversion" ]; then
+        echo "BOOT_TYPE=BOOT_INIT" > $file_bootType
+        boottypeLog "BOOT_INIT is set since $file_bootversion is not present"
+    else
+        echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
+        boottypeLog "BOOT_NORMAL is set since $file_bootversion is present"
+    fi
+    exit 0
+fi
+
 #bootversion backup 
 if [ -e "$file_updateStatus" ]; then
      status=$(<"$file_updateStatus")
@@ -86,6 +119,25 @@ s1_imagename=$(grep -m 1 "imagename" $file_bootversion)
 s1_version=$(grep -m 1 "VERSION" $file_bootversion)
 s1_FW_Class=$(grep -m 1 "FW_CLASS" $file_bootversion)
 
+# ensure slot data is non-empty before comparing
+if [ -z "$s1_FW_Class" ] || [ -z "$s1_version" ] || [ -z "$s1_imagename" ]; then
+    boottypeLog "slot1 information missing or empty; aborting"
+    exit 1
+fi
+
+# verify that FW_Class values are one of the expected strings
+for val in "$v_FW_Class" "$s1_FW_Class"; do
+    case "$val" in
+        FW_CLASS:rdke|FW_CLASS:rdkv)
+			boottypeLog "FW_Class validation passed: '$val' is valid"
+            ;;
+        *)
+            boottypeLog "unexpected FW_Class value '$val'; aborting"
+            exit 1
+            ;;
+    esac
+done
+
 #copy slot information
      # s1 = v
      echo "$v_imagename" > $file_bootversion
@@ -95,6 +147,9 @@ s1_FW_Class=$(grep -m 1 "FW_CLASS" $file_bootversion)
      echo "$s1_imagename" >> $file_bootversion
      echo "$s1_version" >> $file_bootversion
      echo "$s1_FW_Class" >> $file_bootversion
+     boottypeLog "Updated slot information (Slot1 from current image, Slot2 from previous slot)"
+     boottypeLog "Slot1 - imagename: $v_imagename, version: $v_version, FW_Class: $v_FW_Class"
+     boottypeLog "Slot2 - imagename: $s1_imagename, version: $s1_version, FW_Class: $s1_FW_Class"
 
 if [ -f /opt/secure/persistent/MigrationStatus ]; then
     MigrationStatus=$(cat /opt/secure/persistent/MigrationStatus)
@@ -116,7 +171,7 @@ else
      elif [ "$MigrationStatus" == "MIGRATION_COMPLETED" ] || [ "$MigrationStatus" == "NOT_NEEDED" ]; then
 	     if [ "$v_version" == "$s1_version" ]; then
 	         echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
-	    	 boottypeLog "BOOT_NORMAL since Version is equal and MigrationStatus is MIGRATION_COMPLETED"
+	    	 boottypeLog "BOOT_NORMAL since Version is equal and MigrationStatus is $MigrationStatus"
 	     else
 	         echo "BOOT_TYPE=BOOT_UPDATE" > $file_bootType
 	         boottypeLog "BOOT_UPDATE since Version is not equal"
@@ -135,13 +190,19 @@ if [ "$current_bootType" == "BOOT_MIGRATION" ]; then
     if [ -d "$migrationDir" ]; then
         boottypeLog "changed the permission of $migrationDir by +x"
         chmod +x "$migrationDir"
+    else
+        boottypeLog "$migrationDir is not present"
     fi
 
     # Check if the file exists
     if [ -f "$migrationDSFile" ]; then
         boottypeLog "changed the permission of $migrationDSFile by +r"
         chmod +r "$migrationDSFile"
+    else
+        boottypeLog "$migrationDSFile is not present"
     fi
+else
+    boottypeLog "current_bootType is $current_bootType hence no need to change the permission of migration datastore"
 fi
 
 echo "COMPLETED" > $file_updateStatus
