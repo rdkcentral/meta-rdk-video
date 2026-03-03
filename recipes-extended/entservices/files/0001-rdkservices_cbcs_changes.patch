@@ -4,23 +4,23 @@ From: Karunakaran A <Karunakaran_Amirthalingam@cable.comcast.com>
 Date: Wed, 21 Dec 2022 17:24:43 +0000
 Subject: [PATCH] rdkservice changes
 ---
- OpenCDMi/CENCParser.h     | 291 +++++++++++++++------
- OpenCDMi/CMakeLists.txt   |   6 +-
- OpenCDMi/CapsParser.cpp   | 204 ---------------
- OpenCDMi/CapsParser.h     |  63 -----
- OpenCDMi/FrameworkRPC.cpp | 437 +++++++++++++++++++------------
- OpenCDMi/OCDM.config      |  37 +--
- OpenCDMi/OCDM.cpp         |  99 ++++---
- OpenCDMi/OCDM.h           |  68 ++---
- OpenCDMi/Protobuf.h       | 530 ++++++++++++++++++++++++++++++++++++++
+ plugin/CENCParser.h     | 291 +++++++++++++++------
+ plugin/CMakeLists.txt   |   6 +-
+ plugin/CapsParser.cpp   | 204 ---------------
+ plugin/CapsParser.h     |  63 -----
+ plugin/FrameworkRPC.cpp | 437 +++++++++++++++++++------------
+ plugin/OCDM.config      |  37 +--
+ plugin/OCDM.cpp         |  99 ++++---
+ plugin/OCDM.h           |  68 ++---
+ plugin/Protobuf.h       | 530 ++++++++++++++++++++++++++++++++++++++
  9 files changed, 1120 insertions(+), 615 deletions(-)
- delete mode 100644 OpenCDMi/CapsParser.cpp
- delete mode 100644 OpenCDMi/CapsParser.h
- create mode 100644 OpenCDMi/Protobuf.h
-Index: git/OpenCDMi/CENCParser.h
+ delete mode 100644 plugin/CapsParser.cpp
+ delete mode 100644 plugin/CapsParser.h
+ create mode 100644 plugin/Protobuf.h
+Index: git/plugin/CENCParser.h
 ===================================================================
---- git.orig/OpenCDMi/CENCParser.h
-+++ git/OpenCDMi/CENCParser.h
+--- git.orig/plugin/CENCParser.h
++++ git/plugin/CENCParser.h
 @@ -21,6 +21,7 @@
  #define __CENCPARSER_H
  
@@ -419,10 +419,10 @@ Index: git/OpenCDMi/CENCParser.h
  
      private:
          std::list<KeyId> _keyIds;
-Index: git/OpenCDMi/CMakeLists.txt
+Index: git/plugin/CMakeLists.txt
 ===================================================================
---- git.orig/OpenCDMi/CMakeLists.txt
-+++ git/OpenCDMi/CMakeLists.txt
+--- git.orig/plugin/CMakeLists.txt
++++ git/plugin/CMakeLists.txt
 @@ -24,8 +24,9 @@ set(PLUGIN_OPENCDMI_MODE "Local" CACHE S
  set(PLUGIN_OCDM_STARTUPORDER "" CACHE STRING "To configure startup order of OCDM plugin")
  
@@ -443,9 +443,9 @@ Index: git/OpenCDMi/CMakeLists.txt
          Module.cpp)
  
  add_dependencies(${MODULE_NAME} ${PLUGIN_OCDM_IMPLEMENTATION})
-Index: git/OpenCDMi/CapsParser.cpp
+Index: git/plugin/CapsParser.cpp
 ===================================================================
---- git.orig/OpenCDMi/CapsParser.cpp
+--- git.orig/plugin/CapsParser.cpp
 +++ /dev/null
 @@ -1,204 +0,0 @@
 -/*
@@ -652,9 +652,9 @@ Index: git/OpenCDMi/CapsParser.cpp
 -        }
 -    }
 -}
-Index: git/OpenCDMi/CapsParser.h
+Index: git/plugin/CapsParser.h
 ===================================================================
---- git.orig/OpenCDMi/CapsParser.h
+--- git.orig/plugin/CapsParser.h
 +++ /dev/null
 @@ -1,63 +0,0 @@
 -/*
@@ -720,10 +720,10 @@ Index: git/OpenCDMi/CapsParser.h
 -        };
 -    }
 -}
-Index: git/OpenCDMi/FrameworkRPC.cpp
+Index: git/plugin/FrameworkRPC.cpp
 ===================================================================
---- git.orig/OpenCDMi/FrameworkRPC.cpp
-+++ git/OpenCDMi/FrameworkRPC.cpp
+--- git.orig/plugin/FrameworkRPC.cpp
++++ git/plugin/FrameworkRPC.cpp
 @@ -23,7 +23,6 @@
  
  #include "Module.h"
@@ -1710,10 +1710,10 @@ Index: git/OpenCDMi/FrameworkRPC.cpp
      };
  
      SERVICE_REGISTRATION(OCDMImplementation, 1, 0);
-Index: git/OpenCDMi/OCDM.config
+Index: git/plugin/OCDM.config
 ===================================================================
---- git.orig/OpenCDMi/OCDM.config
-+++ git/OpenCDMi/OCDM.config
+--- git.orig/plugin/OCDM.config
++++ git/plugin/OCDM.config
 @@ -37,28 +37,31 @@ map()
      kv(designators "___array___;org.chromium.externalclearkey;org.w3.clearkey")
  end()
@@ -1798,10 +1798,10 @@ Index: git/OpenCDMi/OCDM.config
  endif()
  
  map_append(${configuration} root ${rootobject})
-Index: git/OpenCDMi/OCDM.cpp
+Index: git/plugin/OCDM.cpp
 ===================================================================
---- git.orig/OpenCDMi/OCDM.cpp
-+++ git/OpenCDMi/OCDM.cpp
+--- git.orig/plugin/OCDM.cpp
++++ git/plugin/OCDM.cpp
 @@ -45,41 +45,38 @@ namespace OCDM {
      Exchange::IMemory* MemoryObserver(const RPC::IRemoteConnection* connection)
      {
@@ -1987,10 +1987,10 @@ Index: git/OpenCDMi/OCDM.cpp
      {
      }
  
-Index: git/OpenCDMi/OCDM.h
+Index: git/plugin/OCDM.h
 ===================================================================
---- git.orig/OpenCDMi/OCDM.h
-+++ git/OpenCDMi/OCDM.h
+--- git.orig/plugin/OCDM.h
++++ git/plugin/OCDM.h
 @@ -30,25 +30,20 @@ namespace Plugin {
  
      class OCDM : public PluginHost::IPlugin, public PluginHost::IWeb, public PluginHost::JSONRPC {
@@ -2157,11 +2157,11 @@ Index: git/OpenCDMi/OCDM.h
          PluginHost::IShell* _service;
          Exchange::IContentDecryption* _opencdmi;
          Exchange::IMemory* _memory;
-diff --git a/OpenCDMi/Protobuf.h b/OpenCDMi/Protobuf.h
+diff --git a/plugin/Protobuf.h b/plugin/Protobuf.h
 new file mode 100644
 index 00000000..936de9e0
 --- /dev/null
-+++ b/OpenCDMi/Protobuf.h
++++ b/plugin/Protobuf.h
 @@ -0,0 +1,530 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
