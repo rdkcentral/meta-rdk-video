@@ -39,11 +39,19 @@ EXTRA_OECMAKE += " \
 # ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/wpeframework/proxystubs/*.so.* ${libdir}/*.so ${datadir}/WPEFramework/* ${sysconfdir}/WPEFramework/plugins/*.json"
-
-FILES:${PN}-dev += "\
+# *.so.* captures versioned runtime soname (e.g. libWPEFrameworkExtensionsMarshalling.so.5)
+# *.so   captures the unversioned namelink - kept in ${PN} because dev-so is in INSANE_SKIP
+FILES:${PN} += " \
+    ${libdir}/wpeframework/plugins/*.so \
     ${libdir}/wpeframework/proxystubs/*.so \
-    ${includedir}/WPEFramework/extensions \
+    ${libdir}/wpeframework/proxystubs/*.so.* \
+    ${libdir}/*.so \
+    ${datadir}/WPEFramework/* \
+    ${sysconfdir}/WPEFramework/plugins/*.json \
+"
+
+FILES:${PN}-dev += " \
+    ${includedir}/WPEFramework/extensions/* \
 "
 
 # Ensure the namelink .so is always present for linker use (CMake NAMELINK_COMPONENT
