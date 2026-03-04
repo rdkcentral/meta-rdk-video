@@ -58,7 +58,7 @@ index 0460540..9bbfcc3 100644
 +    if(frameSize == 0 || subSampleInfoPtr == nullptr || *subSampleInfoPtr == nullptr || subSampleCount == nullptr || *subSampleCount == 0) {
 +        // Unable to fully validate the subsample map, but nothing to validate against
 +       // return ERROR_NONE and use the existing code path
-+        return retVal;
++        return ERROR_INVALID_DECRYPT_BUFFER;
 +    }
 +    if(frameSize == totalMappedBytes) {
 +        // Perfect match, no need to adjust anything
