@@ -2,8 +2,6 @@ SUMMARY = "ENTServices remote control plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
-PV = "1.0.0"
-PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig features_check
@@ -12,8 +10,9 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-remotecontrol;${CMF_GITHUB_SRC_URI_SUF
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.0
-SRCREV = "35aa74aa9a2d77ce16bee1254fe1651968f42b4c"
+PV = "1.0.1"
+PR = "r0"
+SRCREV = "0047e5faa1b3d296c80280244a7057597276a89c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
