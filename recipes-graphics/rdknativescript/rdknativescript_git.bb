@@ -16,10 +16,10 @@ S = "${WORKDIR}/git"
 PV = "2.0.2"
 PR = "r0"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};"
+SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;branch=topic/RDKEMW-0;"
 
 #Release 2.0.2
-SRCREV = "e9292baafbdcf46250cdb8ba3cec6566be9509fe"
+SRCREV = "c21d3f74ce1fb4a2285ddd11ad75837273e5b77a"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
