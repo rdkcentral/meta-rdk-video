@@ -2,13 +2,13 @@ SUMMARY = "ENTServices telemetry plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.0.1"
+PV = "1.0.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "e1aad8d4f0e7d0595ddd17cf3b03b0207da0e9ea"
+SRCREV = "6f5738dbfc3e0d2d59143dcdb03edbc21ca0acd6"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-telemetry;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
