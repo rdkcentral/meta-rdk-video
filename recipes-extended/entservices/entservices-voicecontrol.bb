@@ -2,8 +2,6 @@ SUMMARY = "ENTServices voice control plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
-PV = "1.0.0"
-PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig features_check
@@ -12,8 +10,9 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-voicecontrol;${CMF_GITHUB_SRC_URI_SUFF
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.0
-SRCREV = "24c636aa6267a10483a7682ba461e8784c0a8dbf"
+PV = "1.0.1"
+PR = "r0"
+SRCREV = "283f6a6cb78b8402f4396ba496e93580d0b5f00b"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
