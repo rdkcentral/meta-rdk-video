@@ -1,42 +1,30 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
+SUMMARY = "Sys mon tool Power State Monitor recipe"
 
-SUMMARY = "This recipe compiles Power State Monitor code base"
+DESCRIPTION = "Sys mon tool Power State Monitor recipe"
+
 SECTION = "console/utils"
-
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-SRC_URI = "${CMF_GIT_ROOT}/rdk/components/generic/sys_mon_tools/power-state-monitor;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GIT_BRANCH}"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+PV = "1.0.0"
+PR = "r0"
 
-PV = "${RDK_RELEASE}+git${SRCPV}"
-SRCREV = "519715a7690643163b8b973904d8351424906478"
+SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX};name=pwr-state-monitor;branch=RDKEMW-14816-power-state-monitor"
+SRCREV = "63f06e1d81a044265f078a71056f14b5d65896a0"
 S = "${WORKDIR}/git"
 
-DEPENDS = "iarmbus glib-2.0"
+CFLAGS:append = " -DYOCTO_BUILD"
+DEPENDS = "iarmbus iarmmgrs dbus glib-2.0 directfb"
+RDEPENDS:${PN} += "iarmmgrs"
 
-export LINK = "${LD}"
-
-CFLAGS += " -I=${includedir}/rdk/iarmbus \
-        -I=${includedir}/rdk/iarmmgrs-hal \
-        -I=${includedir}/directfb \
-        -I=${libdir}/glib-2.0/include \
-        -I=${includedir}/glib-2.0 "
-
-export GLIBS = "-lglib-2.0 -lz"
-
-LDFLAGS += "-Wl,-O1"
-
-export USE_DBUS = "y"
-
-inherit coverity
-
-do_compile() {
-        oe_runmake -B -C ${S}/src
-}
+inherit autotools pkgconfig coverity
 
 do_install() {
 
     install -d ${D}${bindir}
-    install -m 0755 ${S}/src/pwr-state-monitor ${D}${bindir}
+    install -m 0755 ${B}/pwr-state-monitor ${D}${bindir}
 }
 
+FILES:${PN} += "${bindir}/pwr-state-monitor"
+INSANE_SKIP:${PN} += "useless-rpaths"
