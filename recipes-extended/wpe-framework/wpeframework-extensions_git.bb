@@ -3,13 +3,13 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PV = "1.0.0"
-PR = "r1"
+PR = "r2"
 
 S = "${WORKDIR}/wpeframework-extensions"
 inherit cmake pkgconfig
 
-BRANCH ?= "dev/thunder-extensions"
-SRCREV ?= "4e800f089faf884822c3c51bf64247c626e8a230"
+BRANCH ?= "dev/thunder-extention-deadlock-fix"
+SRCREV ?= "4d6aa4efb7291fbb78463ac923b31f9353a2cc9d"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderNanoServices.git;protocol=ssh;branch=${BRANCH};destsuffix=wpeframework-extensions"
 
