@@ -2,13 +2,13 @@ SUMMARY = "ENTServices appmanagers plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "0.1.0.0"
+PV ?= "0.2.0.0"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "5f147ab697d6b27c6c7e65aa7324434c6982ce2c"
+SRCREV = "d7689a1e6de2da238ae38cebc02c867992b35cf3"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -53,7 +53,7 @@ PACKAGECONFIG ?= " telemetrysupport \
     appmanager \
     preinstallmanager \
     downloadmanager \
-    rdkwindowmanager \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'rdkwindowmanager', ' rdkwindowmanager ', '', d)} \
     telemetrymetrics \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
