@@ -60,7 +60,6 @@ PACKAGECONFIG ?= " monitor \
     usbmass_storage \
     usersettings \
     ocicontainer \  
-    messagecontrol \
     rdknativescript \
     javascriptcore \          
     texttospeechmonitor \    
@@ -101,7 +100,6 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE',
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG[messagecontrol]       = "-DPLUGIN_MESSAGECONTROL=ON,-DPLUGIN_MESSAGECONTROL=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[erm]                  = "-DBUILD_ENABLE_ERM=ON,-DBUILD_ENABLE_ERM=OFF,essos,essos"
 PACKAGECONFIG[monitor]              = "-DPLUGIN_MONITOR=ON ${MONITOR_PLUGIN_ARGS},-DPLUGIN_MONITOR=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[ocicontainer]         = "-DPLUGIN_OCICONTAINER=ON, -DPLUGIN_OCICONTAINER=OFF, dobby entservices-apis systemd, dobby entservices-apis systemd"
