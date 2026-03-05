@@ -5,10 +5,10 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=99e7c83e5e6f31c2cbb811e186972945"
 
 PV = "1.3.4"
-PR = "r0"
+PR = "r1"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "0513d03890410e4e0a9b649b034f6ca14adb0e57"
+SRCREV = "789e9dd74db10ec95ecf30a76528e56e04c6532c"
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
 
 DEPENDS += "safec-common-wrapper"
