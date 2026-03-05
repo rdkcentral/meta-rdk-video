@@ -41,13 +41,8 @@ if [ -f "$PLATFORM_FILE" ]; then
     boottypeLog "Running the bootversion-loader script for $file_platform devices"
 else
     boottypeLog "Exiting since this script is not intended for this platform"
-    if [ ! -e "$file_bootversion" ]; then
-        echo "BOOT_TYPE=BOOT_INIT" > $file_bootType
-        boottypeLog "BOOT_INIT is set since $file_bootversion is not present"
-    else
-        echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
-        boottypeLog "BOOT_NORMAL is set since $file_bootversion is present"
-    fi
+	echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
+    boottypeLog "BOOT_NORMAL is set by default for this platform"
     exit 0
 fi
 
@@ -140,6 +135,7 @@ else
     MigrationStatus="NOT_NEEDED"
 fi
 
+
 boottypeLog "MigrationStatus: $MigrationStatus"
 #comparing slot1 and slot2 FW Class
 if [ "$v_FW_Class" != "$s1_FW_Class" ]; then
@@ -150,7 +146,7 @@ if [ "$v_FW_Class" != "$s1_FW_Class" ]; then
 else
      if [ "$MigrationStatus" != "MIGRATION_COMPLETED" ] && [ "$MigrationStatus" != "NOT_NEEDED" ]; then
           echo "BOOT_TYPE=BOOT_MIGRATION" > $file_bootType
-	      boottypeLog "BOOT_MIGRATION since MigrationStatus is not equal to MIGRATION_COMPLETED"
+	      boottypeLog "BOOT_MIGRATION since MigrationStatus is equal to $MigrationStatus"
      elif [ "$MigrationStatus" == "MIGRATION_COMPLETED" ] || [ "$MigrationStatus" == "NOT_NEEDED" ]; then
 	     if [ "$v_version" == "$s1_version" ]; then
 	         echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
