@@ -44,7 +44,6 @@ else
     boottypeLog "Exiting since this script is not intended for this platform"
     echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
     boottypeLog "BOOT_NORMAL is set by default for this platform"
-    fi
     exit 0
 fi
 
