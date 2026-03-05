@@ -135,8 +135,13 @@ else
     MigrationStatus="NOT_NEEDED"
 fi
 
+if [ "$MigrationStatus" == "MIGRATION_COMPLETED" ] || [ "$MigrationStatus" == "NOT_NEEDED" ] || [ "$MigrationStatus" == "NOT_STARTED" ] && [ "$MigrationStatus" == "STARTED" ] || [ "$MigrationStatus" == "PRIORITY_SETTINGS_MIGRATED" ] || [ "$MigrationStatus" == "DEVICE_SETTINGS_MIGRATED" ] || || [ "$MigrationStatus" == "CLOUD_SETTINGS_MIGRATED" ] || [ "$MigrationStatus" == "APP_DATA_MIGRATED" ]; then
+     boottypeLog "Valid MigrationStatus: $MigrationStatus"
+else
+	boottypeLog "Invalid MigrationStatus: $MigrationStatus"
+	exit 1
+fi
 
-boottypeLog "MigrationStatus: $MigrationStatus"
 #comparing slot1 and slot2 FW Class
 if [ "$v_FW_Class" != "$s1_FW_Class" ]; then
 	# migration fw is run for first time, migration not completed
