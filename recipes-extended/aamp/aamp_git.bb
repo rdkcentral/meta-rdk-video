@@ -7,7 +7,7 @@ PV = "2.11.1"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp = "6fec5ed461c714b6272a72a09da185353f33d76b"
+SRCREV_aamp = "e9aac251636da3d73a57b5ebdd9948a4eb646089"
 
 DEPENDS += "curl libdash libxml2 cjson readline ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 
