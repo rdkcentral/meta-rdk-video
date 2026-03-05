@@ -150,7 +150,7 @@ FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WP
 FILES:${PN}:remove = "${libdir}/wpeframework/plugins/libWPEFrameworkTelemetry.so"
 
 # Exclude telemetry JSON config
-FILES:${PN}:remove = "${datadir}/WPEFramework/plugins/Telemetry.json}"
+FILES:${PN}:remove = "${datadir}/WPEFramework/plugins/Telemetry.json"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
