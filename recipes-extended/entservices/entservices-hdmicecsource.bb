@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUF
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.0.4
-SRCREV = "a889283c1040473f1b99991aba9fc89629e7c5ac"
+# Release version - 1.0.5
+SRCREV = "7494e9ad0f6181b98fde0ed0d12a663161efb785"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"

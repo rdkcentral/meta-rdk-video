@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdcpprofile;${CMF_GITHUB_SRC_URI_SUFFI
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.4
-SRCREV = "515de631479204ef70998ea8cdeb1c610710299a"
+# Release version - 1.0.5
+SRCREV = "0a85f86671ec6518b07cf19d529bd90c1d843b2d"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
