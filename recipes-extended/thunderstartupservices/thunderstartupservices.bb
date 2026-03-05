@@ -45,7 +45,6 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-usbdevice.service \
     wpeframework-usbmassstorage.service \
     wpeframework-firmwareupdate.service \
-    wpeframework-powermanager.service \
     wpeframework-networkmanager.service \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC_SUPPORT',' wpeframework-lisa.service', '', d)} \
     wpeframework-ocicontainer.service \

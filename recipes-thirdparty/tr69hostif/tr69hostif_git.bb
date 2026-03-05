@@ -23,11 +23,6 @@ RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' 
 DEPENDS += "safec-common-wrapper"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 
-# Add wpeframework-clientlibraries dependency
-DEPENDS += "wpeframework-clientlibraries"
-RDEPENDS:${PN}:append = " wpeframework-clientlibraries "
-LDFLAGS += "-lWPEFrameworkPowerController"
-
 # Add remotedebugger dependency
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'rrd', ' remotedebugger', " ", d)}"
 RDEPENDS:${PN}:append  = " ${@bb.utils.contains('DISTRO_FEATURES', 'rrd',' remotedebugger', '',d)}"
@@ -122,7 +117,6 @@ INCLUDE_DIRS += "\
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/power \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs-hal \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include \
-	-I${PKG_CONFIG_SYSROOT_DIR}${includedir}/WPEFramework/powercontroller \
 	"
 
 CPPFLAGS += "${INCLUDE_DIRS}"
