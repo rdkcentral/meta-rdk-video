@@ -131,7 +131,7 @@ done
      boottypeLog "Slot2 - imagename: $s1_imagename, version: $s1_version, FW_Class: $s1_FW_Class"
 
 if [ -f /opt/secure/persistent/MigrationStatus ]; then
-    MigrationStatus=$(cat /opt/secure/persistent/MigrationStatus)
+     MigrationStatus=$(cat /opt/secure/persistent/MigrationStatus | tr -d '\r')
 else
     MigrationStatus="NOT_NEEDED"
 fi
