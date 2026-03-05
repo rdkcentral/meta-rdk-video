@@ -17,7 +17,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-playerinfo;${CMF_GITHUB_SRC_URI_SUFFIX
           "
           
 # Release version - 1.0.3
-SRCREV = "35a91dfb31114dd54682668ff80ca357fbd2a3ff"
+SRCREV = "95060f41ee4b3e71b6167f66464c7eb9332c6f39"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
