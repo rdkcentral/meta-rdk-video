@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "${PV}"
+SRCREV = "2a6a490a79c4174b5a1b6dff811e174cc1ba6769"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
@@ -147,10 +147,10 @@ RDEPENDS:${PN} += "entservices-telemetry"
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 # Exclude telemetry plugin library
-FILES:${PN}:remove = "${libdir}/wpeframework/plugins/libWPEFrameworkTelemetry.so"
+#FILES:${PN}:remove = "${libdir}/wpeframework/plugins/libWPEFrameworkTelemetry.so"
 
 # Exclude telemetry JSON config
-FILES:${PN}:remove = "${datadir}/WPEFramework/plugins/Telemetry.json"
+#FILES:${PN}:remove = "${datadir}/WPEFramework/plugins/Telemetry.json"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
