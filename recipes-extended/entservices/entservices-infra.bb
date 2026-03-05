@@ -141,7 +141,7 @@ do_install:append() {
         fi
     fi
 }
-RDEPENDS:${PN} += "entservices-telemetry"
+#RDEPENDS:${PN} += "entservices-telemetry"
 # ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
