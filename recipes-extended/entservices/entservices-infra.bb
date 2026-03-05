@@ -141,11 +141,16 @@ do_install:append() {
         fi
     fi
 }
-
+RDEPENDS:${PN} += "entservices-telemetry"
 # ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
+# Exclude telemetry plugin library
+FILES:${PN} := "${FILES:${PN} ^${libdir}/wpeframework/plugins/libWPEFrameworkTelemetry.so}"
+
+# Exclude telemetry JSON config
+FILES:${PN} := "${FILES:${PN} ^${datadir}/WPEFramework/plugins/Telemetry.json}"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
