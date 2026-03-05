@@ -17,6 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
+. /etc/device.properties
 
 file_version="/version.txt"
 file_bootversion="/opt/.bootversion"
