@@ -36,7 +36,7 @@ CFLAGS  += " \
     -I=${includedir}/rdk/halif/power-manager \
     -I=${includedir}/rdk/halif/deepsleep-manager \
     "
-TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
+TARGET_LDFLAGS += " -Wl,--no-as-needed -Wl,--as-needed "
 
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
