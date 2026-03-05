@@ -8,16 +8,21 @@ inherit cmake
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-PV = "1.0.0"
+PV = "1.1.3"
 PR = "r0"
 
 SRC_URI = "https://github.com/rdkcentral/firebolt-cpp-transport/releases/download/v${PV}/firebolt-cpp-transport-${PV}.tar.gz"
-SRC_URI[sha256sum] = "2ff666c266ec22f9ed7989b1c4d3a7c6c2df24a8880d8587179236ccfac24163"
+SRC_URI[sha256sum] = "0a0c9394395a514d3ba6931a6c656886523c6b3f038b0cb991c27c837f0e506e"
 
 S = "${WORKDIR}/firebolt-cpp-transport-${PV}"
 
 DEPENDS = "nlohmann-json websocketpp boost"
 RDEPENDS:${PN} = "websocketpp boost-system"
+
+PACKAGECONFIG ??= ""
+PACKAGECONFIG[legacy-rpc-v1] = "-DENABLE_LEGACY_RPC_V1=ON,-DENABLE_LEGACY_RPC_V1=OFF"
+
+EXTRA_OECMAKE:append = " ${PACKAGECONFIG_CONFARGS}"
 
 PACKAGES = "${PN} ${PN}-dev ${PN}-dbg"
 
@@ -26,5 +31,5 @@ FILES:${PN} += "${libdir}/*.so"
 FILES:${PN}-dev += "${libdir}/cmake/* ${includedir}/firebolt"
 FILES:${PN}-dbg += "${libdir}/.debug"
 
-INSANE_SKIP:${PN} = "dev-so"
+INSANE_SKIP:${PN} += "dev-so"
 INSANE_SKIP:${PN}-dbg += "dev-so"
