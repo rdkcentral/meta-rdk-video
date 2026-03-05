@@ -42,6 +42,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agen
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " telemetrysupport \
+                   telemetry \
 "
 # ----------------------------------------------------------------------------
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
