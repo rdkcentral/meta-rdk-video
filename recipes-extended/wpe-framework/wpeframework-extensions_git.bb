@@ -8,8 +8,8 @@ PR = "r2"
 S = "${WORKDIR}/wpeframework-extensions"
 inherit cmake pkgconfig
 
-BRANCH ?= "dev/thunder-extention-deadlock-fix"
-SRCREV ?= "4d6aa4efb7291fbb78463ac923b31f9353a2cc9d"
+BRANCH ?= "dev/thunder-extention"
+SRCREV ?= "e9755aff47bde52395813ac8115094842f8cdf54"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderNanoServices.git;protocol=ssh;branch=${BRANCH};destsuffix=wpeframework-extensions"
 
