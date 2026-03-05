@@ -36,9 +36,6 @@ CFLAGS  += " \
     -I=${includedir}/rdk/halif/power-manager \
     -I=${includedir}/rdk/halif/deepsleep-manager \
     "
-TARGET_LDFLAGS += " -Wl,--no-as-needed -Wl,--as-needed "
-
-
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
