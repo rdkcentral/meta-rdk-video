@@ -45,7 +45,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " telemetrysupport \
     ocicontainer \
-    rdknativescript \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'enable_bolt_apps', '', 'rdknativescript', d)} \
     runtimemanager \
     packagemanager \
     lifecyclemanager \
