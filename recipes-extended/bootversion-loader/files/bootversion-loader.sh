@@ -82,6 +82,23 @@ else
     exit 0
 fi
 
+#update the read permission to migration datastore files
+# Check if the directory exists
+if [ -d "$migrationDir" ]; then
+    boottypeLog "changed the permission of $migrationDir by +x"
+     chmod +x "$migrationDir"
+else
+     boottypeLog "$migrationDir is not present"
+fi
+
+# Check if the file exists
+if [ -f "$migrationDSFile" ]; then
+    boottypeLog "changed the permission of $migrationDSFile by +r"
+    chmod +r "$migrationDSFile"
+else
+    boottypeLog "$migrationDSFile is not present"
+fi
+
 #bootversion backup 
 if [ -e "$file_updateStatus" ]; then
      status=$(<"$file_updateStatus")
@@ -202,23 +219,6 @@ else
 	         boottypeLog "BOOT_UPDATE since Version is not equal"
              fi
      fi
-fi
-
-#update the read permission to migration datastore files
-# Check if the directory exists
-if [ -d "$migrationDir" ]; then
-    boottypeLog "changed the permission of $migrationDir by +x"
-     chmod +x "$migrationDir"
-else
-     boottypeLog "$migrationDir is not present"
-fi
-
-# Check if the file exists
-if [ -f "$migrationDSFile" ]; then
-    boottypeLog "changed the permission of $migrationDSFile by +r"
-    chmod +r "$migrationDSFile"
-else
-    boottypeLog "$migrationDSFile is not present"
 fi
 
 writeToFile "COMPLETED" "$file_updateStatus" "truncate"
