@@ -2,8 +2,8 @@ SUMMARY = "ENTServices frontpanel plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=58ca1fa917c9de60f75f300dcabdc1b1"
 
-PV = "1.0.1"
-PR = "r1"
+PV = "1.0.2"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-frontpanel;${CMF_GITHUB_SRC_URI_SUFFIX
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.1
-SRCREV = "61e3e760fb7bd6f8c5aaec5ab8c1250ad54a2447"
+# Release version - 1.0.2
+SRCREV = "4f30bd926e3a3ef42941fca48ec359a4adcfecf1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
