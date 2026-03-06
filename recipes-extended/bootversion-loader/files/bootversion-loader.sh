@@ -52,7 +52,7 @@ writeToFile() {
 
     if [ $result -ne 0 ]; then
         echo "Error writing to $file: $error_output" >&2
-        update_migration_status "file write error: $error_output"
+        update_boottype_status "file write error: $error_output"
     fi
 }
 
@@ -60,7 +60,8 @@ boottypeLog() {
     echo "`/bin/timestamp`: $0: $*" >> $BOOTTYPE_LOG_FILE
 }
 
-update_migration_status() {
+# Function to update boot type status and exit with error
+update_boottype_status() {
     writeToFile "BOOT_TYPE=BOOT_NORMAL" "$file_bootType" "truncate"
 	boottypeLog "Setting to BOOT_NORMAL due to error:$1"
 	exit 1
@@ -72,8 +73,7 @@ if [ -f "$PLATFORM_FILE" ]; then
     boottypeLog "Running the bootversion-loader script for $file_platform devices"
 else
     boottypeLog "Exiting since this script is not intended for this platform"
-	writeToFile "BOOT_TYPE=BOOT_NORMAL" "$file_bootType" "truncate"
-    boottypeLog "BOOT_NORMAL is set by default for this platform"
+    update_boottype_status "unsupported platform"
     exit 0
 fi
 
@@ -131,7 +131,7 @@ s1_FW_Class=$(grep -m 1 "FW_CLASS" $file_bootversion)
 # ensure slot data is non-empty before comparing
 if [ -z "$s1_FW_Class" ] || [ -z "$s1_version" ] || [ -z "$s1_imagename" ]; then
     boottypeLog "slot1 information missing or empty; aborting"
-    update_migration_status "invalid slot information"
+    update_boottype_status "invalid slot information"
 fi
 
 # verify that FW_Class values are one of the expected strings
@@ -142,7 +142,7 @@ for val in "$v_FW_Class" "$s1_FW_Class"; do
             ;;
         *)
             boottypeLog "unexpected FW_Class value '$val'; aborting"
-            update_migration_status "invalid FW_Class information"
+            update_boottype_status "invalid FW_Class information"
             ;;
     esac
 done
@@ -173,7 +173,7 @@ case "$MigrationStatus" in
         ;;
     *)
         boottypeLog "Invalid MigrationStatus: $MigrationStatus; aborting"
-        update_migration_status "invalid FW_Class information"
+        update_boottype_status "invalid FW_Class information"
         ;;
 esac
 
