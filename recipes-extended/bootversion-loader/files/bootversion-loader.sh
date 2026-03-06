@@ -25,6 +25,8 @@ file_bootType="/tmp/bootType"
 file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
 file_updateStatus="/opt/.updateStatus"
 file_bootversion_bak="/opt/.bootversion.bak"
+migrationDSFile="/opt/secure/migration/migration_data_store.json"
+migrationDir="/opt/secure/migration"
 
 if [ -z $LOG_PATH ]; then
     LOG_PATH="/opt/logs/"
@@ -36,6 +38,39 @@ boottypeLog() {
     echo "`/bin/timestamp`: $0: $*" >> $BOOTTYPE_LOG_FILE
 }
 
+# Write to file with error handling
+# Args: $1=content, $2=file_path, $3=mode (truncate|append)
+# Returns: 0 on success, 1 on failure
+writeToFile() {
+    content="$1"
+    file="$2"
+    mode="$3" 
+
+    # Perform write/append operation
+    if [ "$mode" = "append" ]; then
+        error_output=$(echo "$content" >> "$file" 2>&1)
+        result=$?
+    elif [ "$mode" = "truncate" ]; then
+        error_output=$(echo "$content" > "$file" 2>&1)
+        result=$?
+    fi
+
+    if [ $result -ne 0 ]; then
+        echo "Error writing to $file: $error_output" >&2
+        update_boottype_status "file write error: $error_output"
+    fi
+	return 0
+}
+
+# Function to update boot type status and exit with error
+update_boottype_status() {
+    echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
+	boottypeLog "Setting to BOOT_NORMAL due to error:$1"
+	exit 1
+}
+
+#Start of the script 
+#Checking whether it is intended for this platform
 PLATFORM_FILE="/etc/migration/boot_FSR.platform"
 if [ -f "$PLATFORM_FILE" ]; then
     file_platform="$(tr -d '\r' < "$PLATFORM_FILE" | tr -d ' \t\n')"
@@ -45,6 +80,23 @@ else
     echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
     boottypeLog "BOOT_NORMAL is set by default for this platform"
     exit 0
+fi
+
+#update the read permission to migration datastore files
+# Check if the directory exists
+if [ -d "$migrationDir" ]; then
+    boottypeLog "changed the permission of $migrationDir by +x"
+     chmod +x "$migrationDir"
+else
+     boottypeLog "$migrationDir is not present"
+fi
+
+# Check if the file exists
+if [ -f "$migrationDSFile" ]; then
+    boottypeLog "changed the permission of $migrationDSFile by +r"
+    chmod +r "$migrationDSFile"
+else
+    boottypeLog "$migrationDSFile is not present"
 fi
 
 #bootversion backup 
@@ -62,7 +114,7 @@ if [ -e "$file_updateStatus" ]; then
      elif [ "$status" == "COMPLETED" ]; then
          boottypeLog "Update previously completed, $file_bootversion file is backedup as $file_bootversion_bak"
          cp -f $file_bootversion $file_bootversion_bak
-         echo "INPROGRESS" > $file_updateStatus
+         writeToFile "INPROGRESS" "$file_updateStatus" "truncate"
          boottypeLog "Update in progress..."
      fi
 else
@@ -71,7 +123,7 @@ else
           boottypeLog "Found $file_bootversion file, creating $file_bootversion_bak from $file_bootversion"
           cp -f $file_bootversion $file_bootversion_bak
      fi
-     echo "INPROGRESS" > $file_updateStatus
+     writeToFile "INPROGRESS" "$file_updateStatus" "truncate"
      boottypeLog "Update in progress..."
 fi
 
@@ -83,12 +135,12 @@ v_FW_Class=$(grep "^FW_CLASS" $file_version | tr "=" ":")
 # if /opt/.bootversion does not exist initially on migration from rdkv to rdke
 if [ ! -e "$file_bootversion" ]; then
      # s1 = v
-     echo "$v_imagename" > $file_bootversion
-     echo "$v_version" >> $file_bootversion
-     echo "$v_FW_Class" >> $file_bootversion
-     echo "BOOT_TYPE=BOOT_INIT" > $file_bootType
+     writeToFile "$v_imagename" "$file_bootversion" "truncate"
+     writeToFile "$v_version" "$file_bootversion" "append"
+     writeToFile "$v_FW_Class" "$file_bootversion" "append"
+     writeToFile "BOOT_TYPE=BOOT_INIT" "$file_bootType" "truncate"
      boottypeLog "BOOT_INIT is set since $file_bootversion is not present"
-	 echo "COMPLETED" > $file_updateStatus
+	 writeToFile "COMPLETED" "$file_updateStatus" "truncate"
      boottypeLog "Update completed."
      exit 0
 fi
@@ -101,7 +153,7 @@ s1_FW_Class=$(grep -m 1 "FW_CLASS" $file_bootversion)
 # ensure slot data is non-empty before comparing
 if [ -z "$s1_FW_Class" ] || [ -z "$s1_version" ] || [ -z "$s1_imagename" ]; then
     boottypeLog "slot1 information missing or empty; aborting"
-    exit 1
+    update_boottype_status "invalid slot information"
 fi
 
 # verify that FW_Class values are one of the expected strings
@@ -112,26 +164,27 @@ for val in "$v_FW_Class" "$s1_FW_Class"; do
             ;;
         *)
             boottypeLog "unexpected FW_Class value '$val'; aborting"
-            exit 1
+            update_boottype_status "invalid FW_Class information"
             ;;
     esac
 done
 
 #copy slot information
      # s1 = v
-     echo "$v_imagename" > $file_bootversion
-     echo "$v_version" >> $file_bootversion
-     echo "$v_FW_Class" >> $file_bootversion
+     writeToFile "$v_imagename" "$file_bootversion" "truncate"
+     writeToFile "$v_version" "$file_bootversion" "append"
+     writeToFile "$v_FW_Class" "$file_bootversion" "append"
      # s2 = s1
-     echo "$s1_imagename" >> $file_bootversion
-     echo "$s1_version" >> $file_bootversion
-     echo "$s1_FW_Class" >> $file_bootversion
+     writeToFile "$s1_imagename" "$file_bootversion" "append"
+     writeToFile "$s1_version" "$file_bootversion" "append"
+     writeToFile "$s1_FW_Class" "$file_bootversion" "append"
      boottypeLog "Updated slot information (Slot1 from current image, Slot2 from previous slot)"
      boottypeLog "Slot1 - imagename: $v_imagename, version: $v_version, FW_Class: $v_FW_Class"
      boottypeLog "Slot2 - imagename: $s1_imagename, version: $s1_version, FW_Class: $s1_FW_Class"
 
+#Gets the value of MigrationStatus if already set otherwise sets it as NOT_NEEDED
 if [ -f /opt/secure/persistent/MigrationStatus ]; then
-    MigrationStatus=$(cat /opt/secure/persistent/MigrationStatus | tr -d '\r')
+     MigrationStatus=$(cat /opt/secure/persistent/MigrationStatus | tr -d '\r')
 else
     MigrationStatus="NOT_NEEDED"
 fi
@@ -143,56 +196,30 @@ case "$MigrationStatus" in
         ;;
     *)
         boottypeLog "Invalid MigrationStatus: $MigrationStatus; aborting"
-        exit 1
+        update_boottype_status "invalid MigrationStatus: $MigrationStatus"
         ;;
 esac
 
 #comparing slot1 and slot2 FW Class
 if [ "$v_FW_Class" != "$s1_FW_Class" ]; then
 	# migration fw is run for first time, migration not completed
-	echo "NOT_STARTED" > $file_MigrationStatus
-	echo "BOOT_TYPE=BOOT_MIGRATION" > $file_bootType
+	writeToFile "NOT_STARTED" "$file_MigrationStatus" "truncate"
+	writeToFile "BOOT_TYPE=BOOT_MIGRATION" "$file_bootType" "truncate"
 	boottypeLog "BOOT_MIGRATION is set since FW_Class is not same"
 else
      if [ "$MigrationStatus" != "MIGRATION_COMPLETED" ] && [ "$MigrationStatus" != "NOT_NEEDED" ]; then
-          echo "BOOT_TYPE=BOOT_MIGRATION" > $file_bootType
+          writeToFile "BOOT_TYPE=BOOT_MIGRATION" "$file_bootType" "truncate"
 	      boottypeLog "BOOT_MIGRATION since MigrationStatus is equal to $MigrationStatus"
      elif [ "$MigrationStatus" == "MIGRATION_COMPLETED" ] || [ "$MigrationStatus" == "NOT_NEEDED" ]; then
 	     if [ "$v_version" == "$s1_version" ]; then
-	         echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
+	         writeToFile "BOOT_TYPE=BOOT_NORMAL" "$file_bootType" "truncate"
 	    	 boottypeLog "BOOT_NORMAL since Version is equal and MigrationStatus is $MigrationStatus"
 	     else
-	         echo "BOOT_TYPE=BOOT_UPDATE" > $file_bootType
+	         writeToFile "BOOT_TYPE=BOOT_UPDATE" "$file_bootType" "truncate"
 	         boottypeLog "BOOT_UPDATE since Version is not equal"
              fi
      fi
 fi
 
-#update the read permission to migration datastore files
-current_bootType=$(<"$file_bootType")
-current_bootType=${current_bootType:10}
-if [ "$current_bootType" == "BOOT_MIGRATION" ]; then
-    migrationDSFile="/opt/secure/migration/migration_data_store.json"
-    migrationDir="/opt/secure/migration"
-
-    # Check if the directory exists
-    if [ -d "$migrationDir" ]; then
-        boottypeLog "changed the permission of $migrationDir by +x"
-        chmod +x "$migrationDir"
-    else
-	    boottypeLog "$migrationDir is not present"
-    fi
-
-    # Check if the file exists
-    if [ -f "$migrationDSFile" ]; then
-        boottypeLog "changed the permission of $migrationDSFile by +r"
-        chmod +r "$migrationDSFile"
-    else
-        boottypeLog "$migrationDSFile is not present"
-    fi
-else
-    boottypeLog "current_bootType is $current_bootType hence no need to change the permission of migration datastore"
-fi
-
-echo "COMPLETED" > $file_updateStatus
+writeToFile "COMPLETED" "$file_updateStatus" "truncate"
 boottypeLog "Update completed."
