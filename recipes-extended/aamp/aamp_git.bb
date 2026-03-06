@@ -7,7 +7,9 @@ PV ?= "3.2.0"
 PR ?= "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "95b4505900ae43d96f530c030801a45459ef437b"
+
+SRCREV_aamp ?= "836831bb836a353e5d5a52e702b93434de8491b1"
+
 
 DEPENDS += "curl libdash libxml2 cjson readline ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 
@@ -34,6 +36,8 @@ require aamp-artifacts-version.inc
 EXTRA_OECMAKE += " -DCMAKE_DS_EVENT_SUPPORTED=1 "
 EXTRA_OECMAKE += " -DCMAKE_WPEWEBKIT_WATERMARK_JSBINDINGS=1 "
 
+EXTRA_OECMAKE += " -DCMAKE_TELEMETRY_2_0_REQUIRED=1 "
+DEPENDS += " telemetry"
 #Ethan log is implemented by Dobby hence enabling it.
 PACKAGES = "${PN} ${PN}-dev ${PN}-dbg"
 
