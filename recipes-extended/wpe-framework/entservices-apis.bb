@@ -17,7 +17,7 @@ SRC_URI += "file://RDKEMW-1007.patch"
 
 
 # Tag 3.3.0
-SRCREV_entservices-apis = "f2bdd9248c7c91241625a1889295a39fb20e0597"
+SRCREV_entservices-apis = "93f440e41c1b88d0cac64cedeca0df4050791a8c"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
