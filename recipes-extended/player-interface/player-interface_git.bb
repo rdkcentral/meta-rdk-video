@@ -36,7 +36,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_dis
 EXTRA_OECMAKE += " -DCMAKE_WPEFRAMEWORK_REQUIRED=1"
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'sec_manager', ' -DCMAKE_USE_SECMANAGER=1 ', '', d)}"
-
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'middleware_profiling', ' -DENABLE_MW_PROFILING=ON ', '', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', ' -DCMAKE_RDK_SVP=1 ', '', d)}"
 
 PACKAGES = "${PN} ${PN}-dev ${PN}-dbg"
