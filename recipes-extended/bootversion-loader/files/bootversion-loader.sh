@@ -32,12 +32,36 @@ fi
 
 BOOTTYPE_LOG_FILE="$LOG_PATH/boottypescript.log"
 
+# Write to file with error handling
+# Args: $1=content, $2=file_path, $3=mode (truncate|append)
+# Returns: 0 on success, 1 on failure
+writeToFile() {
+    local content="$1"
+    local file="$2"
+    local mode="${3:-truncate}"  # default to truncate (>)
+
+    # Perform write/append operation
+    local error_output
+    if [ "$mode" = "append" ]; then
+        error_output=$(echo "$content" >> "$file" 2>&1)
+        local result=$?
+    else
+        error_output=$(echo "$content" > "$file" 2>&1)
+        local result=$?
+    fi
+
+    if [ $result -ne 0 ]; then
+        echo "Error writing to $file: $error_output" >&2
+        update_migration_status "file write error: $error_output"
+    fi
+}
+
 boottypeLog() {
     echo "`/bin/timestamp`: $0: $*" >> $BOOTTYPE_LOG_FILE
 }
 
 update_migration_status() {
-	echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
+    writeToFile "BOOT_TYPE=BOOT_NORMAL" "$file_bootType" "truncate"
 	boottypeLog "Setting to BOOT_NORMAL due to error:$1"
 	exit 1
 }
@@ -48,7 +72,7 @@ if [ -f "$PLATFORM_FILE" ]; then
     boottypeLog "Running the bootversion-loader script for $file_platform devices"
 else
     boottypeLog "Exiting since this script is not intended for this platform"
-	echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
+	writeToFile "BOOT_TYPE=BOOT_NORMAL" "$file_bootType" "truncate"
     boottypeLog "BOOT_NORMAL is set by default for this platform"
     exit 0
 fi
@@ -68,7 +92,7 @@ if [ -e "$file_updateStatus" ]; then
      elif [ "$status" == "COMPLETED" ]; then
          boottypeLog "Update previously completed, $file_bootversion file is backedup as $file_bootversion_bak"
          cp -f $file_bootversion $file_bootversion_bak
-         echo "INPROGRESS" > $file_updateStatus
+         writeToFile "INPROGRESS" "$file_updateStatus" "truncate"
          boottypeLog "Update in progress..."
      fi
 else
@@ -77,7 +101,7 @@ else
           boottypeLog "Found $file_bootversion file, creating $file_bootversion_bak from $file_bootversion"
           cp -f $file_bootversion $file_bootversion_bak
      fi
-     echo "INPROGRESS" > $file_updateStatus
+     writeToFile "INPROGRESS" "$file_updateStatus" "truncate"
      boottypeLog "Update in progress..."
 fi
 
@@ -89,12 +113,12 @@ v_FW_Class=$(grep "^FW_CLASS" $file_version | tr "=" ":")
 # if /opt/.bootversion does not exist initially on migration from rdkv to rdke
 if [ ! -e "$file_bootversion" ]; then
      # s1 = v
-     echo "$v_imagename" > $file_bootversion
-     echo "$v_version" >> $file_bootversion
-     echo "$v_FW_Class" >> $file_bootversion
-     echo "BOOT_TYPE=BOOT_INIT" > $file_bootType
+     writeToFile "$v_imagename" "$file_bootversion" "truncate"
+     writeToFile "$v_version" "$file_bootversion" "append"
+     writeToFile "$v_FW_Class" "$file_bootversion" "append"
+     writeToFile "BOOT_TYPE=BOOT_INIT" "$file_bootType" "truncate"
      boottypeLog "BOOT_INIT is set since $file_bootversion is not present"
-	 echo "COMPLETED" > $file_updateStatus
+	 writeToFile "COMPLETED" "$file_updateStatus" "truncate"
      boottypeLog "Update completed."
      exit 0
 fi
@@ -125,13 +149,13 @@ done
 
 #copy slot information
      # s1 = v
-     echo "$v_imagename" > $file_bootversion
-     echo "$v_version" >> $file_bootversion
-     echo "$v_FW_Class" >> $file_bootversion
+     writeToFile "$v_imagename" "$file_bootversion" "truncate"
+     writeToFile "$v_version" "$file_bootversion" "append"
+     writeToFile "$v_FW_Class" "$file_bootversion" "append"
      # s2 = s1
-     echo "$s1_imagename" >> $file_bootversion
-     echo "$s1_version" >> $file_bootversion
-     echo "$s1_FW_Class" >> $file_bootversion
+     writeToFile "$s1_imagename" "$file_bootversion" "append"
+     writeToFile "$s1_version" "$file_bootversion" "append"
+     writeToFile "$s1_FW_Class" "$file_bootversion" "append"
      boottypeLog "Updated slot information (Slot1 from current image, Slot2 from previous slot)"
      boottypeLog "Slot1 - imagename: $v_imagename, version: $v_version, FW_Class: $v_FW_Class"
      boottypeLog "Slot2 - imagename: $s1_imagename, version: $s1_version, FW_Class: $s1_FW_Class"
@@ -156,19 +180,19 @@ esac
 #comparing slot1 and slot2 FW Class
 if [ "$v_FW_Class" != "$s1_FW_Class" ]; then
 	# migration fw is run for first time, migration not completed
-	echo "NOT_STARTED" > $file_MigrationStatus
-	echo "BOOT_TYPE=BOOT_MIGRATION" > $file_bootType
+	writeToFile "NOT_STARTED" "$file_MigrationStatus" "truncate"
+	writeToFile "BOOT_TYPE=BOOT_MIGRATION" "$file_bootType" "truncate"
 	boottypeLog "BOOT_MIGRATION is set since FW_Class is not same"
 else
      if [ "$MigrationStatus" != "MIGRATION_COMPLETED" ] && [ "$MigrationStatus" != "NOT_NEEDED" ]; then
-          echo "BOOT_TYPE=BOOT_MIGRATION" > $file_bootType
+          writeToFile "BOOT_TYPE=BOOT_MIGRATION" "$file_bootType" "truncate"
 	      boottypeLog "BOOT_MIGRATION since MigrationStatus is equal to $MigrationStatus"
      elif [ "$MigrationStatus" == "MIGRATION_COMPLETED" ] || [ "$MigrationStatus" == "NOT_NEEDED" ]; then
 	     if [ "$v_version" == "$s1_version" ]; then
-	         echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
+	         writeToFile "BOOT_TYPE=BOOT_NORMAL" "$file_bootType" "truncate"
 	    	 boottypeLog "BOOT_NORMAL since Version is equal and MigrationStatus is $MigrationStatus"
 	     else
-	         echo "BOOT_TYPE=BOOT_UPDATE" > $file_bootType
+	         writeToFile "BOOT_TYPE=BOOT_UPDATE" "$file_bootType" "truncate"
 	         boottypeLog "BOOT_UPDATE since Version is not equal"
              fi
      fi
@@ -195,5 +219,5 @@ else
     boottypeLog "$migrationDSFile is not present"
 fi
 
-echo "COMPLETED" > $file_updateStatus
+writeToFile "COMPLETED" "$file_updateStatus" "truncate"
 boottypeLog "Update completed."
