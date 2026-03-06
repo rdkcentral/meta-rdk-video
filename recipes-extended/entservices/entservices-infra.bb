@@ -142,6 +142,7 @@ MONITOR_PLUGIN_ARGS                ?= " \
                                        -DPLUGIN_MONITOR_CLONED_APPS=ON -DPLUGIN_MONITOR_CLONED_APP_MEMORYLIMIT=657408 \
                                        -DPLUGIN_MONITOR_SEARCH_AND_DISCOVERY_MEMORYLIMIT=888832 \
                                        -DPLUGIN_MONITOR_NETFLIX_APP_MEMORYLIMIT=1048576 \
+                                       ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', '-DPLUGIN_MONITOR_OPENCDMI=ON','', d)} \
 "
 PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
                                        -DADD_DAC_PARAMS=${@d.getVar('DAC_PARAMS')} \
