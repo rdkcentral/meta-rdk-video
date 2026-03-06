@@ -13,13 +13,13 @@ inherit cmake pkgconfig perlnative ${@bb.utils.contains("DISTRO_FEATURES", "kirk
 
 S = "${WORKDIR}/git"
 
-PV ?= "2.0.0"
-PR ?= "r1"
+PV = "2.0.3"
+PR = "r0"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};"
 
-#Release 1.0.7
-SRCREV = "49dcea27ad8b1fc4d2c49623a117b2d9adb2124d"
+#Release 2.0.3
+SRCREV = "8ae59eff3b967bc773d5bff2f8b68b9d9a94dbc9"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -52,7 +52,8 @@ do_install() {
    fi
 
    cp -a ${B}/JSRuntimeJSC ${D}/home/root/JSRuntimeJSC
-
+   cp -a ${B}/JSRuntimeContainer ${D}/home/root/JSRuntimeContainer
+   
    cp -a ${S}/utils/xhr.js ${D}/home/root/modules/.
    cp -a ${S}/utils/punycode.js ${D}/home/root/modules/.
    cp -a ${S}/utils/http.js ${D}/home/root/modules/.
@@ -70,9 +71,11 @@ do_install() {
    cp -a ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
+   cp -a ${S}/src/jsc/modules/minified_linkedjsdom.js ${D}/home/root/modules/. 
 
    install -d ${D}/${libdir}
    cp -a ${B}/libJSRuntimeJSC.so ${D}/${libdir}
+   cp -a ${B}/libJSRuntimeContainer.so ${D}/${libdir}
    cp -a ${B}/libjsclib.so ${D}/${libdir}
 
 
@@ -83,6 +86,9 @@ do_install() {
 
    install -m 0644 ${S}/include/*.h ${D}${includedir}/jsruntime
    cp -a ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
+
+   install -d ${D}${datadir}/rdknativescript
+   echo "${PV}" > ${D}${datadir}/rdknativescript/version.txt
 }
 
 FILES:${PN} += "${libdir}/*.so"
@@ -98,3 +104,7 @@ FILES:${PN} += "${@'/home/root/JSRuntimeClient' if d.getVar('BUILD_CLIENT') == '
 FILES:${PN} += "/home/root/JSRuntimeJSC"
 FILES:${PN} += "/home/root/modules"
 FILES:${PN} += "${libdir}/libJSRuntimeJSC.so"
+FILES:${PN} += "${libdir}/libJSRuntimeContainer.so"
+FILES:${PN} += "/home/root/JSRuntimeContainer"
+
+SYSROOT_DIRS:append = " ${datadir}/rdknativescript"

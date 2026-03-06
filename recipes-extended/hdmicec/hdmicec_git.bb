@@ -4,13 +4,14 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV ?= "1.0.1"
-PR ?= "r0"
+PV = "1.0.9"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
+SRCREV_hdmicec = "f4ed04882f2930a8da8fe912463d550581b5979c"
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
 RDEPENDS:${PN} = " devicesettings telemetry"
 
@@ -37,8 +38,6 @@ LOGROTATE_ROTATION_cec="1"
 #HDD_DISABLE
 LOGROTATE_SIZE_MEM_cec="128000"
 LOGROTATE_ROTATION_MEM_cec="1"
-
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 

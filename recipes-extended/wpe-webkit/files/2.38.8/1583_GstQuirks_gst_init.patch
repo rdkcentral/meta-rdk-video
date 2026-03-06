@@ -1,0 +1,31 @@
+From 60d9e167a0ac7c9ae6812f78f8a5e20ea180c422 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Fri, 21 Nov 2025 12:35:50 +0100
+Subject: [PATCH] [GST] Ensure GST initialized before playing with GST Quirks
+
+GStreamerQuirksManager verifies each quirk with isPlatformSupported()
+that usually relies on gst elements presense in the registry.
+Calling this without gst_init called fails for every gst element
+and rejects all quirks.
+
+The problem exists for apps that don't use any of canPlayType()
+or isTypeSupported() that handle gst_init internally
+---
+ Source/WebCore/platform/gstreamer/GStreamerQuirks.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirks.cpp b/Source/WebCore/platform/gstreamer/GStreamerQuirks.cpp
+index 3966414697a0..398d93a839fe 100644
+--- a/Source/WebCore/platform/gstreamer/GStreamerQuirks.cpp
++++ b/Source/WebCore/platform/gstreamer/GStreamerQuirks.cpp
+@@ -55,6 +55,7 @@ GStreamerQuirksManager::GStreamerQuirksManager(bool isForTesting, bool loadQuirk
+ {
+     static std::once_flag debugRegisteredFlag;
+     std::call_once(debugRegisteredFlag, [] {
++        ensureGStreamerInitialized();
+         GST_DEBUG_CATEGORY_INIT(webkit_quirks_debug, "webkitquirks", 0, "WebKit Quirks");
+     });
+ 
+-- 
+2.51.0
+

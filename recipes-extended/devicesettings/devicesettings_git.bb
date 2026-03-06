@@ -4,9 +4,10 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-PV ?= "1.0.1"
-PR ?= "r0"
+PV = "1.0.29"
+PR = "r0"
 
+SRCREV_devicesettings = "edc8c70b9a8853e99ae364eb50ea85de131ac109"
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
 
 # devicesettings is not a 'generic' component, as some of its source
@@ -16,7 +17,6 @@ SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=d
 # devicesettings become 'generic' we will remove the dependency on the
 # hal, Note: we make this package machine specific since it uses a
 # machine HAL
-PACKAGE_ARCH = "${MACHINE_ARCH}"
 #MADAN
 DEPENDS="json-c iarmbus rdk-logger virtual/vendor-devicesettings-hal devicesettings-hal-headers safec-common-wrapper rfc wdmp-c"
 #RDEPENDS:${PN} += "directfb"
@@ -116,7 +116,7 @@ INSANE_SKIP:${PN} = "ldflags"
 
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
-CFLAGS += "-DHAS_FLASH_PERSISTENT -DHAS_THERMAL_API -DdsFPD_BRIGHTNESS_DEFAULT=10 "
+CFLAGS += "-DHAS_FLASH_PERSISTENT -DHAS_THERMAL_API -DdsFPD_BRIGHTNESS_DEFAULT=100 "
 #enabling HDCP callback in rpc server
 CFLAGS += " -DHAS_HDCP_CALLBACK"
 CFLAGS += "${@bb.utils.contains("DISTRO_FEATURES", "uhd_enabled", "-DHAS_4K_SUPPORT ", "", d)}"
