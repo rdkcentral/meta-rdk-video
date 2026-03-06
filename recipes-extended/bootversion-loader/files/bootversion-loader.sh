@@ -62,7 +62,7 @@ boottypeLog() {
 
 # Function to update boot type status and exit with error
 update_boottype_status() {
-    writeToFile "BOOT_TYPE=BOOT_NORMAL" "$file_bootType" "truncate"
+    echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
 	boottypeLog "Setting to BOOT_NORMAL due to error:$1"
 	exit 1
 }
@@ -73,7 +73,8 @@ if [ -f "$PLATFORM_FILE" ]; then
     boottypeLog "Running the bootversion-loader script for $file_platform devices"
 else
     boottypeLog "Exiting since this script is not intended for this platform"
-    update_boottype_status "unsupported platform"
+    echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
+    boottypeLog "BOOT_NORMAL is set by default for this platform"
     exit 0
 fi
 
