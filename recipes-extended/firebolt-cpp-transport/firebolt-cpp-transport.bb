@@ -8,11 +8,11 @@ inherit cmake
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-PV = "1.1.0"
+PV = "1.1.3"
 PR = "r0"
 
 SRC_URI = "https://github.com/rdkcentral/firebolt-cpp-transport/releases/download/v${PV}/firebolt-cpp-transport-${PV}.tar.gz"
-SRC_URI[sha256sum] = "be82779706783041f1f343b97d94d45b806702a0b8e471b3df93eb0750df6084"
+SRC_URI[sha256sum] = "0a0c9394395a514d3ba6931a6c656886523c6b3f038b0cb991c27c837f0e506e"
 
 S = "${WORKDIR}/firebolt-cpp-transport-${PV}"
 
@@ -31,5 +31,5 @@ FILES:${PN} += "${libdir}/*.so"
 FILES:${PN}-dev += "${libdir}/cmake/* ${includedir}/firebolt"
 FILES:${PN}-dbg += "${libdir}/.debug"
 
-INSANE_SKIP:${PN} = "dev-so"
+INSANE_SKIP:${PN} += "dev-so"
 INSANE_SKIP:${PN}-dbg += "dev-so"
