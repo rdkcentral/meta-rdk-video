@@ -25,6 +25,8 @@ file_bootType="/tmp/bootType"
 file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
 file_updateStatus="/opt/.updateStatus"
 file_bootversion_bak="/opt/.bootversion.bak"
+migrationDSFile="/opt/secure/migration/migration_data_store.json"
+migrationDir="/opt/secure/migration"
 
 if [ -z $LOG_PATH ]; then
     LOG_PATH="/opt/logs/"
@@ -32,32 +34,32 @@ fi
 
 BOOTTYPE_LOG_FILE="$LOG_PATH/boottypescript.log"
 
+boottypeLog() {
+    echo "`/bin/timestamp`: $0: $*" >> $BOOTTYPE_LOG_FILE
+}
+
 # Write to file with error handling
 # Args: $1=content, $2=file_path, $3=mode (truncate|append)
 # Returns: 0 on success, 1 on failure
 writeToFile() {
-    local content="$1"
-    local file="$2"
-    local mode="${3:-truncate}"  # default to truncate (>)
+    content="$1"
+    file="$2"
+    mode="$3" 
 
     # Perform write/append operation
-    local error_output
     if [ "$mode" = "append" ]; then
         error_output=$(echo "$content" >> "$file" 2>&1)
-        local result=$?
-    else
+        result=$?
+    elif [ "$mode" = "truncate" ]; then
         error_output=$(echo "$content" > "$file" 2>&1)
-        local result=$?
+        result=$?
     fi
 
     if [ $result -ne 0 ]; then
         echo "Error writing to $file: $error_output" >&2
         update_boottype_status "file write error: $error_output"
     fi
-}
-
-boottypeLog() {
-    echo "`/bin/timestamp`: $0: $*" >> $BOOTTYPE_LOG_FILE
+	return 0
 }
 
 # Function to update boot type status and exit with error
@@ -67,6 +69,8 @@ update_boottype_status() {
 	exit 1
 }
 
+#Start of the script 
+#Checking whether it is intended for this platform
 PLATFORM_FILE="/etc/migration/boot_FSR.platform"
 if [ -f "$PLATFORM_FILE" ]; then
     file_platform="$(tr -d '\r' < "$PLATFORM_FILE" | tr -d ' \t\n')"
@@ -161,6 +165,7 @@ done
      boottypeLog "Slot1 - imagename: $v_imagename, version: $v_version, FW_Class: $v_FW_Class"
      boottypeLog "Slot2 - imagename: $s1_imagename, version: $s1_version, FW_Class: $s1_FW_Class"
 
+#Gets the value of MigrationStatus if already set otherwise sets it as NOT_NEEDED
 if [ -f /opt/secure/persistent/MigrationStatus ]; then
      MigrationStatus=$(cat /opt/secure/persistent/MigrationStatus | tr -d '\r')
 else
@@ -174,7 +179,7 @@ case "$MigrationStatus" in
         ;;
     *)
         boottypeLog "Invalid MigrationStatus: $MigrationStatus; aborting"
-        update_boottype_status "invalid FW_Class information"
+        update_boottype_status "invalid MigrationStatus: $MigrationStatus"
         ;;
 esac
 
@@ -200,10 +205,6 @@ else
 fi
 
 #update the read permission to migration datastore files
-
-migrationDSFile="/opt/secure/migration/migration_data_store.json"
-migrationDir="/opt/secure/migration"
-
 # Check if the directory exists
 if [ -d "$migrationDir" ]; then
     boottypeLog "changed the permission of $migrationDir by +x"
