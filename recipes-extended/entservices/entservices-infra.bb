@@ -61,7 +61,7 @@ PACKAGECONFIG ?= " monitor \
     usersettings \
     ocicontainer \  
     messagecontrol \
-    rdknativescript \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'enable_bolt_apps', '', 'rdknativescript', d)} \
     javascriptcore \          
     texttospeechmonitor \    
     migration \
