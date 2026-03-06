@@ -20,6 +20,7 @@ SRCREV_thunder = "R5.3.0"
 SRC_URI += "file://thunder.service.in \
             file://0001-Backward-compatibility-cmake-function-thunder-r4.patch \
             file://0002-PersistentPath-thunder-r5.patch \
+            file://0003-Thunder-version.patch \
            "
 
 S = "${WORKDIR}/git"
