@@ -1,0 +1,34 @@
+From a7edb51ae1dbbb1b2567d8742dd44f03694c6da6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Enrique=20Oca=C3=B1a=20Gonz=C3=A1lez?= <eocanha@igalia.com>
+Date: Thu, 22 Jan 2026 15:37:14 +0100
+Subject: [PATCH] [MSE][GStreamer] Only extend first sample when it's a sync
+ sample
+
+This change, already present upstream (where edit list support has been
+reverted), only applies the "sample extension to start from zero when
+DTS = 0 and PTS > 0" if the sample is a sync one.
+
+Without this, problems happened on MPEG TS streams transmuxed to MSE,
+where two consecutive samples were having DTS=0 and the correction on
+the second one broke the first one. After some attempts to fix the
+problem, we ended up realizing that just by applying the correction on
+sync samples would solve the problem.
+
+See: https://github.com/WebPlatformForEmbedded/WPEWebKit/pull/1601
+---
+ .../WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp  | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp
+index 05b9328e22bfb..764c9204c85e4 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/AppendPipeline.cpp
+@@ -476,7 +476,7 @@ void AppendPipeline::appsinkNewSample(const Track& track, GRefPtr<GstSample>&& s
+         GST_TRACE_OBJECT(track.appsinkPad.get(), "Mapped buffer to segment, PTS %" GST_TIME_FORMAT " -> %s DTS %" GST_TIME_FORMAT " -> %s",
+             GST_TIME_ARGS(GST_BUFFER_PTS(buffer)), pts.toString().utf8().data(), GST_TIME_ARGS(GST_BUFFER_DTS(buffer)), dts.toString().utf8().data());
+         mediaSample->setTimestamps(pts, dts);
+-    } else if (!GST_BUFFER_DTS(buffer) && GST_BUFFER_PTS(buffer) > 0 && GST_BUFFER_PTS(buffer) <= 100'000'000) {
++    } else if (!GST_BUFFER_DTS(buffer) && GST_BUFFER_PTS(buffer) > 0 && GST_BUFFER_PTS(buffer) <= 100'000'000 && mediaSample->isSync()) {
+         // Because a track presentation time starting at some close to zero, but not exactly zero time can cause unexpected
+         // results for applications, we extend the duration of this first sample to the left so that it starts at zero.
+         // This is relevant for files that should have an edit list but don't, or when using GStreamer < 1.16, where
