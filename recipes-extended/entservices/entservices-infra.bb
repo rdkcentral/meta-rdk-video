@@ -30,7 +30,7 @@ DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
 RDEPENDS:${PN} += "wpeframework"
-DEPENDS += "packager-headers"
+DEPENDS += "packager-headers yaml-cpp"
 
 CFLAGS  += " \
     -I=${includedir}/rdk/halif/power-manager \
