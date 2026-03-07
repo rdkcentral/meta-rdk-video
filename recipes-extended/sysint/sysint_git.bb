@@ -61,6 +61,7 @@ CLEANBROKEN = "1"
 DEPENDS += "crashupload"
 RDEPENDS:${PN} += "bash"
 RDEPENDS:${PN} += "busybox"
+RDEPENDS:${PN} += "logrotate-conf"
 
 RF3CE_CTRLM_ENABLED = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'true', 'false', d)}"
 STG_TYPE = "${@bb.utils.contains('DISTRO_FEATURES', 'storage_sdc','SDCARD', 'OTHERS',d)}"
@@ -90,8 +91,6 @@ do_install() {
 	install -m 0644 ${S}/systemd_units/previous-log-backup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/vitalprocess-info.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/vitalprocess-info.service ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/logrotate.service ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/logrotate.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/dump-backup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-secure-upload.service ${D}${systemd_unitdir}/system
@@ -270,7 +269,6 @@ SYSTEMD_SERVICE:${PN}:append:rdkstb = " usbmodule-whitelist.service"
 SYSTEMD_SERVICE:${PN} += "log-rdk-start.service"
 SYSTEMD_SERVICE:${PN} += "previous-log-backup.service"
 SYSTEMD_SERVICE:${PN} += "vitalprocess-info.timer"
-SYSTEMD_SERVICE:${PN} += "logrotate.timer"
 SYSTEMD_SERVICE:${PN} += "dump-backup.service"
 SYSTEMD_SERVICE:${PN}:append:rdkstb = " disk-check.service "
 SYSTEMD_SERVICE:${PN} += "coredump-upload.service"
