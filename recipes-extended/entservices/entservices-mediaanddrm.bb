@@ -3,6 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=16cf2209d4e903e4d5dcd75089d7dfe2"
 
 PV = "1.8.0"
+PV = "1.8.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -19,6 +20,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
           
 # Release version - 1.8.0
 SRCREV = "0ad07785881c6a51ff7c68b4087023ef155ed091"
+# Release version - 1.8.1
+SRCREV = "49ef3c3663371061ac875809af0ca57028db20d5"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
