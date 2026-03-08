@@ -8,7 +8,7 @@ PR ?= "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "d7689a1e6de2da238ae38cebc02c867992b35cf3"
+SRCREV = "283b004c172090e388746dc73ab8e30400e2589d"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -24,6 +24,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant p
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
+DEPENDS += "iptables"
 
 CFLAGS  += " \
     -I=${includedir}/rdk/halif/power-manager \
@@ -116,6 +117,7 @@ EXTRA_OECMAKE += " \
     -DPLUGIN_NATIVEJS_CLIENTIDENTIFIER="${NATIVEJS_CLIENTIDENTIFIER}" \
     -DAIMANAGERS_TELEMETRY_METRICS_SUPPORT=ON \
 "
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'USE_LIBPACKAGE_RALF', '-DUSE_LIBPACKAGE_RALF=ON', '', d)}"
 
 # TBD - set SECAPI_LIB to hw secapi once RDK-12682 changes are available
 EXTRA_OECMAKE += " \
