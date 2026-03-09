@@ -1,4 +1,4 @@
-SUMMARY = "ENTServices Account plugin"
+SUMMARY = "ENTServices  Backup Manager plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-account;${CMF_GITHUB_SRC_URI_SUFFIX} "
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-backupmanager;${CMF_GITHUB_SRC_URI_SUFFIX} "
           
 # Release version - 1.0.0
 SRCREV = "9e3c4908976ef4dc5cf49d9afc617ee9fe2e6c5c"
@@ -37,12 +37,12 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    account \
+    backupmanager \
 "
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[account] = "-DPLUGIN_ACCOUNT=ON,,entservices-apis, entservices-apis"
+PACKAGECONFIG[backupmanager] = "-DPLUGIN_BACKUPMANAGER=ON,,entservices-apis, entservices-apis"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
