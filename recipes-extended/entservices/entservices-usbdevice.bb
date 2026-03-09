@@ -1,34 +1,36 @@
-SUMMARY = "ENTServices powermanager plugin"
+SUMMARY = "ENTServices usbdevice plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.0.3"
+PV = "1.0.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+SRCREV = "7dc3e13c18af16411b809132184306b97b1720ea"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usbdevice;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
+           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.0.3
-SRCREV = "0908ece6a1fb3b0ef5b5ae843abdcb7eb49915b7"
-
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
-EXTRA_OECMAKE += " -DBUILD_ENABLE_THERMAL_PROTECTION=ON "
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
-DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native"
+EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_APPMANAGERS_DEBUG=OFF', '-DRDK_APPMANAGERS_DEBUG=ON', d)}"
+
+DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
+DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
+DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries boost"
 RDEPENDS:${PN} += "wpeframework"
+DEPENDS += "packager-headers"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
+
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
@@ -39,29 +41,23 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-INCLUDE_DIRS = " \
-    -I=${includedir}/rdk/halif/power-manager \
-    -I=${includedir}/WPEFramework/powercontroller \
-    "
-
-CXXFLAGS += " -DPLATCO_BOOTTO_STANDBY"
-CXXFLAGS += " -DOFFLINE_MAINT_REBOOT"
-
-CFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
-CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', ' -DMFR_TEMP_CLOCK_READ ', '', d)} "
-
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " breakpadsupport \
+PACKAGECONFIG ?= " usbdevice \
     telemetrysupport \
-    powermanager \
 "
 
-PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
-PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[powermanager]         = "-DPLUGIN_POWERMANAGER=ON,-DPLUGIN_POWERMANAGER=OFF,iarmbus iarmmgrs virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal virtual/mfrlib entservices-apis,virtual/mfrlib entservices-apis"
+inherit features_check
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
+
 
 # ----------------------------------------------------------------------------
+
+PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
+PACKAGECONFIG[usbdevice]         = "-DPLUGIN_USBDEVICE=ON,-DPLUGIN_USBDEVICE=OFF,libusb1"
+
+# ----------------------------------------------------------------------------
+
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
@@ -69,11 +65,18 @@ EXTRA_OECMAKE += " \
     -DSECAPI_LIB=sec_api \
 "
 
-# Check if DisplayInfo backend is defined.
+
+# TBD - set SECAPI_LIB to hw secapi once RDK-12682 changes are available
+EXTRA_OECMAKE += " \
+    -DBUILD_AMLOGIC=ON \
+    -DBUILD_LLAMA=ON \
+"
+
+# Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
 python () {
-    machine_name = d.getVar('MACHINE')
-    if 'raspberrypi4' in machine_name:
-        d.appendVar('EXTRA_OECMAKE', ' -DBUILD_RPI=ON')
+    dri_device_name = d.getVar('DRI_DEVICE_NAME')
+    if dri_device_name:
+        d.appendVar('OECMAKE_CXX_FLAGS', ' -DDEFAULT_DEVICE=\'\\"{}\\"\' '.format(dri_device_name))
 }
 
 do_install:append() {
@@ -82,10 +85,9 @@ do_install:append() {
     then
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
     fi
-
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
-            find ${D}/etc/WPEFramework/plugins/ -type f ! -name "PowerManager.json" | xargs -r sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
+            find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
     fi
 }
@@ -95,5 +97,6 @@ do_install:append() {
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
-INSANE_SKIP:${PN} += "libdir staticdev dev-so dev-deps"
+INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
+
