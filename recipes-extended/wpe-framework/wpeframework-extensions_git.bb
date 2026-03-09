@@ -9,7 +9,7 @@ S = "${WORKDIR}/wpeframework-extensions"
 inherit cmake pkgconfig
 
 BRANCH ?= "dev/thunder-extensions"
-SRCREV ?= "e9755aff47bde52395813ac8115094842f8cdf54"
+SRCREV ?= "3ddd5eabea3e77c8d3c6a6d480cf8fd214c949f4"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderNanoServices.git;protocol=ssh;branch=${BRANCH};destsuffix=wpeframework-extensions"
 
