@@ -48,10 +48,10 @@ writeToFile() {
 
     # Perform write/append operation
     if [ "$mode" = "append" ]; then
-        error_output=$(echo "$content" >> "$file" 2>&1)
+        error_output=$( { echo "$content" >> "$file"; } 2>&1 )
         result=$?
     elif [ "$mode" = "truncate" ]; then
-        error_output=$(echo "$content" > "$file" 2>&1)
+        error_output=$( { echo "$content" >> "$file"; } 2>&1 )
         result=$?
     fi
 
