@@ -1,0 +1,494 @@
+From f6502fc1d72f79d898de7cfb75a1d55d8b352263 Mon Sep 17 00:00:00 2001
+From: Justin Michaud <jmichaud@igalia.com>
+Date: Wed, 4 Mar 2026 08:50:01 -0700
+Subject: [PATCH] Extra asserts for testing in prod
+
+---
+ Source/JavaScriptCore/heap/MarkedBlock.cpp    | 12 ++++----
+ Source/JavaScriptCore/heap/MarkedBlock.h      |  4 ---
+ .../JavaScriptCore/heap/PreciseAllocation.cpp |  9 ++----
+ .../JavaScriptCore/heap/PreciseAllocation.h   |  5 ----
+ Source/JavaScriptCore/heap/SlotVisitor.cpp    | 20 +++++--------
+ Source/JavaScriptCore/heap/SlotVisitor.h      |  6 ----
+ Source/JavaScriptCore/runtime/JSCast.h        |  2 +-
+ Source/JavaScriptCore/runtime/JSCell.cpp      |  2 --
+ Source/JavaScriptCore/runtime/JSCell.h        |  2 --
+ Source/JavaScriptCore/runtime/JSCellInlines.h | 30 +++++++++----------
+ Source/JavaScriptCore/runtime/OptionsList.h   | 16 +++++-----
+ Source/JavaScriptCore/runtime/VM.h            |  2 +-
+ Source/WTF/wtf/PlatformEnable.h               |  4 ---
+ 13 files changed, 40 insertions(+), 74 deletions(-)
+
+diff --git a/Source/JavaScriptCore/heap/MarkedBlock.cpp b/Source/JavaScriptCore/heap/MarkedBlock.cpp
+index ee68dc760cdf5..548c08dfc79a7 100644
+--- a/Source/JavaScriptCore/heap/MarkedBlock.cpp
++++ b/Source/JavaScriptCore/heap/MarkedBlock.cpp
+@@ -318,8 +318,9 @@ void MarkedBlock::Handle::removeFromDirectory()
+ 
+ void MarkedBlock::Handle::didAddToDirectory(BlockDirectory* directory, unsigned index)
+ {
+-    ASSERT(m_index == std::numeric_limits<unsigned>::max());
+-    ASSERT(!m_directory);
++    RELEASE_ASSERT(m_index == std::numeric_limits<unsigned>::max());
++    RELEASE_ASSERT(WTF::opaque(!m_directory));
++    RELEASE_ASSERT(WTF::opaque(directory));
+     
+     RELEASE_ASSERT(directory->subspace()->alignedMemoryAllocator() == m_alignedMemoryAllocator);
+     
+@@ -348,21 +349,19 @@ void MarkedBlock::Handle::didAddToDirectory(BlockDirectory* directory, unsigned
+ 
+ void MarkedBlock::Handle::didRemoveFromDirectory()
+ {
+-    ASSERT(m_index != std::numeric_limits<unsigned>::max());
+-    ASSERT(m_directory);
++    RELEASE_ASSERT(m_index != std::numeric_limits<unsigned>::max());
++    RELEASE_ASSERT(m_directory);
+     
+     m_index = std::numeric_limits<unsigned>::max();
+     m_directory = nullptr;
+     blockFooter().m_subspace = nullptr;
+ }
+ 
+-#if ASSERT_ENABLED
+ void MarkedBlock::assertValidCell(VM& vm, HeapCell* cell) const
+ {
+     RELEASE_ASSERT(&vm == &this->vm());
+     RELEASE_ASSERT(const_cast<MarkedBlock*>(this)->handle().cellAlign(cell) == cell);
+ }
+-#endif // ASSERT_ENABLED
+ 
+ void MarkedBlock::Handle::dumpState(PrintStream& out)
+ {
+@@ -488,4 +487,3 @@ void printInternal(PrintStream& out, JSC::MarkedBlock::Handle::SweepMode mode)
+ }
+ 
+ } // namespace WTF
+-
+diff --git a/Source/JavaScriptCore/heap/MarkedBlock.h b/Source/JavaScriptCore/heap/MarkedBlock.h
+index 8354bb1001914..637f1dfce1b8d 100644
+--- a/Source/JavaScriptCore/heap/MarkedBlock.h
++++ b/Source/JavaScriptCore/heap/MarkedBlock.h
+@@ -354,11 +354,7 @@ class MarkedBlock {
+ 
+     bool hasAnyMarked() const;
+     void noteMarked();
+-#if ASSERT_ENABLED
+     void assertValidCell(VM&, HeapCell*) const;
+-#else
+-    void assertValidCell(VM&, HeapCell*) const { }
+-#endif
+         
+     WeakSet& weakSet();
+ 
+diff --git a/Source/JavaScriptCore/heap/PreciseAllocation.cpp b/Source/JavaScriptCore/heap/PreciseAllocation.cpp
+index 836e7da64a98c..7a447b2a89b68 100644
+--- a/Source/JavaScriptCore/heap/PreciseAllocation.cpp
++++ b/Source/JavaScriptCore/heap/PreciseAllocation.cpp
+@@ -253,14 +253,11 @@ void PreciseAllocation::dump(PrintStream& out) const
+     out.print(RawPointer(this), ":(cell at ", RawPointer(cell()), " with size ", m_cellSize, " and attributes ", m_attributes, ")");
+ }
+ 
+-#if ASSERT_ENABLED
+ void PreciseAllocation::assertValidCell(VM& vm, HeapCell* cell) const
+ {
+-    ASSERT(&vm == &this->vm());
+-    ASSERT(cell == this->cell());
+-    ASSERT(m_hasValidCell);
++    RELEASE_ASSERT(&vm == &this->vm());
++    RELEASE_ASSERT(cell == this->cell());
++    RELEASE_ASSERT(m_hasValidCell);
+ }
+-#endif
+ 
+ } // namespace JSC
+-
+diff --git a/Source/JavaScriptCore/heap/PreciseAllocation.h b/Source/JavaScriptCore/heap/PreciseAllocation.h
+index e79a27bb3f242..a1ddd9c36a8a8 100644
+--- a/Source/JavaScriptCore/heap/PreciseAllocation.h
++++ b/Source/JavaScriptCore/heap/PreciseAllocation.h
+@@ -139,11 +139,7 @@ class PreciseAllocation : public PackedRawSentinelNode<PreciseAllocation> {
+     
+     void noteMarked() { }
+     
+-#if ASSERT_ENABLED
+     void assertValidCell(VM&, HeapCell*) const;
+-#else
+-    void assertValidCell(VM&, HeapCell*) const { }
+-#endif
+     
+     void sweep();
+     
+@@ -182,4 +178,3 @@ inline void* PreciseAllocation::basePointer() const
+ }
+ 
+ } // namespace JSC
+-
+diff --git a/Source/JavaScriptCore/heap/SlotVisitor.cpp b/Source/JavaScriptCore/heap/SlotVisitor.cpp
+index 3eeab7056de6c..592a29a84d34c 100644
+--- a/Source/JavaScriptCore/heap/SlotVisitor.cpp
++++ b/Source/JavaScriptCore/heap/SlotVisitor.cpp
+@@ -78,9 +78,7 @@ static void validate(JSCell* cell)
+ SlotVisitor::SlotVisitor(Heap& heap, CString codeName)
+     : Base(heap, codeName, heap.m_opaqueRoots)
+     , m_markingVersion(MarkedSpace::initialVersion)
+-#if ASSERT_ENABLED
+     , m_isCheckingForDefaultMarkViolation(false)
+-#endif
+ {
+ }
+ 
+@@ -139,7 +137,7 @@ void SlotVisitor::appendJSCellOrAuxiliary(HeapCell* heapCell)
+     if (!heapCell)
+         return;
+     
+-    ASSERT(!m_isCheckingForDefaultMarkViolation);
++    RELEASE_ASSERT(!m_isCheckingForDefaultMarkViolation);
+     
+     auto validateCell = [&] (JSCell* jsCell) {
+         StructureID structureID = jsCell->structureID();
+@@ -235,7 +233,7 @@ void SlotVisitor::appendHiddenSlow(JSCell* cell, Dependency dependency)
+ 
+ ALWAYS_INLINE void SlotVisitor::appendHiddenSlowImpl(JSCell* cell, Dependency dependency)
+ {
+-    ASSERT(!m_isCheckingForDefaultMarkViolation);
++    RELEASE_ASSERT(!m_isCheckingForDefaultMarkViolation);
+ 
+ #if ENABLE(GC_VALIDATION)
+     validate(cell);
+@@ -274,14 +272,14 @@ void SlotVisitor::appendToMarkStack(JSCell* cell)
+ template<typename ContainerType>
+ ALWAYS_INLINE void SlotVisitor::appendToMarkStack(ContainerType& container, JSCell* cell)
+ {
+-    ASSERT(m_heap.isMarked(cell));
+-#if CPU(X86_64)
++    RELEASE_ASSERT(m_heap.isMarked(cell));
++
+     if (UNLIKELY(Options::dumpZappedCellCrashData())) {
+         if (UNLIKELY(cell->isZapped()))
+             reportZappedCellAndCrash(m_heap, cell);
+     }
+-#endif
+-    ASSERT(!cell->isZapped());
++
++    RELEASE_ASSERT(!cell->isZapped());
+ 
+     container.noteMarked();
+     
+@@ -295,7 +293,7 @@ void SlotVisitor::markAuxiliary(const void* base)
+ {
+     HeapCell* cell = bitwise_cast<HeapCell*>(base);
+     
+-    ASSERT(cell->heap() == heap());
++    RELEASE_ASSERT(cell->heap() == heap());
+     
+     if (Heap::testAndSetMarked(m_markingVersion, cell))
+         return;
+@@ -344,7 +342,7 @@ class SetCurrentCellScope {
+ 
+ ALWAYS_INLINE void SlotVisitor::visitChildren(const JSCell* cell)
+ {
+-    ASSERT(m_heap.isMarked(cell));
++    RELEASE_ASSERT(m_heap.isMarked(cell));
+     
+     SetCurrentCellScope currentCellScope(*this, cell);
+     
+@@ -380,7 +378,6 @@ ALWAYS_INLINE void SlotVisitor::visitChildren(const JSCell* cell)
+     default:
+         // FIXME: This could be so much better.
+         // https://bugs.webkit.org/show_bug.cgi?id=162462
+-#if CPU(X86_64)
+         if (UNLIKELY(Options::dumpZappedCellCrashData())) {
+             Structure* structure = cell->structure();
+             if (LIKELY(structure)) {
+@@ -390,7 +387,6 @@ ALWAYS_INLINE void SlotVisitor::visitChildren(const JSCell* cell)
+             }
+             reportZappedCellAndCrash(m_heap, const_cast<JSCell*>(cell));
+         }
+-#endif
+         cell->methodTable()->visitChildren(const_cast<JSCell*>(cell), *this);
+         break;
+     }
+diff --git a/Source/JavaScriptCore/heap/SlotVisitor.h b/Source/JavaScriptCore/heap/SlotVisitor.h
+index ab347410d4250..2f81ba8fd9493 100644
+--- a/Source/JavaScriptCore/heap/SlotVisitor.h
++++ b/Source/JavaScriptCore/heap/SlotVisitor.h
+@@ -64,7 +64,6 @@ class SlotVisitor final : public AbstractSlotVisitor {
+ 
+     class DefaultMarkingViolationAssertionScope {
+     public:
+-#if ASSERT_ENABLED
+         DefaultMarkingViolationAssertionScope(SlotVisitor& visitor)
+             : m_visitor(visitor)
+         {
+@@ -80,9 +79,6 @@ class SlotVisitor final : public AbstractSlotVisitor {
+     private:
+         SlotVisitor& m_visitor;
+         bool m_wasCheckingForDefaultMarkViolation;
+-#else
+-        DefaultMarkingViolationAssertionScope(SlotVisitor&) { }
+-#endif
+     };
+ 
+     SlotVisitor(Heap&, CString codeName);
+@@ -238,9 +234,7 @@ class SlotVisitor final : public AbstractSlotVisitor {
+     
+     // Put padding here to mitigate false sharing between multiple SlotVisitors.
+     char padding[64];
+-#if ASSERT_ENABLED
+     bool m_isCheckingForDefaultMarkViolation { false };
+-#endif
+ };
+ 
+ class ParallelModeEnabler {
+diff --git a/Source/JavaScriptCore/runtime/JSCast.h b/Source/JavaScriptCore/runtime/JSCast.h
+index c64028917e1ca..626604792f486 100644
+--- a/Source/JavaScriptCore/runtime/JSCast.h
++++ b/Source/JavaScriptCore/runtime/JSCast.h
+@@ -33,7 +33,7 @@ template<typename To, typename From>
+ inline To jsCast(From* from)
+ {
+     static_assert(std::is_base_of<JSCell, typename std::remove_pointer<To>::type>::value && std::is_base_of<JSCell, typename std::remove_pointer<From>::type>::value, "JS casting expects that the types you are casting to/from are subclasses of JSCell");
+-#if (ASSERT_ENABLED || ENABLE(SECURITY_ASSERTIONS)) && CPU(X86_64)
++#if (ASSERT_ENABLED || ENABLE(SECURITY_ASSERTIONS))
+     if (from && !from->JSCell::inherits(std::remove_pointer<To>::type::info()))
+         reportZappedCellAndCrash(*from->JSCell::heap(), from);
+ #else
+diff --git a/Source/JavaScriptCore/runtime/JSCell.cpp b/Source/JavaScriptCore/runtime/JSCell.cpp
+index 0b1307c3e1cba..b97985e3a72b6 100644
+--- a/Source/JavaScriptCore/runtime/JSCell.cpp
++++ b/Source/JavaScriptCore/runtime/JSCell.cpp
+@@ -259,7 +259,6 @@ void JSCellLock::unlockSlow()
+     IndexingTypeLockAlgorithm::unlockSlow(*lock);
+ }
+ 
+-#if CPU(X86_64)
+ NEVER_INLINE NO_RETURN_DUE_TO_CRASH NOT_TAIL_CALLED void reportZappedCellAndCrash(Heap& heap, const JSCell* cell)
+ {
+     MarkedBlock::Handle* foundBlockHandle = nullptr;
+@@ -336,6 +335,5 @@ NEVER_INLINE NO_RETURN_DUE_TO_CRASH NOT_TAIL_CALLED void reportZappedCellAndCras
+ 
+     CRASH_WITH_INFO(cellAddress, headerWord, zapReasonAndMore, subspaceHash, cellSize, foundBlock, variousState);
+ }
+-#endif // CPU(X86_64)
+ 
+ } // namespace JSC
+diff --git a/Source/JavaScriptCore/runtime/JSCell.h b/Source/JavaScriptCore/runtime/JSCell.h
+index 146c614feb58f..58e5df4edef53 100644
+--- a/Source/JavaScriptCore/runtime/JSCell.h
++++ b/Source/JavaScriptCore/runtime/JSCell.h
+@@ -297,8 +297,6 @@ inline auto subspaceForConcurrently(VM& vm)
+     return Type::template subspaceFor<Type, SubspaceAccess::Concurrently>(vm);
+ }
+ 
+-#if CPU(X86_64)
+ JS_EXPORT_PRIVATE NEVER_INLINE NO_RETURN_DUE_TO_CRASH NOT_TAIL_CALLED void reportZappedCellAndCrash(Heap&, const JSCell*);
+-#endif
+ 
+ } // namespace JSC
+diff --git a/Source/JavaScriptCore/runtime/JSCellInlines.h b/Source/JavaScriptCore/runtime/JSCellInlines.h
+index c71ed629cfcf7..e8ba2c812fb13 100644
+--- a/Source/JavaScriptCore/runtime/JSCellInlines.h
++++ b/Source/JavaScriptCore/runtime/JSCellInlines.h
+@@ -52,7 +52,7 @@ namespace JSC {
+ inline JSCell::JSCell(CreatingEarlyCellTag)
+     : m_cellState(CellState::DefinitelyWhite)
+ {
+-    ASSERT(!isCompilationThread());
++    RELEASE_ASSERT(!isCompilationThread());
+ }
+ 
+ inline JSCell::JSCell(VM&, Structure* structure)
+@@ -62,7 +62,7 @@ inline JSCell::JSCell(VM&, Structure* structure)
+     , m_flags(structure->typeInfo().inlineTypeFlags())
+     , m_cellState(CellState::DefinitelyWhite)
+ {
+-    ASSERT(!isCompilationThread());
++    RELEASE_ASSERT(!isCompilationThread());
+ 
+     // Note that in the constructor initializer list above, we are only using values
+     // inside structure but not necessarily the structure pointer itself. All these
+@@ -84,18 +84,18 @@ inline void JSCell::finishCreation(VM& vm)
+     // to make sure that none of our stores sink below here.
+     vm.mutatorFence();
+ #if ENABLE(GC_VALIDATION)
+-    ASSERT(vm.isInitializingObject());
++    RELEASE_ASSERT(vm.isInitializingObject());
+     vm.setInitializingObjectClass(0);
+ #else
+     UNUSED_PARAM(vm);
+ #endif
+-    ASSERT(m_structureID);
++    RELEASE_ASSERT(m_structureID);
+ }
+ 
+ inline void JSCell::finishCreation(VM& vm, Structure* structure, CreatingEarlyCellTag)
+ {
+ #if ENABLE(GC_VALIDATION)
+-    ASSERT(vm.isInitializingObject());
++    RELEASE_ASSERT(vm.isInitializingObject());
+     vm.setInitializingObjectClass(0);
+     if (structure) {
+ #endif
+@@ -109,7 +109,7 @@ inline void JSCell::finishCreation(VM& vm, Structure* structure, CreatingEarlyCe
+     UNUSED_PARAM(vm);
+ #endif
+     // Very first set of allocations won't have a real structure.
+-    ASSERT(m_structureID || !vm.structureStructure);
++    RELEASE_ASSERT(m_structureID || !vm.structureStructure);
+ }
+ 
+ inline JSType JSCell::type() const
+@@ -170,15 +170,15 @@ inline Allocator allocatorForConcurrently(VM& vm, size_t allocationSize, Allocat
+ template<typename T, AllocationFailureMode failureMode>
+ ALWAYS_INLINE void* tryAllocateCellHelper(VM& vm, size_t size, GCDeferralContext* deferralContext)
+ {
+-    ASSERT(deferralContext || vm.heap.isDeferred() || !DisallowGC::isInEffectOnCurrentThread());
+-    ASSERT(size >= sizeof(T));
++    RELEASE_ASSERT(deferralContext || vm.heap.isDeferred() || !DisallowGC::isInEffectOnCurrentThread());
++    RELEASE_ASSERT(size >= sizeof(T));
+     JSCell* result = static_cast<JSCell*>(subspaceFor<T>(vm)->allocate(vm, size, deferralContext, failureMode));
+     if constexpr (failureMode == AllocationFailureMode::ReturnNull) {
+         if (!result)
+             return nullptr;
+     }
+ #if ENABLE(GC_VALIDATION)
+-    ASSERT(!vm.isInitializingObject());
++    RELEASE_ASSERT(!vm.isInitializingObject());
+     vm.setInitializingObjectClass(T::info());
+ #endif
+     result->clearStructure();
+@@ -298,8 +298,8 @@ inline bool JSCell::isAPIValueWrapper() const
+ 
+ ALWAYS_INLINE void JSCell::setStructure(VM& vm, Structure* structure)
+ {
+-    ASSERT(structure->classInfoForCells() == this->structure()->classInfoForCells());
+-    ASSERT(!this->structure()
++    RELEASE_ASSERT(structure->classInfoForCells() == this->structure()->classInfoForCells());
++    RELEASE_ASSERT(!this->structure()
+         || this->structure()->transitionWatchpointSetHasBeenInvalidated()
+         || structure->id().decode() == structure);
+     m_structureID = structure->id();
+@@ -307,7 +307,7 @@ ALWAYS_INLINE void JSCell::setStructure(VM& vm, Structure* structure)
+     m_type = structure->typeInfo().type();
+     IndexingType newIndexingType = structure->indexingModeIncludingHistory();
+     if (m_indexingTypeAndMisc != newIndexingType) {
+-        ASSERT(!(newIndexingType & ~AllArrayTypesAndHistory));
++        RELEASE_ASSERT(!(newIndexingType & ~AllArrayTypesAndHistory));
+         for (;;) {
+             IndexingType oldValue = m_indexingTypeAndMisc;
+             IndexingType newValue = (oldValue & ~AllArrayTypesAndHistory) | structure->indexingModeIncludingHistory();
+@@ -321,10 +321,8 @@ ALWAYS_INLINE void JSCell::setStructure(VM& vm, Structure* structure)
+ inline const MethodTable* JSCell::methodTable() const
+ {
+     Structure* structure = this->structure();
+-#if ASSERT_ENABLED
+     if (Structure* rootStructure = structure->structure())
+-        ASSERT(rootStructure == rootStructure->structure());
+-#endif
++        RELEASE_ASSERT(rootStructure == rootStructure->structure());
+     return &structure->classInfoForCells()->methodTable;
+ }
+ 
+@@ -362,7 +360,7 @@ ALWAYS_INLINE const ClassInfo* JSCell::classInfo() const
+     // destructing the object. The GC thread or JIT threads, unlike the mutator thread, are able to access classInfo
+     // independent of whether the mutator thread is sweeping or not. Hence, we also check for !currentThreadIsHoldingAPILock()
+     // to allow the GC thread or JIT threads to pass this assertion.
+-    ASSERT(vm().heap.mutatorState() != MutatorState::Sweeping || !vm().currentThreadIsHoldingAPILock());
++    RELEASE_ASSERT(vm().heap.mutatorState() != MutatorState::Sweeping || !vm().currentThreadIsHoldingAPILock());
+     return structure()->classInfoForCells();
+ }
+ 
+diff --git a/Source/JavaScriptCore/runtime/OptionsList.h b/Source/JavaScriptCore/runtime/OptionsList.h
+index 88f60336184b9..052e271171196 100644
+--- a/Source/JavaScriptCore/runtime/OptionsList.h
++++ b/Source/JavaScriptCore/runtime/OptionsList.h
+@@ -185,8 +185,8 @@ bool canUseWebAssemblyFastMemory();
+     v(Bool, alwaysComputeHash, false, Normal, nullptr) \
+     v(Bool, testTheFTL, false, Normal, nullptr) \
+     v(Bool, verboseSanitizeStack, false, Normal, nullptr) \
+-    v(Bool, useGenerationalGC, true, Normal, nullptr) \
+-    v(Bool, useConcurrentGC, true, Normal, nullptr) \
++    v(Bool, useGenerationalGC, false, Normal, nullptr) \
++    v(Bool, useConcurrentGC, false, Normal, nullptr) \
+     v(Bool, collectContinuously, false, Normal, nullptr) \
+     v(Double, collectContinuouslyPeriodMS, 1, Normal, nullptr) \
+     v(Bool, forceFencedBarrier, false, Normal, nullptr) \
+@@ -213,14 +213,14 @@ bool canUseWebAssemblyFastMemory();
+     v(Double, gcIncrementBytes, 10000, Normal, nullptr) \
+     v(Double, gcIncrementMaxBytes, 100000, Normal, nullptr) \
+     v(Double, gcIncrementScale, 0, Normal, nullptr) \
+-    v(Bool, scribbleFreeCells, false, Normal, nullptr) \
++    v(Bool, scribbleFreeCells, true, Normal, nullptr) \
+     v(Double, sizeClassProgression, 1.4, Normal, nullptr) \
+     v(Unsigned, preciseAllocationCutoff, 100000, Normal, nullptr) \
+     v(Bool, dumpSizeClasses, false, Normal, nullptr) \
+     v(Bool, useBumpAllocator, true, Normal, nullptr) \
+-    v(Bool, stealEmptyBlocksFromOtherAllocators, true, Normal, nullptr) \
++    v(Bool, stealEmptyBlocksFromOtherAllocators, false, Normal, nullptr) \
+     v(Bool, eagerlyUpdateTopCallFrame, false, Normal, nullptr) \
+-    v(Bool, dumpZappedCellCrashData, false, Normal, nullptr) \
++    v(Bool, dumpZappedCellCrashData, true, Normal, nullptr) \
+     \
+     v(Bool, useOSREntryToDFG, true, Normal, nullptr) \
+     v(Bool, useOSREntryToFTL, true, Normal, nullptr) \
+@@ -254,7 +254,7 @@ bool canUseWebAssemblyFastMemory();
+     v(Bool, logExecutableAllocation, false, Normal, nullptr) \
+     v(Unsigned, maxDFGNodesInBasicBlockForPreciseAnalysis, 20000, Normal, "Disable precise but costly analysis and give conservative results if the number of DFG nodes in a block exceeds this threshold") \
+     \
+-    v(Bool, useConcurrentJIT, true, Normal, "allows the DFG / FTL compilation in threads other than the executing JS thread") \
++    v(Bool, useConcurrentJIT, false, Normal, "allows the DFG / FTL compilation in threads other than the executing JS thread") \
+     v(Unsigned, numberOfWorklistThreads, computeNumberOfWorkerThreads(3, 2), Normal, nullptr) \
+     v(Unsigned, numberOfDFGCompilerThreads, computeNumberOfWorkerThreads(3, 2) - 1, Normal, nullptr) \
+     v(Unsigned, numberOfFTLCompilerThreads, computeNumberOfWorkerThreads(MAXIMUM_NUMBER_OF_FTL_COMPILER_THREADS, 2) - 1, Normal, nullptr) \
+@@ -349,9 +349,9 @@ bool canUseWebAssemblyFastMemory();
+     v(Bool, forceWeakRandomSeed, false, Normal, nullptr) \
+     v(Unsigned, forcedWeakRandomSeed, 0, Normal, nullptr) \
+     \
+-    v(Bool, useZombieMode, false, Normal, "debugging option to scribble over dead objects with 0xbadbeef0") \
++    v(Bool, useZombieMode, true, Normal, "debugging option to scribble over dead objects with 0xbadbeef0") \
+     v(Bool, useImmortalObjects, false, Normal, "debugging option to keep all objects alive forever") \
+-    v(Bool, sweepSynchronously, false, Normal, "debugging option to sweep all dead objects synchronously at GC end before resuming mutator") \
++    v(Bool, sweepSynchronously, true, Normal, "debugging option to sweep all dead objects synchronously at GC end before resuming mutator") \
+     v(Unsigned, maxSingleAllocationSize, 0, Configurable, "debugging option to limit individual allocations to a max size (0 = limit not set, N = limit size in bytes)") \
+     \
+     v(GCLogLevel, logGC, GCLogging::None, Normal, "debugging option to log GC activity (0 = None, 1 = Basic, 2 = Verbose)") \
+diff --git a/Source/JavaScriptCore/runtime/VM.h b/Source/JavaScriptCore/runtime/VM.h
+index 4706048ca9d86..2020a67a25c86 100644
+--- a/Source/JavaScriptCore/runtime/VM.h
++++ b/Source/JavaScriptCore/runtime/VM.h
+@@ -144,7 +144,7 @@ class Watchdog;
+ class WatchpointSet;
+ class Waiter;
+ 
+-#if ENABLE(DFG_JIT) && ASSERT_ENABLED
++#if ENABLE(DFG_JIT)
+ #define ENABLE_DFG_DOES_GC_VALIDATION 1
+ #else
+ #define ENABLE_DFG_DOES_GC_VALIDATION 0
+diff --git a/Source/WTF/wtf/PlatformEnable.h b/Source/WTF/wtf/PlatformEnable.h
+index 67f5b4bdc72a6..81eca174e556f 100644
+--- a/Source/WTF/wtf/PlatformEnable.h
++++ b/Source/WTF/wtf/PlatformEnable.h
+@@ -447,10 +447,8 @@
+ 
+ #if !defined(ENABLE_SECURITY_ASSERTIONS)
+ /* Enable security assertions on all ASAN builds and debug builds. */
+-#if ASAN_ENABLED || !defined(NDEBUG)
+ #define ENABLE_SECURITY_ASSERTIONS 1
+ #endif
+-#endif
+ 
+ #if !defined(ENABLE_SEPARATED_WX_HEAP)
+ #define ENABLE_SEPARATED_WX_HEAP 0
+@@ -833,9 +831,7 @@
+ #define ENABLE_THREADING_GENERIC 1
+ #endif
+ 
+-#if !defined(ENABLE_GC_VALIDATION) && !defined(NDEBUG)
+ #define ENABLE_GC_VALIDATION 1
+-#endif
+ 
+ #if OS(DARWIN) && ENABLE(JIT) && USE(APPLE_INTERNAL_SDK) && CPU(ARM64E) && HAVE(JIT_CAGE) && !PLATFORM(MAC)
+ #define ENABLE_JIT_CAGE 1
+
+

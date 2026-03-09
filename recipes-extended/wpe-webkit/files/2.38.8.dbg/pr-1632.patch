@@ -1,0 +1,1941 @@
+From f187ecc578804470746ce9cba522da665936f703 Mon Sep 17 00:00:00 2001
+From: Mark Lam <mark.lam@apple.com>
+Date: Tue, 16 Aug 2022 13:41:46 -0700
+Subject: [PATCH 1/5] Make the MarkedBlock Footer a Header instead.
+ https://bugs.webkit.org/show_bug.cgi?id=243932 <rdar://problem/98709256>
+
+Reviewed by Yusuke Suzuki.
+
+This opens up an opportunity for potentially making PreciseAllocations polymorphic with MarkedBlocks.
+
+The main difference is that instead of computing an m_endAtom, we now compute a m_startAtom.
+m_startAtom is chosen so that increments of m_atomsPerCell added to m_startAtom will always end
+up at the end of the MarkedBlock (as denoted by endAtom).  This simplifies the iteration of cells
+in the MarkedBlock.
+
+* Source/JavaScriptCore/heap/MarkedBlock.cpp:
+(JSC::MarkedBlock::MarkedBlock):
+(JSC::MarkedBlock::~MarkedBlock):
+(JSC::MarkedBlock::Header::Header):
+(JSC::MarkedBlock::Header::~Header):
+(JSC::MarkedBlock::Handle::stopAllocating):
+(JSC::MarkedBlock::Handle::lastChanceToFinalize):
+(JSC::MarkedBlock::Handle::resumeAllocating):
+(JSC::MarkedBlock::aboutToMarkSlow):
+(JSC::MarkedBlock::resetAllocated):
+(JSC::MarkedBlock::resetMarks):
+(JSC::MarkedBlock::assertMarksNotStale):
+(JSC::MarkedBlock::Handle::didConsumeFreeList):
+(JSC::MarkedBlock::markCount):
+(JSC::MarkedBlock::clearHasAnyMarked):
+(JSC::MarkedBlock::Handle::didAddToDirectory):
+(JSC::MarkedBlock::Handle::didRemoveFromDirectory):
+(JSC::MarkedBlock::Handle::sweep):
+(JSC::MarkedBlock::Footer::Footer): Deleted.
+(JSC::MarkedBlock::Footer::~Footer): Deleted.
+* Source/JavaScriptCore/heap/MarkedBlock.h:
+(JSC::MarkedBlock::Handle::start const):
+(JSC::MarkedBlock::Handle::end const):
+(JSC::MarkedBlock::Header::offsetOfVM):
+(JSC::MarkedBlock::newlyAllocatedVersion const):
+(JSC::MarkedBlock::markingVersion const):
+(JSC::MarkedBlock::lock):
+(JSC::MarkedBlock::subspace const):
+(JSC::MarkedBlock::populatePage const):
+(JSC::MarkedBlock::header):
+(JSC::MarkedBlock::header const):
+(JSC::MarkedBlock::handle):
+(JSC::MarkedBlock::Handle::blockHeader):
+(JSC::MarkedBlock::Handle::cellAlign):
+(JSC::MarkedBlock::vm const):
+(JSC::MarkedBlock::atomNumber):
+(JSC::MarkedBlock::areMarksStale):
+(JSC::MarkedBlock::aboutToMark):
+(JSC::MarkedBlock::isMarkedRaw):
+(JSC::MarkedBlock::isMarked):
+(JSC::MarkedBlock::testAndSetMarked):
+(JSC::MarkedBlock::marks const):
+(JSC::MarkedBlock::isNewlyAllocated):
+(JSC::MarkedBlock::setNewlyAllocated):
+(JSC::MarkedBlock::clearNewlyAllocated):
+(JSC::MarkedBlock::newlyAllocated const):
+(JSC::MarkedBlock::isAtom):
+(JSC::MarkedBlock::Handle::forEachCell):
+(JSC::MarkedBlock::hasAnyMarked const):
+(JSC::MarkedBlock::noteMarked):
+(JSC::MarkedBlock::setVerifierMemo):
+(JSC::MarkedBlock::verifierMemo const):
+(JSC::MarkedBlock::Footer::offsetOfVM): Deleted.
+(JSC::MarkedBlock::footer): Deleted.
+(JSC::MarkedBlock::footer const): Deleted.
+(JSC::MarkedBlock::Handle::blockFooter): Deleted.
+* Source/JavaScriptCore/heap/MarkedBlockInlines.h:
+(JSC::MarkedBlock::isNewlyAllocatedStale const):
+(JSC::MarkedBlock::marksConveyLivenessDuringMarking):
+(JSC::MarkedBlock::Handle::isLive):
+(JSC::MarkedBlock::Handle::specializedSweep):
+(JSC::MarkedBlock::Handle::forEachLiveCell):
+(JSC::MarkedBlock::Handle::forEachDeadCell):
+(JSC::MarkedBlock::Handle::forEachMarkedCell):
+* Source/JavaScriptCore/heap/MarkedSpace.cpp:
+* Source/JavaScriptCore/llint/LLIntThunks.cpp:
+(JSC::LLInt::getHostCallReturnValueThunk):
+* Source/JavaScriptCore/llint/LowLevelInterpreter.asm:
+* Source/JavaScriptCore/tools/Integrity.h:
+(JSC::Integrity::audit):
+* Source/JavaScriptCore/wasm/WasmIRGeneratorHelpers.h:
+(JSC::Wasm::emitRethrowImpl):
+(JSC::Wasm::emitThrowImpl):
+(JSC::Wasm::emitCatchPrologueShared):
+
+Canonical link: https://commits.webkit.org/253482@main
+---
+ Source/JavaScriptCore/heap/BlockDirectory.cpp |  10 ++
+ Source/JavaScriptCore/heap/BlockDirectory.h   |   3 +-
+ Source/JavaScriptCore/heap/MarkedBlock.cpp    |  75 ++++-----
+ Source/JavaScriptCore/heap/MarkedBlock.h      | 142 ++++++++++--------
+ .../JavaScriptCore/heap/MarkedBlockInlines.h  |  67 ++++-----
+ Source/JavaScriptCore/heap/MarkedSpace.cpp    |   4 +-
+ Source/JavaScriptCore/llint/LLIntThunks.cpp   |   2 +-
+ .../llint/LowLevelInterpreter.asm             |   4 +-
+ Source/JavaScriptCore/tools/Integrity.h       |   2 +-
+ .../wasm/WasmIRGeneratorHelpers.h             |   6 +-
+ 10 files changed, 174 insertions(+), 141 deletions(-)
+
+diff --git a/Source/JavaScriptCore/heap/BlockDirectory.cpp b/Source/JavaScriptCore/heap/BlockDirectory.cpp
+index f9df6f0cbf3c9..417fa3ad706e4 100644
+--- a/Source/JavaScriptCore/heap/BlockDirectory.cpp
++++ b/Source/JavaScriptCore/heap/BlockDirectory.cpp
+@@ -306,6 +306,16 @@ void BlockDirectory::shrink()
+         });
+ }
+ 
++MarkedBlock::Handle* BlockDirectory::findMarkedBlockHandleDebug(MarkedBlock* block)
++{
++    for (size_t index = 0; index < m_blocks.size(); ++index) {
++        MarkedBlock::Handle* handle = m_blocks[index];
++        if (&handle->block() == block)
++            return handle;
++    }
++    return nullptr;
++}
++
+ void BlockDirectory::assertNoUnswept()
+ {
+     if (!ASSERT_ENABLED)
+diff --git a/Source/JavaScriptCore/heap/BlockDirectory.h b/Source/JavaScriptCore/heap/BlockDirectory.h
+index 88389ad13f156..498cb94280b7b 100644
+--- a/Source/JavaScriptCore/heap/BlockDirectory.h
++++ b/Source/JavaScriptCore/heap/BlockDirectory.h
+@@ -130,8 +130,9 @@ class BlockDirectory {
+     void setNextDirectoryInAlignedMemoryAllocator(BlockDirectory* directory) { m_nextDirectoryInAlignedMemoryAllocator = directory; }
+     
+     MarkedBlock::Handle* findEmptyBlockToSteal();
+-    
++
+     MarkedBlock::Handle* findBlockToSweep();
++    MarkedBlock::Handle* findMarkedBlockHandleDebug(MarkedBlock*);
+     
+     Subspace* subspace() const { return m_subspace; }
+     MarkedSpace& markedSpace() const;
+diff --git a/Source/JavaScriptCore/heap/MarkedBlock.cpp b/Source/JavaScriptCore/heap/MarkedBlock.cpp
+index ee68dc760cdf5..5f0c9eb4c2445 100644
+--- a/Source/JavaScriptCore/heap/MarkedBlock.cpp
++++ b/Source/JavaScriptCore/heap/MarkedBlock.cpp
+@@ -83,17 +83,17 @@ MarkedBlock::Handle::~Handle()
+ 
+ MarkedBlock::MarkedBlock(VM& vm, Handle& handle)
+ {
+-    new (&footer()) Footer(vm, handle);
++    new (&header()) Header(vm, handle);
+     if (MarkedBlockInternal::verbose)
+         dataLog(RawPointer(this), ": Allocated.\n");
+ }
+ 
+ MarkedBlock::~MarkedBlock()
+ {
+-    footer().~Footer();
++    header().~Header();
+ }
+ 
+-MarkedBlock::Footer::Footer(VM& vm, Handle& handle)
++MarkedBlock::Header::Header(VM& vm, Handle& handle)
+     : m_handle(handle)
+     , m_vm(&vm)
+     , m_markingVersion(MarkedSpace::nullVersion)
+@@ -101,7 +101,7 @@ MarkedBlock::Footer::Footer(VM& vm, Handle& handle)
+ {
+ }
+ 
+-MarkedBlock::Footer::~Footer()
++MarkedBlock::Header::~Header()
+ {
+ }
+ 
+@@ -113,7 +113,7 @@ void MarkedBlock::Handle::unsweepWithNoNewlyAllocated()
+ 
+ void MarkedBlock::Handle::stopAllocating(const FreeList& freeList)
+ {
+-    Locker locker { blockFooter().m_lock };
++    Locker locker { blockHeader().m_lock };
+     
+     if (MarkedBlockInternal::verbose)
+         dataLog(RawPointer(this), ": MarkedBlock::Handle::stopAllocating!\n");
+@@ -135,8 +135,8 @@ void MarkedBlock::Handle::stopAllocating(const FreeList& freeList)
+     // allocated from our free list are not currently marked, so we need another
+     // way to tell what's live vs dead. 
+     
+-    blockFooter().m_newlyAllocated.clearAll();
+-    blockFooter().m_newlyAllocatedVersion = heap()->objectSpace().newlyAllocatedVersion();
++    blockHeader().m_newlyAllocated.clearAll();
++    blockHeader().m_newlyAllocatedVersion = heap()->objectSpace().newlyAllocatedVersion();
+ 
+     forEachCell(
+         [&] (size_t, HeapCell* cell, HeapCell::Kind) -> IterationStatus {
+@@ -160,19 +160,19 @@ void MarkedBlock::Handle::lastChanceToFinalize()
+ {
+     directory()->setIsAllocated(NoLockingNecessary, this, false);
+     directory()->setIsDestructible(NoLockingNecessary, this, true);
+-    blockFooter().m_marks.clearAll();
++    blockHeader().m_marks.clearAll();
+     block().clearHasAnyMarked();
+-    blockFooter().m_markingVersion = heap()->objectSpace().markingVersion();
++    blockHeader().m_markingVersion = heap()->objectSpace().markingVersion();
+     m_weakSet.lastChanceToFinalize();
+-    blockFooter().m_newlyAllocated.clearAll();
+-    blockFooter().m_newlyAllocatedVersion = heap()->objectSpace().newlyAllocatedVersion();
++    blockHeader().m_newlyAllocated.clearAll();
++    blockHeader().m_newlyAllocatedVersion = heap()->objectSpace().newlyAllocatedVersion();
+     sweep(nullptr);
+ }
+ 
+ void MarkedBlock::Handle::resumeAllocating(FreeList& freeList)
+ {
+     {
+-        Locker locker { blockFooter().m_lock };
++        Locker locker { blockHeader().m_lock };
+         
+         if (MarkedBlockInternal::verbose)
+             dataLog(RawPointer(this), ": MarkedBlock::Handle::resumeAllocating!\n");
+@@ -196,7 +196,7 @@ void MarkedBlock::Handle::resumeAllocating(FreeList& freeList)
+ void MarkedBlock::aboutToMarkSlow(HeapVersion markingVersion)
+ {
+     ASSERT(vm().heap.objectSpace().isMarking());
+-    Locker locker { footer().m_lock };
++    Locker locker { header().m_lock };
+     
+     if (!areMarksStale(markingVersion))
+         return;
+@@ -213,12 +213,12 @@ void MarkedBlock::aboutToMarkSlow(HeapVersion markingVersion)
+         // date version! If it does, then we want to leave the newlyAllocated alone, since that
+         // means that we had allocated in this previously empty block but did not fill it up, so
+         // we created a newlyAllocated.
+-        footer().m_marks.clearAll();
++        header().m_marks.clearAll();
+     } else {
+         if (MarkedBlockInternal::verbose)
+             dataLog(RawPointer(this), ": Doing things.\n");
+         HeapVersion newlyAllocatedVersion = space()->newlyAllocatedVersion();
+-        if (footer().m_newlyAllocatedVersion == newlyAllocatedVersion) {
++        if (header().m_newlyAllocatedVersion == newlyAllocatedVersion) {
+             // When do we get here? The block could not have been filled up. The newlyAllocated bits would
+             // have had to be created since the end of the last collection. The only things that create
+             // them are aboutToMarkSlow, lastChanceToFinalize, and stopAllocating. If it had been
+@@ -226,16 +226,16 @@ void MarkedBlock::aboutToMarkSlow(HeapVersion markingVersion)
+             // cannot be lastChanceToFinalize. So it must be stopAllocating. That means that we just
+             // computed the newlyAllocated bits just before the start of an increment. When we are in that
+             // mode, it seems as if newlyAllocated should subsume marks.
+-            ASSERT(footer().m_newlyAllocated.subsumes(footer().m_marks));
+-            footer().m_marks.clearAll();
++            ASSERT(header().m_newlyAllocated.subsumes(header().m_marks));
++            header().m_marks.clearAll();
+         } else {
+-            footer().m_newlyAllocated.setAndClear(footer().m_marks);
+-            footer().m_newlyAllocatedVersion = newlyAllocatedVersion;
++            header().m_newlyAllocated.setAndClear(header().m_marks);
++            header().m_newlyAllocatedVersion = newlyAllocatedVersion;
+         }
+     }
+     clearHasAnyMarked();
+     WTF::storeStoreFence();
+-    footer().m_markingVersion = markingVersion;
++    header().m_markingVersion = markingVersion;
+     
+     // This means we're the first ones to mark any object in this block.
+     directory->setIsMarkingNotEmpty(Locker { directory->bitvectorLock() }, &handle(), true);
+@@ -243,8 +243,8 @@ void MarkedBlock::aboutToMarkSlow(HeapVersion markingVersion)
+ 
+ void MarkedBlock::resetAllocated()
+ {
+-    footer().m_newlyAllocated.clearAll();
+-    footer().m_newlyAllocatedVersion = MarkedSpace::nullVersion;
++    header().m_newlyAllocated.clearAll();
++    header().m_newlyAllocatedVersion = MarkedSpace::nullVersion;
+ }
+ 
+ void MarkedBlock::resetMarks()
+@@ -256,14 +256,14 @@ void MarkedBlock::resetMarks()
+     // version is null, aboutToMarkSlow() will assume that the marks were not stale as of before
+     // beginMarking(). Hence the need to whip the marks into shape.
+     if (areMarksStale())
+-        footer().m_marks.clearAll();
+-    footer().m_markingVersion = MarkedSpace::nullVersion;
++        header().m_marks.clearAll();
++    header().m_markingVersion = MarkedSpace::nullVersion;
+ }
+ 
+ #if ASSERT_ENABLED
+ void MarkedBlock::assertMarksNotStale()
+ {
+-    ASSERT(footer().m_markingVersion == vm().heap.objectSpace().markingVersion());
++    ASSERT(header().m_markingVersion == vm().heap.objectSpace().markingVersion());
+ }
+ #endif // ASSERT_ENABLED
+ 
+@@ -284,7 +284,7 @@ bool MarkedBlock::isMarked(const void* p)
+ 
+ void MarkedBlock::Handle::didConsumeFreeList()
+ {
+-    Locker locker { blockFooter().m_lock };
++    Locker locker { blockHeader().m_lock };
+     if (MarkedBlockInternal::verbose)
+         dataLog(RawPointer(this), ": MarkedBlock::Handle::didConsumeFreeList!\n");
+     ASSERT(isFreeListed());
+@@ -294,12 +294,12 @@ void MarkedBlock::Handle::didConsumeFreeList()
+ 
+ size_t MarkedBlock::markCount()
+ {
+-    return areMarksStale() ? 0 : footer().m_marks.count();
++    return areMarksStale() ? 0 : header().m_marks.count();
+ }
+ 
+ void MarkedBlock::clearHasAnyMarked()
+ {
+-    footer().m_biasedMarkCount = footer().m_markCountBias;
++    header().m_biasedMarkCount = header().m_markCountBias;
+ }
+ 
+ void MarkedBlock::noteMarkedSlow()
+@@ -325,12 +325,19 @@ void MarkedBlock::Handle::didAddToDirectory(BlockDirectory* directory, unsigned
+     
+     m_index = index;
+     m_directory = directory;
+-    blockFooter().m_subspace = directory->subspace();
++    blockHeader().m_subspace = directory->subspace();
+     
+     size_t cellSize = directory->cellSize();
+     m_atomsPerCell = (cellSize + atomSize - 1) / atomSize;
+-    m_endAtom = endAtom - m_atomsPerCell + 1;
+-    
++
++    // Discount the payload atoms at the front so that m_startAtom can start on an atom such that
++    // m_atomsPerCell increments from m_startAtom will get us exactly to endAtom when we have filled
++    // up the payload region using bump allocation. This makes simplifies the computation of the
++    // termination condition for iteration later.
++    size_t numberOfUnallocatableAtoms = numberOfPayloadAtoms % m_atomsPerCell;
++    m_startAtom = firstPayloadRegionAtom + numberOfUnallocatableAtoms;
++    ASSERT(m_startAtom < firstPayloadRegionAtom + m_atomsPerCell);
++
+     m_attributes = directory->attributes();
+ 
+     if (!isJSCellKind(m_attributes.cellKind))
+@@ -343,7 +350,7 @@ void MarkedBlock::Handle::didAddToDirectory(BlockDirectory* directory, unsigned
+     RELEASE_ASSERT(markCountBias < 0);
+     
+     // This means we haven't marked anything yet.
+-    blockFooter().m_biasedMarkCount = blockFooter().m_markCountBias = static_cast<int16_t>(markCountBias);
++    blockHeader().m_biasedMarkCount = blockHeader().m_markCountBias = static_cast<int16_t>(markCountBias);
+ }
+ 
+ void MarkedBlock::Handle::didRemoveFromDirectory()
+@@ -353,7 +360,7 @@ void MarkedBlock::Handle::didRemoveFromDirectory()
+     
+     m_index = std::numeric_limits<unsigned>::max();
+     m_directory = nullptr;
+-    blockFooter().m_subspace = nullptr;
++    blockHeader().m_subspace = nullptr;
+ }
+ 
+ #if ASSERT_ENABLED
+@@ -406,7 +413,7 @@ void MarkedBlock::Handle::sweep(FreeList* freeList)
+     }
+     
+     if (space()->isMarking())
+-        blockFooter().m_lock.lock();
++        blockHeader().m_lock.lock();
+     
+     subspace()->didBeginSweepingToFreeList(this);
+     
+diff --git a/Source/JavaScriptCore/heap/MarkedBlock.h b/Source/JavaScriptCore/heap/MarkedBlock.h
+index 8354bb1001914..eeb201e0f9e41 100644
+--- a/Source/JavaScriptCore/heap/MarkedBlock.h
++++ b/Source/JavaScriptCore/heap/MarkedBlock.h
+@@ -63,10 +63,10 @@ class MarkedBlock {
+     friend struct VerifyMarked;
+ 
+ public:
+-    class Footer;
++    class Header;
+     class Handle;
+ private:
+-    friend class Footer;
++    friend class Header;
+     friend class Handle;
+ public:
+     static constexpr size_t atomSize = 16; // bytes
+@@ -81,9 +81,9 @@ class MarkedBlock {
+     static constexpr size_t maxNumberOfLowerTierCells = 8;
+     static_assert(maxNumberOfLowerTierCells <= 256);
+     
+-    static_assert(!(MarkedBlock::atomSize & (MarkedBlock::atomSize - 1)), "MarkedBlock::atomSize must be a power of two.");
+-    static_assert(!(MarkedBlock::blockSize & (MarkedBlock::blockSize - 1)), "MarkedBlock::blockSize must be a power of two.");
+-    
++    static_assert(!(atomSize & (atomSize - 1)), "MarkedBlock::atomSize must be a power of two.");
++    static_assert(!(blockSize & (blockSize - 1)), "MarkedBlock::blockSize must be a power of two.");
++
+     struct VoidFunctor {
+         typedef void ReturnType;
+         void returnValue() { }
+@@ -102,7 +102,7 @@ class MarkedBlock {
+         // https://bugs.webkit.org/show_bug.cgi?id=159644
+         mutable ReturnType m_count;
+     };
+-        
++
+     class Handle {
+         WTF_MAKE_NONCOPYABLE(Handle);
+         WTF_MAKE_STRUCT_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(MarkedBlockHandle);
+@@ -114,7 +114,7 @@ class MarkedBlock {
+         ~Handle();
+             
+         MarkedBlock& block();
+-        MarkedBlock::Footer& blockFooter();
++        MarkedBlock::Header& blockHeader();
+             
+         void* cellAlign(void*);
+             
+@@ -200,8 +200,8 @@ class MarkedBlock {
+         void didAddToDirectory(BlockDirectory*, unsigned index);
+         void didRemoveFromDirectory();
+         
+-        void* start() const { return &m_block->atoms()[0]; }
+-        void* end() const { return &m_block->atoms()[m_endAtom]; }
++        void* start() const { return &m_block->atoms()[m_startAtom]; }
++        void* end() const { return &m_block->atoms()[endAtom]; }
+         void* atomAt(size_t i) const { return &m_block->atoms()[i]; }
+         bool contains(void* p) const { return start() <= p && p < end(); }
+         void* pageStart() const { return &m_block->atoms()[0]; }
+@@ -229,7 +229,7 @@ class MarkedBlock {
+         void setIsFreeListed();
+         
+         unsigned m_atomsPerCell { std::numeric_limits<unsigned>::max() };
+-        unsigned m_endAtom { std::numeric_limits<unsigned>::max() }; // This is a fuzzy end. Always test for < m_endAtom.
++        unsigned m_startAtom { std::numeric_limits<unsigned>::max() }; // Exact location of the first allocatable atom.
+             
+         CellAttributes m_attributes;
+         bool m_isFreeListed { false };
+@@ -248,12 +248,12 @@ class MarkedBlock {
+     typedef char Atom[atomSize];
+ 
+ public:
+-    class Footer {
++    class Header {
+     public:
+-        Footer(VM&, Handle&);
+-        ~Footer();
++        Header(VM&, Handle&);
++        ~Header();
+ 
+-        static ptrdiff_t offsetOfVM() { return OBJECT_OFFSETOF(Footer, m_vm); }
++        static ptrdiff_t offsetOfVM() { return OBJECT_OFFSETOF(Header, m_vm); }
+         
+     private:
+         friend class LLIntOffsetsExtractor;
+@@ -303,16 +303,28 @@ class MarkedBlock {
+     };
+     
+ private:
+-    Footer& footer();
+-    const Footer& footer() const;
++    Header& header();
++    const Header& header() const;
+ 
+ public:
+-    static constexpr size_t endAtom = (blockSize - sizeof(Footer)) / atomSize;
+-    static constexpr size_t payloadSize = endAtom * atomSize;
+-    static constexpr size_t footerSize = blockSize - payloadSize;
++    static constexpr size_t numberOfAtoms = blockSize / atomSize;
++    static constexpr size_t numberOfPayloadAtoms = (blockSize - sizeof(Header)) / atomSize;
++    static constexpr size_t payloadSize = numberOfPayloadAtoms * atomSize;
++    static constexpr size_t headerSize = blockSize - payloadSize;
++    static_assert(payloadSize == roundUpToMultipleOf<atomSize>(payloadSize));
++    static_assert(headerSize == roundUpToMultipleOf<atomSize>(headerSize));
++    static_assert(sizeof(Header) <= headerSize);
++
++    static constexpr size_t firstPayloadRegionAtom = headerSize / atomSize;
++    static constexpr size_t endAtom = blockSize / atomSize;
++    static constexpr size_t offsetOfHeader = 0;
++    static constexpr size_t headerAtom = offsetOfHeader / atomSize;
++
++    static_assert(payloadSize == ((blockSize - sizeof(MarkedBlock::Header)) & ~(atomSize - 1)), "Payload size computed the alternate way should give the same result");
++    static_assert(firstPayloadRegionAtom * atomSize == headerSize);
++    static_assert(endAtom * atomSize == blockSize);
++    static_assert(endAtom - firstPayloadRegionAtom == numberOfPayloadAtoms);
+ 
+-    static_assert(payloadSize == ((blockSize - sizeof(MarkedBlock::Footer)) & ~(atomSize - 1)), "Payload size computed the alternate way should give the same result");
+-    
+     static MarkedBlock::Handle* tryCreate(Heap&, AlignedMemoryAllocator*);
+         
+     Handle& handle();
+@@ -342,7 +354,7 @@ class MarkedBlock {
+     void clearNewlyAllocated(const void*);
+     const Bitmap<atomsPerBlock>& newlyAllocated() const;
+     
+-    HeapVersion newlyAllocatedVersion() const { return footer().m_newlyAllocatedVersion; }
++    HeapVersion newlyAllocatedVersion() const { return header().m_newlyAllocatedVersion; }
+     
+     inline bool isNewlyAllocatedStale() const;
+     
+@@ -365,7 +377,7 @@ class MarkedBlock {
+     JS_EXPORT_PRIVATE bool areMarksStale();
+     bool areMarksStale(HeapVersion markingVersion);
+     
+-    Dependency aboutToMark(HeapVersion markingVersion);
++    Dependency aboutToMark(HeapVersion markingVersion, HeapCell*);
+         
+ #if ASSERT_ENABLED
+     JS_EXPORT_PRIVATE void assertMarksNotStale();
+@@ -376,52 +388,52 @@ class MarkedBlock {
+     void resetMarks();
+     
+     bool isMarkedRaw(const void* p);
+-    HeapVersion markingVersion() const { return footer().m_markingVersion; }
++    HeapVersion markingVersion() const { return header().m_markingVersion; }
+     
+     const Bitmap<atomsPerBlock>& marks() const;
+     
+-    CountingLock& lock() { return footer().m_lock; }
++    CountingLock& lock() { return header().m_lock; }
+     
+-    Subspace* subspace() const { return footer().m_subspace; }
++    Subspace* subspace() const { return header().m_subspace; }
+ 
+     void populatePage() const
+     {
+-        *bitwise_cast<volatile uint8_t*>(&footer());
++        *bitwise_cast<volatile uint8_t*>(&header());
+     }
+     
+     void setVerifierMemo(void*);
+     template<typename T> T verifierMemo() const;
+ 
+-    static constexpr size_t offsetOfFooter = endAtom * atomSize;
+-    static_assert(offsetOfFooter + sizeof(Footer) <= blockSize);
+-
+ private:
+     MarkedBlock(VM&, Handle&);
+     ~MarkedBlock();
+     Atom* atoms();
+         
+-    JS_EXPORT_PRIVATE void aboutToMarkSlow(HeapVersion markingVersion);
++    JS_EXPORT_PRIVATE void aboutToMarkSlow(HeapVersion markingVersion, HeapCell*);
+     void clearHasAnyMarked();
+     
+     void noteMarkedSlow();
+     
+     inline bool marksConveyLivenessDuringMarking(HeapVersion markingVersion);
+     inline bool marksConveyLivenessDuringMarking(HeapVersion myMarkingVersion, HeapVersion markingVersion);
++
++    // This is only used for debugging. We should remove this once the issue is resolved (rdar://136782494)
++    NO_RETURN_DUE_TO_CRASH NEVER_INLINE void dumpInfoAndCrashForInvalidHandle(AbstractLocker&, HeapCell*);
+ };
+ 
+-inline MarkedBlock::Footer& MarkedBlock::footer()
++inline MarkedBlock::Header& MarkedBlock::header()
+ {
+-    return *bitwise_cast<MarkedBlock::Footer*>(atoms() + endAtom);
++    return *bitwise_cast<MarkedBlock::Header*>(atoms() + headerAtom);
+ }
+ 
+-inline const MarkedBlock::Footer& MarkedBlock::footer() const
++inline const MarkedBlock::Header& MarkedBlock::header() const
+ {
+-    return const_cast<MarkedBlock*>(this)->footer();
++    return const_cast<MarkedBlock*>(this)->header();
+ }
+ 
+ inline MarkedBlock::Handle& MarkedBlock::handle()
+ {
+-    return footer().m_handle;
++    return header().m_handle;
+ }
+ 
+ inline const MarkedBlock::Handle& MarkedBlock::handle() const
+@@ -434,9 +446,9 @@ inline MarkedBlock& MarkedBlock::Handle::block()
+     return *m_block;
+ }
+ 
+-inline MarkedBlock::Footer& MarkedBlock::Handle::blockFooter()
++inline MarkedBlock::Header& MarkedBlock::Handle::blockHeader()
+ {
+-    return block().footer();
++    return block().header();
+ }
+ 
+ inline MarkedBlock::Atom* MarkedBlock::atoms()
+@@ -451,7 +463,7 @@ inline bool MarkedBlock::isAtomAligned(const void* p)
+ 
+ inline void* MarkedBlock::Handle::cellAlign(void* p)
+ {
+-    uintptr_t base = reinterpret_cast<uintptr_t>(block().atoms());
++    uintptr_t base = reinterpret_cast<uintptr_t>(block().atoms() + m_startAtom);
+     uintptr_t bits = reinterpret_cast<uintptr_t>(p);
+     bits -= base;
+     bits -= bits % cellSize();
+@@ -486,7 +498,7 @@ inline VM& MarkedBlock::Handle::vm() const
+ 
+ inline VM& MarkedBlock::vm() const
+ {
+-    return *footer().m_vm;
++    return *header().m_vm;
+ }
+ 
+ inline WeakSet& MarkedBlock::Handle::weakSet()
+@@ -559,21 +571,22 @@ inline size_t MarkedBlock::candidateAtomNumber(const void* p)
+ inline unsigned MarkedBlock::atomNumber(const void* p)
+ {
+     size_t atomNumber = candidateAtomNumber(p);
+-    ASSERT(atomNumber < handle().m_endAtom);
++    ASSERT(atomNumber >= handle().m_startAtom);
++    ASSERT(atomNumber < endAtom);
+     return atomNumber;
+ }
+ 
+ inline bool MarkedBlock::areMarksStale(HeapVersion markingVersion)
+ {
+-    return markingVersion != footer().m_markingVersion;
++    return markingVersion != header().m_markingVersion;
+ }
+ 
+-inline Dependency MarkedBlock::aboutToMark(HeapVersion markingVersion)
++inline Dependency MarkedBlock::aboutToMark(HeapVersion markingVersion, HeapCell* cell)
+ {
+     HeapVersion version;
+-    Dependency dependency = Dependency::loadAndFence(&footer().m_markingVersion, version);
++    Dependency dependency = Dependency::loadAndFence(&header().m_markingVersion, version);
+     if (UNLIKELY(version != markingVersion))
+-        aboutToMarkSlow(markingVersion);
++        aboutToMarkSlow(markingVersion, cell);
+     return dependency;
+ }
+ 
+@@ -584,62 +597,65 @@ inline void MarkedBlock::Handle::assertMarksNotStale()
+ 
+ inline bool MarkedBlock::isMarkedRaw(const void* p)
+ {
+-    return footer().m_marks.get(atomNumber(p));
++    return header().m_marks.get(atomNumber(p));
+ }
+ 
+ inline bool MarkedBlock::isMarked(HeapVersion markingVersion, const void* p)
+ {
+     HeapVersion version;
+-    Dependency dependency = Dependency::loadAndFence(&footer().m_markingVersion, version);
++    Dependency dependency = Dependency::loadAndFence(&header().m_markingVersion, version);
+     if (UNLIKELY(version != markingVersion))
+         return false;
+-    return footer().m_marks.get(atomNumber(p), dependency);
++    return header().m_marks.get(atomNumber(p), dependency);
+ }
+ 
+ inline bool MarkedBlock::isMarked(const void* p, Dependency dependency)
+ {
+     assertMarksNotStale();
+-    return footer().m_marks.get(atomNumber(p), dependency);
++    return header().m_marks.get(atomNumber(p), dependency);
+ }
+ 
+ inline bool MarkedBlock::testAndSetMarked(const void* p, Dependency dependency)
+ {
+     assertMarksNotStale();
+-    return footer().m_marks.concurrentTestAndSet(atomNumber(p), dependency);
++    return header().m_marks.concurrentTestAndSet(atomNumber(p), dependency);
+ }
+ 
+ inline const Bitmap<MarkedBlock::atomsPerBlock>& MarkedBlock::marks() const
+ {
+-    return footer().m_marks;
++    return header().m_marks;
+ }
+ 
+ inline bool MarkedBlock::isNewlyAllocated(const void* p)
+ {
+-    return footer().m_newlyAllocated.get(atomNumber(p));
++    return header().m_newlyAllocated.get(atomNumber(p));
+ }
+ 
+ inline void MarkedBlock::setNewlyAllocated(const void* p)
+ {
+-    footer().m_newlyAllocated.set(atomNumber(p));
++    header().m_newlyAllocated.set(atomNumber(p));
+ }
+ 
+ inline void MarkedBlock::clearNewlyAllocated(const void* p)
+ {
+-    footer().m_newlyAllocated.clear(atomNumber(p));
++    header().m_newlyAllocated.clear(atomNumber(p));
+ }
+ 
+ inline const Bitmap<MarkedBlock::atomsPerBlock>& MarkedBlock::newlyAllocated() const
+ {
+-    return footer().m_newlyAllocated;
++    return header().m_newlyAllocated;
+ }
+ 
+ inline bool MarkedBlock::isAtom(const void* p)
+ {
+     ASSERT(MarkedBlock::isAtomAligned(p));
+     size_t atomNumber = candidateAtomNumber(p);
+-    if (atomNumber % handle().m_atomsPerCell) // Filters pointers into cell middles.
++
++    auto& handle = this->handle();
++    size_t startAtom = handle.m_startAtom;
++    if (atomNumber < startAtom || atomNumber >= endAtom)
+         return false;
+-    if (atomNumber >= handle().m_endAtom) // Filters pointers into invalid cells out of the range.
++    if ((atomNumber - startAtom) % handle.m_atomsPerCell) // Filters pointers into cell middles.
+         return false;
+     return true;
+ }
+@@ -648,7 +664,7 @@ template <typename Functor>
+ inline IterationStatus MarkedBlock::Handle::forEachCell(const Functor& functor)
+ {
+     HeapCell::Kind kind = m_attributes.cellKind;
+-    for (size_t i = 0; i < m_endAtom; i += m_atomsPerCell) {
++    for (size_t i = m_startAtom; i < endAtom; i += m_atomsPerCell) {
+         HeapCell* cell = reinterpret_cast_ptr<HeapCell*>(&m_block->atoms()[i]);
+         if (functor(i, cell, kind) == IterationStatus::Done)
+             return IterationStatus::Done;
+@@ -658,28 +674,28 @@ inline IterationStatus MarkedBlock::Handle::forEachCell(const Functor& functor)
+ 
+ inline bool MarkedBlock::hasAnyMarked() const
+ {
+-    return footer().m_biasedMarkCount != footer().m_markCountBias;
++    return header().m_biasedMarkCount != header().m_markCountBias;
+ }
+ 
+ inline void MarkedBlock::noteMarked()
+ {
+     // This is racy by design. We don't want to pay the price of an atomic increment!
+-    int16_t biasedMarkCount = footer().m_biasedMarkCount;
++    int16_t biasedMarkCount = header().m_biasedMarkCount;
+     ++biasedMarkCount;
+-    footer().m_biasedMarkCount = biasedMarkCount;
++    header().m_biasedMarkCount = biasedMarkCount;
+     if (UNLIKELY(!biasedMarkCount))
+         noteMarkedSlow();
+ }
+ 
+ inline void MarkedBlock::setVerifierMemo(void* p)
+ {
+-    footer().m_verifierMemo = p;
++    header().m_verifierMemo = p;
+ }
+ 
+ template<typename T>
+ T MarkedBlock::verifierMemo() const
+ {
+-    return bitwise_cast<T>(footer().m_verifierMemo);
++    return bitwise_cast<T>(header().m_verifierMemo);
+ }
+ 
+ } // namespace JSC
+diff --git a/Source/JavaScriptCore/heap/MarkedBlockInlines.h b/Source/JavaScriptCore/heap/MarkedBlockInlines.h
+index eb9fd72192e62..de86af2856c4d 100644
+--- a/Source/JavaScriptCore/heap/MarkedBlockInlines.h
++++ b/Source/JavaScriptCore/heap/MarkedBlockInlines.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2016-2021 Apple Inc. All rights reserved.
++ * Copyright (C) 2016-2022 Apple Inc. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+@@ -42,7 +42,7 @@ inline unsigned MarkedBlock::Handle::cellsPerBlock()
+ 
+ inline bool MarkedBlock::isNewlyAllocatedStale() const
+ {
+-    return footer().m_newlyAllocatedVersion != space()->newlyAllocatedVersion();
++    return header().m_newlyAllocatedVersion != space()->newlyAllocatedVersion();
+ }
+ 
+ inline bool MarkedBlock::hasAnyNewlyAllocated()
+@@ -67,7 +67,7 @@ inline MarkedSpace* MarkedBlock::Handle::space() const
+ 
+ inline bool MarkedBlock::marksConveyLivenessDuringMarking(HeapVersion markingVersion)
+ {
+-    return marksConveyLivenessDuringMarking(footer().m_markingVersion, markingVersion);
++    return marksConveyLivenessDuringMarking(header().m_markingVersion, markingVersion);
+ }
+ 
+ inline bool MarkedBlock::marksConveyLivenessDuringMarking(HeapVersion myMarkingVersion, HeapVersion markingVersion)
+@@ -138,41 +138,41 @@ ALWAYS_INLINE bool MarkedBlock::Handle::isLive(HeapVersion markingVersion, HeapV
+     // impact on perf - around 2% on splay if you get it wrong.
+ 
+     MarkedBlock& block = this->block();
+-    MarkedBlock::Footer& footer = block.footer();
++    MarkedBlock::Header& header = block.header();
+     
+-    auto count = footer.m_lock.tryOptimisticFencelessRead();
++    auto count = header.m_lock.tryOptimisticFencelessRead();
+     if (count.value) {
+         Dependency fenceBefore = Dependency::fence(count.input);
+         MarkedBlock& fencedBlock = *fenceBefore.consume(&block);
+-        MarkedBlock::Footer& fencedFooter = fencedBlock.footer();
++        MarkedBlock::Header& fencedHeader = fencedBlock.header();
+         MarkedBlock::Handle* fencedThis = fenceBefore.consume(this);
+         
+         ASSERT_UNUSED(fencedThis, !fencedThis->isFreeListed());
+         
+-        HeapVersion myNewlyAllocatedVersion = fencedFooter.m_newlyAllocatedVersion;
++        HeapVersion myNewlyAllocatedVersion = fencedHeader.m_newlyAllocatedVersion;
+         if (myNewlyAllocatedVersion == newlyAllocatedVersion) {
+             bool result = fencedBlock.isNewlyAllocated(cell);
+-            if (footer.m_lock.fencelessValidate(count.value, Dependency::fence(result)))
++            if (header.m_lock.fencelessValidate(count.value, Dependency::fence(result)))
+                 return result;
+         } else {
+-            HeapVersion myMarkingVersion = fencedFooter.m_markingVersion;
++            HeapVersion myMarkingVersion = fencedHeader.m_markingVersion;
+             if (myMarkingVersion != markingVersion
+                 && (!isMarking || !fencedBlock.marksConveyLivenessDuringMarking(myMarkingVersion, markingVersion))) {
+-                if (footer.m_lock.fencelessValidate(count.value, Dependency::fence(myMarkingVersion)))
++                if (header.m_lock.fencelessValidate(count.value, Dependency::fence(myMarkingVersion)))
+                     return false;
+             } else {
+-                bool result = fencedFooter.m_marks.get(block.atomNumber(cell));
+-                if (footer.m_lock.fencelessValidate(count.value, Dependency::fence(result)))
++                bool result = fencedHeader.m_marks.get(block.atomNumber(cell));
++                if (header.m_lock.fencelessValidate(count.value, Dependency::fence(result)))
+                     return result;
+             }
+         }
+     }
+     
+-    Locker locker { footer.m_lock };
++    Locker locker { header.m_lock };
+ 
+     ASSERT(!isFreeListed());
+     
+-    HeapVersion myNewlyAllocatedVersion = footer.m_newlyAllocatedVersion;
++    HeapVersion myNewlyAllocatedVersion = header.m_newlyAllocatedVersion;
+     if (myNewlyAllocatedVersion == newlyAllocatedVersion)
+         return block.isNewlyAllocated(cell);
+     
+@@ -183,7 +183,7 @@ ALWAYS_INLINE bool MarkedBlock::Handle::isLive(HeapVersion markingVersion, HeapV
+             return false;
+     }
+     
+-    return footer.m_marks.get(block.atomNumber(cell));
++    return header.m_marks.get(block.atomNumber(cell));
+ }
+ 
+ inline bool MarkedBlock::Handle::isLiveCell(HeapVersion markingVersion, HeapVersion newlyAllocatedVersion, bool isMarking, const void* p)
+@@ -246,7 +246,7 @@ void MarkedBlock::Handle::specializedSweep(FreeList* freeList, MarkedBlock::Hand
+     SuperSamplerScope superSamplerScope(false);
+ 
+     MarkedBlock& block = this->block();
+-    MarkedBlock::Footer& footer = block.footer();
++    MarkedBlock::Header& header = block.header();
+     
+     if (false)
+         dataLog(RawPointer(this), "/", RawPointer(&block), ": MarkedBlock::Handle::specializedSweep!\n");
+@@ -269,26 +269,25 @@ void MarkedBlock::Handle::specializedSweep(FreeList* freeList, MarkedBlock::Hand
+         && newlyAllocatedMode == DoesNotHaveNewlyAllocated) {
+         
+         // This is an incredibly powerful assertion that checks the sanity of our block bits.
+-        if (marksMode == MarksNotStale && !footer.m_marks.isEmpty()) {
++        if (marksMode == MarksNotStale && !header.m_marks.isEmpty()) {
+             WTF::dataFile().atomically(
+                 [&] (PrintStream& out) {
+                     out.print("Block ", RawPointer(&block), ": marks not empty!\n");
+-                    out.print("Block lock is held: ", footer.m_lock.isHeld(), "\n");
+-                    out.print("Marking version of block: ", footer.m_markingVersion, "\n");
++                    out.print("Block lock is held: ", header.m_lock.isHeld(), "\n");
++                    out.print("Marking version of block: ", header.m_markingVersion, "\n");
+                     out.print("Marking version of heap: ", space()->markingVersion(), "\n");
+                     UNREACHABLE_FOR_PLATFORM();
+                 });
+         }
+-        
+-        char* startOfLastCell = static_cast<char*>(cellAlign(block.atoms() + m_endAtom - 1));
+-        char* payloadEnd = startOfLastCell + cellSize;
+-        char* payloadBegin = bitwise_cast<char*>(block.atoms());
+-        RELEASE_ASSERT(payloadEnd - MarkedBlock::blockSize <= bitwise_cast<char*>(&block), payloadBegin, payloadEnd, &block, cellSize, m_endAtom);
++
++        char* payloadEnd = bitwise_cast<char*>(block.atoms() + numberOfAtoms);
++        char* payloadBegin = bitwise_cast<char*>(block.atoms() + m_startAtom);
++        RELEASE_ASSERT(static_cast<size_t>(payloadEnd - payloadBegin) <= payloadSize, payloadBegin, payloadEnd, &block, cellSize, m_startAtom);
+         
+         if (sweepMode == SweepToFreeList)
+             setIsFreeListed();
+         if (space()->isMarking())
+-            footer.m_lock.unlock();
++            header.m_lock.unlock();
+         if (destructionMode != BlockHasNoDestructors) {
+             for (char* cell = payloadBegin; cell < payloadEnd; cell += cellSize)
+                 destroy(cell);
+@@ -326,10 +325,10 @@ void MarkedBlock::Handle::specializedSweep(FreeList* freeList, MarkedBlock::Hand
+             ++count;
+         }
+     };
+-    for (size_t i = 0; i < m_endAtom; i += m_atomsPerCell) {
++    for (size_t i = m_startAtom; i < endAtom; i += m_atomsPerCell) {
+         if (emptyMode == NotEmpty
+-            && ((marksMode == MarksNotStale && footer.m_marks.get(i))
+-                || (newlyAllocatedMode == HasNewlyAllocated && footer.m_newlyAllocated.get(i)))) {
++            && ((marksMode == MarksNotStale && header.m_marks.get(i))
++                || (newlyAllocatedMode == HasNewlyAllocated && header.m_newlyAllocated.get(i)))) {
+             isEmpty = false;
+             continue;
+         }
+@@ -343,10 +342,10 @@ void MarkedBlock::Handle::specializedSweep(FreeList* freeList, MarkedBlock::Hand
+     // We only want to discard the newlyAllocated bits if we're creating a FreeList,
+     // otherwise we would lose information on what's currently alive.
+     if (sweepMode == SweepToFreeList && newlyAllocatedMode == HasNewlyAllocated)
+-        footer.m_newlyAllocatedVersion = MarkedSpace::nullVersion;
++        header.m_newlyAllocatedVersion = MarkedSpace::nullVersion;
+     
+     if (space()->isMarking())
+-        footer.m_lock.unlock();
++        header.m_lock.unlock();
+     
+     if (destructionMode == BlockHasDestructorsAndCollectorIsRunning) {
+         for (size_t i : deadCells)
+@@ -507,7 +506,7 @@ inline IterationStatus MarkedBlock::Handle::forEachLiveCell(const Functor& funct
+     // https://bugs.webkit.org/show_bug.cgi?id=180315
+     
+     HeapCell::Kind kind = m_attributes.cellKind;
+-    for (size_t i = 0; i < m_endAtom; i += m_atomsPerCell) {
++    for (size_t i = m_startAtom; i < endAtom; i += m_atomsPerCell) {
+         HeapCell* cell = reinterpret_cast_ptr<HeapCell*>(&m_block->atoms()[i]);
+         if (!isLive(cell))
+             continue;
+@@ -522,7 +521,7 @@ template <typename Functor>
+ inline IterationStatus MarkedBlock::Handle::forEachDeadCell(const Functor& functor)
+ {
+     HeapCell::Kind kind = m_attributes.cellKind;
+-    for (size_t i = 0; i < m_endAtom; i += m_atomsPerCell) {
++    for (size_t i = m_startAtom; i < endAtom; i += m_atomsPerCell) {
+         HeapCell* cell = reinterpret_cast_ptr<HeapCell*>(&m_block->atoms()[i]);
+         if (isLive(cell))
+             continue;
+@@ -542,8 +541,8 @@ inline IterationStatus MarkedBlock::Handle::forEachMarkedCell(const Functor& fun
+     WTF::loadLoadFence();
+     if (areMarksStale)
+         return IterationStatus::Continue;
+-    for (size_t i = 0; i < m_endAtom; i += m_atomsPerCell) {
+-        if (!block.footer().m_marks.get(i))
++    for (size_t i = m_startAtom; i < endAtom; i += m_atomsPerCell) {
++        if (!block.header().m_marks.get(i))
+             continue;
+ 
+         HeapCell* cell = reinterpret_cast_ptr<HeapCell*>(&m_block->atoms()[i]);
+diff --git a/Source/JavaScriptCore/heap/MarkedSpace.cpp b/Source/JavaScriptCore/heap/MarkedSpace.cpp
+index c823d9e94db6f..9e22a57b0584a 100644
+--- a/Source/JavaScriptCore/heap/MarkedSpace.cpp
++++ b/Source/JavaScriptCore/heap/MarkedSpace.cpp
+@@ -1,5 +1,5 @@
+ /*
+- *  Copyright (C) 2003-2018 Apple Inc. All rights reserved.
++ *  Copyright (C) 2003-2022 Apple Inc. All rights reserved.
+  *  Copyright (C) 2007 Eric Seidel <eric@webkit.org>
+  *
+  *  This library is free software; you can redistribute it and/or
+@@ -41,7 +41,7 @@ static Vector<size_t> sizeClasses()
+ 
+     if (UNLIKELY(Options::dumpSizeClasses())) {
+         dataLog("Block size: ", MarkedBlock::blockSize, "\n");
+-        dataLog("Footer size: ", sizeof(MarkedBlock::Footer), "\n");
++        dataLog("Header size: ", sizeof(MarkedBlock::Header), "\n");
+     }
+     
+     auto add = [&] (size_t sizeClass) {
+diff --git a/Source/JavaScriptCore/llint/LLIntThunks.cpp b/Source/JavaScriptCore/llint/LLIntThunks.cpp
+index eb1272340d370..fdf6ccc9517a0 100644
+--- a/Source/JavaScriptCore/llint/LLIntThunks.cpp
++++ b/Source/JavaScriptCore/llint/LLIntThunks.cpp
+@@ -225,7 +225,7 @@ MacroAssemblerCodeRef<JSEntryPtrTag> getHostCallReturnValueThunk()
+ 
+         auto preciseAllocationCase = jit.branchTestPtr(CCallHelpers::NonZero, GPRInfo::regT0, CCallHelpers::TrustedImm32(PreciseAllocation::halfAlignment));
+         jit.andPtr(CCallHelpers::TrustedImmPtr(MarkedBlock::blockMask), GPRInfo::regT0);
+-        jit.loadPtr(CCallHelpers::Address(GPRInfo::regT0, MarkedBlock::offsetOfFooter + MarkedBlock::Footer::offsetOfVM()), GPRInfo::regT0);
++        jit.loadPtr(CCallHelpers::Address(GPRInfo::regT0, MarkedBlock::offsetOfHeader + MarkedBlock::Header::offsetOfVM()), GPRInfo::regT0);
+         auto loadedCase = jit.jump();
+ 
+         preciseAllocationCase.link(&jit);
+diff --git a/Source/JavaScriptCore/llint/LowLevelInterpreter.asm b/Source/JavaScriptCore/llint/LowLevelInterpreter.asm
+index 52c5188adffe3..03d4cdaf4cfb1 100644
+--- a/Source/JavaScriptCore/llint/LowLevelInterpreter.asm
++++ b/Source/JavaScriptCore/llint/LowLevelInterpreter.asm
+@@ -640,7 +640,7 @@ const NotInitialization = constexpr InitializationMode::NotInitialization
+ 
+ const MarkedBlockSize = constexpr MarkedBlock::blockSize
+ const MarkedBlockMask = ~(MarkedBlockSize - 1)
+-const MarkedBlockFooterOffset = constexpr MarkedBlock::offsetOfFooter
++const MarkedBlockHeaderOffset = constexpr MarkedBlock::offsetOfHeader
+ const PreciseAllocationHeaderSize = constexpr (PreciseAllocation::headerSize())
+ const PreciseAllocationVMOffset = (PreciseAllocation::m_weakSet + WeakSet::m_vm - PreciseAllocationHeaderSize)
+ 
+@@ -1507,7 +1507,7 @@ end
+ macro convertCalleeToVM(callee)
+     btpnz callee, (constexpr PreciseAllocation::halfAlignment), .preciseAllocation
+     andp MarkedBlockMask, callee
+-    loadp MarkedBlockFooterOffset + MarkedBlock::Footer::m_vm[callee], callee
++    loadp MarkedBlockHeaderOffset + MarkedBlock::Header::m_vm[callee], callee
+     jmp .done
+ .preciseAllocation:
+     loadp PreciseAllocationVMOffset[callee], callee
+diff --git a/Source/JavaScriptCore/tools/Integrity.h b/Source/JavaScriptCore/tools/Integrity.h
+index 86e59aee3b989..f998a62ce35dc 100644
+--- a/Source/JavaScriptCore/tools/Integrity.h
++++ b/Source/JavaScriptCore/tools/Integrity.h
+@@ -173,7 +173,7 @@ ALWAYS_INLINE void auditCell(VM&, JSValue);
+ ALWAYS_INLINE void auditStructureID(StructureID);
+ 
+ #if ENABLE(EXTRA_INTEGRITY_CHECKS) && USE(JSVALUE64)
+-template<typename T> ALWAYS_INLINE T audit(T value) { return doAudit(value); }
++template<typename T> ALWAYS_INLINE T audit(T value) { return bitwise_cast<T>(doAudit(value)); }
+ #else
+ template<typename T> ALWAYS_INLINE T audit(T value) { return value; }
+ #endif
+diff --git a/Source/JavaScriptCore/wasm/WasmIRGeneratorHelpers.h b/Source/JavaScriptCore/wasm/WasmIRGeneratorHelpers.h
+index 21d5eda6ed4e5..96895fe80684d 100644
+--- a/Source/JavaScriptCore/wasm/WasmIRGeneratorHelpers.h
++++ b/Source/JavaScriptCore/wasm/WasmIRGeneratorHelpers.h
+@@ -116,7 +116,7 @@ static inline void emitRethrowImpl(CCallHelpers& jit)
+     {
+         auto preciseAllocationCase = jit.branchTestPtr(CCallHelpers::NonZero, scratch, CCallHelpers::TrustedImm32(PreciseAllocation::halfAlignment));
+         jit.andPtr(CCallHelpers::TrustedImmPtr(MarkedBlock::blockMask), scratch);
+-        jit.loadPtr(CCallHelpers::Address(scratch, MarkedBlock::offsetOfFooter + MarkedBlock::Footer::offsetOfVM()), scratch);
++        jit.loadPtr(CCallHelpers::Address(scratch, MarkedBlock::offsetOfHeader + MarkedBlock::Header::offsetOfVM()), scratch);
+         auto loadedCase = jit.jump();
+ 
+         preciseAllocationCase.link(&jit);
+@@ -144,7 +144,7 @@ static inline void emitThrowImpl(CCallHelpers& jit, unsigned exceptionIndex)
+     {
+         auto preciseAllocationCase = jit.branchTestPtr(CCallHelpers::NonZero, scratch, CCallHelpers::TrustedImm32(PreciseAllocation::halfAlignment));
+         jit.andPtr(CCallHelpers::TrustedImmPtr(MarkedBlock::blockMask), scratch);
+-        jit.loadPtr(CCallHelpers::Address(scratch, MarkedBlock::offsetOfFooter + MarkedBlock::Footer::offsetOfVM()), scratch);
++        jit.loadPtr(CCallHelpers::Address(scratch, MarkedBlock::offsetOfHeader + MarkedBlock::Header::offsetOfVM()), scratch);
+         auto loadedCase = jit.jump();
+ 
+         preciseAllocationCase.link(&jit);
+@@ -184,7 +184,7 @@ static inline void emitCatchPrologueShared(B3::Air::Code& code, CCallHelpers& ji
+         // https://bugs.webkit.org/show_bug.cgi?id=231213
+         auto preciseAllocationCase = jit.branchTestPtr(CCallHelpers::NonZero, GPRInfo::regT0, CCallHelpers::TrustedImm32(PreciseAllocation::halfAlignment));
+         jit.andPtr(CCallHelpers::TrustedImmPtr(MarkedBlock::blockMask), GPRInfo::regT0);
+-        jit.loadPtr(CCallHelpers::Address(GPRInfo::regT0, MarkedBlock::offsetOfFooter + MarkedBlock::Footer::offsetOfVM()), GPRInfo::regT0);
++        jit.loadPtr(CCallHelpers::Address(GPRInfo::regT0, MarkedBlock::offsetOfHeader + MarkedBlock::Header::offsetOfVM()), GPRInfo::regT0);
+         auto loadedCase = jit.jump();
+ 
+         preciseAllocationCase.link(&jit);
+
+From 94464fe75dcf7f3ee7e2b5175432888b006400bf Mon Sep 17 00:00:00 2001
+From: Angelos Oikonomopoulos <angelos@igalia.com>
+Date: Thu, 5 Mar 2026 09:50:30 +0100
+Subject: [PATCH 2/5] OBJECT_OFFSETOF can be constexp
+
+Note: this only pulls in the basic change of
+https://commits.webkit.org/279198@main but does not update any users.
+---
+ Source/WTF/wtf/StdLibExtras.h | 17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/Source/WTF/wtf/StdLibExtras.h b/Source/WTF/wtf/StdLibExtras.h
+index bb1f6c4243887..c4c11f842e0d2 100644
+--- a/Source/WTF/wtf/StdLibExtras.h
++++ b/Source/WTF/wtf/StdLibExtras.h
+@@ -57,11 +57,22 @@
+ #define DEFINE_DEBUG_ONLY_GLOBAL(type, name, arguments)
+ #endif // NDEBUG
+ 
+-// OBJECT_OFFSETOF: Like the C++ offsetof macro, but you can use it with classes.
++#if COMPILER(CLANG)
++// We have to use __builtin_offsetof directly here instead of offsetof because otherwise Clang will drop
++// our pragma and we'll still get the warning.
++#define OBJECT_OFFSETOF(class, field) \
++    _Pragma("clang diagnostic push") \
++    _Pragma("clang diagnostic ignored \"-Winvalid-offsetof\"") \
++    __builtin_offsetof(class, field) \
++    _Pragma("clang diagnostic pop")
++#elif COMPILER(GCC)
++// It would be nice to silence this warning locally like we do on Clang but GCC complains about `error: ‘#pragma’ is not allowed here`
++#pragma GCC diagnostic ignored "-Winvalid-offsetof"
++#define OBJECT_OFFSETOF(class, field) offsetof(class, field)
++#endif
++
+ // The magic number 0x4000 is insignificant. We use it to avoid using NULL, since
+ // NULL can cause compiler problems, especially in cases of multiple inheritance.
+-#define OBJECT_OFFSETOF(class, field) (reinterpret_cast<ptrdiff_t>(&(reinterpret_cast<class*>(0x4000)->field)) - 0x4000)
+-
+ #define CAST_OFFSET(from, to) (reinterpret_cast<uintptr_t>(static_cast<to>((reinterpret_cast<from>(0x4000)))) - 0x4000)
+ 
+ // STRINGIZE: Can convert any value to quoted string, even expandable macros
+
+From 01d965d0dbc99c597a2da332f64c2a43cf815c41 Mon Sep 17 00:00:00 2001
+From: Daniel Liu <danlliu@umich.edu>
+Date: Fri, 27 Sep 2024 11:54:30 -0700
+Subject: [PATCH 3/5] Add some investigation code for dumping additional info
+ when MarkedBlock::Handle is invalid
+ https://bugs.webkit.org/show_bug.cgi?id=280370 rdar://136782494
+
+Reviewed by Mark Lam and Keith Miller.
+
+We want to dump additional information when this failure case is hit to understand why this
+could be taking place.
+
+This patch is an updated version of Yijia's patch, which implemented most of the logging.
+
+* Source/JavaScriptCore/heap/BlockDirectory.cpp:
+(JSC::BlockDirectory::findMarkedBlockHandle):
+* Source/JavaScriptCore/heap/BlockDirectory.h:
+* Source/JavaScriptCore/heap/CellContainerInlines.h:
+(JSC::CellContainer::aboutToMark):
+* Source/JavaScriptCore/heap/HeapInlines.h:
+(JSC::Heap::testAndSetMarked):
+* Source/JavaScriptCore/heap/MarkedBlock.cpp:
+(JSC::MarkedBlock::aboutToMarkSlow):
+(JSC::MarkedBlock::dumpInfoIfHandleIsNotValid):
+* Source/JavaScriptCore/heap/MarkedBlock.h:
+(JSC::MarkedBlock::Handle::hasBlock):
+(JSC::MarkedBlock::Header::handleBitsForNullCheck):
+(JSC::MarkedBlock::aboutToMark):
+* Source/JavaScriptCore/heap/MarkedSpace.cpp:
+(JSC::MarkedSpace::findMarkedBlockHandle):
+* Source/JavaScriptCore/heap/MarkedSpace.h:
+* Source/JavaScriptCore/heap/SlotVisitorInlines.h:
+(JSC::SlotVisitor::appendUnbarriered):
+(JSC::SlotVisitor::appendHiddenUnbarriered):
+
+Canonical link: https://commits.webkit.org/284376@main
+---
+ .../heap/CellContainerInlines.h               |   2 +-
+ Source/JavaScriptCore/heap/HeapInlines.h      |   2 +-
+ Source/JavaScriptCore/heap/MarkedBlock.cpp    | 171 +++++++++++++++++-
+ Source/JavaScriptCore/heap/MarkedBlock.h      |   6 +-
+ Source/JavaScriptCore/heap/MarkedSpace.cpp    |  15 ++
+ Source/JavaScriptCore/heap/MarkedSpace.h      |   2 +
+ .../JavaScriptCore/heap/SlotVisitorInlines.h  |   4 +-
+ 7 files changed, 192 insertions(+), 10 deletions(-)
+
+diff --git a/Source/JavaScriptCore/heap/CellContainerInlines.h b/Source/JavaScriptCore/heap/CellContainerInlines.h
+index ef48a6d2b216f..3cb498cddeb2d 100644
+--- a/Source/JavaScriptCore/heap/CellContainerInlines.h
++++ b/Source/JavaScriptCore/heap/CellContainerInlines.h
+@@ -90,7 +90,7 @@ inline WeakSet& CellContainer::weakSet() const
+ inline void CellContainer::aboutToMark(HeapVersion markingVersion)
+ {
+     if (!isPreciseAllocation())
+-        markedBlock().aboutToMark(markingVersion);
++        markedBlock().aboutToMark(markingVersion, nullptr);
+ }
+ 
+ inline bool CellContainer::areMarksStale() const
+diff --git a/Source/JavaScriptCore/heap/HeapInlines.h b/Source/JavaScriptCore/heap/HeapInlines.h
+index 4d767a564d5fd..97bf38d6082fd 100644
+--- a/Source/JavaScriptCore/heap/HeapInlines.h
++++ b/Source/JavaScriptCore/heap/HeapInlines.h
+@@ -83,7 +83,7 @@ ALWAYS_INLINE bool Heap::testAndSetMarked(HeapVersion markingVersion, const void
+     if (cell->isPreciseAllocation())
+         return cell->preciseAllocation().testAndSetMarked();
+     MarkedBlock& block = cell->markedBlock();
+-    Dependency dependency = block.aboutToMark(markingVersion);
++    Dependency dependency = block.aboutToMark(markingVersion, cell);
+     return block.testAndSetMarked(cell, dependency);
+ }
+ 
+diff --git a/Source/JavaScriptCore/heap/MarkedBlock.cpp b/Source/JavaScriptCore/heap/MarkedBlock.cpp
+index 5f0c9eb4c2445..e48bcfdfd8e28 100644
+--- a/Source/JavaScriptCore/heap/MarkedBlock.cpp
++++ b/Source/JavaScriptCore/heap/MarkedBlock.cpp
+@@ -31,8 +31,13 @@
+ #include "JSCJSValueInlines.h"
+ #include "MarkedBlockInlines.h"
+ #include "SweepingScope.h"
++#include "VMInspector.h"
+ #include <wtf/CommaPrinter.h>
+ 
++#if PLATFORM(COCOA)
++#include <wtf/cocoa/CrashReporter.h>
++#endif
++
+ namespace JSC {
+ namespace MarkedBlockInternal {
+ static constexpr bool verbose = false;
+@@ -193,17 +198,21 @@ void MarkedBlock::Handle::resumeAllocating(FreeList& freeList)
+     sweep(&freeList);
+ }
+ 
+-void MarkedBlock::aboutToMarkSlow(HeapVersion markingVersion)
++void MarkedBlock::aboutToMarkSlow(HeapVersion markingVersion, HeapCell* cell)
+ {
+     ASSERT(vm().heap.objectSpace().isMarking());
+     Locker locker { header().m_lock };
+     
+     if (!areMarksStale(markingVersion))
+         return;
+-    
+-    BlockDirectory* directory = handle().directory();
+ 
+-    if (handle().directory()->isAllocated(Locker { directory->bitvectorLock() }, &handle())
++    MarkedBlock::Handle* handle = header().handlePointerForNullCheck();
++    if (UNLIKELY(!handle))
++        dumpInfoAndCrashForInvalidHandle(locker, cell);
++
++    BlockDirectory* directory = handle->directory();
++
++    if (handle->directory()->isAllocated(Locker { directory->bitvectorLock() }, handle)
+         || !marksConveyLivenessDuringMarking(markingVersion)) {
+         if (MarkedBlockInternal::verbose)
+             dataLog(RawPointer(this), ": Clearing marks without doing anything else.\n");
+@@ -238,7 +247,7 @@ void MarkedBlock::aboutToMarkSlow(HeapVersion markingVersion)
+     header().m_markingVersion = markingVersion;
+     
+     // This means we're the first ones to mark any object in this block.
+-    directory->setIsMarkingNotEmpty(Locker { directory->bitvectorLock() }, &handle(), true);
++    directory->setIsMarkingNotEmpty(Locker { directory->bitvectorLock() }, handle, true);
+ }
+ 
+ void MarkedBlock::resetAllocated()
+@@ -477,6 +486,158 @@ bool MarkedBlock::Handle::isFreeListedCell(const void* target) const
+     return m_directory->isFreeListedCell(target);
+ }
+ 
++#if PLATFORM(COCOA)
++#define LOG_INVALID_HANDLE_DETAILS(s, ...) do { \
++    out.printf("INVALID HANDLE: " s, __VA_ARGS__); \
++    WTF::setCrashLogMessage(out.toCString().data()); \
++} while (false)
++#else
++#define LOG_INVALID_HANDLE_DETAILS(s, ...) do { \
++    out.printf("INVALID HANDLE: " s, __VA_ARGS__); \
++    dataLog(out.toCString().data()); \
++} while (false)
++#endif
++
++#if CPU(ARM64)
++#define DEFINE_SAVED_VALUE(name, reg, value) \
++    volatile register decltype(value) name asm(reg) = value; \
++    WTF::opaque(name); \
++    WTF::compilerFence();
++#else
++#define DEFINE_SAVED_VALUE(name, reg, value) \
++    decltype(value) name = value; \
++    UNUSED_VARIABLE(name);
++#endif
++
++#define SAVE_TO_REG(name, value) do { \
++    name = WTF::opaque(value); \
++    WTF::compilerFence(); \
++} while (false)
++
++NO_RETURN_DUE_TO_CRASH NEVER_INLINE void MarkedBlock::dumpInfoAndCrashForInvalidHandle(AbstractLocker&, HeapCell* heapCell)
++{
++    JSCell* cell = bitwise_cast<JSCell*>(heapCell);
++    JSType cellType = cell->type();
++
++    StringPrintStream out;
++    LOG_INVALID_HANDLE_DETAILS("MarkedBlock = %p ; heapCell = %p ; type = %d\n", this, heapCell, cellType);
++
++    DEFINE_SAVED_VALUE(savedMarkedBlock, "x19", this);
++    DEFINE_SAVED_VALUE(savedType, "x20", cellType);
++    DEFINE_SAVED_VALUE(savedHeapCell, "x21", heapCell);
++
++    static_assert(!offsetOfHeader);
++    static_assert(!OBJECT_OFFSETOF(Header, m_handle));
++    size_t contiguousZeroCountAfterHandle = 0;
++    {
++        char* mem = WTF::bitwise_cast<char*>(&header());
++        for (; contiguousZeroCountAfterHandle < MarkedBlock::blockSize; ++contiguousZeroCountAfterHandle) {
++            if (*mem)
++                break;
++            ++mem;
++        }
++    }
++    LOG_INVALID_HANDLE_DETAILS("found %zd 0s at beginning of block\n", contiguousZeroCountAfterHandle);
++    SAVE_TO_REG(savedMarkedBlock, this);
++    SAVE_TO_REG(savedHeapCell, heapCell);
++    SAVE_TO_REG(savedType, cellType);
++    DEFINE_SAVED_VALUE(savedCount, "x22", contiguousZeroCountAfterHandle);
++
++    bool isValidBlockVM = false;
++    bool foundBlockInThisVM = false;
++    bool isBlockInVM = false;
++    bool isBlockHandleInVM = false;
++
++    VM* blockVM = header().m_vm;
++    VM* actualVM = nullptr;
++    DEFINE_SAVED_VALUE(savedBlockVM, "x23", blockVM);
++    DEFINE_SAVED_VALUE(savedActualVM, "x24", actualVM);
++    DEFINE_SAVED_VALUE(savedBitfield, "x25", 0L);
++
++    {
++        VMInspector::forEachVM([&](VM& vm) {
++            if (blockVM == &vm) {
++                isValidBlockVM = true;
++                SAVE_TO_REG(savedActualVM, &vm);
++                SAVE_TO_REG(savedBitfield, 8);
++                LOG_INVALID_HANDLE_DETAILS("block VM %p is valid\n", &vm);
++                return IterationStatus::Done;
++            }
++            return IterationStatus::Continue;
++        });
++    }
++
++    SAVE_TO_REG(savedMarkedBlock, this);
++    SAVE_TO_REG(savedHeapCell, heapCell);
++    SAVE_TO_REG(savedType, cellType);
++    SAVE_TO_REG(savedCount, contiguousZeroCountAfterHandle);
++    SAVE_TO_REG(savedBlockVM, blockVM);
++
++    if (isValidBlockVM) {
++        MarkedSpace& objectSpace = blockVM->heap.objectSpace();
++        isBlockInVM = objectSpace.blocks().set().contains(this);
++        isBlockHandleInVM = !!objectSpace.findMarkedBlockHandleDebug(this);
++        foundBlockInThisVM = isBlockInVM || isBlockHandleInVM;
++        LOG_INVALID_HANDLE_DETAILS("block in our VM = %d, block handle in our VM = %d\n", isBlockInVM, isBlockHandleInVM);
++
++        SAVE_TO_REG(savedBitfield, (isValidBlockVM ? 8 : 0) | (isBlockInVM ? 4 : 0) | (isBlockHandleInVM ? 2 : 0) | (foundBlockInThisVM ? 1 : 0));
++    }
++
++    SAVE_TO_REG(savedMarkedBlock, this);
++    SAVE_TO_REG(savedHeapCell, heapCell);
++    SAVE_TO_REG(savedType, cellType);
++    SAVE_TO_REG(savedCount, contiguousZeroCountAfterHandle);
++    SAVE_TO_REG(savedBlockVM, blockVM);
++
++    if (!isBlockInVM && !isBlockHandleInVM) {
++        // worst case path
++        VMInspector::forEachVM([&](VM& vm) {
++            MarkedSpace& objectSpace = vm.heap.objectSpace();
++            isBlockInVM = objectSpace.blocks().set().contains(this);
++            isBlockHandleInVM = !!objectSpace.findMarkedBlockHandleDebug(this);
++            // Either of them is true indicates that the block belongs or used to belong to the VM.
++            if (isBlockInVM || isBlockHandleInVM) {
++                actualVM = &vm;
++                LOG_INVALID_HANDLE_DETAILS("block in another VM: %d, block in another VM: %d; other VM is %p\n", isBlockInVM, isBlockHandleInVM, &vm);
++
++                SAVE_TO_REG(savedActualVM, actualVM);
++                SAVE_TO_REG(savedBitfield, (isValidBlockVM ? 8 : 0) | (isBlockInVM ? 4 : 0) | (isBlockHandleInVM ? 2 : 0) | (foundBlockInThisVM ? 1 : 0));
++
++                return IterationStatus::Done;
++            }
++            return IterationStatus::Continue;
++        });
++    }
++
++    SAVE_TO_REG(savedMarkedBlock, this);
++    SAVE_TO_REG(savedHeapCell, heapCell);
++    SAVE_TO_REG(savedType, cellType);
++    SAVE_TO_REG(savedCount, contiguousZeroCountAfterHandle);
++    SAVE_TO_REG(savedBlockVM, blockVM);
++    SAVE_TO_REG(savedActualVM, savedActualVM);
++    SAVE_TO_REG(savedBitfield, savedBitfield);
++
++    uint64_t bitfield = 0xab00ab01ab020000;
++    if (!isValidBlockVM)
++        bitfield |= 1 << 7;
++    if (!isBlockInVM)
++        bitfield |= 1 << 6;
++    if (!isBlockHandleInVM)
++        bitfield |= 1 << 5;
++    if (!foundBlockInThisVM)
++        bitfield |= 1 << 4;
++
++    // Make sure that the compiler doesn't think of these as "unused"
++    WTF::compilerFence();
++    WTF::opaque(savedMarkedBlock);
++    WTF::opaque(savedHeapCell);
++    WTF::opaque(savedType);
++    WTF::opaque(savedCount);
++    WTF::opaque(savedBlockVM);
++
++    CRASH_WITH_INFO(cell, cellType, contiguousZeroCountAfterHandle, bitfield, this, blockVM, actualVM);
++}
++
+ } // namespace JSC
+ 
+ namespace WTF {
+diff --git a/Source/JavaScriptCore/heap/MarkedBlock.h b/Source/JavaScriptCore/heap/MarkedBlock.h
+index eeb201e0f9e41..64ad66d853ad4 100644
+--- a/Source/JavaScriptCore/heap/MarkedBlock.h
++++ b/Source/JavaScriptCore/heap/MarkedBlock.h
+@@ -254,7 +254,11 @@ class MarkedBlock {
+         ~Header();
+ 
+         static ptrdiff_t offsetOfVM() { return OBJECT_OFFSETOF(Header, m_vm); }
+-        
++        Handle* handlePointerForNullCheck()
++        {
++            return WTF::opaque(&m_handle);
++        }
++
+     private:
+         friend class LLIntOffsetsExtractor;
+         friend class MarkedBlock;
+diff --git a/Source/JavaScriptCore/heap/MarkedSpace.cpp b/Source/JavaScriptCore/heap/MarkedSpace.cpp
+index 9e22a57b0584a..3657c5a97b133 100644
+--- a/Source/JavaScriptCore/heap/MarkedSpace.cpp
++++ b/Source/JavaScriptCore/heap/MarkedSpace.cpp
+@@ -374,6 +374,21 @@ bool MarkedSpace::isPagedOut()
+     return pagedOutPagesStats.mean() > pagedOutPagesStats.count() * bailoutPercentage;
+ }
+ 
++// Don't forget to remove this once we're done debugging (rdar://136782494)
++MarkedBlock::Handle* MarkedSpace::findMarkedBlockHandleDebug(MarkedBlock* block)
++{
++    MarkedBlock::Handle* result = nullptr;
++    forEachDirectory(
++        [&](BlockDirectory& directory) -> IterationStatus {
++            if (MarkedBlock::Handle* handle = directory.findMarkedBlockHandleDebug(block)) {
++                result = handle;
++                return IterationStatus::Done;
++            }
++            return IterationStatus::Continue;
++        });
++    return result;
++}
++
+ void MarkedSpace::freeBlock(MarkedBlock::Handle* block)
+ {
+     m_capacity -= MarkedBlock::blockSize;
+diff --git a/Source/JavaScriptCore/heap/MarkedSpace.h b/Source/JavaScriptCore/heap/MarkedSpace.h
+index 3d45e9e1e29d1..280cc239cd0c0 100644
+--- a/Source/JavaScriptCore/heap/MarkedSpace.h
++++ b/Source/JavaScriptCore/heap/MarkedSpace.h
+@@ -137,6 +137,8 @@ class MarkedSpace {
+     void didConsumeFreeList(MarkedBlock::Handle*);
+     void didAllocateInBlock(MarkedBlock::Handle*);
+ 
++    MarkedBlock::Handle* findMarkedBlockHandleDebug(MarkedBlock*);
++
+     void beginMarking();
+     void endMarking();
+     void snapshotUnswept();
+diff --git a/Source/JavaScriptCore/heap/SlotVisitorInlines.h b/Source/JavaScriptCore/heap/SlotVisitorInlines.h
+index 54223a64796af..03416b0bca4d1 100644
+--- a/Source/JavaScriptCore/heap/SlotVisitorInlines.h
++++ b/Source/JavaScriptCore/heap/SlotVisitorInlines.h
+@@ -54,7 +54,7 @@ ALWAYS_INLINE void SlotVisitor::appendUnbarriered(JSCell* cell)
+         }
+     } else {
+         MarkedBlock& block = cell->markedBlock();
+-        dependency = block.aboutToMark(m_markingVersion);
++        dependency = block.aboutToMark(m_markingVersion, cell);
+         if (LIKELY(block.isMarked(cell, dependency))) {
+             if (LIKELY(!m_heapAnalyzer))
+                 return;
+@@ -90,7 +90,7 @@ ALWAYS_INLINE void SlotVisitor::appendHiddenUnbarriered(JSCell* cell)
+             return;
+     } else {
+         MarkedBlock& block = cell->markedBlock();
+-        dependency = block.aboutToMark(m_markingVersion);
++        dependency = block.aboutToMark(m_markingVersion, cell);
+         if (LIKELY(block.isMarked(cell, dependency)))
+             return;
+     }
+
+From 47be5a4540cf6e9b7e2f88b3ee6866e5d7e639ff Mon Sep 17 00:00:00 2001
+From: Dan Hecht <dan.hecht@apple.com>
+Date: Sat, 16 Nov 2024 09:55:40 -0800
+Subject: [PATCH 4/5] Various improvements to the aboutToMarkSlow
+ instrumentation https://bugs.webkit.org/show_bug.cgi?id=283176
+ rdar://139971430
+
+Reviewed by Mark Lam.
+
+The MarkedBlock::Header::m_lock field sits at offset 24.
+dumpInfoAndCrashForInvalidHandleV2() is always called with this
+lock held, and so regardless of whether 'm_lock' was corrupted with
+a zero, it will always be non-zero by the time the instrumentation reads it.
+So that we can get a better guess at how many contiguious bytes
+from the start of the MarkedBlock are corrupted with zeros, treat the bytes
+occupied by m_lock as zeros when scanning for zeros.
+
+In other words, we don't know what value these bytes were corrupted with,
+so assume they were corrupted with zero so that the scan for zeros continues.
+
+Also count the total number of zeros in the MarkedBlock (which is
+the same as a page on Darwin) to get an overall view into the state
+of the page, to account for the fact that there could be other
+locations on the page that may have been written after the corruption
+occurs.
+
+Improve the use of WTF::setCrashLogMessage(). That function saves
+only the last message, so send the same message on each invocation
+but with additional known details filled in. Then, include
+the source code line number so that the message can be interpreted
+properly.
+
+Record the first 8 bytes of the HeapCell rather than just the type.
+
+Remove the code that tries to save values to registers in the middle
+of the instrumentation. It doesn't work in practice since a crash
+would be more likely to occur after running non-trivial code, which
+will likely clobber the registers anyway.
+
+Add some testing code for the various instrumentation paths
+(disabled at compile time).
+
+* Source/JavaScriptCore/heap/MarkedBlock.cpp:
+(JSC::MarkedBlock::setupTestForDumpInfoAndCrash):
+(JSC::MarkedBlock::aboutToMarkSlow):
+(JSC::MarkedBlock::dumpInfoAndCrashForInvalidHandleV2):
+(JSC::MarkedBlock::dumpInfoAndCrashForInvalidHandle): Deleted.
+* Source/JavaScriptCore/heap/MarkedBlock.h:
+(JSC::MarkedBlock::setupTestForDumpInfoAndCrash):
+* Source/JavaScriptCore/runtime/OptionsList.h:
+
+Canonical link: https://commits.webkit.org/286689@main
+---
+ Source/JavaScriptCore/heap/BlockDirectory.cpp |   1 +
+ Source/JavaScriptCore/heap/BlockDirectory.h   |   2 +
+ Source/JavaScriptCore/heap/MarkedBlock.cpp    | 241 +++++++++---------
+ Source/JavaScriptCore/heap/MarkedBlock.h      |   5 +-
+ Source/JavaScriptCore/heap/MarkedSpace.cpp    |   4 +-
+ Source/JavaScriptCore/heap/MarkedSpace.h      |   3 +-
+ Source/JavaScriptCore/runtime/OptionsList.h   |   2 +-
+ 7 files changed, 126 insertions(+), 132 deletions(-)
+
+diff --git a/Source/JavaScriptCore/heap/BlockDirectory.cpp b/Source/JavaScriptCore/heap/BlockDirectory.cpp
+index 417fa3ad706e4..d60ed0c161f19 100644
+--- a/Source/JavaScriptCore/heap/BlockDirectory.cpp
++++ b/Source/JavaScriptCore/heap/BlockDirectory.cpp
+@@ -306,6 +306,7 @@ void BlockDirectory::shrink()
+         });
+ }
+ 
++// FIXME: rdar://139998916
+ MarkedBlock::Handle* BlockDirectory::findMarkedBlockHandleDebug(MarkedBlock* block)
+ {
+     for (size_t index = 0; index < m_blocks.size(); ++index) {
+diff --git a/Source/JavaScriptCore/heap/BlockDirectory.h b/Source/JavaScriptCore/heap/BlockDirectory.h
+index 498cb94280b7b..452668ba2d330 100644
+--- a/Source/JavaScriptCore/heap/BlockDirectory.h
++++ b/Source/JavaScriptCore/heap/BlockDirectory.h
+@@ -132,6 +132,8 @@ class BlockDirectory {
+     MarkedBlock::Handle* findEmptyBlockToSteal();
+ 
+     MarkedBlock::Handle* findBlockToSweep();
++
++    // FIXME: rdar://139998916
+     MarkedBlock::Handle* findMarkedBlockHandleDebug(MarkedBlock*);
+     
+     Subspace* subspace() const { return m_subspace; }
+diff --git a/Source/JavaScriptCore/heap/MarkedBlock.cpp b/Source/JavaScriptCore/heap/MarkedBlock.cpp
+index e48bcfdfd8e28..d84a1ed61dad3 100644
+--- a/Source/JavaScriptCore/heap/MarkedBlock.cpp
++++ b/Source/JavaScriptCore/heap/MarkedBlock.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2011-2022 Apple Inc. All rights reserved.
++ * Copyright (C) 2011-2024 Apple Inc. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+@@ -198,9 +198,49 @@ void MarkedBlock::Handle::resumeAllocating(FreeList& freeList)
+     sweep(&freeList);
+ }
+ 
++#if ENABLE(MARKEDBLOCK_TEST_DUMP_INFO)
++
++inline void MarkedBlock::setupTestForDumpInfoAndCrash()
++{
++    static std::atomic<uint64_t> count = 0;
++    // Option set to 0 disables testing.
++    if (++count == Options::markedBlockDumpInfoCount()) {
++        memset(&header(), 0, sizeof(uintptr_t));
++        switch (Options::markedBlockDumpInfoCount() & 0xf) {
++        case 1: // Test null VM pointer.
++            dataLogLn("Zeroing MarkedBlock::Header::m_vm");
++            *const_cast<VM**>(&header().m_vm) = nullptr;
++            break;
++        case 2: // Test non-null invalid VM pointer.
++            dataLogLn("Corrupting MarkedBlock::Header::m_vm");
++            *const_cast<VM**>(&header().m_vm) = bitwise_cast<VM*>(0xdeadbeefdeadbeef);
++            break;
++        case 3: // Test contiguous and total zero byte counts: start and end zeroed.
++            dataLogLn("Zeroing start and end of MarkedBlock");
++            char* blockMem = bitwise_cast<char*>(this);
++            memset(blockMem, 0, blockSize / 4);
++            memset(blockMem + 3 * blockSize / 4, 0, blockSize / 4);
++            break;
++        case 4: // Test contiguous and total zero byte counts: entire block zeroed.
++            dataLogLn("Zeroing MarkedBlock");
++            char* blockMem = bitwise_cast<char*>(this);
++            memset(blockMem, 0, blockSize);
++            break;
++        }
++    }
++}
++
++#else
++
++inline void MarkedBlock::setupTestForDumpInfoAndCrash() { }
++
++#endif // ENABLE(MARKEDBLOCK_TEST_DUMP_INFO)
++
+ void MarkedBlock::aboutToMarkSlow(HeapVersion markingVersion, HeapCell* cell)
+ {
+     ASSERT(vm().heap.objectSpace().isMarking());
++    setupTestForDumpInfoAndCrash();
++
+     Locker locker { header().m_lock };
+     
+     if (!areMarksStale(markingVersion))
+@@ -208,7 +248,7 @@ void MarkedBlock::aboutToMarkSlow(HeapVersion markingVersion, HeapCell* cell)
+ 
+     MarkedBlock::Handle* handle = header().handlePointerForNullCheck();
+     if (UNLIKELY(!handle))
+-        dumpInfoAndCrashForInvalidHandle(locker, cell);
++        dumpInfoAndCrashForInvalidHandleV2(locker, cell);
+ 
+     BlockDirectory* directory = handle->directory();
+ 
+@@ -486,156 +526,105 @@ bool MarkedBlock::Handle::isFreeListedCell(const void* target) const
+     return m_directory->isFreeListedCell(target);
+ }
+ 
+-#if PLATFORM(COCOA)
+-#define LOG_INVALID_HANDLE_DETAILS(s, ...) do { \
+-    out.printf("INVALID HANDLE: " s, __VA_ARGS__); \
+-    WTF::setCrashLogMessage(out.toCString().data()); \
+-} while (false)
+-#else
+-#define LOG_INVALID_HANDLE_DETAILS(s, ...) do { \
+-    out.printf("INVALID HANDLE: " s, __VA_ARGS__); \
+-    dataLog(out.toCString().data()); \
+-} while (false)
+-#endif
+-
+-#if CPU(ARM64)
+-#define DEFINE_SAVED_VALUE(name, reg, value) \
+-    volatile register decltype(value) name asm(reg) = value; \
+-    WTF::opaque(name); \
+-    WTF::compilerFence();
+-#else
+-#define DEFINE_SAVED_VALUE(name, reg, value) \
+-    decltype(value) name = value; \
+-    UNUSED_VARIABLE(name);
+-#endif
+-
+-#define SAVE_TO_REG(name, value) do { \
+-    name = WTF::opaque(value); \
+-    WTF::compilerFence(); \
+-} while (false)
+-
+-NO_RETURN_DUE_TO_CRASH NEVER_INLINE void MarkedBlock::dumpInfoAndCrashForInvalidHandle(AbstractLocker&, HeapCell* heapCell)
++NO_RETURN_DUE_TO_CRASH NEVER_INLINE void MarkedBlock::dumpInfoAndCrashForInvalidHandleV2(AbstractLocker&, HeapCell* heapCell)
+ {
+-    JSCell* cell = bitwise_cast<JSCell*>(heapCell);
+-    JSType cellType = cell->type();
+-
+-    StringPrintStream out;
+-    LOG_INVALID_HANDLE_DETAILS("MarkedBlock = %p ; heapCell = %p ; type = %d\n", this, heapCell, cellType);
+-
+-    DEFINE_SAVED_VALUE(savedMarkedBlock, "x19", this);
+-    DEFINE_SAVED_VALUE(savedType, "x20", cellType);
+-    DEFINE_SAVED_VALUE(savedHeapCell, "x21", heapCell);
+-
+-    static_assert(!offsetOfHeader);
+-    static_assert(!OBJECT_OFFSETOF(Header, m_handle));
+-    size_t contiguousZeroCountAfterHandle = 0;
+-    {
+-        char* mem = WTF::bitwise_cast<char*>(&header());
+-        for (; contiguousZeroCountAfterHandle < MarkedBlock::blockSize; ++contiguousZeroCountAfterHandle) {
+-            if (*mem)
+-                break;
+-            ++mem;
+-        }
+-    }
+-    LOG_INVALID_HANDLE_DETAILS("found %zd 0s at beginning of block\n", contiguousZeroCountAfterHandle);
+-    SAVE_TO_REG(savedMarkedBlock, this);
+-    SAVE_TO_REG(savedHeapCell, heapCell);
+-    SAVE_TO_REG(savedType, cellType);
+-    DEFINE_SAVED_VALUE(savedCount, "x22", contiguousZeroCountAfterHandle);
+-
+-    bool isValidBlockVM = false;
+-    bool foundBlockInThisVM = false;
+-    bool isBlockInVM = false;
+-    bool isBlockHandleInVM = false;
+-
+     VM* blockVM = header().m_vm;
+     VM* actualVM = nullptr;
+-    DEFINE_SAVED_VALUE(savedBlockVM, "x23", blockVM);
+-    DEFINE_SAVED_VALUE(savedActualVM, "x24", actualVM);
+-    DEFINE_SAVED_VALUE(savedBitfield, "x25", 0L);
++    bool isBlockVMValid = false;
++    bool isBlockInSet = false;
++    bool isBlockInDirectory = false;
++    bool foundInBlockVM = false;
++    size_t contiguousZeroBytesHeadOfBlock = 0;
++    size_t totalZeroBytesInBlock = 0;
++    uint64_t cellFirst8Bytes = 0;
++
++    if (heapCell) {
++        uint64_t* p = bitwise_cast<uint64_t*>(heapCell);
++        cellFirst8Bytes = *p;
++    }
+ 
+-    {
+-        VMInspector::forEachVM([&](VM& vm) {
+-            if (blockVM == &vm) {
+-                isValidBlockVM = true;
+-                SAVE_TO_REG(savedActualVM, &vm);
+-                SAVE_TO_REG(savedBitfield, 8);
+-                LOG_INVALID_HANDLE_DETAILS("block VM %p is valid\n", &vm);
+-                return IterationStatus::Done;
+-            }
+-            return IterationStatus::Continue;
+-        });
++    auto updateCrashLogMsg = [&](int line) {
++#if PLATFORM(COCOA)
++        StringPrintStream out;
++        out.printf("INVALID HANDLE [%d]: markedBlock=%p; heapCell=%p; cellFirst8Bytes=%#llx; contiguousZeros=%lu; totalZeros=%lu; blockVM=%p; actualVM=%p; isBlockVMValid=%d; isBlockInSet=%d; isBlockInDir=%d; foundInBlockVM=%d;",
++            line, this, heapCell, cellFirst8Bytes, contiguousZeroBytesHeadOfBlock, totalZeroBytesInBlock, blockVM, actualVM, isBlockVMValid, isBlockInSet, isBlockInDirectory, foundInBlockVM);
++        const char* msg = out.toCString().data();
++        WTF::setCrashLogMessage(msg);
++        dataLogLn(msg);
++#else
++        UNUSED_PARAM(line);
++#endif
++    };
++    updateCrashLogMsg(__LINE__);
++
++    char* blockStart = bitwise_cast<char*>(this);
++    bool sawNonZero = false;
++    for (auto mem = blockStart; mem < blockStart + MarkedBlock::blockSize; mem++) {
++        // Exclude the MarkedBlock::Header::m_lock from the zero scan since taking the lock writes a non-zero value.
++        auto isMLockBytes = [blockStart](char* p) {
++            constexpr size_t lockOffset = offsetOfHeader + OBJECT_OFFSETOF(MarkedBlock::Header, m_lock);
++            size_t offset = p - blockStart;
++            return lockOffset <= offset && offset < lockOffset + sizeof(MarkedBlock::Header::m_lock);
++        };
++        bool byteIsZero = !*mem;
++        if (byteIsZero || isMLockBytes(mem)) {
++            totalZeroBytesInBlock++;
++            if (!sawNonZero)
++                contiguousZeroBytesHeadOfBlock++;
++        } else
++            sawNonZero = true;
+     }
++    updateCrashLogMsg(__LINE__);
+ 
+-    SAVE_TO_REG(savedMarkedBlock, this);
+-    SAVE_TO_REG(savedHeapCell, heapCell);
+-    SAVE_TO_REG(savedType, cellType);
+-    SAVE_TO_REG(savedCount, contiguousZeroCountAfterHandle);
+-    SAVE_TO_REG(savedBlockVM, blockVM);
++    VMInspector::forEachVM([&](VM& vm) {
++        if (blockVM == &vm) {
++            isBlockVMValid = true;
++            return IterationStatus::Done;
++        }
++        return IterationStatus::Continue;
++    });
++    updateCrashLogMsg(__LINE__);
+ 
+-    if (isValidBlockVM) {
++    if (isBlockVMValid) {
+         MarkedSpace& objectSpace = blockVM->heap.objectSpace();
+-        isBlockInVM = objectSpace.blocks().set().contains(this);
+-        isBlockHandleInVM = !!objectSpace.findMarkedBlockHandleDebug(this);
+-        foundBlockInThisVM = isBlockInVM || isBlockHandleInVM;
+-        LOG_INVALID_HANDLE_DETAILS("block in our VM = %d, block handle in our VM = %d\n", isBlockInVM, isBlockHandleInVM);
+-
+-        SAVE_TO_REG(savedBitfield, (isValidBlockVM ? 8 : 0) | (isBlockInVM ? 4 : 0) | (isBlockHandleInVM ? 2 : 0) | (foundBlockInThisVM ? 1 : 0));
++        isBlockInSet = objectSpace.blocks().set().contains(this);
++        isBlockInDirectory = !!objectSpace.findMarkedBlockHandleDebug(this);
++        foundInBlockVM = isBlockInSet || isBlockInDirectory;
++        updateCrashLogMsg(__LINE__);
+     }
+ 
+-    SAVE_TO_REG(savedMarkedBlock, this);
+-    SAVE_TO_REG(savedHeapCell, heapCell);
+-    SAVE_TO_REG(savedType, cellType);
+-    SAVE_TO_REG(savedCount, contiguousZeroCountAfterHandle);
+-    SAVE_TO_REG(savedBlockVM, blockVM);
+-
+-    if (!isBlockInVM && !isBlockHandleInVM) {
+-        // worst case path
++    if (!foundInBlockVM) {
++        // Search all VMs to see if this block belongs to any VM.
+         VMInspector::forEachVM([&](VM& vm) {
+             MarkedSpace& objectSpace = vm.heap.objectSpace();
+-            isBlockInVM = objectSpace.blocks().set().contains(this);
+-            isBlockHandleInVM = !!objectSpace.findMarkedBlockHandleDebug(this);
+-            // Either of them is true indicates that the block belongs or used to belong to the VM.
+-            if (isBlockInVM || isBlockHandleInVM) {
++            isBlockInSet = objectSpace.blocks().set().contains(this);
++            isBlockInDirectory = !!objectSpace.findMarkedBlockHandleDebug(this);
++            // Either of them is true indicates that the block belongs to the VM.
++            if (isBlockInSet || isBlockInDirectory) {
+                 actualVM = &vm;
+-                LOG_INVALID_HANDLE_DETAILS("block in another VM: %d, block in another VM: %d; other VM is %p\n", isBlockInVM, isBlockHandleInVM, &vm);
+-
+-                SAVE_TO_REG(savedActualVM, actualVM);
+-                SAVE_TO_REG(savedBitfield, (isValidBlockVM ? 8 : 0) | (isBlockInVM ? 4 : 0) | (isBlockHandleInVM ? 2 : 0) | (foundBlockInThisVM ? 1 : 0));
+-
++                updateCrashLogMsg(__LINE__);
+                 return IterationStatus::Done;
+             }
+             return IterationStatus::Continue;
+         });
+     }
+-
+-    SAVE_TO_REG(savedMarkedBlock, this);
+-    SAVE_TO_REG(savedHeapCell, heapCell);
+-    SAVE_TO_REG(savedType, cellType);
+-    SAVE_TO_REG(savedCount, contiguousZeroCountAfterHandle);
+-    SAVE_TO_REG(savedBlockVM, blockVM);
+-    SAVE_TO_REG(savedActualVM, savedActualVM);
+-    SAVE_TO_REG(savedBitfield, savedBitfield);
++    updateCrashLogMsg(__LINE__);
+ 
+     uint64_t bitfield = 0xab00ab01ab020000;
+-    if (!isValidBlockVM)
++    if (!isBlockVMValid)
+         bitfield |= 1 << 7;
+-    if (!isBlockInVM)
++    if (!isBlockInSet)
+         bitfield |= 1 << 6;
+-    if (!isBlockHandleInVM)
++    if (!isBlockInDirectory)
+         bitfield |= 1 << 5;
+-    if (!foundBlockInThisVM)
++    if (!foundInBlockVM)
+         bitfield |= 1 << 4;
+ 
+-    // Make sure that the compiler doesn't think of these as "unused"
+-    WTF::compilerFence();
+-    WTF::opaque(savedMarkedBlock);
+-    WTF::opaque(savedHeapCell);
+-    WTF::opaque(savedType);
+-    WTF::opaque(savedCount);
+-    WTF::opaque(savedBlockVM);
++    static_assert(MarkedBlock::blockSize < (1ull << 32));
++    uint64_t zeroCounts = contiguousZeroBytesHeadOfBlock | (static_cast<uint64_t>(totalZeroBytesInBlock) << 32);
+ 
+-    CRASH_WITH_INFO(cell, cellType, contiguousZeroCountAfterHandle, bitfield, this, blockVM, actualVM);
++    // NB: could save something other than 'this' since it can be derived from heapCell.
++    CRASH_WITH_INFO(heapCell, cellFirst8Bytes, zeroCounts, bitfield, this, blockVM, actualVM);
+ }
+ 
+ } // namespace JSC
+diff --git a/Source/JavaScriptCore/heap/MarkedBlock.h b/Source/JavaScriptCore/heap/MarkedBlock.h
+index 64ad66d853ad4..ff2485dd42701 100644
+--- a/Source/JavaScriptCore/heap/MarkedBlock.h
++++ b/Source/JavaScriptCore/heap/MarkedBlock.h
+@@ -421,8 +421,9 @@ class MarkedBlock {
+     inline bool marksConveyLivenessDuringMarking(HeapVersion markingVersion);
+     inline bool marksConveyLivenessDuringMarking(HeapVersion myMarkingVersion, HeapVersion markingVersion);
+ 
+-    // This is only used for debugging. We should remove this once the issue is resolved (rdar://136782494)
+-    NO_RETURN_DUE_TO_CRASH NEVER_INLINE void dumpInfoAndCrashForInvalidHandle(AbstractLocker&, HeapCell*);
++    // FIXME: rdar://139998916
++    NO_RETURN_DUE_TO_CRASH NEVER_INLINE void dumpInfoAndCrashForInvalidHandleV2(AbstractLocker&, HeapCell*);
++    inline void setupTestForDumpInfoAndCrash();
+ };
+ 
+ inline MarkedBlock::Header& MarkedBlock::header()
+diff --git a/Source/JavaScriptCore/heap/MarkedSpace.cpp b/Source/JavaScriptCore/heap/MarkedSpace.cpp
+index 3657c5a97b133..b3e5c1bc35e05 100644
+--- a/Source/JavaScriptCore/heap/MarkedSpace.cpp
++++ b/Source/JavaScriptCore/heap/MarkedSpace.cpp
+@@ -1,5 +1,5 @@
+ /*
+- *  Copyright (C) 2003-2022 Apple Inc. All rights reserved.
++ *  Copyright (C) 2003-2024 Apple Inc. All rights reserved.
+  *  Copyright (C) 2007 Eric Seidel <eric@webkit.org>
+  *
+  *  This library is free software; you can redistribute it and/or
+@@ -374,7 +374,7 @@ bool MarkedSpace::isPagedOut()
+     return pagedOutPagesStats.mean() > pagedOutPagesStats.count() * bailoutPercentage;
+ }
+ 
+-// Don't forget to remove this once we're done debugging (rdar://136782494)
++// FIXME: rdar://139998916
+ MarkedBlock::Handle* MarkedSpace::findMarkedBlockHandleDebug(MarkedBlock* block)
+ {
+     MarkedBlock::Handle* result = nullptr;
+diff --git a/Source/JavaScriptCore/heap/MarkedSpace.h b/Source/JavaScriptCore/heap/MarkedSpace.h
+index 280cc239cd0c0..d8f68f1431146 100644
+--- a/Source/JavaScriptCore/heap/MarkedSpace.h
++++ b/Source/JavaScriptCore/heap/MarkedSpace.h
+@@ -1,7 +1,7 @@
+ /*
+  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
+  *  Copyright (C) 2001 Peter Kelly (pmk@post.com)
+- *  Copyright (C) 2003-2021 Apple Inc. All rights reserved.
++ *  Copyright (C) 2003-2024 Apple Inc. All rights reserved.
+  *
+  *  This library is free software; you can redistribute it and/or
+  *  modify it under the terms of the GNU Lesser General Public
+@@ -137,6 +137,7 @@ class MarkedSpace {
+     void didConsumeFreeList(MarkedBlock::Handle*);
+     void didAllocateInBlock(MarkedBlock::Handle*);
+ 
++    // FIXME: rdar://139998916
+     MarkedBlock::Handle* findMarkedBlockHandleDebug(MarkedBlock*);
+ 
+     void beginMarking();
+diff --git a/Source/JavaScriptCore/runtime/OptionsList.h b/Source/JavaScriptCore/runtime/OptionsList.h
+index 88f60336184b9..8ae540b0919cb 100644
+--- a/Source/JavaScriptCore/runtime/OptionsList.h
++++ b/Source/JavaScriptCore/runtime/OptionsList.h
+@@ -557,7 +557,7 @@ bool canUseWebAssemblyFastMemory();
+     v(Bool, useWebAssemblyExceptions, true, Normal, "Allow the new section and instructions from the wasm exception handling spec.") \
+     v(Bool, useWebAssemblyBranchHints, true, Normal, "Allow the new section from the wasm branch hinting spec.") \
+     v(Bool, disableConsoleLog, false, Normal, "Disable printing of JS console logs.") \
+-
++    v(Unsigned, markedBlockDumpInfoCount, 0, Normal, nullptr) /* FIXME: rdar://139998916 */ \
+ 
+ enum OptionEquivalence {
+     SameOption,
+
+From 02b9a1cdadcf4d0b2f967ee01e5b3b8628b89567 Mon Sep 17 00:00:00 2001
+From: Angelos Oikonomopoulos <angelos@igalia.com>
+Date: Thu, 5 Mar 2026 10:06:53 +0100
+Subject: [PATCH 5/5] Enable dumpInfoAndCrashForInvalidHandleV2 on non-Cocoa
+
+---
+ Source/JavaScriptCore/heap/MarkedBlock.cpp | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/Source/JavaScriptCore/heap/MarkedBlock.cpp b/Source/JavaScriptCore/heap/MarkedBlock.cpp
+index d84a1ed61dad3..bd027fce1db9c 100644
+--- a/Source/JavaScriptCore/heap/MarkedBlock.cpp
++++ b/Source/JavaScriptCore/heap/MarkedBlock.cpp
+@@ -544,16 +544,14 @@ NO_RETURN_DUE_TO_CRASH NEVER_INLINE void MarkedBlock::dumpInfoAndCrashForInvalid
+     }
+ 
+     auto updateCrashLogMsg = [&](int line) {
+-#if PLATFORM(COCOA)
+         StringPrintStream out;
+         out.printf("INVALID HANDLE [%d]: markedBlock=%p; heapCell=%p; cellFirst8Bytes=%#llx; contiguousZeros=%lu; totalZeros=%lu; blockVM=%p; actualVM=%p; isBlockVMValid=%d; isBlockInSet=%d; isBlockInDir=%d; foundInBlockVM=%d;",
+-            line, this, heapCell, cellFirst8Bytes, contiguousZeroBytesHeadOfBlock, totalZeroBytesInBlock, blockVM, actualVM, isBlockVMValid, isBlockInSet, isBlockInDirectory, foundInBlockVM);
++            line, this, heapCell, static_cast<long long>(cellFirst8Bytes), contiguousZeroBytesHeadOfBlock, totalZeroBytesInBlock, blockVM, actualVM, isBlockVMValid, isBlockInSet, isBlockInDirectory, foundInBlockVM);
+         const char* msg = out.toCString().data();
++#if PLATFORM(COCOA)
+         WTF::setCrashLogMessage(msg);
+-        dataLogLn(msg);
+-#else
+-        UNUSED_PARAM(line);
+ #endif
++        dataLogLn(msg);
+     };
+     updateCrashLogMsg(__LINE__);
+ 
+
+
