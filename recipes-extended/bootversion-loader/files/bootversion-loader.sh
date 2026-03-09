@@ -53,6 +53,8 @@ writeToFile() {
     elif [ "$mode" = "truncate" ]; then
 		error_output=$( { echo "$content" >> "$file"; } 2>&1 )
         result=$?
+	else
+		boottypeLog "invalid write mode"
     fi
 
     if [ $result -ne 0 ]; then
