@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "a75ce72c4e68fa288353024ba3d6d511aecabc7b"
+SRCREV = "2a7e651fa24fbdd1965629cb6cba70d85997a38f"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-cloudstore;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
