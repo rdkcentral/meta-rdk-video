@@ -17,7 +17,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 require rialto_revision.inc
 
-SRCREV = "eb227caee2521f14d81cbf9fa0f199be1cadb97c"
+SRCREV = "08524c164d2229516b19dad623b1de84a62ff95f"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto-gstreamer;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
 
 DEPENDS = "openssl jsoncpp glib-2.0 gstreamer1.0 gstreamer1.0-plugins-base wpeframework-clientlibraries protobuf protobuf-native rialto rialto-ocdm"
