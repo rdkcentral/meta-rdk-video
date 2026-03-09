@@ -93,7 +93,6 @@ do_install:append() {
     fi
 }
 
-
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
