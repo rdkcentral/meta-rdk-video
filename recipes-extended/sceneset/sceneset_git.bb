@@ -11,7 +11,7 @@ inherit cmake pkgconfig systemd
 
 DEPENDS += "wpeframework entservices-apis"
 
-SRCREV = "bd0bfe2c11788158b8025756d6b61f38304177a7"
+SRCREV = "46eb1a3fd214598b97ac25f2c6758b23563a7f40"
 SRC_URI = "${CMF_GITHUB_ROOT}/sceneset;${CMF_GITHUB_SRC_URI_SUFFIX};name=sceneset"
 SRCREV_FORMAT = "sceneset"
 
