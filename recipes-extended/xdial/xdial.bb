@@ -10,7 +10,7 @@ PV = "1.0.2"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "c9de5ebc80f20e21591fb876a065eff3a702549d"
+SRCREV = "6be8a494d563ca4b2c820f83063611ad4627ca67"
 SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
@@ -23,7 +23,7 @@ EXTRA_OEMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disa
 #libsoup3 not compatible with gdial
 DEPENDS:append =  " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', ' libsoup-3.0 ', ' libsoup-2.4 ', d)}"
 #DEPENDS:append = " libsoup-2.4"
-DEPENDS:append = " gssdp-1.6.3"
+DEPENDS:append = " gssdp"
 DEPENDS:append = " cmake-native"
 EXTRANATIVEPATH += "cmake-native"
 
