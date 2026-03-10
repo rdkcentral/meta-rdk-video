@@ -27,7 +27,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'whoami_enabled', ' -D
 
 # Add Task Timeout
 EXTRA_OECMAKE += "-DTASK_TIMEOUT=${MAINTENANCE_TASK_TIMEOUT}"
-EXTRA_OECMAKE += "-DENABLE_TEST_THREAD_EXCEPTION=ON"
+# EXTRA_OECMAKE += "-DENABLE_TEST_THREAD_EXCEPTION=ON"
 
 # Enable Journal Logging
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_maintenance_manager maintenance_journal_logging', ' -DENABLE_JOURNAL_LOGGING=ON', '',d)}"
