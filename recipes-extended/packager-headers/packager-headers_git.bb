@@ -7,7 +7,7 @@ PV = "1.2.0"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "35abcbcbd7ce94660f3734522d61f25f676f6e0c"
+SRCREV = "de0313b54053df870955abb9463cb33f0fb3160e"
 SRC_URI = "${CMF_GITHUB_ROOT}/eshelpers;${CMF_GITHUB_SRC_URI_SUFFIX};name=eshelpers"
 
 S = "${WORKDIR}/git"
