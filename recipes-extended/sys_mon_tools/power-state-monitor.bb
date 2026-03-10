@@ -11,25 +11,19 @@ PV = "1.0.0"
 PR = "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX};name=pwr-state-monitor;branch=RDKEMW-14816-power-state-monitor"
-SRCREV_power-state-monitor = "9085f60cf22c2c06370a7132f78f8721f27f726e"
+SRCREV = "9085f60cf22c2c06370a7132f78f8721f27f726e"
 S = "${WORKDIR}/git"
 
-DEPENDS = "iarmbus glib-2.0"
+CFLAGS:append = " -DYOCTO_BUILD"
+DEPENDS = "iarmbus iarmmgrs dbus glib-2.0 directfb"
+RDEPENDS:${PN} += "iarmmgrs"
 
-#export LINK = "${LD}"
-
-#export GLIBS = "-lglib-2.0 -lz"
-
-#LDFLAGS += "-Wl,-O1"
-
-#export USE_DBUS = "y"
-
-inherit coverity
+inherit autotools pkgconfig coverity
 
 do_install() {
 
     install -d ${D}${bindir}
-    install -m 0755 ${B}/pwr-state-monitor ${D}${bindir}/
+    install -m 0755 ${B}/pwr-state-monitor ${D}${bindir}
 }
 
 FILES:${PN} += "${bindir}/pwr-state-monitor"
