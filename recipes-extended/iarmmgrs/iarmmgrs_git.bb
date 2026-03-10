@@ -44,7 +44,10 @@ SYSLOG-NG_SERVICE_uimgr += "dsmgr.service mfrmgr.service sysmgr.service"
 
 # Keep Breakpad link flags in LDFLAGS for this make-driven recipe.
 BREAKPAD_LDFLAGS:pn-iarmmgrs = "${BACKTRACE_LDFLAGS}"
+EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
 LDFLAGS:append = " ${@LOG_BACKTRACE == 'y' and BREAKPAD_LDFLAGS or ''}"
+
+EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 
 #key-simulator
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_eu_remote', ' -D_SKQ_KEY_MAP_1_', '', d)}"
