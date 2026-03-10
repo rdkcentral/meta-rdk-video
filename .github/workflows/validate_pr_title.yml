@@ -56,6 +56,24 @@ jobs:
             return 1
           fi
 
+          # Check for duplicate ticket IDs
+          declare -A ticket_count=()
+          local duplicates=()
+          for ticket in "${tickets[@]}"; do
+            if [ -n "${ticket_count[$ticket]}" ]; then
+              duplicates+=("$ticket")
+            fi
+            ticket_count["$ticket"]=1
+          done
+
+          if [ "${#duplicates[@]}" -ne 0 ]; then
+            echo "ERROR: Duplicate ticket ID(s) found in $field_name: ${duplicates[*]}"
+            echo "Each ticket ID should appear only once."
+            echo "Example (single): RDKEMW-123 : Fix playbook issue"
+            echo "Example (multiple): RDKEMW-123, RDKDEV-45 : Fix playbook issue"
+            return 1
+          fi
+
           # Check if extracted ticket IDs are in the valid list
           declare -A invalid_prefix_set=()
           declare -A invalid_token_set=()
