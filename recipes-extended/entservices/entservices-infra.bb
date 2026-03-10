@@ -11,6 +11,7 @@ inherit cmake pkgconfig
 SRCREV = "f2a4e0c1a6dc08dc45167a6b08e84a9fdc185bf6"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkshell_post_startup.conf \
+           file://0001-Add-monitoring-of-cloned-callsigns.patch \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
@@ -47,7 +48,16 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " resourcemanager \
+PACKAGECONFIG ?= " monitor \
+    persistent_store \
+    resourcemanager \
+    sharedstorage \
+    telemetrysupport \
+    usbdevice \
+    usbmass_storage \
+    usersettings \
+    ocicontainer \  
+    messagecontrol \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_bolt_apps', '', 'rdknativescript', d)} \
     javascriptcore \          
     texttospeechmonitor \    
