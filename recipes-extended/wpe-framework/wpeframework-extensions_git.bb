@@ -5,13 +5,13 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 PV = "1.0.0"
 PR = "r2"
 
-S = "${WORKDIR}/wpeframework-extensions"
+S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-BRANCH ?= "dev/thunder-extensions"
-SRCREV ?= "3ddd5eabea3e77c8d3c6a6d480cf8fd214c949f4"
+BRANCH ?= "dev/extensions"
+SRCREV ?= "d9852855190dc2d298f2c7ec4ae14a9b2f57081d"
 
-SRC_URI = "git://github.com/rdkcentral/ThunderNanoServices.git;protocol=ssh;branch=${BRANCH};destsuffix=wpeframework-extensions"
+SRC_URI = "git://github.com/rdk-e/thunderextensions.git;protocol=ssh;branch=${BRANCH}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
