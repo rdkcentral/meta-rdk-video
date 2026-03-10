@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "f2a4e0c1a6dc08dc45167a6b08e84a9fdc185bf6"
+SRCREV = "91e2f8d8b6c0228f475797b83d10499703052125"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
@@ -29,7 +29,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant p
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries entservices-apis iarmbus iarmmgrs rfc"
-RDEPENDS:${PN} += "wpeframework entservices-apis iarmbus rfc"
+RDEPENDS:${PN} += "wpeframework entservices-apis iarmbus iarmmgrs rfc"
 DEPENDS += "packager-headers"
 
 CFLAGS  += " \
