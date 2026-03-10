@@ -42,6 +42,10 @@ SYSLOG-NG_SERVICE_uimgr += "dsmgr.service mfrmgr.service sysmgr.service"
 #SYSLOG-NG_DESTINATION_uimgr = "uimgr_log.txt"
 #SYSLOG-NG_LOGRATE_uimgr = "very-high"
 
+# Keep Breakpad link flags in LDFLAGS for this make-driven recipe.
+BREAKPAD_LDFLAGS:pn-iarmmgrs = "${BACKTRACE_LDFLAGS}"
+LDFLAGS:append = " ${@LOG_BACKTRACE == 'y' and BREAKPAD_LDFLAGS or ''}"
+
 #key-simulator
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_eu_remote', ' -D_SKQ_KEY_MAP_1_', '', d)}"
 
