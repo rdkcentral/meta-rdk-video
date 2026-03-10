@@ -29,7 +29,7 @@ inherit coverity
 do_install() {
 
     install -d ${D}${bindir}
-    install -m 0755 ${B}/pwr-state-monitor ${D}${bindir}
+    install -m 0755 ${B}/pwr-state-monitor ${D}${bindir}/
 }
 
 FILES:${PN} += "${bindir}/pwr-state-monitor"
