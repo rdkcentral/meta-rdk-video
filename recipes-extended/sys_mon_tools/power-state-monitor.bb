@@ -11,7 +11,7 @@ PV = "1.0.0"
 PR = "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX};name=pwr-state-monitor;branch=RDKEMW-14816-power-state-monitor"
-SRCREV_power-state-monitor = "9ab5557a5bf87447befcfd6dfa56b6ab28256469"
+SRCREV_power-state-monitor = "9650fbb48316e37bec7fbdb6ac04410e4aa24066"
 S = "${WORKDIR}/git"
 
 DEPENDS = "iarmbus glib-2.0"
