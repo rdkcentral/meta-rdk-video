@@ -53,22 +53,22 @@ writeToFile() {
     elif [ "$mode" = "truncate" ]; then
 		error_output=$( { echo "$content" > "$file"; } 2>&1 )
         result=$?
-	else
-		boottypeLog "invalid write mode"
+    else
+    boottypeLog "invalid write mode"
     fi
 
     if [ $result -ne 0 ]; then
         echo "Error writing to $file: $error_output" >&2
         update_boottype_status "file write error: $error_output"
     fi
-	return 0
+    return 0
 }
 
 # Function to update boot type status and exit with error
 update_boottype_status() {
     echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
-	boottypeLog "Setting to BOOT_NORMAL due to error:$1"
-	exit 1
+    boottypeLog "Setting to BOOT_NORMAL due to error:$1"
+    exit 1
 }
 
 #Start of the script 
@@ -142,7 +142,7 @@ if [ ! -e "$file_bootversion" ]; then
      writeToFile "$v_FW_Class" "$file_bootversion" "append"
      writeToFile "BOOT_TYPE=BOOT_INIT" "$file_bootType" "truncate"
      boottypeLog "BOOT_INIT is set since $file_bootversion is not present"
-	 writeToFile "COMPLETED" "$file_updateStatus" "truncate"
+     writeToFile "COMPLETED" "$file_updateStatus" "truncate"
      boottypeLog "Update completed."
      exit 0
 fi
