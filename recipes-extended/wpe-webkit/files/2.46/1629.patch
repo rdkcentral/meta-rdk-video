@@ -1,0 +1,32 @@
+From bfbdaec0846d9a488ed74d792c3a98bb0a095596 Mon Sep 17 00:00:00 2001
+From: Gurdal Oruklu <gurdal_oruklu@comcast.com>
+Date: Mon, 2 Mar 2026 20:02:13 -0800
+Subject: [PATCH] [GStreamer][WesterosQuirk] set low-latency-mode  property
+
+Amlogic uses "low-latency-mode"  Westeros sink property instead of "immediate-mode" for lowest latency.
+---
+ .../platform/gstreamer/GStreamerQuirkWesteros.cpp     | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp b/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
+index c7f62b7e33b82..223fb7c759156 100644
+--- a/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
++++ b/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
+@@ -85,9 +85,14 @@ void GStreamerQuirkWesteros::configureElement(GstElement* element, const OptionS
+     if (!characteristics.contains(ElementRuntimeCharacteristics::IsMediaStream))
+         return;
+ 
+-    if (!g_strcmp0(G_OBJECT_TYPE_NAME(G_OBJECT(element)), "GstWesterosSink") && gstObjectHasProperty(element, "immediate-output")) {
+-        GST_INFO("Enable 'immediate-output' in WesterosSink");
+-        g_object_set(element, "immediate-output", TRUE, nullptr);
++    if (!g_strcmp0(G_OBJECT_TYPE_NAME(G_OBJECT(element)), "GstWesterosSink")){
++        if(gstObjectHasProperty(element, "low-latency-mode")) {
++            GST_INFO("Enable 'low-latency-mode' in WesterosSink");
++            g_object_set(element, "low-latency-mode", TRUE, nullptr);
++        } else if (gstObjectHasProperty(element, "immediate-output")) {
++            GST_INFO("Enable 'immediate-output' in WesterosSink");
++            g_object_set(element, "immediate-output", TRUE, nullptr);
++        }
+     }
+ }
+ 
