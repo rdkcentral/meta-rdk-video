@@ -8,9 +8,9 @@ DEPENDS = "cmake-native wpeframework-tools-native wpeframework wpeframework-exte
 RDEPENDS:${PN} = "wpeframework wpeframework-extensions"
 
 PV = "1.2.0"
-PR = "r0"
+PR = "r1"
 
-SRC_URI = "git://github.com/rdkcentral/ThunderPluginActivator;protocol=https;branch=PIS_Test_4.4;name=thunderpluginactivator"
+SRC_URI = "git://github.com/rdkcentral/ThunderPluginActivator;protocol=https;branch=Thunder_44_PIS;name=thunderpluginactivator"
 
 SRCREV = "0332a94cac3378fa3c23d3b106fa2fe642064753"
 
