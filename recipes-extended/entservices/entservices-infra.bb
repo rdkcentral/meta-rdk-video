@@ -47,16 +47,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " monitor \
-    persistent_store \
-    resourcemanager \
-    sharedstorage \
-    telemetrysupport \
-    usbdevice \
-    usbmass_storage \
-    usersettings \
-    ocicontainer \  
-    messagecontrol \
+PACKAGECONFIG ?= " resourcemanager \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_bolt_apps', '', 'rdknativescript', d)} \
     javascriptcore \          
     texttospeechmonitor \    
