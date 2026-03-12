@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "1.0.0"
-PR = "r0"
+PR = "r1"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX};name=pwr-state-monitor;branch=RDKEMW-14816-power-state-monitor"
 SRCREV = "9085f60cf22c2c06370a7132f78f8721f27f726e"
