@@ -16,6 +16,10 @@ SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git
 "
 S = "${WORKDIR}/git/systemd/system"
 
+THUNDER_STARTUP_SERVICES:rdktv-uk-armv7a = " \
+    wpeframework-motiondetection.service \
+    "
+
 THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-avinput.service \
     wpeframework-bluetooth.service \
@@ -27,7 +31,6 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-hdcpprofile.service \
     wpeframework-maintenancemanager.service \
     wpeframework-monitor.service \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'wpeframework-motiondetection.service', '', d)} \
     wpeframework-network.service \
     wpeframework-ocdm.service \
     wpeframework-persistentstore.service \
