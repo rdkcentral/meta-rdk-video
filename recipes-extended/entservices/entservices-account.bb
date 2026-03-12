@@ -8,48 +8,35 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-account;${CMF_GITHUB_SRC_URI_SUFFIX} "
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-account;${CMF_GITHUB_SRC_URI_SUFFIX}"
           
-# Release version - 1.0.0
-SRCREV = "fea7c0d7e0872253dcc1cfe9e65e21b3b1142347"
+# Release version - 1.0.1
+SRCREV = "8a82c8352a7936e6485c74a4a323c3df47cf9a10"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
-DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis boost devicesettings"
-RDEPENDS:${PN} += "wpeframework devicesettings"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
+RDEPENDS:${PN} += "wpeframework"
 
-TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
+TARGET_LDFLAGS += " -Wl,--no-as-needed -Wl,--as-needed "
 
-CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
-CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/halif/ds-hal/ "
-CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
-CXXFLAGS += " -DRFC_ENABLED "
-# enable filtering for undefined interfaces and link local ip address notifications
-CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
-CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
-    telemetrysupport \
     account \
 "
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
-PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[account] = "-DPLUGIN_ACCOUNT=ON,,entservices-apis, entservices-apis"
+PACKAGECONFIG[account] = "-DPLUGIN_ACCOUNT=ON,,entservices-apis,entservices-apis"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
-    -DSECAPI_LIB=sec_api \
 "
-
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"

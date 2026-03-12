@@ -1,4 +1,4 @@
-SUMMARY = "ENTServices  Backup Manager plugin"
+SUMMARY = "ENTServices Backup Manager plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
@@ -8,46 +8,36 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-backupmanager;${CMF_GITHUB_SRC_URI_SUFFIX} "
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-backupmanager;${CMF_GITHUB_SRC_URI_SUFFIX}"
           
-# Release version - 1.0.0
-SRCREV = "ff9a952f2ae75ec50c33af43efe4eae8ad38f938"
+# Release version - 1.0.1
+SRCREV = "0ba988487416627bd6fda21fb11ec852922dca4a"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
-DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis boost devicesettings"
-RDEPENDS:${PN} += "wpeframework devicesettings"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis boost"
+RDEPENDS:${PN} += "wpeframework"
 
-TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
+TARGET_LDFLAGS += " -Wl,--no-as-needed -Wl,--as-needed "
 
-CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
-CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/halif/ds-hal/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
-# enable filtering for undefined interfaces and link local ip address notifications
-CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
-CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
-    telemetrysupport \
     backupmanager \
 "
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
-PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[backupmanager] = "-DPLUGIN_BACKUPMANAGER=ON,,entservices-apis, entservices-apis"
+PACKAGECONFIG[backupmanager] = "-DPLUGIN_BACKUPMANAGER=ON,,entservices-apis,entservices-apis"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
-    -DSECAPI_LIB=sec_api \
 "
 
 
