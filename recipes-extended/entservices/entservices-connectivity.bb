@@ -8,12 +8,12 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "git://github.com/rdkcentral/entservices-connectivity.git;protocol=https;branch=topic/calc-plugin \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
 # Release version - 1.4.0
-SRCREV = "60c34011663e8ac1bb2791d0ee11428b132a21a2"
+SRCREV = "fce4cab806f04d37108c2307d6ab724e6ca6c093"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"

@@ -1,0 +1,13 @@
+[Unit]
+Description=Calculator Rule Executor Service
+After=local-fs.target
+Requires=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c '/usr/bin/main >> /var/log/calculator.log 2>&1'
+User=root
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
