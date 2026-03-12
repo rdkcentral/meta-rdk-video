@@ -4,17 +4,25 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-PV = "1.2.8"
+PV = "1.2.9"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "a07c8d282b90eb763fba2b027df6e468b83f2e18"
+SRCREV = "9636ea50737c8e5f5f0199772e7367b75e70334a"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
 S = "${WORKDIR}/git/systemd/system"
+
+THUNDER_STARTUP_SERVICES:rdktv-uk-armv7a = " \
+    wpeframework-motiondetection.service \
+    "
+
+THUNDER_STARTUP_SERVICES:sky-llama-it= " \
+    wpeframework-motiondetection.service \
+    "
 
 THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-avinput.service \
@@ -42,6 +50,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-voicecontrol.service \
     wpeframework-wifi.service \
     wpeframework-xcast.service \
+    wpeframework-userpreferences.service \
     wpeframework-usersettings.service \
     wpeframework-usbdevice.service \
     wpeframework-usbmassstorage.service \
