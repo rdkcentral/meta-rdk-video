@@ -14,12 +14,12 @@ NETWORKMANAGER_STUN_PORT ?= "19302"
 NETWORKMANAGER_LOGLEVEL ?= "3"
 
 PR = "r0"
-PV = "1.12.3"
+PV = "1.12.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=support/1.12.0"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=main"
 
-# Feb 19, 2026
+# Mar 12, 2026
 SRCREV = "d4244e0822c33c1566af7d089793eda4370057d3"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
