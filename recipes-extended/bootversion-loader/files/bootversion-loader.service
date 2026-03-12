@@ -1,6 +1,6 @@
 [Unit]
 Description=Boot version loader for RDK
-After=ecfs-init.service
+After=ecfs-init.service nvram.service storagemgrmain.service
 Requires=ecfs-init.service
 RequiresMountsFor=/opt/secure /opt /tmp
 
