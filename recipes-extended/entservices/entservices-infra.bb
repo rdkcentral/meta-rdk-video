@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "${PV}"
+SRCREV = "e246cdcc3f243e3890caaec99aa9454085732f29"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
