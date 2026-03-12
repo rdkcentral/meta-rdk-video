@@ -25,7 +25,7 @@ index 36a8eabe..eff3a541 100644
 +                        result = Core::ERROR_TIMEDOUT;
 +                        break;
 +                    }
-+            };
++            }
 +
 +            return result;
 +        }

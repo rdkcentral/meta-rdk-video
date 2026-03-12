@@ -92,9 +92,9 @@ index 2c910bff..0af1d6b8 100644
 +            if (service->State() != PluginHost::Service::state::UNAVAILABLE) {
 +                if (service->Extension() == true ) {
 +                    if (service->Startup() == PluginHost::IShell::startup::ACTIVATED ) {
-+                    SYSLOG(Logging::Startup, (_T("Activating Extension [%s]:[%s]"),
-+                        service->ClassName().c_str(), service->Callsign().c_str()));
-+                    service->Activate(PluginHost::IShell::STARTUP);
++                        SYSLOG(Logging::Startup, (_T("Activating Extension [%s]:[%s]"),
++                            service->ClassName().c_str(), service->Callsign().c_str()));
++                        service->Activate(PluginHost::IShell::STARTUP);
 +                    }
 +                    else {
 +                        SYSLOG(Logging::Startup, (_T("Activation of Extension [%s]:[%s] delayed, autostart is false"),
