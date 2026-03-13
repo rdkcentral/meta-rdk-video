@@ -2,13 +2,13 @@ SUMMARY = "ENTServices PersistentStore plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.0.2"
+PV = "1.0.3"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "de76f588f77a816f8b2da07de6e22c1bdbc27582"
+SRCREV = "8a6ac256d7782a8903f9f5b2db50b8d48195a029"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-persistentstore;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
