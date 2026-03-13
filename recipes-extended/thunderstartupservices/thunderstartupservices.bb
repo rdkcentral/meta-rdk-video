@@ -17,7 +17,9 @@ SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git
 S = "${WORKDIR}/git/systemd/system"
 
 THUNDER_STARTUP_SERVICES:append = "\
+    wpeframework-account.service \
     wpeframework-avinput.service \
+    wpeframework-backupmanager.service \
     wpeframework-bluetooth.service \
     wpeframework-cryptography.service \
     wpeframework-deviceinfo.service \
