@@ -24,40 +24,57 @@ WPA_P2P_SUPP_CONF_DIR="/opt/secure/wifi/p2p"
 WPA_P2P_SUPP_CONF_FILE=$WPA_P2P_SUPP_CONF_DIR/wpa_supplicant.conf
 LOG_LEVEL_STR=""
 DEBUGINIFILE=""
+WPA_P2P_SUPP_ARGS=""
 
 mkdir -p ${WPA_P2P_SUPP_CONF_DIR}
 
-if [ ! -f ${WPA_P2P_SUPP_CONF_FILE} ];then
+if [ ! -f ${WPA_P2P_SUPP_CONF_FILE} ]; then
    cp /etc/wifi_p2p/wpa_supplicant.conf $WPA_P2P_SUPP_CONF_FILE
 fi
 sync
 
-# Configuring wpa_supplicant log levels
-# Get debug.ini file with opt-override support
-if [ -f /opt/debug.ini ]  && [ "$BUILD_TYPE" != "prod" ]; then
-	DEBUGINIFILE=/opt/debug.ini
+# Select debug.ini location
+if [ -f /opt/debug.ini ] && [ "$BUILD_TYPE" != "prod" ]; then
+    DEBUGINIFILE=/opt/debug.ini
 else
-	DEBUGINIFILE=/etc/debug.ini
+    DEBUGINIFILE=/etc/debug.ini
 fi
 
-#Read debug.ini file and map to wpa-supplicant logging level
+# Map RDK log levels to wpa_supplicant
 log_line=`grep "LOG.RDK.WIFIP2PWPA" $DEBUGINIFILE`
 
-if [[ "$log_line" =~ "TRACE9" ]]; then
-	LOG_LEVEL_STR="-ddd"
-elif [[ "$log_line" =~ "TRACE" ]]; then
-	LOG_LEVEL_STR="-dd"
-elif [[ "$log_line" =~ "DEBUG" ]]; then
-	LOG_LEVEL_STR="-d"
-elif [[ "$log_line" =~ "INFO" ]]; then
-	LOG_LEVEL_STR=""
-elif [[ "$log_line" =~ "WARNING" ]]; then
-	LOG_LEVEL_STR="-q"
-elif [[ "$log_line" =~ "ERROR" ]]; then
-	LOG_LEVEL_STR="-qq"
+if echo "$log_line" | grep -q "TRACE9"; then
+    LOG_LEVEL_STR="-ddd"
+elif echo "$log_line" | grep -q "TRACE"; then
+    LOG_LEVEL_STR="-dd"
+elif echo "$log_line" | grep -q "DEBUG"; then
+    LOG_LEVEL_STR="-d"
+elif echo "$log_line" | grep -q "INFO"; then
+    LOG_LEVEL_STR=""
+elif echo "$log_line" | grep -q "WARNING"; then
+    LOG_LEVEL_STR="-q"
+elif echo "$log_line" | grep -q "ERROR"; then
+    LOG_LEVEL_STR="-qq"
 fi
+# P2P Interface from device.properties
+if ip link show wl0.2 >/dev/null 2>&1; then
+    echo "Broadcom platform detected"
 
+    WIFI_P2P_INTERFACE="wl0.2"
+echo "Using P2P interface: $WIFI_P2P_INTERFACE"
+
+WPA_SUPP_P2P_PID_FILE="/var/run/wpa_supplicant/p2p.pid"
+
+WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_INTERFACE -t $LOG_LEVEL_STR -P $WPA_SUPP_P2P_PID_FILE"
+
+else
+# Default generic configuration
+$WIFI_P2P_CTRL_INTERFACE
+    WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_CTRL_INTERFACE -t -U $LOG_LEVEL_STR"
+
+fi
+# Export systemd environment
 /bin/systemctl set-environment WPA_P2P_SUPP_CONF_FILE=$WPA_P2P_SUPP_CONF_FILE
-/bin/systemctl set-environment WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_CTRL_INTERFACE -t $LOG_LEVEL_STR"
+/bin/systemctl set-environment WPA_P2P_SUPP_ARGS="$WPA_P2P_SUPP_ARGS"
 
 exit 0
