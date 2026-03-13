@@ -16,14 +16,6 @@ SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git
 "
 S = "${WORKDIR}/git/systemd/system"
 
-THUNDER_STARTUP_SERVICES:rdktv-uk-armv7a = " \
-    wpeframework-motiondetection.service \
-    "
-
-THUNDER_STARTUP_SERVICES:sky-llama-it= " \
-    wpeframework-motiondetection.service \
-    "
-
 THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-avinput.service \
     wpeframework-bluetooth.service \
