@@ -51,17 +51,24 @@ SELECTED_OPTIMIZATION:append = " ${WPE_WEBKIT_OPTIMIZATION}"
 SELECTED_OPTIMIZATION:remove = "-g"
 SELECTED_OPTIMIZATION:append = " -g1 "
 
-#Optimize for size
-SELECTED_OPTIMIZATION:append = " -Os"
+# FIXED: Changed from -Os to -O2 to prevent type confusion crashes
+# -Os was causing SIGBUS at address 0x5 due to aggressive optimization
+# that breaks JavaScriptCore's value representation (NaN-boxing, type punning)
+#SELECTED_OPTIMIZATION:append = " -Os"  # REMOVED: Too aggressive for JSC
 SELECTED_OPTIMIZATION:append = " -fdata-sections -ffunction-sections"
-SELECTED_OPTIMIZATION:append = " -flto"
+#SELECTED_OPTIMIZATION:append = " -flto"  # REMOVED: Causes whole-program optimization issues with JSC
 SELECTED_OPTIMIZATION:append = " -fstack-usage"
+
+# CRITICAL: JavaScriptCore requires -fno-strict-aliasing for type punning
+# JSC uses tagged pointers and NaN-boxing which violate strict aliasing rules
+SELECTED_OPTIMIZATION:append = " -fno-strict-aliasing"
 
 TUNE_CCARGS:remove = "-fno-omit-frame-pointer -fno-optimize-sibling-calls"
 TUNE_CCARGS:append = " -fno-delete-null-pointer-checks"
 
 COMPATIBLE_MACHINE:mipsel = "(.*)"
-LDFLAGS:append = " -Wl,--no-keep-memory,--strip-all"
+# Changed from --strip-all to --strip-debug to preserve minimal symbols for crash analysis
+LDFLAGS:append = " -Wl,--no-keep-memory,--strip-debug"
 
 do_install() {
    install -d ${D}/${libdir}
