@@ -68,7 +68,7 @@ CFLAGS += " -DDSMGR_LOGGER_ENABLED"
 # added support for rfc
 CFLAGS += "-I${STAGING_INCDIR}/wdmp-c"
 CXXFLAGS += "-I${STAGING_INCDIR}/wdmp-c"
-LDFLAGS +="-lrfcapi"
+LDFLAGS += " -lrfcapi"
 
 # Shared libs created by the RDK build aren't versioned, so we need
 # to force the .so files into the runtime package (and keep them
