@@ -8,7 +8,7 @@ PV = "1.3.5"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "2fd536883d9c5f3e3dd53db863b7436eb99f0edb"
+SRCREV = "2d79ace2965fbe257e61eee7c0e1801867cb043d"
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
 
 DEPENDS += "safec-common-wrapper"
