@@ -84,7 +84,6 @@ INCLUDE_DIRS = " \
     -I=${includedir}/rdk/iarmmgrs-hal \
     -I=${includedir}/directfb \
     -I=${includedir}/glib-2.0 \
-    -I=${includedir}/WPEFramework/powercontroller \
     -I=${libdir}/glib-2.0/include \
     -I${S}/deviceUpdateMgr \
     -I${S}/utils \
@@ -94,6 +93,8 @@ INCLUDE_DIRS = " \
     -I=${includedir}/rdk/servicemanager/helpers \
     -I=${includedir}/rdk/servicemanager \
     "
+
+INCLUDE_DIRS += "${@bb.utils.contains('DISTRO_FEATURES', 'thunder_r5', ' -I=${includedir}/Thunder/powercontroller', ' -I=${includedir}/WPEFramework/powercontroller', d)}"
 
 MFR_LIB ?= '\"libRDKMfrLib.so\"'
 MFR_LIB_NAME ?= "-lRDKMfrLib"
@@ -116,7 +117,10 @@ CFLAGS:remove = "-DRF4CE_GPMSO_API"
 # JIRA: XRE-6537.
 #
 #MADAN
-LDFLAGS += " -lpthread -lglib-2.0 -ldbus-1 -lIARMBus -lsystemd -lsecure_wrapper -lprivilege -ldl -lWPEFrameworkPowerController"
+LDFLAGS += " -lpthread -lglib-2.0 -ldbus-1 -lIARMBus -lsystemd -lsecure_wrapper -lprivilege -ldl"
+
+LDFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'thunder_r5', ' -lThunderPowerController', ' -lWPEFrameworkPowerController', d)}"
+
 CFLAGS += "-std=c++11 -fPIC -D_REENTRANT -Wall -I./include ${INCLUDE_DIRS}"
 
 CFLAGS:append:client = " -DMEDIA_CLIENT"
