@@ -33,14 +33,15 @@ if [ ! -f ${WPA_P2P_SUPP_CONF_FILE} ]; then
 fi
 sync
 
-# Select debug.ini location
+# Configuring wpa_supplicant log levels
+# Get debug.ini file with opt-override support
 if [ -f /opt/debug.ini ] && [ "$BUILD_TYPE" != "prod" ]; then
     DEBUGINIFILE=/opt/debug.ini
 else
     DEBUGINIFILE=/etc/debug.ini
 fi
 
-# Map RDK log levels to wpa_supplicant
+#Read debug.ini file and map to wpa-supplicant logging level
 log_line=`grep "LOG.RDK.WIFIP2PWPA" $DEBUGINIFILE`
 
 if echo "$log_line" | grep -q "TRACE9"; then
@@ -56,7 +57,8 @@ elif echo "$log_line" | grep -q "WARNING"; then
 elif echo "$log_line" | grep -q "ERROR"; then
     LOG_LEVEL_STR="-qq"
 fi
-# P2P Interface from device.properties
+
+# Broadcom specific p2p interface
 if ip link show wl0.2 >/dev/null 2>&1; then
     echo "Broadcom platform detected"
 
@@ -68,7 +70,8 @@ WPA_SUPP_P2P_PID_FILE="/var/run/wpa_supplicant/p2p.pid"
 WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_INTERFACE -t $LOG_LEVEL_STR -P $WPA_SUPP_P2P_PID_FILE"
 
 else
-# Default generic configuration
+
+# Default generic configuration for other platforms
 $WIFI_P2P_CTRL_INTERFACE
     WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_CTRL_INTERFACE -t -U $LOG_LEVEL_STR"
 
