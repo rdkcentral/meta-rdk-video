@@ -21,8 +21,6 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 DEPENDS += "wpeframework wpeframework-tools-native entservices-apis boost"
 RDEPENDS:${PN} += "wpeframework"
 
-TARGET_LDFLAGS += " -Wl,--no-as-needed -Wl,--as-needed "
-
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
 CXXFLAGS += " -Wall -Werror "
