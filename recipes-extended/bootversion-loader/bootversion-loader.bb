@@ -12,15 +12,15 @@ SRC_URI += "file://bootversion-loader.service"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 do_install:append () {
-    install -d ${D}/lib/systemd/system
-    install -m 0644 ${WORKDIR}/bootversion-loader.service ${D}/lib/systemd/system/bootversion-loader.service
+    install -d ${D}${systemd_unitdir}/system
+    install -m 0644 ${WORKDIR}/bootversion-loader.service ${D}${systemd_unitdir}/system/bootversion-loader.service
     if [ "${BOOT_FSR_PLATFORM}" = "flex" ]; then
-        sed -i 's/^After=ecfs-init.service$/After=ecfs-init.service storagemgrmain.service/' ${D}/lib/systemd/system/bootversion-loader.service
+        sed -i 's/^After=ecfs-init.service$/After=ecfs-init.service storagemgrmain.service/' ${D}${systemd_unitdir}/system/bootversion-loader.service
     fi
-    install -d ${D}/lib/rdk
-    install -m 0755 ${WORKDIR}/bootversion-loader.sh ${D}/lib/rdk/bootversion-loader.sh
+    install -d ${D}${base_libdir}/rdk
+    install -m 0755 ${WORKDIR}/bootversion-loader.sh ${D}${base_libdir}/rdk/bootversion-loader.sh
 }
 
 SYSTEMD_SERVICE:${PN} = "bootversion-loader.service"
 FILES:${PN} += "${systemd_unitdir}/system/bootversion-loader.service"
-FILES:${PN} += "/lib/rdk/bootversion-loader.sh"
+FILES:${PN} += "${base_libdir}/rdk/bootversion-loader.sh"
