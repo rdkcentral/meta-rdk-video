@@ -16,10 +16,10 @@ S = "${WORKDIR}/git"
 PV = "2.0.3"
 PR = "r0"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};"
+SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;branch=topic/revert_coverity;"
 
 #Release 2.0.3
-SRCREV = "8ae59eff3b967bc773d5bff2f8b68b9d9a94dbc9"
+SRCREV = "9669d05eaf73effd16e0d5f0f3d10e3f8f75979d"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
