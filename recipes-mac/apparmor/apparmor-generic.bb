@@ -3,11 +3,11 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://rdk-apparmor-profiles/LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 PV = "2.1.0"
-PR = "r0"
+PR = "r1"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit pkgconfig autotools systemd
-SRCREV_rdk-apparmor-profiles = "65affcd23cb00fa70d16af4b5fae452c037488b8"
+SRCREV_rdk-apparmor-profiles = "50576f5f8cd064f501f79c105fa25cb0b618d3eb"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdk-apparmor-profiles.git;${CMF_GITHUB_SRC_URI_SUFFIX};destsuffix=git/rdk-apparmor-profiles;name=rdk-apparmor-profiles"
 
 S = "${WORKDIR}/git"
