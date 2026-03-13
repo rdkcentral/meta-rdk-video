@@ -2,7 +2,7 @@ SUMMARY = "ENTServices UserSettings plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2b42edef8fa55315f34f2370b4715ca9"
 
-PV = "1.0.4"
+PV = "1.0.6"
 PR = "r0"
 
 S = "${WORKDIR}/git"
