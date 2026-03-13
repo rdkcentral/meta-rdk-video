@@ -8,9 +8,8 @@ PV = "1.0.9"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-# L2HalMock requires the AIDL-enabled hdmicec implementation.
-SRCREV_hdmicec = "f0c27ca6627d00fb3f87d96dfe1624ce00bb0f29"
-SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;protocol=${CMF_GIT_PROTOCOL};branch=aidl_feature;name=hdmicec"
+SRCREV_hdmicec = "f4ed04882f2930a8da8fe912463d550581b5979c"
+SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
 
 DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
