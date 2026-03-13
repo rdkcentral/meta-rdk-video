@@ -6,13 +6,13 @@ Upstream-Status: None
 Signed-off-by: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
 
 ---
- Monitor/Monitor.config | 51 ++++++++++++++++++++++++++++++++++++++++++
+ plugin/Monitor.config | 51 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 51 insertions(+)
 
-Index: git/Monitor/Monitor.config
+Index: git/plugin/Monitor.config
 ===================================================================
---- git.orig/Monitor/Monitor.config
-+++ git/Monitor/Monitor.config
+--- git.orig/plugin/Monitor.config
++++ git/plugin/Monitor.config
 @@ -208,6 +208,72 @@ if(PLUGIN_MONITOR_WEBKITBROWSER_RESIDENT
      map_append(${configuration} observables ${RESIDENT_APP_MONITOR_CONFIG})
  endif()
