@@ -2,7 +2,7 @@ SUMMARY = "ENTServices powermanager plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
-PV = "1.0.3"
+PV = "1.0.4"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFF
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.3
-SRCREV = "0908ece6a1fb3b0ef5b5ae843abdcb7eb49915b7"
+# Release version - 1.0.4
+SRCREV = "556400e37137b7dc06716159e22c74405dcb7741"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
