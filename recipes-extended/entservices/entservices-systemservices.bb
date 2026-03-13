@@ -2,7 +2,7 @@ SUMMARY = "ENTServices systemservices plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.1.0"
+PV = "1.1.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-systemservices;${CMF_GITHUB_SRC_URI_SU
            file://rdkservices.ini \
           "
 
-# Release version - 1.1.0
-SRCREV = "c6992f7539c200f8f9386771826c5a02c2a98e89"
+# Release version - 1.1.2
+SRCREV = "6b3eff85dbdbd558b2f7c074af7447b72ee6d4c6"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
