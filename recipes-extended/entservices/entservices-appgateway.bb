@@ -17,6 +17,8 @@ TOOLCHAIN = "gcc"
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries entservices-apis"
 RDEPENDS:${PN} += "wpeframework entservices-apis"
 
+TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
+
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
 PACKAGECONFIG ?= "appgateway appnotifications appgatewaycommon telemetrysupport"
