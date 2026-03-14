@@ -4,17 +4,22 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
+PV = "1.3.0"
+PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
+SRCREV = "0fd235377a54dff372378f21d3a16f8e025f2a6b"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
 S = "${WORKDIR}/git/systemd/system"
 
 THUNDER_STARTUP_SERVICES:append = "\
+    wpeframework-account.service \
     wpeframework-avinput.service \
+    wpeframework-backupmanager.service \
     wpeframework-bluetooth.service \
     wpeframework-cryptography.service \
     wpeframework-deviceinfo.service \
@@ -50,9 +55,16 @@ THUNDER_STARTUP_SERVICES:append = "\
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkwindowmanager',' wpeframework-rdkwindowmanager.service', '', d)} \
     wpeframework-lifecyclemanager.service \
     wpeframework-runtimemanager.service \
-    wpeframework-storagemanager.service \
+    wpeframework-appstoragemanager.service \
     wpeframework-packagemanager.service \
     wpeframework-appmanager.service \
+    wpeframework-appgateway.service \
+    wpeframework-appnotifications.service \
+    wpeframework-appgatewaycommon.service \
+    wpeframework-downloadmanager.service \
+    wpeframework-preinstallmanager.service \
+    wpeframework-telemetrymetrics.service \
+    wpeframework-devicediagnostics.service \
     "
 
 CONTROL_FILES = "\
@@ -118,21 +130,6 @@ do_install:append() {
         # Converts: "Description=WPEFramework SystemMode Initialiser"
         # To:      "Description=WPE SystemMode"
         sed -i 's/^Description=WPEFramework \(.*\) Initialiser$/Description=WPE \1/' "$SERVICE_FILE"
-
-        if grep -q '^ExecStart=.*PluginActivator' "$SERVICE_FILE"; then
-            CALLSIGN=$(sed -n -E 's/.*PluginActivator.*[[:space:]]+([A-Za-z0-9_.-]+)$/\1/p' "$SERVICE_FILE")
-
-            if [ -n "$CALLSIGN" ]; then
-                if ! grep -q "^ExecStop=/usr/bin/PluginActivator.*$CALLSIGN" "$SERVICE_FILE"; then
-                    if grep -q '^ExecStartPost=' "$SERVICE_FILE"; then
-                        sed -i "/^ExecStartPost=/a ExecStop=/usr/bin/PluginActivator -r 5 -x $CALLSIGN" "$SERVICE_FILE"
-                    else
-                        sed -i "/^ExecStart=.*PluginActivator/a ExecStop=/usr/bin/PluginActivator -r 5 -x $CALLSIGN" "$SERVICE_FILE"
-                    fi
-                fi
-            fi
-        fi
-
     done
 }
 

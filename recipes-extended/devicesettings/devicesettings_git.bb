@@ -4,9 +4,10 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-PV ?= "1.0.1"
-PR ?= "r0"
+PV = "1.0.31"
+PR = "r0"
 
+SRCREV_devicesettings = "08ade67217d2157cfe0f48154773ac168cba189b"
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
 
 # devicesettings is not a 'generic' component, as some of its source
@@ -16,11 +17,13 @@ SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=d
 # devicesettings become 'generic' we will remove the dependency on the
 # hal, Note: we make this package machine specific since it uses a
 # machine HAL
-PACKAGE_ARCH = "${MACHINE_ARCH}"
 #MADAN
 DEPENDS="json-c iarmbus rdk-logger virtual/vendor-devicesettings-hal devicesettings-hal-headers safec-common-wrapper rfc wdmp-c"
 #RDEPENDS:${PN} += "directfb"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec ', " ", d)}"
+
+# Telemetry Support
+DEPENDS:append = " telemetry"
 
 S = "${WORKDIR}/git"
 
@@ -55,7 +58,7 @@ INCLUDE_DIRS = " \
 
 # note: we really on 'make -e' to control LDFLAGS and CFLAGS from here. This is
 # far from ideal, but this is to workaround the current component Makefile
-LDFLAGS += "-lrdkloggers -lpthread -lglib-2.0 -L. -lIARMBus -ldl "
+LDFLAGS += "-lrdkloggers -lpthread -lglib-2.0 -L. -lIARMBus -ldl -ltelemetry_msgsender"
 CFLAGS += "-fPIC -D_REENTRANT -Wall ${INCLUDE_DIRS}"
 CFLAGS += "-DRDK_DSHAL_NAME="\""libds-hal.so.0\""""
 CFLAGS += " -DYOCTO_BUILD"
@@ -65,7 +68,7 @@ CFLAGS += " -DDSMGR_LOGGER_ENABLED"
 # added support for rfc
 CFLAGS += "-I${STAGING_INCDIR}/wdmp-c"
 CXXFLAGS += "-I${STAGING_INCDIR}/wdmp-c"
-LDFLAGS +="-lrfcapi"
+LDFLAGS += " -lrfcapi"
 
 # Shared libs created by the RDK build aren't versioned, so we need
 # to force the .so files into the runtime package (and keep them
@@ -116,7 +119,7 @@ INSANE_SKIP:${PN} = "ldflags"
 
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
-CFLAGS += "-DHAS_FLASH_PERSISTENT -DHAS_THERMAL_API -DdsFPD_BRIGHTNESS_DEFAULT=10 "
+CFLAGS += "-DHAS_FLASH_PERSISTENT -DHAS_THERMAL_API -DdsFPD_BRIGHTNESS_DEFAULT=100 "
 #enabling HDCP callback in rpc server
 CFLAGS += " -DHAS_HDCP_CALLBACK"
 CFLAGS += "${@bb.utils.contains("DISTRO_FEATURES", "uhd_enabled", "-DHAS_4K_SUPPORT ", "", d)}"

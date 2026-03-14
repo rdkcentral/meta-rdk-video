@@ -1,0 +1,21 @@
+diff --git a/Source/com/Communicator.h b/Source/com/Communicator.h
+index d691d8a3c..152d1b006 100644
+--- a/Source/com/Communicator.h
++++ b/Source/com/Communicator.h
+@@ -1062,14 +1062,13 @@ namespace RPC {
+                         observer++;
+                     }
+ 
+-                    // Don't forget to close on our side as well, if it is not already closed....
+-                    index->second->Terminate();
+-
+                     // Release this entry, do not wait till it get's overwritten.
+                     index->second->Release();
+                     _connections.erase(index);
+                     _adminLock.Unlock();
+ 
++                    // Don't forget to close on our side as well, if it is not already closed....
++                    connection->Terminate();
+                     connection->Release();
+                 }
+             }

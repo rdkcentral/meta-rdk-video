@@ -1,0 +1,35 @@
+From 377b0da151fd8d6534ab3bfebd72fdde35dc8901 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Wed, 4 Jun 2025 15:11:11 +0200
+Subject: [PATCH] comcast - RDKTV-17281, RDKTV-17781 Workaround for AppleTV+
+ rendering  issue
+
+Instead of clearing the framebuffer on visibility change clear on
+Loading state change. This will avoid black screen on launching AppleTV+
+successively (when there are no updates). Also it takes care of clearing
+the content before any other Lightning app is launched (like Peacock)
+
+AppleTV was not showing its splash animation jumping directly
+into main app view (video grid) on startup
+
+Signed-off-by: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+---
+ Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+index 4cf2bade1842..e8d088b54667 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+@@ -5543,7 +5543,7 @@ void WebGLRenderingContextBase::activityStateDidChange(OptionSet<ActivityState>
+ 
+     auto changed = oldActivityState ^ newActivityState;
+     if (((changed & ActivityState::IsInWindow) && !(newActivityState & ActivityState::IsInWindow)) ||
+-        ((changed & ActivityState::IsVisible) && !(newActivityState & ActivityState::IsVisible))) {
++        (!(newActivityState & ActivityState::IsVisible) && (changed & ActivityState::IsLoading) && (newActivityState & ActivityState::IsLoading))) {
+         if (m_scissorEnabled)
+             m_context->disable(GraphicsContextGL::SCISSOR_TEST);
+         m_context->clearColor(0, 0, 0, 0);
+-- 
+2.48.1
+

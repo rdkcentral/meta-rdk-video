@@ -2,6 +2,8 @@ DESCRIPTION = "JavaScriptCore"
 LICENSE = "LGPL-2.1-only"
 LIC_FILES_CHKSUM = "file://Source/WebCore/LICENSE-LGPL-2.1;md5=a778a33ef338abbaf8b8a7c36b6eec80 "
 
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
 inherit cmake pkgconfig perlnative ${@bb.utils.contains("DISTRO_FEATURES", "kirkstone", "python3native", "pythonnative", d)} gettext
 
 SRCREV = "fc1703ed69006e92c6d014d1de7d1ea7b9d2f915"
