@@ -1,0 +1,66 @@
+diff --git a/include/dsAudio.h b/include/dsAudio.h
+index f02cbf2..8279f99 100644
+--- a/include/dsAudio.h
++++ b/include/dsAudio.h
+@@ -901,7 +901,7 @@ dsError_t dsAudioEnableARC(intptr_t handle, dsAudioARCStatus_t arcStatus);
+  * 
+  * @see dsSetStereoMode()
+  */
+-dsError_t  dsGetStereoMode(intptr_t handle, dsAudioStereoMode_t *stereoMode);
++dsError_t  dsGetStereoMode(int handle, dsAudioStereoMode_t *stereoMode);
+ 
+ /**
+  * @brief Sets the digital audio output mode of digital interfaces.
+@@ -925,7 +925,7 @@ dsError_t  dsGetStereoMode(intptr_t handle, dsAudioStereoMode_t *stereoMode);
+  * 
+  * @see dsGetStereoMode()
+  */
+-dsError_t  dsSetStereoMode(intptr_t handle, dsAudioStereoMode_t mode);
++dsError_t  dsSetStereoMode(int handle, dsAudioStereoMode_t mode);
+ 
+ /**
+  * @brief Checks if auto mode is enabled or not for the digital interfaces.
+@@ -1210,7 +1210,7 @@ dsError_t  dsIsAudioMute(intptr_t handle, bool *muted);
+  * 
+  * @see dsEnableAudioPort()
+  */
+-dsError_t  dsIsAudioPortEnabled(intptr_t handle, bool *enabled);
++dsError_t  dsIsAudioPortEnabled(int handle, bool *enabled);
+ 
+ /**
+  * @brief Enables or Disables the Audio port corresponding to the specified port handle.
+@@ -1232,7 +1232,7 @@ dsError_t  dsIsAudioPortEnabled(intptr_t handle, bool *enabled);
+  * 
+  * @see dsIsAudioPortEnabled()
+  */
+-dsError_t  dsEnableAudioPort(intptr_t handle, bool enabled);
++dsError_t  dsEnableAudioPort(int handle, bool enabled);
+ 
+ /**
+  * @note This API is deprecated.
+diff --git a/include/dsDisplay.h b/include/dsDisplay.h
+index 4a088ef..257f779 100644
+--- a/include/dsDisplay.h
++++ b/include/dsDisplay.h
+@@ -452,7 +452,7 @@ dsError_t dsDisplayTerm();
+  * @see dsDisplayEventCallback_t()
+  * 
+  */
+-dsError_t dsRegisterDisplayEventCallback(intptr_t handle, dsDisplayEventCallback_t cb);
++dsError_t dsRegisterDisplayEventCallback(int handle, dsDisplayEventCallback_t cb);
+ 
+ #ifdef __cplusplus
+ }
+diff --git a/include/dsVideoPort.h b/include/dsVideoPort.h
+index 3b84074..67d1a2f 100644
+--- a/include/dsVideoPort.h
++++ b/include/dsVideoPort.h
+@@ -412,7 +412,7 @@ dsError_t  dsEnableVideoPort(intptr_t handle, bool enabled);
+  * 
+  * @see dsGetResolution()
+  */
+-dsError_t  dsSetResolution(intptr_t handle, dsVideoPortResolution_t *resolution);
++dsError_t  dsSetResolution(int handle, dsVideoPortResolution_t *resolution);
+ 
+ /**
+  * @brief Gets the display resolution of specified video port.

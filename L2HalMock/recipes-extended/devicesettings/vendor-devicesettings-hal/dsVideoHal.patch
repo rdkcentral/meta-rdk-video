@@ -1,0 +1,13 @@
+diff --git a/dsVideoPort.c b/dsVideoPort.c
+index 3034a48..83bd8d8 100644
+--- a/dsVideoPort.c
++++ b/dsVideoPort.c
+@@ -431,7 +431,7 @@ dsError_t  dsIsDisplayConnected(int handle, bool *connected)
+     dsError_t ret = dsERR_NONE;
+ 		dsVideoPortParam_t *videoPortHdl;
+ 
+-	_RETURN_IF_ERROR((dsVideoPortParam_t *)handle > INVALID_HANDLE, dsERR_INVALID_PARAM);
++	// _RETURN_IF_ERROR((dsVideoPortParam_t *)handle > INVALID_HANDLE, dsERR_INVALID_PARAM);
+ 	_RETURN_IF_ERROR(connected != NULL, dsERR_INVALID_PARAM);
+ 
+ 	videoPortHdl = (dsVideoPortParam_t *)handle;
