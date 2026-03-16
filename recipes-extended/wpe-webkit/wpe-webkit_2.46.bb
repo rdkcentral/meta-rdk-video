@@ -7,23 +7,25 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r32"
+PR  = "r33"
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
 DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-# Tip of the branch on Feb 27, 2026
-SRCREV = "464a06c5917dac3304909ae30c34b2d1e2b35f4f"
+# Tip of the branch on Mar 4, 2026
+SRCREV = "eb1facfe62a0a316a9e4f5a57af9c9ec87278d93"
 
 BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.46"
 SRC_URI = "${BASE_URI}"
 
 # Drop after PR is accepted
 SRC_URI += "file://2.46/1629.patch"
+SRC_URI += "file://2.46/1630_insert_cencparser.patch"
 
 # Drop after westeros change is approved and released
 SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
+SRC_URI += "file://2.46/persistent-licenses-poc.patch"
 
 # Comcast specific changes
 SRC_URI += "file://2.46/comcast-RDKTV-380-disable-privileges-loss.patch"

@@ -1,0 +1,207 @@
+From edd847f73de81b787e1d368642f19509f917f15c Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Fri, 27 Feb 2026 09:11:06 -0500
+Subject: [PATCH 1/2] [EME][ThunderParser] inject cencparser before decryptor
+ when availabble
+
+cencparser is a custom parser that converts H264/H265 CENC video from
+AVC to byte-stream format. it is required to be inerted before
+decryptor on platforms that don't provide secure parsers and decoder
+only accepts video in byte-stream format.
+---
+ .../gstreamer/eme/WebKitThunderParser.cpp     | 123 ++++++++++++++++++
+ 1 file changed, 123 insertions(+)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderParser.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderParser.cpp
+index ff2696092c32a..74877e19960d7 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderParser.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderParser.cpp
+@@ -238,6 +238,127 @@ static void webkitMediaThunderParserConstructed(GObject* object)
+     gst_bin_sync_children_states(GST_BIN_CAST(self));
+ }
+ 
++static void tryInsertCencparser(WebKitMediaThunderParser* self)
++{
++    auto cencparserFactory = adoptGRef(gst_element_factory_find("cencparser"));
++    if (!cencparserFactory)
++        return;
++
++    auto sinkPad = adoptGRef(gst_element_get_static_pad(GST_ELEMENT(self), "sink"));
++    auto peerPad = adoptGRef(gst_pad_get_peer(sinkPad.get()));
++    auto peerCaps = adoptGRef(gst_pad_get_current_caps (peerPad.get()));
++    if (!peerCaps) {
++        peerCaps = adoptGRef(gst_pad_query_caps(peerPad.get(), nullptr));
++        if (!peerCaps) {
++            GST_WARNING_OBJECT (self, "Couldn't get caps from peer.");
++            return;
++        }
++    }
++
++    GST_DEBUG_OBJECT(self, "Have type: %" GST_PTR_FORMAT, peerCaps.get());
++
++    // Cenc parser is required only for h264 and h265 video streams.
++    static constexpr std::array<ASCIILiteral, 2> s_cencparserMediaTypes = { "video/x-h264"_s, "video/x-h265"_s };
++    bool shouldInsertCencparser = std::any_of(
++        s_cencparserMediaTypes.begin(), s_cencparserMediaTypes.end(),
++        [&peerCaps](const auto& mediaType) { return doCapsHaveType(peerCaps.get(), mediaType.characters()); });
++    if (!shouldInsertCencparser) {
++        GST_DEBUG_OBJECT (self, "Cencparser is not required.");
++        return;
++    }
++
++    // Sanity check
++    auto currentSinkPadTarget = adoptGRef(gst_ghost_pad_get_target(GST_GHOST_PAD(sinkPad.get())));
++    auto currentSinkPadTargetParent = adoptGRef(gst_pad_get_parent_element(currentSinkPadTarget.get()));
++    if (gst_element_get_factory(currentSinkPadTargetParent.get()) == cencparserFactory) {
++        GST_DEBUG_OBJECT(self, "Cencparser is already inserted.");
++        return;
++    }
++
++    // Create and setup cencparser
++    GstElement *cencparser = gst_element_factory_create(cencparserFactory.get(), nullptr);
++    if (!cencparser) {
++        GST_WARNING_OBJECT (self, "Could not create cencparser.");
++        return;
++    }
++    gst_bin_add_many(GST_BIN_CAST(self), cencparser, nullptr);
++    if (!gst_element_sync_state_with_parent(cencparser))
++        GST_WARNING_OBJECT(self, "Failed to sync state of '%s' with parent bin.", GST_ELEMENT_NAME(cencparser));
++    gst_base_transform_set_passthrough(
++        GST_BASE_TRANSFORM(self->priv->decryptor.get()), !WebCore::areEncryptedCaps(peerCaps.get()));
++
++    // In passthrough mode, decryptor returns an empty caps result for a caps
++    // query on sink pad. This is because of lack of clear caps in its sink
++    // pad's template. That is the intersection of transformed clear caps with
++    // encrypted caps from the template produces an empty result.
++    // This empty result causes capsfilter linking to fail inside cencparser.
++    // Workaround: intercept cencparser's caps query and append the media types
++    // that cencparser expects.
++    auto decryptorSinkPad = adoptGRef(gst_element_get_static_pad(self->priv->decryptor.get(), "sink"));
++    gst_pad_add_probe(
++        decryptorSinkPad.get(),
++        static_cast<GstPadProbeType>(GST_PAD_PROBE_TYPE_PULL | GST_PAD_PROBE_TYPE_QUERY_DOWNSTREAM),
++        reinterpret_cast<GstPadProbeCallback>(+[](GstPad* pad, GstPadProbeInfo* info, gpointer userData) -> GstPadProbeReturn {
++            if (!GST_IS_QUERY(info->data) || GST_QUERY_TYPE(GST_PAD_PROBE_INFO_QUERY(info)) != GST_QUERY_CAPS)
++                return GST_PAD_PROBE_OK;
++
++            GRefPtr<GstElement> decryptor = adoptGRef(gst_pad_get_parent_element(pad));
++            if (!gst_base_transform_is_passthrough(GST_BASE_TRANSFORM(decryptor.get())))
++                return GST_PAD_PROBE_OK;
++
++            GstCaps *result = nullptr;
++            GstQuery *query = GST_PAD_PROBE_INFO_QUERY(info);
++            gst_query_parse_caps_result (query, &result);
++            if (gst_caps_is_empty(result)) {
++                GRefPtr<GstCaps> tmp = adoptGRef(gst_caps_new_empty());
++                for (const auto& mediaType : s_cencparserMediaTypes) {
++                    gst_caps_append_structure(tmp.get(), gst_structure_new_empty(mediaType.characters()));
++                }
++                GstCaps *filter = nullptr;
++                gst_query_parse_caps (query, &filter);
++                if (filter) {
++                    GstCaps* intersection;
++                    intersection = gst_caps_intersect_full(filter, tmp.get(), GST_CAPS_INTERSECT_FIRST);
++                    gst_caps_append (result, intersection);
++                } else {
++                    gst_caps_append (result, tmp.leakRef());
++                }
++                GST_DEBUG_OBJECT(pad, "Enriched result caps: %" GST_PTR_FORMAT, result);
++            }
++            return GST_PAD_PROBE_OK;
++        }), nullptr, nullptr);
++
++    GST_DEBUG_OBJECT(self, "Inserting cencparser %" GST_PTR_FORMAT " before decryptor %" GST_PTR_FORMAT, cencparser, self->priv->decryptor.get());
++    GRefPtr<GstPad> cencparserSinkPad = adoptGRef(gst_element_get_static_pad(cencparser, "sink"));
++    if (!gst_ghost_pad_set_target(GST_GHOST_PAD(sinkPad.get()), cencparserSinkPad.get())) {
++        GST_WARNING_OBJECT (self, "Could not change sink pad target.");
++    } else if (!gst_element_link_pads_full(cencparser, "src", self->priv->decryptor.get(), "sink", GST_PAD_LINK_CHECK_NOTHING)) {
++        GST_WARNING_OBJECT (self, "Failed to link %" GST_PTR_FORMAT " with %" GST_PTR_FORMAT, cencparser, self->priv->decryptor.get());
++    } else {
++        GST_DEBUG_OBJECT (self, "Successfully inserted cencparser %" GST_PTR_FORMAT, cencparser);
++    }
++}
++
++static GstStateChangeReturn webkitMediaThunderParserChangeState(GstElement* element, GstStateChange transition)
++{
++    WebKitMediaThunderParser* self = WEBKIT_MEDIA_THUNDER_PARSER(element);
++
++    switch (transition) {
++    case GST_STATE_CHANGE_NULL_TO_READY: {
++        tryInsertCencparser(self);
++        break;
++    }
++    default:
++        break;
++    }
++
++    GstStateChangeReturn result = GST_ELEMENT_CLASS(webkit_media_thunder_parser_parent_class)->change_state(element, transition);
++
++    // Add post-transition code here.
++
++    return result;
++}
++
+ static void webkit_media_thunder_parser_class_init(WebKitMediaThunderParserClass* klass)
+ {
+     GST_DEBUG_CATEGORY_INIT(webkitMediaThunderParserDebugCategory, "webkitthunderparser", 0, "Thunder parser");
+@@ -246,6 +367,8 @@ static void webkit_media_thunder_parser_class_init(WebKitMediaThunderParserClass
+     objectClass->constructed = webkitMediaThunderParserConstructed;
+ 
+     auto elementClass = GST_ELEMENT_CLASS(klass);
++    elementClass->change_state = GST_DEBUG_FUNCPTR(webkitMediaThunderParserChangeState);
++
+     auto padTemplateCaps = createThunderParseSinkPadTemplateCaps();
+     gst_element_class_add_pad_template(elementClass, gst_pad_template_new("sink", GST_PAD_SINK, GST_PAD_ALWAYS, padTemplateCaps.get()));
+     gst_element_class_add_pad_template(elementClass, gst_static_pad_template_get(&thunderParseSrcTemplate));
+
+From 8d5967fd1938cdf70967c6a717680515b84b2a22 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Fri, 27 Feb 2026 09:02:22 -0500
+Subject: [PATCH 2/2] [EME][GStreamer] Fix crash if transformCaps called before
+ CDM instance is set
+
+This can happend if upstream element (a capsfilter) queires caps during negotiation.
+---
+ ...bKitCommonEncryptionDecryptorGStreamer.cpp | 22 +++++++++++++------
+ 1 file changed, 15 insertions(+), 7 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitCommonEncryptionDecryptorGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitCommonEncryptionDecryptorGStreamer.cpp
+index 69c0a1c7caa9d..00fee91ea0681 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitCommonEncryptionDecryptorGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitCommonEncryptionDecryptorGStreamer.cpp
+@@ -80,6 +80,7 @@ static gboolean acceptCaps(GstBaseTransform*, GstPadDirection, GstCaps*);
+ static GstFlowReturn transformInPlace(GstBaseTransform*, GstBuffer*);
+ static gboolean sinkEventHandler(GstBaseTransform*, GstEvent*);
+ static void setContext(GstElement*, GstContext*);
++static bool isCDMProxyAvailable(WebKitMediaCommonEncryptionDecrypt* self);
+ 
+ GST_DEBUG_CATEGORY(webkit_media_common_encryption_decrypt_debug_category);
+ #define GST_CAT_DEFAULT webkit_media_common_encryption_decrypt_debug_category
+@@ -170,13 +171,20 @@ static GstCaps* transformCaps(GstBaseTransform* base, GstPadDirection direction,
+                 gst_structure_remove_fields(outgoingStructure.get(), "base-profile", "codec_data", "height", "framerate", "level", "pixel-aspect-ratio", "profile", "rate", "width", nullptr);
+ 
+                 auto name = WebCore::gstStructureGetName(incomingStructure);
+-                gst_structure_set(outgoingStructure.get(), "protection-system", G_TYPE_STRING, klass->protectionSystemId(self),
+-                    "original-media-type", G_TYPE_STRING, reinterpret_cast<const char*>(name.rawCharacters()) , nullptr);
+-
+-                // GST_PROTECTION_UNSPECIFIED_SYSTEM_ID was added in the GStreamer
+-                // developement git master which will ship as version 1.16.0.
+-                gst_structure_set_name(outgoingStructure.get(), !g_strcmp0(klass->protectionSystemId(self),
+-                    GST_PROTECTION_UNSPECIFIED_SYSTEM_ID) ? "application/x-webm-enc" : "application/x-cenc");
++                if (!isCDMProxyAvailable(self)) {
++                    GST_WARNING_OBJECT(base, "CDM proxy is not available yet, transformed CAPs might be inaccurate.");
++                    gst_structure_set(outgoingStructure.get(),
++                        "original-media-type", G_TYPE_STRING, reinterpret_cast<const char*>(name.rawCharacters()) , nullptr);
++                    gst_structure_set_name(outgoingStructure.get(), "application/x-cenc");
++                } else {
++                    gst_structure_set(outgoingStructure.get(), "protection-system", G_TYPE_STRING, klass->protectionSystemId(self),
++                        "original-media-type", G_TYPE_STRING, reinterpret_cast<const char*>(name.rawCharacters()) , nullptr);
++
++                    // GST_PROTECTION_UNSPECIFIED_SYSTEM_ID was added in the GStreamer
++                    // developement git master which will ship as version 1.16.0.
++                    gst_structure_set_name(outgoingStructure.get(), !g_strcmp0(klass->protectionSystemId(self),
++                        GST_PROTECTION_UNSPECIFIED_SYSTEM_ID) ? "application/x-webm-enc" : "application/x-cenc");
++                }
+             }
+         }
+ 
