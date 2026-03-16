@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "git://github.com/rdkcentral/entservices-mediaanddrm.git;protocol=https;branch=topic/RDKMW-7056 \
            file://index.html \
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
@@ -53,6 +53,7 @@ include include/texttospeech.inc
 PACKAGECONFIG ?= "  breakpadsupport \
     telemetrysupport \
     texttospeech \
+    gstreamerplayer \
     ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
 "
 
@@ -79,7 +80,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains("BUILD_VARIANT", "debug", "-DPLUGIN_BUILD
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[systemaudioplayer]    = "-DPLUGIN_SYSTEMAUDIOPLAYER=ON,,entservices-apis trower-base64 boost websocketpp wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app,entservices-apis trower-base64 wpeframework-clientlibraries openssl gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app"
-
+PACKAGECONFIG[gstreamerplayer]       = "-DPLUGIN_GSTREAMERPLAYER=ON,,gstreamer1.0 gstreamer1.0-plugins-base,gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad"
 # ----------------------------------------------------------------------------
 
 EXTRA_OECMAKE += " \
