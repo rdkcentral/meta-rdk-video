@@ -10,9 +10,9 @@ RDEPENDS:${PN} = "wpeframework"
 PV = "1.2.0"
 PR = "r1"
 
-SRC_URI = "git://github.com/rdkcentral/ThunderPluginActivator;protocol=https;branch=main;name=thunderpluginactivator"
+SRC_URI = "git://github.com/dnnaveen151027/ThunderPluginActivator;protocol=https;branch=main;name=thunderpluginactivator"
 
-SRCREV = "545eafe42509a9e441408268df1e02c9da590329"
+SRCREV = "a1e092abe30dbfca6bb558a4f49a2ea0e9874d6d"
 
 S = "${WORKDIR}/git"
 
