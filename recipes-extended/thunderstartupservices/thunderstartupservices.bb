@@ -64,6 +64,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-downloadmanager.service \
     wpeframework-preinstallmanager.service \
     wpeframework-telemetrymetrics.service \
+    wpeframework-devicediagnostics.service \
     "
 
 CONTROL_FILES = "\
