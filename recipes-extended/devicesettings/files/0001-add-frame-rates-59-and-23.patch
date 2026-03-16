@@ -1,75 +1,22 @@
+diff --git a/ds/frameRate.cpp b/ds/frameRate.cpp
+index c63c9d5..13ab12b 100644
 --- a/ds/frameRate.cpp
 +++ b/ds/frameRate.cpp
-@@ namespace {
--       const float _values[] = {
--               0, //unkown
--               24,
--               25,
--               30,
--               60,
--               23.98,
--               29.97,
--               50,
--               59.94,
--               100,
--                        119.88,
--                        120,
--                        200,
--                        239.79,
--                        240,
--       };
--       const char * _names[] = {
--               "UnKnown", //unkown
--               "24",
--               "25",
--               "30",
--               "60",
--               "23.98",
--               "29.97",
--               "50",
--               "59.94",
--               "100",
--                        "119.88",
--                        "120",
--                        "200",
--                        "239.79",
--                        "240",
--       };
-+       const float _values[] = {
-+               0, //unkown
-+               24,
-+               25,
-+               30,
-+               60,
-+               23.98,
-+               29.97,
-+               50,
-+               59.94,
-+               100,
-+               119.88,
-+               120,
-+               200,
-+               239.79,
-+               240,
-+               59,         // Added: Played at 59 frames per second
-+               23          // Added: Played at 23 frames per second
-+       };
-+       const char * _names[] = {
-+               "UnKnown", //unkown
-+               "24",
-+               "25",
-+               "30",
-+               "60",
-+               "23.98",
-+               "29.97",
-+               "50",
-+               "59.94",
-+               "100",
-+               "119.88",
-+               "120",
-+               "200",
-+               "239.79",
-+               "240",
-+               "59",       // Added
-+               "23"        // Added
-+       };
+@@ -51,6 +51,8 @@ namespace {
+                         200,
+                         239.79,
+                         240,
++                        59,
++                        23,
+ 	};
+ 	const char * _names[] = {
+ 			"UnKnown", //unkown
+@@ -68,6 +70,8 @@ namespace {
+                         "200",
+                         "239.79",
+                         "240",
++                        "59",
++                        "23",
+ 	};
+ 
+ 	inline bool isValid(int id) {
