@@ -9,9 +9,9 @@ DEPENDS = "cmake-native wpeframework-tools-native wpeframework"
 PV = "1.2.0"
 PR = "r0"
 
-SRC_URI = "git://github.com/rdkcentral/ThunderPluginActivator;protocol=https;branch=main;name=thunderpluginactivator"
+SRC_URI = "git://github.com/dnnaveen151027/ThunderPluginActivator;protocol=https;branch=main;name=thunderpluginactivator"
 
-SRCREV = "545eafe42509a9e441408268df1e02c9da590329"
+SRCREV = "5e6c5e417b26993f2521a04e967a627a67ce4b47"
 
 S = "${WORKDIR}/git"
 
