@@ -2,13 +2,13 @@ SUMMARY = "ENTServices Monitor plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
-PV = "1.0.1"
+PV = "1.0.3"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "29adea1b386aa9c7737c100e7278c8c744845c5c"
+SRCREV = "f91fbb436359b9632de91d19ca8da4f287b4a84c"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-monitor;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-Add-monitoring-of-cloned-callsigns.patch \
            file://rdkservices.ini \
