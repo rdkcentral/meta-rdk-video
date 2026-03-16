@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV = "0.1.0"
 PR = "r0"
 
-SRCREV = "6365e6829ca30d2e4f6ef1abd42b72cb187c4d56"
+SRCREV = "3d55307e69a4f8ea809a9e09420e4d952b3f7877"
 
 inherit pkgconfig
 inherit cmake
