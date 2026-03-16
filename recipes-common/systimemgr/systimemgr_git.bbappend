@@ -6,6 +6,8 @@ SRC_URI:append:ntp-dtt-drm-tee  = " file://systimemgr_ntp-dtt-drm-tee.conf "
 
 SRC_URI:append:ntp-dtt-rdkdefault = " file://systimemgr_ntp-dtt-rdkdefault.conf "
 
+#some comment
+
 CXXFLAGS += " -Wall -Werror"
 
 do_install:append:ntp-dtt-rdkdefault() {
