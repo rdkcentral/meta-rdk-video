@@ -2,13 +2,13 @@ SUMMARY = "ENTServices usbdevice plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.0.2"
+PV = "1.0.3"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "7dc3e13c18af16411b809132184306b97b1720ea"
+SRCREV = "de9721b90d91970bd94a5ddccee0c2ca34f71aff"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usbdevice;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
