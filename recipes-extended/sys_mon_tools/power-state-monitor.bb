@@ -11,7 +11,7 @@ PV = "1.0.0"
 PR = "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX};name=pwr-state-monitor;branch=RDKEMW-14816-power-state-monitor"
-SRCREV = "9085f60cf22c2c06370a7132f78f8721f27f726e"
+SRCREV = "63f06e1d81a044265f078a71056f14b5d65896a0"
 S = "${WORKDIR}/git"
 
 CFLAGS:append = " -DYOCTO_BUILD"
