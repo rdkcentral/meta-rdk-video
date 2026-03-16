@@ -31,6 +31,8 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit coverity
 
+SRC_URI += "file://files/0001-add-frame-rates-59-and-23.patch"
+
 CFLAGS += "-DSAFEC_DUMMY_API"
 CXXFLAGS += "-DSAFEC_DUMMY_API "
 
