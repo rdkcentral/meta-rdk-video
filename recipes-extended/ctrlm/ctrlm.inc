@@ -1,0 +1,3 @@
+CTRLM_SRCREV = "a84164fbcbef69ca12cb9049536661bc25090b01"
+CTRLM_PV     = "1.1.11"
+CTRLM_PR     = "r0"

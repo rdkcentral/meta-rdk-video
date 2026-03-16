@@ -31,6 +31,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-DELIA-64727-Prealloc-secure-memory-before-decrypt.patch \
            file://r4.4/0001-RDKEMW-7064-Dont-decrypt-fake-buffer-is-revoke-has-b.patch \
            file://r4.4/0001-PowerManagerClient-library-implementation.patch \
+           file://r4.4/0001-RDKEMW-13372-Support-for-additional-clear-data-after.patch \
            "
 
 # Oct 17, 2023
@@ -74,7 +75,7 @@ WPE_CDMI_ADAPTER_IMPL = "${@get_cdmi_adapter(d)}"
 PACKAGECONFIG ?= " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdm ${WPE_CDMI_ADAPTER_IMPL}', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'provisioning', 'provisionproxy', '', d)} \
-    securityagent \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'securityagent', d)} \
     cryptography \
     powercontroller \
     "

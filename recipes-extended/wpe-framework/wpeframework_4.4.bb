@@ -12,7 +12,7 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r39"
+PR = "r41"
 PV = "4.4.3"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -58,7 +58,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/PR-1785-Reduce_scope_of_adminlock.patch \
             file://r4.4/PR-1791-Thunder-hung-SocketPort-close-Delete-channel.patch \
             file://r4.4/PR-1797-SocketPort-Closed.patch \
-            file://r4.4/PR1832-Thunder-ABBA-Deadlock-Fix.patch \
+            file://r4.4/PR-1832-ABBA-Deadlock-Fix-RDKTV-35315.patch \
             file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
             file://r4.4/0001-SmarkLink-Crash-Fix.patch \
             file://r4.4/Jsonrpc_dynamic_error_handling.patch \
@@ -68,6 +68,12 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/0001-To-handle-truncated-UTF-code-on-parsing-empty-null-t.patch \
             file://r4.4/0002-Print-Log-Upon-Time-ComRPC-Timeout.patch \
             file://r4.4/RDKEMW-10951_WPEFramework_Config_Override.patch \
+            file://r4.4/PR-2057-RDKEMW-14228_apply_sysinfo_mem_unit.patch \
+            file://r4.4/WorkerPoolRevoke_fix.patch \
+            file://r4.4/WaitedRelease.patch \
+            file://r4.4/StartExtensions.patch \
+            file://r4.4/EnablePISLogging.patch \
+            file://r4.4/0001-LIMIT-Limit-handing-out-interfaces-of-Plugins-only-i.patch \
            "
 
 S = "${WORKDIR}/git"

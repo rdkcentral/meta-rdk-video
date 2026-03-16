@@ -4,20 +4,22 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-PV = "1.2.2"
+PV = "1.3.0"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "9c361b8abcf628cd9fd16bb92b9d7dc8c2736cb1"
+SRCREV = "0fd235377a54dff372378f21d3a16f8e025f2a6b"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
 S = "${WORKDIR}/git/systemd/system"
 
 THUNDER_STARTUP_SERVICES:append = "\
+    wpeframework-account.service \
     wpeframework-avinput.service \
+    wpeframework-backupmanager.service \
     wpeframework-bluetooth.service \
     wpeframework-cryptography.service \
     wpeframework-deviceinfo.service \
@@ -53,14 +55,16 @@ THUNDER_STARTUP_SERVICES:append = "\
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkwindowmanager',' wpeframework-rdkwindowmanager.service', '', d)} \
     wpeframework-lifecyclemanager.service \
     wpeframework-runtimemanager.service \
-    wpeframework-storagemanager.service \
+    wpeframework-appstoragemanager.service \
     wpeframework-packagemanager.service \
     wpeframework-appmanager.service \
     wpeframework-appgateway.service \
     wpeframework-appnotifications.service \
-    wpeframework-fbsettings.service \
+    wpeframework-appgatewaycommon.service \
     wpeframework-downloadmanager.service \
     wpeframework-preinstallmanager.service \
+    wpeframework-telemetrymetrics.service \
+    wpeframework-devicediagnostics.service \
     "
 
 CONTROL_FILES = "\
