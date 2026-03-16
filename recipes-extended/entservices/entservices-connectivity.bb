@@ -2,18 +2,18 @@ SUMMARY = "ENTServices Connectivity plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV = "1.4.0"
+PV = "1.5.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "git://github.com/rdkcentral/entservices-connectivity.git;protocol=https;branch=topic/calc-plugin \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.4.0
-SRCREV = "fce4cab806f04d37108c2307d6ab724e6ca6c093"
+# Release version - 1.5.1
+SRCREV = "4bb25093dda62ab69cfba5467ad5af627ad55549"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -40,8 +40,6 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    calculator \
-    gstreamer \
     ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'bluetoothcontrol', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', 'wifimanager network', '', d)} \
 "
@@ -53,10 +51,7 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[bluetoothcontrol]     = "-DPLUGIN_BLUETOOTH=ON -DPLUGIN_BLUETOOTH_AUTOSTART=true,-DPLUGIN_BLUETOOTH=OFF,iarmbus iarmmgrs bluetooth-mgr,bluez5 iarmbus bluetooth-mgr"
 PACKAGECONFIG[network]              = "-DPLUGIN_NETWORK=ON,-DPLUGIN_NETWORK=OFF,iarmbus iarmmgrs rfc,iarmbus rfc netsrvmgr"
 PACKAGECONFIG[wifimanager]          = "-DPLUGIN_WIFIMANAGER=ON,-DPLUGIN_WIFIMANAGER=OFF,netsrvmgr iarmbus iarmmgrs,iarmbus wpa-supplicant"
-PACKAGECONFIG[calculator] = "-DPLUGIN_CALCULATOR=ON,-DPLUGIN_CALCULATOR=OFF,,"
-PACKAGECONFIG[gstreamer] = "-DPLUGIN_GSTREAMER=ON,-DPLUGIN_GSTREAMER=OFF,gstreamer1.0 gstreamer1.0-plugins-base,gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad"
 
-#---------------PACKAGECONFIG[feature] = "ENABLED_FLAGS,DISABLED_FLAGS,BUILD_DEPS,RUNTIME_DEPS"-----------#
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
