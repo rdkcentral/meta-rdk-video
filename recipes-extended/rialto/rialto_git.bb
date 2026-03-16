@@ -39,7 +39,7 @@ PACKAGECONFIG[servermanager] = "-DENABLE_SERVER_MANAGER=ON,-DENABLE_SERVER_MANAG
 # requires the 'server' package config to be enabled as well.
 PACKAGECONFIG ??= "server servermanager"
 
-RDEPENDS:${PN} += "protobuf mongoose"
+RDEPENDS:${PN} += "protobuf mongoose yaml-cpp"
 RDEPENDS:${PN}-server += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
 RDEPENDS:${PN}-servermanager += "${PN}-server"
 RDEPENDS:${PN}-servermanager-lib += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
