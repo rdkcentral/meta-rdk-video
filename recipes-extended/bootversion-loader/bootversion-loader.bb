@@ -14,9 +14,6 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 do_install:append () {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/bootversion-loader.service ${D}${systemd_unitdir}/system/bootversion-loader.service
-    if [ "${BOOT_FSR_PLATFORM}" = "flex" ]; then
-        sed -i 's/^After=ecfs-init.service$/After=ecfs-init.service storagemgrmain.service/' ${D}${systemd_unitdir}/system/bootversion-loader.service
-    fi
     install -d ${D}${base_libdir}/rdk
     install -m 0755 ${WORKDIR}/bootversion-loader.sh ${D}${base_libdir}/rdk/bootversion-loader.sh
 }
