@@ -68,7 +68,6 @@ WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_INTERFACE 
 
 else
 # Default generic configuration for other platforms
-$WIFI_P2P_CTRL_INTERFACE
     WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_CTRL_INTERFACE -t -U $LOG_LEVEL_STR"
 
 fi
