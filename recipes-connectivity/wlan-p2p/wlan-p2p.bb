@@ -21,7 +21,7 @@ SYSLOG-NG_FILTER = "wlan_p2p"
 SYSLOG-NG_SERVICE_wlan_p2p = "wlan-p2p.service"
 SYSLOG-NG_DESTINATION_wlan_p2p = "wpa_p2p_supplicant.log"
 SYSLOG-NG_LOGRATE_wlan_p2p = "medium"
-RDEPENDS:${PN} += " bash"
+RDEPENDS:${PN} += " bash iproute2"
 do_install () {
 
     install -d ${D}${bindir}
