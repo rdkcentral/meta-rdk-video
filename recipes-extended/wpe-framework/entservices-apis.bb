@@ -16,7 +16,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name
 SRC_URI += "file://RDKEMW-1007.patch"
 
 # Tag 3.4.2
-SRCREV_entservices-apis = "588fcc5f3bb4d304cc332871aef16217b4337e38"
+SRCREV_entservices-apis = "ac73ef5094af4620b9d4ff4b4f4c7bbff526b00a"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
