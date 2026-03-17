@@ -17,7 +17,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-
 . /etc/device.properties
 
 WPA_P2P_SUPP_CONF_DIR="/opt/secure/wifi/p2p"
@@ -33,15 +32,14 @@ if [ ! -f ${WPA_P2P_SUPP_CONF_FILE} ]; then
 fi
 sync
 
-# Configuring wpa_supplicant log levels
-# Get debug.ini file with opt-override support
+# Select debug.ini location
 if [ -f /opt/debug.ini ] && [ "$BUILD_TYPE" != "prod" ]; then
     DEBUGINIFILE=/opt/debug.ini
 else
     DEBUGINIFILE=/etc/debug.ini
 fi
 
-#Read debug.ini file and map to wpa-supplicant logging level
+# Map RDK log levels to wpa_supplicant
 log_line=`grep "LOG.RDK.WIFIP2PWPA" $DEBUGINIFILE`
 
 if echo "$log_line" | grep -q "TRACE9"; then
@@ -57,26 +55,23 @@ elif echo "$log_line" | grep -q "WARNING"; then
 elif echo "$log_line" | grep -q "ERROR"; then
     LOG_LEVEL_STR="-qq"
 fi
-
-# Broadcom specific p2p interface
+# P2P Interface from device.properties
 if ip link show wl0.2 >/dev/null 2>&1; then
     echo "Broadcom platform detected"
 
     WIFI_P2P_INTERFACE="wl0.2"
-    echo "Using P2P interface: $WIFI_P2P_INTERFACE"
+echo "Using P2P interface: $WIFI_P2P_INTERFACE"
 
-    WPA_SUPP_P2P_PID_FILE="/var/run/wpa_supplicant/p2p.pid"
+WPA_SUPP_P2P_PID_FILE="/var/run/wpa_supplicant/p2p.pid"
 
-    WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_INTERFACE -t $LOG_LEVEL_STR -P $WPA_SUPP_P2P_PID_FILE"
+WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_INTERFACE -t $LOG_LEVEL_STR -P $WPA_SUPP_P2P_PID_FILE"
 
 else
-
-    # Default generic configuration for other platforms
-    $WIFI_P2P_CTRL_INTERFACE
-    WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_CTRL_INTERFACE -t -U $LOG_LEVEL_STR"
+# Default generic configuration
+    WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_CTRL_INTERFACE -t $LOG_LEVEL_STR"
 
 fi
-# Export systemd environment
+# Export systemd environment 
 /bin/systemctl set-environment WPA_P2P_SUPP_CONF_FILE=$WPA_P2P_SUPP_CONF_FILE
 /bin/systemctl set-environment WPA_P2P_SUPP_ARGS="$WPA_P2P_SUPP_ARGS"
 
