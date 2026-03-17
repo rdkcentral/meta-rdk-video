@@ -1,0 +1,55 @@
+From 02bee5bfa115240655e55fd66ff635454957a90c Mon Sep 17 00:00:00 2001
+From: Radenko Mihajlovic <Radenko_Mihajlovic@comcast.com>
+Date: Tue, 17 Mar 2026 13:37:01 +0000
+Subject: [PATCH] 0001-DTM-4808-convert-pure-virtual-in-virtual
+
+---
+ apis/OpenCDMi/IDRM.h | 33 +++++++++++++++++++++++++++------
+ 1 file changed, 27 insertions(+), 6 deletions(-)
+
+diff --git a/apis/OpenCDMi/IDRM.h b/apis/OpenCDMi/IDRM.h
+index 4a49207..fdd1db0 100644
+--- a/apis/OpenCDMi/IDRM.h
++++ b/apis/OpenCDMi/IDRM.h
+@@ -461,14 +461,35 @@ public:
+         = 0;
+ 
+     // fairplay
+-    virtual CDMi_RESULT CreateMovieSession(uint32_t version, const uint8_t* cert, uint32_t certificatesize, const uint32_t* versionlist, uint32_t versionListSize, uint64_t* movieIdOut) = 0;
+-    virtual CDMi_RESULT DestroyMovieSession(uint32_t version, uint64_t movieId) = 0;
++    virtual CDMi_RESULT CreateMovieSession(uint32_t version, const uint8_t* cert, uint32_t certificatesize,
++        const uint32_t* versionlist, uint32_t versionListSize, uint64_t* movieIdOut)
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
++    virtual CDMi_RESULT DestroyMovieSession(uint32_t version, uint64_t movieId)
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
+     virtual CDMi_RESULT GenerateChallengeWithVersionList(uint32_t version, uint64_t movieId,
+         const uint8_t* assetidData, uint32_t assetidSize,
+-        const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallengeBuffer, uint8_t *licenseSize, uint8_t *session) = 0;
+-    virtual CDMi_RESULT DestroyServerExchange(uint32_t version, uint8_t* session) = 0;
+-    virtual CDMi_RESULT ProcessLicense(uint32_t version, uint8_t *session, const uint8_t *licenseData, uint32_t licenseDataSize, uint8_t *cryptoId) = 0;
+-    virtual CDMi_RESULT InitLibrary() = 0;
++        const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize,
++        uint64_t cryptorId, uint8_t* licenseChallengeBuffer, uint8_t* licenseSize, uint8_t* session)
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
++    virtual CDMi_RESULT DestroyServerExchange(uint32_t version, uint8_t* session)
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
++    virtual CDMi_RESULT ProcessLicense(uint32_t version, uint8_t* session,
++        const uint8_t* licenseData, uint32_t licenseDataSize, uint8_t* cryptoId)
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
++    virtual CDMi_RESULT InitLibrary()
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
+ };
+ 
+ // IMediaKeySession defines the MediaKeySessionExt interface.
