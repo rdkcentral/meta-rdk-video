@@ -10,7 +10,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "0fd235377a54dff372378f21d3a16f8e025f2a6b"
+SRCREV = "63432dc4760271142cd20896c9ec1d0a47f81522"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -102,12 +102,12 @@ do_install:append() {
 
     SERVICE="${SERVICE_DIR}/wpeframework-displaysettings.service"
 
-    if [ -f "$SERVICE" ]; then
-        # Insert the line before [Service], only if not already present
-        if ! grep -q "^ConditionPathExists=/tmp/wpeframeworkstarted" "$SERVICE"; then
-            sed -i '/^\[Service\]/i ConditionPathExists=/tmp/wpeframeworkstarted' "$SERVICE"
-        fi
-    fi
+    # if [ -f "$SERVICE" ]; then
+    #     # Insert the line before [Service], only if not already present
+    #     if ! grep -q "^ConditionPathExists=/tmp/wpeframeworkstarted" "$SERVICE"; then
+    #         sed -i '/^\[Service\]/i ConditionPathExists=/tmp/wpeframeworkstarted' "$SERVICE"
+    #     fi
+    # fi
 
     # IPControl service to add securemount dependencies
     IP_SERVICE="${SERVICE_DIR}/wpeframework-ipcontrol.service"
