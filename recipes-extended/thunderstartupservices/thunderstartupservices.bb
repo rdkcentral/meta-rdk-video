@@ -134,4 +134,17 @@ do_install:append() {
     done
 }
 
+# Enable support for keymap in rdkwindowmanager service if WINDOWMANAGER_RCU_KEYMAP_FILE is set.
+do_install:append() {
+    if [ -n "${WINDOWMANAGER_RCU_KEYMAP_FILE}" ]; then
+        RDKWM_SERVICE="${D}${systemd_system_unitdir}/wpeframework-rdkwindowmanager.service"
+
+        if [ -f "$RDKWM_SERVICE" ]; then
+            if ! grep -q '^Environment="RDK_WINDOW_MANAGER_KEYMAP_FILE=' "$RDKWM_SERVICE"; then
+                sed -i "/^\[Service\]/a Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"" "$RDKWM_SERVICE"
+            fi
+        fi
+    fi
+}
+
 FILES:${PN} += "${systemd_system_unitdir} ${sysconfdir}/systemd/system"
