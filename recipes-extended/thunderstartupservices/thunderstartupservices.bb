@@ -138,7 +138,7 @@ do_install:append() {
         RDKWM_SERVICE="${D}${systemd_system_unitdir}/wpeframework-rdkwindowmanager.service"
 
         if [ -f "$RDKWM_SERVICE" ]; then
-            if ! grep -q '^Environment="RDK_WINDOW_MANAGER_KEYMAP_FILE=' "$RDKWM_SERVICE"; then
+            if ! grep -Eq '^[[:space:]]*Environment="?RDK_WINDOW_MANAGER_KEYMAP_FILE=' "$RDKWM_SERVICE"; then
                 sed -i "/^\[Service\]/a Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"" "$RDKWM_SERVICE"
             fi
         fi
