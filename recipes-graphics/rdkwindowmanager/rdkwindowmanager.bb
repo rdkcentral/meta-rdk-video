@@ -8,7 +8,7 @@ DEPENDS = "westeros wayland essos virtual/egl rapidjson jpeg libpng curl"
 DEPENDS:append = "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '', 'libsoup-2.4 boost libsyswrapper', d)}"
 
 # Provision to add RCU keymapping support by OEM.
-RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_rcu-keymapper}"
+RDEPENDS:${PN} += " ${VIRTUAL-RUNTIME_rcu-keymapper}"
 
 S = "${WORKDIR}/git"
 PV = "0.3.0.0"
