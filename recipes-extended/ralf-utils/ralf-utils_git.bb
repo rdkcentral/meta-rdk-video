@@ -14,6 +14,7 @@ PV              ?= "1.2.0"
 PR              ?= "r0"
 S                = "${WORKDIR}/git"
 
+# Network access is required during do_unpack for this recipe's current source layout
 do_unpack[network] = "1"
 DEPENDS          = "openssl libxml2 libarchive lz4"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
