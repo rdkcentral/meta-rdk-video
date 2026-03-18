@@ -132,10 +132,8 @@ do_install:append() {
         # To:      "Description=WPE SystemMode"
         sed -i 's/^Description=WPEFramework \(.*\) Initialiser$/Description=WPE \1/' "$SERVICE_FILE"
     done
-}
 
-# Enable support for keymap in rdkwindowmanager service if WINDOWMANAGER_RCU_KEYMAP_FILE is set.
-do_install:append() {
+    # Enable support for keymap in rdkwindowmanager service if WINDOWMANAGER_RCU_KEYMAP_FILE is set.
     if [ -n "${WINDOWMANAGER_RCU_KEYMAP_FILE}" ]; then
         RDKWM_SERVICE="${D}${systemd_system_unitdir}/wpeframework-rdkwindowmanager.service"
 
