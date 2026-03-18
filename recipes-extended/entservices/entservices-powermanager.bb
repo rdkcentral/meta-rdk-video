@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFF
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.4
-SRCREV = "556400e37137b7dc06716159e22c74405dcb7741"
+# Release version - 1.1.4
+SRCREV = "dbe8ea5f40245c529161257f36c806d2da4d68e5"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
