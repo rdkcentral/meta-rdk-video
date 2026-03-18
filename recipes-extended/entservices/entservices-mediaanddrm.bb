@@ -18,7 +18,7 @@ SRC_URI = "git://github.com/rdkcentral/entservices-mediaanddrm.git;protocol=http
           "
           
 # Release version - 1.8.2
-SRCREV = "b440308bfe8196da6b83d4d7bbc9b57205f572db"
+SRCREV = "28365725a4e46d2f77343a0cf4852dd8da7a72d8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
