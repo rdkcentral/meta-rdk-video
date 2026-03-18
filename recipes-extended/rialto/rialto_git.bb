@@ -20,7 +20,7 @@ SRCREV = "fc2f3fe0cd5b75a19b91250b839984a931b8617a"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
-DEPENDS = "openssl jsoncpp protobuf protobuf-native yaml-cpp"
+DEPENDS = "openssl jsoncpp protobuf protobuf-native"
 DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform "
 
 S = "${WORKDIR}/git"
@@ -39,10 +39,10 @@ PACKAGECONFIG[servermanager] = "-DENABLE_SERVER_MANAGER=ON,-DENABLE_SERVER_MANAG
 # requires the 'server' package config to be enabled as well.
 PACKAGECONFIG ??= "server servermanager"
 
-RDEPENDS:${PN} += "protobuf mongoose yaml-cpp"
+RDEPENDS:${PN} += "protobuf mongoose"
 RDEPENDS:${PN}-server += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils yaml-cpp"
-RDEPENDS:${PN}-servermanager += "${PN}-server yaml-cpp"
-RDEPENDS:${PN}-servermanager-lib += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils yaml-cpp"
+RDEPENDS:${PN}-servermanager += "${PN}-server"
+RDEPENDS:${PN}-servermanager-lib += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
 
 FILES:${PN}-client += "${libdir}/libRialtoClient.so.*"
 FILES:${PN}-server += "${bindir}/RialtoServer"
