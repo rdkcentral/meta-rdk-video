@@ -58,7 +58,6 @@ fi
 
 #Configuration for wl0.2 interface 
 if ip link show wl0.2 >/dev/null 2>&1; then
-    echo "Broadcom platform detected"
 
     WIFI_P2P_INTERFACE="wl0.2"
     echo "Using P2P interface: $WIFI_P2P_INTERFACE"
@@ -74,4 +73,4 @@ else
 fi
 # Export systemd environment 
 /bin/systemctl set-environment WPA_P2P_SUPP_CONF_FILE=$WPA_P2P_SUPP_CONF_FILE
-/bin/systemctl set-environment WPA_P2P_SUPP_ARGS="$WPA_P2P_SUPP_ARGS"
+/bin/systemctl set-environment WPA_P2P_SUPP_ARGS="$WPA_P2P_SUPP_ARGS
