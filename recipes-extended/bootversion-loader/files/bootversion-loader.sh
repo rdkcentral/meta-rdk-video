@@ -28,11 +28,7 @@ file_bootversion_bak="/opt/.bootversion.bak"
 migrationDSFile="/opt/secure/migration/migration_data_store.json"
 migrationDir="/opt/secure/migration"
 
-if [ -z $LOG_PATH ]; then
-    LOG_PATH="/opt/logs/"
-fi
-
-BOOTTYPE_LOG_FILE="$LOG_PATH/boottypescript.log"
+BOOTTYPE_LOG_FILE="/opt/logs/boottypescript.log"
 
 boottypeLog() {
     echo "`/bin/timestamp`: $0: $*" >> $BOOTTYPE_LOG_FILE
