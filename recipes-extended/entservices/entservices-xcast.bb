@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-xcast;${CMF_GITHUB_SRC_URI_SUFFIX}\
           "
 
 # Release version - 2.0.2
-SRCREV = "d1f2d5b008e120294951e24b37dbaa32fbe9219e"
+SRCREV = "e717a76d62e74013f0fb62cc36a4c679e26de02e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -39,11 +39,12 @@ PACKAGECONFIG ?= " breakpadsupport \
 "
 
 PACKAGECONFIG:append = " xcast"
+PACKAGECONFIG:append = " gstreamer"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[xcast]                = "-DPLUGIN_XCAST=ON,-DPLUGIN_XCAST=OFF,iarmbus iarmmgrs rfc xdial networkmanager-plugin,iarmbus rfc xdial networkmanager-plugin"
-
+PACKAGECONFIG[gstreamer]            = "-DPLUGIN_GSTREAMERPLAYER=ON,-DPLUGIN_GSTREAMERPLAYER=OFF,,"
 # ----------------------------------------------------------------------------
 
 EXTRA_OECMAKE += " \
