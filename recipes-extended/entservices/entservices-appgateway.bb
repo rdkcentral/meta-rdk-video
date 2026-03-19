@@ -2,9 +2,9 @@ SUMMARY = "ENTServices AppGateway plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "0.3.1.0"
+PV = "1.0.0.0"
 PR = "r0"
-SRCREV = "5d8045e14783032f9c8d81bbf3dd601d307c3554"
+SRCREV = "4f73d38a5c7098f8cec6c4b3c6ab1eaea378490b"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -17,13 +17,16 @@ TOOLCHAIN = "gcc"
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries entservices-apis"
 RDEPENDS:${PN} += "wpeframework entservices-apis"
 
+TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
+
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
-PACKAGECONFIG ?= "appgateway appnotifications appgatewaycommon"
+PACKAGECONFIG ?= "appgateway appnotifications appgatewaycommon telemetrysupport"
 
 PACKAGECONFIG[appgateway]       = "-DPLUGIN_APPGATEWAY=ON,-DPLUGIN_APPGATEWAY=OFF"
 PACKAGECONFIG[appnotifications] = "-DPLUGIN_APPNOTIFICATIONS=ON,-DPLUGIN_APPNOTIFICATIONS=OFF"
 PACKAGECONFIG[appgatewaycommon] = "-DPLUGIN_APPGATEWAYCOMMON=ON,-DPLUGIN_APPGATEWAYCOMMON=OFF,networkmanager-plugin"
+PACKAGECONFIG[telemetrysupport] = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so"
 
