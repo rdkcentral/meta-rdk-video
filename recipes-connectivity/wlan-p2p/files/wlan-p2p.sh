@@ -74,3 +74,8 @@ fi
 # Export systemd environment 
 /bin/systemctl set-environment WPA_P2P_SUPP_CONF_FILE=$WPA_P2P_SUPP_CONF_FILE
 /bin/systemctl set-environment WPA_P2P_SUPP_ARGS="$WPA_P2P_SUPP_ARGS"
+<<<<<<< HEAD
+=======
+
+exit 0
+>>>>>>> ee0140af (Update wlan-p2p.sh)
