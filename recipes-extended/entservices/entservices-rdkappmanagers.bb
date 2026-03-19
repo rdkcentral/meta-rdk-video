@@ -8,7 +8,7 @@ PR ?= "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "16ebc5a9908f423ae5f6246f04f0b05ee836eca1"
+SRCREV = "ca7ff4b487ec340c25a90d0a508bc0d6a865871a"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -135,6 +135,13 @@ do_install:append() {
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
+    fi
+
+    # Keep AppManagersHelpers canonical in ${libdir} so dynamic linker resolves
+    # NEEDED entries without relying on plugin directory lookups.
+    if [ -f "${D}${libdir}/wpeframework/plugins/libAppManagersHelpers.so" ]; then
+        install -d "${D}${libdir}"
+        mv "${D}${libdir}/wpeframework/plugins/libAppManagersHelpers.so" "${D}${libdir}/libAppManagersHelpers.so"
     fi
 }
 
