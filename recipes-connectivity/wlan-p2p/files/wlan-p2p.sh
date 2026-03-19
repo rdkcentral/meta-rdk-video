@@ -56,7 +56,7 @@ elif echo "$log_line" | grep -q "ERROR"; then
     LOG_LEVEL_STR="-qq"
 fi
 
-#Configuration for wl0.2 interface 
+# Configuration for wl0.2 interface
 if ip link show wl0.2 >/dev/null 2>&1; then
 
     WIFI_P2P_INTERFACE="wl0.2"
@@ -71,7 +71,7 @@ else
     WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_CTRL_INTERFACE -t $LOG_LEVEL_STR"
 
 fi
-# Export systemd environment 
+# Export systemd environment
 /bin/systemctl set-environment WPA_P2P_SUPP_CONF_FILE=$WPA_P2P_SUPP_CONF_FILE
 /bin/systemctl set-environment WPA_P2P_SUPP_ARGS="$WPA_P2P_SUPP_ARGS"
 
