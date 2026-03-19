@@ -17,8 +17,13 @@ PATCHTOOL = "git"
 TOOLCHAIN = "gcc"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
+FIREBOLT_CPP_CLIENT_PV ?= "0.5.3"
+FIREBOLT_CPP_TRANSPORT_PV ?= "1.1.5"
+
 SRC_URI  = "git://github.com/youtube/cobalt.git;protocol=https;name=cobalt;branch=25.lts.stable"
 SRC_URI += "${LARBOARD_SRC_URI};protocol=${CMF_GITHUB_PROTOCOL};destsuffix=larboard;name=larboard;branch=develop"
+SRC_URI += "https://github.com/rdkcentral/firebolt-cpp-client/releases/download/v${FIREBOLT_CPP_CLIENT_PV}/firebolt-cpp-client-${FIREBOLT_CPP_CLIENT_PV}.tar.gz;name=firebolt_cpp_client"
+SRC_URI += "https://github.com/rdkcentral/firebolt-cpp-transport/releases/download/v${FIREBOLT_CPP_TRANSPORT_PV}/firebolt-cpp-transport-${FIREBOLT_CPP_TRANSPORT_PV}.tar.gz;name=firebolt_cpp_transport"
 SRC_URI += "file://25/0001-Include-RDK-platforms.patch"
 SRC_URI += "file://25/0002-Fix-crashpad-build.patch"
 SRC_URI += "file://25/0003-breakpad-add-mapping-info.patch"
@@ -27,6 +32,9 @@ SRC_URI += "file://25/0005-Use-Yocto-host-toolchain.patch"
 SRC_URI += "file://25/0006-Use-certifi-to-tell-urllib-where-to-find-CA-file-397.patch"
 SRC_URI += "file://25/0007-Prevent-cobalt-unloading.patch"
 
+SRC_URI[firebolt_cpp_client.sha256sum] = "1c7d304fc594acde1549d49e9f8935a8ed7fcaaf7c01667180d1f3b787925c22"
+SRC_URI[firebolt_cpp_transport.sha256sum] = "ecf662735ba6619022158ffac2717ec1c5c4c4055705db5d7b475d3c461d5e90"
+
 CR = "30"
 PR = "r${CR}"
 SRCREV_cobalt = "25.lts.${CR}"
@@ -34,7 +42,7 @@ SRCREV_larboard = "${LARBOARD_SRCREV_DEV}"
 SRCREV_FORMAT = "cobalt_larboard"
 PV .= "+git${SRCPV}"
 
-do_fetch[vardeps] += " SRCREV_FORMAT SRCREV_cobalt SRCREV_larboard"
+do_fetch[vardeps] += " SRCREV_FORMAT SRCREV_cobalt SRCREV_larboard FIREBOLT_CPP_CLIENT_PV FIREBOLT_CPP_TRANSPORT_PV"
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
 
@@ -42,6 +50,7 @@ DEPENDS += "virtual/libgles2 virtual/egl essos gstreamer1.0 gstreamer1.0-plugins
 DEPENDS += " wpeframework entservices-apis wpeframework-clientlibraries"
 DEPENDS += " ninja-native bison-native openssl-native gn-native ccache-native"
 DEPENDS += " python3-six-native python3-urllib3-native"
+DEPENDS += " nlohmann-json websocketpp boost"
 
 RDEPENDS:${PN} += "gstreamer1.0-plugins-base-app gstreamer1.0-plugins-base-playback"
 
@@ -65,12 +74,15 @@ PACKAGECONFIG ?= "${COBALT_BUILD_TYPE}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdm', '', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'securityagent', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_asan', 'asan', '', d)}"
+#PACKAGECONFIG:append = " ${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_ripple firebolt_rdk_certify', 'firebolt', '', d)}"
+
 
 PACKAGECONFIG[opencdm]       = "rdk_enable_ocdm=true,rdk_enable_ocdm=false,,"
 PACKAGECONFIG[securityagent] = "rdk_enable_securityagent=true,rdk_enable_securityagent=false,,"
 PACKAGECONFIG[qa]            = ",,nodejs-native,"
 PACKAGECONFIG[asan]          = "use_asan=true,,gcc-sanitizers"
 PACKAGECONFIG[gold]          = ""
+#PACKAGECONFIG[firebolt]      = "rdk_enable_firebolt_api=true,rdk_enable_firebolt_api=false,firebolt-cpp-client firebolt-cpp-transport,"
 
 GN_ARGS_EXTRA ?= ""
 GN_ARGS_EXTRA:append = " sb_enable_cpp20_audit=false"
@@ -94,6 +106,11 @@ python() {
 do_unpack_extra() {
     bbnote "copy larboard"
     ( cd "${S}/third_party/" && ln -sf ../../larboard/src/third_party/starboard . )
+
+    bbnote "stage firebolt-cpp sources into cobalt third_party"
+    rm -rf "${S}/third_party/firebolt-cpp-client" "${S}/third_party/firebolt-cpp-transport"
+    cp -a "${WORKDIR}/firebolt-cpp-client-${FIREBOLT_CPP_CLIENT_PV}" "${S}/third_party/firebolt-cpp-client"
+    cp -a "${WORKDIR}/firebolt-cpp-transport-${FIREBOLT_CPP_TRANSPORT_PV}" "${S}/third_party/firebolt-cpp-transport"
 }
 addtask unpack_extra after do_patch before do_configure
 
