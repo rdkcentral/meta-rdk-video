@@ -49,7 +49,6 @@ INCLUDE_DIRS = " \
     -I${S}/hal/include \
     -I${STAGING_DIR_TARGET}${includedir} \
     -I${STAGING_DIR_TARGET}${includedir}/rdk/iarmbus \
-    -I${STAGING_DIR_TARGET}${includedir}/rdk/iarmmgrs-hal \
     -I${STAGING_DIR_TARGET}${includedir}/rdk/logger \
     -I${STAGING_DIR_TARGET}${includedir}/glib-2.0 \
     -I${STAGING_DIR_TARGET}${libdir}/glib-2.0/include \
