@@ -12,7 +12,7 @@ SYSMONTOOL_NAME = "sys-utils"
 
 PV = "${RDK_RELEASE}+gitr${SRCPV}"
 SRC_URI = "${CMF_GIT_ROOT}/rdk/components/generic/sys_mon_tools/sys_utils;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GIT_BRANCH}"
-SRCREV = "${AUTOREV}"
+SRCREV = "f53212b9ad6feae80cea17a1a756b2b7be295934"
 
 DEPENDS = "iarmbus iarmmgrs dbus glib-2.0 devicesettings directfb devicesettings-hal-headers "
 RDEPENDS:${PN} = " devicesettings"

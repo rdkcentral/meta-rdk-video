@@ -9,7 +9,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PV = "${RDK_RELEASE}+git${SRCPV}"
 
-SRCREV = "${AUTOREV}"
+SRCREV = "5d7e810bcaf8411acb3a084926ae9887ed969b03"
 SRC_URI = "${CMF_GIT_ROOT}/rdk/components/generic/sys_mon_tools/analyzers/scripts/target;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GIT_BRANCH}"
 S = "${WORKDIR}/git"
 

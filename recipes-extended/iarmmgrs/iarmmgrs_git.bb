@@ -4,12 +4,14 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0 & ISC"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=83a31d934b0cc2ab2d44a329445b4366"
 
-PV ?= "1.1.0"
-PR ?= "r0"
+
+PV = "1.1.13"
+PR = "r0"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
+SRCREV = "b6b5e6aeb82cfba5663c67eb9a5c7d3d63c275e3"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
 #SRC_URI:append = " file://irmgr.diff"
@@ -17,6 +19,9 @@ S = "${WORKDIR}/git"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 DEPENDS:append = " safec-common-wrapper"
+
+# Telemetry Support
+DEPENDS:append = " telemetry"
 
 PARALLEL_MAKE = ""
 DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal \
@@ -114,7 +119,7 @@ CFLAGS:remove = "-DRF4CE_GPMSO_API"
 # JIRA: XRE-6537.
 #
 #MADAN
-LDFLAGS += " -lpthread -lglib-2.0 -ldbus-1 -lIARMBus -lsystemd -lsecure_wrapper -lprivilege -ldl -lWPEFrameworkPowerController"
+LDFLAGS += " -lpthread -lglib-2.0 -ldbus-1 -lIARMBus -lsystemd -lsecure_wrapper -lprivilege -ldl -lWPEFrameworkPowerController -ltelemetry_msgsender"
 CFLAGS += "-std=c++11 -fPIC -D_REENTRANT -Wall -I./include ${INCLUDE_DIRS}"
 
 CFLAGS:append:client = " -DMEDIA_CLIENT"
@@ -270,7 +275,6 @@ do_install:append(){
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiEraseAllData ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiSetCredentials ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiGetCredentials ${D}${bindir}
-
 }
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', 'ctrlm-headers', '', d)}"

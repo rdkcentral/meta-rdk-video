@@ -1,0 +1,3 @@
+XR_VOICE_SDK_SRCREV = "e4d8effc22fa1cff45a0d6901012d4ad0d25e69e"
+XR_VOICE_SDK_PV     = "1.0.12"
+XR_VOICE_SDK_PR     = "r0"

@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = " \
 "
 
 inherit features_check
-REQUIRED_DISTRO_FEATURES = "cobalt-25"
+CONFLICT_DISTRO_FEATURES = "cobalt-24"
 
 TOOLCHAINS_DIR = "starboard-toolchains"
 CLANG_BUILD_REVISION = "17-init-8029-g27f27d15-3"

@@ -1,6 +1,5 @@
 [Unit]
 Description=Boot version loader for RDK
-After=tr69hostif.service
 
 [Service]
 Type=oneshot
