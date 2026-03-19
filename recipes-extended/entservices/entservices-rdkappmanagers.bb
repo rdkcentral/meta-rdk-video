@@ -60,6 +60,7 @@ PACKAGECONFIG ?= " telemetrysupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_ralf', ' ralfsupport', '', d)} \
+    perfmetrics \
 "
 
 inherit features_check
@@ -87,6 +88,7 @@ PACKAGECONFIG[downloadmanager]      = "-DPLUGIN_DOWNLOADMANAGER=ON ${DOWNLOADMAN
 PACKAGECONFIG[rdkwindowmanager]     = "-DPLUGIN_RDK_WINDOW_MANAGER=ON,-DPLUGIN_RDK_WINDOW_MANAGER=OFF,rdkwindowmanager entservices-apis,rdkwindowmanager entservices-apis"
 PACKAGECONFIG[telemetrymetrics]     = "-DPLUGIN_TELEMETRYMETRICS=ON,-DPLUGIN_TELEMETRYMETRICS=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[ralfsupport] = "-DRALF_PACKAGE_SUPPORT=ON, -DRALF_PACKAGE_SUPPORT=OFF,ralf-utils jsoncpp, ralf-utils jsoncpp"
+PACKAGECONFIG[perfmetrics]          = "-DENABLE_RDKAPPMANAGERS_PERFMETRICS=ON,-DENABLE_RDKAPPMANAGERS_PERFMETRICS=OFF,,"
 
 # ----------------------------------------------------------------------------
 
