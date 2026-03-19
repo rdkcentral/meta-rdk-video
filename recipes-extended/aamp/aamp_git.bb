@@ -24,6 +24,9 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 #To be removed later, the AAMP_RELEASE_TAG_NAME is not using.
 AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
 
+#support to override branch by setting AAMP_BRANCH = "<AAMP Branch Name>".
+AAMP_BRANCH ?= "develop"
+CMF_GITHUB_SRC_URI_SUFFIX = "protocol=${CMF_GITHUB_PROTOCOL};branch=${AAMP_BRANCH}"
 SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
 
 S = "${WORKDIR}/git"
