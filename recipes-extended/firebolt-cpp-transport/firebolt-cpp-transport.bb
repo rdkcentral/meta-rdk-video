@@ -8,19 +8,20 @@ inherit cmake
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-PV = "1.1.4"
+PV = "1.1.6"
 PR = "r0"
 
 SRC_URI = "https://github.com/rdkcentral/firebolt-cpp-transport/releases/download/v${PV}/firebolt-cpp-transport-${PV}.tar.gz"
-SRC_URI[sha256sum] = "218e1b2ee41404fe1ccda3bb0cea885c9c6d1cc0ac89f94c929129fcb388d5ea"
+SRC_URI[sha256sum] = "fba0193b4fbc69b68b3c9674d102ef3d95aca923af020d6b35d75713aaf35369"
 
 S = "${WORKDIR}/firebolt-cpp-transport-${PV}"
 
 DEPENDS = "nlohmann-json websocketpp boost"
-RDEPENDS:${PN} = "websocketpp boost-system"
+RDEPENDS:${PN} = "boost-system"
 
 PACKAGECONFIG ??= ""
 PACKAGECONFIG[legacy-rpc-v1] = "-DENABLE_LEGACY_RPC_V1=ON,-DENABLE_LEGACY_RPC_V1=OFF"
+PACKAGECONFIG[disable-so-version] = "-DDISABLE_SO_VERSION=ON,-DDISABLE_SO_VERSION=OFF"
 
 EXTRA_OECMAKE:append = " ${PACKAGECONFIG_CONFARGS}"
 
