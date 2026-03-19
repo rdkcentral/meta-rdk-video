@@ -30,6 +30,8 @@ PACKAGECONFIG[sniffer] = "-Dsniffer=true,-Dsniffer=false,gtk4,"
 
 REQUIRED_DISTRO_FEATURES = "${@bb.utils.contains('PACKAGECONFIG', 'sniffer', 'opengl', '', d)}"
 
+PROVIDES += "libgssdp-1.6-0"
+
 PACKAGES += "${PN}-tools"
 
 FILES:${PN}-tools = "${bindir}/gssdp-device-sniffer ${datadir}/gssdp-1.6/*.glade"
