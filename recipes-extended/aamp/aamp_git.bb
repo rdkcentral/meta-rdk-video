@@ -11,7 +11,7 @@ SRCREV_aamp ?= "32ffcb2f9ba33838d243954abca53a9195cc2762"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "develop"
-CMF_GITHUB_SRC_URI_SUFFIX:remove = "CMF_GITHUB_BRANCH"
+CMF_GITHUB_SRC_URI_SUFFIX:remove = "${CMF_GITHUB_BRANCH}"
 CMF_GITHUB_SRC_URI_SUFFIX:append = "branch=${AAMP_BRANCH}"
 
 DEPENDS += "curl libdash libxml2 cjson readline ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
