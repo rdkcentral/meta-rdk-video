@@ -13,7 +13,7 @@ EXTRA_OECMAKE += " \
 
 PV = "2.0.2"
 
-SRCREV = "ea9c7ec1a810053619596123f5bd6fd22b3215f4"
+SRCREV = "1739d7c5fec93f20da0e672571e8d8f6a4ca17bf"
 SRC_URI = "${CMF_GITHUB_ROOT}/gstreamer-netflix-platform;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 S = "${WORKDIR}/git"
