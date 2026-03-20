@@ -9,6 +9,10 @@ PR ?= "r0"
 SRCREV_FORMAT = "aamp"
 SRCREV_aamp ?= "32ffcb2f9ba33838d243954abca53a9195cc2762"
 
+# To build from a different branch, override both AAMP_BRANCH and SRCREV_aamp to specific branch & revision.
+AAMP_BRANCH ?= "develop"
+CMF_GITHUB_SRC_URI_SUFFIX = "protocol=${CMF_GITHUB_PROTOCOL};branch=${AAMP_BRANCH}"
+
 DEPENDS += "curl libdash libxml2 cjson readline ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 
 RDEPENDS:${PN} += "devicesettings ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
@@ -24,9 +28,6 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 #To be removed later, the AAMP_RELEASE_TAG_NAME is not using.
 AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
 
-#support to override branch by setting AAMP_BRANCH = "<AAMP Branch Name>".
-AAMP_BRANCH ?= "develop"
-CMF_GITHUB_SRC_URI_SUFFIX = "protocol=${CMF_GITHUB_PROTOCOL};branch=${AAMP_BRANCH}"
 SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
 
 S = "${WORKDIR}/git"
