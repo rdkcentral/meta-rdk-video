@@ -31,7 +31,7 @@ EXTRA_OECMAKE += " ${@bb.utils.contains("IMAGE_FEATURES", "prod", "-DRIALTO_BUIL
 PACKAGES =+ "${PN}-client ${PN}-server ${PN}-servermanager-lib ${PN}-servermanager ${PN}-client-dev ${PN}-server-dev ${PN}-servermanager-lib-dev ${PN}-servermanager-dev "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-PACKAGECONFIG[server] = "-DENABLE_SERVER=ON,-DENABLE_SERVER=OFF,wpeframework-clientlibraries gstreamer1.0 gstreamer1.0-plugins-base glib-2.0 virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
+PACKAGECONFIG[server] = "-DENABLE_SERVER=ON,-DENABLE_SERVER=OFF,wpeframework-clientlibraries gstreamer1.0 gstreamer1.0-plugins-base glib-2.0 virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils yaml-cpp"
 PACKAGECONFIG[servermanager] = "-DENABLE_SERVER_MANAGER=ON,-DENABLE_SERVER_MANAGER=OFF,mongoose,"
 
 # The 'servermanager' package config has a runtime
@@ -40,7 +40,7 @@ PACKAGECONFIG[servermanager] = "-DENABLE_SERVER_MANAGER=ON,-DENABLE_SERVER_MANAG
 PACKAGECONFIG ??= "server servermanager"
 
 RDEPENDS:${PN} += "protobuf mongoose"
-RDEPENDS:${PN}-server += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
+RDEPENDS:${PN}-server += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils yaml-cpp"
 RDEPENDS:${PN}-servermanager += "${PN}-server"
 RDEPENDS:${PN}-servermanager-lib += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
 
