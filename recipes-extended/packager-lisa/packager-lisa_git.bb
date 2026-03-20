@@ -4,7 +4,7 @@ SECTION = "rdk/libs"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.2.2"
+PV = "1.2.3"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -13,7 +13,7 @@ RPROVIDES:${PN} = "virtual/libpackage"
 
 DEPENDS += "packager-headers"
 
-SRCREV = "79d57fa660c0772463ff497567a19a740002468e"
+SRCREV = "3931d9664d126a7a3521466d051f830cbbf680ae"
 SRC_URI = "${CMF_GITHUB_ROOT}/libpackage;${CMF_GITHUB_SRC_URI_SUFFIX};name=lisapack"
 SRCREV_FORMAT = "lisapack"
 
@@ -25,9 +25,14 @@ PACKAGECONFIG ?= " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_ralf', 'ralfsupport', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC_SUPPORT', 'lisa', '', d)} \
     "
-PACKAGECONFIG[ralfsupport]    = "-DENABLE_RALF_SUPPORT=ON -DDAC_APP_PATH=${DAC_APP_PATH}, -DENABLE_RALF_SUPPORT=OFF, ralf-utils jsoncpp, ralf-utils jsoncpp" 
+PACKAGECONFIG[ralfsupport]    = "-DENABLE_RALF_SUPPORT=ON ${RALF_SUPPORT_ARGS}, -DENABLE_RALF_SUPPORT=OFF, ralf-utils jsoncpp, ralf-utils jsoncpp"
 PACKAGECONFIG[depcheck]    = "-DDISABLE_DEPENDENCY_CHECK=OFF, -DDISABLE_DEPENDENCY_CHECK=ON"
 PACKAGECONFIG[lisa]    = ",,sqlite3 boost libarchive,sqlite3 boost libarchive"
 
 DAC_APP_CERT_PATH ?= "/etc/rdk/certs"
-EXTRA_OECMAKE:append = " -DRDK_PACKAGE_CERT_PATH=${DAC_APP_CERT_PATH} -DDAC_APP_PATH=${DAC_APP_PATH}"
+
+RALF_SUPPORT_ARGS = " \
+                      -DDAC_APP_PATH=${DAC_APP_PATH} \
+                      -DRDK_PACKAGE_CERT_PATH=${DAC_APP_CERT_PATH} \
+                      "
+EXTRA_OECMAKE:append = " -DBUILD_REFERENCE=${SRCREV}"
