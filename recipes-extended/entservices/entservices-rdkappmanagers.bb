@@ -137,6 +137,11 @@ do_install:append() {
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
     fi
+
+    # Write component version info for appinfraversion.txt merge
+    install -d ${D}${sysconfdir}
+    echo "APP_MANAGERS_PV = \"${PV}\""     >  ${D}${sysconfdir}/appmanagers.txt
+    echo "APP_MANAGERS_SHA = \"${SRCREV}\"" >> ${D}${sysconfdir}/appmanagers.txt
 }
 
 # ----------------------------------------------------------------------------
