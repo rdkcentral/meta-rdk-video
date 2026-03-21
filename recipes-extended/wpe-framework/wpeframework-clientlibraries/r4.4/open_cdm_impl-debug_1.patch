@@ -1,0 +1,86 @@
+diff --git a/Source/ocdm/open_cdm_ext.cpp b/Source/ocdm/open_cdm_ext.cpp
+index 391f7ea..30e9652 100644
+--- a/Source/ocdm/open_cdm_ext.cpp
++++ b/Source/ocdm/open_cdm_ext.cpp
+@@ -49,17 +49,21 @@ static domainKeysystemMap domainMap =  {
+ OpenCDMError opencdm_parse_keysystem(std::string& keySystemDomain)
+ {
+     OpenCDMError result = ERROR_NONE;
+-
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+     std::size_t pos = keySystemDomain.find(KEYSYSTEM_DOMAIN_SEPERATOR);
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+     if (pos!=std::string::npos){
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+         std::string keySystemStr = keySystemDomain.substr(0, pos);
+         std::string domainStr = keySystemDomain.substr(pos + sizeof(KEYSYSTEM_DOMAIN_SEPERATOR)-1);
+-
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+         domainKeysystemMap::iterator index = domainMap.find(domainStr);
+ 
+         if(index != domainMap.end()){
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+             keySystemDomain.assign(index->second);
+         }else{
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+             keySystemDomain.assign(keySystemStr);
+         }
+     }
+@@ -68,6 +72,7 @@ OpenCDMError opencdm_parse_keysystem(std::string& keySystemDomain)
+ 
+ DEPRECATED struct OpenCDMSystem* opencdm_create_system(const char keySystem[])
+ {
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+     struct OpenCDMSystem* result = nullptr;
+     opencdm_create_system_extended(keySystem, &result);
+     return result;
+@@ -75,18 +80,25 @@ DEPRECATED struct OpenCDMSystem* opencdm_create_system(const char keySystem[])
+ 
+ OpenCDMError opencdm_create_system_extended(const char keySystem[], struct OpenCDMSystem** system)
+ {
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+     ASSERT(system != nullptr);
+     *system = nullptr;
+     OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
+-    if(!accessor)
++    if(!accessor) {
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+         return ERROR_INVALID_ACCESSOR;
+-
++    }
+     std::string parsedKeysystem = std::string(keySystem);
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+     opencdm_parse_keysystem(parsedKeysystem);
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+     std::string metadata;
+     OpenCDMError result = static_cast<OpenCDMError>(accessor->Metadata(parsedKeysystem, metadata));
+-    if( result == OpenCDMError::ERROR_NONE )
++    if( result == OpenCDMError::ERROR_NONE ) {
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+         *system = new OpenCDMSystem(parsedKeysystem.c_str(), metadata);
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
++    }
+     return result;
+ }
+ 
+diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
+index 5edb5d1..21aac3e 100644
+--- a/Source/ocdm/open_cdm_impl.h
++++ b/Source/ocdm/open_cdm_impl.h
+@@ -154,12 +154,16 @@ public:
+ 
+     virtual Exchange::OCDM_RESULT Metadata(const string& keySystem, string& metadata) const override
+     {
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+         if (_remote == nullptr) {
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+             Reconnect();
+         }
+         if (_remote == nullptr) {
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+             return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+         } else {
++printf("SAS: %s %s (%d)\n", __FILE__, __FUNCTION__, __LINE__);
+             return(_remote->Metadata(keySystem, metadata));
+         }
+     }
