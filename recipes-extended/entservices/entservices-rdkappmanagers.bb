@@ -140,8 +140,8 @@ do_install:append() {
 
     # Write component version info for appinfraversion.txt merge
     install -d ${D}${sysconfdir}
-    echo "APP_MANAGERS_PV = \"${PV}\""     >  ${D}${sysconfdir}/appmanagers.txt
-    echo "APP_MANAGERS_SHA = \"${SRCREV}\"" >> ${D}${sysconfdir}/appmanagers.txt
+    echo "APP_MANAGERS_PV = \"${PV}\""     >  ${D}${sysconfdir}/appmanagersversion.txt
+    echo "APP_MANAGERS_SHA = \"${SRCREV}\"" >> ${D}${sysconfdir}/appmanagersversion.txt
 }
 
 # ----------------------------------------------------------------------------
