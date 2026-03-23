@@ -10,7 +10,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 inherit cmake pkgconfig systemd
 
 EXTRA_OECMAKE += "-DSCENESET_DEFAULT_APPNAME='${SCENESET_DEFAULT_APPNAME}' \
-                 -DFACTORY_APP_PATH='${FACTORY_APP_PATH}' \
+                 -DFACTORY_APP_PATH='${FACTORY_APPS_PATH}' \
                  -DAPP_PREINSTALL_DIRECTORY='${APP_PREINSTALL_DIRECTORY}'"
 
 DEPENDS += "wpeframework entservices-apis ralf-utils"
