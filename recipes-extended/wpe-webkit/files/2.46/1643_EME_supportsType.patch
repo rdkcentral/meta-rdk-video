@@ -1,0 +1,73 @@
+From f6216cfd332ca34141eda753d53aa21f84efd1bf Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Fri, 20 Mar 2026 11:51:48 +0100
+Subject: [PATCH 1/2] [EME] Check support for full content type string
+ (including codecs)
+
+When evaluating media capability support in EME::requestMediaKeySystemAccess(),
+MediaPlayer::supportsType() was called with only the container MIME type
+(e.g. 'video/mp4'), stripping codecs and other parameters.
+
+Pass the full content type string (e.g. 'video/mp4; codecs="avc1.42E01E"')
+so the media engine can properly validate codec support, not just the container.
+---
+ Source/WebCore/platform/encryptedmedia/CDMPrivate.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/encryptedmedia/CDMPrivate.cpp b/Source/WebCore/platform/encryptedmedia/CDMPrivate.cpp
+index 88ff86897d1e..566b8c029cbc 100644
+--- a/Source/WebCore/platform/encryptedmedia/CDMPrivate.cpp
++++ b/Source/WebCore/platform/encryptedmedia/CDMPrivate.cpp
+@@ -420,7 +420,7 @@ std::optional<Vector<CDMMediaCapability>> CDMPrivate::getSupportedCapabilitiesFo
+         //       combination of container, media types, robustness and local accumulated configuration in combination
+         //       with restrictions:
+         MediaEngineSupportParameters parameters;
+-        parameters.type = ContentType(contentType->mimeType());
++        parameters.type = ContentType(requestedCapability.contentType);
+         if (MediaPlayer::supportsType(parameters) == MediaPlayer::SupportsType::IsNotSupported) {
+ 
+             // Try with Media Source:
+-- 
+2.51.0
+
+
+From 67aa2d19a70fb95d4926358514b87ed8fa04ed99 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Fri, 20 Mar 2026 11:46:58 +0100
+Subject: [PATCH 2/2] [EME] Fix logging inside requestMediaKeySystemAccess()
+ flow
+
+1) Fix logging for std::optional<T> type
+2) Log supportedConfiguration before WTFMove()
+---
+ Source/WebCore/Modules/encryptedmedia/NavigatorEME.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Source/WebCore/Modules/encryptedmedia/NavigatorEME.cpp b/Source/WebCore/Modules/encryptedmedia/NavigatorEME.cpp
+index 488227f39aaf..9117fa42823f 100644
+--- a/Source/WebCore/Modules/encryptedmedia/NavigatorEME.cpp
++++ b/Source/WebCore/Modules/encryptedmedia/NavigatorEME.cpp
+@@ -62,7 +62,7 @@ template<typename T>
+ struct LogArgument<std::optional<T>> {
+     static String toString(const std::optional<T>& value)
+     {
+-        return value ? "nullopt"_s : LogArgument<T>::toString(value.value());
++        return value ? LogArgument<T>::toString(value.value()) : "nullopt"_s;
+     }
+ };
+ 
+@@ -153,10 +153,10 @@ static void tryNextSupportedConfiguration(Document& document, RefPtr<CDM>&& impl
+ 
+                 // Obtain reference to the key system string before the `implementation` RefPtr<> is cleared out.
+                 const String& keySystem = implementation->keySystem();
++                infoLog(logger, identifier, "Resolved: keySystem(", keySystem, "), supportedConfiguration(", supportedConfiguration, ")");
+                 auto access = MediaKeySystemAccess::create(document, keySystem, WTFMove(supportedConfiguration.value()), implementation.releaseNonNull());
+ 
+                 // 6.3.3.2. Resolve promise with access and abort the parallel steps of this algorithm.
+-                infoLog(logger, identifier, "Resolved: keySystem(", keySystem, "), supportedConfiguration(", supportedConfiguration, ")");
+                 promise->resolveWithNewlyCreated<IDLInterface<MediaKeySystemAccess>>(WTFMove(access));
+                 return;
+             }
+-- 
+2.51.0
+
