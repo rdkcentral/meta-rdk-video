@@ -119,7 +119,6 @@ do_install:append() {
         sed -i '/^After=/a RequiresMountsFor=/opt/secure' "$IP_SERVICE"
     fi
 
-
     # Ensure all services are in proper Unix LF format
     find "$SERVICE_DIR" -type f -name "*.service" -exec sed -i 's/\r$//' {} +
 
@@ -131,6 +130,17 @@ do_install:append() {
         # To:      "Description=WPE SystemMode"
         sed -i 's/^Description=WPEFramework \(.*\) Initialiser$/Description=WPE \1/' "$SERVICE_FILE"
     done
+
+    # Enable support for keymap in rdkwindowmanager service if WINDOWMANAGER_RCU_KEYMAP_FILE is set.
+    if [ -n "${WINDOWMANAGER_RCU_KEYMAP_FILE}" ]; then
+        RDKWM_SERVICE="${D}${systemd_system_unitdir}/wpeframework-rdkwindowmanager.service"
+
+        if [ -f "$RDKWM_SERVICE" ]; then
+            if ! grep -Eq '^[[:space:]]*Environment="?RDK_WINDOW_MANAGER_KEYMAP_FILE=' "$RDKWM_SERVICE"; then
+                sed -i "/^\[Service\]/a Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"" "$RDKWM_SERVICE"
+            fi
+        fi
+    fi
 }
 
 FILES:${PN} += "${systemd_system_unitdir} ${sysconfdir}/systemd/system"
