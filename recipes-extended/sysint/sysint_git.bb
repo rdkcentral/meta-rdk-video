@@ -180,6 +180,9 @@ do_install() {
         rm -rf ${D}${base_libdir}/rdk/pNexus.sh
         rm -rf ${D}${base_libdir}/rdk/stackCalls.sh
         rm -rf ${D}${base_libdir}/rdk/watchdog-starter
+        rm -rf ${D}${base_libdir}/rdk/uploadSTBLogs.sh
+        rm -rf ${D}${base_libdir}/rdk/uploadLogsNow.sh
+        rm -rf ${D}${base_libdir}/rdk/usbLogUpload.sh
 	#
 	# The below scripts are installed by xre for emulator so need to
 	# delete from sysint generic repo. For now, we will prevent these
