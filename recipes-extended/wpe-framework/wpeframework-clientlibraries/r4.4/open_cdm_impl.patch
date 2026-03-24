@@ -1,5 +1,5 @@
 diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
-index fb9ce2a..eb5bb8f 100644
+index fb9ce2a..510a0a3 100644
 --- a/Source/ocdm/open_cdm_impl.h
 +++ b/Source/ocdm/open_cdm_impl.h
 @@ -31,6 +31,40 @@ using namespace WPEFramework;
@@ -43,7 +43,39 @@ index fb9ce2a..eb5bb8f 100644
  struct OpenCDMSystem {
      OpenCDMSystem(const char system[], const std::string& metadata) : _keySystem(system), _metadata(metadata) {}
      ~OpenCDMSystem() = default;
-@@ -154,16 +188,102 @@ public:
+@@ -63,24 +97,31 @@ protected:
+         , _sessionKeys()
+     {
+         TRACE_L1("Trying to open an OCDM connection @ %s\n", domainName);
++	printf("******Trying to open an OCDM connection @ %s******\n", domainName); fflush(stdout);
+         Reconnect(); // make sure ResourceMonitor singleton is created before OpenCDMAccessor so the destruction order is correct
+     }
+ 
+     void Reconnect() const
+     {
++	 printf("******In Reconnect*********** \n");fflush(stdout);
+         if (_client.IsValid() == false) {
++	    printf("********Client is not valid ******** \n");fflush(stdout);
+             _client = Core::ProxyType<RPC::CommunicatorClient>::Create(Core::NodeId(_domain.c_str()), Core::ProxyType<Core::IIPCServer>(_engine));
+         }
+ 
+         if ((_client.IsValid() == true) && (_client->IsOpen() == false)) {
++	    printf("*******Client is valid********* \n");fflush(stdout);
+             if (_remote != nullptr) {
++		 printf("*******Release the remote ******** \n");fflush(stdout);
+                 _remote->Release();
+             }
++	    printf("**********Callign t create remoe OpenCDMImplementation********* \n");fflush(stdout);
+             _remote = _client->Open<Exchange::IAccessorOCDM>(_T("OpenCDMImplementation"));
+ 
+             ASSERT(_remote != nullptr);
+ 
+             if (_remote == nullptr) {
++		printf("********Failed to open a channel to OCDM Implementation ******* \n");fflush(stdout);
+                 TRACE_L1("Failed to open a channel to OCDM implementation");
+                 if (_client.IsValid()) {
+                   _client.Release();
+@@ -154,16 +195,102 @@ public:
  
      virtual Exchange::OCDM_RESULT Metadata(const string& keySystem, string& metadata) const override
      {
@@ -146,7 +178,7 @@ index fb9ce2a..eb5bb8f 100644
      virtual Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& length, uint8_t buffer[]) const override {
          Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
   
-@@ -182,11 +302,16 @@ public:
+@@ -182,11 +309,16 @@ public:
          Exchange::ISession::ICallback* callback, std::string& sessionId, 
          Exchange::ISession*& session) override
      {
@@ -163,7 +195,7 @@ index fb9ce2a..eb5bb8f 100644
          }
          return (result);
      }
-@@ -461,6 +586,85 @@ private:
+@@ -461,6 +593,85 @@ private:
          }
  
      public:
@@ -249,7 +281,7 @@ index fb9ce2a..eb5bb8f 100644
          uint32_t Decrypt(uint8_t* encryptedData, uint32_t encryptedDataLength,
              const ::SampleInfo* sampleInfo,
              uint32_t initWithLast15,
-@@ -575,22 +779,33 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+@@ -575,22 +786,33 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
          , _system(system)
          , _pvtData(nullptr)
      {
@@ -284,7 +316,7 @@ index fb9ce2a..eb5bb8f 100644
      }
  
      virtual ~OpenCDMSession();
-@@ -729,6 +944,57 @@ public:
+@@ -729,6 +951,57 @@ public:
          return (result);
      }
  
@@ -342,7 +374,7 @@ index fb9ce2a..eb5bb8f 100644
      void* SessionPrivateData() const
      {
          return _pvtData;
-@@ -823,16 +1089,20 @@ protected:
+@@ -823,16 +1096,20 @@ protected:
      }
      void DecryptSession(Exchange::ISession* session)
      {
@@ -364,7 +396,7 @@ index fb9ce2a..eb5bb8f 100644
                  _decryptSession = new DataExchange(bufferid); 
              }
              else if ( result == 1 ) {
-@@ -843,6 +1113,7 @@ protected:
+@@ -843,6 +1120,7 @@ protected:
              else {
                  ASSERT (_decryptSession == nullptr);
                  TRACE_L1("DecryptSession could not be created!");
@@ -372,3 +404,4 @@ index fb9ce2a..eb5bb8f 100644
              }
          }
      }
+
