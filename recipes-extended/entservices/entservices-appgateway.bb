@@ -29,6 +29,12 @@ PACKAGECONFIG[appnotifications] = "-DPLUGIN_APPNOTIFICATIONS=ON,-DPLUGIN_APPNOTI
 PACKAGECONFIG[appgatewaycommon] = "-DPLUGIN_APPGATEWAYCOMMON=ON,-DPLUGIN_APPGATEWAYCOMMON=OFF,networkmanager-plugin"
 PACKAGECONFIG[telemetrysupport] = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 
+do_install:append() {
+    install -d ${D}${sysconfdir}
+    echo "APP_GATEWAY_PV = \"${PV}\""     >  ${D}${sysconfdir}/appgatewayversion.txt
+    echo "APP_GATEWAY_SHA = \"${SRCREV}\"" >> ${D}${sysconfdir}/appgatewayversion.txt
+}
+
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so"
 
 INSANE_SKIP:${PN} += "dev-so"
