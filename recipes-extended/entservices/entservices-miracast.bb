@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-miracast;${CMF_GITHUB_SRC_URI_SUFFIX} 
           "
 
 # Release version - 2.0.2
-SRCREV = "d529003c5c8a5bf06a40f8be37392ec7479c7b55"
+SRCREV = "b344c130b229d42c989761a7eb742d4c798c09f9"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
