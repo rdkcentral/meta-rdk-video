@@ -11,15 +11,15 @@ NETWORKMANAGER_STUN_ENDPOINT ?= "stun.l.google.com"
 NETWORKMANAGER_STUN_PORT ?= "19302"
 
 # Default Loglevel configuration
-NETWORKMANAGER_LOGLEVEL ?= "3"
+NETWORKMANAGER_LOGLEVEL ?= "4"
 
 PR = "r0"
-PV = "v2.1.0"
+PV = "v3.1.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=main"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/RDK-60454"
 
-SRCREV = "8b2e6d134939dead8617deca28ab27cebe399d0f"
+SRCREV = "2e864034848fe3257f9749d4fa44deee6d4d67ca"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
@@ -39,6 +39,7 @@ EXTRA_OECMAKE += " \
                 -DPLUGIN_BUILD_REFERENCE="${SRCREV}" \
                 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON    \
                 -DUSE_TELEMETRY=ON \
+                -INCLUDE_BREAKPAD=ON \
                 -DENABLE_ROUTER_DISCOVERY_TOOL=ON \
                 -DENABLE_MIGRATION_MFRMGR_SUPPORT=ON \
                 "
