@@ -2,7 +2,7 @@ SUMMARY = "ENTServices screencapture plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7df5a8706277b586ca000838046993d1"
 
-PV = "1.0.3"
+PV = "1.1.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -16,8 +16,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-screencapture;${CMF_GITHUB_SRC_URI_SUF
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
           
-# Release version - 1.0.3
-SRCREV = "48ef3e3224a03b9ea9ba9d75634d2b3e4b2e15db"
+# Release version - 1.1.0
+SRCREV = "2d86c8b4980b90cac946a3e8222794918383e69b"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
