@@ -1,0 +1,59 @@
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index e359dfed..1f6cfc6c 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -1092,6 +1092,7 @@ POP_WARNING()
+         _config.Security(securityProvider);
+ 
+         std::vector<PluginHost::ISubSystem::subsystem> externallyControlled;
++        _service.Open();
+         ServiceMap::Iterator iterator(_services.Services());
+ 
+ #if 0
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index 643c8450..eed7ce8f 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -2445,14 +2445,7 @@ namespace PluginHost {
+                     // STRONG RECOMMENDATION TO HAVE THIS ACTIVE (TRUE)!!!
+                     RPC::Administrator::Instance().DelegatedReleases(delegatedReleases);
+ 
+-                    if (RPC::Communicator::Open(RPC::CommunicationTimeOut) != Core::ERROR_NONE) {
+-                        TRACE_L1("We can not open the RPC server. No out-of-process communication available. %d", __LINE__);
+-                    } else {
+-                        // We need to pass the communication channel NodeId via an environment variable, for process,
+-                        // not being started by the rpcprocess...
+-                        Core::SystemInfo::SetEnvironment(string(CommunicatorConnector), RPC::Communicator::Connector());
+-                        RPC::Communicator::ForcedDestructionTimes(softKillCheckWaitTime, hardKillCheckWaitTime);
+-                    }
++                    RPC::Communicator::ForcedDestructionTimes(softKillCheckWaitTime, hardKillCheckWaitTime);
+ 
+                     if (observableProxyStubPath.empty() == true) {
+                         SYSLOG(Logging::Startup, (_T("Dynamic COMRPC disabled.")));
+@@ -2603,6 +2596,16 @@ namespace PluginHost {
+                     _deadProxiesProtection.Unlock();
+                 }
+ 
++                void Open() {
++                    if (RPC::Communicator::Open(RPC::CommunicationTimeOut) != Core::ERROR_NONE) {
++                        TRACE_L1("We can not open the RPC server. No out-of-process communication available. %d", __LINE__);
++                    } else {
++                        // We need to pass the communication channel NodeId via an environment variable, for process,
++                        // not being started by the rpcprocess...
++                        Core::SystemInfo::SetEnvironment(string(CommunicatorConnector), RPC::Communicator::Connector());
++                    }
++                }
++
+ 
+             private:
+                 void Reload(const string& path) {
+@@ -3115,6 +3118,9 @@ POP_WARNING()
+                 return (result);
+             }
+ 
++            void Open() {
++                _processAdministrator.Open();
++            }
+             void* Instantiate(const RPC::Object& object, const uint32_t waitTime, uint32_t& sessionId, const string& dataPath, const string& persistentPath, const string& volatilePath)
+             {
+                 return (_processAdministrator.Create(sessionId, object, waitTime, dataPath, persistentPath, volatilePath));
