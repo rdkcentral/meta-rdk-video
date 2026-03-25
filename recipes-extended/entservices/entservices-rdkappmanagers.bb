@@ -95,6 +95,7 @@ PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
 "
 RUNTIMEMANAGER_PLUGIN_ARGS         ?= " \
                                        -DPLUGIN_RUNTIME_APP_PORTAL=${RUNTIME_APP_PORTAL} \
+                                       -DPLUGIN_RUNTIME_CONFIG_FILE=${RUNTIME_CONFIG_FILE} \
 "
 
 PREINSTALLMANAGER_PLUGIN_ARGS         ?= " \
@@ -105,6 +106,7 @@ DOWNLOADMANAGER_PLUGIN_ARGS         ?= " \
                                        -DPLUGIN_DOWNLOADMANAGER_DOWNLOAD_DIR=${APP_DOWNLOAD_DIRECTORY} \
 "
 RUNTIME_APP_PORTAL ?= "com.sky.as.apps"
+RUNTIME_CONFIG_FILE ?= ""
 APP_PREINSTALL_DIRECTORY ?= "/opt/preinstall"
 APP_DOWNLOAD_DIRECTORY ?= "/opt/CDL/"
 NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
