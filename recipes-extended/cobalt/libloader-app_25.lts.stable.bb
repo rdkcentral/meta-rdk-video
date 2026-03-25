@@ -12,6 +12,7 @@ CONFLICT_DISTRO_FEATURES = "cobalt-24"
 
 require larboard_revision.inc
 require rdke-cobalt-buildfix.inc
+require firebolt_source.inc
 
 PATCHTOOL = "git"
 TOOLCHAIN = "gcc"
@@ -29,12 +30,13 @@ SRC_URI += "file://25/0007-Prevent-cobalt-unloading.patch"
 
 CR = "30"
 PR = "r${CR}"
-SRCREV_cobalt = "25.lts.${CR}"
+SRCREV_cobalt   = "25.lts.${CR}"
 SRCREV_larboard = "${LARBOARD_SRCREV_DEV}"
-SRCREV_FORMAT = "cobalt_larboard"
+SRCREV_FORMAT   = "${@'cobalt_larboard_fbclient_fbtransport' if firebolt_src_mode(d) else 'cobalt_larboard'}"
 PV .= "+git${SRCPV}"
 
 do_fetch[vardeps] += " SRCREV_FORMAT SRCREV_cobalt SRCREV_larboard"
+do_fetch[vardeps] += " ${@'SRCREV_fbclient SRCREV_fbtransport FIREBOLT_CPP_CLIENT_SRCREV FIREBOLT_CPP_TRANSPORT_SRCREV' if firebolt_src_mode(d) else ''}"
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
 
@@ -65,6 +67,8 @@ PACKAGECONFIG ?= "${COBALT_BUILD_TYPE}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdm', '', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'securityagent', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_asan', 'asan', '', d)}"
+PACKAGECONFIG:append = " ${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_ripple firebolt_rdk_certify', 'firebolt-src', '', d)}"
+PACKAGECONFIG:remove = " ${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_ripple firebolt_rdk_certify', 'firebolt-prebuilt', '', d)}"
 
 PACKAGECONFIG[opencdm]       = "rdk_enable_ocdm=true,rdk_enable_ocdm=false,,"
 PACKAGECONFIG[securityagent] = "rdk_enable_securityagent=true,rdk_enable_securityagent=false,,"
@@ -92,8 +96,10 @@ python() {
 }
 
 do_unpack_extra() {
-    bbnote "copy larboard"
+    bbnote "symlink larboard"
     ( cd "${S}/third_party/" && ln -sf ../../larboard/src/third_party/starboard . )
+
+    do_unpack_firebolt
 }
 addtask unpack_extra after do_patch before do_configure
 
