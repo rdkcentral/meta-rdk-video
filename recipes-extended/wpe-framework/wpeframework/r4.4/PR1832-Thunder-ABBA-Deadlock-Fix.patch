@@ -23,7 +23,7 @@ index b8716586c..a8db49e59 100644
                      _adminLock.Unlock();
  
 +                    // Don't forget to close on our side as well, if it is not already closed....
-+                    index->second->Terminate();
++                    connection->Terminate();
                      connection->Release();
                  }
              }
