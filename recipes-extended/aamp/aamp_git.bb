@@ -7,7 +7,7 @@ PV ?= "3.3.0"
 PR ?= "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "9af90a0e320b9c95619f2a59ea3ca5386b269c14"
+SRCREV_aamp ?= "bc1ad7df8a3062c741f301d39898c7de0e588d92"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "develop"
