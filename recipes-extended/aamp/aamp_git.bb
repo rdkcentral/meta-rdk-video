@@ -9,6 +9,10 @@ PR ?= "r0"
 SRCREV_FORMAT = "aamp"
 SRCREV_aamp ?= "1284ce2845299ba7e87380c81940ccb69527c7fb"
 
+# Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
+AAMP_BRANCH ?= "develop"
+CMF_GITHUB_BRANCH = "branch=${AAMP_BRANCH}"
+
 DEPENDS += "curl libdash libxml2 cjson readline ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 
 RDEPENDS:${PN} += "devicesettings ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
