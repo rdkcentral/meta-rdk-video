@@ -22,8 +22,7 @@ EXTRA_OEMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disa
 
 #libsoup3 not compatible with gdial
 DEPENDS:append =  " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', ' libsoup-3.0 ', ' libsoup-2.4 ', d)}"
-#DEPENDS:append = " libsoup-2.4"
-DEPENDS:append = " gssdp16"
+DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', ' gssdp16 ', ' gssdp ', d)}"
 DEPENDS:append = " cmake-native"
 EXTRANATIVEPATH += "cmake-native"
 
