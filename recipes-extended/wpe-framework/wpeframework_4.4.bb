@@ -15,9 +15,12 @@ DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '
 PR = "r39"
 PV = "4.4.3"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
+#SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=feature/RDKEMW-12950_8.4.4.3-sas;name=thunder"
 
-SRCREV_thunder = "19100433e5517c743738bb2a9ed8ce2f79c10eaf"
+#SRCREV_thunder = "19100433e5517c743738bb2a9ed8ce2f79c10eaf"
+# TRACE debugging
+SRCREV_thunder = "a9c2510055be2e55a4032f669bc3beea92fc0313"
 
 SRC_URI += "file://wpeframework-init \
            file://wpeframework.service.in \
