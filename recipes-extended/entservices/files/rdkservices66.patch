@@ -117,13 +117,13 @@ index bb4254b..8f6b15d 100644
 +                             if(contentType == 0x80000007)
 +                              {  
 +                                    uint32_t svpmemoryhandle = FPSSvpOut();
-+                                    printf("*******the svpout = 0x%x***** \n",svpmemoryhandle);fflush(stdout);
++                                    //printf("*******the svpout = 0x%x***** \n",svpmemoryhandle);fflush(stdout);
 +                                    decryptedmem =(void *)&svpmemoryhandle;
 +                                     
 +                               }
 +                               else
 +                               {
-+                                     printf("*********FS Audio Handling*********** \n");fflush(stdout);
++                                     //printf("*********FS Audio Handling*********** \n");fflush(stdout);
 +                                     //Allocate the memory
 +                                     decryptedmem = (void *)calloc(1, encryptedDataSize);
 +
@@ -153,7 +153,7 @@ index bb4254b..8f6b15d 100644
 +                                        // print_hexdumpkey(decryptedmem,encryptedDataSize);
 +                                        // printf("*******End of Clear data ********* \n");fflush(stdout) ;
 +                                         SetBuffer(0, encryptedDataSize, (uint8_t *)decryptedmem);
-+                                         printf("*******Free the clear data******** \n");fflush(stdout);
++                                         //printf("*******Free the clear data******** \n");fflush(stdout);
 +                                         free(decryptedmem);
 +                                     }
 +                                    // Store the status we have for the other side.
