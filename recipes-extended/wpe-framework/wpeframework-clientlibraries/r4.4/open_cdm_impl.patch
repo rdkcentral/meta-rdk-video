@@ -212,7 +212,7 @@ index fb9ce2a..510a0a3 100644
 +               const uint8_t* iv,
 +               void *svpout)
 +	{
-+	    printf("********inside of exchange Decrypt_fps******** \n");
++	    //printf("********inside of exchange Decrypt_fps******** \n");
 +            int ret = 0;
 +
 +           _systemLock.Lock();
@@ -235,7 +235,7 @@ index fb9ce2a..510a0a3 100644
 +		SetFPSSliceInfoArray(sliceInfoArrayCount, reinterpret_cast<const CDMi::Cdmi_FPSSliceInfo *>(sliceInfoArray));
 +		if(contentType == 0x80000007) // SVP Video
 +		{
-+		   printf("*****calling SetSVPBufferHandless 0x%x ********* \n",*(uint32_t *)svpout);
++		   //printf("*****calling SetSVPBufferHandless 0x%x ********* \n",*(uint32_t *)svpout);
 +                   SetFPSSvpOut(*(uint32_t *)svpout);
 +		}
 +		//printf("*****calling Write********* \n");fflush(stdout);
@@ -258,7 +258,7 @@ index fb9ce2a..510a0a3 100644
 +
 +
 +
-+		    printf("***********End of clear data ********** \n");} 
++		   // printf("***********End of clear data ********** \n");} 
 +		    //printf("*******get the status of last decrypt******* \n");
 +
 +                    // Get the status of the last decrypt.
@@ -333,7 +333,7 @@ index fb9ce2a..510a0a3 100644
 +    const uint8_t* iv,
 +    void *returnData)
 +    {
-+	printf("********** inside of Mediakeysesson Decrypt_fps************ \n");
++	//printf("********** inside of Mediakeysesson Decrypt_fps************ \n");
 +	//printf("********** inside of Mediakeysesson Decrypt_fps************ \n");
 +        uint32_t result = OpenCDMError::ERROR_INVALID_DECRYPT_BUFFER;
 +        //printf("*******The _session = %p********** \n",_session);
@@ -348,7 +348,7 @@ index fb9ce2a..510a0a3 100644
 +        DataExchange* decryptSession = _decryptSession;
 +
 +        if (decryptSession != nullptr) {
-+	   printf("******calling decryptSession->Decrypt_fps********* \n");
++	   //printf("******calling decryptSession->Decrypt_fps********* \n");
 +            result = decryptSession->Decrypt_fps(
 +                  version,
 +                  movieID,

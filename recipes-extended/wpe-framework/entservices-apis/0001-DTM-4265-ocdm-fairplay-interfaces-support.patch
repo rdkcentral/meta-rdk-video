@@ -124,7 +124,7 @@ index c7de450..f0a4031 100644
 +                //printf("### sliceInfoArray Count %d Index %d offset %u size %u \n", admin->fps_sliceInfoArrayCount, index, sliceInfo[index].offset, sliceInfo[index].size);fflush(stdout);
 +                //printf("### sliceInfoArray Count %d Index %d offset %u size %u \n", admin->fps_sliceInfoArrayCount, index, admin->fps_sliceInfo[index].offset, admin->fps_sliceInfo[index].size);fflush(stdout);
 +            }
-+            printf("########The sliceInfo =%p###### \n",&(admin->fps_sliceInfo[0]));fflush(stdout);
++            //printf("########The sliceInfo =%p###### \n",&(admin->fps_sliceInfo[0]));fflush(stdout);
 +        }
 +
 +        const CDMi::Cdmi_FPSSliceInfo *FPSSliceInfoArray() const

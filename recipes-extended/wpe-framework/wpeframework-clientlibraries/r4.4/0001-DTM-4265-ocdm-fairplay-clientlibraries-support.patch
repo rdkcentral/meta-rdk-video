@@ -48,7 +48,7 @@ index 5d189ae..7cd37a2 100644
 +    void *returnData)
 +{
 +   
-+    printf("********* In opencdm_session_decrypt_fps********** \n");
++    //printf("********* In opencdm_session_decrypt_fps********** \n");
 +    //printf("********* In opencdm_session_decrypt_fps********** \n");
 +
 +    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
