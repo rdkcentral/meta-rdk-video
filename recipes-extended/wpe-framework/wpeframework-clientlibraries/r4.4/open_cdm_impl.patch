@@ -258,7 +258,7 @@ index fb9ce2a..510a0a3 100644
 +
 +
 +
-+		   // printf("***********End of clear data ********** \n");} 
++		   } 
 +		    //printf("*******get the status of last decrypt******* \n");
 +
 +                    // Get the status of the last decrypt.
