@@ -185,7 +185,7 @@ index 25bbe20..600cc83 100644
 +        uint64_t cryptorId, uint8_t* licenseChallengeBuffer /* @out @length:12000 */, uint8_t *licenseSize /* @out @length:4 */, uint8_t *session /* @out @length:4 */) const = 0;
 +    virtual OCDM_RESULT DestroyServerExchange(const string& keySystem, uint32_t version, uint8_t* session /* @in @length:4 */) const = 0;
 +    virtual OCDM_RESULT InitLibrary(const string& keySystem) const = 0;
-+    virtual OCDM_RESULT ProcessLicense(const string& keySystem, uint32_t version, uint8_t* session /* @in @length:4 */, const uint8_t* licenseData /* @in @length:licenseDataSize */, uint32_t licenseDataSize, uint8_t *cryptoId /* @out @length:8 */) const = 0;
++    virtual OCDM_RESULT ProcessLicense(const string& keySystem, uint32_t version, uint8_t* session /* @in @length:4 */, const uint8_t* licenseData /* @in @length:licenseDataSize */, uint32_t licenseDataSize, uint8_t *cryptoId /* @inout @length:8 */) const = 0;
 +
      // Provides keysystem-specific metricdata
      virtual OCDM_RESULT Metricdata(
