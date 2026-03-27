@@ -151,7 +151,7 @@ index c7de450..f0a4031 100644
 +        void SetFPSSvpOut(uint32_t svpmemoryhandle)
 +        { 
 +            //printf("############SetFPSSvpOut() called ################ \n");
-+            printf("########svp memory handle = 0x%x ###### \n",svpmemoryhandle);fflush(stdout);
++            //printf("########svp memory handle = 0x%x ###### \n",svpmemoryhandle);fflush(stdout);
 +            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
 +            admin->fps_svpmemoryHandle = svpmemoryhandle;
 +             //printf("########admin->fps_svpout = %p ###### \n",admin->fps_svpout);fflush(stdout);
