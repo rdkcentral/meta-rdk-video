@@ -96,23 +96,23 @@ index bb4254b..c18be93 100644
 +                                {
 +			    printf("*******Getting the payload buffer****** \n");
 +			    uint8_t *payloadBuffer = Buffer();
-+			    printf("*******the buffer =%p ******* \n",payloadBuffer);fflush(stdout);
++			   // printf("*******the buffer =%p ******* \n",payloadBuffer);fflush(stdout);
 +			    uint64_t movieId = FPSMovieId();
-+			    printf("*****The movie ID = %llu**** \n",movieId);fflush(stdout);
++			   // printf("*****The movie ID = %llu**** \n",movieId);fflush(stdout);
 +			    uint64_t cryptorId = FPSCryptorId();
-+                                    printf("*****The cryptor ID = %llu**** \n",cryptorId);fflush(stdout);
++                                   // printf("*****The cryptor ID = %llu**** \n",cryptorId);fflush(stdout);
 +			    uint32_t contentType = FPSContentType();
-+                                    printf("*****The contentType = %d**** \n",contentType);fflush(stdout);
++                                    //printf("*****The contentType = %d**** \n",contentType);fflush(stdout);
 +			    uint32_t sliceInfoArryCount = FPSSliceInfoArrayCoun();
-+                                    printf("*****The sliceInfoArryCount = %d**** \n",sliceInfoArryCount);fflush(stdout);
++                                    //printf("*****The sliceInfoArryCount = %d**** \n",sliceInfoArryCount);fflush(stdout);
 +			    uint32_t encryptedDataSize = BytesWritten();
-+			    printf("*******the encrypted data size = %d ******* \n",encryptedDataSize);fflush(stdout);
++			    //printf("*******the encrypted data size = %d ******* \n",encryptedDataSize);fflush(stdout);
 +			    const CDMi::Cdmi_FPSSliceInfo  *sliceInfoArray = FPSSliceInfoArray();
-+			    printf("********the slice info Array = %p******* \n",sliceInfoArray);
++			    //printf("********the slice info Array = %p******* \n",sliceInfoArray);
 +                                    
-+			     for(uint32_t idx = 0; idx < sliceInfoArryCount; idx++) {
-+                                          printf("### sliceInfoArray Count %d Index %d offset %d size %d\n", sliceInfoArryCount, idx, sliceInfoArray[idx].offset, sliceInfoArray[idx].size);fflush(stdout);
-+                                       }
++			    // for(uint32_t idx = 0; idx < sliceInfoArryCount; idx++) {
++                                         // printf("### sliceInfoArray Count %d Index %d offset %d size %d\n", sliceInfoArryCount, idx, sliceInfoArray[idx].offset, sliceInfoArray[idx].size);fflush(stdout);
++                                      // }
 +
 +                             if(contentType == 0x80000007)
 +                              {  
@@ -145,13 +145,13 @@ index bb4254b..c18be93 100644
 +                                        sliceInfoArryCount,
 +                                        nullptr,
 +                                        decryptedmem);
-+                                     printf("*******the return value = %d****** \n",cr);fflush(stdout);
++                                     printf("*******the return value = %d****** \n",cr);//fflush(stdout);
 +                                     if ((cr == 0) && (contentType == 0xA))
 +                                     {
-+                                         printf("********set buffer ********* \n");fflush(stdout);
-+                                         printf("*******print the clear data ********* \n");fflush(stdout);
++                                         //printf("********set buffer ********* \n");fflush(stdout);
++                                        // printf("*******print the clear data ********* \n");fflush(stdout);
 +                                        // print_hexdumpkey(decryptedmem,encryptedDataSize);
-+                                         printf("*******End of Clear data ********* \n");fflush(stdout) ;
++                                        // printf("*******End of Clear data ********* \n");fflush(stdout) ;
 +                                         SetBuffer(0, encryptedDataSize, (uint8_t *)decryptedmem);
 +                                         printf("*******Free the clear data******** \n");fflush(stdout);
 +                                         free(decryptedmem);
