@@ -58,9 +58,10 @@ RDEPENDS:${PN}:append:dunfell = " wpeframework rdkperf"
 
 #Cryptography library
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl','openssl', 'virtual/vendor-secapi2-adapter', d)}"
-DEPENDS += "${@bb.utils.filter('PROVIDES', 'virtual/vendor-secapi-netflix', d)}"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl','', 'virtual/vendor-secapi-netflix', d)}"
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl',"", bb.utils.contains('DISTRO_FEATURES', 'netflix_cryptanium', 'virtual/vendor-secapi-crypto', "", d), d)}"
-DEPENDS += "${@bb.utils.filter('PROVIDES', 'virtual/vendor-secapi3', d)}"
+DEPENDS += " virtual/vendor-secapi-netflix "
+DEPENDS += " virtual/vendor-secapi3 "
 CRYPTOGRAPHY_IMPLEMENTATION = "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl','OpenSSL', 'SecApi', d)}"
 
 
