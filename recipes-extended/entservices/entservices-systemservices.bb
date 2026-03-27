@@ -2,7 +2,7 @@ SUMMARY = "ENTServices systemservices plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.1.3"
+PV = "1.4.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -14,7 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-systemservices;${CMF_GITHUB_SRC_URI_SU
           "
 
 # Release version - 1.4.0
-SRCREV = "89b6f5e19b0d10e41461116eac5fdf34dd7d8ebb"
+SRCREV = "6f420241508d35aec780020198dded11f07bce0b"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
