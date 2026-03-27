@@ -6,8 +6,8 @@ index 5d189ae..7cd37a2 100644
      OpenCDMSessionCallbacks* callbacks, void* userData,
      struct OpenCDMSession** session)
  {
-+    printf("*********opencdm_construct_session******** \n");
-+    printf("*********opencdm_construct_session******** \n");
++    //printf("*********opencdm_construct_session******** \n");
++    //printf("*********opencdm_construct_session******** \n");
      ASSERT(system != nullptr);
      ASSERT(session != nullptr);
      OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
@@ -15,8 +15,8 @@ index 5d189ae..7cd37a2 100644
      if ((system != nullptr) && (session != nullptr)) {
          TRACE_L1("Creating a Session for %s", system->keySystem().c_str());
 -
-+     printf("******8creating session for %s \n",system->keySystem().c_str());
-+     printf("********Calling OpenCDMSession::CreateSession********** \n");
++     //printf("******8creating session for %s \n",system->keySystem().c_str());
++     //printf("********Calling OpenCDMSession::CreateSession********** \n");
          result = OpenCDMSession::CreateSession(system,
                                              licenseType,
                                              initDataType,
@@ -24,8 +24,8 @@ index 5d189ae..7cd37a2 100644
                                              callbacks, userData,
                                              session
      );
-+       printf("********returned OpenCDMSession::CreateSession********** \n");
-+       printf("********returned OpenCDMSession::CreateSession********** \n");
++       //printf("********returned OpenCDMSession::CreateSession********** \n");
++       //printf("********returned OpenCDMSession::CreateSession********** \n");
          TRACE_L1("Created a Session, result %p, %d", *session, result);
      }
  
@@ -49,7 +49,7 @@ index 5d189ae..7cd37a2 100644
 +{
 +   
 +    printf("********* In opencdm_session_decrypt_fps********** \n");
-+    printf("********* In opencdm_session_decrypt_fps********** \n");
++    //printf("********* In opencdm_session_decrypt_fps********** \n");
 +
 +    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
 +    ASSERT(session != nullptr);
@@ -59,8 +59,8 @@ index 5d189ae..7cd37a2 100644
 +            version, movieID, cryptorID, contentType, buffer, bufferSize, sliceInfoArray, sliceInfoArrayCount, iv, returnData)) : OpenCDMError::ERROR_NONE;
 +    }
 +
-+    printf("**********returned from opencdm_session_decrypt_fps********** \n");
-+    printf("**********returned from opencdm_session_decrypt_fps********** \n");
++    //printf("**********returned from opencdm_session_decrypt_fps********** \n");
++    //printf("**********returned from opencdm_session_decrypt_fps********** \n");
 +    return (result);
 +}
 +

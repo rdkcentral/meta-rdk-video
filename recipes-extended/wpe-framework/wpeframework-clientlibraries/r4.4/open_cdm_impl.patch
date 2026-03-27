@@ -182,16 +182,16 @@ index fb9ce2a..510a0a3 100644
          Exchange::ISession::ICallback* callback, std::string& sessionId, 
          Exchange::ISession*& session) override
      {
-+       printf("********inside CreateSession******** \n");
-+       printf("*********the session = %p \n",session);
++       //printf("********inside CreateSession******** \n");
++       //printf("*********the session = %p \n",session);
          Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
  
          if (_remote != nullptr) {
-+           printf("********calling remote CreateSession******** \n");
-+           printf("********calling remote CreateSession******** \n");
++          // printf("********calling remote CreateSession******** \n");
++           //printf("********calling remote CreateSession******** \n");
              result = _remote->CreateSession(keySystem, licenseType, initDataType, initData, initDataLength, CDMData,
                          CDMDataLength, callback, sessionId, session);
-+           printf("********_remote->CreateSession returned  with result =%d and session =%p \n *********",result,session);
++           //printf("********_remote->CreateSession returned  with result =%d and session =%p \n *********",result,session);
          }
          return (result);
      }
@@ -267,7 +267,7 @@ index fb9ce2a..510a0a3 100644
 +                    // And free the lock, for the next production Scenario..
 +		   // printf("*********calling consumed******** \n");
 +                    Consumed();
-+		    printf("******after consumed******* \n");
++		   // printf("******after consumed******* \n");
 +                }
 +            }
 +            _busy = false;
@@ -285,34 +285,34 @@ index fb9ce2a..510a0a3 100644
          , _system(system)
          , _pvtData(nullptr)
      {
-+       printf("**********OpenCDMSession constructor invoked ******* \n");
-+       printf("**********OpenCDMSession constructor invoked ******* \n");
++       //printf("**********OpenCDMSession constructor invoked ******* \n");
++       //printf("**********OpenCDMSession constructor invoked ******* \n");
          OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
          std::string bufferId;
          Exchange::ISession* realSession = nullptr;
  
          ASSERT(system != nullptr);
-+       printf("*******calling Accessor CreateSession********** \n");
++       //printf("*******calling Accessor CreateSession********** \n");
          accessor->CreateSession(system->keySystem(), licenseType, initDataType, pbInitData,
              cbInitData, pbCustomData, cbCustomData, &_sink,
              _sessionId, realSession);
 -
-+       printf("********right after accessor->CreateSession********** \n");
-+       printf("*****Do we have the valid realsession =%p****** \n",realSession);
-+       printf("********right after accessor->CreateSession********** \n");
++       //printf("********right after accessor->CreateSession********** \n");
++       //printf("*****Do we have the valid realsession =%p****** \n",realSession);
++       //printf("********right after accessor->CreateSession********** \n");
 +     
          if (realSession == nullptr) {
-+	    printf("*****Creating session failed****** \n");
++	  //  printf("*****Creating session failed****** \n");
              TRACE_L1("Creating a Session failed. %d", __LINE__);
          } else {
-+	    printf("Add the session \n");
++	    //printf("Add the session \n");
              Session(realSession);
              realSession->Release();
              accessor->AddSession(this);
-+	    printf("Done");
++	    //printf("Done");
          }
-+       printf("*******End of constructon *********** \n");
-+       printf("*******End of constructon *********** \n");
++       //printf("*******End of constructon *********** \n");
++       //printf("*******End of constructon *********** \n");
      }
  
      virtual ~OpenCDMSession();
@@ -378,21 +378,21 @@ index fb9ce2a..510a0a3 100644
      }
      void DecryptSession(Exchange::ISession* session)
      {
-+	 printf("*******Inside of DecryptSession********* \n");
++	// printf("*******Inside of DecryptSession********* \n");
          if (session == nullptr) {
-+           printf("*********Delete _decryptSession******* \n");
++          // printf("*********Delete _decryptSession******* \n");
              delete _decryptSession;
              _decryptSession = nullptr;
          } else {
-+	  printf("*****Lets create the DataExchange******* \n");
++	  //printf("*****Lets create the DataExchange******* \n");
              std::string bufferid;
              ASSERT(_session != nullptr);
              uint32_t result = _session->CreateSessionBuffer(bufferid);
 -
-+            printf("*******The createsession buffer result =%d bufferid = %s ****** \n",result,bufferid.c_str());
++           // printf("*******The createsession buffer result =%d bufferid = %s ****** \n",result,bufferid.c_str());
              if( result == 0 ) {
                  ASSERT (_decryptSession == nullptr);
-+                printf("********Creating DataExchange******** \n");
++             //   printf("********Creating DataExchange******** \n");
                  _decryptSession = new DataExchange(bufferid); 
              }
              else if ( result == 1 ) {
@@ -400,7 +400,7 @@ index fb9ce2a..510a0a3 100644
              else {
                  ASSERT (_decryptSession == nullptr);
                  TRACE_L1("DecryptSession could not be created!");
-+		printf("*****DecryptSession could not be created****** \n");
++		//printf("*****DecryptSession could not be created****** \n");
              }
          }
      }

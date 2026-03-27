@@ -58,99 +58,99 @@ index c7de450..f0a4031 100644
 +        // FPS specific
 +        void SetFPSVersion(const uint32_t version)
 +        {
-+            printf("############SetFPSVersion() called with version %u##############\n", version);
++            //printf("############SetFPSVersion() called with version %u##############\n", version);
 +            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
 +            admin->fps_version = version;
 +        }
 +
 +        uint32_t FPSVersion() const
 +        {
-+            printf("############FPSVersion() called##############\n");
++            //printf("############FPSVersion() called##############\n");
 +            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
 +            return (admin->fps_version);
 +        }
 +
 +        void SetFPSMovieId(const uint64_t movieId)
 +        {
-+            printf("############SetFPSMovieId() called with movieId %llu##############\n", movieId);
++            //printf("############SetFPSMovieId() called with movieId %llu##############\n", movieId);
 +            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
 +            admin->fps_movieID = movieId;
 +        }
 +
 +        uint64_t FPSMovieId() const
 +        {
-+            printf("############FPSMovieId() called##############\n");
++            //printf("############FPSMovieId() called##############\n");
 +            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
 +            return (admin->fps_movieID);
 +        }
 +
 +        void SetFPSCryptorId(const uint64_t cryptorId)
 +        {
-+            printf("############SetFPSCryptorId() called with cryptorId %llu##############\n", cryptorId);
++            //printf("############SetFPSCryptorId() called with cryptorId %llu##############\n", cryptorId);
 +            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
 +            admin->fps_cryptorID = cryptorId;
 +        }
 +
 +        uint64_t FPSCryptorId() const
 +        {
-+            printf("############FPSCryptorId() called##############\n");
++            //printf("############FPSCryptorId() called##############\n");
 +            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
 +            return (admin->fps_cryptorID);
 +        }
 +
 +        void SetFPSContentType(const uint32_t contentType)
 +        {
-+            printf("############SetFPSContentType() called with contentType %u##############\n", contentType);
++            //printf("############SetFPSContentType() called with contentType %u##############\n", contentType);
 +            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
 +            admin->fps_contentType = contentType;
 +        }
 +
 +        uint32_t FPSContentType() const
 +        {
-+            printf("############FPSContentType() called##############\n");
++            //printf("############FPSContentType() called##############\n");
 +            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
 +            return (admin->fps_contentType);
 +        }
 +
 +       void SetFPSSliceInfoArray(const uint32_t sliceinfocount, const CDMi::Cdmi_FPSSliceInfo sliceInfo[])
 +        {
-+            printf("############SetFPSSliceInfoArray() called with count %u##############\n", sliceinfocount);
++            //printf("############SetFPSSliceInfoArray() called with count %u##############\n", sliceinfocount);
 +            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
 +            admin->fps_sliceInfoArrayCount = sliceinfocount;
 +            for (uint8_t index = 0; index < sliceinfocount; index++)
 +            {
 +                admin->fps_sliceInfo[index].offset = sliceInfo[index].offset;
 +                admin->fps_sliceInfo[index].size = sliceInfo[index].size;
-+                printf("### sliceInfoArray Count %d Index %d offset %u size %u \n", admin->fps_sliceInfoArrayCount, index, sliceInfo[index].offset, sliceInfo[index].size);fflush(stdout);
-+                printf("### sliceInfoArray Count %d Index %d offset %u size %u \n", admin->fps_sliceInfoArrayCount, index, admin->fps_sliceInfo[index].offset, admin->fps_sliceInfo[index].size);fflush(stdout);
++                //printf("### sliceInfoArray Count %d Index %d offset %u size %u \n", admin->fps_sliceInfoArrayCount, index, sliceInfo[index].offset, sliceInfo[index].size);fflush(stdout);
++                //printf("### sliceInfoArray Count %d Index %d offset %u size %u \n", admin->fps_sliceInfoArrayCount, index, admin->fps_sliceInfo[index].offset, admin->fps_sliceInfo[index].size);fflush(stdout);
 +            }
 +            printf("########The sliceInfo =%p###### \n",&(admin->fps_sliceInfo[0]));fflush(stdout);
 +        }
 +
 +        const CDMi::Cdmi_FPSSliceInfo *FPSSliceInfoArray() const
 +        {
-+            printf("############FPSSliceInfoArray() called##############\n");
++            //printf("############FPSSliceInfoArray() called##############\n");
 +            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
 +            return (&(admin->fps_sliceInfo[0]));
 +        }
 +
 +        void SetFPSSliceInfoArrayCount(const uint32_t sliceInfoArrayCount)
 +        {
-+            printf("############SetFPSSliceInfoArrayCount() called with count %u##############\n", sliceInfoArrayCount);
++            //printf("############SetFPSSliceInfoArrayCount() called with count %u##############\n", sliceInfoArrayCount);
 +            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
 +            admin->fps_sliceInfoArrayCount = sliceInfoArrayCount;
 +        }
 +
 +        uint32_t FPSSliceInfoArrayCoun() const
 +        {
-+            printf("############FPSSliceInfoArrayCount() called##############\n");
++            //printf("############FPSSliceInfoArrayCount() called##############\n");
 +            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
 +            return (admin->fps_sliceInfoArrayCount);
 +        }
 +
 +        void SetFPSSvpOut(uint32_t svpmemoryhandle)
 +        { 
-+            printf("############SetFPSSvpOut() called ################ \n");
++            //printf("############SetFPSSvpOut() called ################ \n");
 +            printf("########svp memory handle = 0x%x ###### \n",svpmemoryhandle);fflush(stdout);
 +            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
 +            admin->fps_svpmemoryHandle = svpmemoryhandle;
@@ -159,7 +159,7 @@ index c7de450..f0a4031 100644
 +
 +	uint32_t FPSSvpOut(void)
 +        {
-+            printf("###########FPSSvpOut() called ################ \n");
++            //printf("###########FPSSvpOut() called ################ \n");
 +            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
 +            return (admin->fps_svpmemoryHandle);
 +        }
