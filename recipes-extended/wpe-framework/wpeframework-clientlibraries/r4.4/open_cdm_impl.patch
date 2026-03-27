@@ -121,7 +121,7 @@ index fb9ce2a..510a0a3 100644
 +        }
 +    }
 +
-+    virtual Exchange::OCDM_RESULT GenerateChallengeWithVersionList(const string& keySystem, uint32_t version, uint64_t movieId, const uint8_t* assetidData, uint32_t assetidSize, const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallengeBuffer, uint8_t* licenseSize, uint8_t* session) const override{
++    virtual Exchange::OCDM_RESULT GenerateChallengeWithVersionList(const string& keySystem, uint32_t version, uint64_t movieId, const uint8_t* assetidData, uint32_t assetidSize, const uint8_t* versionlist, uint32_t versionListSize, const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallengeBuffer, uint8_t* licenseSize, uint8_t* session) const override{
 +        Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
 +        if (_remote == nullptr) {
 +            Reconnect();
@@ -129,7 +129,7 @@ index fb9ce2a..510a0a3 100644
 +        if (_remote == nullptr) {
 +            return Exchange::OCDM_RESULT::OCDM_S_FALSE;
 +        } else {
-+            result = _remote->GenerateChallengeWithVersionList(keySystem, version, movieId, assetidData, assetidSize, streamerChallengeData, streamerChallengeSize, cryptorId, licenseChallengeBuffer, licenseSize, session);
++            result = _remote->GenerateChallengeWithVersionList(keySystem, version, movieId, assetidData, assetidSize, versionlist, versionListSize,  streamerChallengeData, streamerChallengeSize, cryptorId, licenseChallengeBuffer, licenseSize, session);
 +
 +            return result;
 +        }
