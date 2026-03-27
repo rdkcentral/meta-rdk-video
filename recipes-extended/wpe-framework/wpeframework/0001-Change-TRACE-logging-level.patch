@@ -1,0 +1,22 @@
+From 7eb1b0050e1a310ab617c898afbffe70aa2b9b3c Mon Sep 17 00:00:00 2001
+From: Radenko Mihajlovic <Radenko_Mihajlovic@comcast.com>
+Date: Fri, 27 Mar 2026 13:32:00 +0000
+Subject: [PATCH] Change TRACE logging level
+
+---
+ Source/core/Trace.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/core/Trace.h b/Source/core/Trace.h
+index e4aee833..fbead45f 100644
+--- a/Source/core/Trace.h
++++ b/Source/core/Trace.h
+@@ -109,7 +109,7 @@ namespace WPEFramework {
+ #ifdef __DEBUG__
+ #define _TRACE_LEVEL 2
+ #else
+-#define _TRACE_LEVEL 7
++#define _TRACE_LEVEL 2
+ #endif
+ #endif
+ 
