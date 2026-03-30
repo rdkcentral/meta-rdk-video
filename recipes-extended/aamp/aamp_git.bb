@@ -3,11 +3,11 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV ?= "3.3.0"
+PV ?= "3.4.0"
 PR ?= "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "32ffcb2f9ba33838d243954abca53a9195cc2762"
+SRCREV_aamp ?= "cb758566a590fe72e77055ba250dbdfe6341ea8c"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "develop"
