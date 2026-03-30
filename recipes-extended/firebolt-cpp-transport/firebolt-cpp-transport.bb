@@ -8,11 +8,11 @@ inherit cmake
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-PV = "1.1.6"
+PV = "1.1.7"
 PR = "r0"
 
 SRC_URI = "https://github.com/rdkcentral/firebolt-cpp-transport/releases/download/v${PV}/firebolt-cpp-transport-${PV}.tar.gz"
-SRC_URI[sha256sum] = "fba0193b4fbc69b68b3c9674d102ef3d95aca923af020d6b35d75713aaf35369"
+SRC_URI[sha256sum] = "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
 
 S = "${WORKDIR}/firebolt-cpp-transport-${PV}"
 
