@@ -7,14 +7,14 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r34"
+PR  = "r35"
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
 DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-# Tip of the branch on Mar 20, 2026
-SRCREV = "950255901c91633694d52afabfa6b1fecffa050a"
+# Tip of the branch on Mar 31, 2026
+SRCREV = "2ad5899ce3387a88d14a7b9644e85c85b421661f"
 
 BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.46"
 SRC_URI = "${BASE_URI}"
@@ -22,7 +22,6 @@ SRC_URI = "${BASE_URI}"
 # Drop after PR is accepted
 SRC_URI += "file://2.46/1629.patch"
 
-SRC_URI += "file://2.46/1640_MediaCapabilities_audio_codecs_check.patch"
 SRC_URI += "file://2.46/1641_AC4_USAC.patch"
 SRC_URI += "file://2.46/1643_EME_supportsType.patch"
 
