@@ -144,6 +144,7 @@ do_install() {
 	install -m 0644 ${S}/systemd_units/system-time-set.path ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/system-time-set.target ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/system-time-event.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/vm_cpu_stats.service ${D}${systemd_unitdir}/system
 
         if [ "${BIND_ENABLED}" = "true" ]; then
            echo "BIND_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
