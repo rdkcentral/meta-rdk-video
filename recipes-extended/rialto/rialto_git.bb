@@ -11,13 +11,13 @@ SUMMARY = "Rialto"
 LICENSE  = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=327e572d11c37963726ba0b02d30cf2c"
 
-PV = "0.14.1"
+PV = "0.16.1"
 PR = "r0"
 
 require rialto_revision.inc
 
-SRCREV = "5c2b720c3a2874b1112ecac3fce5e0793c4fcf94"
-SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=RialtoProfiler_OTO_14.1"
+SRCREV = "7e612ccaba160e38205ce42f946d2f89dd0ca0be"
+SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=RialtoProfiler_OTO_16.1"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
 DEPENDS = "openssl jsoncpp protobuf protobuf-native"
