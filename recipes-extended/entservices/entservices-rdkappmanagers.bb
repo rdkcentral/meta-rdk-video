@@ -138,10 +138,12 @@ do_install:append() {
         fi
     fi
 
-    # Write component version info for appinfraversion.txt merge
-    install -d ${D}${sysconfdir}
-    echo "APP_MANAGERS_PV = \"${PV}\""     >  ${D}${sysconfdir}/appmanagersversion.txt
-    echo "APP_MANAGERS_SHA = \"${SRCREV}\"" >> ${D}${sysconfdir}/appmanagersversion.txt
+    # Keep AppManagersHelpers canonical in ${libdir} so dynamic linker resolves
+    # NEEDED entries without relying on plugin directory lookups.
+    if [ -f "${D}${libdir}/wpeframework/plugins/libAppManagersHelpers.so" ]; then
+        install -d "${D}${libdir}"
+        mv "${D}${libdir}/wpeframework/plugins/libAppManagersHelpers.so" "${D}${libdir}/libAppManagersHelpers.so"
+    fi
 }
 
 # ----------------------------------------------------------------------------
