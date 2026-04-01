@@ -10,7 +10,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "93e90cdcb0d0411f9aa17ca45bd973e089e4910b"
+SRCREV = "38228b814194ab16d067fdcbd75d8ff99ef2f251"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
