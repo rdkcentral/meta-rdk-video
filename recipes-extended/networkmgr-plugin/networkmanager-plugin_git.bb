@@ -39,7 +39,7 @@ EXTRA_OECMAKE += " \
                 -DPLUGIN_BUILD_REFERENCE="${SRCREV}" \
                 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON    \
                 -DUSE_TELEMETRY=ON \
-                -DINCLUDE_BREAKPAD \
+                -DINCLUDE_BREAKPAD=ON \
                 -DENABLE_ROUTER_DISCOVERY_TOOL=ON \
                 -DENABLE_MIGRATION_MFRMGR_SUPPORT=ON \
                 "
