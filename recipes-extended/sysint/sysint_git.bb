@@ -5,10 +5,10 @@ LICENSE = "Apache-2.0 & BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=f36198fb804ffbe39b5b2c336ceef9f8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-PV = "4.5.3"
+PV = "4.5.4"
 PR = "r0"
 
-SRCREV = "3bd6471d56c616ce86091a4efd1ae724b0087657"
+SRCREV = "9307d256d7163794e6759e8390015c2ea5b55827"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
@@ -74,24 +74,24 @@ ENABLE_SYSLOGNG = "${@bb.utils.contains('DISTRO_FEATURES', 'syslog-ng', 'true', 
 DUNFELL_BUILD = "${@bb.utils.contains('DISTRO_FEATURES', 'dunfell', 'true', 'false', d)}"
 
 do_install() {
-	install -d ${D}${base_libdir}/rdk
-	install -m 0755 ${S}/lib/rdk/* ${D}${base_libdir}/rdk
+	    install -d ${D}${base_libdir}/rdk
+	    install -m 0755 ${S}/lib/rdk/* ${D}${base_libdir}/rdk
 
-	install -d ${D}${sysconfdir}
+	    install -d ${D}${sysconfdir}
         install -d ${D}${sysconfdir}/rfcdefaults
-	install -m 0644 ${S}/etc/*.properties ${D}${sysconfdir}
-	install -m 0644 ${S}/etc/*.conf ${D}${sysconfdir}
-	install -m 0644 ${S}/etc/env_setup.sh ${D}${sysconfdir}
+	    install -m 0644 ${S}/etc/*.properties ${D}${sysconfdir}
+	    install -m 0644 ${S}/etc/*.conf ${D}${sysconfdir}
+	    install -m 0644 ${S}/etc/env_setup.sh ${D}${sysconfdir}
         install -m 0755 ${S}/etc/rfcdefaults/sysint-generic.ini ${D}${sysconfdir}/rfcdefaults/sysint-generic.ini
 
-	install -d ${D}${base_bindir} ${D}/var/spool/cron
+	    install -d ${D}${base_bindir} ${D}/var/spool/cron
         install -d ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/log-rdk-start.service ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/previous-log-backup.service ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/log-rdk-start.service ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/previous-log-backup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/vitalprocess-info.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/vitalprocess-info.service ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/logrotate.service ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/logrotate.timer ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/logrotate.service ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/logrotate.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/dump-backup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-secure-upload.service ${D}${systemd_unitdir}/system
@@ -124,9 +124,9 @@ do_install() {
         install -m 0644 ${S}/systemd_units/restart-parodus.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/oops-dump.service ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/ntp-event.service ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/ntp-event.path ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/dropbear.service ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/ntp-event.service ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/ntp-event.path ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/dropbear.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/network-connection-stats.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/network-connection-stats.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/NM_Bootstrap.service ${D}${systemd_unitdir}/system
@@ -134,16 +134,16 @@ do_install() {
         install -m 0644 ${S}/systemd_units/notify-network-ready.service ${D}${systemd_unitdir}/system
 
 
-	install -m 0644 ${S}/systemd_units/network-up.path ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/network-up.target ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/network-up.timer ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/ntp-time-sync.path ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/ntp-time-sync.target ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/ntp-time-sync-event.service ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/ntp-time-sync.timer ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/system-time-set.path ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/system-time-set.target ${D}${systemd_unitdir}/system
-	install -m 0644 ${S}/systemd_units/system-time-event.service ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/network-up.path ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/network-up.target ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/network-up.timer ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/ntp-time-sync.path ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/ntp-time-sync.target ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/ntp-time-sync-event.service ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/ntp-time-sync.timer ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/system-time-set.path ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/system-time-set.target ${D}${systemd_unitdir}/system
+	    install -m 0644 ${S}/systemd_units/system-time-event.service ${D}${systemd_unitdir}/system
 
         if [ "${BIND_ENABLED}" = "true" ]; then
            echo "BIND_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
@@ -165,38 +165,35 @@ do_install() {
         rm -f ${D}${base_libdir}/rdk/deviceInitiatedFWDnld.sh
         rm -f ${D}${base_libdir}/rdk/swupdate_utility.sh
 
-	# uploadDumps.sh has to be taken from a different source
-	# lighttpd_utility.sh is not required
-	rm -rf ${D}${base_libdir}/rdk/uploadDumps.sh
-	rm -rf ${D}${base_libdir}/rdk/lighttpd_utility.sh
+    	# uploadDumps.sh has to be taken from a different source
+    	# lighttpd_utility.sh is not required
+    	rm -rf ${D}${base_libdir}/rdk/uploadDumps.sh
+    	rm -rf ${D}${base_libdir}/rdk/lighttpd_utility.sh
         rm -rf ${D}${base_libdir}/rdk/runPod.sh
         rm -rf ${D}${base_libdir}/rdk/runSnmp.sh
         rm -rf ${D}${base_libdir}/rdk/runRMFStreamer
         rm -rf ${D}${base_libdir}/rdk/runVodClientApp
-
-	#
-        # removing unused files for comcast component
         rm -rf ${D}${base_libdir}/rdk/adddefaultgateway.sh
         rm -rf ${D}${base_libdir}/rdk/pNexus.sh
         rm -rf ${D}${base_libdir}/rdk/stackCalls.sh
         rm -rf ${D}${base_libdir}/rdk/watchdog-starter
-	#
-	# The below scripts are installed by xre for emulator so need to
-	# delete from sysint generic repo. For now, we will prevent these
-	# to be installed by sysint.
-	#
-	ln -sf /lib/rdk/rebootSTB.sh ${D}/
-	ln -sf /lib/rdk/rebootNow.sh ${D}/
-	ln -sf /lib/rdk/timestamp ${D}${base_bindir}/timestamp
+
+	    # The below scripts are installed by xre for emulator so need to
+	    # delete from sysint generic repo. For now, we will prevent these
+	    # to be installed by sysint.
+	    #
+	    ln -sf /lib/rdk/rebootSTB.sh ${D}/
+	    ln -sf /lib/rdk/rebootNow.sh ${D}/
+	    ln -sf /lib/rdk/timestamp ${D}${base_bindir}/timestamp
 
         # Samhain can only invoke external utilities present in trusted FHS path
         if [ -f ${S}/../lib/rdk/upload2splunk.sh ]; then
             install -d ${D}${sbindir}
             install -m 0755 ${S}/../lib/rdk/upload2splunk.sh ${D}${sbindir}
         fi
-	if [ -f ${D}/${base_libdir}/rdk/upload2splunk.sh ]; then
-	    rm -f ${D}${base_libdir}/rdk/upload2splunk.sh
-	fi
+	    if [ -f ${D}/${base_libdir}/rdk/upload2splunk.sh ]; then
+	        rm -f ${D}${base_libdir}/rdk/upload2splunk.sh
+	    fi
 
         # zcip.script is installed in both /lib/rdk and /etc. Removing /lib/rdk/zcip.script to avoid duplicates
         # Try to use zcip.script from /etc if required
@@ -242,21 +239,21 @@ do_install() {
         rm -rf ${D}${base_libdir}/rdk/htmlDiagPreSetup.sh
         rm -rf ${D}${base_libdir}/rdk/rfStatisticsCheck.sh
 
-	# For NetworkManager
-	install -d ${D}${sysconfdir}/NetworkManager
-	install -d ${D}${sysconfdir}/NetworkManager/conf.d
-    install -d ${D}${sysconfdir}/NetworkManager/dnsmasq.d
-	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d
-	install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
-	install -m 0755 ${S}/lib/rdk/NM_Dispatcher.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d
-	install -m 0755 ${S}/lib/rdk/NM_preDown.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
-	install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
-    install -m 0755 ${S}/etc/dnsmasq-dobby.conf ${D}${sysconfdir}/NetworkManager/dnsmasq.d/dnsmasq-dobby.conf
+	    # For NetworkManager
+	    install -d ${D}${sysconfdir}/NetworkManager
+	    install -d ${D}${sysconfdir}/NetworkManager/conf.d
+        install -d ${D}${sysconfdir}/NetworkManager/dnsmasq.d
+	    install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d
+	    install -d ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
+	    install -m 0755 ${S}/lib/rdk/NM_Dispatcher.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d
+	    install -m 0755 ${S}/lib/rdk/NM_preDown.sh ${D}${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d
+	    install -m 0755 ${S}/etc/10-unmanaged-devices ${D}${sysconfdir}/NetworkManager/conf.d/10-unmanaged-devices.conf
+        install -m 0755 ${S}/etc/dnsmasq-dobby.conf ${D}${sysconfdir}/NetworkManager/dnsmasq.d/dnsmasq-dobby.conf
         rm ${D}${sysconfdir}/dnsmasq-dobby.conf
         rm ${D}${base_libdir}/rdk/NM_Dispatcher.sh
         rm ${D}${base_libdir}/rdk/NM_preDown.sh
-    install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
-    install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
+        install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
+        install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
 }
 
 do_install:append:rdkstb() {
