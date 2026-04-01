@@ -12,7 +12,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 # WASMEdge 0.13.5 - latest version compatible with RDK-E dependencies
 # Compatible with: fmt 8.1.1, spdlog 1.9.2, LLVM 13.0.1 (no workarounds needed)
-DEPENDS += "boost fmt spdlog llvm llvm-native clang"
+DEPENDS += "boost fmt spdlog clang clang-native"
 
 # Fetch WASMEdge 0.13.5 release tag
 SRC_URI = "git://git@github.com/WasmEdge/WasmEdge.git;branch=master"
@@ -47,6 +47,7 @@ do_install() {
     install -d ${D}${libdir}
     install -d ${D}${includedir}/wasmedge
     install -d ${D}${bindir}
+    install -d ${D}/home/root
 
     # Install shared library with symlinks using Yocto helper
     # oe_soinstall automatically creates: libwasmedge.so.0.0.3 → libwasmedge.so.0 → libwasmedge.so
@@ -60,6 +61,8 @@ do_install() {
     install ${B}/include/api/wasmedge/*.h ${D}${includedir}/wasmedge/
     install ${B}/include/api/wasmedge/*.inc ${D}${includedir}/wasmedge/ || true
 
+    install  ${B}/tools/wasmedge/wasmedge ${D}/home/root/wasmedge
+    install  ${B}/tools/wasmedge/wasmedgec ${D}/home/root/wasmedgec
     # Create pkg-config file
 #    install -d ${D}${libdir}/pkgconfig
 #    cat > ${D}${libdir}/pkgconfig/wasmedge.pc << 'EOF'
@@ -82,6 +85,8 @@ FILES:${PN} += "${libdir}/libwasmedge.so.0"
 FILES:${PN} += "${libdir}/libwasmedge.so"
 FILES:${PN} += "${bindir}/wasmedge"
 FILES:${PN} += "${bindir}/wasmedgec"
+FILES:${PN} += "/home/root/wasmedge"
+FILES:${PN} += "/home/root/wasmedgec"
 
 # Development package (headers, symlinks, pkg-config)
 FILES:${PN}-dev   = " \
