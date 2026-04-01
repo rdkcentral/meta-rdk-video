@@ -23,13 +23,6 @@ SRCREV  = "b8eb435507efb98fa8a799257795fcd9f8440975"
 PV      = "0.13.5"
 PR      = "r0"
 
-# wasmedge-quickjs: QuickJS JavaScript engine compiled to WASM.
-# Enables running JS scripts inside WasmEdge:
-#   wasmedge --dir .:. wasmedge_quickjs.wasm your_script.js
-# Source: github.com/second-state/wasmedge-quickjs (compatible with WasmEdge 0.13.5)
-SRC_URI += "https://github.com/second-state/wasmedge-quickjs/releases/download/v0.5.0-alpha/wasmedge_quickjs.wasm;subdir=qjs;name=qjswasm"
-SRC_URI[qjswasm.sha256sum] = "b8451261a244b7bc62ae95acb43882044aed2f3d5f08355889252b418ec89231"
-
 S = "${WORKDIR}/git"
 
 inherit cmake pkgconfig
@@ -57,8 +50,7 @@ EXTRA_OECMAKE = " \
     -DWASMEDGE_BUILD_SHARED_LIB=ON                                      \
     -DWASMEDGE_BUILD_STATIC_LIB=OFF                                     \
     -DWASMEDGE_BUILD_EXAMPLES=OFF                                       \
-    -DWASMEDGE_BUILD_PLUGINS=ON                                         \
-    -DWASMEDGE_PLUGIN_WASI_NN_BACKEND=OFF                               \
+    -DWASMEDGE_BUILD_PLUGINS=OFF                                        \
     -DWASMEDGE_USE_LLVM=ON                                              \
     -DWASMEDGE_FORCE_DISABLE_LTO=OFF                                    \
     -DCMAKE_BUILD_TYPE=Release                                          \
@@ -89,12 +81,6 @@ do_install() {
     install ${B}/include/api/wasmedge/*.h ${D}${includedir}/wasmedge/
     install ${B}/include/api/wasmedge/*.inc ${D}${includedir}/wasmedge/ || true
 
-    # Install wasmedge-quickjs WASM binary — QuickJS JS engine compiled to WASM.
-    # Allows running JavaScript inside WasmEdge:
-    #   wasmedge --dir .:. /usr/share/wasmedge/wasmedge_quickjs.wasm script.js
-    install -d ${D}/usr/share/wasmedge
-    install -m 0644 ${WORKDIR}/qjs/wasmedge_quickjs.wasm ${D}/usr/share/wasmedge/
-
     # Create pkg-config file
     #install -d ${D}${libdir}/pkgconfig
     #cat > ${D}${libdir}/pkgconfig/wasmedge.pc << 'EOF'
@@ -119,8 +105,6 @@ FILES:${PN} += "${libdir}/libwasmedge.so.0"
 FILES:${PN} += "${libdir}/libwasmedge.so"
 FILES:${PN} += "${bindir}/wasmedge"
 FILES:${PN} += "${bindir}/wasmedgec"
-# wasmedge-quickjs WASM binary — deployed to target for JS-in-WASM execution
-FILES:${PN} += "/usr/share/wasmedge/wasmedge_quickjs.wasm"
 
 # Development package (headers, symlinks, pkg-config)
 FILES:${PN}-dev   += "${includedir}/wasmedge/"
@@ -133,6 +117,5 @@ INSANE_SKIP:${PN} += "dev-so"
 INSANE_SKIP:${PN} += "file-rdeps"
 # Allow Yocto's do_package to run 'strip --strip-unneeded' on libwasmedge.so
 # Removing 'already-stripped' so the packager strips debug symbols at package time
-
 
 
