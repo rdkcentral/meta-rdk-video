@@ -13,13 +13,13 @@ inherit cmake pkgconfig perlnative ${@bb.utils.contains("DISTRO_FEATURES", "kirk
 
 S = "${WORKDIR}/git"
 
-PV = "2.0.2"
+PV = "2.0.4"
 PR = "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};"
 
-#Release 2.0.2
-SRCREV = "e9292baafbdcf46250cdb8ba3cec6566be9509fe"
+#Release 2.0.4
+SRCREV = "47ecb4b1aab79825037823dc30eeb0221787c265"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -71,6 +71,7 @@ do_install() {
    cp -a ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
+   cp -a ${S}/src/jsc/modules/minified_linkedjsdom.js ${D}/home/root/modules/. 
 
    install -d ${D}/${libdir}
    cp -a ${B}/libJSRuntimeJSC.so ${D}/${libdir}
@@ -85,6 +86,9 @@ do_install() {
 
    install -m 0644 ${S}/include/*.h ${D}${includedir}/jsruntime
    cp -a ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
+
+   install -d ${D}${datadir}/rdknativescript
+   echo "${PV}" > ${D}${datadir}/rdknativescript/version.txt
 }
 
 FILES:${PN} += "${libdir}/*.so"
@@ -102,3 +106,5 @@ FILES:${PN} += "/home/root/modules"
 FILES:${PN} += "${libdir}/libJSRuntimeJSC.so"
 FILES:${PN} += "${libdir}/libJSRuntimeContainer.so"
 FILES:${PN} += "/home/root/JSRuntimeContainer"
+
+SYSROOT_DIRS:append = " ${datadir}/rdknativescript"

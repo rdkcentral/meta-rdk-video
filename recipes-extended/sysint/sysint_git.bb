@@ -5,10 +5,10 @@ LICENSE = "Apache-2.0 & BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=f36198fb804ffbe39b5b2c336ceef9f8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-PV = "4.3.1"
+PV = "4.5.3"
 PR = "r0"
 
-SRCREV = "4a29ec2760d7193648d01f47dde641db4c24b3ff"
+SRCREV = "3bd6471d56c616ce86091a4efd1ae724b0087657"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 

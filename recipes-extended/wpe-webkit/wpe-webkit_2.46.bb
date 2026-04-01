@@ -7,20 +7,24 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r31"
+PR  = "r34"
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
 DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-# Tip of the branch on Feb 27, 2026
-SRCREV = "464a06c5917dac3304909ae30c34b2d1e2b35f4f"
+# Tip of the branch on Mar 20, 2026
+SRCREV = "950255901c91633694d52afabfa6b1fecffa050a"
 
 BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.46"
 SRC_URI = "${BASE_URI}"
 
 # Drop after PR is accepted
-# - none -
+SRC_URI += "file://2.46/1629.patch"
+
+SRC_URI += "file://2.46/1640_MediaCapabilities_audio_codecs_check.patch"
+SRC_URI += "file://2.46/1641_AC4_USAC.patch"
+SRC_URI += "file://2.46/1643_EME_supportsType.patch"
 
 # Drop after westeros change is approved and released
 SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
@@ -109,6 +113,7 @@ PACKAGECONFIG:append:toolchain-clang = " uselld"
 
 EXTRA_OECMAKE += " \
   -DPYTHON_EXECUTABLE=${STAGING_BINDIR_NATIVE}/python3-native/python3 \
+  -DGL_TEXTURE_MAX_SIZE=2000 \
 "
 
 FILES:${PN} += " ${libdir}/wpe-webkit-*/injected-bundle/libWPEInjectedBundle.so"

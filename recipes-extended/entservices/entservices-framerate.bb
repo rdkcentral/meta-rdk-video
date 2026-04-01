@@ -2,7 +2,7 @@ SUMMARY = "ENTServices framerate plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.1.0"
+PV = "1.1.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-framerate;${CMF_GITHUB_SRC_URI_SUFFIX}
            file://rdkservices.ini \
           "
 
-# Release version - 1.1.0
-SRCREV = "6bb38038f654de41a4e57c6eb8d1425ce15a1ccd"
+# Release version - 1.1.2
+SRCREV = "c8b81112f804a2b3d95afc5d8e6bed19c87125d1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
