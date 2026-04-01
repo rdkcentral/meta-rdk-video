@@ -5,14 +5,14 @@ HOMEPAGE = "https://github.com/rdkcentral/Thunder"
 
 LIC_FILES_CHKSUM = "file://LICENSE;md5=85bcfede74b96d9a58c6ea5d4b607e58"
 
-DEPENDS = "zlib wpeframework-tools-native rfc thunder-hang-recovery"
+DEPENDS = "zlib wpeframework-tools-native rfc"
 DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
 
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r40"
+PR = "r41"
 PV = "4.4.3"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -69,6 +69,11 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/0002-Print-Log-Upon-Time-ComRPC-Timeout.patch \
             file://r4.4/RDKEMW-10951_WPEFramework_Config_Override.patch \
             file://r4.4/PR-2057-RDKEMW-14228_apply_sysinfo_mem_unit.patch \
+            file://r4.4/WorkerPoolRevoke_fix.patch \
+            file://r4.4/WaitedRelease.patch \
+            file://r4.4/StartExtensions.patch \
+            file://r4.4/EnablePISLogging.patch \
+            file://r4.4/0001-LIMIT-Limit-handing-out-interfaces-of-Plugins-only-i.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -82,7 +87,7 @@ WPEFRAMEWORK_SYSTEM_PREFIX = "OE"
 WPEFRAMEWORK_PORT = "9998"
 WPEFRAMEWORK_BINDING = "127.0.0.1"
 WPEFRAMEWORK_IDLE_TIME = "0"
-WPEFRAMEWORK_THREADPOOL_COUNT ?= "32"
+WPEFRAMEWORK_THREADPOOL_COUNT ?= "16"
 WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
 
 
@@ -191,7 +196,7 @@ INSANE_SKIP:${PN}-dbg += "dev-so"
 # ----------------------------------------------------------------------------
 
 RDEPENDS:${PN}_rpi = "userland"
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)} thunder-hang-recovery"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 # Should be able to remove this when generic rdk_svp flag
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'sage_svp', 'gst-svp-ext', '', d)}"
 
@@ -200,7 +205,7 @@ RDEPENDS:${PN}:append:rpi = " ${@bb.utils.contains('DISTRO_FEATURES', 'vc4graphi
 inherit breakpad-logmapper syslog-ng-config-gen logrotate_config
 
 SYSLOG-NG_FILTER = "wpeframework"
-SYSLOG-NG_SERVICE_wpeframework = "wpeframework.service thunderHangRecovery.service"
+SYSLOG-NG_SERVICE_wpeframework = "wpeframework.service"
 SYSLOG-NG_DESTINATION_wpeframework = "wpeframework.log"
 SYSLOG-NG_LOGRATE_wpeframework = "high"
 

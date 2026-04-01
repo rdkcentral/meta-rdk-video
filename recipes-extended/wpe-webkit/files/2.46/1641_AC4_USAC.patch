@@ -1,0 +1,304 @@
+From 6c0297f5c8a4bbe19e1effafbe9d8eba12e033a6 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Fri, 13 Mar 2026 15:12:01 +0100
+Subject: [PATCH 1/4] Report support for AC4 codec
+
+Report AC4 support based on GST elements capabilites audio/x-ac4
+Note wildcards used - all levels and profils are now supported ac-4*
+---
+ .../platform/graphics/gstreamer/GStreamerRegistryScanner.cpp     | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index 2c6a6ddc38fc..2787456e8961 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -565,6 +565,7 @@ void GStreamerRegistryScanner::initializeDecoders(const GStreamerRegistryScanner
+     Vector<GstCapsWebKitMapping> mseCompatibleMapping = {
+         { ElementFactories::Type::AudioDecoder, "audio/x-ac3"_s, { }, { "x-ac3"_s, "ac-3"_s, "ac3"_s } },
+         { ElementFactories::Type::AudioDecoder, "audio/x-eac3"_s, { "audio/x-ac3"_s }, { "x-eac3"_s, "ec3"_s, "ec-3"_s, "eac3"_s } },
++        { ElementFactories::Type::AudioDecoder, "audio/x-ac4"_s, { }, { "x-ac4"_s, "ac-4*"_s, "ac4*"_s } },
+         { ElementFactories::Type::AudioDecoder, "audio/x-flac"_s, { "audio/x-flac"_s, "audio/flac"_s }, { "x-flac"_s, "flac"_s, "fLaC"_s } },
+     };
+     fillMimeTypeSetFromCapsMapping(factories, mseCompatibleMapping);
+-- 
+2.51.0
+
+
+From 8dd6487cda339af82799f652e120230bde36fa8a Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Fri, 13 Mar 2026 14:57:20 +0100
+Subject: [PATCH 2/4] [GST] Add ac4 support for thunder decryptor and parser
+ bin
+
+ThunderDecryptor can now be used with encrypted ac4 audio
+---
+ .../platform/graphics/gstreamer/eme/GStreamerEMEUtilities.h   | 4 ++--
+ .../gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp         | 1 +
+ .../platform/graphics/gstreamer/eme/WebKitThunderParser.cpp   | 1 +
+ 3 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.h b/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.h
+index 7cd766870f37..5066a4a5ba0c 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.h
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/GStreamerEMEUtilities.h
+@@ -114,8 +114,8 @@ public:
+     static constexpr auto s_unspecifiedUUID = GST_PROTECTION_UNSPECIFIED_SYSTEM_ID ""_s;
+     static constexpr auto s_unspecifiedKeySystem = GST_PROTECTION_UNSPECIFIED_SYSTEM_ID ""_s;
+ 
+-    static constexpr std::array<ASCIILiteral, 11> s_cencEncryptionMediaTypes = { "video/mp4"_s, "audio/mp4"_s, "video/x-h264"_s, "video/x-h265"_s, "audio/mpeg"_s,
+-        "audio/x-eac3"_s, "audio/x-ac3"_s, "audio/x-flac"_s, "audio/x-opus"_s, "video/x-vp9"_s, "video/x-av1"_s };
++    static constexpr std::array<ASCIILiteral, 12> s_cencEncryptionMediaTypes = { "video/mp4"_s, "audio/mp4"_s, "video/x-h264"_s, "video/x-h265"_s, "audio/mpeg"_s,
++        "audio/x-eac3"_s, "audio/x-ac3"_s, "audio/x-ac4"_s, "audio/x-flac"_s, "audio/x-opus"_s, "video/x-vp9"_s, "video/x-av1"_s };
+     static constexpr std::array<ASCIILiteral, 7> s_webmEncryptionMediaTypes = { "video/webm"_s, "audio/webm"_s, "video/x-vp9"_s, "video/x-av1"_s, "audio/x-opus"_s, "audio/x-vorbis"_s, "video/x-vp8"_s };
+ 
+     static bool isClearKeyKeySystem(const String& keySystem)
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp
+index 0c53197153be..bd39cfd9243d 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderDecryptorGStreamer.cpp
+@@ -59,6 +59,7 @@ static GstStaticPadTemplate srcTemplate = GST_STATIC_PAD_TEMPLATE("src",
+         "audio/x-flac; "
+         "audio/x-eac3; "
+         "audio/x-ac3; "
++        "audio/x-ac4; "
+         "video/x-h264; "
+         "video/x-h265; "
+         "video/x-vp9; video/x-vp8; "
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderParser.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderParser.cpp
+index 01725cf5fb59..764329ddacdc 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderParser.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/WebKitThunderParser.cpp
+@@ -67,6 +67,7 @@ static GstStaticPadTemplate thunderParseSrcTemplate = GST_STATIC_PAD_TEMPLATE("s
+         "audio/x-flac; "
+         "audio/x-eac3; "
+         "audio/x-ac3; "
++        "audio/x-ac4; "
+         "video/x-h264; "
+         "video/x-h265; "
+         "video/x-vp9; video/x-vp8; "
+-- 
+2.51.0
+
+
+From d17742e73ce4b4c95289a3c11fbd51bd812116fb Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Fri, 13 Mar 2026 16:08:57 +0100
+Subject: [PATCH 3/4] GStreamerRegistryScanner: filter unsupported AC-4
+ profiles and levels
+
+Add parseAc4LevelAndProfile() which validates AC-4 codec strings:
+- bare "ac-4" (no dots) is accepted as generic/unconstrained
+- "ac-4.XX.01.NN" with mdcompat NN in 0-3 is accepted
+- incomplete strings (< 4 dot-separated components) are rejected
+- presentation_version != 1 (e.g. IMS value 2) is rejected
+- mdcompat levels 4-7 are rejected
+
+The check is wired into isCodecSupported() as an early-reject guard
+before the generic codec-map lookup, so valid ac-4 strings still
+resolve through the existing "ac-4*" entry in the decoder map.
+---
+ .../gstreamer/GStreamerRegistryScanner.cpp    | 33 ++++++++++++++++++-
+ .../gstreamer/GStreamerRegistryScanner.h      |  2 ++
+ 2 files changed, 34 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index 2787456e8961..6879488ce217 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -565,7 +565,7 @@ void GStreamerRegistryScanner::initializeDecoders(const GStreamerRegistryScanner
+     Vector<GstCapsWebKitMapping> mseCompatibleMapping = {
+         { ElementFactories::Type::AudioDecoder, "audio/x-ac3"_s, { }, { "x-ac3"_s, "ac-3"_s, "ac3"_s } },
+         { ElementFactories::Type::AudioDecoder, "audio/x-eac3"_s, { "audio/x-ac3"_s }, { "x-eac3"_s, "ec3"_s, "ec-3"_s, "eac3"_s } },
+-        { ElementFactories::Type::AudioDecoder, "audio/x-ac4"_s, { }, { "x-ac4"_s, "ac-4*"_s, "ac4*"_s } },
++        { ElementFactories::Type::AudioDecoder, "audio/x-ac4"_s, { }, { "x-ac4"_s, "ac-4*"_s, "ac4"_s } },
+         { ElementFactories::Type::AudioDecoder, "audio/x-flac"_s, { "audio/x-flac"_s, "audio/flac"_s }, { "x-flac"_s, "flac"_s, "fLaC"_s } },
+     };
+     fillMimeTypeSetFromCapsMapping(factories, mseCompatibleMapping);
+@@ -798,6 +798,8 @@ GStreamerRegistryScanner::CodecLookupResult GStreamerRegistryScanner::isCodecSup
+         result = isAVC1CodecSupported(configuration, codecName, shouldCheckForHardwareUse);
+     else if (codecName.startsWith("hev1"_s) || codecName.startsWith("hvc1"_s))
+         result = isHEVCCodecSupported(configuration, codecName, shouldCheckForHardwareUse);
++    else if (codecName.startsWith("ac-4"_s) && !parseAc4LevelAndProfile(codecName))
++        result = { false, nullptr };
+ #if PLATFORM(WPE)
+     else if ((codecName.startsWith("dvhe"_s) || codecName.startsWith("dvh1"_s)) && !supportsDVHCodec)
+         result = { false, nullptr };
+@@ -1019,6 +1021,35 @@ ASCIILiteral GStreamerRegistryScanner::configurationNameForLogging(Configuration
+     return ""_s;
+ }
+ 
++bool GStreamerRegistryScanner::parseAc4LevelAndProfile(const String& codec) const
++{
++    auto parts = codec.split('.');
++    // sanity check
++    if (parts.isEmpty())
++        return false;
++    // "ac-4" with no dots is valid (generic, unconstrained).
++    if (parts.size() == 1 && equalIgnoringASCIICase(parts[0], "ac-4"_s))
++        return true;
++    // Full format requires exactly 4 components: ["ac-4", bitstream_version, presentation_version, mdcompat]
++    if (parts.size() != 4) {
++        GST_DEBUG("AC-4 codec string has wrong number of components: %s", codec.utf8().data());
++        return false;
++    }
++    // presentation_version must be 1 (stereo/5.1); value 2 denotes IMS which is not supported.
++    auto presentationVersion = parseInteger<unsigned>(parts[2]);
++    if (!presentationVersion || *presentationVersion != 1) {
++        GST_DEBUG("AC-4 codec string has unsupported presentation_version: %s", codec.utf8().data());
++        return false;
++    }
++    // mdcompat (level): only levels 0-3 are supported.
++    auto mdcompat = parseInteger<unsigned>(parts[3]);
++    if (!mdcompat || *mdcompat > 3) {
++        GST_DEBUG("AC-4 codec string has unsupported mdcompat level: %s", codec.utf8().data());
++        return false;
++    }
++    return true;
++}
++
+ GStreamerRegistryScanner::RegistryLookupResult GStreamerRegistryScanner::isConfigurationSupported(Configuration configuration, const MediaConfiguration& mediaConfiguration) const
+ {
+ #ifndef GST_DISABLE_GST_DEBUG
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.h b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.h
+index d0695a01573d..bef62a6c3a1f 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.h
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.h
+@@ -174,6 +174,8 @@ private:
+     CodecLookupResult isAVC1CodecSupported(Configuration, const String& codec, bool shouldCheckForHardwareUse) const;
+     CodecLookupResult isHEVCCodecSupported(Configuration, const String& codec, bool shouldCheckForHardwareUse) const;
+ 
++    bool parseAc4LevelAndProfile(const String& codec) const;
++
+     ASCIILiteral configurationNameForLogging(Configuration) const;
+     bool supportsFeatures(const String& features) const;
+ 
+-- 
+2.51.0
+
+
+From 68001f1fed6e136fbf8c51820f0e7864aa643f4b Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Fri, 13 Mar 2026 16:45:26 +0100
+Subject: [PATCH 4/4] GStreamerRegistryScanner: filter USAC (xHE-AAC) via caps
+ check
+
+Add isUSACCodecSupported() to gate mp4a.40.42 codec strings behind an
+explicit GStreamer capability query rather than letting them fall through
+to the generic mp4a* codec map entry.
+
+Use below CAPS to probe Decoder/Sink support:
+  audio/mpeg, mpegversion=4, stream-format=usac
+
+A new areCapsSupported(ElementFactories::Type, caps, hw) overload is
+added so the lookup can target AudioDecoder/AudioEncoder factories
+directly; the existing Configuration-based overload now delegates to it.
+---
+ .../gstreamer/GStreamerRegistryScanner.cpp    | 42 ++++++++++++++-----
+ .../gstreamer/GStreamerRegistryScanner.h      |  2 +
+ 2 files changed, 34 insertions(+), 10 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index 6879488ce217..6b0e7fff177a 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -138,6 +138,17 @@ static VideoDecodingLimits* resolveVideoDecodingLimits()
+     return limits ? &*limits : nullptr;
+ }
+ 
++// Returns true if the given mp4a codec string refers to USAC (xHE-AAC, AudioObjectType=42).
++// Format: mp4a.<hex-object-type>.<decimal-audio-object-type>  e.g. "mp4a.40.42"
++static bool isUsacMp4aCodec(const String& codec)
++{
++    auto parts = codec.split('.');
++    if (parts.size() != 3)
++        return false;
++    auto aot = parseInteger<unsigned>(parts[2]);
++    return aot && *aot == 42;
++}
++
+ // We shouldn't accept media that the player can't actually play.
+ // AAC supports up to 96 channels.
+ #define MEDIA_MAX_AAC_CHANNELS 96
+@@ -798,6 +809,8 @@ GStreamerRegistryScanner::CodecLookupResult GStreamerRegistryScanner::isCodecSup
+         result = isAVC1CodecSupported(configuration, codecName, shouldCheckForHardwareUse);
+     else if (codecName.startsWith("hev1"_s) || codecName.startsWith("hvc1"_s))
+         result = isHEVCCodecSupported(configuration, codecName, shouldCheckForHardwareUse);
++    else if (codecName.startsWith("mp4a"_s) && isUsacMp4aCodec(codecName))
++        result = isUSACCodecSupported(configuration, shouldCheckForHardwareUse);
+     else if (codecName.startsWith("ac-4"_s) && !parseAc4LevelAndProfile(codecName))
+         result = { false, nullptr };
+ #if PLATFORM(WPE)
+@@ -949,23 +962,21 @@ bool GStreamerRegistryScanner::areAllCodecsSupported(Configuration configuration
+     return true;
+ }
+ 
+-GStreamerRegistryScanner::CodecLookupResult GStreamerRegistryScanner::areCapsSupported(Configuration configuration, const GRefPtr<GstCaps>& caps, bool shouldCheckForHardwareUse) const
++GStreamerRegistryScanner::CodecLookupResult GStreamerRegistryScanner::areCapsSupported(ElementFactories::Type factoryType, const GRefPtr<GstCaps>& caps, bool shouldCheckForHardwareUse) const
+ {
+-    OptionSet<ElementFactories::Type> factoryTypes;
+-    switch (configuration) {
+-    case Configuration::Decoding:
+-        factoryTypes.add(ElementFactories::Type::VideoDecoder);
+-        break;
+-    case Configuration::Encoding:
+-        factoryTypes.add(ElementFactories::Type::VideoEncoder);
+-        break;
+-    }
++    OptionSet<ElementFactories::Type> factoryTypes = { factoryType };
+     auto lookupResult = ElementFactories(factoryTypes).hasElementForCaps(factoryTypes.toSingleValue().value(), caps, ElementFactories::CheckHardwareClassifier::Yes);
+     bool supported = lookupResult && (shouldCheckForHardwareUse ? lookupResult.isUsingHardware : true);
+     GST_DEBUG("%s decoding supported for caps %" GST_PTR_FORMAT ": %s", shouldCheckForHardwareUse ? "Hardware" : "Software", caps.get(), boolForPrinting(supported));
+     return { supported, supported ? lookupResult.factory : nullptr };
+ }
+ 
++GStreamerRegistryScanner::CodecLookupResult GStreamerRegistryScanner::areCapsSupported(Configuration configuration, const GRefPtr<GstCaps>& caps, bool shouldCheckForHardwareUse) const
++{
++    auto factoryType = configuration == Configuration::Decoding ? ElementFactories::Type::VideoDecoder : ElementFactories::Type::VideoEncoder;
++    return areCapsSupported(factoryType, caps, shouldCheckForHardwareUse);
++}
++
+ GStreamerRegistryScanner::CodecLookupResult GStreamerRegistryScanner::isAVC1CodecSupported(Configuration configuration, const String& codec, bool shouldCheckForHardwareUse) const
+ {
+     auto h264Caps = adoptGRef(gst_caps_new_empty_simple("video/x-h264"));
+@@ -1021,6 +1032,17 @@ ASCIILiteral GStreamerRegistryScanner::configurationNameForLogging(Configuration
+     return ""_s;
+ }
+ 
++GStreamerRegistryScanner::CodecLookupResult GStreamerRegistryScanner::isUSACCodecSupported(Configuration configuration, bool shouldCheckForHardwareUse) const
++{
++    // USAC (Unified Speech and Audio Coding / xHE-AAC) requires a decoder that explicitly
++    // supports xHE-AAC/USAC. Check stream-format=usac: used by platform decoders/sinks
++    auto factoryType = configuration == Configuration::Decoding ? ElementFactories::Type::AudioDecoder : ElementFactories::Type::AudioEncoder;
++    auto usacStreamFormatCaps = adoptGRef(gst_caps_from_string("audio/mpeg, mpegversion=(int)4, stream-format=(string)usac"));
++    auto result = areCapsSupported(factoryType, usacStreamFormatCaps, shouldCheckForHardwareUse);
++    GST_DEBUG("USAC (xHE-AAC) audio %s supported: %s", shouldCheckForHardwareUse ? "hardware" : "software", boolForPrinting(result.isSupported));
++    return result;
++}
++
+ bool GStreamerRegistryScanner::parseAc4LevelAndProfile(const String& codec) const
+ {
+     auto parts = codec.split('.');
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.h b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.h
+index bef62a6c3a1f..e1c9b90904e8 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.h
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.h
+@@ -161,6 +161,7 @@ protected:
+     void initializeEncoders(const ElementFactories&);
+ 
+     RegistryLookupResult isConfigurationSupported(Configuration, const MediaConfiguration&) const;
++    CodecLookupResult areCapsSupported(ElementFactories::Type, const GRefPtr<GstCaps>&, bool shouldCheckForHardwareUse) const;
+ 
+     struct GstCapsWebKitMapping {
+         ElementFactories::Type elementType;
+@@ -175,6 +176,7 @@ private:
+     CodecLookupResult isHEVCCodecSupported(Configuration, const String& codec, bool shouldCheckForHardwareUse) const;
+ 
+     bool parseAc4LevelAndProfile(const String& codec) const;
++    CodecLookupResult isUSACCodecSupported(Configuration, bool shouldCheckForHardwareUse) const;
+ 
+     ASCIILiteral configurationNameForLogging(Configuration) const;
+     bool supportsFeatures(const String& features) const;
+-- 
+2.51.0
+
