@@ -2,13 +2,13 @@ SUMMARY = "ENTServices appmanagers plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "0.3.0.0"
+PV ?= "0.3.0.1"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "38314bd091ba50aae703d5ebb551293b9c5fa8b6"
+SRCREV = "ff1eb701d390fca1f746c8f47f18edabfb280114"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -142,6 +142,13 @@ do_install:append() {
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
+    fi
+
+    # Keep AppManagersHelpers canonical in ${libdir} so dynamic linker resolves
+    # NEEDED entries without relying on plugin directory lookups.
+    if [ -f "${D}${libdir}/wpeframework/plugins/libAppManagersHelpers.so" ]; then
+        install -d "${D}${libdir}"
+        mv "${D}${libdir}/wpeframework/plugins/libAppManagersHelpers.so" "${D}${libdir}/libAppManagersHelpers.so"
     fi
 }
 
