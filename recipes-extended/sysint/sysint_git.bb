@@ -6,9 +6,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=f36198fb804ffbe39b5b2c336ceef9f8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "4.5.4"
-PR = "r0"
+PR = "r2"
 
-SRCREV = "1f301e97e6c70a0d54ebea03538157842d0ed71e"
+SRCREV = "5c9f54871d3495f93eddda50ebd9d63874b2604e"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
