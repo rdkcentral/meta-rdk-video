@@ -2,7 +2,7 @@ SUMMARY = "ENTServices screencapture plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7df5a8706277b586ca000838046993d1"
 
-PV = "1.0.3"
+PV = "1.1.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
