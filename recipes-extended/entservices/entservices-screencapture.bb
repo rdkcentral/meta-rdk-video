@@ -17,7 +17,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-screencapture;${CMF_GITHUB_SRC_URI_SUF
           "
           
 # Release version - 1.0.3
-SRCREV = "21461ace48d11588768b6121c21e8aa954a7ce0b"
+SRCREV = "2651c48f91d72fe34d5abeb73076de0538bc2004"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
