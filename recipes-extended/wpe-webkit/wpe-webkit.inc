@@ -12,14 +12,14 @@ DEPENDS += " \
      freetype glib-2.0 gnutls harfbuzz icu jpeg pcre sqlite3 zlib \
      libepoxy libpng libwebp libxml2 libxslt \
      virtual/egl virtual/libgles2 \
-     libinput libepoxy libgcrypt \
+     libepoxy libgcrypt \
 "
 
 EXTRANATIVEPATH += " chrpath-native"
 
 S = "${WORKDIR}/git"
 
-inherit cmake pkgconfig perlnative gettext python3native ccache add-version
+inherit cmake pkgconfig perlnative gettext python3native ccache
 
 PACKAGECONFIG ?= "2dcanvas mediasource encryptedmedia \
                   video westeros mediastream sampling-profiler gamepad \
@@ -96,7 +96,6 @@ RDEPS_VIDEO = " \
     gstreamer1.0-plugins-base-app \
     gstreamer1.0-plugins-base-playback \
     gstreamer1.0-plugins-good-soup \
-    gstreamer1.0-plugins-bad-opusparse \
     gstreamer1.0-plugins-good-matroska \
 "
 
@@ -136,11 +135,11 @@ RDEPS_WEBAUDIO += "${RDEPS_EXTRA}"
 RRECOMMENDS:${PN} += "ca-certificates shared-mime-info wpe-backend-rdk-platform-plugin"
 PACKAGE_DEBUG_SPLIT_STYLE = "debug-without-src"
 
-# Ensure we'll get the recipe version and SRCRV into the versions.txt file part of the build image
-do_add_version () {
-    echo "WPE_WEBKIT_VERSION=${PV}-${PR}" > ${EXTRA_VERSIONS_PATH}/${PN}.txt
+# Ensure we'll get the recipe version and SRCRV into the versions.txt
+do_install:append() {
+    install -d ${D}/etc/${PN}
+    echo "WPE_WEBKIT_VERSION=${PV}-${PR}" > ${D}/etc/${PN}/version.txt
 }
-
 
 # Build wpewebkit with split-dwarf, see for more info:
 #   https://gcc.gnu.org/wiki/DebugFission

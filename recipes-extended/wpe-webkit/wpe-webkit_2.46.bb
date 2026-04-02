@@ -7,9 +7,8 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r33"
+PR  = "r35"
 
-DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
 DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -90,7 +89,8 @@ PACKAGECONFIG[video]                 = "-DENABLE_VIDEO=ON,-DENABLE_VIDEO=OFF,gst
 PACKAGECONFIG[webassembly]           = "-DENABLE_WEBASSEMBLY=ON,-DENABLE_WEBASSEMBLY=OFF, "
 PACKAGECONFIG[webdriver]             = "-DENABLE_WEBDRIVER=ON,-DENABLE_WEBDRIVER=OFF,"
 PACKAGECONFIG[woff2]                 = "-DUSE_WOFF2=ON,-DUSE_WOFF2=OFF,woff2"
-PACKAGECONFIG[wpeframework_opencdm]  = "-DENABLE_THUNDER=ON,-DENABLE_THUNDER=OFF,wpeframework-clientlibraries,"
+PACKAGECONFIG[wpeframework_opencdm]  = "-DENABLE_THUNDER=ON,,wpeframework-clientlibraries virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins,"
+PACKAGECONFIG[rialto_opencdm]        = "-DENABLE_THUNDER=ON,,rialto-ocdm,rialto-ocdm"
 PACKAGECONFIG[wpeplatform]           = "-DENABLE_WPE_PLATFORM=ON,-DENABLE_WPE_PLATFORM=OFF -DUSE_LIBDRM=OFF -DUSE_GBM=OFF,libdrm,"
 PACKAGECONFIG[wpeqtapi]              = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[cairo]                 = "-DUSE_CAIRO=ON -DUSE_SKIA=OFF,-DUSE_CAIRO=OFF,cairo"
@@ -121,6 +121,7 @@ FILES:${PN}-web-inspector-plugin += " ${libdir}/wpe-webkit-*/libWPEWebInspectorR
 TUNE_CCARGS:remove = "${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', '','-fno-omit-frame-pointer -fno-optimize-sibling-calls', d)}"
 TUNE_CCARGS:append = " -fno-delete-null-pointer-checks"
 
+WPE_WEBKIT_LTO:arm64 = ""
 WPE_WEBKIT_LTO ??= "-flto=auto"
 TARGET_CFLAGS += "${WPE_WEBKIT_LTO}"
 TARGET_LDFLAGS += "${WPE_WEBKIT_LTO}"
@@ -133,3 +134,4 @@ def wk_use_ccache(bb,d):
        return "NO"
     return "YES"
 export WK_USE_CCACHE="${@wk_use_ccache(bb, d)}"
+
