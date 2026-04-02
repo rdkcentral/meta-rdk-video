@@ -19,7 +19,7 @@ S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/RDK-61067_new"
 
-SRCREV = "ca5851589e8c4d41026cda3a597e392293917418"
+SRCREV = "9819da0fe57e78707098b7a2ebcc211a449c3ac1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs gcc-sanitizers ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
@@ -46,7 +46,7 @@ EXTRA_OECMAKE += " \
 CXXFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal -fsanitize=address"
 CFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal -fsanitize=address"
 
-LDFLAGS += " -lasan"
+LDFLAGS += " -lasan -fsanitize=address"
 
 do_install:append(){
     install -d ${D}${sysconfdir}/NetworkManager
