@@ -81,7 +81,7 @@ PACKAGECONFIG[telemetry]            = "-DPLUGIN_TELEMETRY=ON,,iarmbus iarmmgrs e
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON ${RUNTIMEMANAGER_PLUGIN_ARGS},-DPLUGIN_RUNTIME_MANAGER=OFF,entservices-apis iptables,entservices-apis iptables"
 PACKAGECONFIG[packagemanager]       = "-DPLUGIN_PACKAGE_MANAGER=ON ${PACKAGEMANAGER_PLUGIN_ARGS} -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_PACKAGE_MANAGER=OFF -DLIB_PACKAGE=OFF,curl virtual/libpackage,curl virtual/libpackage"
 PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LIFECYCLE_MANAGER=OFF,websocketpp entservices-apis,entservices-apis"
-PACKAGECONFIG[appstoragemanager]       = "-DPLUGIN_APP_STORAGE_MANAGER=ON,-DPLUGIN_APP_STORAGE_MANAGER=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[appstoragemanager]    = "-DPLUGIN_APP_STORAGE_MANAGER=ON ${APPSTORAGEMANAGER_PLUGIN_ARGS},-DPLUGIN_APP_STORAGE_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[appmanager]           = "-DPLUGIN_APPMANAGER=ON,-DPLUGIN_APPMANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[preinstallmanager]    = "-DPLUGIN_PREINSTALL_MANAGER=ON ${PREINSTALLMANAGER_PLUGIN_ARGS},-DPLUGIN_PREINSTALL_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[downloadmanager]      = "-DPLUGIN_DOWNLOADMANAGER=ON ${DOWNLOADMANAGER_PLUGIN_ARGS} -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_DOWNLOADMANAGER=OFF -DLIB_PACKAGE=OFF,entservices-apis curl virtual/libpackage,entservices-apis curl virtual/libpackage"
@@ -105,9 +105,15 @@ PREINSTALLMANAGER_PLUGIN_ARGS         ?= " \
 DOWNLOADMANAGER_PLUGIN_ARGS         ?= " \
                                        -DPLUGIN_DOWNLOADMANAGER_DOWNLOAD_DIR=${APP_DOWNLOAD_DIRECTORY} \
 "
+
+APPSTORAGEMANAGER_PLUGIN_ARGS       ?= " \
+                                       -DPLUGIN_APP_STORAGE_MANAGER_PATH=${DEFAULT_APP_STORAGE_PATH} \
+"
+
 RUNTIME_APP_PORTAL ?= "com.sky.as.apps"
 APP_PREINSTALL_DIRECTORY ?= "/opt/preinstall"
 APP_DOWNLOAD_DIRECTORY ?= "/opt/CDL/"
+DEFAULT_APP_STORAGE_PATH ?= "/opt/persistent/storageManager"
 NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
 
 EXTRA_OECMAKE += " \
