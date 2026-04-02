@@ -2,7 +2,7 @@ SUMMARY = "ENTServices firmware update plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.2.1"
+PV = "1.2.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SU
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.2.1
-SRCREV = "24ea58cdb5a04e3302d37c8c2ff19223da5da149"
+# Release version - 1.2.2
+SRCREV = "dbb804fc07a30dd25d23d1a49b5878401cba3e6f"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
