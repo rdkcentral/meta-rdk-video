@@ -1,0 +1,85 @@
+diff --git a/DeviceInfo/DeviceInfoJsonRpc.cpp b/DeviceInfo/DeviceInfoJsonRpc.cpp
+index 935e00a..1349620 100644
+--- a/DeviceInfo/DeviceInfoJsonRpc.cpp
++++ b/DeviceInfo/DeviceInfoJsonRpc.cpp
+@@ -188,14 +188,14 @@ namespace Plugin {
+     uint32_t DeviceInfo::get_make(MakeData& response) const
+     {
+         string make;
+-
++        fprintf(stderr, "bvanav-dbg: JSONRPC request DeviceInfo.make entered plugin's get_make\n");
+         auto result = _deviceInfo->Make(make);
+         if (result == Core::ERROR_NONE) {
+             response.Make = make;
+         } else {
+             TRACE(Trace::Fatal, (_T("Make wasn't specified.")));
+         }
+-
++        fprintf(stderr, "bvanav-dbg: JSONRPC request DeviceInfo.make returned from plugin's get_make\n");
+         return result;
+     }
+ 
+@@ -238,7 +238,7 @@ namespace Plugin {
+     uint32_t DeviceInfo::get_devicetype(DevicetypeData& response) const
+     {
+         string deviceType;
+-        
++        fprintf(stderr, "bvanav-dbg: JSONRPC request DeviceInfo.devicetype entered plugin's get_devicetype\n");
+         auto result = _deviceInfo->DeviceType(deviceType);
+         if (result == Core::ERROR_NONE) {
+             Core::EnumerateType<JsonData::DeviceInfo::DevicetypeData::DevicetypeType> value(deviceType.c_str(), false);
+@@ -249,7 +249,7 @@ namespace Plugin {
+                 result = Core::ERROR_GENERAL;
+             }
+         }
+-
++        fprintf(stderr, "bvanav-dbg: JSONRPC request DeviceInfo.devicetype returned from plugin's get_devicetype\n");
+         return result;
+     }
+ 
+diff --git a/DeviceInfo/Implementation/DeviceInfo.cpp b/DeviceInfo/Implementation/DeviceInfo.cpp
+index 2ddb61a..daae362 100644
+--- a/DeviceInfo/Implementation/DeviceInfo.cpp
++++ b/DeviceInfo/Implementation/DeviceInfo.cpp
+@@ -118,10 +118,15 @@ namespace Plugin {
+ 
+     Core::hresult DeviceInfoImplementation::Make(string& make) const
+     {
+-
+-        return ( GetMFRData(mfrSERIALIZED_TYPE_MANUFACTURER, make) == Core::ERROR_NONE)
+-            ? Core::ERROR_NONE
+-            : GetFileRegex(_T("/etc/device.properties"),std::regex("^MFG_NAME(?:\\s*)=(?:\\s*)(?:\"{0,1})([^\"\\n]+)(?:\"{0,1})(?:\\s*)$"), make);
++        fprintf(stderr, "bvanav-dbg: DeviceInfo.make entered DeviceInfoImplementation::Make\n");
++        Core::hresult result = GetMFRData(mfrSERIALIZED_TYPE_MANUFACTURER, make);
++        if(result != Core::ERROR_NONE)
++        {
++            fprintf(stderr, "bvanav-dbg: DeviceInfo.make DeviceInfoImplementation::Make executing GetFileRegex\n");
++            GetFileRegex(_T("/etc/device.properties"),std::regex("^MFG_NAME(?:\\s*)=(?:\\s*)(?:\"{0,1})([^\"\\n]+)(?:\"{0,1})(?:\\s*)$"), make);
++        }
++        fprintf(stderr, "bvanav-dbg: DeviceInfo.make returned from DeviceInfoImplementation::Make\n");
++        return result;
+     }
+ 
+     Core::hresult DeviceInfoImplementation::Model(string& model) const
+@@ -146,10 +151,12 @@ namespace Plugin {
+ 
+     Core::hresult DeviceInfoImplementation::DeviceType(string& deviceType) const
+     {
++        fprintf(stderr, "bvanav-dbg: DeviceInfo.devicetype entered DeviceInfoImplementation::DeviceType\n");
+         const char* device_type;
+         uint32_t result = GetFileRegex(_T("/etc/authService.conf"),
+             std::regex("^deviceType(?:\\s*)=(?:\\s*)(?:\"{0,1})([^\"\\n]+)(?:\"{0,1})(?:\\s*)$"), deviceType);
+-
++        
++        fprintf(stderr, "bvanav-dbg: DeviceInfo.devicetype DeviceInfoImplementation::DeviceType after 1st GetFileRegex\n");
+         if (result != Core::ERROR_NONE) {
+             // If we didn't find the deviceType in authService.conf, try device.properties
+             result = GetFileRegex(_T("/etc/device.properties"),
+@@ -163,6 +170,7 @@ namespace Plugin {
+                     (strcmp("hybrid", device_type) == 0) ? "QamIpStb" : "IpTv";
+             }
+         }
++        fprintf(stderr, "bvanav-dbg: DeviceInfo.devicetype returned from DeviceInfoImplementation::DeviceType\n");
+         return result;
+     }
+

@@ -66,6 +66,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/Revert_PR-665_support_JSON_Parsing.patch \
             file://r4.4/RDKEMW-8889-Avoid-LoadMeta-On-Boot.patch \
             file://r4.4/RDKEMW-13752_apply_sysinfo_mem_unit.patch \
+            file://r4.4/thunder-bvanav-dbg.patch \
            "
 
 S = "${WORKDIR}/git"

@@ -1,0 +1,114 @@
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index 643c8450d..7f78f2766 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -26,6 +26,7 @@
+ #include "IRemoteInstantiation.h"
+ #include "WarningReportingCategories.h"
+ #include "PostMortem.h"
++#include "core/JSON.h"
+ 
+ #ifdef PROCESSCONTAINERS_ENABLED
+ #include "../processcontainers/ProcessContainer.h"
+@@ -4571,6 +4572,24 @@ POP_WARNING()
+         inline void Submit(const Core::ProxyType<Core::IDispatch>& job)
+         {
+             _dispatcher.Submit(job);
++
++            if(BvanavDbg::getInstance().getDIDeviceType())
++            {
++                BvanavDbg::getInstance().resetDIDeviceType();
++                fprintf(stderr, "bvanav-dbg: QueueLength when request for DeviceInfo.devicetype: %d\n", _dispatcher.queueLength());
++            }
++
++            if(BvanavDbg::getInstance().getDIMake())
++            {
++                BvanavDbg::getInstance().resetDIMake();
++                fprintf(stderr, "bvanav-dbg: QueueLength when request for DeviceInfo.make: %d\n", _dispatcher.queueLength());
++            }
++
++            if(BvanavDbg::getInstance().getAVInputDevice())
++            {
++                BvanavDbg::getInstance().resetAVInputDevice();
++                fprintf(stderr, "bvanav-dbg: QueueLength when request for org.rdk.AVInput.1.getInputDevices: %d\n", _dispatcher.queueLength());
++            } 
+         }
+         inline void Schedule(const uint64_t time, const Core::ProxyType<Core::IDispatch>& job)
+         {
+diff --git a/Source/core/JSON.h b/Source/core/JSON.h
+index 5a10b955f..aac308bf2 100644
+--- a/Source/core/JSON.h
++++ b/Source/core/JSON.h
+@@ -32,6 +32,32 @@
+ #include "TextFragment.h"
+ #include "TypeTraits.h"
+ 
++class BvanavDbg 
++{
++    bool _AVInputDevice, _DIMake, _DIDeviceType;
++    
++    BvanavDbg():_AVInputDevice(false), _DIMake(false), _DIDeviceType(false){}
++    
++    public:
++        static BvanavDbg& getInstance()
++        {
++            static BvanavDbg _BvanavDbg;
++            return _BvanavDbg;
++        }
++
++        inline void setAVInputDevice()   { _AVInputDevice=true;}
++        inline bool getAVInputDevice()   {return _AVInputDevice;}
++        inline void resetAVInputDevice() {_AVInputDevice=false;}
++
++        inline void setDIMake()   {_DIMake=true;}
++        inline bool getDIMake()   {return _DIMake;}
++        inline void resetDIMake() {_DIMake=false;}
++        
++        inline void setDIDeviceType()   {_DIDeviceType=true;}
++        inline bool getDIDeviceType()   {return _DIDeviceType;}
++        inline void resetDIDeviceType() {_DIDeviceType=false;}
++};
++
+ namespace WPEFramework {
+ 
+ namespace Core {
+@@ -2037,6 +2063,24 @@ namespace Core {
+                     }
+                 }
+ 
++                if(_value == "DeviceInfo.devicetype") 
++                {
++                    BvanavDbg::getInstance().setDIDeviceType();
++                    fprintf(stderr, "bvanav-dbg: Thunder deserialized JSONRPC request: DeviceInfo.devicetype\n");
++                }
++                
++                if(_value == "DeviceInfo.make")
++                {
++                    BvanavDbg::getInstance().setDIMake();
++                    fprintf(stderr, "bvanav-dbg: Thunder deserialized JSONRPC request: DeviceInfo.make\n");
++                }
++                
++                if(_value == "org.rdk.AVInput.1.getInputDevices")
++                {
++                    BvanavDbg::getInstance().setAVInputDevice();
++                    fprintf(stderr, "bvanav-dbg: Thunder deserialized JSONRPC request: org.rdk.AVInput.1.getInputDevices\n");
++                }
++
+                 return (result);
+             }
+ 
+diff --git a/Source/core/WorkerPool.h b/Source/core/WorkerPool.h
+index ea68bc1a8..1075c65ff 100644
+--- a/Source/core/WorkerPool.h
++++ b/Source/core/WorkerPool.h
+@@ -338,6 +338,10 @@ POP_WARNING()
+ 
+             _threadPool.Submit(job, Core::infinite);
+         }
++        uint32_t queueLength() const
++        {
++            return _threadPool.Pending();
++        }
+         void Schedule(const Core::Time& time, const Core::ProxyType<IDispatch>& job) override
+         {
+             if (time > Core::Time::Now()) {
