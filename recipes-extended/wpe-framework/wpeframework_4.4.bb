@@ -172,14 +172,17 @@ do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
 
-    # Enable support for keymap in rdkwindowmanager service if WINDOWMANAGER_RCU_KEYMAP_FILE is set.
+    # Propagate configured keymap via parent service environment to rdkwindowmanager plugin.
     if [ -n "${WINDOWMANAGER_RCU_KEYMAP_FILE}" ]; then
         RDKWM_SERVICE="${D}${systemd_unitdir}/system/wpeframework.service"
 
         if [ -f "$RDKWM_SERVICE" ]; then
-            bbnote "Adding Windowmanager KEYMAP env in wpeframework.service"
-            if ! grep -Eq '^[[:space:]]*Environment="?RDK_WINDOW_MANAGER_KEYMAP_FILE=' "$RDKWM_SERVICE"; then
-                sed -i "/^\[Service\]/a Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"" "$RDKWM_SERVICE"
+            if grep -Eq '^[[:space:]]*Environment="?RDK_WINDOW_MANAGER_KEYMAP_FILE=' "${RDKWM_SERVICE}"; then
+                bbnote "Updating Windowmanager KEYMAP env in wpeframework.service"
+                sed -i -E "s|^[[:space:]]*Environment=\"?RDK_WINDOW_MANAGER_KEYMAP_FILE=.*$|Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"|" "${RDKWM_SERVICE}"
+            else
+                bbnote "Adding Windowmanager KEYMAP env in wpeframework.service"
+                sed -i "/^\[Service\]/a Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"" "${RDKWM_SERVICE}"
             fi
         fi
     fi
