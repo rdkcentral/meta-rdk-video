@@ -145,7 +145,7 @@ ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'Securit
 EXTRA_OECMAKE += " \
     -DINSTALL_HEADERS_TO_TARGET=ON \
     -DEXTERN_EVENTS="${WPEFRAMEWORK_EXTERN_EVENTS}" \
-    -DEXCEPTIONS_ENABLE=ON \  
+    -DEXCEPTIONS_ENABLE=ON \
     -DBUILD_SHARED_LIBS=ON \
     -DRPC=ON \
     -DBUILD_REFERENCE=${SRCREV} \
@@ -171,6 +171,18 @@ EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
+
+    # Enable support for keymap in rdkwindowmanager service if WINDOWMANAGER_RCU_KEYMAP_FILE is set.
+    if [ -n "${WINDOWMANAGER_RCU_KEYMAP_FILE}" ]; then
+        RDKWM_SERVICE="${D}${systemd_unitdir}/system/wpeframework.service"
+
+        if [ -f "$RDKWM_SERVICE" ]; then
+            bbnote "Adding Windowmanager KEYMAP env in wpeframework.service"
+            if ! grep -Eq '^[[:space:]]*Environment="?RDK_WINDOW_MANAGER_KEYMAP_FILE=' "$RDKWM_SERVICE"; then
+                sed -i "/^\[Service\]/a Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"" "$RDKWM_SERVICE"
+            fi
+        fi
+    fi
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
@@ -224,4 +236,3 @@ BREAKPAD_LOGMAPPER_LOGLIST = "wpeframework.log"
 do_add_version () {
     echo "WPEFRAMEWORK-VERSION=${THUNDER_RELEASE_TAG_NAME}" > ${EXTRA_VERSIONS_PATH}/${PN}.txt
 }
-
