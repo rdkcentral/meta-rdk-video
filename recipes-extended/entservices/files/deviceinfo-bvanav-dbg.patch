@@ -1,44 +1,41 @@
 diff --git a/DeviceInfo/DeviceInfoJsonRpc.cpp b/DeviceInfo/DeviceInfoJsonRpc.cpp
-index 935e00a..1349620 100644
+index 2fbfb1e..752126b 100644
 --- a/DeviceInfo/DeviceInfoJsonRpc.cpp
 +++ b/DeviceInfo/DeviceInfoJsonRpc.cpp
-@@ -188,14 +188,14 @@ namespace Plugin {
-     uint32_t DeviceInfo::get_make(MakeData& response) const
+@@ -189,6 +189,7 @@ namespace Plugin {
      {
          string make;
--
+ 
 +        fprintf(stderr, "bvanav-dbg: JSONRPC request DeviceInfo.make entered plugin's get_make\n");
          auto result = _deviceInfo->Make(make);
          if (result == Core::ERROR_NONE) {
              response.Make = make;
-         } else {
+@@ -196,6 +197,7 @@ namespace Plugin {
              TRACE(Trace::Fatal, (_T("Make wasn't specified.")));
          }
--
+ 
 +        fprintf(stderr, "bvanav-dbg: JSONRPC request DeviceInfo.make returned from plugin's get_make\n");
          return result;
      }
  
-@@ -238,7 +238,7 @@ namespace Plugin {
-     uint32_t DeviceInfo::get_devicetype(DevicetypeData& response) const
+@@ -239,6 +241,7 @@ namespace Plugin {
      {
          string deviceType;
--        
+ 
 +        fprintf(stderr, "bvanav-dbg: JSONRPC request DeviceInfo.devicetype entered plugin's get_devicetype\n");
          auto result = _deviceInfo->DeviceType(deviceType);
          if (result == Core::ERROR_NONE) {
              Core::EnumerateType<JsonData::DeviceInfo::DevicetypeData::DevicetypeType> value(deviceType.c_str(), false);
-@@ -249,7 +249,7 @@ namespace Plugin {
-                 result = Core::ERROR_GENERAL;
+@@ -250,6 +253,7 @@ namespace Plugin {
              }
          }
--
+ 
 +        fprintf(stderr, "bvanav-dbg: JSONRPC request DeviceInfo.devicetype returned from plugin's get_devicetype\n");
          return result;
      }
  
 diff --git a/DeviceInfo/Implementation/DeviceInfo.cpp b/DeviceInfo/Implementation/DeviceInfo.cpp
-index 2ddb61a..daae362 100644
+index 2ddb61a..03978b1 100644
 --- a/DeviceInfo/Implementation/DeviceInfo.cpp
 +++ b/DeviceInfo/Implementation/DeviceInfo.cpp
 @@ -118,10 +118,15 @@ namespace Plugin {
@@ -50,14 +47,14 @@ index 2ddb61a..daae362 100644
 -            ? Core::ERROR_NONE
 -            : GetFileRegex(_T("/etc/device.properties"),std::regex("^MFG_NAME(?:\\s*)=(?:\\s*)(?:\"{0,1})([^\"\\n]+)(?:\"{0,1})(?:\\s*)$"), make);
 +        fprintf(stderr, "bvanav-dbg: DeviceInfo.make entered DeviceInfoImplementation::Make\n");
-+        Core::hresult result = GetMFRData(mfrSERIALIZED_TYPE_MANUFACTURER, make);
++        Core::hresult status = GetMFRData(mfrSERIALIZED_TYPE_MANUFACTURER, make);
 +        if(result != Core::ERROR_NONE)
 +        {
 +            fprintf(stderr, "bvanav-dbg: DeviceInfo.make DeviceInfoImplementation::Make executing GetFileRegex\n");
-+            GetFileRegex(_T("/etc/device.properties"),std::regex("^MFG_NAME(?:\\s*)=(?:\\s*)(?:\"{0,1})([^\"\\n]+)(?:\"{0,1})(?:\\s*)$"), make);
++            status = GetFileRegex(_T("/etc/device.properties"),std::regex("^MFG_NAME(?:\\s*)=(?:\\s*)(?:\"{0,1})([^\"\\n]+)(?:\"{0,1})(?:\\s*)$"), make);
 +        }
-+        fprintf(stderr, "bvanav-dbg: DeviceInfo.make returned from DeviceInfoImplementation::Make\n");
-+        return result;
++        fprintf(stderr, "bvanav-dbg: DeviceInfo.make returned from DeviceInfoImplementation::Make make: %s\n", make.c_str());
++        return status;
      }
  
      Core::hresult DeviceInfoImplementation::Model(string& model) const
@@ -69,8 +66,7 @@ index 2ddb61a..daae362 100644
          const char* device_type;
          uint32_t result = GetFileRegex(_T("/etc/authService.conf"),
              std::regex("^deviceType(?:\\s*)=(?:\\s*)(?:\"{0,1})([^\"\\n]+)(?:\"{0,1})(?:\\s*)$"), deviceType);
--
-+        
+ 
 +        fprintf(stderr, "bvanav-dbg: DeviceInfo.devicetype DeviceInfoImplementation::DeviceType after 1st GetFileRegex\n");
          if (result != Core::ERROR_NONE) {
              // If we didn't find the deviceType in authService.conf, try device.properties
@@ -79,7 +75,7 @@ index 2ddb61a..daae362 100644
                      (strcmp("hybrid", device_type) == 0) ? "QamIpStb" : "IpTv";
              }
          }
-+        fprintf(stderr, "bvanav-dbg: DeviceInfo.devicetype returned from DeviceInfoImplementation::DeviceType\n");
++        fprintf(stderr, "bvanav-dbg: DeviceInfo.devicetype returned from DeviceInfoImplementation::DeviceType devType: %s\n", deviceType.c_str());
          return result;
      }
-
+ 
