@@ -48,7 +48,7 @@ index 2ddb61a..03978b1 100644
 -            : GetFileRegex(_T("/etc/device.properties"),std::regex("^MFG_NAME(?:\\s*)=(?:\\s*)(?:\"{0,1})([^\"\\n]+)(?:\"{0,1})(?:\\s*)$"), make);
 +        fprintf(stderr, "bvanav-dbg: DeviceInfo.make entered DeviceInfoImplementation::Make\n");
 +        Core::hresult status = GetMFRData(mfrSERIALIZED_TYPE_MANUFACTURER, make);
-+        if(result != Core::ERROR_NONE)
++        if(status != Core::ERROR_NONE)
 +        {
 +            fprintf(stderr, "bvanav-dbg: DeviceInfo.make DeviceInfoImplementation::Make executing GetFileRegex\n");
 +            status = GetFileRegex(_T("/etc/device.properties"),std::regex("^MFG_NAME(?:\\s*)=(?:\\s*)(?:\"{0,1})([^\"\\n]+)(?:\"{0,1})(?:\\s*)$"), make);
