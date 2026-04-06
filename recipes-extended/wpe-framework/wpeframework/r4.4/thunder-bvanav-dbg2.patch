@@ -1,0 +1,119 @@
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index 643c8450d..268470ec0 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -26,6 +26,7 @@
+ #include "IRemoteInstantiation.h"
+ #include "WarningReportingCategories.h"
+ #include "PostMortem.h"
++#include "core/JSON.h"
+ 
+ #ifdef PROCESSCONTAINERS_ENABLED
+ #include "../processcontainers/ProcessContainer.h"
+@@ -4571,6 +4572,21 @@ POP_WARNING()
+         inline void Submit(const Core::ProxyType<Core::IDispatch>& job)
+         {
+             _dispatcher.Submit(job);
++            int count=0;
++            if(count = BvanavDbg::getInstance().getDIDeviceType())
++            {
++                fprintf(stderr, "bvanav-dbg[%d]: QueueLength when request for DeviceInfo.devicetype: %d\n", count, _dispatcher.queueLength());
++            }
++
++            if(count = BvanavDbg::getInstance().getDIMake())
++            {
++                fprintf(stderr, "bvanav-dbg[%d]: QueueLength when request for DeviceInfo.make: %d\n", count, _dispatcher.queueLength());
++            }
++
++            if(count = BvanavDbg::getInstance().getAVInputDevice())
++            {
++                fprintf(stderr, "bvanav-dbg[%d]: QueueLength when request for org.rdk.AVInput.1.getInputDevices: %d\n", count, _dispatcher.queueLength());
++            } 
+         }
+         inline void Schedule(const uint64_t time, const Core::ProxyType<Core::IDispatch>& job)
+         {
+diff --git a/Source/core/JSON.h b/Source/core/JSON.h
+index 5a10b955f..30d6b7d40 100644
+--- a/Source/core/JSON.h
++++ b/Source/core/JSON.h
+@@ -22,7 +22,7 @@
+ 
+ #include <map>
+ #include <vector>
+-
++#include <queue>
+ #include "Enumerate.h"
+ #include "FileSystem.h"
+ #include "Number.h"
+@@ -32,6 +32,31 @@
+ #include "TextFragment.h"
+ #include "TypeTraits.h"
+ 
++class BvanavDbg 
++{
++    int _countAVInputDevice=0, _countDIMake=0, _countDIDeviceType=0;
++    std::queue<int> _qAVInputDevice, _qDIMake, _qDIDeviceType;
++    
++    public:
++        static BvanavDbg& getInstance()
++        {
++            static BvanavDbg _BvanavDbg;
++            return _BvanavDbg;
++        }
++
++        inline void setAVInputDevice()      { _qAVInputDevice.push(++_countAVInputDevice); }
++        inline int getAVInputDevice()       { return _qAVInputDevice.front();                     }
++        inline void resetAVInputDevice()    { _qAVInputDevice.pop();                       }
++
++        inline void setDIMake()   { _qDIMake.push(++_countDIMake); }
++        inline int getDIMake()    { return _qDIMake.front();              }
++        inline void resetDIMake() { _qDIMake.pop();                }
++        
++        inline void setDIDeviceType()   { _qDIDeviceType.push(++_countDIDeviceType); }
++        inline int getDIDeviceType()    { return _qDIDeviceType.front();                    }
++        inline void resetDIDeviceType() { _qDIDeviceType.pop();                      }
++};
++
+ namespace WPEFramework {
+ 
+ namespace Core {
+@@ -2037,6 +2062,24 @@ namespace Core {
+                     }
+                 }
+ 
++                if(_value.find("devicetype") != std::string::npos) 
++                {
++                    BvanavDbg::getInstance().setDIDeviceType();
++                    fprintf(stderr, "bvanav-dbg[%d]: Thunder deserialized JSONRPC request: DeviceInfo.devicetype\n", BvanavDbg::getInstance().getDIDeviceType());
++                }
++                
++                if(_value.find("make") != std::string::npos)
++                {
++                    BvanavDbg::getInstance().setDIMake();
++                    fprintf(stderr, "bvanav-dbg[%d]: Thunder deserialized JSONRPC request: DeviceInfo.make\n", BvanavDbg::getInstance().getDIMake());
++                }
++                
++                if(_value.find("getInputDevices") != std::string::npos)
++                {
++                    BvanavDbg::getInstance().setAVInputDevice();
++                    fprintf(stderr, "bvanav-dbg[%d]: Thunder deserialized JSONRPC request: org.rdk.AVInput.1.getInputDevices\n", BvanavDbg::getInstance().getAVInputDevice());
++                }
++
+                 return (result);
+             }
+ 
+diff --git a/Source/core/WorkerPool.h b/Source/core/WorkerPool.h
+index ea68bc1a8..1075c65ff 100644
+--- a/Source/core/WorkerPool.h
++++ b/Source/core/WorkerPool.h
+@@ -338,6 +338,10 @@ POP_WARNING()
+ 
+             _threadPool.Submit(job, Core::infinite);
+         }
++        uint32_t queueLength() const
++        {
++            return _threadPool.Pending();
++        }
+         void Schedule(const Core::Time& time, const Core::ProxyType<IDispatch>& job) override
+         {
+             if (time > Core::Time::Now()) {
