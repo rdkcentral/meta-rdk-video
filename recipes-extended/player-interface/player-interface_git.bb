@@ -25,6 +25,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/middleware-player-interface;${CMF_GITHUB_SRC_URI_S
 S = "${WORKDIR}/git"
 
 require player-interface-common.inc
+require player-interface-artifacts-version.inc
 
 PACKAGECONFIG:append = " playready widevine clearkey"
 
