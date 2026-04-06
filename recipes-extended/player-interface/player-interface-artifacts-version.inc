@@ -73,4 +73,4 @@ def deduce_vipa_widget_version_prefix(d):
 # DATETIME is defined elsewhere
 WIDGET_VERSION_PREFIX = "${@deduce_vipa_widget_version_prefix(d)}"
 PLAYERINTERFACE_ARTIFACTS_VERSION ?= "${OS_TYPE}-${PLATFORM_PATH}-${@deduce_playerinterface_artifacts_version_code(d)}"
-PLAYERINTERFACE_ARTIFACTS_VERSION_ARTIFACTS_VERSION[vardepsexclude] += "DATETIME"
+PLAYERINTERFACE_ARTIFACTS_VERSION[vardepsexclude] += "DATETIME"
