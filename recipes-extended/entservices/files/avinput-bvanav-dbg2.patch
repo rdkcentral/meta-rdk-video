@@ -1,5 +1,5 @@
 diff --git a/AVInput/AVInput.cpp b/AVInput/AVInput.cpp
-index c758670..12544aa 100644
+index c758670..20626d3 100644
 --- a/AVInput/AVInput.cpp
 +++ b/AVInput/AVInput.cpp
 @@ -543,12 +543,14 @@ bool AVInput::setVideoRectangle(int x, int y, int width, int height, int type)
@@ -18,7 +18,7 @@ index c758670..12544aa 100644
          }catch (...) {
              LOGWARN("Invalid Arguments");
              returnResponse(false);
-@@ -558,11 +560,13 @@ uint32_t AVInput::getInputDevicesWrapper(const JsonObject& parameters, JsonObjec
+@@ -558,11 +560,14 @@ uint32_t AVInput::getInputDevicesWrapper(const JsonObject& parameters, JsonObjec
      else {
          JsonArray listHdmi = getInputDevices(HDMI);
          JsonArray listComposite = getInputDevices(COMPOSITE);
@@ -29,10 +29,11 @@ index c758670..12544aa 100644
          response["devices"] = listHdmi;
      }
 +    fprintf(stderr, "bvanav-dbg[%d]: JSONRPC request org.rdk.AVInput.1.getInputDevices returned from plugin's getInputDevicesWrapper\n", count);
++    BvanavDbg::getInstance().resetAVInputDevice();
      returnResponse(true);
  }
  
-@@ -612,6 +616,8 @@ uint32_t AVInput::readEDIDWrapper(const JsonObject& parameters, JsonObject& resp
+@@ -612,6 +617,8 @@ uint32_t AVInput::readEDIDWrapper(const JsonObject& parameters, JsonObject& resp
  
  JsonArray AVInput::getInputDevices(int iType)
  {
@@ -41,7 +42,7 @@ index c758670..12544aa 100644
      JsonArray list;
      try
      {
-@@ -622,6 +628,7 @@ JsonArray AVInput::getInputDevices(int iType)
+@@ -622,6 +629,7 @@ JsonArray AVInput::getInputDevices(int iType)
          else if (iType == COMPOSITE) {
              num = device::CompositeInput::getInstance().getNumberOfInputs();
          }
@@ -49,7 +50,7 @@ index c758670..12544aa 100644
          if (num > 0) {
              int i = 0;
              for (i = 0; i < num; i++) {
-@@ -646,6 +653,7 @@ JsonArray AVInput::getInputDevices(int iType)
+@@ -646,6 +654,7 @@ JsonArray AVInput::getInputDevices(int iType)
      catch (const std::exception &e) {
          LOGWARN("AVInputService::getInputDevices Failed");
      }
