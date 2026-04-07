@@ -1,0 +1,60 @@
+diff --git a/AVInput/AVInput.cpp b/AVInput/AVInput.cpp
+index c758670..844e49e 100644
+--- a/AVInput/AVInput.cpp
++++ b/AVInput/AVInput.cpp
+@@ -543,12 +543,14 @@ bool AVInput::setVideoRectangle(int x, int y, int width, int height, int type)
+ uint32_t AVInput::getInputDevicesWrapper(const JsonObject& parameters, JsonObject& response)
+ {
+     LOGINFOMETHOD();
+-
++    int count = BvanavDbg::getInstance().getCountAVInputDevice();
++    fprintf(stderr, "bvanav-dbg[%d]: JSONRPC request org.rdk.AVInput.1.getInputDevices entered plugin's getInputDevicesWrapper\n", count);
+     if (parameters.HasLabel("typeOfInput")) {
+         string sType = parameters["typeOfInput"].String();
+         int iType = 0;
+         try {
+             iType = getTypeOfInput (sType);
++            fprintf(stderr, "bvanav-dbg[%d]: getInputDevicesWrapper - after 1st getTypeOfInput\n", count);
+         }catch (...) {
+             LOGWARN("Invalid Arguments");
+             returnResponse(false);
+@@ -558,11 +560,13 @@ uint32_t AVInput::getInputDevicesWrapper(const JsonObject& parameters, JsonObjec
+     else {
+         JsonArray listHdmi = getInputDevices(HDMI);
+         JsonArray listComposite = getInputDevices(COMPOSITE);
++        fprintf(stderr, "bvanav-dbg[%d]: getInputDevicesWrapper - after 2nd getInputDevices\n", count);
+         for (int i = 0; i < listComposite.Length(); i++) {
+             listHdmi.Add(listComposite.Get(i));
+         }
+         response["devices"] = listHdmi;
+     }
++    fprintf(stderr, "bvanav-dbg[%d]: JSONRPC request org.rdk.AVInput.1.getInputDevices returned from plugin's getInputDevicesWrapper\n", count);
+     returnResponse(true);
+ }
+ 
+@@ -612,6 +616,9 @@ uint32_t AVInput::readEDIDWrapper(const JsonObject& parameters, JsonObject& resp
+ 
+ JsonArray AVInput::getInputDevices(int iType)
+ {
++    int count = BvanavDbg::getInstance().getCountAVInputDevice();
++    BvanavDbg::getInstance().popAVInputDevice();
++    fprintf(stderr, "bvanav-dbg[%d]: org.rdk.AVInput.1.getInputDevices entered AVInput::getInputDevices iType: %d\n", count, iType);
+     JsonArray list;
+     try
+     {
+@@ -622,6 +629,7 @@ JsonArray AVInput::getInputDevices(int iType)
+         else if (iType == COMPOSITE) {
+             num = device::CompositeInput::getInstance().getNumberOfInputs();
+         }
++        fprintf(stderr, "bvanav-dbg[%d]: AVInput::getInputDevices iType: %d, after device::HdmiInput::getInstance().getNumberOfInputs\n", count, iType);
+         if (num > 0) {
+             int i = 0;
+             for (i = 0; i < num; i++) {
+@@ -646,6 +654,7 @@ JsonArray AVInput::getInputDevices(int iType)
+     catch (const std::exception &e) {
+         LOGWARN("AVInputService::getInputDevices Failed");
+     }
++    fprintf(stderr, "bvanav-dbg[%d]: org.rdk.AVInput.1.getInputDevices returned from AVInput::getInputDevices\n", count);
+     return list;
+ }
+ 
