@@ -6,6 +6,9 @@ detects the DOM events and provides the ARIA information to TTS"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
+PV = "1.1.1"
+PR = "r1"
+
 SRCREV = "a5fd9df4078194df81236b8b1f7c5b79cb3cdc03"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkat;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
