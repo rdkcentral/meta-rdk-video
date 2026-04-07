@@ -9,6 +9,8 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit cmake pkgconfig systemd
 
+# Config exposed variable is FACTORY_APPS_PATH, map it as FACTORY_APP_PATH
+
 EXTRA_OECMAKE += "-DSCENESET_DEFAULT_APPNAME='${SCENESET_DEFAULT_APPNAME}' \
                  -DFACTORY_APP_PATH='${FACTORY_APPS_PATH}' \
                  -DAPP_PREINSTALL_DIRECTORY='${APP_PREINSTALL_DIRECTORY}'"
