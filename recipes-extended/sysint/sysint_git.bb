@@ -257,7 +257,7 @@ do_install() {
         # Remove conflicting files when legacy_entos_support distro feature is enabled
         if ${@bb.utils.contains('DISTRO_FEATURES', 'legacy_entos_support', 'true', 'false', d)}; then
             rm -f ${D}${sysconfdir}/common.properties
-            rm -f ${D}${base_libdir}/rdk/imageFlasher.sh  
+            rm -f ${D}${base_libdir}/rdk/imageFlasher.sh
             rm -f ${D}${base_libdir}/rdk/init-zram.sh
         fi
 }
