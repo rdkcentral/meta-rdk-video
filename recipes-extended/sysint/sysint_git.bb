@@ -322,3 +322,5 @@ FILES:${PN} += " /HrvInitScripts/*"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/NM_Dispatcher.sh"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d/NM_preDown.sh"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dnsmasq.d/dnsmasq-dobby.conf"
+# Conditionally remove files from package when legacy_entos_support is enabled
+FILES:${PN}:remove = "${@bb.utils.contains('DISTRO_FEATURES', 'legacy_entos_support', '${sysconfdir}/common.properties lib/rdk/imageFlasher.sh lib/rdk/init-zram.sh', '', d)}"
