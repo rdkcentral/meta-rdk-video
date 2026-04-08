@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=
 S = "${WORKDIR}/git"
 
 inherit systemd syslog-ng-config-gen logrotate_config
-SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup update-device-details applications vitalprocess-info iptables mount_log reboot-reason messages zram"
+SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup update-device-details applications vitalprocess-info iptables mount_log messages zram"
 SYSLOG-NG_FILTER:append = " ConnectionStats systemd_timesyncd"
 SYSLOG-NG_SERVICE_ConnectionStats = "network-connection-stats.service"
 SYSLOG-NG_DESTINATION_ConnectionStats = "ConnectionStats.txt"
@@ -45,9 +45,6 @@ SYSLOG-NG_LOGRATE_vitalprocess-info = "high"
 SYSLOG-NG_SERVICE_mount_log:append:rdkstb = " disk-check.service "
 SYSLOG-NG_DESTINATION_mount_log = "mount_log.txt"
 SYSLOG-NG_LOGRATE_mount_log = "low"
-SYSLOG-NG_SERVICE_reboot-reason = "reboot-reason-logger.service update-reboot-info.service"
-SYSLOG-NG_DESTINATION_reboot-reason = "rebootreason.log"
-SYSLOG-NG_LOGRATE_reboot-reason = "low"
 SYSLOG-NG_FILTER += "messages"
 SYSLOG-NG_DESTINATION_messages = "messages.txt"
 SYSLOG-NG_LOGRATE_messages = "low"
@@ -103,11 +100,8 @@ do_install() {
         install -m 0644 ${S}/systemd_units/minidump-secure-upload.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/disk-threshold-check.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/disk-threshold-check.timer ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-reason-logger.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/iptables.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/update-device-details.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/update-reboot-info.path ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/update-reboot-info.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
@@ -115,11 +109,8 @@ do_install() {
         install -m 0644 ${S}/systemd_units/minidump-secure-upload.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/disk-threshold-check.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/disk-threshold-check.timer ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/reboot-reason-logger.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/iptables.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/update-device-details.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/update-reboot-info.path ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/update-reboot-info.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
@@ -151,7 +142,7 @@ do_install() {
 
         if [ "${ENABLE_SYSLOGNG}" = "true" ]; then
            echo "SYSLOG_NG_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
-           install -D -m 0644 ${S}/systemd_units/after_syslog-ng.conf ${D}${systemd_unitdir}/system/reboot-reason-logger.service.d/reboot-reason-logger.conf
+           install -D -m 0644 ${S}/systemd_units/after_syslog-ng.conf
         fi
 
         if [ "${MMC_TYPE}" = "EMMC" ]; then
@@ -183,7 +174,6 @@ do_install() {
 	    # to be installed by sysint.
 	    #
 	    ln -sf /lib/rdk/rebootSTB.sh ${D}/
-	    ln -sf /lib/rdk/rebootNow.sh ${D}/
 	    ln -sf /lib/rdk/timestamp ${D}${base_bindir}/timestamp
 
         # Samhain can only invoke external utilities present in trusted FHS path
@@ -280,12 +270,9 @@ SYSTEMD_SERVICE:${PN} += "minidump-upload.path"
 SYSTEMD_SERVICE:${PN} += "minidump-secure-upload.path"
 SYSTEMD_SERVICE:${PN} += "dropbear.service"
 SYSTEMD_SERVICE:${PN} += "disk-threshold-check.timer"
-SYSTEMD_SERVICE:${PN} += "reboot-reason-logger.service"
 SYSTEMD_SERVICE:${PN} += "iptables.service"
 SYSTEMD_SERVICE:${PN} += "update-device-details.service"
 SYSTEMD_SERVICE:${PN} += "oops-dump.service"
-SYSTEMD_SERVICE:${PN} += "update-reboot-info.path"
-SYSTEMD_SERVICE:${PN} += "update-reboot-info.service"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.path"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.service"
 SYSTEMD_SERVICE:${PN} += "gstreamer-cleanup.service"
@@ -308,7 +295,6 @@ FILES:${PN} += "${systemd_unitdir}/system/*"
 FILES:${PN} += "${base_libdir}/rdk/*"
 FILES:${PN} += "${sysconfdir}/rdk/*"
 FILES:${PN} += "/rebootSTB.sh"
-FILES:${PN} += "/rebootNow.sh"
 FILES:${PN} += "${sysconfdir}/*"
 FILES:${PN} += "${base_bindir}/timestamp"
 FILES:${PN} += "${sbindir}/*"
