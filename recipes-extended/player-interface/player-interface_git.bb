@@ -6,6 +6,8 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV = "0.1.0"
 PR = "r0"
 
+# Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
+PLAYERINTERFACE_BRANCH ?= "develop"
 SRCREV = "269f2b1a38492c26f2f7cfb41d194029a8ea88d2"
 
 inherit pkgconfig
@@ -89,9 +91,8 @@ do_create_artifacts() {
     echo "OS_TYPE=${OS_TYPE}" >> ${ARTIFACT_INFO_FILE}
     echo "PLATFORM=${PLATFORM_PATH}" >> ${ARTIFACT_INFO_FILE}
     echo "RDK_BRANCH=${PROJECT_BRANCH}" >> ${ARTIFACT_INFO_FILE}
-    echo "WIDGET_VERSION_PREFIX=${WIDGET_VERSION_PREFIX}" >> ${ARTIFACT_INFO_FILE}
     echo "YOCTO_VERSION=${@get_yocto_code(d)}" >> ${ARTIFACT_INFO_FILE}
-    echo "PLAYERINTERFACE_BRANCH=${PLAYERINTERFACE_RELEASE_TAG_NAME}" >> ${ARTIFACT_INFO_FILE}
+    echo "PLAYERINTERFACE_BRANCH=${PLAYERINTERFACE_BRANCH}" >> ${ARTIFACT_INFO_FILE}
 
     # Get the actual Git commit hash instead of AUTOREV
     if [ -d "${S}/.git" ]; then

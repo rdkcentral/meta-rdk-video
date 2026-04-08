@@ -43,34 +43,6 @@ def deduce_playerinterface_artifacts_version_code(d):
         return '{}.{}'.format(X, '${DATETIME}')
     return try_sky_release() or try_sprint_or_stable()
 
-# Try to deduce the VIPA widget version prefix
-def deduce_vipa_widget_version_prefix(d):
-    """
-    For non-release builds -
-      X_OS_Y_Z (X = branch name, OS = V or E, Y = platform, Z = JS version )
-      develop_E_Y_Z for develop RDKE ( Y = platform, Z = JS version )
-      2.16.0_E_Y_Z for support/2.16.0 RDKE ( Y = platform, Z = JS version )
-    For release builds -
-      X_OS_Y_Z (X = RELEASE.SPIN, OS = V or E, Y = platform, Z = JS version )
-      038.012.00.8.2.0.13.1_E_Y_Z for 8.2 RDKE ( Y = platform, Z = JS version )
-    JS version will be added when widget is created
-    """
-    def generate_for_release():
-        X = d.getVar("RELEASE_VERSION_STRING", True)
-        if not X:
-            return None
-        Y = d.getVar('RELEASE_SPIN') or '0'
-        PLATFORM = d.getVar('PLATFORM_PATH')
-        return '{}.{}_E_{}'.format(X, Y, PLATFORM)
-
-    def generate_for_sprint_or_stable():
-        X = extract_branch_name(d)
-        PLATFORM = d.getVar('PLATFORM_PATH')
-        return '{}_E_{}'.format(X, PLATFORM)
-
-    return generate_for_release() or generate_for_sprint_or_stable()
-
 # DATETIME is defined elsewhere
-WIDGET_VERSION_PREFIX = "${@deduce_vipa_widget_version_prefix(d)}"
 PLAYERINTERFACE_ARTIFACTS_VERSION ?= "${OS_TYPE}-${PLATFORM_PATH}-${@deduce_playerinterface_artifacts_version_code(d)}"
 PLAYERINTERFACE_ARTIFACTS_VERSION[vardepsexclude] += "DATETIME"
