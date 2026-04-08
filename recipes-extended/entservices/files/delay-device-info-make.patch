@@ -1,0 +1,82 @@
+diff --git a/DeviceInfo/Implementation/DeviceInfo.cpp b/DeviceInfo/Implementation/DeviceInfo.cpp
+index 2ddb61a..f15077d 100644
+--- a/DeviceInfo/Implementation/DeviceInfo.cpp
++++ b/DeviceInfo/Implementation/DeviceInfo.cpp
+@@ -90,9 +90,26 @@ namespace Plugin {
+ 
+     SERVICE_REGISTRATION(DeviceInfoImplementation, 1, 0);
+ 
+-    DeviceInfoImplementation::DeviceInfoImplementation()
++    DeviceInfoImplementation::DeviceInfoImplementation() : bvanavDbgFile("/opt/delay-make-api.txt", std::ios::in), bvanavDbgDelay(0)
+     {
+         Utils::IARM::init();
++        if(bvanavDbgFile.is_open())
++        {
++            std::cout << "bvanav-dbg: File /opt/delay-make-api.txt Present !!!" << std::endl; 
++            if(bvanavDbgFile >> bvanavDbgDelay)
++            {
++                std::cout << "bvanav-dbg: Delay specified in /opt/delay-make-api.txt is " << bvanavDbgDelay << std::endl; 
++            }
++            else
++            {
++                std::cout << "bvanav-dbg: No delay specified in /opt/delay-make-api.txt" << std::endl; 
++            }
++        }
++        else
++        {
++            std::cout << "bvanav-dbg: File /opt/delay-make-api.txt Absent !!!" << std::endl; 
++        }
++
+     }
+ 
+     Core::hresult DeviceInfoImplementation::SerialNumber(string& serialNumber) const
+@@ -118,10 +135,21 @@ namespace Plugin {
+ 
+     Core::hresult DeviceInfoImplementation::Make(string& make) const
+     {
+-
+-        return ( GetMFRData(mfrSERIALIZED_TYPE_MANUFACTURER, make) == Core::ERROR_NONE)
+-            ? Core::ERROR_NONE
+-            : GetFileRegex(_T("/etc/device.properties"),std::regex("^MFG_NAME(?:\\s*)=(?:\\s*)(?:\"{0,1})([^\"\\n]+)(?:\"{0,1})(?:\\s*)$"), make);
++        Core::hresult status;
++        if(bvanavDbgDelay > 0)
++        {
++            std::cout << "bvanav-dbg: DeviceInfoImplementation::Make Enter delayed by " << bvanavDbgDelay << std::endl;
++            std::this_thread::sleep_for(std::chrono::seconds(bvanavDbgDelay));
++        }
++        std::cout << "bvanav-dbg: DeviceInfoImplementation::Make Enter GetMFRData" << std::endl;
++        status = GetMFRData(mfrSERIALIZED_TYPE_MANUFACTURER, make);
++        if(status != Core::ERROR_NONE)
++        {
++            std::cout << "bvanav-dbg: DeviceInfoImplementation::Make GetFileRegex" << std::endl;
++            status = GetFileRegex(_T("/etc/device.properties"),std::regex("^MFG_NAME(?:\\s*)=(?:\\s*)(?:\"{0,1})([^\"\\n]+)(?:\"{0,1})(?:\\s*)$"), make);
++        }
++        std::cout << "bvanav-dbg: DeviceInfoImplementation::Make Return" << std::endl;
++        return status;
+     }
+ 
+     Core::hresult DeviceInfoImplementation::Model(string& model) const
+diff --git a/DeviceInfo/Implementation/DeviceInfo.h b/DeviceInfo/Implementation/DeviceInfo.h
+index 7b2d8a2..5b1e541 100644
+--- a/DeviceInfo/Implementation/DeviceInfo.h
++++ b/DeviceInfo/Implementation/DeviceInfo.h
+@@ -25,7 +25,8 @@
+ #else
+ #include <interfaces/IDeviceInfo2.h>
+ #endif /* USE_THUNDER_R4 */
+-
++#include <fstream>
++#include <chrono>
+ namespace WPEFramework {
+ namespace Plugin {
+     class DeviceInfoImplementation : public Exchange::IDeviceInfo {
+@@ -52,6 +53,9 @@ namespace Plugin {
+         Core::hresult Brand(string& brand) const override;
+         Core::hresult ReleaseVersion(string& releaseVersion ) const override;
+         Core::hresult ChipSet(string& chipSet ) const override;
++
++        std::fstream bvanavDbgFile;
++        int bvanavDbgDelay;
+     };
+ }
+ }
