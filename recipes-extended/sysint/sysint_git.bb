@@ -140,11 +140,6 @@ do_install() {
            echo "BIND_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
         fi
 
-        if [ "${ENABLE_SYSLOGNG}" = "true" ]; then
-           echo "SYSLOG_NG_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
-           install -D -m 0644 ${S}/systemd_units/after_syslog-ng.conf
-        fi
-
         if [ "${MMC_TYPE}" = "EMMC" ]; then
            echo "SD_CARD_TYPE=EMMC" >> ${D}${sysconfdir}/device-middleware.properties
         fi
