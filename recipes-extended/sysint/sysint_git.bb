@@ -254,6 +254,13 @@ do_install() {
         rm ${D}${base_libdir}/rdk/NM_preDown.sh
         install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
         install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
+        
+        # Remove conflicting files when legacy_entos_support distro feature is enabled
+        if ${@bb.utils.contains('DISTRO_FEATURES', 'legacy_entos_support', 'true', 'false', d)}; then
+            rm -f ${D}${sysconfdir}/common.properties
+            rm -f ${D}${base_libdir}/rdk/imageFlasher.sh  
+            rm -f ${D}${base_libdir}/rdk/init-zram.sh
+        fi
 }
 
 do_install:append:rdkstb() {
