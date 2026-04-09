@@ -7,7 +7,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r35"
+PR  = "r36"
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
 DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
@@ -24,6 +24,7 @@ SRC_URI += "file://2.46/1629.patch"
 
 SRC_URI += "file://2.46/1641_AC4_USAC.patch"
 SRC_URI += "file://2.46/1643_EME_supportsType.patch"
+SRC_URI += "file://2.46/0001-Revert-Media-Avoid-play-call-during-seek-flow-before.patch"
 
 # Drop after westeros change is approved and released
 SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
