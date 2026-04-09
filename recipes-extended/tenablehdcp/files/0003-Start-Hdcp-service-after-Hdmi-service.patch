@@ -1,8 +1,8 @@
 ##########################################
-Date: Tus, 15 Feb 2022 09:16:03 +0100
-From: Ia0d327e697cfc205a5b07feb7a510ff075da29a3 Tus, 15 Feb 2022
-09:16:03 +0100
+From: Christine Tai <chrsitinetai@realtek.com>
+Date: Tue, 15 Feb 2022 09:16:03 +0100
 Subject: [PATCH] Start Hdcp service after Hdmi service
+Change-Id: Ia0d327e697cfc205a5b07feb7a510ff075da29a3
 Source: Sky
 Upstream-Status: Pending
 Signed-off-by: Christine Tai <chrsitinetai@realtek.com>
