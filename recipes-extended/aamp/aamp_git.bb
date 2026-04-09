@@ -7,7 +7,7 @@ PV ?= "3.3.0"
 PR ?= "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "165e328bee22daf6caf6b7a4f62b90735a97e35e"
+SRCREV_aamp ?= "d453e9926fce09f713a2bc758e53aea339e1fb93"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "feature/DELIA-70176_1"
