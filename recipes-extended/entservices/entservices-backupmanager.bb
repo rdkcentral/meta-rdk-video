@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Backup Manager plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.0.1"
+PV = "1.0.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -10,8 +10,8 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-backupmanager;${CMF_GITHUB_SRC_URI_SUFFIX}"
           
-# Release version - 1.0.1
-SRCREV = "9b53ae682e0a19c655daa9d690e8902ed948b38b"
+# Release version - 1.0.2
+SRCREV = "2163d5257683d018ad273f766092caa21c03df83"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
