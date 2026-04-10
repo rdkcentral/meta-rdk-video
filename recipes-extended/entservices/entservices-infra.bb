@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "${PV}"
+SRCREV = "4fb45321a75e6251c9eb499f1d7d62f7783cfed3"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
@@ -58,7 +58,6 @@ PACKAGECONFIG ?= " resourcemanager \
 "
 PACKAGECONFIG:append = " erm"
 PACKAGECONFIG:append = " rustadapter "
-
 inherit features_check
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
 
@@ -88,6 +87,7 @@ PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON"
 PACKAGECONFIG[texttospeechmonitor]  = "-DPLUGIN_MONITOR_TEXTTOSPEECH=ON"
 PACKAGECONFIG[preinstallmanager]    = "-DPLUGIN_PREINSTALL_MANAGER=ON,-DPLUGIN_PREINSTALL_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[downloadmanager]      = "-DPLUGIN_DOWNLOADMANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_DOWNLOADMANAGER=OFF -DLIB_PACKAGE=OFF,entservices-apis curl virtual/libpackage,entservices-apis curl virtual/libpackage"
+PACKAGECONFIG[gstreamerservice]     = "-DPLUGIN_GSTREAMERSERVICE=ON,-DPLUGIN_GSTREAMERSERVICE=OFF,gstreamer1.0 gstreamer1.0-plugins-base entservices-apis,gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good entservices-apis"
 # ----------------------------------------------------------------------------
 
 
