@@ -2,10 +2,10 @@ SUMMARY = "ENTServices AppGateway plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "1.0.2.4"
+PV = "1.1.0.0.rc1"
 PR = "r0"
-# Release version - 1.0.2.4
-SRCREV = "8f6ef0b30640634dc6f493c2ee535bc585825b5d"
+# Release version - 1.1.0.0.rc1
+SRCREV = "6e250ce54f79dd8c280ce16fc32d537f52680631"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -28,6 +28,12 @@ PACKAGECONFIG[appgateway]       = "-DPLUGIN_APPGATEWAY=ON,-DPLUGIN_APPGATEWAY=OF
 PACKAGECONFIG[appnotifications] = "-DPLUGIN_APPNOTIFICATIONS=ON,-DPLUGIN_APPNOTIFICATIONS=OFF"
 PACKAGECONFIG[appgatewaycommon] = "-DPLUGIN_APPGATEWAYCOMMON=ON,-DPLUGIN_APPGATEWAYCOMMON=OFF,networkmanager-plugin"
 PACKAGECONFIG[telemetrysupport] = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
+
+do_install:append() {
+    install -d ${D}${sysconfdir}
+    echo "APP_GATEWAY_PV = \"${PV}\""     >  ${D}${sysconfdir}/appgatewayversion.txt
+    echo "APP_GATEWAY_SHA = \"${SRCREV}\"" >> ${D}${sysconfdir}/appgatewayversion.txt
+}
 
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so"
 
