@@ -9,7 +9,7 @@ diff --git a/conf/dsmgr.service b/conf/dsmgr.service
 index d89a589..8b5344e 100644
 --- a/conf/dsmgr.service
 +++ b/conf/dsmgr.service
-@@ -23,6 +23,7 @@ OnFailure=reboot-notifier@%i.service
+@@ -23,6 +23,7 @@
  
  [Service]
  Type=notify

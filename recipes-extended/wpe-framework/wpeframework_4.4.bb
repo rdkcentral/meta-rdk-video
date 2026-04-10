@@ -5,15 +5,16 @@ HOMEPAGE = "https://github.com/rdkcentral/Thunder"
 
 LIC_FILES_CHKSUM = "file://LICENSE;md5=85bcfede74b96d9a58c6ea5d4b607e58"
 
-DEPENDS = "zlib wpeframework-tools-native rfc thunder-hang-recovery"
+DEPENDS = "zlib wpeframework-tools-native rfc"
 DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
 
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r39"
+PR = "r41"
 PV = "4.4.3"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
 
@@ -21,7 +22,6 @@ SRCREV_thunder = "19100433e5517c743738bb2a9ed8ce2f79c10eaf"
 
 SRC_URI += "file://wpeframework-init \
            file://wpeframework.service.in \
-           file://network_manager_migration.conf \
            file://r4.4/Library_version_matched_with_release_tag.patch \
            file://r4.4/Remove_versioning_for_executables.patch \
            file://r4.4/wpeframework_version.patch \
@@ -58,12 +58,22 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/PR-1785-Reduce_scope_of_adminlock.patch \
             file://r4.4/PR-1791-Thunder-hung-SocketPort-close-Delete-channel.patch \
             file://r4.4/PR-1797-SocketPort-Closed.patch \
-            file://r4.4/PR1832-Thunder-ABBA-Deadlock-Fix.patch \
+            file://r4.4/PR-1832-ABBA-Deadlock-Fix-RDKTV-35315.patch \
             file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
             file://r4.4/0001-SmarkLink-Crash-Fix.patch \
             file://r4.4/Jsonrpc_dynamic_error_handling.patch \
             file://r4.4/PR-1923-RDKEMW-6261-to-improve-system-shutdown-time-upon-R4.4.3.patch \
             file://r4.4/rdkemw-124-Link-Breakpad-wrapper.patch \
+            file://r4.4/RDKEMW-8889-Avoid-LoadMeta-On-Boot.patch \
+            file://r4.4/0001-To-handle-truncated-UTF-code-on-parsing-empty-null-t.patch \
+            file://r4.4/0002-Print-Log-Upon-Time-ComRPC-Timeout.patch \
+            file://r4.4/RDKEMW-10951_WPEFramework_Config_Override.patch \
+            file://r4.4/PR-2057-RDKEMW-14228_apply_sysinfo_mem_unit.patch \
+            file://r4.4/WorkerPoolRevoke_fix.patch \
+            file://r4.4/WaitedRelease.patch \
+            file://r4.4/StartExtensions.patch \
+            file://r4.4/EnablePISLogging.patch \
+            file://r4.4/0001-LIMIT-Limit-handing-out-interfaces-of-Plugins-only-i.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -161,9 +171,6 @@ EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
-
-    install -d ${D}${systemd_unitdir}/system/wpeframework.service.d
-    install -m 0644 ${WORKDIR}/network_manager_migration.conf ${D}${systemd_unitdir}/system/wpeframework.service.d
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
@@ -189,7 +196,7 @@ INSANE_SKIP:${PN}-dbg += "dev-so"
 # ----------------------------------------------------------------------------
 
 RDEPENDS:${PN}_rpi = "userland"
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)} thunder-hang-recovery"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 # Should be able to remove this when generic rdk_svp flag
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'sage_svp', 'gst-svp-ext', '', d)}"
 
@@ -198,7 +205,7 @@ RDEPENDS:${PN}:append:rpi = " ${@bb.utils.contains('DISTRO_FEATURES', 'vc4graphi
 inherit breakpad-logmapper syslog-ng-config-gen logrotate_config
 
 SYSLOG-NG_FILTER = "wpeframework"
-SYSLOG-NG_SERVICE_wpeframework = "wpeframework.service thunderHangRecovery.service"
+SYSLOG-NG_SERVICE_wpeframework = "wpeframework.service"
 SYSLOG-NG_DESTINATION_wpeframework = "wpeframework.log"
 SYSLOG-NG_LOGRATE_wpeframework = "high"
 

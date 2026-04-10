@@ -4,17 +4,22 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
+PV = "1.3.1"
+PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
+SRCREV = "5c32f6e3b478bcc183dbbd05e19faf8fbce75d34"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
 S = "${WORKDIR}/git/systemd/system"
 
 THUNDER_STARTUP_SERVICES:append = "\
+    wpeframework-account.service \
     wpeframework-avinput.service \
+    wpeframework-backupmanager.service \
     wpeframework-bluetooth.service \
     wpeframework-cryptography.service \
     wpeframework-deviceinfo.service \
@@ -24,6 +29,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-hdcpprofile.service \
     wpeframework-maintenancemanager.service \
     wpeframework-monitor.service \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'wpeframework-motiondetection.service', '', d)} \
     wpeframework-network.service \
     wpeframework-ocdm.service \
     wpeframework-persistentstore.service \
@@ -50,9 +56,16 @@ THUNDER_STARTUP_SERVICES:append = "\
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkwindowmanager',' wpeframework-rdkwindowmanager.service', '', d)} \
     wpeframework-lifecyclemanager.service \
     wpeframework-runtimemanager.service \
-    wpeframework-storagemanager.service \
+    wpeframework-appstoragemanager.service \
     wpeframework-packagemanager.service \
     wpeframework-appmanager.service \
+    wpeframework-appgateway.service \
+    wpeframework-appnotifications.service \
+    wpeframework-appgatewaycommon.service \
+    wpeframework-downloadmanager.service \
+    wpeframework-preinstallmanager.service \
+    wpeframework-telemetrymetrics.service \
+    wpeframework-devicediagnostics.service \
     "
 
 CONTROL_FILES = "\
@@ -118,22 +131,18 @@ do_install:append() {
         # Converts: "Description=WPEFramework SystemMode Initialiser"
         # To:      "Description=WPE SystemMode"
         sed -i 's/^Description=WPEFramework \(.*\) Initialiser$/Description=WPE \1/' "$SERVICE_FILE"
+    done
 
-        if grep -q '^ExecStart=.*PluginActivator' "$SERVICE_FILE"; then
-            CALLSIGN=$(sed -n -E 's/.*PluginActivator.*[[:space:]]+([A-Za-z0-9_.-]+)$/\1/p' "$SERVICE_FILE")
+    # Enable support for keymap in rdkwindowmanager service if WINDOWMANAGER_RCU_KEYMAP_FILE is set.
+    if [ -n "${WINDOWMANAGER_RCU_KEYMAP_FILE}" ]; then
+        RDKWM_SERVICE="${D}${systemd_system_unitdir}/wpeframework-rdkwindowmanager.service"
 
-            if [ -n "$CALLSIGN" ]; then
-                if ! grep -q "^ExecStop=/usr/bin/PluginActivator.*$CALLSIGN" "$SERVICE_FILE"; then
-                    if grep -q '^ExecStartPost=' "$SERVICE_FILE"; then
-                        sed -i "/^ExecStartPost=/a ExecStop=/usr/bin/PluginActivator -r 5 -x $CALLSIGN" "$SERVICE_FILE"
-                    else
-                        sed -i "/^ExecStart=.*PluginActivator/a ExecStop=/usr/bin/PluginActivator -r 5 -x $CALLSIGN" "$SERVICE_FILE"
-                    fi
-                fi
+        if [ -f "$RDKWM_SERVICE" ]; then
+            if ! grep -Eq '^[[:space:]]*Environment="?RDK_WINDOW_MANAGER_KEYMAP_FILE=' "$RDKWM_SERVICE"; then
+                sed -i "/^\[Service\]/a Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"" "$RDKWM_SERVICE"
             fi
         fi
-
-    done
+    fi
 }
 
 FILES:${PN} += "${systemd_system_unitdir} ${sysconfdir}/systemd/system"
