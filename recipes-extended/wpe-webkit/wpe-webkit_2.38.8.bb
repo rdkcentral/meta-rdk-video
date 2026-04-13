@@ -3,7 +3,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r16"
+PR  = "r17"
 
 # Temporary build fix
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
@@ -38,6 +38,7 @@ SRC_URI += "file://2.38.8/1614_Only-extend-first-sample-when-it-is-a-sync-sample
 SRC_URI += "file://2.38.8/1605_Enable-new-dtags_flags-in-wpe-webkit.patch"
 SRC_URI += "file://2.38.8/1611_Load-libWPEWebInspectorResources-from-widget.patch"
 SRC_URI += "file://2.38.8/1626_Video_decoding_limit.patch"
+SRC_URI += "file://2.38.8/1470_Hide-KHR-khrplatform.h-header-under-ANGLE-directory.patch"
 
 # Drop after libwpe upgrade
 SRC_URI += "file://2.38.8/RDK-54304-Fix-build-with-an-older-libpwe.patch"
