@@ -27,7 +27,7 @@ do_install() {
     install -d ${D}/${libdir}
     install -d ${D}/usr/include
     install -m 0755 ${S}/librdkgstreamerutils.so ${D}/${libdir}
-    install -m 0755 ${S}/librdkgstreamerclientutils.so  ${D}/${libdir}
+    install -m 0755 ${S}/librdkgstreamerrltclientutils.so  ${D}/${libdir}
     install -m 0644 ${S}/rdk_gstreamer_utils.h ${D}/usr/include
 }
 
