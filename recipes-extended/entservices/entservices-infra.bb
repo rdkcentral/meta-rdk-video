@@ -50,7 +50,8 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 PACKAGECONFIG ?= " resourcemanager \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_bolt_apps', '', 'rdknativescript', d)} \
     javascriptcore \          
-    texttospeechmonitor \    
+    texttospeechmonitor \
+    gstreamerservice \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',             'rdkshell', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell enable_rialto', 'rdkshellrialto', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
@@ -89,7 +90,8 @@ PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON"
 PACKAGECONFIG[texttospeechmonitor]  = "-DPLUGIN_MONITOR_TEXTTOSPEECH=ON"
 PACKAGECONFIG[preinstallmanager]    = "-DPLUGIN_PREINSTALL_MANAGER=ON,-DPLUGIN_PREINSTALL_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[downloadmanager]      = "-DPLUGIN_DOWNLOADMANAGER=ON -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_DOWNLOADMANAGER=OFF -DLIB_PACKAGE=OFF,entservices-apis curl virtual/libpackage,entservices-apis curl virtual/libpackage"
-PACKAGECONFIG[gstreamerservice]     = "-DPLUGIN_GSTREAMER_SERVICE=ON,-DPLUGIN_GSTREAMER_SERVICE=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[gstreamerservice]     = "-DPLUGIN_GSTREAMERSERVICE=ON,-DPLUGIN_GSTREAMERSERVICE=OFF,gstreamer1.0 gstreamer1.0-plugins-base entservices-apis,gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good entservices-apis"
+
 # ----------------------------------------------------------------------------
 
 
