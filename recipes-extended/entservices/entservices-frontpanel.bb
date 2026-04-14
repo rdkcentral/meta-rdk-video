@@ -2,7 +2,7 @@ SUMMARY = "ENTServices frontpanel plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=58ca1fa917c9de60f75f300dcabdc1b1"
 
-PV = "1.0.2"
+PV = "1.1.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
