@@ -7,7 +7,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=f36198fb804ffbe39b5b2c336ceef9f8"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "1.0"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
+SRC_URI = "git://github.com/rdkcentral/sysint.git;branch=topic/RDKEMW-16728"
+SRCREV = "${AUTOREV}"
+
 S = "${WORKDIR}/git"
 
 inherit systemd syslog-ng-config-gen logrotate_config
