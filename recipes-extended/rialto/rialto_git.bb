@@ -16,8 +16,8 @@ PR = "r0"
 
 require rialto_revision.inc
 
-SRCREV = "6688f0aea9e132d1f37e79202b7fd73d0980de48"
-SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
+SRCREV = "a7ba47078e2141a51ec77b84f362a7dac07c96dc"
+SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=feature/RDKEMW-16516"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
 DEPENDS = "openssl jsoncpp protobuf protobuf-native"
@@ -39,7 +39,12 @@ PACKAGECONFIG[servermanager] = "-DENABLE_SERVER_MANAGER=ON,-DENABLE_SERVER_MANAG
 # requires the 'server' package config to be enabled as well.
 PACKAGECONFIG ??= "server servermanager"
 
-RDEPENDS:${PN} += "protobuf mongoose"
+# Telemetry Support
+DEPENDS:append = " telemetry"
+
+EXTRA_OECMAKE += " -DCMAKE_TELEMETRY_2_0_REQUIRED=1 "
+
+RDEPENDS:${PN} += "protobuf mongoose telemetry"
 RDEPENDS:${PN}-server += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
 RDEPENDS:${PN}-servermanager += "${PN}-server"
 RDEPENDS:${PN}-servermanager-lib += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
