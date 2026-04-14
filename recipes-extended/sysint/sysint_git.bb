@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=f36198fb804ffbe39b5b2c336ceef9f8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "1.0"
-
+SRCREV = 475d700c1c251cca2248aef84fc1a22a1e298cef
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;protocol=${CMF_GIT_PROTOCOL};branch=topic/RDKEMW-16728"
 
 S = "${WORKDIR}/git"
