@@ -8,7 +8,6 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "1.0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;protocol=${CMF_GIT_PROTOCOL};branch=topic/RDKEMW-16728"
-SRCREV = "${AUTOREV}"
 
 S = "${WORKDIR}/git"
 
