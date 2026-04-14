@@ -39,6 +39,8 @@ FILES:${PN} += "${includedir}/xr_mq.h \
                 ${includedir}/vsdk_json_to_header.py \
                 ${includedir}/rdkx_logger.h \
                 ${includedir}/rdkx_logger_modules.h \
+                ${includedir}/xr_ffv_hal_plugin.h \
+                ${includedir}/xr_ffv_hal_interface.h \
                "
 
 do_configure[noexec] = "1"
@@ -46,25 +48,27 @@ do_compile[noexec] = "1"
 
 do_install() {
    install -d ${D}${includedir}
-   install -m 644 ${S}/src/xr-mq/xr_mq.h               ${D}${includedir}
-   install -m 644 ${S}/src/xr-fdc/xr_fdc.h             ${D}${includedir}
-   install -m 644 ${S}/src/xr-timer/xr_timer.h         ${D}${includedir}
-   install -m 644 ${S}/src/xr-timestamp/xr_timestamp.h ${D}${includedir}
-   install -m 644 ${S}/src/xr-sm-engine/xr_sm_engine.h ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio.h          ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_hal.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_eos.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_dga.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_kwd.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_sdf.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_ovc.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_ppr.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_common.h   ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_platform.h ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_version.h  ${D}${includedir}
-   install -m 644 ${S}/scripts/vsdk_json_combine.py    ${D}${includedir}
-   install -m 644 ${S}/scripts/vsdk_json_to_header.py  ${D}${includedir}
-   install -m 644 ${S}/src/xr-logger/rdkx_logger.h     ${D}${includedir}
+   install -m 644 ${S}/src/xr-mq/xr_mq.h                       ${D}${includedir}
+   install -m 644 ${S}/src/xr-fdc/xr_fdc.h                     ${D}${includedir}
+   install -m 644 ${S}/src/xr-timer/xr_timer.h                 ${D}${includedir}
+   install -m 644 ${S}/src/xr-timestamp/xr_timestamp.h         ${D}${includedir}
+   install -m 644 ${S}/src/xr-sm-engine/xr_sm_engine.h         ${D}${includedir}
+   install -m 644 ${S}/src/xr-audio/xraudio.h                  ${D}${includedir}
+   install -m 644 ${S}/src/xr-audio/xraudio_hal.h              ${D}${includedir}
+   install -m 644 ${S}/src/xr-audio/xraudio_eos.h              ${D}${includedir}
+   install -m 644 ${S}/src/xr-audio/xraudio_dga.h              ${D}${includedir}
+   install -m 644 ${S}/src/xr-audio/xraudio_kwd.h              ${D}${includedir}
+   install -m 644 ${S}/src/xr-audio/xraudio_sdf.h              ${D}${includedir}
+   install -m 644 ${S}/src/xr-audio/xraudio_ovc.h              ${D}${includedir}
+   install -m 644 ${S}/src/xr-audio/xraudio_ppr.h              ${D}${includedir}
+   install -m 644 ${S}/src/xr-audio/xraudio_common.h           ${D}${includedir}
+   install -m 644 ${S}/src/xr-audio/xraudio_platform.h         ${D}${includedir}
+   install -m 644 ${S}/src/xr-audio/xraudio_version.h          ${D}${includedir}
+   install -m 644 ${S}/scripts/vsdk_json_combine.py            ${D}${includedir}
+   install -m 644 ${S}/scripts/vsdk_json_to_header.py          ${D}${includedir}
+   install -m 644 ${S}/src/xr-logger/rdkx_logger.h             ${D}${includedir}
+   install -m 644 ${S}/src/xr-ffv-hal/xr_ffv_hal_plugin.h      ${D}${includedir}
+   install -m 644 ${S}/src/xr-ffv-hal/xr_ffv_hal_interface.h   ${D}${includedir}
 
    ${S}/scripts/rdkx_logger_modules_to_c.py ${S}/src/xr-logger/rdkv/rdkx_logger_modules.json rdkx_logger_modules
    install -m 644 rdkx_logger_modules.h  ${D}${includedir}
