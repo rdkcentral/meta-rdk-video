@@ -8,7 +8,7 @@ PV = "1.0.10"
 PR = "r0"
 
 
-SRCREV_hdmicec = "1ce51f4b0592f75775797e600998419054be6ade"
+SRCREV_hdmicec = "f0c27ca6627d00fb3f87d96dfe1624ce00bb0f29"
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
