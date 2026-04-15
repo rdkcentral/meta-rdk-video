@@ -5,7 +5,7 @@ LICENSE = "Apache-2.0 & ISC"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=83a31d934b0cc2ab2d44a329445b4366"
 
 
-PV = "1.1.14"
+PV = "1.1.13"
 PR = "r0"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
@@ -16,6 +16,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgr
 SRCREV_FORMAT = "iarmmgrs"
 #SRC_URI:append = " file://irmgr.diff"
 S = "${WORKDIR}/git"
+PACKAGE_ARCH = "${MACHINE_ARCH}"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 DEPENDS:append = " safec-common-wrapper"
@@ -24,18 +25,16 @@ DEPENDS:append = " safec-common-wrapper"
 DEPENDS:append = " telemetry"
 
 PARALLEL_MAKE = ""
-DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal \
-         ermgr iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
+#removed ermgr from depends
+DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal devicesettings-hal-headers \
+         iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
          deepsleep-manager-headers power-manager-headers wpeframework-clientlibraries"
-DEPENDS:append:client = " virtual/mfrlib"
-DEPENDS:append = " virtual/mfrlib"
-DEPENDS:append = " virtual/vendor-devicesettings-hal "
-DEPENDS:append = " virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal "
-RDEPENDS:${PN}:append = " devicesettings rfc"
-RDEPENDS:${PN}_client_morty += " virtual/mfrlib"
-RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_mfrlib} devicesettings"
+#DEPENDS:append:client = " virtual/mfrlib"
+#DEPENDS:append = " virtual/mfrlib"
+RDEPENDS:${PN}:append = " devicesettings rfc devicesettings-hal-noop"
+#RDEPENDS:${PN}_client_morty += " virtual/mfrlib"
+#RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_mfrlib} devicesettings"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 
 inherit pkgconfig breakpad-logmapper syslog-ng-config-gen
@@ -98,8 +97,8 @@ INCLUDE_DIRS = " \
     -I=${includedir}/rdk/servicemanager \
     "
 
-MFR_LIB ?= '\"libRDKMfrLib.so\"'
-MFR_LIB_NAME ?= "-lRDKMfrLib"
+#MFR_LIB ?= '\"libRDKMfrLib.so\"'
+#MFR_LIB_NAME ?= "-lRDKMfrLib"
 # FIXME
 # rdk_build.sh has this and we might need to do something with it:
 # export _ENABLE_WAKEUP_KEY=-D_ENABLE_WAKEUP_KEY
@@ -139,6 +138,7 @@ CXXLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', '-DENABLE_
              '', d), d), d), d), d)}"
 EXTRA_OEMAKE += "-e MAKEFLAGS="
 
+#removed lds-hal
 do_compile() {
 
     oe_runmake -B -C ${S}/utils/
@@ -166,7 +166,7 @@ do_compile() {
     fi
 }
 
-inherit update-rc.d coverity systemd pkgconfig
+inherit update-rc.d systemd pkgconfig
 INITSCRIPT_NAME = "iarmmgrsd"
 INITSCRIPT_PARAMS = "defaults 76"
 
@@ -248,18 +248,23 @@ CFLAGS += "-DPLATCO_BOOTTO_STANDBY"
 CFLAGS += "-DENABLE_THERMAL_PROTECTION"
 CFLAGS += "-DUSE_WAKEUP_TIMER_EVT"
 
+SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' file://0001-set-debus-address-path-dsmgr-service.patch ', '',d)}"
+SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' file://0002-hdmi_in_essos_resmgr_env.patch ', '',d)}"
+SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' file://0003-add_dsmgr_service_env_settings.patch ', '',d)}"
+
 inherit syslog-ng-config-gen
 
 SYSLOG-NG_FILTER += "uimgr"
 
-LDFLAGS += "-lRDKMfrLib "
+#LDFLAGS += "-lRDKMfrLib "
 
 LDFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' -lsqlite3 ', '',d)}"
 
-LDFLAGS += " -ldshalcli -lds -liarmmgrs-deepsleep-hal"
+#removed -liarmmgrs-deepsleep-hal
+LDFLAGS += " -ldshalcli -lds "
 
 do_compile:append() {
-    LDFLAGS="-ldshalcli -lds -liarmmgrs-deepsleep-hal -lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" oe_runmake -B -C ${S}/mfr/test_mfr/
+    LDFLAGS="-ldshalcli -lds -lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" oe_runmake -B -C ${S}/mfr/test_mfr/
 }
 
 do_install:append(){
@@ -323,6 +328,13 @@ do_install:append() {
     fi
 }
 
+do_install:prepend() {
+	if [ ! -f ${S}/vrexmgr/vrexPrefs.json ]; then
+		install -d ${S}/vrexmgr/include
+		printf '{}\n' > ${S}/vrexmgr/vrexPrefs.json
+		printf '#ifndef VREXMGR_H\n#define VREXMGR_H\n#endif\n' > ${S}/vrexmgr/include/vrexmgr.h
+	fi
+}
 
 SYSTEMD_SERVICE:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', '', 'deviceupdatemgr.service', d)}"
 
