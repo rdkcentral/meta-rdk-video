@@ -122,7 +122,6 @@ do_compile() {
     rm -rf hal
 
     # Write HAL name as a header to avoid shell quoting issues with -D flag
-    printf '#define RDK_DSHAL_NAME "libds-hal.so.0"\n' > ${B}/dshal_name.h
 
     # Export CFLAGS/CXXFLAGS with -Wno-error - make -e will use these
     export CFLAGS="$CFLAGS -Wno-error"
