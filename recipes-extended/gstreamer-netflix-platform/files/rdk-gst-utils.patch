@@ -1,0 +1,63 @@
+diff --git a/Makefile b/Makefile
+index 6664f6b..3d9724d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -19,7 +19,7 @@
+ 
+ 
+ EXTRA_CXXFLAGS = -Wno-attributes -Wall -g -fpermissive -std=c++1y -fPIC -I.
+-EXTRA_LDFLAGS = -lgstreamer-1.0 -lglib-2.0 -Wl,-rpath=../../,-rpath=./ -lrdkgstreamerutilsplatform
++EXTRA_LDFLAGS = -lds -ldshalcli -lds-cli -lIARMBus -lgstreamer-1.0 -lglib-2.0 -Wl,-rpath=../../,-rpath=./ -lrdkgstreamerutilsplatform
+ RIALTO_CLIENT_EXTRA_LDFLAGS = -lgstreamer-1.0 -lglib-2.0 -Wl,-rpath=../../,-rpath=./ 
+ 
+ SOURCES = rdk_gstreamer_utils.cpp
+diff --git a/rdk_gstreamer_utils.cpp b/rdk_gstreamer_utils.cpp
+index 8df965f..8d81139 100644
+--- a/rdk_gstreamer_utils.cpp
++++ b/rdk_gstreamer_utils.cpp
+@@ -24,9 +24,14 @@
+ #include <glib.h>
+ #include <string.h>
+ #include <dlfcn.h>
++#include "manager.hpp"
++#include "host.hpp"
++#include "dsTypes.h"
++#include "exception.hpp"
++#include "libIBus.h"
+ 
+ using namespace std;
+-
++static bool initialised = false;
+ namespace rdk_gstreamer_utils {
+ 
+     GstElement* retrieveGstElementByName(GstElement *element, const char *targetName)
+@@ -229,6 +234,29 @@ namespace rdk_gstreamer_utils {
+ 
+     void SetAudioServerParam(bool enabled)
+     {
++       IARM_Result_t res;
++      if (!initialised) {
++      res = IARM_Bus_Init("Netflix");
++       LOG_RGU("IARM_BUS Init: %d", res);
++       if (res == IARM_RESULT_SUCCESS || res == IARM_RESULT_INVALID_STATE /* already inited or connected */) {
++             res = IARM_Bus_Connect();
++            LOG_RGU("IARM_Bus_Connect: %d", res);
++       }
++
++       device::Manager::Initialize();
++        LOG_RGU("device::Manager::Initialize success");
++       initialised = true;
++      }
++      try {
++            LOG_RGU("Calling aPort.setContinuousAudioOutputMode\n");
++     //      device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort("HDMI_ARC0");
++     //      aPort.setContinuousAudioOutputMode(enabled);
++             device::Host::getInstance().setContinuousAudioOutputMode(enabled);
++        }
++        catch(const device::Exception& err) {
++                LOG_RGU("Exception calling setContinuous audio output mode\n");
++        }
++
+        SetAudioServerParam_soc(enabled);
+     }
+ 
