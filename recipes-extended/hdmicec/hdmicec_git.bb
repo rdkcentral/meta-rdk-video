@@ -6,13 +6,15 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PV = "1.0.10"
 PR = "r0"
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
 
 SRCREV_hdmicec = "1ce51f4b0592f75775797e600998419054be6ade"
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
+PACKAGE_ARCH = "${MACHINE_ARCH}"
 
-DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
+#remove vendor-hdmicec-hal depends
+DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader iarmmgrs-hal-headers telemetry"
 RDEPENDS:${PN} = " devicesettings telemetry"
 
 DEPENDS += "safec-common-wrapper"
@@ -24,7 +26,7 @@ S = "${WORKDIR}/git"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 
-inherit systemd autotools pkgconfig coverity breakpad-logmapper syslog-ng-config-gen logrotate_config
+inherit systemd autotools pkgconfig breakpad-logmapper syslog-ng-config-gen logrotate_config
 #SYSLOG-NG_FILTER = "cec"
 #SYSLOG-NG_SERVICE_cec = "cecdaemon.service cecdevmgr.service"
 #SYSLOG-NG_DESTINATION_cec = "cec_log.txt"
