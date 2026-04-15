@@ -13,9 +13,13 @@ PR = "r0"
 
 SRCREV_iarmbus = "464973a6710837ff03120583da4efdbebf4ab759"
 SRCREV_FORMAT = "iarmbus"
-SRC_URI = "${CMF_GITHUB_ROOT}/iarmbus;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmbus"
+SRC_URI = "git://github.com/rdkcentral/iarmbus;protocol=https;nobranch=1;name=iarmbus"
 
 S = "${WORKDIR}/git"
+
+PACKAGE_ARCH = "${MACHINE_ARCH}"
+
+CFLAGS += "-Wno-error=format-overflow -Wno-error=stringop-truncation -Wno-error=format-security"
 
 CFLAGS += "-DENABLE_SD_NOTIFY"
 LDFLAGS += "-lsystemd"
@@ -24,9 +28,8 @@ DEPENDS="libxml2 dbus glib-2.0"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd', '', d)}"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-inherit autotools pkgconfig systemd coverity syslog-ng-config-gen logrotate_config
+inherit autotools pkgconfig systemd
 SYSLOG-NG_FILTER = "uimgr"
 SYSLOG-NG_SERVICE_uimgr = "iarmbusd.service"
 SYSLOG-NG_DESTINATION_uimgr = "uimgr_log.txt"
