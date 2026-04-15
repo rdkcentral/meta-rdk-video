@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "b1a94e70fa0d1834d552cda4c243f0488755bd83"
+SRCREV = "35beca3e2924d7324c0ae8ac9ff27d25cef3e1a8"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usbdevice;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
