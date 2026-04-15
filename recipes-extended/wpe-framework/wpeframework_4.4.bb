@@ -79,6 +79,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
 
+PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_instrumentation', 'warning_reporting', '', d)}"
 
 inherit cmake pkgconfig systemd python3native add-version
 
@@ -126,6 +127,10 @@ PACKAGECONFIG[webkitbrowser]   = "-DPLUGIN_WEBKITBROWSER=ON,,"
 PACKAGECONFIG[websocket]       = "-DWEBSOCKET=ON,,"
 
 PACKAGECONFIG[com] = "-DCOM=ON,,,"
+
+PACKAGECONFIG[warning_reporting]       = "-DWARNING_REPORTING=ON,-DWARNING_REPORTING=OFF,"
+PACKAGECONFIG[deadlock_detection]      = "-DDEADLOCK_DETECTION=ON,-DDEADLOCK_DETECTION=OFF,"
+PACKAGECONFIG[securesocket]            = "-DSECURE_SOCKET=ON,-DSECURE_SOCKET=OFF,openssl"
 
 # FIXME, determine this a little smarter
 # Provision event is required for libprovision and provision plugin
