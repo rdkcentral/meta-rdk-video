@@ -14,7 +14,6 @@ DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '
 
 PR = "r41"
 PV = "4.4.3"
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
 
@@ -79,6 +78,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
 
+PACKAGE_ARCH = "${MACHINE_ARCH}"
 
 inherit cmake pkgconfig systemd python3native add-version
 
@@ -91,9 +91,9 @@ WPEFRAMEWORK_THREADPOOL_COUNT ?= "16"
 WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
 
 
-BREAKPAD_LDFLAGS:pn-wpeframework = "${BACKTRACE_LDFLAGS}"
-EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
-LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
+#BREAKPAD_LDFLAGS:pn-wpeframework = "${BACKTRACE_LDFLAGS}"
+#EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
+#LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
 
 PACKAGECONFIG ?= " \
     release \
@@ -172,7 +172,7 @@ do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
 }
-
+EXTRA_VERSIONS_PATH = "${D}${sysconfdir}/versions"
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
 
 # ----------------------------------------------------------------------------
