@@ -136,6 +136,10 @@ do_install:append() {
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
     fi
+    if [ -f "${D}${libdir}/wpeframework/plugins/libAppManagersHelpers.so" ]; then
+        install -d "${D}${libdir}"
+        mv "${D}${libdir}/wpeframework/plugins/libAppManagersHelpers.so" "${D}${libdir}/libAppManagersHelpers.so"
+    fi
 }
 
 # ----------------------------------------------------------------------------
