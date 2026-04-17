@@ -6,7 +6,7 @@ S = "${WORKDIR}/git/BrowserLauncher"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-runtime;${CMF_GITHUB_SRC_URI_SUFFIX}"
-SRCREV = "3966f4f7c23ab29f86f5ae8a764a9aac6344d8b9"
+SRCREV = "4b8d8b4a8b2d608162c10efdbf43ced9a52b1c5d"
 PV .= "+${@bb.fetch2.get_srcrev(d).replace('AUTOINC+','')}"
 
 inherit pkgconfig cmake
@@ -21,3 +21,6 @@ EXTRA_OECMAKE:append = " -DBROWSER_LAUNCHER_VERSION=${PV}"
 # override install prefix
 EXTRA_OECMAKE:append = " -DCMAKE_INSTALL_PREFIX:PATH=${libexecdir}/${BPN}"
 INSANE_SKIP:${PN} += "installed-vs-shipped"
+
+INSTALL_RPATH ?= "\$ORIGIN:\$ORIGIN/../../lib"
+EXTRA_OECMAKE:append = " -DCMAKE_INSTALL_RPATH=${INSTALL_RPATH}"
