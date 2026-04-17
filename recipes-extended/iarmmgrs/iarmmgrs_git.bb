@@ -191,6 +191,7 @@ do_install() {
     install -m 0755 ${S}/utils/libiarmUtils.so ${D}${libdir}/libiarmUtils.so.0.0.0
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/conf/dsmgr.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${S}/conf/ds-reboot.sh ${D}${libdir}/
     install -m 0644 ${S}/conf/sysmgr.service ${D}${systemd_unitdir}/system
     ln -rsf ${D}${libdir}/libiarmUtils.so.0.0.0  ${D}${base_libdir}/libiarmUtils.so
 
