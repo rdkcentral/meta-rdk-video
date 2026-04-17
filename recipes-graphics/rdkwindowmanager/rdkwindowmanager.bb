@@ -1,6 +1,6 @@
 DESCRIPTION = "RDK Window Manager"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=9b36bf6cc7d5808435a27926d9dc6f7d"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=5a302d945c4b4ee2960872c471d41400"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}:"
 DEPENDS = "westeros wayland essos virtual/egl rapidjson jpeg libpng curl"
