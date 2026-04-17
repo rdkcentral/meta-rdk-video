@@ -1,0 +1,26 @@
+From 468bb25c6cfb6b66af248cefc436d463438a6e7e Mon Sep 17 00:00:00 2001
+From: Bram Oosterhuis <dev@bybram.com>
+Date: Fri, 17 Apr 2026 18:19:42 +0000
+Subject: [PATCH] Enable position-independent code for Gateway library
+
+---
+ RuntimeManager/Gateway/CMakeLists.txt | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/RuntimeManager/Gateway/CMakeLists.txt b/RuntimeManager/Gateway/CMakeLists.txt
+index 5b7946e..ad2db61 100644
+--- a/RuntimeManager/Gateway/CMakeLists.txt
++++ b/RuntimeManager/Gateway/CMakeLists.txt
+@@ -65,7 +65,8 @@ add_library(Gateway STATIC ${GATEWAY_SOURCES})
+ # Set C++ standard
+ set_target_properties(Gateway PROPERTIES
+     CXX_STANDARD 11
+-    CXX_STANDARD_REQUIRED YES)
++    CXX_STANDARD_REQUIRED YES
++    POSITION_INDEPENDENT_CODE ON)
+ 
+ # Link WPEFramework dependencies
+ target_link_libraries(Gateway PUBLIC
+-- 
+2.43.0
+

@@ -10,7 +10,9 @@ inherit cmake pkgconfig
 
 SRCREV = "64ec2a7a7fd7adb68c42bd22ad6c45a887690534"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX} \
+           file://0001-Enable-position-independent-code-for-Gateway-library.patch \
+           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
