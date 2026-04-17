@@ -2,12 +2,11 @@ SUMMARY = "WPE Framework User Interface"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=66fe57b27abb01505f399ce4405cfea0"
 
-SRC_URI = "git://github.com/rdkcentral/ThunderUI.git"
-
-PV = "1.0.0"
 PR = "r0"
-#Version on July 22, 2021
-SRCREV = "ae6d061a6a08d97ad3ad8821c422b4f45aeeced1"
+PV = "4.4.1"
+SRCREV = "b4f54fd06fc4e6c748f21d3f62d3f8763f58d6d1"
+
+SRC_URI = "git://github.com/rdkcentral/ThunderUI.git;protocol=https;branch=R4_4"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
