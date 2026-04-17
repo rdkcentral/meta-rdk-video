@@ -1,0 +1,49 @@
+From 39f2c08b6b669853785fa2666f408b59cc7f4632 Mon Sep 17 00:00:00 2001
+From: Bram Oosterhuis <dev@bybram.com>
+Date: Fri, 17 Apr 2026 11:28:01 +0200
+Subject: [PATCH] Fix MODULE_NAME leak from header into all including TUs
+
+---
+ wrappers/include/TextTrackPluginWrapper.h  | 6 ------
+ wrappers/source/TextTrackPluginWrapper.cpp | 6 ++++++
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/wrappers/include/TextTrackPluginWrapper.h b/wrappers/include/TextTrackPluginWrapper.h
+index 10af9e33..00fa2984 100644
+--- a/wrappers/include/TextTrackPluginWrapper.h
++++ b/wrappers/include/TextTrackPluginWrapper.h
+@@ -19,13 +19,7 @@
+ #ifndef FIREBOLT_RIALTO_WRAPPERS_TEXT_TRACK_PLUGIN_WRAPPER_H_
+ #define FIREBOLT_RIALTO_WRAPPERS_TEXT_TRACK_PLUGIN_WRAPPER_H_
+ 
+-#ifndef MODULE_NAME
+-#define MODULE_NAME TextTrackClosedCaptionsStyleClient
+-#endif
+-
+ #include "ITextTrackPluginWrapper.h"
+-#include <com/com.h>
+-#include <core/core.h>
+ #ifdef RIALTO_ENABLE_TEXT_TRACK
+ #include <interfaces/ITextTrack.h>
+ #endif // RIALTO_ENABLE_TEXT_TRACK
+diff --git a/wrappers/source/TextTrackPluginWrapper.cpp b/wrappers/source/TextTrackPluginWrapper.cpp
+index 19a99461..8e9511e9 100644
+--- a/wrappers/source/TextTrackPluginWrapper.cpp
++++ b/wrappers/source/TextTrackPluginWrapper.cpp
+@@ -17,10 +17,16 @@
+  * limitations under the License.
+  */
+ 
++#define MODULE_NAME TextTrackClosedCaptionsStyleClient
++
++#include <core/core.h>
++#include <com/com.h>
++
+ #include "TextTrackPluginWrapper.h"
+ #include "TextTrackPluginWrapperFactory.h"
+ #include "TextTrackWrapper.h"
+ 
++MODULE_NAME_ARCHIVE_DECLARATION
+ namespace firebolt::rialto::wrappers
+ {
+ std::shared_ptr<ITextTrackPluginWrapper> TextTrackPluginWrapperFactory::getTextTrackPluginWrapper()
