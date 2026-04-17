@@ -97,7 +97,7 @@ EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
 LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
 
 PACKAGECONFIG ?= " \
-    release \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_experimental debug-variant', 'debug', 'release', d)} \
     virtualinput \
     websocket \
     "
@@ -105,9 +105,8 @@ PACKAGECONFIG ?= " \
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com', '', d)}"
 
 # Buildtype
-# Maybe we need to couple this to a Yocto feature
-PACKAGECONFIG[debug]            = "-DCMAKE_BUILD_TYPE=Debug,-DCMAKE_BUILD_TYPE=Release,"
-PACKAGECONFIG[release]          = "-DCMAKE_BUILD_TYPE=Release,-DCMAKE_BUILD_TYPE=Debug,"
+PACKAGECONFIG[debug]            = "-DCMAKE_BUILD_TYPE=Debug,,"
+PACKAGECONFIG[release]          = "-DCMAKE_BUILD_TYPE=Release,,"
 
 PACKAGECONFIG[testloader]       = "-DLOADER_TEST=ON,-DLOADER_TEST=OFF,"
 PACKAGECONFIG[virtualinput]     = "-DVIRTUALINPUT=ON,-DVIRTUALINPUT=OFF,"
