@@ -1,0 +1,21 @@
+From d4e4ff12a28505d9ef30206f2bd0b022df2ff010 Mon Sep 17 00:00:00 2001
+From: Bram Oosterhuis <dev@bybram.com>
+Date: Fri, 17 Apr 2026 10:19:22 +0200
+Subject: [PATCH] Add missing Module.h include in power_controller.cpp
+
+---
+ Source/powercontroller/power_controller.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Source/powercontroller/power_controller.cpp b/Source/powercontroller/power_controller.cpp
+index 4749ae4..f7ff393 100644
+--- a/Source/powercontroller/power_controller.cpp
++++ b/Source/powercontroller/power_controller.cpp
+@@ -29,6 +29,7 @@
+ #include <sys/syscall.h>
+ 
+ // Thunder includes
++#include "Module.h"
+ #include <interfaces/IPowerManager.h>
+ #include <plugins/Types.h>
+ 
