@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = " \
 "
 
 inherit features_check
-REQUIRED_DISTRO_FEATURES = "cobalt-25"
+CONFLICT_DISTRO_FEATURES = "cobalt-24"
 
 require larboard_revision.inc
 require rdke-cobalt-buildfix.inc
@@ -25,6 +25,7 @@ SRC_URI += "file://25/0003-breakpad-add-mapping-info.patch"
 SRC_URI += "file://25/0004-Build-fix-for-ARM64.patch"
 SRC_URI += "file://25/0005-Use-Yocto-host-toolchain.patch"
 SRC_URI += "file://25/0006-Use-certifi-to-tell-urllib-where-to-find-CA-file-397.patch"
+SRC_URI += "file://25/0007-Prevent-cobalt-unloading.patch"
 
 CR = "30"
 PR = "r${CR}"
