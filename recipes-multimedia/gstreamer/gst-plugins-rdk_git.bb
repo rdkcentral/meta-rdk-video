@@ -14,6 +14,8 @@ PR = "r0"
 
 SRCREV = "2a713a366153cf38dcf7bbced0b0c9de828c34c7"
 SRC_URI = "${CMF_GITHUB_ROOT}/gst-plugins-rdk;${CMF_GITHUB_SRC_URI_SUFFIX};name=gst-plugins-rdk"
+SRC_URI += "file://gstreamer-cleanup.sh"
+SRC_URI += "file://gstreamer-cleanup.service"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -38,6 +40,7 @@ EXTRA_OECONF = "${ENABLE_GST1}"
 DEBIAN_NOAUTONAME:${PN} = "1"
 
 inherit autotools pkgconfig
+inherit systemd
 
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --cflags libsafec`', ' -fPIC', d)}"
 CFLAGS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --cflags libsafec`', ' -fPIC', d)}"
@@ -47,4 +50,18 @@ CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC
 
 PACKAGECONFIG ??= "httpsrc"
 PACKAGECONFIG[httpsrc] = "--enable-httpsrc,,openssl,"
+
+RDEPENDS:${PN} += " bash"
+
+do_install:append () {
+	install -d ${D}${systemd_unitdir}/system
+	install -m 0644 ${WORKDIR}/gstreamer-cleanup.service ${D}${systemd_unitdir}/system/gstreamer-cleanup.service
+	install -d ${D}${base_libdir}/rdk
+	install -m 0755 ${WORKDIR}/gstreamer-cleanup.sh ${D}${base_libdir}/rdk/gstreamer-cleanup.sh
+}
+
+SYSTEMD_SERVICE:${PN} = "gstreamer-cleanup.service"
+SYSTEMD_AUTO_ENABLE = "enable"
+FILES:${PN} += "${systemd_unitdir}/system/gstreamer-cleanup.service"
+FILES:${PN} += "${base_libdir}/rdk/gstreamer-cleanup.sh"
 
