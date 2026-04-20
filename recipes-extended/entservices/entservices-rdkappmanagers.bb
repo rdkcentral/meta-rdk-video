@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "b48ee0b81f4fa1c492799d323ba5005e1263c4cf"
+SRCREV = "b287962020535e58d54922077e79579b363edde4"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -20,8 +20,10 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_APPMANAGERS_DEBUG=OFF', '-DRDK_APPMANAGERS_DEBUG=ON', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers_runtimeconfig', ' -DENABLE_RDKAPPMANAGERS_RUNTIMECONFIG=ON', '', d)}"
 
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
+DEPENDS += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers_runtimeconfig', 'yaml-cpp', '', d)}"
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
 DEPENDS += "iptables"
@@ -95,6 +97,7 @@ PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
 "
 RUNTIMEMANAGER_PLUGIN_ARGS         ?= " \
                                        -DPLUGIN_RUNTIME_APP_PORTAL=${RUNTIME_APP_PORTAL} \
+                                       -DPLUGIN_RUNTIME_CONFIG_FILE=${RUNTIME_CONFIG_FILE} \
 "
 
 PREINSTALLMANAGER_PLUGIN_ARGS         ?= " \
@@ -106,6 +109,7 @@ DOWNLOADMANAGER_PLUGIN_ARGS         ?= " \
 "
 RUNTIME_APP_PORTAL ?= "com.sky.as.apps"
 APP_PREINSTALL_DIRECTORY ?= "/opt/preinstall"
+RUNTIME_CONFIG_FILE ?= ""
 APP_DOWNLOAD_DIRECTORY ?= "/opt/CDL/"
 NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
 
