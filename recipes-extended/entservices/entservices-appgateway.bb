@@ -30,11 +30,13 @@ PACKAGECONFIG[appgatewaycommon] = "-DPLUGIN_APPGATEWAYCOMMON=ON,-DPLUGIN_APPGATE
 PACKAGECONFIG[telemetrysupport] = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 
 do_install:append() {
-    install -d ${D}${sysconfdir}
+    install -d ${D}${sysconfdir} ${D}/opt
     echo "APP_GATEWAY_PV = \"${PV}\""     >  ${D}${sysconfdir}/appgatewayversion.txt
     echo "APP_GATEWAY_SHA = \"${SRCREV}\"" >> ${D}${sysconfdir}/appgatewayversion.txt
+    install -m 0644 ${D}${sysconfdir}/appgatewayversion.txt ${D}/opt/appgatewayversion.txt
 }
 
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so"
+FILES:${PN} += "/opt/appgatewayversion.txt"
 
 INSANE_SKIP:${PN} += "dev-so"
