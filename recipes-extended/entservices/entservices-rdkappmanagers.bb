@@ -2,13 +2,13 @@ SUMMARY = "ENTServices appmanagers plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV ?= "0.3.0.0"
-PR ?= "r0"
+PV = "0.3.0.2"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "16ebc5a9908f423ae5f6246f04f0b05ee836eca1"
+SRCREV = "b48ee0b81f4fa1c492799d323ba5005e1263c4cf"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -136,6 +136,11 @@ do_install:append() {
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
     fi
+
+    # Write component version info for appinfraversion.txt merge
+    install -d ${D}${sysconfdir}
+    echo "APP_MANAGERS_PV = \"${PV}\""     >  ${D}${sysconfdir}/appmanagersversion.txt
+    echo "APP_MANAGERS_SHA = \"${SRCREV}\"" >> ${D}${sysconfdir}/appmanagersversion.txt
 }
 
 # ----------------------------------------------------------------------------

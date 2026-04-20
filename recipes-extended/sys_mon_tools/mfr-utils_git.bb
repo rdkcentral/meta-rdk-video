@@ -4,12 +4,12 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.0.8"
+PV = "1.0.11"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 
-SRCREV_mfr-utils = "a309758f5721a10ff8cdfa3ef8b957f7614a2d29"
+SRCREV_mfr-utils = "7778a631ba1360379d6d30f0c67a9b5fb458fd59"
 SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX};name=mfr-utils"
 S = "${WORKDIR}/git"
 
