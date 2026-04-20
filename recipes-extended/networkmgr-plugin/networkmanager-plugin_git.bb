@@ -22,8 +22,8 @@ SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=
 SRCREV = "81ca57a3a0dbdded0db766d7d802b48b133f1d8c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-DEPENDS = " openssl rdk-logger zlib boost curl libnfnetlink libnetfilter_log glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
-RDEPENDS:${PN} += " wpeframework rdk-logger curl libnetfilter_log iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
+DEPENDS = " openssl rdk-logger zlib boost curl libnfnetlink libnetfilter-log glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
+RDEPENDS:${PN} += " wpeframework rdk-logger curl libnetfilter-log iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
 
 inherit cmake pkgconfig python3native
 
