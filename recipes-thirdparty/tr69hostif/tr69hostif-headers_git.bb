@@ -4,11 +4,11 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=99e7c83e5e6f31c2cbb811e186972945"
 
-PV = "1.3.0"
+PV = "1.3.9"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "711a0e475dda90533c17bb8f0cf95d9e989b4271"
+SRCREV = "172808d7d26343a6a7142dae366749e71f846b7c"
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
 
 DEPENDS += "safec-common-wrapper"

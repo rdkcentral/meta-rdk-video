@@ -4,10 +4,10 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-PV = "1.0.29"
+PV = "1.0.32"
 PR = "r0"
 
-SRCREV_devicesettings = "edc8c70b9a8853e99ae364eb50ea85de131ac109"
+SRCREV_devicesettings = "6dd206a0dfc5ef40ac2f2a297f9bf1ccf93627f9"
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
 
 # devicesettings is not a 'generic' component, as some of its source
@@ -21,6 +21,9 @@ SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=d
 DEPENDS="json-c iarmbus rdk-logger virtual/vendor-devicesettings-hal devicesettings-hal-headers safec-common-wrapper rfc wdmp-c"
 #RDEPENDS:${PN} += "directfb"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec ', " ", d)}"
+
+# Telemetry Support
+DEPENDS:append = " telemetry"
 
 S = "${WORKDIR}/git"
 
@@ -55,7 +58,7 @@ INCLUDE_DIRS = " \
 
 # note: we really on 'make -e' to control LDFLAGS and CFLAGS from here. This is
 # far from ideal, but this is to workaround the current component Makefile
-LDFLAGS += "-lrdkloggers -lpthread -lglib-2.0 -L. -lIARMBus -ldl "
+LDFLAGS += "-lrdkloggers -lpthread -lglib-2.0 -L. -lIARMBus -ldl -ltelemetry_msgsender"
 CFLAGS += "-fPIC -D_REENTRANT -Wall ${INCLUDE_DIRS}"
 CFLAGS += "-DRDK_DSHAL_NAME="\""libds-hal.so.0\""""
 CFLAGS += " -DYOCTO_BUILD"
@@ -65,7 +68,7 @@ CFLAGS += " -DDSMGR_LOGGER_ENABLED"
 # added support for rfc
 CFLAGS += "-I${STAGING_INCDIR}/wdmp-c"
 CXXFLAGS += "-I${STAGING_INCDIR}/wdmp-c"
-LDFLAGS +="-lrfcapi"
+LDFLAGS += " -lrfcapi"
 
 # Shared libs created by the RDK build aren't versioned, so we need
 # to force the .so files into the runtime package (and keep them
