@@ -1,6 +1,6 @@
 DESCRIPTION = "GStreamer registry cleanup service for post-CDL bootup"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://${THISDIR}/files/Apache-2.0;md5=3b83ef96387f14655fc854ddc3c6bd57"
+LIC_FILES_CHKSUM = "file://gstreamer-cleanup.sh;beginline=1;endline=16;md5=0d0f8cd19c1930fd89f6d1580a274a06"
 
 RDEPENDS:${PN} += " bash"
 
