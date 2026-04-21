@@ -5,13 +5,13 @@ LICENSE = "Apache-2.0 & ISC"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=83a31d934b0cc2ab2d44a329445b4366"
 
 
-PV = "1.1.13"
+PV = "1.1.14"
 PR = "r0"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
-SRCREV = "b6b5e6aeb82cfba5663c67eb9a5c7d3d63c275e3"
+SRCREV = "fdc26b06b59c8c05333a745d8841e572efa261d3"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
 #SRC_URI:append = " file://irmgr.diff"
@@ -247,10 +247,6 @@ CFLAGS += "-D_DISABLE_SCHD_REBOOT_AT_DEEPSLEEP"
 CFLAGS += "-DPLATCO_BOOTTO_STANDBY"
 CFLAGS += "-DENABLE_THERMAL_PROTECTION"
 CFLAGS += "-DUSE_WAKEUP_TIMER_EVT"
-
-SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' file://0001-set-debus-address-path-dsmgr-service.patch ', '',d)}"
-SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' file://0002-hdmi_in_essos_resmgr_env.patch ', '',d)}"
-SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' file://0003-add_dsmgr_service_env_settings.patch ', '',d)}"
 
 inherit syslog-ng-config-gen
 
