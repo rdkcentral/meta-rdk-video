@@ -11,9 +11,9 @@ EXTRA_OECMAKE += " \
     -DAUDIOMIXER_NOT_SUPPORTED=${AUDIOMIXER_NOT_SUPPORTED} \
 "
 
-PV = "2.0.2"
+PV = "2.0.3"
 
-SRCREV = "ea9c7ec1a810053619596123f5bd6fd22b3215f4"
+SRCREV = "c5849623cd61791bc3ca94f26ac16a8761e9c404"
 SRC_URI = "${CMF_GITHUB_ROOT}/gstreamer-netflix-platform;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 S = "${WORKDIR}/git"
@@ -27,6 +27,7 @@ do_install() {
     install -d ${D}/${libdir}
     install -d ${D}/usr/include
     install -m 0755 ${S}/librdkgstreamerutils.so ${D}/${libdir}
+    install -m 0755 ${S}/librdkgstreamerrltclientutils.so  ${D}/${libdir}
     install -m 0644 ${S}/rdk_gstreamer_utils.h ${D}/usr/include
 }
 
