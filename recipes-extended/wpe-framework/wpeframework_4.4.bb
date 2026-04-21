@@ -16,9 +16,9 @@ PR = "r41"
 PV = "4.4.3"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder"
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4_5_test;name=thunder"
 
-SRCREV_thunder = "b4a5f8e6490db3c94889b21c09a2d9f63928ec89"
+SRCREV_thunder = "e89726e63243d5b116529dc4d9cd2a574ae46b81"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
