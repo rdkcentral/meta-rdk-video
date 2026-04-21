@@ -263,9 +263,7 @@ do_compile:append() {
 }
 
 do_install:append(){
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', 'true', 'false', d)}; then
         install -m 0755 ${S}/mfr/test_mfr/test_mfr_client ${D}${bindir}
-    fi
         install -m 0755 ${S}/mfr/test_mfr/mfr_scrubAllBanks ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_deletePDRI ${D}${bindir}
         install -m 0755 ${S}/mfr/test_mfr/mfr_wifiEraseAllData ${D}${bindir}
