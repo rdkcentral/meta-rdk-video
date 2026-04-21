@@ -17,7 +17,8 @@ SRC_URI = "git://github.com/rdkcentral/iarmbus;protocol=https;nobranch=1;name=ia
 
 S = "${WORKDIR}/git"
 
-PACKAGE_ARCH = "${MACHINE_ARCH}"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+PACKAGE_ARCH:x86-64 = "${MACHINE_ARCH}"
 
 CFLAGS += "-Wno-error=format-overflow -Wno-error=stringop-truncation -Wno-error=format-security"
 
@@ -29,7 +30,7 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd', '', d)}"
 
 
-inherit autotools pkgconfig systemd
+inherit autotools pkgconfig systemd syslog-ng-config-gen logrotate_config
 SYSLOG-NG_FILTER = "uimgr"
 SYSLOG-NG_SERVICE_uimgr = "iarmbusd.service"
 SYSLOG-NG_DESTINATION_uimgr = "uimgr_log.txt"
