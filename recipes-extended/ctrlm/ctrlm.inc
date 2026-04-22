@@ -1,3 +1,3 @@
-CTRLM_SRCREV = "8c162389fda0aac0c678c00a7f590cde92de285f"
-CTRLM_PV     = "1.1.11.3"
+CTRLM_SRCREV = "307527a3145c0c0b05c6b2ad2d5b9f1112afecfc"
+CTRLM_PV     = "1.1.11.4"
 CTRLM_PR     = "r0"
