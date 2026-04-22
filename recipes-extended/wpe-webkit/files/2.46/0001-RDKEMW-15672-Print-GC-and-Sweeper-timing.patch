@@ -1,0 +1,321 @@
+From cc36beea44759b77f96eaad2256ad1e16d54c689 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Tue, 21 Apr 2026 16:47:17 +0200
+Subject: [PATCH] RDKEMW-15672: Print GC and Sweeper timing
+
+---
+ Source/JavaScriptCore/heap/Heap.cpp           |  21 ++-
+ .../heap/IncrementalSweeper.cpp               |  37 +++++
+ .../JavaScriptCore/heap/IncrementalSweeper.h  |   4 +
+ Source/JavaScriptCore/heap/Xlog.h             | 145 ++++++++++++++++++
+ 4 files changed, 199 insertions(+), 8 deletions(-)
+ create mode 100644 Source/JavaScriptCore/heap/Xlog.h
+
+diff --git a/Source/JavaScriptCore/heap/Heap.cpp b/Source/JavaScriptCore/heap/Heap.cpp
+index 1c77d0eaefcb..861b5fa64f84 100644
+--- a/Source/JavaScriptCore/heap/Heap.cpp
++++ b/Source/JavaScriptCore/heap/Heap.cpp
+@@ -98,6 +98,8 @@
+ #include <bmalloc/bmalloc.h>
+ #endif
+ 
++#include "Xlog.h"
++
+ #if USE(FOUNDATION)
+ #include <wtf/spi/cocoa/objcSPI.h>
+ #endif
+@@ -1200,17 +1202,16 @@ void Heap::sweepSynchronously()
+     if (UNLIKELY(!Options::useGC()))
+         return;
+ 
+-    MonotonicTime before { };
+-    if (UNLIKELY(Options::logGC())) {
++    MonotonicTime before = MonotonicTime::now();
++    XLOG("[JSC Sweep] SYNC START, heap: %zukb", capacity() / 1024);
++    if (UNLIKELY(Options::logGC()))
+         dataLog("Full sweep: ", capacity() / 1024, "kb ");
+-        before = MonotonicTime::now();
+-    }
+     m_objectSpace.sweepBlocks();
+     m_objectSpace.shrink();
+-    if (UNLIKELY(Options::logGC())) {
+-        MonotonicTime after = MonotonicTime::now();
++    MonotonicTime after = MonotonicTime::now();
++    XLOG("[JSC Sweep] SYNC END, duration: %.3fms, heap: %zukb", (after - before).milliseconds(), capacity() / 1024);
++    if (UNLIKELY(Options::logGC()))
+         dataLog("=> ", capacity() / 1024, "kb, ", (after - before).milliseconds(), "ms");
+-    }
+ }
+ 
+ void Heap::collect(Synchronousness synchronousness, GCRequest request)
+@@ -1436,7 +1437,9 @@ NEVER_INLINE bool Heap::runBeginPhase(GCConductor conn)
+     }
+     
+     willStartCollection();
+-        
++
++    XLOG("[JSC GC] START %s, heap: %zukb", (*m_collectionScope == CollectionScope::Full ? "FullCollection" : "EdenCollection"), capacity() / 1024);
++
+     if (UNLIKELY(m_verifier)) {
+         // Verify that live objects from the last GC cycle haven't been corrupted by
+         // mutators before we begin this new GC cycle.
+@@ -1749,6 +1752,8 @@ NEVER_INLINE bool Heap::runEndPhase(GCConductor conn)
+     m_lastGCStartTime = m_currentGCStartTime;
+     m_lastGCEndTime = MonotonicTime::now();
+     m_totalGCTime += m_lastGCEndTime - m_lastGCStartTime;
++
++    XLOG("[JSC GC] END %s, duration: %.3fms, heap: %zukb", (endingCollectionScope == CollectionScope::Full ? "FullCollection" : "EdenCollection"), (m_lastGCEndTime - m_lastGCStartTime).milliseconds(), capacity() / 1024);
+     if (endingCollectionScope == CollectionScope::Full)
+         m_lastFullGCEndTime = m_lastGCEndTime;
+     return changePhase(conn, CollectorPhase::NotRunning);
+diff --git a/Source/JavaScriptCore/heap/IncrementalSweeper.cpp b/Source/JavaScriptCore/heap/IncrementalSweeper.cpp
+index f0b507913222..ec6484374e9b 100644
+--- a/Source/JavaScriptCore/heap/IncrementalSweeper.cpp
++++ b/Source/JavaScriptCore/heap/IncrementalSweeper.cpp
+@@ -31,6 +31,8 @@
+ #include "MarkedBlockInlines.h"
+ #include <wtf/SystemTracing.h>
+ 
++#include "Xlog.h"
++
+ namespace JSC {
+ 
+ static constexpr Seconds sweepTimeSlice = 10_ms;
+@@ -69,6 +71,11 @@ void IncrementalSweeper::doWork(VM& vm)
+ 
+ void IncrementalSweeper::doSweep(VM& vm, MonotonicTime deadline, SweepTrigger trigger)
+ {
++    m_sweepFireCount++;
++    MonotonicTime fireStart = MonotonicTime::now();
++    XLOG("[JSC Sweep] INCREMENTAL FIRE #%u START, trigger: %s, heap: %zukb",
++        m_sweepFireCount, (trigger == SweepTrigger::Timer ? "Timer" : "Opportunistic"), vm.heap.capacity() / 1024);
++
+     std::optional<TraceScope> traceScope;
+     if (UNLIKELY(Options::useTracePoints()))
+         traceScope.emplace(IncrementalSweepStart, IncrementalSweepEnd, vm.heap.size(), vm.heap.capacity());
+@@ -77,6 +84,13 @@ void IncrementalSweeper::doSweep(VM& vm, MonotonicTime deadline, SweepTrigger tr
+         if (MonotonicTime::now() < deadline)
+             continue;
+ 
++        {
++            double fireMs = (MonotonicTime::now() - fireStart).milliseconds();
++            m_sweepTotalActiveMs += fireMs;
++            XLOG("[JSC Sweep] INCREMENTAL FIRE #%u END, active: %.3fms, trigger: %s, heap: %zukb",
++                m_sweepFireCount, fireMs, (trigger == SweepTrigger::Timer ? "Timer" : "Opportunistic"), vm.heap.capacity() / 1024);
++        }
++
+         if (trigger == SweepTrigger::Timer)
+             scheduleTimer();
+         else
+@@ -86,6 +100,19 @@ void IncrementalSweeper::doSweep(VM& vm, MonotonicTime deadline, SweepTrigger tr
+     if (trigger == SweepTrigger::OpportunisticTask)
+         m_lastOpportunisticTaskDidFinishSweeping = true;
+ 
++    {
++        double fireMs = (MonotonicTime::now() - fireStart).milliseconds();
++        m_sweepTotalActiveMs += fireMs;
++        XLOG("[JSC Sweep] INCREMENTAL FIRE #%u END, active: %.3fms, trigger: %s, heap: %zukb",
++            m_sweepFireCount, fireMs, (trigger == SweepTrigger::Timer ? "Timer" : "Opportunistic"), vm.heap.capacity() / 1024);
++    }
++
++    MonotonicTime now = MonotonicTime::now();
++    XLOG("[JSC Sweep] INCREMENTAL END, wall: %.3fms, active: %.3fms, fires: %u, heap: %zukb",
++        (now - m_sweepStartTime).milliseconds(), m_sweepTotalActiveMs, m_sweepFireCount, vm.heap.capacity() / 1024);
++    if (m_isSweeping) {
++        m_isSweeping = false;
++    }
+     cancelTimer();
+ }
+ 
+@@ -125,12 +152,22 @@ bool IncrementalSweeper::sweepNextBlock(VM& vm, SweepTrigger trigger)
+ 
+ void IncrementalSweeper::startSweeping(JSC::Heap& heap)
+ {
++    m_sweepStartTime = MonotonicTime::now();
++    m_isSweeping = true;
++    m_sweepFireCount = 0;
++    m_sweepTotalActiveMs = 0;
++    XLOG("[JSC Sweep] INCREMENTAL START, heap: %zukb", heap.capacity() / 1024);
+     scheduleTimer();
+     m_currentDirectory = heap.objectSpace().firstDirectory();
+ }
+ 
+ void IncrementalSweeper::stopSweeping()
+ {
++    if (m_isSweeping) {
++        MonotonicTime now = MonotonicTime::now();
++        XLOG("[JSC Sweep] INCREMENTAL STOPPED, duration: %.3fms", (now - m_sweepStartTime).milliseconds());
++        m_isSweeping = false;
++    }
+     m_currentDirectory = nullptr;
+     cancelTimer();
+ }
+diff --git a/Source/JavaScriptCore/heap/IncrementalSweeper.h b/Source/JavaScriptCore/heap/IncrementalSweeper.h
+index f10fbc9ed137..7b28eeec5d1f 100644
+--- a/Source/JavaScriptCore/heap/IncrementalSweeper.h
++++ b/Source/JavaScriptCore/heap/IncrementalSweeper.h
+@@ -51,6 +51,10 @@ private:
+     
+     BlockDirectory* m_currentDirectory;
+     bool m_lastOpportunisticTaskDidFinishSweeping { false };
++    MonotonicTime m_sweepStartTime;
++    bool m_isSweeping { false };
++    unsigned m_sweepFireCount { 0 };
++    double m_sweepTotalActiveMs { 0 };
+ };
+ 
+ } // namespace JSC
+diff --git a/Source/JavaScriptCore/heap/Xlog.h b/Source/JavaScriptCore/heap/Xlog.h
+new file mode 100644
+index 000000000000..89b9dcd9466c
+--- /dev/null
++++ b/Source/JavaScriptCore/heap/Xlog.h
+@@ -0,0 +1,145 @@
++
++#pragma once
++
++#define ENABLE_TRACE 1
++#define XLOG_TO_FILE 0
++
++#include <time.h>
++#include <stdio.h>
++#if ENABLE_TRACE
++#include <string>
++#include <sstream>
++#endif
++
++#include <unistd.h>
++#include <pthread.h>
++
++#if !ENABLE_TRACE
++#ifndef uint64_t
++#define uint64_t long long unsigned
++#endif
++#endif
++
++//uint64_t nowX(void);
++
++static uint64_t nowX(void) { 
++    struct timespec res;
++    clock_gettime(CLOCK_MONOTONIC_RAW, &res);
++    return (uint64_t)res.tv_sec * 1000 * 1000 + (uint64_t)res.tv_nsec / 1000;
++}
++
++
++#if XLOG_TO_FILE
++static void printToFileX(const char* msg) {
++    const char* filename = "/tmp/OCDM/trace_asurdej.txt";
++    FILE* f = fopen(filename, "a");
++    if (!f) {
++        fprintf(stderr, "Failed to open file\n");
++        return;
++    }
++    fprintf(f, "[%s] msg: %s\n", getenv("APPLICATION_NAME"), msg);
++    fclose(f);
++}
++#endif
++
++#define TFM "%llu.%.6llu"
++#define TVAL(time) (time) / 1000000, (time) % 1000000
++#define TVALDIFF(time) TVAL(nowX() - time)
++
++#if ENABLE_TRACE
++#if XLOG_TO_FILE
++#define XLOGF(fmt, ...) do { \
++    char buf[1024]; \
++    uint64_t nowXX = nowX(); \
++    snprintf(buf, sizeof(buf), "%llu.%.6llu asurdej [%d:%d] %s-%s():%d " fmt "\n"           , nowXX / 1000000, nowXX % 1000000, (int) getpid(), (int) gettid(), __FILE__, __func__, __LINE__,       ##__VA_ARGS__); \
++    printToFileX(buf); \
++ } while (0)
++
++#define XLOG(fmt, ...) XLOGF(fmt, ##__VA_ARGS__)
++#else // XLOG_TO_FILE
++#define XLOG(fmt, ...)  do { uint64_t nowXX = nowX(); fprintf(stderr, "%ju.%.6ju asurdej [%d:%d] %s-%s():%d " fmt "\n"           , nowXX / 1000000, nowXX % 1000000, (int) getpid(), (int) gettid(), __FILE__, __func__, __LINE__,       ##__VA_ARGS__); } while (0)
++#endif // XLOG_TO_FILE
++
++#define XLOGT(fmt, ...) XLOG("[this: %p] " fmt, this, ##__VA_ARGS__)
++//#define XLOG(fmt, ...)  XLOGX("[this: %p] " fmt, this, ##__VA_ARGS__)
++#else // ENABLE_TRACE 0
++#if XLOG_TO_FILE
++#define XLOGF(fmt, ...) do { \
++    char buf[1024]; \
++    uint64_t nowXX = nowX(); \
++    snprintf(buf, sizeof(buf), "%llu.%.6llu asurdej [%d:%lu] %s-%s():%d " fmt "\n"           , nowXX / 1000000, nowXX % 1000000, (int) getpid(), (unsigned long) pthread_self(), __FILE__, __func__, __LINE__,       ##__VA_ARGS__); \
++    printToFileX(buf); \
++ } while (0)
++
++#define XLOG(fmt, ...) XLOGF(fmt, ##__VA_ARGS__)
++#else // XLOG_TO_FILE
++#define XLOG(fmt, ...)  do { uint64_t nowXX = nowX(); fprintf(stderr, "%lluu.%.6llu asurdej [%d:%d] %s-%s():%d " fmt "\n"           , nowXX / 1000000, nowXX % 1000000, (int) getpid(), (int) pthread_self(), __FILE__, __func__, __LINE__,       ##__VA_ARGS__); } while (0)
++//#define XLOG(fmt, ...)  do { fprintf(stderr, "asurdej [%d] %s-%s():%d " fmt "\n"           , (int) getpid(), __FILE__, __func__, __LINE__,       ##__VA_ARGS__); } while (0)
++#endif // XLOG_TO_FILE
++#define XLOGT(fmt, ...) XLOG("[this: %p] " fmt, this, ##__VA_ARGS__)
++#endif
++
++#if ENABLE_TRACE
++class ScopedTraceX {
++ public:
++
++    // ScopedTraceX(const char* name, void* origObj = nullptr) : m_name(name), m_parent(origObj) {
++    //     m_start = nowX();
++
++    //     //uint64_t now = nowX();
++    //     fprintf(stderr, "%llu.%.6llu asurdej [%d:%d] %s TRACE_START[%p] [obj:%p] %s\n",
++    //     m_start / 1000000, m_start % 1000000,
++    //     (int) getpid(), (int) gettid(),
++    //     m_path.c_str(), this, m_parent, m_name.c_str()); 
++    // }
++
++    ScopedTraceX(const char* file, const char* func, int line, const char* name, void* origObj = nullptr) : m_name(name), m_parent(origObj) {
++        std::stringstream ss;
++        ss << file << "-" << func << "():" << line << " ";
++        m_path = ss.str();
++
++        m_start = nowX();
++
++        //uint64_t now = nowX();
++        fprintf(stderr, "%ju.%.6ju asurdej [%d:%d] %s TRACE_START [%p] [obj:%p] %s\n",
++        m_start / 1000000, m_start % 1000000,
++        (int) getpid(), (int) gettid(),
++        m_path.c_str(), this, m_parent, m_name.c_str());
++    }
++
++    ~ScopedTraceX() {
++        uint64_t stop = nowX();
++        uint64_t diff = stop - m_start;
++
++        fprintf(stderr, "%ju.%.6ju asurdej [%d:%d] %s TRACE_STOP [%p] [obj:%p] %s took %ju.%.6ju\n",
++        stop / 1000000, stop % 1000000,
++        (int) getpid(), (int) gettid(),
++        m_path.c_str(), this, m_parent, m_name.c_str(), diff / 1000000, diff % 1000000);
++
++        if (diff > 20000) { 
++            XLOG("!!! WARNING !!!");
++        }
++    }
++
++ uint64_t m_start = 0;
++
++ std::string m_name;
++ void* m_parent = nullptr;
++ std::string m_path;
++};
++
++
++#define STRACE(name) XLOG(""); ScopedTraceX ala##name(__FILE__, __func__, __LINE__, #name, this)
++
++#endif
++
++#define TRACE_START(fmt, ...)  uint64_t startXX = nowX(); XLOG("TRACE_START " fmt, ##__VA_ARGS__);
++#define TRACE_STOP(fmt, ...)   uint64_t diffXX = nowX() - startXX; XLOG("TRACE_STOP %ju.%.6ju " fmt, diffXX / 1000000, diffXX % 1000000, ##__VA_ARGS__); if (diffXX > 100000) { XLOG("!!! WARNING !!!"); }
++
++#define TRACEN_START(name, fmt, ...) const char* nameXX = #name; TRACE_START("%s " fmt, nameXX, ##__VA_ARGS__)
++#define TRACEN_STOP(fmt, ...) TRACE_STOP("%s " fmt, nameXX, ##__VA_ARGS__)
++
++#define TRACET_START(name)  TRACEN_START(name, "[This: %p]", this);
++#define TRACET_STOP()   TRACEN_STOP("[This: %p]", this);
++
++
+-- 
+2.51.0
+

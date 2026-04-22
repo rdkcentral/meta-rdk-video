@@ -58,6 +58,8 @@ SRC_URI += "file://2.46/comcast-DELIA-59087-Disable-pausing-playback-for-buf.pat
 SRC_URI += "file://2.46/comcast-RDKTV-28214-Quick-_exit.patch"
 #SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
 
+SRC_URI += "file://2.46/0001-RDKEMW-15672-Print-GC-and-Sweeper-timing.patch"
+
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"
 PACKAGECONFIG[asan]                  = "-DENABLE_SANITIZERS=address,,gcc-sanitizers"
