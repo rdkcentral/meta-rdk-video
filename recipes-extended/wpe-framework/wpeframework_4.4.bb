@@ -12,7 +12,7 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r41"
+PR = "r42"
 PV = "4.4.3"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -74,6 +74,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/StartExtensions.patch \
             file://r4.4/EnablePISLogging.patch \
             file://r4.4/0001-LIMIT-Limit-handing-out-interfaces-of-Plugins-only-i.patch \
+            file://r4.4/StartCOMServerAfterControllerInit.patch \
            "
 
 S = "${WORKDIR}/git"
