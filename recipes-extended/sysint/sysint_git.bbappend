@@ -4,6 +4,8 @@ DOBBY_ENABLED = "${@bb.utils.contains('DISTRO_FEATURES', 'DOBBY_CONTAINERS','tru
 
 SRC_URI += "file://udhcpc.vendor_specific"
 SRC_URI += "file://timeZone_offset_map"
+SRC_URI += "file://timesyncd-update.conf"
+SRC_URI += "file://nm-connectivity.conf"
 
 inherit logrotate_config 
 
@@ -21,9 +23,14 @@ LOGROTATE_ROTATION_pqstats="3"
 LOGROTATE_SIZE_MEM_pqstats="1572864"
 LOGROTATE_ROTATION_MEM_pqstats="3"
 
+NM_CONNECTIVITY_CHECK_URL ?= "http://nmcheck.gnome.org/check_network_status.txt"
+NM_CONNECTIVITY_CHECK_RESPONSE ?= "NetworkManager is online"
+
 do_install:append() {
     install -m 0755 ${WORKDIR}/udhcpc.vendor_specific ${D}${sysconfdir}/udhcpc.vendor_specific
     install -m 0644 ${WORKDIR}/timeZone_offset_map ${D}${sysconfdir}/timeZone_offset_map
+    install -d ${D}${systemd_unitdir}/system/systemd-timesyncd.service.d
+    install -m 644 ${WORKDIR}/timesyncd-update.conf ${D}${systemd_unitdir}/system/systemd-timesyncd.service.d
 
     if [ "${DOBBY_ENABLED}" = "true" ]; then
         echo "DOBBY_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
@@ -39,6 +46,22 @@ do_install:append() {
        sed -i 's/BUILD_TYPE=dev/BUILD_TYPE=prod/g' ${D}${sysconfdir}/device.properties
     fi
 
+    install -d ${D}${sysconfdir}/NetworkManager/conf.d/
+    install -m 0755 ${WORKDIR}/nm-connectivity.conf ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
+    if [ -f "${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf" ]; then
+           if [ -n "${NM_CONNECTIVITY_CHECK_URL}" ]; then
+               sed -i "s|uri=.*|uri=${NM_CONNECTIVITY_CHECK_URL}|g" ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
+           fi
+           if [ -n "${NM_CONNECTIVITY_CHECK_RESPONSE}" ]; then
+               sed -i "s|response=|response=${NM_CONNECTIVITY_CHECK_RESPONSE}|g" ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
+           fi
+    fi
+    if [ "${MACHINE}" = "es1-rtk-xumo" ]; then
+          if [ -f ${D}${base_libdir}/rdk/startStunnel.sh ]; then
+                bbnote "Disabling SHORTS"
+               sed -i 's/`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable 2>&1 > \/dev\/null`/\"false\"/' ${D}${base_libdir}/rdk/startStunnel.sh
+          fi
+    fi
 }
 
 FILES:${PN} += "${sysconfdir}/udhcpc.vendor_specific"
@@ -50,13 +73,6 @@ LOGROTATE_SIZE_MEM_applications = "512000"
 LOGROTATE_ROTATION_MEM_applications = "2"
 LOGROTATE_SIZE_applications = "20971520"
 LOGROTATE_ROTATION_applications = "5"
-
-LOGROTATE_NAME = "reboot-reason"
-LOGROTATE_LOGNAME_reboot-reason = "rebootreason.log"
-LOGROTATE_SIZE_MEM_reboot-reason = "1572864"
-LOGROTATE_ROTATION_MEM_reboot-reason = "3"
-LOGROTATE_SIZE_reboot-reason = "1572864"
-LOGROTATE_ROTATION_reboot-reason = "3"
 
 LOGROTATE_NAME = "system"
 LOGROTATE_LOGNAME_system = "system.log"
@@ -149,13 +165,6 @@ LOGROTATE_ROTATION_webpa_log = "3"
 LOGROTATE_SIZE_MEM_webpa_log = "128000"
 LOGROTATE_ROTATION_MEM_webpa_log = "3"
 
-LOGROTATE_NAME = "rebootInfo"
-LOGROTATE_LOGNAME_rebootInfo = "rebootInfo.log"
-LOGROTATE_SIZE_rebootInfo = "64000"
-LOGROTATE_ROTATION_rebootInfo = "3"
-LOGROTATE_SIZE_MEM_rebootInfo = "64000"
-LOGROTATE_ROTATION_MEM_rebootInfo = "3"
-
 LOGROTATE_NAME = "core_log"
 LOGROTATE_LOGNAME_core_log = "core_log.txt"
 LOGROTATE_SIZE_core_log = "128000"
@@ -183,3 +192,5 @@ LOGROTATE_SIZE_dcm="1572864"
 LOGROTATE_ROTATION_dcm="1"
 LOGROTATE_SIZE_MEM_dcm="512000"
 LOGROTATE_ROTATION_MEM_dcm="1"
+
+FILES:${PN} += "${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf"

@@ -1,0 +1,14 @@
+[Unit]
+Description=Thunder-R5.3
+
+[Service]
+Type=notify
+Environment="XDG_RUNTIME_DIR=/tmp"
+Environment="GST_REGISTRY=/opt/.gstreamer/registry.bin" 
+Environment="GST_REGISTRY_UPDATE=no"
+ExecStart=/usr/bin/Thunder -b
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
