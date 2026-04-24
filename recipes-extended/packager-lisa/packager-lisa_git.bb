@@ -13,7 +13,7 @@ RPROVIDES:${PN} = "virtual/libpackage"
 
 DEPENDS += "packager-headers"
 
-SRCREV = "3931d9664d126a7a3521466d051f830cbbf680ae"
+SRCREV = "a4d192fa9ad0ee9721859035f8eb811281265967"
 SRC_URI = "${CMF_GITHUB_ROOT}/libpackage;${CMF_GITHUB_SRC_URI_SUFFIX};name=lisapack"
 SRCREV_FORMAT = "lisapack"
 
