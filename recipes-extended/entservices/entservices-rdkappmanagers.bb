@@ -152,9 +152,10 @@ do_install:append() {
     fi
 
     # Write component version info for appinfraversion.txt merge
-    install -d ${D}${sysconfdir}
+    install -d ${D}${sysconfdir} ${D}/opt
     echo "APP_MANAGERS_PV = \"${PV}\""     >  ${D}${sysconfdir}/appmanagersversion.txt
     echo "APP_MANAGERS_SHA = \"${SRCREV}\"" >> ${D}${sysconfdir}/appmanagersversion.txt
+    install -m 0644 ${D}${sysconfdir}/appmanagersversion.txt ${D}/opt/appmanagersversion.txt
 }
 
 # ----------------------------------------------------------------------------
@@ -162,6 +163,7 @@ do_install:append() {
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_ralf', '${datadir}/*', '', d)}"
+FILES:${PN} += "/opt/appmanagersversion.txt"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
