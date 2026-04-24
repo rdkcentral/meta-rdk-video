@@ -239,6 +239,12 @@ do_install() {
         rm ${D}${base_libdir}/rdk/NM_preDown.sh
         install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
         install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
+        # Remove conflicting files when legacy_entos_support distro feature is enabled
+        if ${@bb.utils.contains('DISTRO_FEATURES', 'legacy_entos_support', 'true', 'false', d)}; then
+            rm -f ${D}${sysconfdir}/common.properties
+            rm -f ${D}${base_libdir}/rdk/imageFlasher.sh
+            rm -f ${D}${base_libdir}/rdk/init-zram.sh
+        fi
 }
 
 do_install:append:rdkstb() {
@@ -297,3 +303,5 @@ FILES:${PN} += " /HrvInitScripts/*"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/NM_Dispatcher.sh"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dispatcher.d/pre-down.d/NM_preDown.sh"
 FILES:${PN} += "${sysconfdir}/NetworkManager/dnsmasq.d/dnsmasq-dobby.conf"
+# Conditionally remove files from package when legacy_entos_support is enabled
+FILES:${PN}:remove = "${@bb.utils.contains('DISTRO_FEATURES', 'legacy_entos_support', '${sysconfdir}/common.properties lib/rdk/imageFlasher.sh lib/rdk/init-zram.sh', '', d)}"
