@@ -165,3 +165,4 @@ FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_ralf', '${datadi
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
+
