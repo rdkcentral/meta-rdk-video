@@ -17,7 +17,7 @@ SRC_URI += "file://gstreamer-cleanup.service"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-do_install:append () { 
+do_install:append ()  
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/gstreamer-cleanup.service ${D}${systemd_unitdir}/system/gstreamer-cleanup.service
     install -d ${D}${base_libdir}/rdk
