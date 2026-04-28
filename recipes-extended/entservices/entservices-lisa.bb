@@ -33,3 +33,11 @@ INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
 
 require include/entservices-lisa-dac-config.inc
+
+# ----------------------------------------------------------------------------
+
+DEPENDS:append = " gcc-sanitizers "
+RDEPENDS_${PN}:append = " gcc-sanitizers "
+CFLAGS:append = " -fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer "
+CXXFLAGS:append = " -fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer "
+LDFLAGS:append = " -fsanitize=address "

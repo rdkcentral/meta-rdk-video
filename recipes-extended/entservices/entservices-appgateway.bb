@@ -38,3 +38,11 @@ do_install:append() {
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so"
 
 INSANE_SKIP:${PN} += "dev-so"
+
+# ----------------------------------------------------------------------------
+
+DEPENDS:append = " gcc-sanitizers "
+RDEPENDS_${PN}:append = " gcc-sanitizers "
+CFLAGS:append = " -fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer "
+CXXFLAGS:append = " -fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer "
+LDFLAGS:append = " -fsanitize=address "

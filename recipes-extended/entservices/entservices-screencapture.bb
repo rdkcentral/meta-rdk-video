@@ -105,3 +105,11 @@ FILES:${PN} += "\
      ${libdir}/wpeframework/plugins/libWPEFrameworkScreenCapture.so \
      /etc/WPEFramework/plugins/ScreenCapture.json \
 "
+
+# ----------------------------------------------------------------------------
+
+DEPENDS:append = " gcc-sanitizers "
+RDEPENDS_${PN}:append = " gcc-sanitizers "
+CFLAGS:append = " -fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer "
+CXXFLAGS:append = " -fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer "
+LDFLAGS:append = " -fsanitize=address "
