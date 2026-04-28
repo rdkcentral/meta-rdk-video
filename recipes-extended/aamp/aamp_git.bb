@@ -7,7 +7,7 @@ PV ?= "3.3.0"
 PR ?= "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "8de308302175e2af4b4ac142bf76f62a2315431d"
+SRCREV_aamp ?= "6663dce6e38c9c9a29d9bb9c9342cddf7e4ae23b"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "inbandcc"
