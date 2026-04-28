@@ -5,7 +5,7 @@ HOMEPAGE = "https://github.com/rdkcentral/Thunder"
 
 LIC_FILES_CHKSUM = "file://LICENSE;md5=85bcfede74b96d9a58c6ea5d4b607e58"
 
-DEPENDS = "zlib wpeframework-tools-native rfc thunder-hang-recovery"
+DEPENDS = "zlib wpeframework-tools-native rfc"
 DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
 
@@ -145,7 +145,7 @@ ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'Securit
 EXTRA_OECMAKE += " \
     -DINSTALL_HEADERS_TO_TARGET=ON \
     -DEXTERN_EVENTS="${WPEFRAMEWORK_EXTERN_EVENTS}" \
-    -DEXCEPTIONS_ENABLE=ON \  
+    -DEXCEPTIONS_ENABLE=ON \
     -DBUILD_SHARED_LIBS=ON \
     -DRPC=ON \
     -DBUILD_REFERENCE=${SRCREV} \
@@ -171,6 +171,21 @@ EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
+
+    # Propagate configured keymap via parent service environment to rdkwindowmanager plugin.
+    if [ -n "${WINDOWMANAGER_RCU_KEYMAP_FILE}" ]; then
+        WPEFW_SERVICE="${D}${systemd_unitdir}/system/wpeframework.service"
+
+        if [ -f "$WPEFW_SERVICE" ]; then
+            if grep -Eq '^[[:space:]]*Environment="?RDK_WINDOW_MANAGER_KEYMAP_FILE=' "${WPEFW_SERVICE}"; then
+                bbnote "Updating Windowmanager KEYMAP env in wpeframework.service"
+                sed -i -E "s|^[[:space:]]*Environment=\"?RDK_WINDOW_MANAGER_KEYMAP_FILE=.*$|Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"|" "${WPEFW_SERVICE}"
+            else
+                bbnote "Adding Windowmanager KEYMAP env in wpeframework.service"
+                sed -i "/^\[Service\]/a Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"" "${WPEFW_SERVICE}"
+            fi
+        fi
+    fi
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
@@ -196,7 +211,7 @@ INSANE_SKIP:${PN}-dbg += "dev-so"
 # ----------------------------------------------------------------------------
 
 RDEPENDS:${PN}_rpi = "userland"
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)} thunder-hang-recovery"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 # Should be able to remove this when generic rdk_svp flag
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'sage_svp', 'gst-svp-ext', '', d)}"
 
@@ -205,7 +220,7 @@ RDEPENDS:${PN}:append:rpi = " ${@bb.utils.contains('DISTRO_FEATURES', 'vc4graphi
 inherit breakpad-logmapper syslog-ng-config-gen logrotate_config
 
 SYSLOG-NG_FILTER = "wpeframework"
-SYSLOG-NG_SERVICE_wpeframework = "wpeframework.service thunderHangRecovery.service"
+SYSLOG-NG_SERVICE_wpeframework = "wpeframework.service"
 SYSLOG-NG_DESTINATION_wpeframework = "wpeframework.log"
 SYSLOG-NG_LOGRATE_wpeframework = "high"
 
@@ -224,4 +239,3 @@ BREAKPAD_LOGMAPPER_LOGLIST = "wpeframework.log"
 do_add_version () {
     echo "WPEFRAMEWORK-VERSION=${THUNDER_RELEASE_TAG_NAME}" > ${EXTRA_VERSIONS_PATH}/${PN}.txt
 }
-
