@@ -26,9 +26,9 @@ Before=wpeframework.service
 [Service]
 Type=oneshot
 RemainAfterExit=Yes
-ExecStartPre=/bin/bash -c 'if [ -f /lib/rdk/logMilestone.sh ];then sh /lib/rdk/logMilestone.sh "GST_CLEANUP_START"; fi;'
+ExecStartPre=/bin/sh -c 'if [ -f /lib/rdk/logMilestone.sh ];then sh /lib/rdk/logMilestone.sh "GST_CLEANUP_START"; fi;'
 ExecStart=-/lib/rdk/gstreamer-cleanup.sh
-ExecStartPost=/bin/bash -c 'if [ -f /lib/rdk/logMilestone.sh ];then sh /lib/rdk/logMilestone.sh "GST_CLEANUP_COMPLETE"; fi;'
+ExecStartPost=/bin/sh -c 'if [ -f /lib/rdk/logMilestone.sh ];then sh /lib/rdk/logMilestone.sh "GST_CLEANUP_COMPLETE"; fi;'
 ExecStop=/bin/sh -c 'FW_UPDATE_STATE=$(cat /opt/fwdnldstatus.txt | grep FwUpdateState | cut -d "|" -f2); echo "FW_UPDATE_STATE: $FW_UPDATE_STATE"; if [ "$FW_UPDATE_STATE" == "Preparing to reboot" ]; then  echo "Removing gstreamer registry after firmware update"; rm -rf /opt/.gstreamer; fi;'
 
 [Install]
