@@ -1,6 +1,6 @@
 SUMMARY = "ENTServices Playerinfo plugins"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=1c020dfe1abb4e684874a44de1244c28"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=b8674f44703ede95bec14083251335db"
 
 PV = "1.0.3"
 PR = "r1"
