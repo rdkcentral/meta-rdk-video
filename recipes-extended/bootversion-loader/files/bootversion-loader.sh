@@ -28,10 +28,9 @@ file_bootversion_bak="/opt/.bootversion.bak"
 migrationDSFile="/opt/secure/migration/migration_data_store.json"
 migrationDir="/opt/secure/migration"
 
-BOOTTYPE_LOG_FILE="/opt/logs/boottypescript.log"
-
 boottypeLog() {
-    echo "`/bin/timestamp`: $0: $*" >> $BOOTTYPE_LOG_FILE
+    log_msg="`/bin/timestamp`: $0: $*"
+    echo "$log_msg" | systemd-cat -t boottypescript
 }
 
 # Write to file with error handling
