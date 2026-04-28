@@ -32,8 +32,8 @@ index 29959d47f452..ccb731f9833e 100644
 +            // This means that s_videoMemoryInFootprint should not be set for this device
 +            // or footprint and footprintVideo are coming from two different processes
 +            // and shouldn't be compared with each other. Both cases are misconfigurations.
-+            WTFLogAlways("Video memory footprint (%zu MB) is larger than total memory footprint (%zu MB). \
-+                          Check MemoryPressureHandler configuration\n", footprintVideo / MB, footprint / MB);
++            WTFLogAlways("Video memory footprint (%zu MB) is larger than total memory footprint (%zu MB). "
++                "Check MemoryPressureHandler configuration\n", footprintVideo / MB, footprint / MB);
 +            return footprint;
 +        }
          footprint -= footprintVideo;
