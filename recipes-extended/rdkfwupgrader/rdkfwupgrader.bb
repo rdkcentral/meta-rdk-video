@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=70514b59ff7b36bbbc30d093c6814d8e"
 PV = "1.6.2"
 PR = "r0"
 
-SRCREV_rdkfw = "7053669e3eb77a385d07614260fa387b933b23e5"
+SRCREV_rdkfw = "48d59c8ee9b3306c4f70986f118d639410506474"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkfwupdater;${CMF_GITHUB_SRC_URI_SUFFIX};name=rdkfw"
 
 DEPENDS +=" cjson curl rdk-logger rbus"
