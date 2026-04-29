@@ -1,7 +1,7 @@
 # Maintenance Manager Plugin, provides an interface to control and monitor maintenance activities on Embedded devices
 
 # Task Timeout for Maintenance tasks
-MAINTENANCE_TASK_TIMEOUT = "3600"
+MAINTENANCE_TASK_TIMEOUT = "600"
 
 # Syslog-ng configuration for Maintenance Manager
 SYSLOG-NG_FILTER += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_maintenance_manager maintenance_journal_logging', 'maintenancemanager', '', d)}"
