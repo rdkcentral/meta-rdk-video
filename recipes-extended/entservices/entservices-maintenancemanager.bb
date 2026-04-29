@@ -2,7 +2,7 @@ SUMMARY = "ENTServices maintenancemanager plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
-PV = "1.9.0"
+PV = "1.0.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-maintenancemanager;${CMF_GITHUB_SRC_UR
            file://rdkservices.ini \
           "
 
-# Release version - 1.9.0
-SRCREV = "253aa5dc8978b22908d3e2ccc079e2a7603fd0a7"
+# Release version - 1.0.0
+SRCREV = "ee0d02de30937447fa2cf3ae0c4af4948ad50830"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
