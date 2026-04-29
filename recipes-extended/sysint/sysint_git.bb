@@ -11,7 +11,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=
 S = "${WORKDIR}/git"
 
 inherit systemd syslog-ng-config-gen logrotate_config
-SYSLOG-NG_FILTER = " systemd dropbear gstreamer-cleanup update-device-details applications vitalprocess-info iptables mount_log reboot-reason messages zram"
+SYSLOG-NG_FILTER = " systemd dropbear update-device-details applications vitalprocess-info iptables mount_log reboot-reason messages zram"
 SYSLOG-NG_FILTER:append = " ConnectionStats systemd_timesyncd"
 SYSLOG-NG_SERVICE_ConnectionStats = "network-connection-stats.service"
 SYSLOG-NG_DESTINATION_ConnectionStats = "ConnectionStats.txt"
@@ -25,9 +25,6 @@ SYSLOG-NG_LOGRATE_dropbear = "medium"
 SYSLOG-NG_SERVICE_systemd = "init.scope"
 SYSLOG-NG_DESTINATION_systemd = "system.log"
 SYSLOG-NG_LOGRATE_systemd = "high"
-SYSLOG-NG_SERVICE_gstreamer-cleanup = "gstreamer-cleanup.service"
-SYSLOG-NG_DESTINATION_gstreamer-cleanup = "gst-cleanup.log"
-SYSLOG-NG_LOGRATE_gstreamer-cleanup = "low"
 SYSLOG-NG_SERVICE_update-device-details = "update-device-details.service"
 SYSLOG-NG_DESTINATION_update-device-details = "device_details.log"
 SYSLOG-NG_LOGRATE_update-device-details = "low"
@@ -111,7 +108,6 @@ do_install() {
         install -m 0644 ${S}/systemd_units/update-reboot-info.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/minidump-upload.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/minidump-secure-upload.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/disk-threshold-check.service ${D}${systemd_unitdir}/system
@@ -126,7 +122,6 @@ do_install() {
         install -m 0644 ${S}/systemd_units/update-reboot-info.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/oops-dump.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/restart-timesyncd.service ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/systemd_units/restart-timesyncd.path ${D}${systemd_unitdir}/system
@@ -298,7 +293,6 @@ SYSTEMD_SERVICE:${PN} += "update-reboot-info.path"
 SYSTEMD_SERVICE:${PN} += "update-reboot-info.service"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.path"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.service"
-SYSTEMD_SERVICE:${PN} += "gstreamer-cleanup.service"
 SYSTEMD_SERVICE:${PN} += "restart-timesyncd.path"
 SYSTEMD_SERVICE:${PN} += "ntp-event.service"
 SYSTEMD_SERVICE:${PN} += "ntp-event.path"
