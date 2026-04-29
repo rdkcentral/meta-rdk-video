@@ -92,7 +92,7 @@ python() {
 }
 
 do_unpack_extra() {
-    bbnote "copy larboard"
+    bbnote "symlink larboard"
     ( cd "${S}/third_party/" && ln -sf ../../larboard/src/third_party/starboard . )
 }
 addtask unpack_extra after do_patch before do_configure
@@ -154,3 +154,6 @@ FILES_SOLIBSDEV = ""
 INSANE_SKIP:${PN} += "dev-so"
 INSANE_SKIP:${PN}-dev += "dev-so dev-elf"
 INSANE_SKIP:${PN}-dbg += "dev-so"
+
+FIREBOLT_DEP = "${@bb.utils.contains('DISTRO_FEATURES', 'larboard_use_system_firebolt_libs', 'larboard_firebolt_system', 'larboard_firebolt_src', d)}"
+require ${FIREBOLT_DEP}.inc
