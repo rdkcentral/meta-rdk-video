@@ -25,15 +25,15 @@ DEPENDS:append = " safec-common-wrapper"
 DEPENDS:append = " telemetry"
 
 PARALLEL_MAKE = ""
-#removed ermgr from depends
-DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal devicesettings-hal-headers \
-         iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
+#removed ermgr from depends due Nothing PROVIDES 'virtual/westeros-soc'
+DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal \
+          iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
          deepsleep-manager-headers power-manager-headers wpeframework-clientlibraries"
-#DEPENDS:append:client = " virtual/mfrlib"
-#DEPENDS:append = " virtual/mfrlib"
-RDEPENDS:${PN}:append = " devicesettings rfc devicesettings-hal-noop"
-#RDEPENDS:${PN}_client_morty += " virtual/mfrlib"
-#RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_mfrlib} devicesettings"
+DEPENDS:append:client = " virtual/mfrlib"
+DEPENDS:append = " virtual/mfrlib"
+RDEPENDS:${PN}:append = " rfc devicesettings-hal-noop"
+RDEPENDS:${PN}_client_morty += " virtual/mfrlib"
+RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_mfrlib} devicesettings"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
 
 
@@ -97,8 +97,8 @@ INCLUDE_DIRS = " \
     -I=${includedir}/rdk/servicemanager \
     "
 
-#MFR_LIB ?= '\"libRDKMfrLib.so\"'
-#MFR_LIB_NAME ?= "-lRDKMfrLib"
+MFR_LIB ?= '\"libRDKMfrLib.so\"'
+MFR_LIB_NAME ?= "-lRDKMfrLib"
 # FIXME
 # rdk_build.sh has this and we might need to do something with it:
 # export _ENABLE_WAKEUP_KEY=-D_ENABLE_WAKEUP_KEY
@@ -256,7 +256,7 @@ inherit syslog-ng-config-gen
 
 SYSLOG-NG_FILTER += "uimgr"
 
-#LDFLAGS += "-lRDKMfrLib "
+LDFLAGS += "-lRDKMfrLib "
 
 LDFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' -lsqlite3 ', '',d)}"
 
