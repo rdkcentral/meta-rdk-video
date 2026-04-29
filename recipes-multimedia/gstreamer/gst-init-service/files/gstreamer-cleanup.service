@@ -1,0 +1,35 @@
+##############################################################################
+# If not stated otherwise in this file or this component's LICENSE file the
+# following copyright and licenses apply:
+#
+# Copyright 2020 RDK Management
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##############################################################################
+
+[Unit]
+Description=Cleans up Gstreamer Registry
+
+After=local-fs.target nvram.service
+Before=wpeframework.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=Yes
+ExecStartPre=/bin/sh -c 'if [ -f /lib/rdk/logMilestone.sh ];then sh /lib/rdk/logMilestone.sh "GST_CLEANUP_START"; fi;'
+ExecStart=-/lib/rdk/gstreamer-cleanup.sh
+ExecStartPost=/bin/sh -c 'if [ -f /lib/rdk/logMilestone.sh ];then sh /lib/rdk/logMilestone.sh "GST_CLEANUP_COMPLETE"; fi;'
+ExecStop=/bin/sh -c 'FW_UPDATE_STATE=$(cat /opt/fwdnldstatus.txt | grep FwUpdateState | cut -d "|" -f2); echo "FW_UPDATE_STATE: $FW_UPDATE_STATE"; if [ "$FW_UPDATE_STATE" == "Preparing to reboot" ]; then  echo "Removing gstreamer registry after firmware update"; rm -rf /opt/.gstreamer; fi;'
+
+[Install]
+WantedBy=multi-user.target
