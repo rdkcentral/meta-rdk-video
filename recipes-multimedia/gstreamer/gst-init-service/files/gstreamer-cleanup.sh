@@ -31,11 +31,6 @@ if [[ -f /version.txt ]]; then
     CUR_IMAGE=$(grep "^imagename:" /version.txt | cut -d":" -f2)
 fi
 
-# Print the variables for debugging - can be removed once the logic is stable
-echo "DEBUG: CDLFILE=[${CDLFILE}]"
-echo "DEBUG: PREV_CDLFILE=[${PREV_CDLFILE}]"
-echo "DEBUG: CUR_IMAGE=[${CUR_IMAGE}]"
-
 # Check all cleanup conditions in a single if statement using bash syntax
 if [[ ! -f /opt/previous_flashed_file_name || \
       ( ! -f /opt/cdl_flashed_file_name && "${PREV_CDLFILE}" != *"${CUR_IMAGE}"* ) || \

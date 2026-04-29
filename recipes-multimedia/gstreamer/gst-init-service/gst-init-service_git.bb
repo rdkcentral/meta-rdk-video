@@ -10,7 +10,12 @@ PR = "r0"
 
 RDEPENDS:${PN} += "bash"
 
-inherit systemd
+inherit systemd syslog-ng-config-gen
+
+SYSLOG-NG_FILTER = "gstreamer-cleanup"
+SYSLOG-NG_SERVICE_gstreamer-cleanup = "gstreamer-cleanup.service"
+SYSLOG-NG_DESTINATION_gstreamer-cleanup = "gstreamer_cleanup.log"
+SYSLOG-NG_LOGRATE_gstreamer-cleanup = "low"
 
 SRC_URI += "file://gstreamer-cleanup.sh"
 SRC_URI += "file://gstreamer-cleanup.service"
