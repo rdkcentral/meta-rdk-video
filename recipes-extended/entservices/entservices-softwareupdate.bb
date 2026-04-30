@@ -67,7 +67,12 @@ python () {
         d.appendVar('OECMAKE_CXX_FLAGS', ' -DDEFAULT_DEVICE=\'\\"{}\\"\' '.format(dri_device_name))
 }
 
-do_install:append() {
+do_install() {
+    # MaintenanceManager is intentionally disabled in this recipe after
+    # splitting it to entservices-maintenancemanager; softwareupdate may
+    # not generate an install target, so skip cmake_do_install here.
+    bbnote "Skipping cmake_do_install for entservices-softwareupdate (no plugin install target expected)."
+
     install -d ${D}${sysconfdir}/rfcdefaults
     if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
     then
