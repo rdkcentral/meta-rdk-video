@@ -30,7 +30,9 @@ DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor
           iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
          deepsleep-manager-headers power-manager-headers wpeframework-clientlibraries"
 DEPENDS:append:client = " virtual/mfrlib"
-DEPENDS:append = " virtual/mfrlib"
+DEPENDS:append = " virtual/mfrlib"  
+DEPENDS:append = " virtual/vendor-devicesettings-hal "
+DEPENDS:append = " virtual/vendor-deepsleepmgr-hal  "
 RDEPENDS:${PN}:append = " devicesettings rfc"
 RDEPENDS:${PN}_client_morty += " virtual/mfrlib"
 RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_mfrlib} devicesettings"
