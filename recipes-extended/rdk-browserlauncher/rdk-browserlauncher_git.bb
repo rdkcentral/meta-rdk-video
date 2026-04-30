@@ -6,6 +6,7 @@ S = "${WORKDIR}/git/BrowserLauncher"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-runtime;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI += "file://0001-set-ld-library-path-and-egl-lib-name.patch"
 SRCREV = "3966f4f7c23ab29f86f5ae8a764a9aac6344d8b9"
 PV .= "+${@bb.fetch2.get_srcrev(d).replace('AUTOINC+','')}"
 

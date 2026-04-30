@@ -1,0 +1,27 @@
+From: Darko Lulic <lulicdarko@gmail.com>
+Date: Mon, 28 Apr 2026 00:00:00 +0000
+Subject: [PATCH] BrowserLauncher: set LD_LIBRARY_PATH for subprocesses
+
+---
+--- a/src/main.cpp	2026-04-30 08:46:46.254446835 +0000
++++ b/src/main.cpp	2026-04-30 08:47:02.138550931 +0000
+@@ -236,6 +236,20 @@
+     launchconfig->applyCmdLineOptions(std::move(configOptions));
+     launchconfig->printConfig();
+
++    // Put /usr/lib (host base-layer libs with correct Broadcom Nexus ABI)
++    // first, then runtimeDir/../../lib for widget-specific libs that the host
++    // doesn't provide (libwoff2common, libvpx, libWPEWebKit, etc).
++    {
++        gchar_ptr runtimeLib { g_build_filename(launchconfig->runtimeDir().c_str(), "..", "..", "lib", nullptr) };
++        const char* existing = g_getenv("LD_LIBRARY_PATH");
++        std::string ldLibPath = "/usr/lib:";
++        ldLibPath += runtimeLib.get();
++        if (existing && existing[0])
++            ldLibPath += std::string(":") + existing;
++        g_setenv("LD_LIBRARY_PATH", ldLibPath.c_str(), TRUE);
++        g_message("LD_LIBRARY_PATH set to: %s", ldLibPath.c_str());
++    }
++
+     // preload dependencies
+     preLoadWPE(launchconfig->runtimeDir());
