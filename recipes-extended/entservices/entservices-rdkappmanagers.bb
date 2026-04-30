@@ -113,7 +113,7 @@ APPSTORAGEMANAGER_PLUGIN_ARGS       ?= " \
 RUNTIME_APP_PORTAL ?= "com.sky.as.apps"
 APP_PREINSTALL_DIRECTORY ?= "/opt/preinstall"
 APP_DOWNLOAD_DIRECTORY ?= "/opt/CDL/"
-DEFAULT_APP_STORAGE_PATH ?= "/opt/persistent/storageManager"
+DEFAULT_APP_STORAGE_PATH ?= "/media/apps/storageManager"
 NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
 
 EXTRA_OECMAKE += " \
