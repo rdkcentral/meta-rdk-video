@@ -42,12 +42,13 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
 
-#require recipes-extended/entservices/include/compositor.inc
+require recipes-extended/entservices/include/compositor.inc
 #include include/compositor.inc
 
 DEPENDS = " \
     entservices-apis \
     wpeframework-tools-native \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'compositor', '${WPE_COMPOSITOR_DEP}', '', d)} \
     gstreamer1.0 \
 "
 
@@ -56,10 +57,10 @@ RDEPENDS:${PN}:append:dunfell = "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_sv
 RDEPENDS:${PN}:append:dunfell = " wpeframework rdkperf"
 
 #Cryptography library
-#DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl','openssl', 'virtual/vendor-secapi2-adapter', d)}"
-#DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl','', 'virtual/vendor-secapi-netflix', d)}"
-#DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl',"", bb.utils.contains('DISTRO_FEATURES', 'netflix_cryptanium', 'virtual/vendor-secapi-crypto', "", d), d)}"
-#CRYPTOGRAPHY_IMPLEMENTATION = "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl','OpenSSL', 'SecApi', d)}"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl','openssl', 'virtual/vendor-secapi2-adapter', d)}"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl','', 'virtual/vendor-secapi-netflix', d)}"
+DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl',"", bb.utils.contains('DISTRO_FEATURES', 'netflix_cryptanium', 'virtual/vendor-secapi-crypto', "", d), d)}"
+CRYPTOGRAPHY_IMPLEMENTATION = "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl','OpenSSL', 'SecApi', d)}"
 
 
 def get_cdmi_adapter(d):
@@ -101,7 +102,6 @@ EXTRA_OECMAKE += " \
     -DPLUGIN_COMPOSITOR_SUB_IMPLEMENTATION=${WPE_COMPOSITOR_SUB_IMPL} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'netflix_cryptanium', '-DSECAPI_ENGINE_CRYPTANIUM=1', '', d)} \
     -DCRYPTOGRAPHY_IMPLEMENTATION=${CRYPTOGRAPHY_IMPLEMENTATION}\
-    -DCRYPTOGRAPHY_IMPLEMENTATION=OpenSSL \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_firebolt_compliance_tdk', '-DBUILD_CRYPTOGRAPHY_TESTS=ON', '', d)} \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
 "
