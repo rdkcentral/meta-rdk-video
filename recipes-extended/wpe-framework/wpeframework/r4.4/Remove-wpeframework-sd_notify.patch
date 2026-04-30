@@ -13,9 +13,9 @@ Index: git/Source/WPEFramework/PluginServer.cpp
  #include <syslog.h>
  #endif
  
-+#ifdef SYSTEMD_FOUND
-+#include <systemd/sd-daemon.h>
-+#endif /* SYSTEMD_FOUND */
++//#ifdef SYSTEMD_FOUND
++#//include <systemd/sd-daemon.h>
++#//endif /* SYSTEMD_FOUND */
 +
  #ifdef PROCESSCONTAINERS_ENABLED
  #include "../processcontainers/ProcessContainer.h"
@@ -24,10 +24,10 @@ Index: git/Source/WPEFramework/PluginServer.cpp
                  }
              }
          }
-+#ifdef SYSTEMD_FOUND
-+        SYSLOG(Logging::Startup, (_T("Notify that WPEFramework Systemd Service is Ready")));
-+        sd_notify(0, "READY=1");
-+#endif /* SYSTEMD_FOUND */
++//#ifdef SYSTEMD_FOUND
++//        SYSLOG(Logging::Startup, (_T("Notify that WPEFramework Systemd Service is Ready")));
++//        sd_notify(0, "READY=1");
++//#endif /* SYSTEMD_FOUND */
      }
  
      void Server::Close()
@@ -39,14 +39,14 @@ index 431e617f..5b34b720 100644
              )
  endif ()
  
-+find_package(Systemd)
-+if (SYSTEMD_FOUND)
-+    target_link_libraries( ${TARGET}
-+            PRIVATE
-+            Systemd::Systemd
-+            )
-+    SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DSYSTEMD_FOUND")
-+endif()
++#find_package(Systemd)
++#if (SYSTEMD_FOUND)
++#    target_link_libraries( ${TARGET}
++#            PRIVATE
++#            Systemd::Systemd
++#            )
++#    SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DSYSTEMD_FOUND")
++#endif()
 +
  set_target_properties(${TARGET} PROPERTIES
          CXX_STANDARD 11
