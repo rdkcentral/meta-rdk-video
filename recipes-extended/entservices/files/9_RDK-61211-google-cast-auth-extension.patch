@@ -1,0 +1,114 @@
+From 921a2505f509e922099e256a69e42712eba6d15e Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Thu, 26 Mar 2026 16:30:59 +0000
+Subject: [PATCH] RDK-61211: google cast auth extension
+
+---
+ plugin/FrameworkRPC.cpp | 61 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
+
+diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
+index aa436c1..d34bf54 100644
+--- a/plugin/FrameworkRPC.cpp
++++ b/plugin/FrameworkRPC.cpp
+@@ -677,6 +677,47 @@ namespace Plugin {
+                 CommonEncryptionData _cencData;
+             };
+ 
++            class GoogleCastAuthExtensionProxy : public Exchange::IGoogleCastAuthExtension {
++            private:
++                CDMi::IGoogleCastAuthExtension* _impl;
++            public:
++                explicit GoogleCastAuthExtensionProxy(CDMi::IGoogleCastAuthExtension* impl)
++                    : _impl(impl) {
++                }
++
++                static Exchange::IGoogleCastAuthExtension* Create(CDMi::IGoogleCastAuthExtension* impl) {
++                    return Core::Service<GoogleCastAuthExtensionProxy>::Create<Exchange::IGoogleCastAuthExtension>(impl);
++                }
++
++                Exchange::OCDM_RESULT SignHash(const string& wrappedDeviceKey, const string& hash, string& signature /* @out */) override {
++                    if (_impl)
++                        return static_cast<Exchange::OCDM_RESULT>(_impl->SignHash(wrappedDeviceKey, hash, signature));
++                    return Exchange::OCDM_INTERFACE_NOT_IMPLEMENTED;
++                }
++
++                Exchange::OCDM_RESULT GenDeviceKeyAndCert(string& wrappedDeviceKey /* @out */, string& deviceCertificate /* @out */) override {
++                    if (_impl)
++                        return static_cast<Exchange::OCDM_RESULT>(_impl->GenDeviceKeyAndCert(wrappedDeviceKey, deviceCertificate));
++                    return Exchange::OCDM_INTERFACE_NOT_IMPLEMENTED;
++                }
++
++                Exchange::OCDM_RESULT GetModelCertChain(string& certChain /* @out */) const override {
++                    if (_impl)
++                        return static_cast<Exchange::OCDM_RESULT>(_impl->GetModelCertChain(certChain));
++                    return Exchange::OCDM_INTERFACE_NOT_IMPLEMENTED;
++                }
++
++                Exchange::OCDM_RESULT GetSystemId(uint32_t& id /* @out */) const override {
++                    if (_impl)
++                        return static_cast<Exchange::OCDM_RESULT>(_impl->GetSystemId(id));
++                    return Exchange::OCDM_INTERFACE_NOT_IMPLEMENTED;
++                }
++
++                BEGIN_INTERFACE_MAP(GoogleCastAuthExtensionProxy)
++                INTERFACE_ENTRY(Exchange::IGoogleCastAuthExtension)
++                END_INTERFACE_MAP
++            };
++
+         public:
+             AccessorOCDM(OCDMImplementation* parent, const string& name, const uint32_t defaultSize)
+                 : _parent(*parent)
+@@ -684,11 +725,16 @@ namespace Plugin {
+                 , _administrator(name)
+                 , _defaultSize(defaultSize)
+                 , _sessionList()
++                , _googleCastAuthExtension(GoogleCastAuthExtensionProxy::Create(parent->GoogleCastAuthExtension()))
+             {
+                 ASSERT(parent != nullptr);
+             }
+             ~AccessorOCDM() override
+             {
++                if (_googleCastAuthExtension) {
++                    _googleCastAuthExtension->Release();
++                    _googleCastAuthExtension = nullptr;
++                }
+                 TRACE(Trace::Information, (_T("Released the AccessorOCDM server side [%d]"), __LINE__));
+             }
+ 
+@@ -940,6 +986,7 @@ namespace Plugin {
+ 
+             BEGIN_INTERFACE_MAP(AccessorOCDM)
+             INTERFACE_ENTRY(Exchange::IAccessorOCDM)
++            INTERFACE_AGGREGATE(Exchange::IGoogleCastAuthExtension, _googleCastAuthExtension)
+             END_INTERFACE_MAP
+ 
+         private:
+@@ -1011,6 +1058,7 @@ namespace Plugin {
+             BufferAdministrator _administrator;
+             uint32_t _defaultSize;
+             std::list<SessionImplementation*> _sessionList;
++            Exchange::IGoogleCastAuthExtension* _googleCastAuthExtension;
+         };
+ 
+         class Config : public Core::JSON::Container {
+@@ -1342,6 +1390,19 @@ namespace Plugin {
+             return (result);
+         }
+ 
++        CDMi::IGoogleCastAuthExtension* GoogleCastAuthExtension()
++        {
++            CDMi::IGoogleCastAuthExtension* result = nullptr;
++            std::map<const std::string, SystemFactory>::const_iterator index(_systemToFactory.begin());
++            while (index != _systemToFactory.end()) {
++                auto instance = index->second.Factory->Instance();
++                if ((result = dynamic_cast<CDMi::IGoogleCastAuthExtension*>(instance)) != nullptr)
++                    break;
++                index++;
++            }
++            return result;
++        }
++
+     private:
+         void LoadDesignators(const string& keySystem, std::list<string>& designators) const
+         {

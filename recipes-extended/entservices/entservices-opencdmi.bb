@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=c03d0e6d700b63b51bf8da6b61dac850"
 
 PV = "1.0.2"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -21,6 +21,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://0002-Adding-Support-For-R4.patch \
            file://0001-Add-a-new-metrics-punch-through-on-the-OCDM-framework-rdkservice.patch \
            file://0001-set-OCDM-process-thread-name.patch \
+           file://9_RDK-61211-google-cast-auth-extension.patch \
           "
           
 # Release version - 1.0.2
