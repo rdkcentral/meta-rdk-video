@@ -15,6 +15,8 @@ SRC_URI += " \
     file://ripple.service \
     "
 PV = "${RIPPLE_VERSION}"
+PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 #Working directory for open components
 S = "${OPEN_RIPPLE_S}"

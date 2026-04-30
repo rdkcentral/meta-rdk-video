@@ -5,11 +5,13 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV ?= "1.0.1"
-PR ?= "r0"
+include xr-voice-sdk.inc
 
-PACKAGE_ARCH  = "${MIDDLEWARE_ARCH}"
-SRCREV_FORMAT = "xr-voice-sdk"
+PACKAGE_ARCH   = "${MIDDLEWARE_ARCH}"
+PV            := "${XR_VOICE_SDK_PV}"
+PR            := "${XR_VOICE_SDK_PR}"
+SRCREV        := "${XR_VOICE_SDK_SRCREV}"
+SRCREV_FORMAT  = "xr-voice-sdk"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/xr-voice-sdk;${CMF_GITHUB_SRC_URI_SUFFIX};name=xr-voice-sdk"
 
@@ -62,9 +64,9 @@ do_install() {
    install -m 644 ${S}/src/xr-audio/xraudio_version.h  ${D}${includedir}
    install -m 644 ${S}/scripts/vsdk_json_combine.py    ${D}${includedir}
    install -m 644 ${S}/scripts/vsdk_json_to_header.py  ${D}${includedir}
-   install -m 644 ${S}/src/xr-logger/rdkx_logger.h     ${D}${includedir}
+   install -m 644 ${S}/src/xr-logger/rdkx_logger_mw.h  ${D}${includedir}/rdkx_logger.h
 
-   ${S}/scripts/rdkx_logger_modules_to_c.py ${S}/src/xr-logger/rdkv/rdkx_logger_modules.json rdkx_logger_modules
+   ${S}/scripts/rdkx_logger_modules_to_c.py ${S}/src/xr-logger/rdkv/rdkx_logger_modules.json rdkx_logger_modules "mw"
    install -m 644 rdkx_logger_modules.h  ${D}${includedir}
 }
 
