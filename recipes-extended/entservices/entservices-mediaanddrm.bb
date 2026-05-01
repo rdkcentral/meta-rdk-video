@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Media and DRM plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=16cf2209d4e903e4d5dcd75089d7dfe2"
 
-PV ?= "1.3.6-hotfix.2"
+PV ?= "1.3.6.3"
 PR ?= "r0"
 
 S = "${WORKDIR}/git"
@@ -24,8 +24,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-set-OCDM-process-thread-name.patch \
           "
           
-# Release version - 1.3.6-hotfix.2
-SRCREV = "d63a5d1385f4cd46835a2357c91dda408c24470f"
+# Release version - 1.3.6.3
+SRCREV = "04dc16cbdb1d1ed5a7d0c59bda1bde6492d40dae"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
