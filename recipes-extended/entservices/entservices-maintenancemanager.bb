@@ -1,19 +1,20 @@
-SUMMARY = "ENTServices softwareupdate plugin"
+SUMMARY = "ENTServices maintenancemanager plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
-PV = "1.13.2"
+PV = "1.0.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-softwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-maintenancemanager;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+           file://rdkservices.ini \
           "
 
-# Release version - 1.15.1
-SRCREV = "a5c9b41b8eaa2a54a78d12fccfebb42bdfb63cf6"
+# Release version - 1.0.0
+SRCREV = "ee0d02de30937447fa2cf3ae0c4af4948ad50830"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -37,6 +38,8 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
+include include/maintenanceMgr.inc
+
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " breakpadsupport \
@@ -44,8 +47,6 @@ PACKAGECONFIG ?= " breakpadsupport \
     "
 
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'whoami_enabled', 'whoami', '', d)}"
-
-#PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES' , 'enable_maintenance_manager', ' maintenancemanager', '', d)}"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
@@ -56,7 +57,6 @@ PACKAGECONFIG[whoami]        = "-DENABLE_WHOAMI=ON,-DENABLE_WHOAMI=OFF,"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
-    -DPLUGIN_MAINTENANCEMANAGER=OFF \
     -DSECAPI_LIB=sec_api \
 "
 
@@ -67,12 +67,7 @@ python () {
         d.appendVar('OECMAKE_CXX_FLAGS', ' -DDEFAULT_DEVICE=\'\\"{}\\"\' '.format(dri_device_name))
 }
 
-do_install() {
-    # MaintenanceManager is intentionally disabled in this recipe after
-    # splitting it to entservices-maintenancemanager; softwareupdate may
-    # not generate an install target, so skip cmake_do_install here.
-    bbnote "Skipping cmake_do_install for entservices-softwareupdate (no plugin install target expected)."
-
+do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
     if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
     then
