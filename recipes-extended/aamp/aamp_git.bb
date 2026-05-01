@@ -3,12 +3,13 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV ?= "3.3.0"
+PV ?= "3.4.0"
 PR ?= "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "32ffcb2f9ba33838d243954abca53a9195cc2762"
+SRCREV_aamp ?= "ea2b214c9755fc366c18937803747d83c9037635"
 
+AAMP_BRANCH = "RDK-61151_federated_2604"
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "develop"
 CMF_GITHUB_BRANCH = "branch=${AAMP_BRANCH}"
