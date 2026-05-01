@@ -48,6 +48,10 @@ SYSLOG-NG_LOGRATE_mount_log = "low"
 SYSLOG-NG_FILTER += "messages"
 SYSLOG-NG_DESTINATION_messages = "messages.txt"
 SYSLOG-NG_LOGRATE_messages = "low"
+SYSLOG-NG_SERVICE_crashupload += "coredump-upload.service"
+SYSLOG-NG_SERVICE_crashupload += "coredump-secure-upload.service"
+SYSLOG-NG_SERVICE_crashupload += "minidump-upload.service"
+SYSLOG-NG_SERVICE_crashupload += "minidump-secure-upload.service"
 
 # Get kernel logs via journal
 SYSLOG-NG_PROGRAM_messages += " kernel"
