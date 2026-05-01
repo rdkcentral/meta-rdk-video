@@ -11,14 +11,14 @@ SUMMARY = "Rialto-ocdm"
 LICENSE  = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=1fa88b316b1ce25ab7d95ae4d854ec8f"
 
-PV = "0.10.0"
-PR = "r0"
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-
 require rialto_revision.inc
 
-SRCREV = "0ef215962e7c44505f615df73a257cafeccf6778"
-SRC_URI = "${CMF_GITHUB_ROOT}/rialto-ocdm;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
+PV = "${RIALTO_OCDM_VERSION}"
+PR = "${RIALTO_OCDM_PR}"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
+SRCREV = "${RIALTO_OCDM_SRCREV}"
+SRC_URI = "${CMF_GITHUB_ROOT}/rialto-ocdm;protocol=${CMF_GIT_PROTOCOL};branch=${RIALTO_OCDM_BRANCH}"
 
 DEPENDS = "openssl jsoncpp glib-2.0 gstreamer1.0 gstreamer1.0-plugins-base wpeframework-tools-native wpeframework-clientlibraries protobuf protobuf-native rialto"
 
