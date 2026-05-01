@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicediagnostics;${CMF_GITHUB_SRC_URI
           "
 
 # Release version - 1.2.2
-SRCREV = "16de54e86bc798cb7ad4435ba76634acc9a0462e"
+SRCREV = "0ea11726116295d2f74d41c26ee533acce1da560"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
