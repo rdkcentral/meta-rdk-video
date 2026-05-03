@@ -32,7 +32,7 @@ EXTRA_OECMAKE += " \
 
 PACKAGECONFIG ?= "helpers"
 
-PACKAGECONFIG[helpers] = "-DPLUGIN_HELPERS=ON,-DPLUGIN_HELPERS=OFF,entservices-apis devicesettings,entservices-apis devicesettings"
+PACKAGECONFIG[helpers] = "-DPLUGIN_HELPERS=ON,-DPLUGIN_HELPERS=OFF,entservices-apis devicesettings virtual/vendor-devicesettings-hal,entservices-apis devicesettings"
 
 # ----------------------------------------------------------------------------
 
