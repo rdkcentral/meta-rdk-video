@@ -30,7 +30,7 @@ EXTRA_OECMAKE += " \
 
 PACKAGECONFIG ?= "helpers"
 
-PACKAGECONFIG[helpers] = "-DPLUGIN_HELPERS=ON,-DPLUGIN_HELPERS=OFF,,"
+PACKAGECONFIG[helpers] = "-DPLUGIN_HELPERS=ON,-DPLUGIN_HELPERS=OFF,entservices-apis, entservices-apis"
 
 # ----------------------------------------------------------------------------
 
