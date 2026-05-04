@@ -1,0 +1,45 @@
+From 284b884d6e89620aafd971c4746a4dea9dcd71c5 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Thu, 7 May 2026 09:08:02 +0000
+Subject: [PATCH] add implementation of api to get robustnesslevel
+
+---
+ plugin/FrameworkRPC.cpp | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
+index bb4254b..25dae0c 100644
+--- a/plugin/FrameworkRPC.cpp
++++ b/plugin/FrameworkRPC.cpp
+@@ -904,6 +904,28 @@ namespace Plugin {
+                 return result;
+             }
+ 
++            Exchange::OCDM_RESULT GetSupportedRobustness(
++                const std::string& keySystem,
++                RPC::IStringIterator*& robustness) override
++            {
++                robustness.clear();
++
++                CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                Exchange::OCDM_RESULT result = Exchange::OCDM_RESULT::OCDM_S_FALSE;
++
++                if (system != nullptr) {
++                    std::list<std::string> levels;
++                    TRACE(Trace::Information, ("Get Supported Robustness()"));
++                    result = static_cast<Exchange::OCDM_RESULT>(system->GetSupportedRobustness(levels));
++ 
++		    if (result == Exchange::OCDM_RESULT::OCDM_SUCCESS && !levels.empty()) {
++                        robustness = Core::Service<RPC::StringIterator>::Create<RPC::IStringIterator>(levels);
++                    }
++                    return result;
++                }
++                return result;
++            }
++
+             uint64_t GetDrmSystemTime(const std::string& keySystem) const override
+             {
+                 CDMi::IMediaKeysExt* systemExt = dynamic_cast<CDMi::IMediaKeysExt*>(_parent.KeySystem(keySystem));
+-- 
+2.44.4
+

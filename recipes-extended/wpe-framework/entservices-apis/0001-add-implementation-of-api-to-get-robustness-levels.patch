@@ -1,0 +1,51 @@
+From 6f83279fd702db70dc69f4e81b02fd324c270f7a Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Thu, 7 May 2026 15:59:45 +0000
+Subject: [PATCH] add implementation of api to get robustness levels
+
+---
+ apis/OpenCDMi/IDRM.h  | 3 +++
+ apis/OpenCDMi/IOCDM.h | 6 ++++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/apis/OpenCDMi/IDRM.h b/apis/OpenCDMi/IDRM.h
+index a34454a..9219983 100644
+--- a/apis/OpenCDMi/IDRM.h
++++ b/apis/OpenCDMi/IDRM.h
+@@ -442,6 +442,9 @@ public:
+         uint32_t f_cbServerCertificate)
+         = 0;
+ 
++     // Provides supported robustness
++    virtual CDMi_RESULT GetSupportedRobustness(std::list<std::string>& levels) = 0;
++
+     // Destroy a MediaKeySession instance.
+     virtual CDMi_RESULT DestroyMediaKeySession(
+         IMediaKeySession* f_piMediaKeySession)
+diff --git a/apis/OpenCDMi/IOCDM.h b/apis/OpenCDMi/IOCDM.h
+index 5d3fe8c..518323b 100644
+--- a/apis/OpenCDMi/IOCDM.h
++++ b/apis/OpenCDMi/IOCDM.h
+@@ -183,6 +183,8 @@ struct IAccessorOCDM : virtual public Core::IUnknown {
+ 
+     enum { ID = ID_ACCESSOROCDM };
+ 
++    using IStringIterator = RPC::IIteratorType<string, RPC::ID_STRINGITERATOR>;
++
+     ~IAccessorOCDM() override = default;
+ 
+     virtual bool IsTypeSupported(const std::string& keySystem,
+@@ -213,6 +215,10 @@ struct IAccessorOCDM : virtual public Core::IUnknown {
+         const uint16_t serverCertificateLength)
+         = 0;
+ 
++    // Provides supported robustness
++    virtual OCDM_RESULT GetSupportedRobustness(const string& keySystem,
++         RPC::IStringIterator*& robustness /* @out */) const = 0;
++
+     virtual uint64_t GetDrmSystemTime(const std::string& keySystem) const = 0;
+ 
+     virtual std::string GetVersionExt(const std::string& keySystem) const = 0;
+-- 
+2.44.4
+

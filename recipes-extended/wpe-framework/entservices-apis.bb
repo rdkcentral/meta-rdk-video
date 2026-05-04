@@ -14,6 +14,7 @@ DEPENDS = "wpeframework wpeframework-tools-native"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis"
 
 SRC_URI += "file://RDKEMW-1007.patch"
+SRC_URI += "file://0001-add-implementation-of-api-to-get-robustness-levels.patch"
 
 # Tag 3.6.2
 SRCREV_entservices-apis = "a5e973aee6d5a5e924db507fa2eccf63e959c394"
