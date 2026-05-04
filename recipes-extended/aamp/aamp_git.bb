@@ -25,8 +25,6 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player
 NO_RECOMMENDATIONS = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-#To be removed later, the AAMP_RELEASE_TAG_NAME is not using.
-AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
 
@@ -49,7 +47,7 @@ FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
 
-CXXFLAGS += " -DAAMP_BUILD_INFO=${AAMP_RELEASE_TAG_NAME}"
+CXXFLAGS += " -DAAMP_BUILD_INFO=${PV}"
 
 #required for specific products but for now distro is available only for UK 
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', ' -DENABLE_USE_SINGLE_PIPELINE=1', '', d)}"
@@ -115,7 +113,7 @@ do_create_artifacts() {
     echo "RDK_BRANCH=${PROJECT_BRANCH}" >> ${ARTIFACT_INFO_FILE}
     echo "WIDGET_VERSION_PREFIX=${WIDGET_VERSION_PREFIX}" >> ${ARTIFACT_INFO_FILE}
     echo "YOCTO_VERSION=${@get_yocto_code(d)}" >> ${ARTIFACT_INFO_FILE}
-    echo "AAMP_BRANCH=${AAMP_RELEASE_TAG_NAME}" >> ${ARTIFACT_INFO_FILE}
+    echo "AAMP_BRANCH=${PV}" >> ${ARTIFACT_INFO_FILE}
 
     # Get the actual Git commit hash instead of AUTOREV
     if [ -d "${S}/.git" ]; then
