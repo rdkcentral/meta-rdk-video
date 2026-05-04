@@ -113,7 +113,7 @@ do_create_artifacts() {
     echo "RDK_BRANCH=${PROJECT_BRANCH}" >> ${ARTIFACT_INFO_FILE}
     echo "WIDGET_VERSION_PREFIX=${WIDGET_VERSION_PREFIX}" >> ${ARTIFACT_INFO_FILE}
     echo "YOCTO_VERSION=${@get_yocto_code(d)}" >> ${ARTIFACT_INFO_FILE}
-    echo "AAMP_BRANCH=${PV}" >> ${ARTIFACT_INFO_FILE}
+    echo "AAMP_BRANCH=${AAMP_BRANCH}" >> ${ARTIFACT_INFO_FILE}
 
     # Get the actual Git commit hash instead of AUTOREV
     if [ -d "${S}/.git" ]; then
