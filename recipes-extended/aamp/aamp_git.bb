@@ -7,9 +7,8 @@ PV ?= "3.4.0"
 PR ?= "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "ea2b214c9755fc366c18937803747d83c9037635"
+SRCREV_aamp ?= "d16ce0e9f1d28c2afd36831576c893b633844478"
 
-AAMP_BRANCH = "RDK-61151_federated_2604"
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "develop"
 CMF_GITHUB_BRANCH = "branch=${AAMP_BRANCH}"
