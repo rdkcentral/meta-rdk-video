@@ -39,7 +39,7 @@ LOGROTATE_SIZE_ctrlm_log="20971520"
 LOGROTATE_ROTATION_ctrlm_log="25"
 
 SRC_URI:append = " file://ctrlm-main.service"
-SRC_URI_append = " file://ctrlm-server.service"
+SRC_URI:append = " file://ctrlm-server.service"
 
 VERSION_TEST_TONES = "20220616"
 SRC_URI:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' ${RDK_ARTIFACTS_BASE_URL}/generic/components/yocto/ctrlm_factory/test_tones/test_tones_${VERSION_TEST_TONES}/2.1/test_tones_${VERSION_TEST_TONES}-2.1.tar.bz2;name=test_tones', '', d)}"
