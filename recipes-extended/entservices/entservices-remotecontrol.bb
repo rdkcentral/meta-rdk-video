@@ -6,7 +6,5 @@ ENTSERVICES_CONTROL_REPO = "entservices-remotecontrol"
 SRCREV = "0047e5faa1b3d296c80280244a7057597276a89c"
 require include/entservices-control-common.inc
 
-include include/remotecontrol.inc
-
 PACKAGES =+ "${PN}-test"
 FILES:${PN}-test += "${bindir}/remoteControlTestClient"
