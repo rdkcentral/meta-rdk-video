@@ -5,9 +5,6 @@ SRC_URI = "${CMF_GITHUB_ROOT}/${ENTSERVICES_CONTROL_REPO};${CMF_GITHUB_SRC_URI_S
            file://rdkservices.ini \
           "
 
-PV = "1.0.1"
-PR = "r0"
-
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
