@@ -1,0 +1,14 @@
+[Unit]
+Description=Control Manager Server Service
+After=ctrlm-main.service
+ConditionPathExists=/usr/lib/libctrlm-server-app.so
+
+[Service]
+Type=notify
+EnvironmentFile=/etc/device.properties
+ExecStart=/usr/bin/controlServer -v
+RestartSec=100ms
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -132,6 +132,9 @@ do_install() {
     install -m 644 ${S}/src/ble/hal/utils/statemachine.h     ${D}${includedir}/ctrlm_private/utils
     install -m 644 ${S}/src/ble/hal/utils/futureaggregator.h ${D}${includedir}/ctrlm_private/utils
     install -m 644 ${S}/src/ble/hal/utils/fwimagefile.h      ${D}${includedir}/ctrlm_private/utils
+
+    # Server App
+    install -m 644 ${S}/src/server/ctrlm_server_app.h        ${D}${includedir}/ctrlm_private
 }
 
 ALLOW_EMPTY:${PN} = "1"
