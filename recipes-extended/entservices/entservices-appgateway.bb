@@ -33,8 +33,12 @@ do_install:append() {
     install -d ${D}${sysconfdir}
     echo "APP_GATEWAY_PV = \"${PV}\""     >  ${D}${sysconfdir}/appgatewayversion.txt
     echo "APP_GATEWAY_SHA = \"${SRCREV}\"" >> ${D}${sysconfdir}/appgatewayversion.txt
+    
+    # Install version population script to ${bindir} (/usr/bin)
+    install -m 0755 ${WORKDIR}/pop_appinfra_version.sh ${D}${bindir}/
 }
 
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so"
+FILES:${PN} += "${libdir}/wpeframework/plugins/*.so" \
+              "${bindir}/pop_appinfra_version.sh"
 
 INSANE_SKIP:${PN} += "dev-so"
