@@ -25,9 +25,9 @@ interface changes for enhanced instance management and add operational state tra
  Source/powercontroller/CMakeLists.txt       |   79 +
  Source/powercontroller/Module.cpp           |   22 +
  Source/powercontroller/Module.h             |   33 +
- Source/powercontroller/power_controller.cpp | 2300 +++++++++++++++++++
+ Source/powercontroller/power_controller.cpp | 2364 +++++++++++++++++++
  Source/powercontroller/power_controller.h   |  398 ++++
- 5 files changed, 2832 insertions(+)
+ 5 files changed, 2896 insertions(+)
  create mode 100644 Source/powercontroller/CMakeLists.txt
  create mode 100644 Source/powercontroller/Module.cpp
  create mode 100644 Source/powercontroller/Module.h
@@ -220,10 +220,10 @@ index 0000000..c9c1321
 +#endif
 diff --git a/Source/powercontroller/power_controller.cpp b/Source/powercontroller/power_controller.cpp
 new file mode 100644
-index 0000000..b11ee11
+index 0000000..d3e7d0b
 --- /dev/null
 +++ b/Source/powercontroller/power_controller.cpp
-@@ -0,0 +1,2300 @@
+@@ -0,0 +1,2364 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -1834,6 +1834,7 @@ index 0000000..b11ee11
 +
 +public:
 +    static Core::CriticalSection _cApiLock; // C-API level lock: serializes all extern "C" PowerController_* calls
++    static bool initialized; // indicates whether PowerController is initialized or not, expected to be accessed under _cApiLock
 +
 +private:
 +    static PowerController* _instance;
@@ -1997,6 +1998,7 @@ index 0000000..b11ee11
 +/* static */ Core::CriticalSection PowerController::_cApiLock;
 +/* static */ Core::CriticalSection PowerController::_internalApiLock;
 +/* static */ Core::CriticalSection PowerController::_callbackLock;
++/* static */ bool PowerController::initialized = false;
 +
 +extern "C" {
 +
@@ -2005,6 +2007,7 @@ index 0000000..b11ee11
 +    LOGINFO(">>>");
 +    PowerController::_cApiLock.Lock();
 +    PowerController::Init();
++    PowerController::initialized = true;
 +    PowerController::_cApiLock.Unlock();
 +    LOGINFO("<<<");
 +}
@@ -2014,6 +2017,7 @@ index 0000000..b11ee11
 +    LOGINFO(">>>");
 +    PowerController::_cApiLock.Lock();
 +    PowerController::Term();
++    PowerController::initialized = false;
 +    PowerController::_cApiLock.Unlock();
 +    LOGINFO("<<<");
 +}
@@ -2034,12 +2038,18 @@ index 0000000..b11ee11
 +
 +uint32_t PowerController_Disconnect()
 +{
++    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +    LOGINFO(">>>");
 +    PowerController::_cApiLock.Lock();
-+    PowerController *instance = PowerController::Instance();
-+    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+    if (instance) {
-+        result = instance->Disconnect();
++    if (!PowerController::initialized) {
++        LOGWARN("Instance is not created, cannot disconnect");
++        result = POWER_CONTROLLER_ERROR_NONE;
++    }
++    else {
++        PowerController *instance = PowerController::Instance();
++        if (instance) {
++            result = instance->Disconnect();
++        }
 +    }
 +    PowerController::_cApiLock.Unlock();
 +    LOGINFO("<<< result: %d", result);
@@ -2048,12 +2058,18 @@ index 0000000..b11ee11
 +
 +bool PowerController_IsOperational()
 +{
++    bool result = false;
 +    LOGINFO(">>>");
 +    PowerController::_cApiLock.Lock();
-+    PowerController *instance = PowerController::Instance();
-+    bool result = false;
-+    if (instance) {
-+        result = instance->IsOperational();
++    if (!PowerController::initialized) {
++        LOGWARN("Instance is not created, cannot be operational");
++    }
++    else {
++        PowerController *instance = PowerController::Instance();
++        bool result = false;
++        if (instance) {
++            result = instance->IsOperational();
++        }
 +    }
 +    PowerController::_cApiLock.Unlock();
 +    LOGINFO("<<< result: %d", result);
@@ -2343,12 +2359,18 @@ index 0000000..b11ee11
 +
 +uint32_t PowerController_UnRegisterOperationalStateChangeCallback(PowerController_OperationalStateChangeCb callback)
 +{
++    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +    LOGINFO(">>>");
 +    PowerController::_cApiLock.Lock();
-+    PowerController *instance = PowerController::Instance();
-+    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+    if (instance) {
-+        result = instance->UnRegisterOperationalStateChangedCallback(callback);
++    if (!PowerController::initialized) {
++        LOGWARN("Instance is not created, cannot unregister operational state change callback");
++        result = POWER_CONTROLLER_ERROR_NONE;
++    }
++    else {
++        PowerController *instance = PowerController::Instance();
++        if (instance) {
++            result = instance->UnRegisterOperationalStateChangedCallback(callback);
++        }
 +    }
 +    PowerController::_cApiLock.Unlock();
 +    LOGINFO("<<< result: %d", result);
@@ -2371,12 +2393,19 @@ index 0000000..b11ee11
 +
 +uint32_t PowerController_UnRegisterPowerModeChangedCallback(PowerController_PowerModeChangedCb callback)
 +{
++    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +    LOGINFO(">>>");
 +    PowerController::_cApiLock.Lock();
-+    PowerController *instance = PowerController::Instance();
-+    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+    if (instance) {
-+        result = instance->UnRegisterPowerModeChangedCallback(callback);
++    if (!PowerController::initialized) {
++        LOGWARN("Instance is not created, cannot unregister power mode change callback");
++        result = POWER_CONTROLLER_ERROR_NONE;
++    }
++    else {
++        PowerController *instance = PowerController::Instance();
++        uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
++        if (instance) {
++            result = instance->UnRegisterPowerModeChangedCallback(callback);
++        }
 +    }
 +    PowerController::_cApiLock.Unlock();
 +    LOGINFO("<<< result: %d", result);
@@ -2399,12 +2428,19 @@ index 0000000..b11ee11
 +
 +uint32_t PowerController_UnRegisterPowerModePreChangeCallback(PowerController_PowerModePreChangeCb callback)
 +{
++    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +    LOGINFO(">>>");
 +    PowerController::_cApiLock.Lock();
-+    PowerController *instance = PowerController::Instance();
-+    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+    if (instance) {
-+        result = instance->UnRegisterPowerModePreChangeCallback(callback);
++    if (!PowerController::initialized) {
++        LOGWARN("Instance is not created, cannot unregister power mode pre-change callback");
++        result = POWER_CONTROLLER_ERROR_NONE;
++    }
++    else {
++        PowerController *instance = PowerController::Instance();
++        uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
++        if (instance) {
++            result = instance->UnRegisterPowerModePreChangeCallback(callback);
++        }
 +    }
 +    PowerController::_cApiLock.Unlock();
 +    LOGINFO("<<< result: %d", result);
@@ -2427,12 +2463,19 @@ index 0000000..b11ee11
 +
 +uint32_t PowerController_UnRegisterDeepSleepTimeoutCallback(PowerController_DeepSleepTimeoutCb callback)
 +{
++    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +    LOGINFO(">>>");
 +    PowerController::_cApiLock.Lock();
-+    PowerController *instance = PowerController::Instance();
-+    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+    if (instance) {
-+        result = instance->UnRegisterDeepSleepTimeoutCallback(callback);
++    if (!PowerController::initialized) {
++        LOGWARN("Instance is not created, cannot unregister deep sleep timeout callback");
++        result = POWER_CONTROLLER_ERROR_NONE;
++    }
++    else {
++        PowerController *instance = PowerController::Instance();
++        uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
++        if (instance) {
++            result = instance->UnRegisterDeepSleepTimeoutCallback(callback);
++        }
 +    }
 +    PowerController::_cApiLock.Unlock();
 +    LOGINFO("<<< result: %d", result);
@@ -2455,12 +2498,19 @@ index 0000000..b11ee11
 +
 +uint32_t PowerController_UnRegisterNetworkStandbyModeChangedCallback(PowerController_NetworkStandbyModeChangedCb callback)
 +{
++    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +    LOGINFO(">>>");
 +    PowerController::_cApiLock.Lock();
-+    PowerController *instance = PowerController::Instance();
-+    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+    if (instance) {
-+        result = instance->UnRegisterNetworkStandbyModeChangedCallback(callback);
++    if (!PowerController::initialized) {
++        LOGWARN("Instance is not created, cannot unregister network standby mode changed callback");
++        result = POWER_CONTROLLER_ERROR_NONE;
++    }
++    else {
++        PowerController *instance = PowerController::Instance();
++        uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
++        if (instance) {
++            result = instance->UnRegisterNetworkStandbyModeChangedCallback(callback);
++        }
 +    }
 +    PowerController::_cApiLock.Unlock();
 +    LOGINFO("<<< result: %d", result);
@@ -2483,12 +2533,19 @@ index 0000000..b11ee11
 +
 +uint32_t PowerController_UnRegisterThermalModeChangedCallback(PowerController_ThermalModeChangedCb callback)
 +{
++    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +    LOGINFO(">>>");
 +    PowerController::_cApiLock.Lock();
-+    PowerController *instance = PowerController::Instance();
-+    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+    if (instance) {
-+        result = instance->UnRegisterThermalModeChangedCallback(callback);
++    if (!PowerController::initialized) {
++        LOGWARN("Instance is not created, cannot unregister thermal mode changed callback");
++        result = POWER_CONTROLLER_ERROR_NONE;
++    }
++    else {
++        PowerController *instance = PowerController::Instance();
++        uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
++        if (instance) {
++            result = instance->UnRegisterThermalModeChangedCallback(callback);
++        }
 +    }
 +    PowerController::_cApiLock.Unlock();
 +    LOGINFO("<<< result: %d", result);
@@ -2511,12 +2568,19 @@ index 0000000..b11ee11
 +
 +uint32_t PowerController_UnRegisterRebootBeginCallback(PowerController_RebootBeginCb callback)
 +{
++    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
 +    LOGINFO(">>>");
 +    PowerController::_cApiLock.Lock();
-+    PowerController *instance = PowerController::Instance();
-+    uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
-+    if (instance) {
-+        result = instance->UnRegisterRebootBeginCallback(callback);
++    if (!PowerController::initialized) {
++        LOGWARN("Instance is not created, cannot unregister reboot begin callback");
++        result = POWER_CONTROLLER_ERROR_NONE;
++    }
++    else {
++        PowerController *instance = PowerController::Instance();
++        uint32_t result = POWER_CONTROLLER_ERROR_UNAVAILABLE;
++        if (instance) {
++            result = instance->UnRegisterRebootBeginCallback(callback);
++        }
 +    }
 +    PowerController::_cApiLock.Unlock();
 +    LOGINFO("<<< result: %d", result);
