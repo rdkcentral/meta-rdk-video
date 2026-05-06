@@ -1,7 +1,7 @@
 SUMMARY = "entservices-apis"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
-PV = "3.6.2"
+PV = "3.6.4"
 PR = "r0"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -15,8 +15,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name
 
 SRC_URI += "file://RDKEMW-1007.patch"
 
-# Tag 3.6.2
-SRCREV_entservices-apis = "98d8ec5bb237743e28a11ccf19e2dbc6e727178b"
+# Tag 3.6.4
+SRCREV_entservices-apis = "ed34c173df1757e1793b9b671655a67a644d86b4"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
