@@ -33,7 +33,7 @@ THIS_SCRIPT=`basename "$0"`
 
 log ()
 {
-    echo "`/bin/timestamp` [$THIS_SCRIPT]: $*" >> /opt/logs/wpa_supplicant.log
+    echo "`/bin/timestamp` [$THIS_SCRIPT]: $*" | systemd-cat -t wpa_supplicant
 }
 
 do_configure_p2p_wpa_args ()
