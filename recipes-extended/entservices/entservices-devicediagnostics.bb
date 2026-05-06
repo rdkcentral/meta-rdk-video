@@ -2,7 +2,7 @@ SUMMARY = "ENTServices devicediagnostics plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.4.0"
+PV = "1.4.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicediagnostics;${CMF_GITHUB_SRC_URI
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.4.0
-SRCREV = "70adaa2e45159efd00b457c6f16bbb9565a4ec78"
+# Release version - 1.4.1
+SRCREV = "e8af97ec9e21a74469534f1084043538ad3f6b8a"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
