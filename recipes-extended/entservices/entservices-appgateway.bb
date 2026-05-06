@@ -39,7 +39,7 @@ do_install:append() {
 }
 
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so \
-                ${bindir}/pop_appinfra_version.sh" \
+                ${bindir}/pop_appinfra_version.sh \
                 "
                 
 INSANE_SKIP:${PN} += "dev-so"
