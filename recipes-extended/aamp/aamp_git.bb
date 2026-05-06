@@ -3,8 +3,8 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV ?= "3.4.0"
-PR ?= "r0"
+PV = "3.4.0"
+PR = "r0"
 
 SRCREV_FORMAT = "aamp"
 SRCREV_aamp ?= "d16ce0e9f1d28c2afd36831576c893b633844478"
@@ -46,8 +46,6 @@ FILES:${PN} +="${libdir}/gstreamer-1.0/lib*.so"
 FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
-
-CXXFLAGS += " -DAAMP_BUILD_INFO=${PV}"
 
 #required for specific products but for now distro is available only for UK 
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', ' -DENABLE_USE_SINGLE_PIPELINE=1', '', d)}"
