@@ -36,14 +36,14 @@ if [[ ! -f /opt/previous_flashed_file_name || \
       ( ! -f /opt/cdl_flashed_file_name && "${PREV_CDLFILE}" != *"${CUR_IMAGE}"* ) || \
       ( -f /opt/cdl_flashed_file_name && "${CDLFILE}" != *"${PREV_CDLFILE}"* ) ]]; then
 
-    echo "Removing gstreamer registry on bootup after CDL"
+    echo "Recreating gstreamer registry on bootup due to CDL or FSR"
     rm -rf /opt/.gstreamer
     mkdir -p /opt/.gstreamer
     GST_REGISTRY=/opt/.gstreamer/registry.bin GST_REGISTRY_UPDATE=yes gst-inspect-1.0 >/dev/null 2>&1
 
 elif [[ ! -f /opt/.gstreamer/registry.bin ]]; then
     # Fallback: Clean if registry file is missing anyway
-    echo "Gstreamer registry empty"
+    echo "Gstreamer registry empty, creating gstreamer registry"
     rm -rf /opt/.gstreamer
     mkdir -p /opt/.gstreamer
     GST_REGISTRY=/opt/.gstreamer/registry.bin GST_REGISTRY_UPDATE=yes gst-inspect-1.0 >/dev/null 2>&1
