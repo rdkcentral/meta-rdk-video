@@ -56,6 +56,7 @@ SRC_URI += "file://2.46/comcast-WebRTC-keep-render-time-interpolation.patch"
 SRC_URI += "file://2.46/comcast-DELIA-59087-Disable-pausing-playback-for-buf.patch"
 SRC_URI += "file://2.46/comcast-RDKTV-28214-Quick-_exit.patch"
 #SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
+SRC_URI += "file://2.46/0001-WPE-Extend-PROJECT_VERSINO_MICRO-with-external-suffi.patch"
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"
@@ -113,6 +114,7 @@ PACKAGECONFIG:append:toolchain-clang = " uselld"
 EXTRA_OECMAKE += " \
   -DPYTHON_EXECUTABLE=${STAGING_BINDIR_NATIVE}/python3-native/python3 \
   -DGL_TEXTURE_MAX_SIZE=2000 \
+  -DWPE_VERSION_MICRO_SUFFIX=01 \
 "
 
 FILES:${PN} += " ${libdir}/wpe-webkit-*/injected-bundle/libWPEInjectedBundle.so"

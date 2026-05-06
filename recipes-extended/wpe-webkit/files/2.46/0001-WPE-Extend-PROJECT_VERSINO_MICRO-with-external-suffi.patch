@@ -1,0 +1,29 @@
+From 67826a1434ae2351c73a320e989027c77843b5d1 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Wed, 6 May 2026 11:17:14 +0200
+Subject: [PATCH] [WPE] Extend PROJECT_VERSINO_MICRO with external suffix
+
+---
+ Source/cmake/OptionsWPE.cmake | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+index 93e358f791ee..41fb857ec5ae 100644
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -1,7 +1,11 @@
+ include(GNUInstallDirs)
+ include(VersioningUtils)
+ 
+-SET_PROJECT_VERSION(2 46 7)
++# Allow appending a suffix to the micro version from the build system (e.g. bitbake)
++# to distinguish builds with API additions: -DWPE_VERSION_MICRO_SUFFIX=1
++# Result: 2.46.7 + suffix 1 → micro becomes 71, so version is 2.46.71
++set(WPE_VERSION_MICRO_SUFFIX "" CACHE STRING "Suffix to append to PROJECT_VERSION_MICRO for WPE builds")
++SET_PROJECT_VERSION(2 46 "7${WPE_VERSION_MICRO_SUFFIX}")
+ 
+ set(USER_AGENT_BRANDING "" CACHE STRING "Branding to add to user agent string")
+ 
+-- 
+2.51.0
+
