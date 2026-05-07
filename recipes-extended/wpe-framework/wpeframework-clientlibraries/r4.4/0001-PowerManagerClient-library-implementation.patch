@@ -25,9 +25,9 @@ interface changes for enhanced instance management and add operational state tra
  Source/powercontroller/CMakeLists.txt       |   79 +
  Source/powercontroller/Module.cpp           |   22 +
  Source/powercontroller/Module.h             |   33 +
- Source/powercontroller/power_controller.cpp | 2364 +++++++++++++++++++
- Source/powercontroller/power_controller.h   |  398 ++++
- 5 files changed, 2896 insertions(+)
+ Source/powercontroller/power_controller.cpp | 2398 +++++++++++++++++++
+ Source/powercontroller/power_controller.h   |  398 +++
+ 5 files changed, 2930 insertions(+)
  create mode 100644 Source/powercontroller/CMakeLists.txt
  create mode 100644 Source/powercontroller/Module.cpp
  create mode 100644 Source/powercontroller/Module.h
@@ -220,10 +220,10 @@ index 0000000..c9c1321
 +#endif
 diff --git a/Source/powercontroller/power_controller.cpp b/Source/powercontroller/power_controller.cpp
 new file mode 100644
-index 0000000..d3e7d0b
+index 0000000..9805d0a
 --- /dev/null
 +++ b/Source/powercontroller/power_controller.cpp
-@@ -0,0 +1,2364 @@
+@@ -0,0 +1,2398 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -251,6 +251,7 @@ index 0000000..d3e7d0b
 +#include <thread>
 +#include <type_traits>
 +
++#include <sys/eventfd.h>
 +#include <sys/inotify.h>
 +#include <sys/syscall.h>
 +
@@ -601,6 +602,7 @@ index 0000000..d3e7d0b
 +
 +    int _fd; // inotify fd
 +    int _wd; // inotify watch descriptor
++    int _wakeupFd; // eventfd used to wake poll() on shutdown
 +    int _pid; // current PID
 +
 +    bool _running; // current running state
@@ -795,11 +797,14 @@ index 0000000..d3e7d0b
 +                break;
 +            }
 +
-+            struct pollfd pfd = { .fd = _fd, .events = POLLIN };
++            struct pollfd pfds[2] = {
++                { .fd = _fd,       .events = POLLIN },
++                { .fd = _wakeupFd, .events = POLLIN },
++            };
 +
 +            while (!_shutdown) {
 +
-+                int poll_res = poll(&pfd, 1, POLL_TIMEOUT);
++                int poll_res = poll(pfds, 2, POLL_TIMEOUT);
 +
 +                if (poll_res == -1) {
 +                    if (errno == EINTR)
@@ -811,7 +816,12 @@ index 0000000..d3e7d0b
 +                    // timedout
 +                    continue;
 +                } else {
-+                    if (pfd.revents & POLLIN) {
++                    if (pfds[1].revents & POLLIN) {
++                        /* Wakeup signal received, exit loop */
++                        LOGINFO("Wakeup signal received, exiting monitor loop");
++                        break;
++                    }
++                    if (pfds[0].revents & POLLIN) {
 +                        /* Inotify events are available. */
 +                        handle_inotify_event(_fd);
 +                    }
@@ -839,10 +849,18 @@ index 0000000..d3e7d0b
 +        , _callback(std::move(callback))
 +        , _fd(INVALID_FD)
 +        , _wd(INVALID_FD)
++        , _wakeupFd(INVALID_FD)
 +        , _pid(INVALID_PID)
 +        , _shutdown(false)
 +        , _thread(nullptr)
 +    {
++        LOGINFO(">>> pidFile: %s, processName: %s", _pidFile.c_str(), _processName.c_str());
++        _wakeupFd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
++        if (_wakeupFd < 0) {
++            LOGERR("eventfd creation failed, err: %s", strerror(errno));
++            _wakeupFd = INVALID_FD;
++        }
++        LOGINFO("<<<");
 +    }
 +
 +    inline bool Running() const
@@ -872,9 +890,18 @@ index 0000000..d3e7d0b
 +
 +    ~PIDFileMonitor()
 +    {
-+        LOGINFO("destructor");
++        LOGINFO(">>>");
 +
 +        _shutdown = true;
++
++        // Signal the wakeup eventfd to unblock poll() immediately
++        if (INVALID_FD != _wakeupFd) {
++            uint64_t val = 1;
++            LOGINFO("Signaling monitor thread to shutdown via eventfd");
++            if (write(_wakeupFd, &val, sizeof(val)) < 0) {
++                LOGERR("eventfd write failed, err: %s", strerror(errno));
++            }
++        }
 +
 +        if (_thread) {
 +            if (_thread->joinable()) {
@@ -882,6 +909,13 @@ index 0000000..d3e7d0b
 +            }
 +            _thread.reset();
 +        }
++
++        if (INVALID_FD != _wakeupFd) {
++            LOGINFO("Closing wakeup eventfd: %d", _wakeupFd);
++            close(_wakeupFd);
++            _wakeupFd = INVALID_FD;
++        }
++        LOGINFO("<<<");
 +    }
 +
 +    PIDFileMonitor(const PIDFileMonitor&) = delete;
