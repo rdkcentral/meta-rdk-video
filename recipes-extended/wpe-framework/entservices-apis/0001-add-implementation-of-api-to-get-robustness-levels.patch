@@ -1,17 +1,26 @@
-From 6f83279fd702db70dc69f4e81b02fd324c270f7a Mon Sep 17 00:00:00 2001
+From c300694627df10b011bd8b237111ff305e536323 Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Thu, 7 May 2026 15:59:45 +0000
+Date: Thu, 7 May 2026 18:15:22 +0000
 Subject: [PATCH] add implementation of api to get robustness levels
 
 ---
- apis/OpenCDMi/IDRM.h  | 3 +++
+ apis/OpenCDMi/IDRM.h  | 5 ++++-
  apis/OpenCDMi/IOCDM.h | 6 ++++++
- 2 files changed, 9 insertions(+)
+ 2 files changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/apis/OpenCDMi/IDRM.h b/apis/OpenCDMi/IDRM.h
-index a34454a..9219983 100644
+index a34454a..0a8b863 100644
 --- a/apis/OpenCDMi/IDRM.h
 +++ b/apis/OpenCDMi/IDRM.h
+@@ -46,7 +46,7 @@
+ #include <type_traits>
+ #include <typeinfo>
+ #include <vector>
+-
++#include <list>
+ #include <interfaces/Portability.h>
+ 
+ class BufferReader {
 @@ -442,6 +442,9 @@ public:
          uint32_t f_cbServerCertificate)
          = 0;
@@ -23,7 +32,7 @@ index a34454a..9219983 100644
      virtual CDMi_RESULT DestroyMediaKeySession(
          IMediaKeySession* f_piMediaKeySession)
 diff --git a/apis/OpenCDMi/IOCDM.h b/apis/OpenCDMi/IOCDM.h
-index 5d3fe8c..518323b 100644
+index 5d3fe8c..5048112 100644
 --- a/apis/OpenCDMi/IOCDM.h
 +++ b/apis/OpenCDMi/IOCDM.h
 @@ -183,6 +183,8 @@ struct IAccessorOCDM : virtual public Core::IUnknown {

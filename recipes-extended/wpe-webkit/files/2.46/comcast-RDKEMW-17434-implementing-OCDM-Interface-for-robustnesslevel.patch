@@ -1,12 +1,12 @@
-From b157fb05413df7f477c97a2cb2814e51fc601bc9 Mon Sep 17 00:00:00 2001
+From c742e29cf4111122beecd52c2ce853665756c41b Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Fri, 1 May 2026 01:31:24 +0000
-Subject: [PATCH] implementing OCDM Interface for robustnesslevel
+Date: Fri, 8 May 2026 08:16:09 +0000
+Subject: [PATCH]  implementing OCDM Interface for robustnesslevel
 
 ---
- Source/WebCore/platform/GStreamer.cmake       |  8 +++++++
- .../graphics/gstreamer/eme/CDMThunder.cpp     | 24 ++++++++++++++++++-
- 2 files changed, 31 insertions(+), 1 deletion(-)
+ Source/WebCore/platform/GStreamer.cmake       |  8 ++++++
+ .../graphics/gstreamer/eme/CDMThunder.cpp     | 27 ++++++++++++++++++-
+ 2 files changed, 34 insertions(+), 1 deletion(-)
 
 diff --git a/Source/WebCore/platform/GStreamer.cmake b/Source/WebCore/platform/GStreamer.cmake
 index 55f7c973771b..85e0591bc647 100644
@@ -32,10 +32,10 @@ index 55f7c973771b..85e0591bc647 100644
 +
  endif ()
 diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
-index 1e5134cd90b0..40f7ff134094 100644
+index 1e5134cd90b0..d76d03a88d22 100644
 --- a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
 +++ b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
-@@ -171,7 +171,29 @@ bool CDMPrivateThunder::supportsConfiguration(const CDMKeySystemConfiguration& c
+@@ -171,7 +171,32 @@ bool CDMPrivateThunder::supportsConfiguration(const CDMKeySystemConfiguration& c
  
  Vector<AtomString> CDMPrivateThunder::supportedRobustnesses() const
  {
@@ -48,18 +48,21 @@ index 1e5134cd90b0..40f7ff134094 100644
 +        return robustnesses;
 +    }
 +
-+    char* buffer = nullptr;
++    char** buffer = nullptr;
 +    uint16_t count = 0;
 +
-+    if (opencdm_system_supported_robustness(m_thunderSystem.get(), &buffer, &count) == ERROR_NONE && buffer && count > 0) {
-+        const char* p = buffer;
-+        for (uint16_t i=0; i<count; ++i) {
-+            robustnesses.append(AtomString { String::fromUTF8(p) });
-+            p += strlen(p) + 1;
-+	}
++    if (opencdm_system_supported_robustness(m_thunderSystem.get(), &buffer, &count) == ERROR_NONE && buffer != nullptr && count > 0) {
++        robustnesses.reserveCapacity(robustnesses.size() + count);
++        for (uint16_t i = 0; i < count; ++i) {
++            if (buffer[i] != nullptr) {
++                robustnesses.append(AtomString { String::fromUTF8(buffer[i]) });
++                free(buffer[i]);
++	    }
++        }
 +    }
-+    if (buffer)
++    if (buffer != nullptr) {
 +        free(buffer);
++    }
 +#endif
 +
 +    return robustnesses;
@@ -68,3 +71,4 @@ index 1e5134cd90b0..40f7ff134094 100644
  CDMRequirement CDMPrivateThunder::distinctiveIdentifiersRequirement(const CDMKeySystemConfiguration&, const CDMRestrictions&) const
 -- 
 2.44.4
+
