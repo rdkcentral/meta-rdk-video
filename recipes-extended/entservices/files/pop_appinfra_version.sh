@@ -7,13 +7,17 @@ VERSION_FILE="/opt/logs/version.txt"
 APPGATEWAY_VERSION="/etc/appgatewayversion.txt"
 APPMANAGER_VERSION="/etc/appmanagersversion.txt"
 APPGATEWAY_CPC_VERSION="/etc/appgatewaycpcversion.txt"
-DEVICE_PROPERTIES="/etc/device.properties"
 
-# Source device properties (if exists)
-[ -f /etc/device.properties ] && . /etc/device.properties || echo "Warning: /etc/device.properties not found."
+# Read BUILD_TYPE from device properties (if exists)
+if [ -f /etc/device.properties ]; then
+    BUILD_TYPE=$(grep -m 1 "^BUILD_TYPE=" /etc/device.properties | cut -d '=' -f 2)
+else
+    echo "Warning: /etc/device.properties not found."
+fi
 
-# Set RUST_LOG based on BUILD_TYPE
+# Populate appinfra component versions into /opt/logs/version.txt only for vbn/dev builds
 if [[ "$BUILD_TYPE" == "vbn" || "$BUILD_TYPE" == "dev" ]]; then
+    mkdir -p "$(dirname "$VERSION_FILE")"
 
     # Read existing content and remove plugin version lines (to avoid duplication)
     # Keep only system version info
@@ -21,10 +25,11 @@ if [[ "$BUILD_TYPE" == "vbn" || "$BUILD_TYPE" == "dev" ]]; then
         # Extract lines that are NOT plugin versions
         # Remove lines starting with APP_GATEWAY, APP_MANAGERS, APP_GATEWAY_CPC
         temp_file=$(mktemp)
-        grep -v "^APP_GATEWAY\|^APP_MANAGERS\|^APP_GATEWAY_CPC" "$VERSION_FILE" > "$temp_file" 2>/dev/null || true
+        grep -Ev "^(APP_GATEWAY|APP_MANAGERS|APP_GATEWAY_CPC)" "$VERSION_FILE" > "$temp_file" 2>/dev/null || true
         
-        # Overwrite the original file with cleaned content
-        mv "$temp_file" "$VERSION_FILE"
+        # Overwrite content in place to preserve existing file mode/ownership
+        cat "$temp_file" > "$VERSION_FILE"
+        rm -f "$temp_file"
     fi
 
     # Append appgateway version if it exists
