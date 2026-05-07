@@ -53,10 +53,7 @@ FILES:${PN} += "${systemd_unitdir}/system/ctrlm-main.service "
 FILES:${PN} += "${systemd_unitdir}/system/ctrlm-server.service "
 
 SYSTEMD_PACKAGES += " ctrlm-main"
-SYSTEMD_SERVICE:ctrlm-main  = "ctrlm-main.service"
-
-SYSTEMD_PACKAGES += " ctrlm-server"
-SYSTEMD_SERVICE:ctrlm-server  = "ctrlm-server.service"
+SYSTEMD_SERVICE:ctrlm-main  = "ctrlm-main.service ctrlm-server.service"
 
 ENABLE_GPERFTOOLS_HEAPCHECK_WP_DISTRO = "1"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES_RDK', 'comcast-gperftools-heapcheck-wp', ' -DFDC_ENABLED=ON', '', d)}"
