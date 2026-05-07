@@ -7,7 +7,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r38"
+PR  = "r39"
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
 DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
@@ -57,6 +57,7 @@ SRC_URI += "file://2.46/comcast-DELIA-59087-Disable-pausing-playback-for-buf.pat
 SRC_URI += "file://2.46/comcast-RDKTV-28214-Quick-_exit.patch"
 #SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
 SRC_URI += "file://2.46/comcast-RDKEMW-16580-WPE-Switch-gamepad-backend-from-libwpe-to-libmanette.patch"
+SRC_URI += "file://2.46/comcast-RDKEMW-16580-Backport-Implement-playEffect-via-libmanette-rumble.patch"
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"
