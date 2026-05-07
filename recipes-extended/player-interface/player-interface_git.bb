@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV = "0.1.3"
 PR = "r0"
 
-SRCREV = "99d9f9642676457e8032a048c72d891c468f0aae"
+SRCREV = "333c9b32f6a286950a00020ea66966a6a2a4c601"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "main"
 
@@ -35,6 +35,7 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', '-DCMAKE_GST_SUBTEC_ENABLED=1 ', '', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON ', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'middleware_profiling', ' -DENABLE_MW_PROFILING=ON', '', d)}"
 
 EXTRA_OECMAKE += " -DCMAKE_WPEFRAMEWORK_REQUIRED=1"
 
