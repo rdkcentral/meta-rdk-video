@@ -17,7 +17,7 @@ PR = "r1"
 PV = "v2.2.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=main"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=develop"
 
 SRCREV = "f719fcbb05a5b39f91168b91ce868e41d6634269"
 
