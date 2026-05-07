@@ -17,7 +17,6 @@ fi
 
 # Populate appinfra component versions into /opt/logs/version.txt only for vbn/dev builds
 if [ "$BUILD_TYPE" = "vbn" ] || [ "$BUILD_TYPE" = "dev" ]; then
-    mkdir -p "$(dirname "$VERSION_FILE")"
 
     # Read existing content and remove plugin version lines (to avoid duplication)
     # Keep only system version info
