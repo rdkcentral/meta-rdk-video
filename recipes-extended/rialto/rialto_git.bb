@@ -16,12 +16,14 @@ PR = "r0"
 
 require rialto_revision.inc
 
-SRCREV = "6688f0aea9e132d1f37e79202b7fd73d0980de48"
+SRCREV = "2bad508a60c4e9ee82be9dfa2f120ac588f52ccf"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
 DEPENDS = "openssl jsoncpp protobuf protobuf-native"
 DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform "
+DEPENDS += " rdkperf"
+RDEPENDS_${PN} += " rdkperf"
 
 S = "${WORKDIR}/git"
 inherit pkgconfig cmake coverity features_check
