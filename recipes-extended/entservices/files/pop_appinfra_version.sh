@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Script to populate /opt/logs/version.txt with appgateway, appmanager, and cpc versions
 # Preserves existing system version info and updates only the plugin versions
 # Prevents duplication on service restarts
@@ -16,7 +16,7 @@ else
 fi
 
 # Populate appinfra component versions into /opt/logs/version.txt only for vbn/dev builds
-if [[ "$BUILD_TYPE" == "vbn" || "$BUILD_TYPE" == "dev" ]]; then
+if [ "$BUILD_TYPE" = "vbn" ] || [ "$BUILD_TYPE" = "dev" ]; then
     mkdir -p "$(dirname "$VERSION_FILE")"
 
     # Read existing content and remove plugin version lines (to avoid duplication)
