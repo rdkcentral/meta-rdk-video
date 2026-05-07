@@ -10,7 +10,7 @@ APPGATEWAY_CPC_VERSION="/etc/appgatewaycpcversion.txt"
 
 # Read BUILD_TYPE from device properties (if exists)
 if [ -f /etc/device.properties ]; then
-    BUILD_TYPE=$(grep -m 1 "^BUILD_TYPE=" /etc/device.properties | cut -d '=' -f 2- | tr -d ' "')
+    BUILD_TYPE=$(grep -m 1 "^BUILD_TYPE=" /etc/device.properties | cut -d '=' -f 2- | sed 's/^[[:space:]]*"\{0,1\}\(.*\)"\{0,1\}[[:space:]]*$/\1/')
 else
     echo "Warning: /etc/device.properties not found."
 fi
@@ -23,7 +23,7 @@ if [[ "$BUILD_TYPE" == "vbn" || "$BUILD_TYPE" == "dev" ]]; then
     # Keep only system version info
     if [ -f "$VERSION_FILE" ]; then
         # Extract lines that are NOT plugin versions
-        # Remove lines starting with APP_GATEWAY, APP_MANAGERS, APP_GATEWAY_CPC
+        # Remove lines starting with APP_GATEWAY, APP_GATEWAY_CPC, or APP_MANAGERS
         temp_file=$(mktemp)
         grep -Ev "^(APP_GATEWAY(_CPC)?|APP_MANAGERS)" "$VERSION_FILE" > "$temp_file" 2>/dev/null || true
         
