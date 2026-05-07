@@ -25,9 +25,9 @@ interface changes for enhanced instance management and add operational state tra
  Source/powercontroller/CMakeLists.txt       |   79 +
  Source/powercontroller/Module.cpp           |   22 +
  Source/powercontroller/Module.h             |   33 +
- Source/powercontroller/power_controller.cpp | 2398 +++++++++++++++++++
+ Source/powercontroller/power_controller.cpp | 2417 +++++++++++++++++++
  Source/powercontroller/power_controller.h   |  398 +++
- 5 files changed, 2930 insertions(+)
+ 5 files changed, 2949 insertions(+)
  create mode 100644 Source/powercontroller/CMakeLists.txt
  create mode 100644 Source/powercontroller/Module.cpp
  create mode 100644 Source/powercontroller/Module.h
@@ -220,10 +220,10 @@ index 0000000..c9c1321
 +#endif
 diff --git a/Source/powercontroller/power_controller.cpp b/Source/powercontroller/power_controller.cpp
 new file mode 100644
-index 0000000..9805d0a
+index 0000000..c0d1c0c
 --- /dev/null
 +++ b/Source/powercontroller/power_controller.cpp
-@@ -0,0 +1,2398 @@
+@@ -0,0 +1,2417 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -778,6 +778,7 @@ index 0000000..9805d0a
 +        ASSERT(INVALID_PID != _pid);
 +
 +        LOGINFO("started, pid file: %s", _pidFile.c_str());
++        _running = true;
 +
 +        do {
 +
@@ -789,6 +790,7 @@ index 0000000..9805d0a
 +                break;
 +            }
 +
++            LOGINFO("inotify initialized _fd: %d, Adding inotify watch",_fd);
 +            _wd = inotify_add_watch(_fd, _pidFile.c_str(), IN_CLOSE_WRITE);
 +
 +            if (_wd < 0) {
@@ -801,6 +803,8 @@ index 0000000..9805d0a
 +                { .fd = _fd,       .events = POLLIN },
 +                { .fd = _wakeupFd, .events = POLLIN },
 +            };
++
++            LOGINFO("inotify watch added, _wd: %d, start polling for events", _wd);
 +
 +            while (!_shutdown) {
 +
@@ -830,8 +834,13 @@ index 0000000..9805d0a
 +        } while (false);
 +
 +        if (INVALID_FD != _wd) {
-+            LOGINFO("Closing inotify watch, wd: %d", _wd);
-+            close(_wd);
++            LOGINFO("Removing inotify watch, wd: %d", _wd);
++            if (INVALID_FD != _fd) {
++                int result = inotify_rm_watch(_fd, _wd);
++                if (result < 0) {
++                    LOGERR("inotify_rm_watch failed, err: %s", strerror(errno));
++                }
++            }
 +            _wd = INVALID_FD;
 +        }
 +        if (INVALID_FD != _fd) {
@@ -839,6 +848,7 @@ index 0000000..9805d0a
 +            close(_fd);
 +            _fd = INVALID_FD;
 +        }
++        _running = false;
 +        LOGINFO("<<<");
 +    }
 +
@@ -880,6 +890,34 @@ index 0000000..9805d0a
 +        }
 +    }
 +
++    void Stop()
++    {
++        LOGINFO(">>>");
++        _shutdown = true;
++
++        if (_running) {
++            // Signal the wakeup eventfd to unblock poll() immediately
++            if (INVALID_FD != _wakeupFd) {
++                uint64_t val = 1;
++                LOGINFO("Signaling monitor thread to shutdown via eventfd");
++                if (write(_wakeupFd, &val, sizeof(val)) < 0) {
++                    LOGERR("eventfd write failed, err: %s", strerror(errno));
++                }
++            }
++
++            LOGINFO("Waiting for monitor thread to exit");
++
++            if (_thread) {
++                if (_thread->joinable()) {
++                    _thread->join();
++                }
++                _thread.reset();
++            }
++        }
++
++        LOGINFO("<<<");
++    }
++
 +    int PID()
 +    {
 +        if (INVALID_PID == _pid) {
@@ -891,30 +929,7 @@ index 0000000..9805d0a
 +    ~PIDFileMonitor()
 +    {
 +        LOGINFO(">>>");
-+
-+        _shutdown = true;
-+
-+        // Signal the wakeup eventfd to unblock poll() immediately
-+        if (INVALID_FD != _wakeupFd) {
-+            uint64_t val = 1;
-+            LOGINFO("Signaling monitor thread to shutdown via eventfd");
-+            if (write(_wakeupFd, &val, sizeof(val)) < 0) {
-+                LOGERR("eventfd write failed, err: %s", strerror(errno));
-+            }
-+        }
-+
-+        if (_thread) {
-+            if (_thread->joinable()) {
-+                _thread->join();
-+            }
-+            _thread.reset();
-+        }
-+
-+        if (INVALID_FD != _wakeupFd) {
-+            LOGINFO("Closing wakeup eventfd: %d", _wakeupFd);
-+            close(_wakeupFd);
-+            _wakeupFd = INVALID_FD;
-+        }
++        Stop();
 +        LOGINFO("<<<");
 +    }
 +
@@ -1023,7 +1038,7 @@ index 0000000..9805d0a
 +    ~PowerController()
 +    {
 +        _shutdown = true;
-+        (void)Disconnect(); /* Internally it will Close destroys _powerManagerInterface too */
++        (void)Disconnect(true); /* Internally it will Close destroys _powerManagerInterface too */
 +    }
 +
 +    void pidChangedCb(const int pid)
@@ -1120,6 +1135,7 @@ index 0000000..9805d0a
 +
 +    inline bool isConnected() const
 +    {
++        LOGINFO("Checking COM-RPC channel, _connected: %d", _connected);
 +        return _connected;
 +    }
 +
@@ -1138,7 +1154,6 @@ index 0000000..9805d0a
 +        _internalApiLock.Lock();
 +        try {
 +            do {
-+                LOGINFO("Checking COM-RPC channel ...");
 +                if (!isConnected()) {
 +                    LOGINFO("Opening COM-RPC channel ...");
 +                    uint32_t res = BaseClass::Open(RPC::CommunicationTimeOut, BaseClass::Connector(), callSign);
@@ -1180,7 +1195,7 @@ index 0000000..9805d0a
 +        return status;
 +    }
 +
-+    uint32_t Disconnect()
++    uint32_t Disconnect(bool shutdown = false)
 +    {
 +        uint32_t status = Core::ERROR_GENERAL;
 +
@@ -1188,7 +1203,11 @@ index 0000000..9805d0a
 +
 +        _internalApiLock.Lock();
 +
-+        LOGINFO("Checking COM-RPC channel ...");
++        if (shutdown && _pidMonitor.Running()) {
++            LOGINFO("Stopping PID monitor ...");
++            _pidMonitor.Stop();
++        }
++
 +        if (isConnected()) {
 +            LOGINFO("Closing COM-RPC channel ...");
 +            status = BaseClass::Close(Core::infinite);
@@ -1903,9 +1922,9 @@ index 0000000..9805d0a
 +bool PowerController::RegisterThunderNotificationLocked<PowerModePreChangedCb>()
 +{
 +    bool result = false;
-+    LOGINFO(">>> Registering Notification: PowerModePreChange");
++    LOGINFO(">>>");
 +    result = Core::ERROR_NONE == _powerManagerInterface->Register(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IModePreChangeNotification>());
-+    LOGINFO("<<< Notification Registration: PowerModePreChange, result: %d", result);
++    LOGINFO("<<< result: %d", result);
 +    return result;
 +}
 +
@@ -1913,9 +1932,9 @@ index 0000000..9805d0a
 +bool PowerController::RegisterThunderNotificationLocked<PowerModeChangedCb>()
 +{
 +    bool result = false;
-+    LOGINFO(">>> Registering Notification: PowerModeChanged");
++    LOGINFO(">>>");
 +    result = Core::ERROR_NONE == _powerManagerInterface->Register(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IModeChangedNotification>());
-+    LOGINFO("<<< Notification Registration: PowerModeChanged, result: %d", result);
++    LOGINFO("<<< result: %d", result);
 +    return result;
 +}
 +
@@ -1923,9 +1942,9 @@ index 0000000..9805d0a
 +bool PowerController::RegisterThunderNotificationLocked<DeepSleepTimeoutCb>()
 +{
 +    bool result = false;
-+    LOGINFO(">>> Registering Notification: DeepSleepTimeout");
++    LOGINFO(">>>");
 +    result = Core::ERROR_NONE == _powerManagerInterface->Register(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IDeepSleepTimeoutNotification>());
-+    LOGINFO("<<< Notification Registration: DeepSleepTimeout, result: %d", result);
++    LOGINFO("<<< result: %d", result);
 +    return result;
 +}
 +
@@ -1933,9 +1952,9 @@ index 0000000..9805d0a
 +bool PowerController::RegisterThunderNotificationLocked<NetworkStandbyModeChangedCb>()
 +{
 +    bool result = false;
-+    LOGINFO(">>> Registering Notification: NetworkStandbyModeChanged");
++    LOGINFO(">>>");
 +    result = Core::ERROR_NONE == _powerManagerInterface->Register(_powerManagerNotification.baseInterface<Exchange::IPowerManager::INetworkStandbyModeChangedNotification>());
-+    LOGINFO("<<< Notification Registration: NetworkStandbyModeChanged, result: %d", result);
++    LOGINFO("<<< result: %d", result);
 +    return result;
 +}
 +
@@ -1943,9 +1962,9 @@ index 0000000..9805d0a
 +bool PowerController::RegisterThunderNotificationLocked<ThermalModeChangedCb>()
 +{
 +    bool result = false;
-+    LOGINFO(">>> Registering Notification: ThermalModeChanged");
++    LOGINFO(">>>");
 +    result = Core::ERROR_NONE == _powerManagerInterface->Register(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IThermalModeChangedNotification>());
-+    LOGINFO("<<< Notification Registration: ThermalModeChanged, result: %d", result);
++    LOGINFO("<<< result: %d", result);
 +    return result;
 +}
 +
@@ -1953,9 +1972,9 @@ index 0000000..9805d0a
 +bool PowerController::RegisterThunderNotificationLocked<RebootBeginCb>()
 +{
 +    bool result = false;
-+    LOGINFO(">>> Registering Notification: RebootBegin");
++    LOGINFO(">>>");
 +    result = Core::ERROR_NONE == _powerManagerInterface->Register(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IRebootNotification>());
-+    LOGINFO("<<< Notification Registration: RebootBegin, result: %d", result);
++    LOGINFO("<<< result: %d", result);
 +    return result;
 +}
 +
@@ -1970,9 +1989,9 @@ index 0000000..9805d0a
 +bool PowerController::UnregisterThunderNotificationLocked<PowerModePreChangedCb>()
 +{
 +    bool result = false;
-+    LOGINFO(">>> Unregistering Notification: PowerModePreChange");
++    LOGINFO(">>>");
 +    result = Core::ERROR_NONE == _powerManagerInterface->Unregister(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IModePreChangeNotification>());
-+    LOGINFO("<<< Notification Unregistration: PowerModePreChange, result: %d", result);
++    LOGINFO("<<< result: %d", result);
 +    return result;
 +}
 +
@@ -1980,9 +1999,9 @@ index 0000000..9805d0a
 +bool PowerController::UnregisterThunderNotificationLocked<PowerModeChangedCb>()
 +{
 +    bool result = false;
-+    LOGINFO(">>> Unregistering Notification: PowerModeChanged");
++    LOGINFO(">>>");
 +    result = Core::ERROR_NONE == _powerManagerInterface->Unregister(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IModeChangedNotification>());
-+    LOGINFO("<<< Notification Unregistration: PowerModeChanged, result: %d", result);
++    LOGINFO("<<< result: %d", result);
 +    return result;
 +}
 +
@@ -1990,9 +2009,9 @@ index 0000000..9805d0a
 +bool PowerController::UnregisterThunderNotificationLocked<DeepSleepTimeoutCb>()
 +{
 +    bool result = false;
-+    LOGINFO(">>> Unregistering Notification: DeepSleepTimeout");
++    LOGINFO(">>>");
 +    result = Core::ERROR_NONE == _powerManagerInterface->Unregister(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IDeepSleepTimeoutNotification>());
-+    LOGINFO("<<< Notification Unregistration: DeepSleepTimeout, result: %d", result);
++    LOGINFO("<<< result: %d", result);
 +    return result;
 +}
 +
@@ -2000,9 +2019,9 @@ index 0000000..9805d0a
 +bool PowerController::UnregisterThunderNotificationLocked<NetworkStandbyModeChangedCb>()
 +{
 +    bool result = false;
-+    LOGINFO(">>> Unregistering Notification: NetworkStandbyModeChanged");
++    LOGINFO(">>>");
 +    result = Core::ERROR_NONE == _powerManagerInterface->Unregister(_powerManagerNotification.baseInterface<Exchange::IPowerManager::INetworkStandbyModeChangedNotification>());
-+    LOGINFO("<<< Notification Unregistration: NetworkStandbyModeChanged, result: %d", result);
++    LOGINFO("<<< result: %d", result);
 +    return result;
 +}
 +
@@ -2010,9 +2029,9 @@ index 0000000..9805d0a
 +bool PowerController::UnregisterThunderNotificationLocked<ThermalModeChangedCb>()
 +{
 +    bool result = false;
-+    LOGINFO(">>> Unregistering Notification: ThermalModeChanged");
++    LOGINFO(">>>");
 +    result = Core::ERROR_NONE == _powerManagerInterface->Unregister(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IThermalModeChangedNotification>());
-+    LOGINFO("<<< Notification Unregistration: ThermalModeChanged, result: %d", result);
++    LOGINFO("<<< result: %d", result);
 +    return result;
 +}
 +
@@ -2020,9 +2039,9 @@ index 0000000..9805d0a
 +bool PowerController::UnregisterThunderNotificationLocked<RebootBeginCb>()
 +{
 +    bool result = false;
-+    LOGINFO(">>> Unregistering Notification: RebootBegin");
++    LOGINFO(">>>");
 +    result = Core::ERROR_NONE == _powerManagerInterface->Unregister(_powerManagerNotification.baseInterface<Exchange::IPowerManager::IRebootNotification>());
-+    LOGINFO("<<< Notification Unregistration: RebootBegin, result: %d", result);
++    LOGINFO("<<< result: %d", result);
 +    return result;
 +}
 +
