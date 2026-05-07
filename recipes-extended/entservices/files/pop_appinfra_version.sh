@@ -10,7 +10,7 @@ APPGATEWAY_CPC_VERSION="/etc/appgatewaycpcversion.txt"
 
 # Read BUILD_TYPE from device properties (if exists)
 if [ -f /etc/device.properties ]; then
-    BUILD_TYPE=$(grep -m 1 "^BUILD_TYPE=" /etc/device.properties | cut -d '=' -f 2- | sed 's/^[[:space:]]*"\{0,1\}\(.*\)"\{0,1\}[[:space:]]*$/\1/')
+    BUILD_TYPE=$(grep -m 1 "^BUILD_TYPE=" /etc/device.properties | cut -d '=' -f 2- | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^"//; s/"$//')
 else
     echo "Warning: /etc/device.properties not found."
 fi
