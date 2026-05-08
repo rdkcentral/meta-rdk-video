@@ -2,10 +2,10 @@ SUMMARY = "ENTServices AppGateway plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "1.1.0.2"
+PV = "1.2.0.0.rc1"
 PR = "r0"
-# Release version - 1.1.0.2
-SRCREV = "ba37bae07608d29c52e5db2b2310dd7680dca815"
+# Release version - 1.2.0.0.rc1
+SRCREV = "a870d300e964f1d97e3b22cd6cebeaa5266361a3"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
