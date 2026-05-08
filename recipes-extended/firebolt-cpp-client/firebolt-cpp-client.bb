@@ -8,13 +8,13 @@ inherit cmake
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-PV = "0.5.5"
+PV = "0.5.5+git${SRCPV}"
 PR = "r0"
 
-SRC_URI = "https://github.com/rdkcentral/firebolt-cpp-client/releases/download/v${PV}/firebolt-cpp-client-${PV}.tar.gz"
-SRC_URI[sha256sum] = "9ecb43d70cfe9f5737d28c2cae150e8b3258a70a54cb77982fa7da508aecfbbd"
+SRC_URI = "git://github.com/rdkcentral/firebolt-cpp-client.git;protocol=https;branch=feature/RDKEMW-17483"
+SRCREV = "bd39f0da63769552b6fd3f077750688256b8a338"
 
-S = "${WORKDIR}/firebolt-cpp-client-${PV}"
+S = "${WORKDIR}/git"
 
 DEPENDS = "firebolt-cpp-transport nlohmann-json"
 RDEPENDS:${PN} = "firebolt-cpp-transport"
