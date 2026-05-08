@@ -32,7 +32,7 @@ DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor
 DEPENDS:append:client = " virtual/mfrlib"
 DEPENDS:append = " virtual/mfrlib"  
 DEPENDS:append = " virtual/vendor-devicesettings-hal "
-DEPENDS:append = " virtual/vendor-deepsleepmgr-hal  "
+DEPENDS:append = " virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal "
 RDEPENDS:${PN}:append = " devicesettings rfc"
 RDEPENDS:${PN}_client_morty += " virtual/mfrlib"
 RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_mfrlib} devicesettings"
@@ -263,10 +263,10 @@ LDFLAGS += "-lRDKMfrLib "
 LDFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' -lsqlite3 ', '',d)}"
 
 #removed -liarmmgrs-deepsleep-hal
-LDFLAGS += " -ldshalcli -lds "
+LDFLAGS += " -ldshalcli -lds -liarmmgrs-deepsleep-hal"
 
 do_compile:append() {
-    LDFLAGS="-ldshalcli -lds -lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" oe_runmake -B -C ${S}/mfr/test_mfr/
+    LDFLAGS="-ldshalcli -lds -liarmmgrs-deepsleep-hal -lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" oe_runmake -B -C ${S}/mfr/test_mfr/
 }
 
 do_install:append(){
