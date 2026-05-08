@@ -1,26 +1,27 @@
-From d44e9bc784013a30a8dbaf3b0d3006f0572be555 Mon Sep 17 00:00:00 2001
-From: kkanag314 <krishnapriya_kanagaraj@comcast.com>
+From d6b59aa0b413e4f56d4a23fc61c6bacf9fb0dfd3 Mon Sep 17 00:00:00 2001
 From: Karunakaran A <Karunakaran_Amirthalingam@cable.comcast.com>
 Date: Wed, 21 Dec 2022 17:24:43 +0000
 Subject: [PATCH] rdkservice changes
+
 ---
- plugin/CENCParser.h     | 291 +++++++++++++++------
+ plugin/CENCParser.h     | 291 +++++++++++++++-------
  plugin/CMakeLists.txt   |   6 +-
- plugin/CapsParser.cpp   | 204 ---------------
+ plugin/CapsParser.cpp   | 204 ----------------
  plugin/CapsParser.h     |  63 -----
- plugin/FrameworkRPC.cpp | 437 +++++++++++++++++++------------
+ plugin/FrameworkRPC.cpp | 435 +++++++++++++++++++++------------
  plugin/OCDM.config      |  37 +--
- plugin/OCDM.cpp         |  99 ++++---
- plugin/OCDM.h           |  68 ++---
- plugin/Protobuf.h       | 530 ++++++++++++++++++++++++++++++++++++++
- 9 files changed, 1120 insertions(+), 615 deletions(-)
+ plugin/OCDM.cpp         | 103 ++++----
+ plugin/OCDM.h           |  48 ++--
+ plugin/Protobuf.h       | 530 ++++++++++++++++++++++++++++++++++++++++
+ 9 files changed, 1111 insertions(+), 606 deletions(-)
  delete mode 100644 plugin/CapsParser.cpp
  delete mode 100644 plugin/CapsParser.h
  create mode 100644 plugin/Protobuf.h
-Index: git/plugin/CENCParser.h
-===================================================================
---- git.orig/plugin/CENCParser.h
-+++ git/plugin/CENCParser.h
+
+diff --git a/plugin/CENCParser.h b/plugin/CENCParser.h
+index 58b5eb5..212533a 100644
+--- a/plugin/CENCParser.h
++++ b/plugin/CENCParser.h
 @@ -21,6 +21,7 @@
  #define __CENCPARSER_H
  
@@ -244,7 +245,10 @@ Index: git/plugin/CENCParser.h
 +                            psshData = nullptr;
 +                        }
 +                    }
-+                } else {
+                 } else {
+-                    TRACE(Trace::Information, (_T("PlayReady BIN detected [%d]\n"), __LINE__));
+-                    system = PLAYREADY;
+-                    psshData += 4;
 +                    TRACE(Trace::Error, (_T("Unsupported PSSH version (%hhu)"), version));
 +                }
 +                if ((keyIdData != nullptr) || (psshData != nullptr)) {
@@ -276,11 +280,9 @@ Index: git/plugin/CENCParser.h
 +                            keyIdData += KeyId::Length();
 +                        }
 +                    }
-                 } else {
--                    TRACE(Trace::Information, (_T("PlayReady BIN detected [%d]\n"), __LINE__));
--                    system = PLAYREADY;
--                    psshData += 4;
--                }
++                } else {
++                    TRACE(Trace::Error, (_T("Invalid PSSH data")));
+                 }
 -            } else if (::memcmp(&(data[4]), WideVine, KeyId::Length()) == 0) {
 -                TRACE(Trace::Information, (_T("WideVine detected [%d]\n"), __LINE__));
 -                system = WIDEVINE;
@@ -289,8 +291,6 @@ Index: git/plugin/CENCParser.h
 -                TRACE(Trace::Information, (_T("ClearKey detected [%d]\n"), __LINE__));
 -                system = CLEARKEY;
 -                psshData += 4;
-+                    TRACE(Trace::Error, (_T("Invalid PSSH data")));
-+                }
              } else {
 -                TRACE(Trace::Information, (_T("Unknown system: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X.\n"), data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11]));
 -                count = 0;
@@ -419,11 +419,11 @@ Index: git/plugin/CENCParser.h
  
      private:
          std::list<KeyId> _keyIds;
-Index: git/plugin/CMakeLists.txt
-===================================================================
---- git.orig/plugin/CMakeLists.txt
-+++ git/plugin/CMakeLists.txt
-@@ -24,8 +24,9 @@ set(PLUGIN_OPENCDMI_MODE "Local" CACHE S
+diff --git a/plugin/CMakeLists.txt b/plugin/CMakeLists.txt
+index e83612c..1988005 100644
+--- a/plugin/CMakeLists.txt
++++ b/plugin/CMakeLists.txt
+@@ -24,8 +24,9 @@ set(PLUGIN_OPENCDMI_MODE "Local" CACHE STRING "Controls if the plugin should run
  set(PLUGIN_OCDM_STARTUPORDER "" CACHE STRING "To configure startup order of OCDM plugin")
  
  # deprecated/legacy flags support
@@ -443,9 +443,10 @@ Index: git/plugin/CMakeLists.txt
          Module.cpp)
  
  add_dependencies(${MODULE_NAME} ${PLUGIN_OCDM_IMPLEMENTATION})
-Index: git/plugin/CapsParser.cpp
-===================================================================
---- git.orig/plugin/CapsParser.cpp
+diff --git a/plugin/CapsParser.cpp b/plugin/CapsParser.cpp
+deleted file mode 100644
+index 1d6a7ad..0000000
+--- a/plugin/CapsParser.cpp
 +++ /dev/null
 @@ -1,204 +0,0 @@
 -/*
@@ -652,9 +653,10 @@ Index: git/plugin/CapsParser.cpp
 -        }
 -    }
 -}
-Index: git/plugin/CapsParser.h
-===================================================================
---- git.orig/plugin/CapsParser.h
+diff --git a/plugin/CapsParser.h b/plugin/CapsParser.h
+deleted file mode 100644
+index 9ad148d..0000000
+--- a/plugin/CapsParser.h
 +++ /dev/null
 @@ -1,63 +0,0 @@
 -/*
@@ -720,10 +722,10 @@ Index: git/plugin/CapsParser.h
 -        };
 -    }
 -}
-Index: git/plugin/FrameworkRPC.cpp
-===================================================================
---- git.orig/plugin/FrameworkRPC.cpp
-+++ git/plugin/FrameworkRPC.cpp
+diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
+index c5b32c7..3f677bd 100644
+--- a/plugin/FrameworkRPC.cpp
++++ b/plugin/FrameworkRPC.cpp
 @@ -23,7 +23,6 @@
  
  #include "Module.h"
@@ -744,9 +746,9 @@ Index: git/plugin/FrameworkRPC.cpp
 +                : RPC::Communicator(source, proxyStubPath, Core::ProxyType<Core::IIPCServer>(engine))
                  , _parentInterface(parentInterface)
              {
-                 engine->Announcements(Announcement());
-@@ -124,15 +126,15 @@ namespace Plugin {
-
+ #if ((THUNDER_VERSION == 2) || ((THUNDER_VERSION == 4) && (THUNDER_VERSION_MINOR == 2)))
+@@ -127,15 +127,15 @@ namespace Plugin {
+ 
          private:
  #ifndef USE_THUNDER_R4
 -            virtual void* Aquire(const string& className, const uint32_t interfaceId, const uint32_t versionId)
@@ -757,14 +759,14 @@ Index: git/plugin/FrameworkRPC.cpp
  #endif /* USE_THUNDER_R4 */
              {
                  void* result = nullptr;
-
+ 
                  // Currently we only support version 1 of the IRPCLink :-)
 -                if (((versionId == 1) || (versionId == static_cast<uint32_t>(~0))) && ((interfaceId == ::OCDM::IAccessorOCDM::ID) || (interfaceId == Core::IUnknown::ID))) {
 +                if (((versionId == 1) || (versionId == static_cast<uint32_t>(~0))) && ((interfaceId == Exchange::IAccessorOCDM::ID) || (interfaceId == Core::IUnknown::ID))) {
                      // Reference count our parent
                      _parentInterface->AddRef();
                      TRACE(Trace::Information, ("OCDM interface acquired => %p", this));
-@@ -140,10 +140,10 @@ namespace Plugin {
+@@ -146,10 +146,10 @@ namespace Plugin {
              }
  
          private:
@@ -777,7 +779,7 @@ Index: git/plugin/FrameworkRPC.cpp
          private:
              AccessorOCDM() = delete;
              AccessorOCDM(const AccessorOCDM&) = delete;
-@@ -230,35 +230,70 @@ namespace Plugin {
+@@ -236,35 +236,70 @@ namespace Plugin {
              };
  
              // IMediaKeys defines the MediaKeys interface.
@@ -855,16 +857,17 @@ Index: git/plugin/FrameworkRPC.cpp
                          // Make sure the thread reaches a HALT.. We are done.
                          Core::Thread::Stop();
  
-@@ -280,35 +315,43 @@ namespace Plugin {
+@@ -286,35 +321,43 @@ namespace Plugin {
                              RequestConsume(Core::infinite);
  
                              if (IsRunning() == true) {
 -                                uint8_t keyIdLength = 0;
 -                                const uint8_t* keyIdData = KeyId(keyIdLength);
-+                                uint8_t *payloadBuffer = Buffer();
- 
+-
 -                                _parser->Parse(StreamInfo(), StreamInfoLength());
 -                                _mediaKeys->SetCapsParser(_parser);
++                                uint8_t *payloadBuffer = Buffer();
++
 +                                CDMi::SampleInfo sampleInfo;
 +                                sampleInfo.scheme = static_cast<CDMi::EncryptionScheme>(EncScheme());
 +                                EncPattern(sampleInfo.pattern.encrypted_blocks,sampleInfo.pattern.clear_blocks);
@@ -919,7 +922,7 @@ Index: git/plugin/FrameworkRPC.cpp
                                  }
  
                                  // Store the status we have for the other side.
-@@ -327,7 +370,6 @@ namespace Plugin {
+@@ -333,7 +376,6 @@ namespace Plugin {
                      CDMi::IMediaKeySessionExt* _mediaKeysExt;
                      uint8_t* _sessionKey;
                      uint32_t _sessionKeyLength;
@@ -927,7 +930,7 @@ Index: git/plugin/FrameworkRPC.cpp
                  };
  
                  // IMediaKeys defines the MediaKeys interface.
-@@ -338,7 +380,7 @@ namespace Plugin {
+@@ -344,7 +386,7 @@ namespace Plugin {
                      Sink& operator=(const Sink&) = delete;
  
                  public:
@@ -936,7 +939,7 @@ Index: git/plugin/FrameworkRPC.cpp
                          : _parent(*parent)
                          , _callback(callback)
                      {
-@@ -376,7 +418,7 @@ namespace Plugin {
+@@ -382,7 +424,7 @@ namespace Plugin {
                          TRACE(Trace::Information, ("OnKeyError(%d,%s)", f_nError, errorMessage));
                          if (_callback != nullptr) {
                              std::string message(errorMessage, strlen(errorMessage));
@@ -945,7 +948,7 @@ Index: git/plugin/FrameworkRPC.cpp
                          }
                      }
  
-@@ -385,27 +427,27 @@ namespace Plugin {
+@@ -391,27 +433,27 @@ namespace Plugin {
                      {
                          ASSERT (buffer != nullptr);
  
@@ -982,7 +985,7 @@ Index: git/plugin/FrameworkRPC.cpp
  
                          const CommonEncryptionData::KeyId* updated = _parent._cencData.UpdateKeyStatus(key, keyId);
  
-@@ -415,7 +457,7 @@ namespace Plugin {
+@@ -421,7 +463,7 @@ namespace Plugin {
                              _callback->OnKeyStatusUpdate(updated->Id(), updated->Length(), key);
                          }
                      }
@@ -991,7 +994,7 @@ Index: git/plugin/FrameworkRPC.cpp
                      {
                          if ((_callback != nullptr) && (_callback == callback)) {
                              _callback->Release();
-@@ -432,7 +474,7 @@ namespace Plugin {
+@@ -438,7 +480,7 @@ namespace Plugin {
  
                  private:
                      SessionImplementation& _parent;
@@ -1000,7 +1003,7 @@ Index: git/plugin/FrameworkRPC.cpp
                  };
  
              public:
-@@ -443,7 +485,7 @@ namespace Plugin {
+@@ -449,7 +491,7 @@ namespace Plugin {
                      AccessorOCDM* parent,
                      const std::string keySystem,
                      CDMi::IMediaKeySession* mediaKeySession,
@@ -1009,7 +1012,7 @@ Index: git/plugin/FrameworkRPC.cpp
                      const CommonEncryptionData* sessionData)
                      : _parent(*parent)
                      , _refCount(1)
-@@ -454,7 +496,6 @@ namespace Plugin {
+@@ -460,7 +502,6 @@ namespace Plugin {
                      , _sink(this, callback)
                      , _buffer(nullptr)
                      , _cencData(*sessionData)
@@ -1017,7 +1020,7 @@ Index: git/plugin/FrameworkRPC.cpp
                  {
                      ASSERT(parent != nullptr);
                      ASSERT(sessionData != nullptr);
-@@ -469,7 +510,7 @@ namespace Plugin {
+@@ -475,7 +516,7 @@ namespace Plugin {
                      AccessorOCDM* parent,
                      const std::string keySystem,
                      CDMi::IMediaKeySessionExt* mediaKeySession,
@@ -1026,15 +1029,15 @@ Index: git/plugin/FrameworkRPC.cpp
                      const CommonEncryptionData* sessionData)
                      : _parent(*parent)
                      , _refCount(1)
-@@ -492,7 +533,6 @@ namespace Plugin {
-                     _mediaKeySession->Run(&_sink);
+@@ -499,7 +540,6 @@ namespace Plugin {
+                         _mediaKeySession->Run(&_sink);
                      TRACE(Trace::Information, (_T("Constructed the Session Server side: %p"), this));
  
 -                    _mediaKeySession->SetCapsParser(&_parser);
                  }
                  #ifdef __WINDOWS__
                  #pragma warning(default : 4355)
-@@ -500,7 +540,6 @@ namespace Plugin {
+@@ -507,7 +547,6 @@ namespace Plugin {
  
                  virtual ~SessionImplementation()
                  {
@@ -1042,7 +1045,7 @@ Index: git/plugin/FrameworkRPC.cpp
  
                      TRACE(Trace::Information, (_T("Destructing the Session Server side: %p"), this));
                      // this needs to be done in a thread safe way. Leave it up to
-@@ -518,44 +557,52 @@ namespace Plugin {
+@@ -525,44 +564,52 @@ namespace Plugin {
                  {
                      return ((keySystem == _keySystem) && (_cencData.IsSupported(keyIds) == true));
                  }
@@ -1104,7 +1107,7 @@ Index: git/plugin/FrameworkRPC.cpp
                              bufferID.clear();
                              TRACE(Trace::Error, ("Failed to create buffer for Server::Session::CreateSessionBuffer(%s,%s) => %p", _keySystem.c_str(), _sessionId.c_str(), this));
                          }
-@@ -563,13 +610,13 @@ namespace Plugin {
+@@ -570,13 +617,13 @@ namespace Plugin {
                          _adminLock.Unlock();
                          TRACE(Trace::Information, ("Buffer already created Server::Session::CreateSessionBuffer(%s,%s,%s) => %p", _keySystem.c_str(), _sessionId.c_str(), BufferId().c_str(), this));
                          bufferID = _buffer->Name();
@@ -1120,7 +1123,7 @@ Index: git/plugin/FrameworkRPC.cpp
                  {
                      std::string bufferid;
                      _adminLock.Lock();
-@@ -580,41 +627,41 @@ namespace Plugin {
+@@ -591,41 +638,41 @@ namespace Plugin {
                      return bufferid;
                  }
  
@@ -1170,7 +1173,7 @@ Index: git/plugin/FrameworkRPC.cpp
                      TRACE(Trace::Information, (_T("ResetOutputProtection! %p"), this));
                      _mediaKeySession->ResetOutputProtection();
                  }
-@@ -624,49 +671,52 @@ namespace Plugin {
+@@ -635,49 +682,52 @@ namespace Plugin {
                      _mediaKeySession->SetParameter(name, value);
                  }
  
@@ -1239,22 +1242,24 @@ Index: git/plugin/FrameworkRPC.cpp
                  END_INTERFACE_MAP
  
              private:
-@@ -680,7 +730,6 @@ namespace Plugin {
+@@ -691,7 +741,6 @@ namespace Plugin {
                  Core::Sink<Sink> _sink;
                  DataExchange* _buffer;
                  CommonEncryptionData _cencData;
 -                CapsParser _parser;
              };
  
-         public:
-@@ -693,31 +742,31 @@ namespace Plugin {
+             class GoogleCastAuthExtensionProxy : public Exchange::IGoogleCastAuthExtension {
+@@ -746,7 +795,7 @@ namespace Plugin {
              {
                  ASSERT(parent != nullptr);
              }
 -            virtual ~AccessorOCDM()
 +            ~AccessorOCDM() override
              {
-                 TRACE(Trace::Information, (_T("Released the AccessorOCDM server side [%d]"), __LINE__));
+                 if (_googleCastAuthExtension) {
+                     _googleCastAuthExtension->Release();
+@@ -756,25 +805,25 @@ namespace Plugin {
              }
  
          public:
@@ -1285,7 +1290,7 @@ Index: git/plugin/FrameworkRPC.cpp
                  }
  
                  return result;
-@@ -728,7 +777,7 @@ namespace Plugin {
+@@ -785,7 +834,7 @@ namespace Plugin {
              }
  
              // Create a MediaKeySession using the supplied init data and CDM data.
@@ -1294,7 +1299,7 @@ Index: git/plugin/FrameworkRPC.cpp
                  const std::string& keySystem,
                  const int32_t licenseType,
                  const std::string& initDataType,
-@@ -736,9 +785,9 @@ namespace Plugin {
+@@ -793,9 +842,9 @@ namespace Plugin {
                  const uint16_t initDataLength,
                  const uint8_t* CDMData,
                  const uint16_t CDMDataLength,
@@ -1306,7 +1311,7 @@ Index: git/plugin/FrameworkRPC.cpp
              {
                   CDMi::IMediaKeys *system = _parent.KeySystem(keySystem);
  
-@@ -750,8 +799,8 @@ namespace Plugin {
+@@ -807,8 +856,8 @@ namespace Plugin {
  
                       // OKe we got a buffer machanism to transfer the raw data, now create
                       // the session.
@@ -1317,7 +1322,7 @@ Index: git/plugin/FrameworkRPC.cpp
                                          CDMData, CDMDataLength, &sessionInterface) == 0)
                       {
                           if (sessionInterface != nullptr)
-@@ -773,7 +822,7 @@ namespace Plugin {
+@@ -830,7 +879,7 @@ namespace Plugin {
                                      CommonEncryptionData::Iterator index(keyIds.Keys());
                                      while (index.Next() == true) {
                                          const CommonEncryptionData::KeyId& entry(index.Current());
@@ -1326,7 +1331,7 @@ Index: git/plugin/FrameworkRPC.cpp
                                      }
                                  }
                                  _adminLock.Unlock();
-@@ -785,35 +834,35 @@ namespace Plugin {
+@@ -842,35 +891,35 @@ namespace Plugin {
                       TRACE(Trace::Error, (_T("Could not create a DRM session! [%d]"), __LINE__));
                   }
  
@@ -1369,7 +1374,7 @@ Index: git/plugin/FrameworkRPC.cpp
              }
  
              std::string GetVersionExt(const std::string& keySystem) const override
-@@ -843,13 +892,13 @@ namespace Plugin {
+@@ -900,13 +949,13 @@ namespace Plugin {
                  return false;
              }
  
@@ -1386,7 +1391,7 @@ Index: git/plugin/FrameworkRPC.cpp
              }
  
              uint32_t ResetSecureStops(const std::string& keySystem) override
-@@ -861,7 +910,7 @@ namespace Plugin {
+@@ -918,7 +967,7 @@ namespace Plugin {
                  return 0;
              }
  
@@ -1395,7 +1400,7 @@ Index: git/plugin/FrameworkRPC.cpp
                  const std::string& keySystem,
                  unsigned char Ids[],
                  uint16_t idsLength,
-@@ -869,89 +918,89 @@ namespace Plugin {
+@@ -926,90 +975,90 @@ namespace Plugin {
              {
                  CDMi::IMediaKeysExt* systemExt = dynamic_cast<CDMi::IMediaKeysExt*>(_parent.KeySystem(keySystem));
                  if (systemExt) {
@@ -1502,6 +1507,7 @@ Index: git/plugin/FrameworkRPC.cpp
              BEGIN_INTERFACE_MAP(AccessorOCDM)
 -            INTERFACE_ENTRY(::OCDM::IAccessorOCDM)
 +            INTERFACE_ENTRY(Exchange::IAccessorOCDM)
+             INTERFACE_AGGREGATE(Exchange::IGoogleCastAuthExtension, _googleCastAuthExtension)
              END_INTERFACE_MAP
  
          private:
@@ -1513,7 +1519,7 @@ Index: git/plugin/FrameworkRPC.cpp
  
                  std::list<SessionImplementation*>::const_iterator index(_sessionList.begin());
  
-@@ -1089,47 +1138,85 @@ namespace Plugin {
+@@ -1148,47 +1197,85 @@ namespace Plugin {
              Core::JSON::DecUInt32 ShareSize;
              Core::JSON::ArrayType<Systems> KeySystems;
          };
@@ -1589,10 +1595,10 @@ Index: git/plugin/FrameworkRPC.cpp
 -            // On activation subscribe, on deactivation un-subscribe
 -            PluginHost::ISubSystem* subSystem = service->SubSystems();
 +            _shell = service;
- 
++
 +            _shell->AddRef();
 +            _thread.Start();
-+
+ 
 +            return (result);
 +        }
 +
@@ -1614,7 +1620,7 @@ Index: git/plugin/FrameworkRPC.cpp
  
              // Before we start loading the mapping of the Keys to the factories, load the factories :-)
              Core::Directory entry(locator.c_str(), _T("*.drm"));
-@@ -1155,6 +1242,7 @@ namespace Plugin {
+@@ -1214,6 +1301,7 @@ namespace Plugin {
                      }
                  } else {
                      SYSLOG(Logging::Startup, (_T("Could not load factory [%s], error [%s]"), Core::File::FileNameExtended(entry.Current()).c_str(), library.Error().c_str()));
@@ -1622,7 +1628,7 @@ Index: git/plugin/FrameworkRPC.cpp
                  }
              }
  
-@@ -1178,6 +1266,7 @@ namespace Plugin {
+@@ -1237,6 +1325,7 @@ namespace Plugin {
  
                              } else {
                                  SYSLOG(Logging::Startup, (_T("Required factory [%s], not found for [%s]"), system.c_str(), designator.c_str()));
@@ -1630,7 +1636,7 @@ Index: git/plugin/FrameworkRPC.cpp
                              }
                          }
                      }
-@@ -1185,7 +1274,7 @@ namespace Plugin {
+@@ -1244,7 +1333,7 @@ namespace Plugin {
                      //now handle the configuration
                      if (factory != factories.end()) {
                          const string configuration(index.Current().Configuration.Value());
@@ -1639,7 +1645,7 @@ Index: git/plugin/FrameworkRPC.cpp
                      }
                  }
  
-@@ -1202,15 +1291,16 @@ namespace Plugin {
+@@ -1261,15 +1350,16 @@ namespace Plugin {
                  SYSLOG(Logging::Startup, (_T("No DRM factories specified. OCDM can not service any DRM requests.")));
              }
  
@@ -1659,7 +1665,7 @@ Index: git/plugin/FrameworkRPC.cpp
                      _service = nullptr;
                      _entryPoint = nullptr;
                  } else {
-@@ -1230,6 +1320,8 @@ namespace Plugin {
+@@ -1289,6 +1379,8 @@ namespace Plugin {
              return (result);
          }
          void Deinitialize(PluginHost::IShell* service) override {
@@ -1668,7 +1674,7 @@ Index: git/plugin/FrameworkRPC.cpp
              std::map<const string, SystemFactory>::iterator factory(_systemToFactory.begin());
  
              std::list<CDMi::ISystemFactory*> deinitialized;
-@@ -1245,6 +1337,22 @@ namespace Plugin {
+@@ -1304,6 +1396,22 @@ namespace Plugin {
                  
                  factory++;
              }
@@ -1691,7 +1697,7 @@ Index: git/plugin/FrameworkRPC.cpp
          }
          virtual uint32_t Reset()
          {
-@@ -1395,14 +1503,17 @@ namespace Plugin {
+@@ -1467,14 +1575,17 @@ namespace Plugin {
              blacklist.insert(std::pair<const std::string, std::vector<std::string>>(system, elements));
          }
  
@@ -1710,10 +1716,10 @@ Index: git/plugin/FrameworkRPC.cpp
      };
  
      SERVICE_REGISTRATION(OCDMImplementation, 1, 0);
-Index: git/plugin/OCDM.config
-===================================================================
---- git.orig/plugin/OCDM.config
-+++ git/plugin/OCDM.config
+diff --git a/plugin/OCDM.config b/plugin/OCDM.config
+index e7295c4..659ca69 100644
+--- a/plugin/OCDM.config
++++ b/plugin/OCDM.config
 @@ -37,28 +37,31 @@ map()
      kv(designators "___array___;org.chromium.externalclearkey;org.w3.clearkey")
  end()
@@ -1798,10 +1804,10 @@ Index: git/plugin/OCDM.config
  endif()
  
  map_append(${configuration} root ${rootobject})
-Index: git/plugin/OCDM.cpp
-===================================================================
---- git.orig/plugin/OCDM.cpp
-+++ git/plugin/OCDM.cpp
+diff --git a/plugin/OCDM.cpp b/plugin/OCDM.cpp
+index 6ff2796..dd29c5b 100644
+--- a/plugin/OCDM.cpp
++++ b/plugin/OCDM.cpp
 @@ -45,41 +45,38 @@ namespace OCDM {
      Exchange::IMemory* MemoryObserver(const RPC::IRemoteConnection* connection)
      {
@@ -1987,10 +1993,10 @@ Index: git/plugin/OCDM.cpp
      {
      }
  
-Index: git/plugin/OCDM.h
-===================================================================
---- git.orig/plugin/OCDM.h
-+++ git/plugin/OCDM.h
+diff --git a/plugin/OCDM.h b/plugin/OCDM.h
+index 6b45d68..0ae3999 100644
+--- a/plugin/OCDM.h
++++ b/plugin/OCDM.h
 @@ -30,25 +30,20 @@ namespace Plugin {
  
      class OCDM : public PluginHost::IPlugin, public PluginHost::IWeb, public PluginHost::JSONRPC {
@@ -2068,7 +2074,7 @@ Index: git/plugin/OCDM.h
  
              public:
                  Core::JSON::String Name;
-@@ -126,39 +118,33 @@ namespace Plugin {
+@@ -126,40 +118,34 @@ namespace Plugin {
              };
  
          public:
@@ -2096,9 +2102,8 @@ Index: git/plugin/OCDM.h
 +        OCDM& operator=(const OCDM&) = delete;
          OCDM()
              : _skipURL(0)
--            , _service(nullptr)
 +            , _connectionId(0)
-+            , _service(nullptr)
+             , _service(nullptr)
              , _opencdmi(nullptr)
              , _memory(nullptr)
              , _notification(this)
@@ -2118,48 +2123,9 @@ Index: git/plugin/OCDM.h
      public:
          BEGIN_INTERFACE_MAP(OCDM)
          INTERFACE_ENTRY(PluginHost::IPlugin)
-@@ -178,22 +164,22 @@ namespace Plugin {
-         // If there is an error, return a string describing the issue why the initialisation failed.
-         // The Service object is *NOT* reference counted, lifetime ends if the plugin is deactivated.
-         // The lifetime of the Service object is guaranteed till the deinitialize method is called.
--        virtual const string Initialize(PluginHost::IShell* service);
-+        const string Initialize(PluginHost::IShell* service) override;
- 
-         // The plugin is unloaded from the webbridge. This is call allows the module to notify clients
-         // or to persist information if needed. After this call the plugin will unlink from the service path
-         // and be deactivated. The Service object is the same as passed in during the Initialize.
-         // After theis call, the lifetime of the Service object ends.
--        virtual void Deinitialize(PluginHost::IShell* service);
-+        void Deinitialize(PluginHost::IShell* service) override;
- 
-         // Returns an interface to a JSON struct that can be used to return specific metadata information with respect
-         // to this plugin. This Metadata can be used by the MetData plugin to publish this information to the ouside world.
--        virtual string Information() const;
-+        string Information() const  override;
- 
-         //  IWeb methods
-         // -------------------------------------------------------------------------------------------------------
--        virtual void Inbound(Web::Request& request);
--        virtual Core::ProxyType<Web::Response> Process(const Web::Request& request);
-+        void Inbound(Web::Request& request)  override;
-+        Core::ProxyType<Web::Response> Process(const Web::Request& request) override;
- 
-     private:
-         void Deactivated(RPC::IRemoteConnection* process);
-@@ -207,8 +193,8 @@ namespace Plugin {
-         uint32_t get_keysystems(const string& index, Core::JSON::ArrayType<Core::JSON::String>& response) const;
- 
-     private:
--        uint8_t _skipURL{};
--        uint32_t _connectionId{};
-+        uint8_t _skipURL;
-+        uint32_t _connectionId;
-         PluginHost::IShell* _service;
-         Exchange::IContentDecryption* _opencdmi;
-         Exchange::IMemory* _memory;
 diff --git a/plugin/Protobuf.h b/plugin/Protobuf.h
 new file mode 100644
-index 00000000..936de9e0
+index 0000000..936de9e
 --- /dev/null
 +++ b/plugin/Protobuf.h
 @@ -0,0 +1,530 @@
@@ -2694,4 +2660,5 @@ index 00000000..936de9e0
 +
 +} // namespace
 -- 
-2.17.1
+2.34.1
+
