@@ -1,45 +1,112 @@
-From 284b884d6e89620aafd971c4746a4dea9dcd71c5 Mon Sep 17 00:00:00 2001
+From e7b8035ac622b6d47b81b16ea2a181ae244bf8a0 Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Thu, 7 May 2026 09:08:02 +0000
+Date: Tue, 12 May 2026 07:55:21 +0000
 Subject: [PATCH] add implementation of api to get robustnesslevel
 
 ---
- plugin/FrameworkRPC.cpp | 22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+ plugin/FrameworkRPC.cpp | 54 ++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 53 insertions(+), 1 deletion(-)
 
 diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
-index bb4254b..25dae0c 100644
+index c17bdea..faafe4b 100644
 --- a/plugin/FrameworkRPC.cpp
 +++ b/plugin/FrameworkRPC.cpp
-@@ -904,6 +904,28 @@ namespace Plugin {
-                 return result;
-             }
+@@ -804,6 +804,37 @@ namespace Plugin {
+                 END_INTERFACE_MAP
+             };
  
-+            Exchange::OCDM_RESULT GetSupportedRobustness(
-+                const std::string& keySystem,
-+                RPC::IStringIterator*& robustness) override
-+            {
-+                robustness.clear();
++            class WidevineRobustnessExtensionProxy : public Exchange::IWidevineRobustnessExtension {
++            private:
++                CDMi::IWidevineRobustnessExtension* _impl;
++            public:
++                explicit WidevineRobustnessExtensionProxy(CDMi::IWidevineRobustnessExtension* impl)
++                    : _impl(impl) {
++                }
 +
-+                CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
-+                Exchange::OCDM_RESULT result = Exchange::OCDM_RESULT::OCDM_S_FALSE;
++                static Exchange::IWidevineRobustnessExtension* Create(CDMi::IWidevineRobustnessExtension* impl) {
++                    return Core::Service<WidevineRobustnessExtensionProxy>::Create<Exchange::IWidevineRobustnessExtension>(impl);
++                }
 +
-+                if (system != nullptr) {
++                Exchange::OCDM_RESULT GetSupportedRobustness(RPC::IStringIterator*& robustness) const override {
++                    robustness.clear();
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_RESULT::OCDM_S_FALSE;
++
 +                    std::list<std::string> levels;
 +                    TRACE(Trace::Information, ("Get Supported Robustness()"));
-+                    result = static_cast<Exchange::OCDM_RESULT>(system->GetSupportedRobustness(levels));
-+ 
++                    result = static_cast<Exchange::OCDM_RESULT>(_impl->GetSupportedRobustness(levels));
++
 +		    if (result == Exchange::OCDM_RESULT::OCDM_SUCCESS && !levels.empty()) {
 +                        robustness = Core::Service<RPC::StringIterator>::Create<RPC::IStringIterator>(levels);
 +                    }
 +                    return result;
 +                }
-+                return result;
-+            }
 +
-             uint64_t GetDrmSystemTime(const std::string& keySystem) const override
++                BEGIN_INTERFACE_MAP(WidevineRobustnessExtensionProxy)
++                INTERFACE_ENTRY(Exchange::IWidevineRobustnessExtension)
++                END_INTERFACE_MAP
++            };
++
+         public:
+             AccessorOCDM(OCDMImplementation* parent, const string& name, const uint32_t defaultSize)
+                 : _parent(*parent)
+@@ -812,6 +843,7 @@ namespace Plugin {
+                 , _defaultSize(defaultSize)
+                 , _sessionList()
+                 , _googleCastAuthExtension(GoogleCastAuthExtensionProxy::Create(parent->GoogleCastAuthExtension()))
++                , _widevineRobustnessExtension(WidevineRobustnessExtensionProxy::Create(parent->WidevineRobustnessExtension()))
              {
-                 CDMi::IMediaKeysExt* systemExt = dynamic_cast<CDMi::IMediaKeysExt*>(_parent.KeySystem(keySystem));
+                 ASSERT(parent != nullptr);
+             }
+@@ -821,6 +853,11 @@ namespace Plugin {
+                     _googleCastAuthExtension->Release();
+                     _googleCastAuthExtension = nullptr;
+                 }
++
++                if (_widevineRobustnessExtension) {
++                    _widevineRobustnessExtension->Release();
++                    _widevineRobustnessExtension = nullptr;
++                }
+                 TRACE(Trace::Information, (_T("Released the AccessorOCDM server side [%d]"), __LINE__));
+             }
+ 
+@@ -1090,7 +1127,8 @@ namespace Plugin {
+             BEGIN_INTERFACE_MAP(AccessorOCDM)
+             INTERFACE_ENTRY(Exchange::IAccessorOCDM)
+             INTERFACE_AGGREGATE(Exchange::IGoogleCastAuthExtension, _googleCastAuthExtension)
+-            END_INTERFACE_MAP
++            INTERFACE_AGGREGATE(Exchange::IWidevineRobustnessExtension, _widevineRobustnessExtension)
++	    END_INTERFACE_MAP
+ 
+         private:
+             Exchange::ISession* FindSession(const CommonEncryptionData& keyIds, const string& keySystem) const
+@@ -1162,6 +1200,7 @@ namespace Plugin {
+             uint32_t _defaultSize;
+             std::list<SessionImplementation*> _sessionList;
+             Exchange::IGoogleCastAuthExtension* _googleCastAuthExtension;
++            Exchange::IWidevineRobustnessExtension*  _widevineRobustnessExtension;
+         };
+ 
+         class Config : public Core::JSON::Container {
+@@ -1565,6 +1604,19 @@ namespace Plugin {
+             return result;
+         }
+ 
++        CDMi::IWidevineRobustnessExtension* WidevineRobustnessExtension()
++        {
++            CDMi::IWidevineRobustnessExtension* result = nullptr;
++            std::map<const std::string, SystemFactory>::const_iterator index(_systemToFactory.begin());
++            while (index != _systemToFactory.end()) {
++                auto instance = index->second.Factory->Instance();
++                if ((result = dynamic_cast<CDMi::IWidevineRobustnessExtension*>(instance)) != nullptr)
++                    break;
++                index++;
++            }
++            return result;
++        }
++
+     private:
+         void LoadDesignators(const string& keySystem, std::list<string>& designators) const
+         {
 -- 
 2.44.4
 

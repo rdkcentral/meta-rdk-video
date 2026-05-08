@@ -1,16 +1,16 @@
-From eaf91553e3f7e5f7baf6d08115b27696013d6239 Mon Sep 17 00:00:00 2001
+From 08979b0f8aecec31abb36f626bdd939dd8c37f69 Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Fri, 8 May 2026 09:39:01 +0000
+Date: Mon, 11 May 2026 20:06:34 +0000
 Subject: [PATCH] implement api to get supported robustness
 
 ---
  Source/ocdm/open_cdm.cpp    | 43 +++++++++++++++++++++++++++++++++++++
  Source/ocdm/open_cdm.h      | 12 +++++++++++
- Source/ocdm/open_cdm_impl.h |  9 ++++++++
- 3 files changed, 64 insertions(+)
+ Source/ocdm/open_cdm_impl.h | 14 ++++++++++++
+ 3 files changed, 69 insertions(+)
 
 diff --git a/Source/ocdm/open_cdm.cpp b/Source/ocdm/open_cdm.cpp
-index 65e337d..921a74a 100644
+index 65e337d..dd83306 100644
 --- a/Source/ocdm/open_cdm.cpp
 +++ b/Source/ocdm/open_cdm.cpp
 @@ -144,6 +144,49 @@ OpenCDMError opencdm_destruct_system(struct OpenCDMSystem* system)
@@ -27,7 +27,7 @@ index 65e337d..921a74a 100644
 + *     levels are reported.
 + */
 +OpenCDMError opencdm_system_supported_robustness(struct OpenCDMSystem* system,
-+     char** robustness, uint16_t* count)
++     char*** robustness, uint16_t* count)
 +{
 +    assert(system != nullptr);
 +    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
@@ -87,21 +87,26 @@ index ef8c03c..f11ea7f 100644
   * \brief Checks if a DRM system is supported.
   *
 diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
-index fb9ce2a..548cd7a 100644
+index fb9ce2a..bba2927 100644
 --- a/Source/ocdm/open_cdm_impl.h
 +++ b/Source/ocdm/open_cdm_impl.h
-@@ -173,6 +173,15 @@ public:
+@@ -173,6 +173,20 @@ public:
          return (result);
      }
  
-+    virtual Exchange::OCDM_RESULT GetSupportedRobustness(const string& keySystem, RPC::IStringIterator*& robustness) const {
++    virtual Exchange::OCDM_RESULT GetSupportedRobustness(RPC::IStringIterator*& robustness) const {
 +        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
 +
 +        if (_remote != nullptr) {
-+            return(_remote->GetSupportedRobustness(keySystem, robustness));
++	    Exchange::IWidevineRobustnessExtension* wvExt = _remote->QueryInterface<Exchange::IWidevineRobustnessExtension>();
++
++	    if (wvExt != nullptr) {
++               result =  wvExt->GetSupportedRobustness(robustness);
++		wvExt->Release();
++            }
 +        }
 +        return (result);
-+    } 
++    }
 +
      // Create a MediaKeySession using the supplied init data and CDM data.
      virtual Exchange::OCDM_RESULT
