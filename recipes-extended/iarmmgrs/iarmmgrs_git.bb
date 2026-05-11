@@ -6,12 +6,12 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=83a31d934b0cc2ab2d44a329445b4366"
 
 
 PV = "1.1.14"
-PR = "r2"
+PR = "r3"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
-SRCREV = "427eafa935a1bc7611792cc77f05034b9b5735ae"
+SRCREV = "32f3d858af74e0105df75fdc4114e2c38c6549f7"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
 #SRC_URI:append = " file://irmgr.diff"
