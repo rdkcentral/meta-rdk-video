@@ -52,8 +52,8 @@ EXTRA_OECMAKE = "-DCMAKE_SYSROOT=${RECIPE_SYSROOT} -DCMAKE_PROJECT_VERSION=${PV}
 do_install() {
    cmake --install ${B} --component internal-headers --prefix ${D}${prefix}
    install -d ${D}${includedir}
-   install -m 755 ${S}/scripts/vsdk_json_combine.py   ${D}${includedir}
-   install -m 755 ${S}/scripts/vsdk_json_to_header.py ${D}${includedir}
+   install -m 644 ${S}/scripts/vsdk_json_combine.py   ${D}${includedir}
+   install -m 644 ${S}/scripts/vsdk_json_to_header.py ${D}${includedir}
 }
 
 ALLOW_EMPTY:${PN} = "1"
