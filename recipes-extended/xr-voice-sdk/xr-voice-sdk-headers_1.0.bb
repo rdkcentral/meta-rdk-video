@@ -20,7 +20,6 @@ S = "${WORKDIR}/git"
 DEPENDS = "gperf-native util-linux jansson"
 
 FILES:${PN} += "${includedir}/xr_mq.h \
-
                 ${includedir}/xr_fdc.h \
                 ${includedir}/xr_timer.h \
                 ${includedir}/xr_timestamp.h \
