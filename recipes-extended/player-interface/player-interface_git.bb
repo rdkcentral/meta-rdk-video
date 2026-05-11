@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV = "0.1.3"
 PR = "r0"
 
-SRCREV = "99d9f9642676457e8032a048c72d891c468f0aae"
+SRCREV = "8a0af757b14063c7937828b738c7f12671b88f18"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "main"
 
