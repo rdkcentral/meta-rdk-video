@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "4103648a9246ff8563be6fd1eb95b508feb6560e"
+SRCREV = "70c6c6d9e722eafc15889d0a48c9261c58ed8017"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -96,6 +96,7 @@ PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
 "
 RUNTIMEMANAGER_PLUGIN_ARGS         ?= " \
                                        -DPLUGIN_RUNTIME_APP_PORTAL=${RUNTIME_APP_PORTAL} \
+                                       -DPLUGIN_RUNTIME_CONFIG_FILE=${RUNTIME_CONFIG_FILE} \
 "
 
 PREINSTALLMANAGER_PLUGIN_ARGS         ?= " \
@@ -112,6 +113,7 @@ APPSTORAGEMANAGER_PLUGIN_ARGS       ?= " \
 
 RUNTIME_APP_PORTAL ?= "com.sky.as.apps"
 APP_PREINSTALL_DIRECTORY ?= "/opt/preinstall"
+RUNTIME_CONFIG_FILE ?= ""
 APP_DOWNLOAD_DIRECTORY ?= "/opt/CDL/"
 DEFAULT_APP_STORAGE_PATH ?= "/opt/persistent/storageManager"
 NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
