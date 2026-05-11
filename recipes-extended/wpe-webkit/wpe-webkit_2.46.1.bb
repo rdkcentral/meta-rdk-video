@@ -14,7 +14,7 @@ PR = "r${WPE_RECIPE_REVISION}"
 WPE_MICRO_VERSION_SUFFIX = "${@'%02d%02d' % (int((d.getVar('PV').split('.') + ['0'])[2]), int(d.getVar('WPE_RECIPE_REVISION')))}"
 
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
-DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
+DEPENDS:append = " libtasn1 unifdef-native libsoup fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 # Tip of the branch on May 11, 2026
