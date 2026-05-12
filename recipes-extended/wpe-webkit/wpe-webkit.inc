@@ -96,6 +96,7 @@ RDEPS_VIDEO = " \
     gstreamer1.0-plugins-base-app \
     gstreamer1.0-plugins-base-playback \
     gstreamer1.0-plugins-good-soup \
+    gstreamer1.0-plugins-bad-opusparse \
     gstreamer1.0-plugins-good-matroska \
 "
 
