@@ -12,7 +12,7 @@ DEPENDS += " \
      freetype glib-2.0 gnutls harfbuzz icu jpeg pcre sqlite3 zlib \
      libepoxy libpng libwebp libxml2 libxslt \
      virtual/egl virtual/libgles2 \
-     libepoxy libgcrypt \
+     libgcrypt \
 "
 
 EXTRANATIVEPATH += " chrpath-native"
