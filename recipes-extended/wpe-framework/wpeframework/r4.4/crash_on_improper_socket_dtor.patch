@@ -1,0 +1,16 @@
+diff --git a/Source/core/SocketPort.cpp b/Source/core/SocketPort.cpp
+index 0898183d..d2adf7da 100644
+--- a/Source/core/SocketPort.cpp
++++ b/Source/core/SocketPort.cpp
+@@ -411,6 +411,11 @@ namespace WPEFramework {
+             // Make sure the socket is closed before you destruct. Otherwise
+             // the virtuals might be called, which are destructed at this point !!!!
+             ASSERT((m_Socket == INVALID_SOCKET) || (IsClosed()));
++            if(!((m_Socket == INVALID_SOCKET) || (IsClosed()))) {
++                TRACE_L1("Watchout!!! Socket is still open in destructor");
++                int* ptr = nullptr;
++                *ptr = 10;
++            }
+ 
+             if (m_Socket != INVALID_SOCKET) {
+                 DestroySocket(m_Socket);
