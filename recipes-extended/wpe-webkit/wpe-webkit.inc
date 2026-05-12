@@ -137,8 +137,8 @@ PACKAGE_DEBUG_SPLIT_STYLE = "debug-without-src"
 
 # Ensure we'll get the recipe version and SRCRV into the versions.txt
 do_install:append() {
-    install -d ${D}/etc/${PN}
-    echo "WPE_WEBKIT_VERSION=${PV}-${PR}" > ${D}/etc/${PN}/version.txt
+    install -d ${D}${sysconfdir}/${PN}
+    echo "WPE_WEBKIT_VERSION=${PV}-${PR}" > ${D}${sysconfdir}/${PN}/version.txt
 }
 
 # Build wpewebkit with split-dwarf, see for more info:
