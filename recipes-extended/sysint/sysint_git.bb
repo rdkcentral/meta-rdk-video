@@ -8,7 +8,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "5.0.1"
 PR = "r0"
 
-SRCREV = "6974aef88b03e5871608dcd134ba2aca3cd49e19"
+SRCREV = "cd2d60123551551f7e58efd7e5de5910007f7863"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
@@ -104,7 +104,7 @@ do_install() {
         install -m 0644 ${S}/systemd_units/update-device-details.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.service ${D}${systemd_unitdir}/system
-        #install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/minidump-upload.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/minidump-secure-upload.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/disk-threshold-check.service ${D}${systemd_unitdir}/system
@@ -113,7 +113,7 @@ do_install() {
         install -m 0644 ${S}/systemd_units/update-device-details.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/restart-parodus.service ${D}${systemd_unitdir}/system
-        #install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/gstreamer-cleanup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/oops-dump.service ${D}${systemd_unitdir}/system
 	    install -m 0644 ${S}/systemd_units/ntp-event.service ${D}${systemd_unitdir}/system
 	    install -m 0644 ${S}/systemd_units/ntp-event.path ${D}${systemd_unitdir}/system
@@ -270,7 +270,7 @@ SYSTEMD_SERVICE:${PN} += "update-device-details.service"
 SYSTEMD_SERVICE:${PN} += "oops-dump.service"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.path"
 SYSTEMD_SERVICE:${PN} += "restart-parodus.service"
-#SYSTEMD_SERVICE:${PN} += "gstreamer-cleanup.service"
+SYSTEMD_SERVICE:${PN} += "gstreamer-cleanup.service"
 SYSTEMD_SERVICE:${PN} += "ntp-event.service"
 SYSTEMD_SERVICE:${PN} += "ntp-event.path"
 SYSTEMD_SERVICE:${PN} += "network-connection-stats.service"
