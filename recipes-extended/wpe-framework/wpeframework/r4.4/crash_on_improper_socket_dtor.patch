@@ -1,3 +1,23 @@
+diff --git a/Source/core/ResourceMonitor.h b/Source/core/ResourceMonitor.h
+index b5a8f096..4ce1e46e 100644
+--- a/Source/core/ResourceMonitor.h
++++ b/Source/core/ResourceMonitor.h
+@@ -210,6 +210,7 @@ namespace Core {
+             // Make sure this entry is only registered once !!!
+             if (std::find(_resourceList.begin(), _resourceList.end(), &resource) == _resourceList.end()) {
+                 _resourceList.push_back(&resource);
++                TRACE_L1("Registering resource %p with descriptor %d at index %d", &resource, resource.Descriptor(), static_cast<int>(_resourceList.size()));
+             }
+ 
+             if (_resourceList.size() == 1) {
+@@ -423,6 +424,7 @@ namespace Core {
+                         // always make sure that the iterator is on the right spot/filedescriptor.
+                         ASSERT(entry->Descriptor() == _descriptorArray[fd_index].fd);
+ 
++                        TRACE_L1("Calling handle for resource %p with descriptor %d at index %d with flags %d", entry, entry->Descriptor(), fd_index, _descriptorArray[fd_index].revents);
+                         uint16_t flagsSet = _descriptorArray[fd_index].revents;
+ 
+                         Arm();
 diff --git a/Source/core/SocketPort.cpp b/Source/core/SocketPort.cpp
 index 0898183d..d2adf7da 100644
 --- a/Source/core/SocketPort.cpp
