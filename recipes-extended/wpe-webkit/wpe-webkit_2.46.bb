@@ -121,7 +121,7 @@ FILES:${PN}-web-inspector-plugin += " ${libdir}/wpe-webkit-*/libWPEWebInspectorR
 TUNE_CCARGS:remove = "${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', '','-fno-omit-frame-pointer -fno-optimize-sibling-calls', d)}"
 TUNE_CCARGS:append = " -fno-delete-null-pointer-checks"
 
-WPE_WEBKIT_LTO:arm64 = ""
+WPE_WEBKIT_LTO:aarch64 = ""
 WPE_WEBKIT_LTO ??= "-flto=auto"
 TARGET_CFLAGS += "${WPE_WEBKIT_LTO}"
 TARGET_LDFLAGS += "${WPE_WEBKIT_LTO}"
