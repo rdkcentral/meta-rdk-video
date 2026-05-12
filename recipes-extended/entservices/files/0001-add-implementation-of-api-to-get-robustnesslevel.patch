@@ -1,17 +1,17 @@
-From e7b8035ac622b6d47b81b16ea2a181ae244bf8a0 Mon Sep 17 00:00:00 2001
+From 6b384758e1e59f7cfd822ba835f64b0b0682f411 Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Tue, 12 May 2026 07:55:21 +0000
+Date: Wed, 13 May 2026 08:05:45 +0000
 Subject: [PATCH] add implementation of api to get robustnesslevel
 
 ---
- plugin/FrameworkRPC.cpp | 54 ++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 53 insertions(+), 1 deletion(-)
+ plugin/FrameworkRPC.cpp | 57 ++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 56 insertions(+), 1 deletion(-)
 
 diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
-index c17bdea..faafe4b 100644
+index c17bdea..b4df7de 100644
 --- a/plugin/FrameworkRPC.cpp
 +++ b/plugin/FrameworkRPC.cpp
-@@ -804,6 +804,37 @@ namespace Plugin {
+@@ -804,6 +804,40 @@ namespace Plugin {
                  END_INTERFACE_MAP
              };
  
@@ -28,8 +28,11 @@ index c17bdea..faafe4b 100644
 +                }
 +
 +                Exchange::OCDM_RESULT GetSupportedRobustness(RPC::IStringIterator*& robustness) const override {
-+                    robustness.clear();
-+                    Exchange::OCDM_RESULT result = Exchange::OCDM_RESULT::OCDM_S_FALSE;
++                    
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_RESULT::OCDM_INTERFACE_NOT_IMPLEMENTED;
++
++                    if (!_impl)
++                        return result;
 +
 +                    std::list<std::string> levels;
 +                    TRACE(Trace::Information, ("Get Supported Robustness()"));
@@ -49,7 +52,7 @@ index c17bdea..faafe4b 100644
          public:
              AccessorOCDM(OCDMImplementation* parent, const string& name, const uint32_t defaultSize)
                  : _parent(*parent)
-@@ -812,6 +843,7 @@ namespace Plugin {
+@@ -812,6 +846,7 @@ namespace Plugin {
                  , _defaultSize(defaultSize)
                  , _sessionList()
                  , _googleCastAuthExtension(GoogleCastAuthExtensionProxy::Create(parent->GoogleCastAuthExtension()))
@@ -57,7 +60,7 @@ index c17bdea..faafe4b 100644
              {
                  ASSERT(parent != nullptr);
              }
-@@ -821,6 +853,11 @@ namespace Plugin {
+@@ -821,6 +856,11 @@ namespace Plugin {
                      _googleCastAuthExtension->Release();
                      _googleCastAuthExtension = nullptr;
                  }
@@ -69,7 +72,7 @@ index c17bdea..faafe4b 100644
                  TRACE(Trace::Information, (_T("Released the AccessorOCDM server side [%d]"), __LINE__));
              }
  
-@@ -1090,7 +1127,8 @@ namespace Plugin {
+@@ -1090,7 +1130,8 @@ namespace Plugin {
              BEGIN_INTERFACE_MAP(AccessorOCDM)
              INTERFACE_ENTRY(Exchange::IAccessorOCDM)
              INTERFACE_AGGREGATE(Exchange::IGoogleCastAuthExtension, _googleCastAuthExtension)
@@ -79,7 +82,7 @@ index c17bdea..faafe4b 100644
  
          private:
              Exchange::ISession* FindSession(const CommonEncryptionData& keyIds, const string& keySystem) const
-@@ -1162,6 +1200,7 @@ namespace Plugin {
+@@ -1162,6 +1203,7 @@ namespace Plugin {
              uint32_t _defaultSize;
              std::list<SessionImplementation*> _sessionList;
              Exchange::IGoogleCastAuthExtension* _googleCastAuthExtension;
@@ -87,7 +90,7 @@ index c17bdea..faafe4b 100644
          };
  
          class Config : public Core::JSON::Container {
-@@ -1565,6 +1604,19 @@ namespace Plugin {
+@@ -1565,6 +1607,19 @@ namespace Plugin {
              return result;
          }
  

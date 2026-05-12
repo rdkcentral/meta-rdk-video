@@ -1,48 +1,23 @@
-From c742e29cf4111122beecd52c2ce853665756c41b Mon Sep 17 00:00:00 2001
+From c439777346789e815a86d663c9b2ffae758769cc Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Fri, 8 May 2026 08:16:09 +0000
-Subject: [PATCH]  implementing OCDM Interface for robustnesslevel
+Date: Wed, 13 May 2026 08:13:42 +0000
+Subject: [PATCH] implementing OCDM Interface for robustnesslevel
 
 ---
- Source/WebCore/platform/GStreamer.cmake       |  8 ++++++
- .../graphics/gstreamer/eme/CDMThunder.cpp     | 27 ++++++++++++++++++-
- 2 files changed, 34 insertions(+), 1 deletion(-)
+ .../graphics/gstreamer/eme/CDMThunder.cpp     | 27 +++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
-diff --git a/Source/WebCore/platform/GStreamer.cmake b/Source/WebCore/platform/GStreamer.cmake
-index 55f7c973771b..85e0591bc647 100644
---- a/Source/WebCore/platform/GStreamer.cmake
-+++ b/Source/WebCore/platform/GStreamer.cmake
-@@ -175,10 +175,18 @@ if (ENABLE_ENCRYPTED_MEDIA AND ENABLE_THUNDER)
-     # Globally add thunder libraries, required for the check_cxx_symbol_exists call.
-     set(CMAKE_REQUIRED_LIBRARIES ${THUNDER_LIBRARIES})
- 
-+    check_cxx_symbol_exists(opencdm_system_supported_robustness ${THUNDER_INCLUDE_DIR}/open_cdm.h HAS_OCDM_SUPPORTED_ROBUSTNESS)
-+    if (HAS_OCDM_SUPPORTED_ROBUSTNESS)
-+      list(APPEND WebCore_PRIVATE_DEFINITIONS THUNDER_HAS_OCDM_SUPPORTED_ROBUSTNESS=1)
-+    else ()
-+      list(APPEND WebCore_PRIVATE_DEFINITIONS THUNDER_HAS_OCDM_SUPPORTED_ROBUSTNESS=0)
-+    endif ()
-+    
-     check_cxx_symbol_exists(opencdm_gstreamer_session_decrypt_buffer ${THUNDER_INCLUDE_DIR}/open_cdm_adapter.h HAS_OCDM_DECRYPT_BUFFER)
-     if (HAS_OCDM_DECRYPT_BUFFER)
-       list(APPEND WebCore_PRIVATE_DEFINITIONS THUNDER_HAS_OCDM_DECRYPT_BUFFER=1)
-     else ()
-       list(APPEND WebCore_PRIVATE_DEFINITIONS THUNDER_HAS_OCDM_DECRYPT_BUFFER=0)
-     endif ()
-+
- endif ()
 diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
-index 1e5134cd90b0..d76d03a88d22 100644
+index 139a26be65c7..8a226b065ed2 100644
 --- a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
 +++ b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
-@@ -171,7 +171,32 @@ bool CDMPrivateThunder::supportsConfiguration(const CDMKeySystemConfiguration& c
+@@ -171,6 +171,33 @@ bool CDMPrivateThunder::supportsConfiguration(const CDMKeySystemConfiguration& c
  
  Vector<AtomString> CDMPrivateThunder::supportedRobustnesses() const
  {
--    return { emptyAtom(), "SW_SECURE_DECODE"_s, "SW_SECURE_CRYPTO"_s, "HW_SECURE_DECODE"_s, "HW_SECURE_CRYPTO"_s, "HW_SECURE_ALL"_s };
-+    Vector<AtomString> robustnesses = { emptyAtom() };
-+
 +#if THUNDER_HAS_OCDM_SUPPORTED_ROBUSTNESS
++    Vector<AtomString> robustnesses = { emptyAtom() };
++    
 +    if (!m_thunderSystem) {
 +        WTFLogAlways("CDMPrivateThunder: No active OpenCDM system for %s. Returning default robustness only.", m_keySystem.utf8().data());
 +        return robustnesses;
@@ -63,12 +38,13 @@ index 1e5134cd90b0..d76d03a88d22 100644
 +    if (buffer != nullptr) {
 +        free(buffer);
 +    }
++    
++    return robustnesses;
 +#endif
 +
-+    return robustnesses;
+     return { emptyAtom(), "SW_SECURE_DECODE"_s, "SW_SECURE_CRYPTO"_s, "HW_SECURE_DECODE"_s, "HW_SECURE_CRYPTO"_s, "HW_SECURE_ALL"_s };
  }
  
- CDMRequirement CDMPrivateThunder::distinctiveIdentifiersRequirement(const CDMKeySystemConfiguration&, const CDMRestrictions&) const
 -- 
 2.44.4
 

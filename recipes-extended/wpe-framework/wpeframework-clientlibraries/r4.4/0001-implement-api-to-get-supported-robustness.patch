@@ -41,7 +41,7 @@ index 65e337d..dd83306 100644
 +     
 +    if (accessor != nullptr) {
 +       RPC::IStringIterator* iterator = nullptr;
-+       result = static_cast<OpenCDMError>(accessor->GetSupportedRobustness(system->keySystem(), iterator));
++       result = static_cast<OpenCDMError>(accessor->GetSupportedRobustness(iterator));
 +
 +       if (result == ERROR_NONE && iterator != nullptr) {
 +	   uint16_t size = iterator->Count();
@@ -55,8 +55,8 @@ index 65e337d..dd83306 100644
 +	       *count = size;
 +           }
 +       iterator->Release();
-+   }
-+
++       }
++    }
 +    return (result);
 +}
 +
