@@ -214,7 +214,6 @@ PACKAGECONFIG[mfr] = "-DUSE_MFR,,,"
 
 SYSTEMD_SERVICE:${PN} += "dsmgr.service"
 SYSTEMD_SERVICE:${PN} += "ds-reboot-notifier.service"
-SYSTEMD_SERVICE:${PN} += "ds-reboot.sh"
 SYSTEMD_SERVICE:${PN} += "sysmgr.service"
 
 SYSTEMD_SERVICE:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'mfr', 'mfrmgr.service', '', d)}"
