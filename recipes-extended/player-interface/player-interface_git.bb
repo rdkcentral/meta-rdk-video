@@ -11,7 +11,7 @@ SRCREV = "269f2b1a38492c26f2f7cfb41d194029a8ea88d2"
 inherit pkgconfig
 inherit cmake
 
-DEPENDS += "iarmmgrs wpeframework ${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0 gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)} wpeframework-clientlibraries wpe-webkit virtual/vendor-gst-drm-plugins essos virtual/vendor-secapi2-adapter"
+DEPENDS += "iarmmgrs wpeframework ${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0 gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)} wpeframework-clientlibraries ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', 'wpe-webkit', '', d)} virtual/vendor-gst-drm-plugins essos virtual/vendor-secapi2-adapter"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec_cc', 'subttxrend-app', '', d)}"
 RDEPENDS:${PN} += "devicesettings ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"

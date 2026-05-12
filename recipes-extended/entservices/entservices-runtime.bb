@@ -35,7 +35,7 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-RDEPENDS_${PN}:append = " webkitbrowser-plugin"
+RDEPENDS_${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', ' webkitbrowser-plugin', '', d)}"
 
 include include/webkitbrowser.inc
 
