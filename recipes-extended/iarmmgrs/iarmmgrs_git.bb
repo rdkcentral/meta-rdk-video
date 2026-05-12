@@ -191,6 +191,8 @@ do_install() {
     install -m 0755 ${S}/utils/libiarmUtils.so ${D}${libdir}/libiarmUtils.so.0.0.0
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/conf/dsmgr.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${S}/conf/ds-reboot-notifier.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${S}/conf/ds-reboot.sh ${D}${libdir}
     install -m 0644 ${S}/conf/sysmgr.service ${D}${systemd_unitdir}/system
     ln -rsf ${D}${libdir}/libiarmUtils.so.0.0.0  ${D}${base_libdir}/libiarmUtils.so
 
@@ -211,6 +213,8 @@ PACKAGECONFIG ??= ""
 PACKAGECONFIG[mfr] = "-DUSE_MFR,,,"
 
 SYSTEMD_SERVICE:${PN} += "dsmgr.service"
+SYSTEMD_SERVICE:${PN} += "ds-reboot-notifier.service"
+SYSTEMD_SERVICE:${PN} += "ds-reboot.sh"
 SYSTEMD_SERVICE:${PN} += "sysmgr.service"
 
 SYSTEMD_SERVICE:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'mfr', 'mfrmgr.service', '', d)}"
