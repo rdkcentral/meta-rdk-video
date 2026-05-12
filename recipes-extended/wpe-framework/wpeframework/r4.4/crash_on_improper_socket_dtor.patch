@@ -1,12 +1,12 @@
 diff --git a/Source/core/ResourceMonitor.h b/Source/core/ResourceMonitor.h
-index b5a8f096..4ce1e46e 100644
+index b5a8f096..e75a4a20 100644
 --- a/Source/core/ResourceMonitor.h
 +++ b/Source/core/ResourceMonitor.h
 @@ -210,6 +210,7 @@ namespace Core {
              // Make sure this entry is only registered once !!!
              if (std::find(_resourceList.begin(), _resourceList.end(), &resource) == _resourceList.end()) {
                  _resourceList.push_back(&resource);
-+                TRACE_L1("Registering resource %p with descriptor %d at index %d", &resource, resource.Descriptor(), static_cast<int>(_resourceList.size()));
++                SYSLOG(Logging::Shutdown, (_T("Registering resource %p with descriptor %d at index %d"), &resource, resource.Descriptor(), static_cast<int>(_resourceList.size())));
              }
  
              if (_resourceList.size() == 1) {
@@ -14,12 +14,12 @@ index b5a8f096..4ce1e46e 100644
                          // always make sure that the iterator is on the right spot/filedescriptor.
                          ASSERT(entry->Descriptor() == _descriptorArray[fd_index].fd);
  
-+                        TRACE_L1("Calling handle for resource %p with descriptor %d at index %d with flags %d", entry, entry->Descriptor(), fd_index, _descriptorArray[fd_index].revents);
++                        SYSLOG(Logging::Shutdown, (_T("Calling handle for resource %p with descriptor %d at index %d with flags %d"), entry, entry->Descriptor(), fd_index, _descriptorArray[fd_index].revents));
                          uint16_t flagsSet = _descriptorArray[fd_index].revents;
  
                          Arm();
 diff --git a/Source/core/SocketPort.cpp b/Source/core/SocketPort.cpp
-index 0898183d..d2adf7da 100644
+index 0898183d..09ae91f6 100644
 --- a/Source/core/SocketPort.cpp
 +++ b/Source/core/SocketPort.cpp
 @@ -411,6 +411,11 @@ namespace WPEFramework {
@@ -27,7 +27,7 @@ index 0898183d..d2adf7da 100644
              // the virtuals might be called, which are destructed at this point !!!!
              ASSERT((m_Socket == INVALID_SOCKET) || (IsClosed()));
 +            if(!((m_Socket == INVALID_SOCKET) || (IsClosed()))) {
-+                TRACE_L1("Watchout!!! Socket is still open in destructor");
++                SYSLOG(Logging::Shutdown, (_T("Watchout!!! Socket is still open in destructor of SocketPort <%p> m_socket %d"), (this), m_Socket));
 +                int* ptr = nullptr;
 +                *ptr = 10;
 +            }
