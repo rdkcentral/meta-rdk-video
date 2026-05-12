@@ -56,12 +56,6 @@ do_install:append() {
                sed -i "s|response=|response=${NM_CONNECTIVITY_CHECK_RESPONSE}|g" ${D}${sysconfdir}/NetworkManager/conf.d/nm-connectivity.conf
            fi
     fi
-    if [ "${MACHINE}" = "es1-rtk-xumo" ]; then
-          if [ -f ${D}${base_libdir}/rdk/startStunnel.sh ]; then
-                bbnote "Disabling SHORTS"
-               sed -i 's/`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable 2>&1 > \/dev\/null`/\"false\"/' ${D}${base_libdir}/rdk/startStunnel.sh
-          fi
-    fi
 }
 
 FILES:${PN} += "${sysconfdir}/udhcpc.vendor_specific"
@@ -73,13 +67,6 @@ LOGROTATE_SIZE_MEM_applications = "512000"
 LOGROTATE_ROTATION_MEM_applications = "2"
 LOGROTATE_SIZE_applications = "20971520"
 LOGROTATE_ROTATION_applications = "5"
-
-LOGROTATE_NAME = "reboot-reason"
-LOGROTATE_LOGNAME_reboot-reason = "rebootreason.log"
-LOGROTATE_SIZE_MEM_reboot-reason = "1572864"
-LOGROTATE_ROTATION_MEM_reboot-reason = "3"
-LOGROTATE_SIZE_reboot-reason = "1572864"
-LOGROTATE_ROTATION_reboot-reason = "3"
 
 LOGROTATE_NAME = "system"
 LOGROTATE_LOGNAME_system = "system.log"
@@ -171,13 +158,6 @@ LOGROTATE_SIZE_webpa_log = "128000"
 LOGROTATE_ROTATION_webpa_log = "3"
 LOGROTATE_SIZE_MEM_webpa_log = "128000"
 LOGROTATE_ROTATION_MEM_webpa_log = "3"
-
-LOGROTATE_NAME = "rebootInfo"
-LOGROTATE_LOGNAME_rebootInfo = "rebootInfo.log"
-LOGROTATE_SIZE_rebootInfo = "64000"
-LOGROTATE_ROTATION_rebootInfo = "3"
-LOGROTATE_SIZE_MEM_rebootInfo = "64000"
-LOGROTATE_ROTATION_MEM_rebootInfo = "3"
 
 LOGROTATE_NAME = "core_log"
 LOGROTATE_LOGNAME_core_log = "core_log.txt"
