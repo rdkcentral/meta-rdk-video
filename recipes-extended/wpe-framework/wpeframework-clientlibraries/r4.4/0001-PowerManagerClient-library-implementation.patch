@@ -921,11 +921,11 @@ index 0000000..9304da4
 +                _thread.reset();
 +                _running = false;
 +            }
++        }
 +
-+            if (INVALID_FD != _wakeupFd) {
-+                close(_wakeupFd);
-+                _wakeupFd = INVALID_FD;
-+            }
++        if (INVALID_FD != _wakeupFd) {
++            close(_wakeupFd);
++            _wakeupFd = INVALID_FD;
 +        }
 +
 +        LOGINFO("<<<");
