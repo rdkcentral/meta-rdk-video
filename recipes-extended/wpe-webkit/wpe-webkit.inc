@@ -12,14 +12,14 @@ DEPENDS += " \
      freetype glib-2.0 gnutls harfbuzz icu jpeg pcre sqlite3 zlib \
      libepoxy libpng libwebp libxml2 libxslt \
      virtual/egl virtual/libgles2 \
-     libinput libepoxy libgcrypt \
+     libgcrypt \
 "
 
 EXTRANATIVEPATH += " chrpath-native"
 
 S = "${WORKDIR}/git"
 
-inherit cmake pkgconfig perlnative gettext python3native ccache add-version
+inherit cmake pkgconfig perlnative gettext python3native ccache
 
 PACKAGECONFIG ?= "2dcanvas mediasource encryptedmedia \
                   video westeros mediastream sampling-profiler gamepad \
@@ -136,12 +136,6 @@ RDEPS_WEBAUDIO += "${RDEPS_EXTRA}"
 RRECOMMENDS:${PN} += "ca-certificates shared-mime-info wpe-backend-rdk-platform-plugin"
 PACKAGE_DEBUG_SPLIT_STYLE = "debug-without-src"
 
-# Ensure we'll get the recipe version and SRCRV into the versions.txt file part of the build image
-do_add_version () {
-    echo "WPE_WEBKIT_VERSION=${PV}-${PR}" > ${EXTRA_VERSIONS_PATH}/${PN}.txt
-}
-
-
 # Build wpewebkit with split-dwarf, see for more info:
 #   https://gcc.gnu.org/wiki/DebugFission
 #   https://www.tweag.io/blog/2023-11-23-debug-fission/
@@ -150,6 +144,10 @@ SELECTED_OPTIMIZATION:remove =  "${@bb.utils.contains('DISTRO_FEATURES', 'wpe-we
 SELECTED_OPTIMIZATION:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', '-g', '-g1', d)}"
 WPE_WEBKIT_LTO:remove = "${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', '-flto=auto', '', d)}"
 do_install:append() {
+    # Ensure the recipe version is installed into version.txt
+    install -d ${D}${sysconfdir}/${PN}
+    echo "WPE_WEBKIT_VERSION=${PV}-${PR}" > ${D}${sysconfdir}/${PN}/version.txt
+
     if ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', 'true', 'false', d)}; then
        rm -rf ${D}/usr/src/debug/${PN}-dwo.tgz
        install -d ${D}/usr/src/debug/
