@@ -1105,7 +1105,7 @@ index 0000000..9304da4
 +        _internalApiLock.Unlock();
 +        LOGINFO("<<<");
 +
-+        // avoid notifying operational state changed if shuting down because of Term
++        // avoid notifying operational state changed if shutting down because of Term
 +        if (!_shutdown) {
 +            _callbackLock.Lock();
 +            LOGINFO(">>> Callback Lock acquired");
