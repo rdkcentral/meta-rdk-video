@@ -5,7 +5,7 @@ LICENSE = "Apache-2.0 & ISC"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=83a31d934b0cc2ab2d44a329445b4366"
 
 
-PV = "1.1.13.4"
+PV = "1.1.13.3"
 PR = "r0"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
