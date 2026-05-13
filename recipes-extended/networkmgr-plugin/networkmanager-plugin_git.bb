@@ -14,7 +14,7 @@ NETWORKMANAGER_STUN_PORT ?= "19302"
 NETWORKMANAGER_LOGLEVEL ?= "3"
 
 PR = "r0"
-PV = "v2.1.0"
+PV = "v2.2.0"
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;nobranch=1"
@@ -41,6 +41,7 @@ EXTRA_OECMAKE += " \
                 -DUSE_TELEMETRY=ON \
                 -DENABLE_ROUTER_DISCOVERY_TOOL=ON \
                 -DENABLE_MIGRATION_MFRMGR_SUPPORT=ON \
+                -DUSE_RDK_LOGGER=ON \
                 "
 
 CXXFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
