@@ -1,6 +1,6 @@
-From 08979b0f8aecec31abb36f626bdd939dd8c37f69 Mon Sep 17 00:00:00 2001
+From 91b706fd543460ace6bf9dcab97ad6ea744b3443 Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Mon, 11 May 2026 20:06:34 +0000
+Date: Wed, 13 May 2026 17:38:31 +0000
 Subject: [PATCH] implement api to get supported robustness
 
 ---
@@ -10,7 +10,7 @@ Subject: [PATCH] implement api to get supported robustness
  3 files changed, 69 insertions(+)
 
 diff --git a/Source/ocdm/open_cdm.cpp b/Source/ocdm/open_cdm.cpp
-index 65e337d..dd83306 100644
+index 65e337d..979769f 100644
 --- a/Source/ocdm/open_cdm.cpp
 +++ b/Source/ocdm/open_cdm.cpp
 @@ -144,6 +144,49 @@ OpenCDMError opencdm_destruct_system(struct OpenCDMSystem* system)
@@ -41,7 +41,7 @@ index 65e337d..dd83306 100644
 +     
 +    if (accessor != nullptr) {
 +       RPC::IStringIterator* iterator = nullptr;
-+       result = static_cast<OpenCDMError>(accessor->GetSupportedRobustness(iterator));
++       result = static_cast<OpenCDMError>(accessor->GetSupportedRobustness(system->keySystem(),iterator));
 +
 +       if (result == ERROR_NONE && iterator != nullptr) {
 +	   uint16_t size = iterator->Count();
@@ -87,21 +87,21 @@ index ef8c03c..f11ea7f 100644
   * \brief Checks if a DRM system is supported.
   *
 diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
-index fb9ce2a..bba2927 100644
+index fb9ce2a..7d10e18 100644
 --- a/Source/ocdm/open_cdm_impl.h
 +++ b/Source/ocdm/open_cdm_impl.h
 @@ -173,6 +173,20 @@ public:
          return (result);
      }
  
-+    virtual Exchange::OCDM_RESULT GetSupportedRobustness(RPC::IStringIterator*& robustness) const {
++    virtual Exchange::OCDM_RESULT GetSupportedRobustness(const string& keySystem,RPC::IStringIterator*& robustness) const {
 +        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
 +
 +        if (_remote != nullptr) {
-+	    Exchange::IWidevineRobustnessExtension* wvExt = _remote->QueryInterface<Exchange::IWidevineRobustnessExtension>();
++	    Exchange::IRobustnessExtension* wvExt = _remote->QueryInterface<Exchange::IRobustnessExtension>();
 +
 +	    if (wvExt != nullptr) {
-+               result =  wvExt->GetSupportedRobustness(robustness);
++               result =  wvExt->GetSupportedRobustness(keySystem,robustness);
 +		wvExt->Release();
 +            }
 +        }

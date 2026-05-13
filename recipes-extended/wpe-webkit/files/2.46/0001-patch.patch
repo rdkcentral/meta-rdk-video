@@ -1,12 +1,12 @@
-From b5f538c0243e394e1d201715277bb6d687dcbc77 Mon Sep 17 00:00:00 2001
+From 75b32dcc2c0313463c108f08c1ad8ad102401cad Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Wed, 13 May 2026 09:17:11 +0000
-Subject: [PATCH] add implementation of api to get robustnesslevel
+Date: Wed, 13 May 2026 09:27:10 +0000
+Subject: [PATCH] patch
 
 ---
- Source/WebCore/platform/GStreamer.cmake       |  8 ++++++
- .../graphics/gstreamer/eme/CDMThunder.cpp     | 27 +++++++++++++++++++
- 2 files changed, 35 insertions(+)
+ Source/WebCore/platform/GStreamer.cmake       |  8 +++++
+ .../graphics/gstreamer/eme/CDMThunder.cpp     | 32 +++++++++++++++++++
+ 2 files changed, 40 insertions(+)
 
 diff --git a/Source/WebCore/platform/GStreamer.cmake b/Source/WebCore/platform/GStreamer.cmake
 index 55f7c973771b..85e0591bc647 100644
@@ -32,10 +32,10 @@ index 55f7c973771b..85e0591bc647 100644
 +
  endif ()
 diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
-index 139a26be65c7..b1733672d673 100644
+index 139a26be65c7..b67c9736477c 100644
 --- a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
 +++ b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
-@@ -171,6 +171,33 @@ bool CDMPrivateThunder::supportsConfiguration(const CDMKeySystemConfiguration& c
+@@ -171,6 +171,38 @@ bool CDMPrivateThunder::supportsConfiguration(const CDMKeySystemConfiguration& c
  
  Vector<AtomString> CDMPrivateThunder::supportedRobustnesses() const
  {
@@ -54,7 +54,7 @@ index 139a26be65c7..b1733672d673 100644
 +        robustnesses.reserveCapacity(robustnesses.size() + count);
 +        for (uint16_t i = 0; i < count; ++i) {
 +            if (buffer[i] != nullptr) {
-+                robustnesses.append(AtomString { String::fromUTF8(buffer[i]) });
++                robustnesses.append(AtomString(String::fromUTF8(buffer[i])));
 +                free(buffer[i]);
 +	    }
 +        }
@@ -62,7 +62,12 @@ index 139a26be65c7..b1733672d673 100644
 +    if (buffer != nullptr) {
 +        free(buffer);
 +    }
-+    
++ 
++    // Iterate through the vector and log each level
++    for (const auto& level : robustnesses) {
++        GST_ERROR("CDMThunder: Robustness level: %s", level.utf8().data());
++    }
++
 +    return robustnesses;
 +#endif
 +

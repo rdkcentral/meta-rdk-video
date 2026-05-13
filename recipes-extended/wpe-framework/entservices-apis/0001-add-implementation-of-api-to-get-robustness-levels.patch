@@ -1,6 +1,6 @@
-From 801adc98690ac9b1222861b4db0fe9163a06e09a Mon Sep 17 00:00:00 2001
+From 67a400640c3a6f18acaf6c6db71f48cb931b3e0f Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Tue, 12 May 2026 06:59:55 +0000
+Date: Wed, 13 May 2026 17:35:44 +0000
 Subject: [PATCH] add implementation of api to get robustness levels
 
 ---
@@ -10,19 +10,19 @@ Subject: [PATCH] add implementation of api to get robustness levels
  3 files changed, 16 insertions(+)
 
 diff --git a/apis/Ids.h b/apis/Ids.h
-index eadd0b8..e59fbc1 100755
+index eadd0b8..1eddc70 100755
 --- a/apis/Ids.h
 +++ b/apis/Ids.h
 @@ -128,6 +128,7 @@ namespace Exchange {
          ID_SESSION                                   = ID_ACCESSOROCDM + 1,
          ID_SESSION_CALLBACK                          = ID_ACCESSOROCDM + 2,
          ID_SESSION_EXTENSION                         = ID_ACCESSOROCDM + 3,
-+        ID_WIDEVINE_ROBUSTNESS_EXTENSION             = ID_ACCESSOROCDM + 4,
++        ID_ROBUSTNESS_EXTENSION             = ID_ACCESSOROCDM + 4,
  
          ID_MESSAGE_CONTROL                           = ID_ENTOS_OFFSET + 0x100,
          ID_MESSAGE_CONTROL_ITERATOR                  = ID_MESSAGE_CONTROL + 1,
 diff --git a/apis/OpenCDMi/IDRM.h b/apis/OpenCDMi/IDRM.h
-index f8b8a7d..4595cc4 100644
+index f8b8a7d..2f48022 100644
 --- a/apis/OpenCDMi/IDRM.h
 +++ b/apis/OpenCDMi/IDRM.h
 @@ -43,6 +43,7 @@
@@ -37,8 +37,8 @@ index f8b8a7d..4595cc4 100644
      virtual CDMi_RESULT GetSystemId(uint32_t& id /* @out */) const = 0;
  };
  
-+struct IWidevineRobustnessExtension {
-+    virtual ~IWidevineRobustnessExtension() = default;
++struct IRobustnessExtension {
++    virtual ~IRobustnessExtension() = default;
 +    virtual CDMi_RESULT GetSupportedRobustness(std::list<std::string>& levels) const = 0;
 +};
 +
@@ -46,20 +46,20 @@ index f8b8a7d..4595cc4 100644
      virtual ~ISystemFactory() = default;
      virtual IMediaKeys* Instance() = 0;
 diff --git a/apis/OpenCDMi/IOCDM.h b/apis/OpenCDMi/IOCDM.h
-index 27cb4c1..c535924 100644
+index 27cb4c1..4c935e2 100644
 --- a/apis/OpenCDMi/IOCDM.h
 +++ b/apis/OpenCDMi/IOCDM.h
 @@ -411,6 +411,15 @@ struct EXTERNAL IGoogleCastAuthExtension : virtual public Core::IUnknown {
      virtual OCDM_RESULT GetSystemId(uint32_t& id /* @out */) const = 0;
  };
  
-+struct EXTERNAL IWidevineRobustnessExtension : virtual public Core::IUnknown {
-+    enum { ID = ID_WIDEVINE_ROBUSTNESS_EXTENSION };
++struct EXTERNAL IRobustnessExtension : virtual public Core::IUnknown {
++    enum { ID = ID_ROBUSTNESS_EXTENSION };
 +
-+    virtual ~IWidevineRobustnessExtension() override = default;
++    virtual ~IRobustnessExtension() override = default;
 +
 +    // Get the Robustness level from Widevine DRM
-+    virtual OCDM_RESULT GetSupportedRobustness(RPC::IStringIterator*& robustness /* @out */) const = 0;
++    virtual OCDM_RESULT GetSupportedRobustness(const std::string& keySystem,RPC::IStringIterator*& robustness /* @out */) const = 0;
 +};
 +
  } //namespace Exchange
