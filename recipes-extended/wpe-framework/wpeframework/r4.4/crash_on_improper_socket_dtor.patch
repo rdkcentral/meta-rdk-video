@@ -1,5 +1,25 @@
+diff --git a/Source/core/Library.cpp b/Source/core/Library.cpp
+index b38ffe78..e226f7d1 100644
+--- a/Source/core/Library.cpp
++++ b/Source/core/Library.cpp
+@@ -114,6 +114,7 @@ namespace Core {
+             _refCountedHandle->_handle = handle;
+             _refCountedHandle->_name = fileName;
+             TRACE_L1("Loaded library: %s\n", fileName);
++            printf("Loaded library: %s\n", fileName);
+ 
+             // Trigger the callback to notify that a library has been loaded
+             if (g_loadCallback)
+@@ -223,6 +224,7 @@ namespace Core {
+                 ::FreeLibrary(_refCountedHandle->_handle);
+ #endif
+                 TRACE_L1("Dropping reference on library: %s", _refCountedHandle->_name.c_str());
++                printf("Dropping reference on library: %s\n", _refCountedHandle->_name.c_str());
+                 delete _refCountedHandle;
+             }
+             _refCountedHandle = nullptr;
 diff --git a/Source/core/ResourceMonitor.h b/Source/core/ResourceMonitor.h
-index b5a8f096..693cefb7 100644
+index b5a8f096..5f164604 100644
 --- a/Source/core/ResourceMonitor.h
 +++ b/Source/core/ResourceMonitor.h
 @@ -210,6 +210,7 @@ namespace Core {
@@ -14,7 +34,7 @@ index b5a8f096..693cefb7 100644
                          // always make sure that the iterator is on the right spot/filedescriptor.
                          ASSERT(entry->Descriptor() == _descriptorArray[fd_index].fd);
  
-+                       printf("Calling handle for resource %p with descriptor %d at index %d with flags %d\n", entry, entry->Descriptor(), fd_index, _descriptorArray[fd_index].revents);
++                       //printf("Calling handle for resource %p with descriptor %d at index %d with flags %d\n", entry, entry->Descriptor(), fd_index, _descriptorArray[fd_index].revents);
                          uint16_t flagsSet = _descriptorArray[fd_index].revents;
  
                          Arm();
