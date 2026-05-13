@@ -11,8 +11,8 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "0.5.5+git${SRCPV}"
 PR = "r0"
 
-SRC_URI = "git://github.com/rdkcentral/firebolt-cpp-client.git;protocol=https;branch=feature/RDKEMW-17483"
-SRCREV = "bd39f0da63769552b6fd3f077750688256b8a338"
+SRC_URI = "git://github.com/rdkcentral/firebolt-cpp-client.git;protocol=https;branch=develop"
+SRCREV = "c8e00f2c366d9e7bc93d59abe58da5a0ec350fc3"
 
 S = "${WORKDIR}/git"
 
