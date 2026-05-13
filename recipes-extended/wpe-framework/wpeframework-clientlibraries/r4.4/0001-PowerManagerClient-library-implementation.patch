@@ -27,9 +27,9 @@ interface changes for enhanced instance management and add operational state tra
  Source/powercontroller/CMakeLists.txt       |   79 +
  Source/powercontroller/Module.cpp           |   22 +
  Source/powercontroller/Module.h             |   33 +
- Source/powercontroller/power_controller.cpp | 2422 +++++++++++++++++++
+ Source/powercontroller/power_controller.cpp | 2423 +++++++++++++++++++
  Source/powercontroller/power_controller.h   |  398 +++
- 5 files changed, 2954 insertions(+)
+ 5 files changed, 2955 insertions(+)
  create mode 100644 Source/powercontroller/CMakeLists.txt
  create mode 100644 Source/powercontroller/Module.cpp
  create mode 100644 Source/powercontroller/Module.h
@@ -225,7 +225,7 @@ new file mode 100644
 index 0000000..9304da4
 --- /dev/null
 +++ b/Source/powercontroller/power_controller.cpp
-@@ -0,0 +1,2422 @@
+@@ -0,0 +1,2423 @@
 +/*
 + * If not stated otherwise in this file or this component's LICENSE file the
 + * following copyright and licenses apply:
@@ -924,6 +924,7 @@ index 0000000..9304da4
 +        }
 +
 +        if (INVALID_FD != _wakeupFd) {
++            LOGINFO("Closing wakeupFd ...");
 +            close(_wakeupFd);
 +            _wakeupFd = INVALID_FD;
 +        }
@@ -1332,7 +1333,7 @@ index 0000000..9304da4
 +        if (_powerManagerInterface) {
 +            result = _powerManagerInterface->SetPowerState(keyCode, powerState_, reason);
 +        }
-+        LOGINFO("result[%d], keyCode[%d], powerState[%d], reason[%s]", result, keyCode, powerState_, reason);
++        LOGINFO("result[%d], keyCode[%d], powerState[%d], reason[%s]", result, keyCode, powerState_, reason ? reason : "Invalid");
 +
 +        _internalApiLock.Unlock();
 +        LOGINFO("<<<");
