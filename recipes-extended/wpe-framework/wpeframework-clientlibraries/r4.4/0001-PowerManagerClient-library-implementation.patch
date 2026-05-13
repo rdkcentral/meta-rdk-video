@@ -921,6 +921,11 @@ index 0000000..9304da4
 +                _thread.reset();
 +                _running = false;
 +            }
++
++            if (INVALID_FD != _wakeupFd) {
++                close(_wakeupFd);
++                _wakeupFd = INVALID_FD;
++            }
 +        }
 +
 +        LOGINFO("<<<");
@@ -2643,7 +2648,6 @@ index 0000000..9304da4
 +}
 +
 +} // extern "C"
-\ No newline at end of file
 diff --git a/Source/powercontroller/power_controller.h b/Source/powercontroller/power_controller.h
 new file mode 100644
 index 0000000..cdcd8af
