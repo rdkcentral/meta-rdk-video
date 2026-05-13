@@ -6,6 +6,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV = "3.3.0"
 PR = "r0"
 
+# Force internal middleware build for this recipe
+DISTRO_FEATURES:remove = "build_external_player_interface"
+
 SRCREV_FORMAT = "aamp"
 SRCREV_aamp ?= "66c2d4eb897be36fdb261258a735b1278e69e137"
 
