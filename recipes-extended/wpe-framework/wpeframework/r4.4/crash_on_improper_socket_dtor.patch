@@ -1,5 +1,5 @@
 diff --git a/Source/core/ResourceMonitor.h b/Source/core/ResourceMonitor.h
-index b5a8f096..89985448 100644
+index b5a8f096..f03090c3 100644
 --- a/Source/core/ResourceMonitor.h
 +++ b/Source/core/ResourceMonitor.h
 @@ -210,6 +210,7 @@ namespace Core {
@@ -10,15 +10,23 @@ index b5a8f096..89985448 100644
              }
  
              if (_resourceList.size() == 1) {
+@@ -235,6 +236,7 @@ namespace Core {
+             typename std::list<RESOURCE*>::iterator index(std::find(_resourceList.begin(), _resourceList.end(), &resource));
+ 
+             if (index != _resourceList.end()) {
++                TRACE_L3("Unregistering resource %p with descriptor %d at index %d\n", &resource, resource.Descriptor(), static_cast<int>(std::distance(_resourceList.begin(), index)));
+                 *index = nullptr;
+                 Break();
+             }
 diff --git a/Source/core/SocketPort.cpp b/Source/core/SocketPort.cpp
-index 0898183d..68ae1199 100644
+index 0898183d..470ad31e 100644
 --- a/Source/core/SocketPort.cpp
 +++ b/Source/core/SocketPort.cpp
 @@ -407,10 +407,16 @@ namespace WPEFramework {
          SocketPort::~SocketPort()
          {
              TRACE_L5("Destructor SocketPort <%p>", (this));
-+            TRACE_L3("Destructor SocketPort <%p>", (this));
++            TRACE_L3("Destructor SocketPort <%p> with descriptor: %d", (this), m_Socket);
  
              // Make sure the socket is closed before you destruct. Otherwise
              // the virtuals might be called, which are destructed at this point !!!!
@@ -32,10 +40,26 @@ index 0898183d..68ae1199 100644
              if (m_Socket != INVALID_SOCKET) {
                  DestroySocket(m_Socket);
 diff --git a/Source/websocket/JSONRPCLink.h b/Source/websocket/JSONRPCLink.h
-index d7dc2f08..db544aa0 100644
+index d7dc2f08..68a5a86c 100644
 --- a/Source/websocket/JSONRPCLink.h
 +++ b/Source/websocket/JSONRPCLink.h
-@@ -1442,10 +1442,12 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+@@ -555,6 +555,7 @@ namespace WPEFramework {
+ 			}
+ 			virtual ~LinkType()
+ 			{
++				TRACE_L3("Destructing LinkType for callsign [%s]", _callsign.c_str());
+ 				_channel->Unregister(*this);
+ 
+ 				for (auto& element : _pendingQueue) {
+@@ -1317,6 +1318,7 @@ namespace WPEFramework {
+ 				}
+ 				~Connection() override
+ 				{
++					TRACE_L3("Destructing Connection for callsign [%s]", Base::Callsign().c_str());
+ 					_monitor.Revoke(_T("statechange"));
+ 					_eventSubscriber.Stop();
+ 					_eventSubscriber.Wait(Core::Thread::STOPPED, Core::infinite);
+@@ -1442,10 +1444,12 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
  				: _connection(*this, remoteCallsign, localCallsign, query)
  				, _callsign(remoteCallsign)
  			{
