@@ -14,7 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFF
           "
 
 # Release version - 1.3.0
-SRCREV = "b621092021e752ba4952bb05bdc04a465f434f8f"
+SRCREV = "f78ed40f94c942a64bfa7458a1d0e2e90a84358e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
