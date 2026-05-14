@@ -11,7 +11,7 @@ PR = "r3"
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
-SRCREV = "32f3d858af74e0105df75fdc4114e2c38c6549f7"
+SRCREV = "74bbe343a964f018385ff98c83ac9c247e62f355"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
 #SRC_URI:append = " file://irmgr.diff"
@@ -192,6 +192,7 @@ do_install() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/conf/dsmgr.service ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/conf/ds-reboot.sh ${D}${libdir}/
+    install -m 0644 ${S}/conf/ds-monitor.sh ${D}${libdir}/
     install -m 0644 ${S}/conf/sysmgr.service ${D}${systemd_unitdir}/system
     ln -rsf ${D}${libdir}/libiarmUtils.so.0.0.0  ${D}${base_libdir}/libiarmUtils.so
 
