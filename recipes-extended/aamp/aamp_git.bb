@@ -3,8 +3,8 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV ?= "3.3.0"
-PR ?= "r0"
+PV = "3.3.0"
+PR = "r0"
 
 SRCREV_FORMAT = "aamp"
 SRCREV_aamp ?= "32ffcb2f9ba33838d243954abca53a9195cc2762"
@@ -25,8 +25,6 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player
 NO_RECOMMENDATIONS = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-#To be removed later, the AAMP_RELEASE_TAG_NAME is not using.
-AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
 
@@ -48,8 +46,6 @@ FILES:${PN} +="${libdir}/gstreamer-1.0/lib*.so"
 FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
-
-CXXFLAGS += " -DAAMP_BUILD_INFO=${AAMP_RELEASE_TAG_NAME}"
 
 #required for specific products but for now distro is available only for UK 
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', ' -DENABLE_USE_SINGLE_PIPELINE=1', '', d)}"
@@ -115,7 +111,7 @@ do_create_artifacts() {
     echo "RDK_BRANCH=${PROJECT_BRANCH}" >> ${ARTIFACT_INFO_FILE}
     echo "WIDGET_VERSION_PREFIX=${WIDGET_VERSION_PREFIX}" >> ${ARTIFACT_INFO_FILE}
     echo "YOCTO_VERSION=${@get_yocto_code(d)}" >> ${ARTIFACT_INFO_FILE}
-    echo "AAMP_BRANCH=${AAMP_RELEASE_TAG_NAME}" >> ${ARTIFACT_INFO_FILE}
+    echo "AAMP_BRANCH=${PV}" >> ${ARTIFACT_INFO_FILE}
 
     # Get the actual Git commit hash instead of AUTOREV
     if [ -d "${S}/.git" ]; then
