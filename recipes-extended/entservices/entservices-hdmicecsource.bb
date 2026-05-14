@@ -9,8 +9,7 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
-          "
+           "
 
 # Release version - 1.2.0
 SRCREV = "87a64801e2767b03b198168ee822274aeb6b3227"
