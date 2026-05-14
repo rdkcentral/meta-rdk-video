@@ -1,56 +1,50 @@
-diff --git a/Source/core/Library.cpp b/Source/core/Library.cpp
-index b38ffe78..e226f7d1 100644
---- a/Source/core/Library.cpp
-+++ b/Source/core/Library.cpp
-@@ -114,6 +114,7 @@ namespace Core {
-             _refCountedHandle->_handle = handle;
-             _refCountedHandle->_name = fileName;
-             TRACE_L1("Loaded library: %s\n", fileName);
-+            printf("Loaded library: %s\n", fileName);
- 
-             // Trigger the callback to notify that a library has been loaded
-             if (g_loadCallback)
-@@ -223,6 +224,7 @@ namespace Core {
-                 ::FreeLibrary(_refCountedHandle->_handle);
- #endif
-                 TRACE_L1("Dropping reference on library: %s", _refCountedHandle->_name.c_str());
-+                printf("Dropping reference on library: %s\n", _refCountedHandle->_name.c_str());
-                 delete _refCountedHandle;
-             }
-             _refCountedHandle = nullptr;
 diff --git a/Source/core/ResourceMonitor.h b/Source/core/ResourceMonitor.h
-index b5a8f096..5f164604 100644
+index b5a8f096..89985448 100644
 --- a/Source/core/ResourceMonitor.h
 +++ b/Source/core/ResourceMonitor.h
 @@ -210,6 +210,7 @@ namespace Core {
              // Make sure this entry is only registered once !!!
              if (std::find(_resourceList.begin(), _resourceList.end(), &resource) == _resourceList.end()) {
                  _resourceList.push_back(&resource);
-+                printf("Registering resource %p with descriptor %d at index %d\n", &resource, resource.Descriptor(), static_cast<int>(_resourceList.size()));
++                TRACE_L3("Registering resource %p with descriptor %d at index %d\n", &resource, resource.Descriptor(), static_cast<int>(_resourceList.size()));
              }
  
              if (_resourceList.size() == 1) {
-@@ -423,6 +424,7 @@ namespace Core {
-                         // always make sure that the iterator is on the right spot/filedescriptor.
-                         ASSERT(entry->Descriptor() == _descriptorArray[fd_index].fd);
- 
-+                       //printf("Calling handle for resource %p with descriptor %d at index %d with flags %d\n", entry, entry->Descriptor(), fd_index, _descriptorArray[fd_index].revents);
-                         uint16_t flagsSet = _descriptorArray[fd_index].revents;
- 
-                         Arm();
 diff --git a/Source/core/SocketPort.cpp b/Source/core/SocketPort.cpp
-index 0898183d..2edbe31c 100644
+index 0898183d..68ae1199 100644
 --- a/Source/core/SocketPort.cpp
 +++ b/Source/core/SocketPort.cpp
-@@ -411,6 +411,11 @@ namespace WPEFramework {
+@@ -407,10 +407,16 @@ namespace WPEFramework {
+         SocketPort::~SocketPort()
+         {
+             TRACE_L5("Destructor SocketPort <%p>", (this));
++            TRACE_L3("Destructor SocketPort <%p>", (this));
+ 
              // Make sure the socket is closed before you destruct. Otherwise
              // the virtuals might be called, which are destructed at this point !!!!
              ASSERT((m_Socket == INVALID_SOCKET) || (IsClosed()));
 +            if(!((m_Socket == INVALID_SOCKET) || (IsClosed()))) {
-+                printf("Watchout!!! Socket is still open in destructor of SocketPort <%p> m_socket %d\n", (this), m_Socket);
++                TRACE_L3("Watchout!!! Socket is still open in destructor of SocketPort <%p> m_socket %d\n", (this), m_Socket);
 +                int* ptr = nullptr;
 +                *ptr = 10;
 +            }
  
              if (m_Socket != INVALID_SOCKET) {
                  DestroySocket(m_Socket);
+diff --git a/Source/websocket/JSONRPCLink.h b/Source/websocket/JSONRPCLink.h
+index d7dc2f08..db544aa0 100644
+--- a/Source/websocket/JSONRPCLink.h
++++ b/Source/websocket/JSONRPCLink.h
+@@ -1442,10 +1442,12 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+ 				: _connection(*this, remoteCallsign, localCallsign, query)
+ 				, _callsign(remoteCallsign)
+ 			{
++				TRACE_L1("Creating SmartLinkType for callsign [%s]", remoteCallsign.c_str());
+ 			}
+ POP_WARNING()
+ 			~SmartLinkType()
+ 			{
++				TRACE_L1("Destroying SmartLinkType for callsign [%s]", _callsign.c_str());
+ 			}
+ 		public:
+ 			template <typename INBOUND, typename METHOD>
