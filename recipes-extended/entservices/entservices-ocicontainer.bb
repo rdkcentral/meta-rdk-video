@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "72bbd7b8133d7f3a03433b80e7d6922c469bc7a3"
+SRCREV = "b3244e5ec257ab02252043a024ff2d368bafc60b"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-ocicontainer;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
