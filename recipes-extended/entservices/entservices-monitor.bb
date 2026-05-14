@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "248e80fc92ec6f9facde6c62f1dd671db2b713df"
+SRCREV = "16825372c854e8b8736061da0dc8ee313ab0a1a5"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-monitor;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-Add-monitoring-of-cloned-callsigns.patch \
            file://rdkservices.ini \
