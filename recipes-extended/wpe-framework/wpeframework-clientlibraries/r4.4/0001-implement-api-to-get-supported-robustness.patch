@@ -1,19 +1,19 @@
-From 91b706fd543460ace6bf9dcab97ad6ea744b3443 Mon Sep 17 00:00:00 2001
+From 4b39d864cd63dd9edb084c3a372785987cbcd400 Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Wed, 13 May 2026 17:38:31 +0000
+Date: Fri, 15 May 2026 05:47:42 +0000
 Subject: [PATCH] implement api to get supported robustness
 
 ---
- Source/ocdm/open_cdm.cpp    | 43 +++++++++++++++++++++++++++++++++++++
- Source/ocdm/open_cdm.h      | 12 +++++++++++
- Source/ocdm/open_cdm_impl.h | 14 ++++++++++++
- 3 files changed, 69 insertions(+)
+ Source/ocdm/open_cdm.cpp    | 46 +++++++++++++++++++++++++++++++++++++
+ Source/ocdm/open_cdm.h      | 12 ++++++++++
+ Source/ocdm/open_cdm_impl.h |  9 ++++++++
+ 3 files changed, 67 insertions(+)
 
 diff --git a/Source/ocdm/open_cdm.cpp b/Source/ocdm/open_cdm.cpp
-index 65e337d..979769f 100644
+index 65e337d..7bf21fa 100644
 --- a/Source/ocdm/open_cdm.cpp
 +++ b/Source/ocdm/open_cdm.cpp
-@@ -144,6 +144,49 @@ OpenCDMError opencdm_destruct_system(struct OpenCDMSystem* system)
+@@ -144,6 +144,52 @@ OpenCDMError opencdm_destruct_system(struct OpenCDMSystem* system)
      return (result);
  }
  
@@ -54,9 +54,12 @@ index 65e337d..979769f 100644
 +	       *robustness = results;
 +	       *count = size;
 +           }
-+       iterator->Release();
++           iterator->Release();
 +       }
++    } else {
++       return OpenCDMError::ERROR_INVALID_ACCESSOR;
 +    }
++
 +    return (result);
 +}
 +
@@ -75,9 +78,9 @@ index ef8c03c..f11ea7f 100644
 + * Gets the robustness level supported by underlying CDM system.
 + *
 + * \param system \ref OpenCDMAccessor instance
-+ * \param[out] robustness On sucess,set supported robustness levels(e.g:"SW_SECURE_DECODE,SW_SECURE_CRYPTO").
++ * \param[out] robustness On success,set supported robustness levels(e.g:"SW_SECURE_DECODE,SW_SECURE_CRYPTO").
 + *     caller must free this bufferSet to NULL if the CDM reports no robustness levels.
-+ * \param[out] count On sucess,return the length of the returned buffer.Set to 0 of no robustness 
++ * \param[out] count On success,return the length of the returned buffer.Set to 0 of no robustness 
 + *     levels are reported.
 + * \return ERROR_NONE on success
 + */
@@ -87,10 +90,10 @@ index ef8c03c..f11ea7f 100644
   * \brief Checks if a DRM system is supported.
   *
 diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
-index fb9ce2a..7d10e18 100644
+index fb9ce2a..344209b 100644
 --- a/Source/ocdm/open_cdm_impl.h
 +++ b/Source/ocdm/open_cdm_impl.h
-@@ -173,6 +173,20 @@ public:
+@@ -173,6 +173,15 @@ public:
          return (result);
      }
  
@@ -98,12 +101,7 @@ index fb9ce2a..7d10e18 100644
 +        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
 +
 +        if (_remote != nullptr) {
-+	    Exchange::IRobustnessExtension* wvExt = _remote->QueryInterface<Exchange::IRobustnessExtension>();
-+
-+	    if (wvExt != nullptr) {
-+               result =  wvExt->GetSupportedRobustness(keySystem,robustness);
-+		wvExt->Release();
-+            }
++               return(_remote->GetSupportedRobustness(keySystem,robustness));
 +        }
 +        return (result);
 +    }

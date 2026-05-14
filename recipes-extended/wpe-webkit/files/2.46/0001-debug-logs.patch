@@ -1,12 +1,12 @@
-From 75b32dcc2c0313463c108f08c1ad8ad102401cad Mon Sep 17 00:00:00 2001
+From 0fccd6115c33e7d20f01068a43addec17a498e41 Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Wed, 13 May 2026 09:27:10 +0000
-Subject: [PATCH] patch
+Date: Fri, 15 May 2026 09:20:41 +0000
+Subject: [PATCH] debug logs
 
 ---
  Source/WebCore/platform/GStreamer.cmake       |  8 +++++
- .../graphics/gstreamer/eme/CDMThunder.cpp     | 32 +++++++++++++++++++
- 2 files changed, 40 insertions(+)
+ .../graphics/gstreamer/eme/CDMThunder.cpp     | 33 +++++++++++++++++++
+ 2 files changed, 41 insertions(+)
 
 diff --git a/Source/WebCore/platform/GStreamer.cmake b/Source/WebCore/platform/GStreamer.cmake
 index 55f7c973771b..85e0591bc647 100644
@@ -32,16 +32,17 @@ index 55f7c973771b..85e0591bc647 100644
 +
  endif ()
 diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
-index 139a26be65c7..b67c9736477c 100644
+index 139a26be65c7..4469e5564d44 100644
 --- a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
 +++ b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
-@@ -171,6 +171,38 @@ bool CDMPrivateThunder::supportsConfiguration(const CDMKeySystemConfiguration& c
+@@ -171,6 +171,39 @@ bool CDMPrivateThunder::supportsConfiguration(const CDMKeySystemConfiguration& c
  
  Vector<AtomString> CDMPrivateThunder::supportedRobustnesses() const
  {
 +#if THUNDER_HAS_OCDM_SUPPORTED_ROBUSTNESS
 +    Vector<AtomString> robustnesses = { emptyAtom() };
-+    
++
++    GST_ERROR("KKP_INSIDE: Robustness level:");    
 +    if (!m_thunderSystem) {
 +        WTFLogAlways("CDMPrivateThunder: No active OpenCDM system for %s. Returning default robustness only.", m_keySystem.utf8().data());
 +        return robustnesses;
@@ -54,7 +55,7 @@ index 139a26be65c7..b67c9736477c 100644
 +        robustnesses.reserveCapacity(robustnesses.size() + count);
 +        for (uint16_t i = 0; i < count; ++i) {
 +            if (buffer[i] != nullptr) {
-+                robustnesses.append(AtomString(String::fromUTF8(buffer[i])));
++                robustnesses.append(AtomString { String::fromUTF8(buffer[i]) });
 +                free(buffer[i]);
 +	    }
 +        }
@@ -62,15 +63,15 @@ index 139a26be65c7..b67c9736477c 100644
 +    if (buffer != nullptr) {
 +        free(buffer);
 +    }
-+ 
-+    // Iterate through the vector and log each level
++   
 +    for (const auto& level : robustnesses) {
-+        GST_ERROR("CDMThunder: Robustness level: %s", level.utf8().data());
++        GST_ERROR("CDMThunder: Robustness level: %s", level.string().utf8().data());
 +    }
 +
 +    return robustnesses;
 +#endif
 +
++    GST_ERROR("KKP_OUTSIDE: Robustness level:");
      return { emptyAtom(), "SW_SECURE_DECODE"_s, "SW_SECURE_CRYPTO"_s, "HW_SECURE_DECODE"_s, "HW_SECURE_CRYPTO"_s, "HW_SECURE_ALL"_s };
  }
  

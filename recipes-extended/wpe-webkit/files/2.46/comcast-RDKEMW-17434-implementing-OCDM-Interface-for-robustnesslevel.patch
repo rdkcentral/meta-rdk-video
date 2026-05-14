@@ -43,7 +43,7 @@ index 139a26be65c7..b1733672d673 100644
 +    Vector<AtomString> robustnesses = { emptyAtom() };
 +    
 +    if (!m_thunderSystem) {
-+        WTFLogAlways("CDMPrivateThunder: No active OpenCDM system for %s. Returning default robustness only.", m_keySystem.utf8().data());
++        GST_ERROR("CDMPrivateThunder: No active OpenCDM system for %s. Returning default robustness only.", m_keySystem.utf8().data());
 +        return robustnesses;
 +    }
 +
@@ -54,15 +54,15 @@ index 139a26be65c7..b1733672d673 100644
 +        robustnesses.reserveCapacity(robustnesses.size() + count);
 +        for (uint16_t i = 0; i < count; ++i) {
 +            if (buffer[i] != nullptr) {
-+                robustnesses.append(AtomString { String::fromUTF8(buffer[i]) });
++                robustnesses.append(AtomString::fromLatin1(buffer[i]));;
 +                free(buffer[i]);
-+	    }
++            }
 +        }
 +    }
 +    if (buffer != nullptr) {
 +        free(buffer);
 +    }
-+    
++ 
 +    return robustnesses;
 +#endif
 +

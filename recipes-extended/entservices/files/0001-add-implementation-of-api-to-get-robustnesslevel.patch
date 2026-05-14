@@ -1,119 +1,44 @@
-From e5949f7edc8ea3c01fb1d70791243a70a68de7c5 Mon Sep 17 00:00:00 2001
+From a4b619d3595dc92031b7d944b1e87185caca16bc Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Wed, 13 May 2026 18:17:54 +0000
+Date: Thu, 14 May 2026 18:54:20 +0000
 Subject: [PATCH] add implementation of api to get robustnesslevel
 
 ---
- plugin/FrameworkRPC.cpp | 61 ++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 60 insertions(+), 1 deletion(-)
+ plugin/FrameworkRPC.cpp | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
 diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
-index c17bdea..8255192 100644
+index c17bdea..4bb7e95 100644
 --- a/plugin/FrameworkRPC.cpp
 +++ b/plugin/FrameworkRPC.cpp
-@@ -804,6 +804,44 @@ namespace Plugin {
-                 END_INTERFACE_MAP
-             };
+@@ -866,6 +866,27 @@ namespace Plugin {
+                 return(result);
+             }
  
-+            class RobustnessExtensionProxy : public Exchange::IRobustnessExtension {
-+            private:
-+                CDMi::IRobustnessExtension* _impl;
-+            public:
-+                explicit RobustnessExtensionProxy(CDMi::IRobustnessExtension* impl)
-+                    : _impl(impl) {
-+                }
++            Exchange::OCDM_RESULT GetSupportedRobustness(const std::string& keySystem, RPC::IStringIterator*& robustness) const override {                    
++                Exchange::OCDM_RESULT result = Exchange::OCDM_INTERFACE_NOT_IMPLEMENTED;
 +
-+                static Exchange::IRobustnessExtension* Create(CDMi::IRobustnessExtension* impl) {
-+                    return Core::Service<RobustnessExtensionProxy>::Create<Exchange::IRobustnessExtension>(impl);
-+                }
++                CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);                        
++                if (system != nullptr) {
++                    CDMi::IRobustnessExtension* extension = dynamic_cast<CDMi::IRobustnessExtension*>(system);
 +
-+                Exchange::OCDM_RESULT GetSupportedRobustness(const std::string& keySystem, RPC::IStringIterator*& robustness) const override {
-+                    
-+                    Exchange::OCDM_RESULT result = Exchange::OCDM_INTERFACE_NOT_IMPLEMENTED;
-+                
-+                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
-+                    if (system != nullptr && _impl != nullptr) {
-+                        CDMi::IRobustnessExtension* extension = dynamic_cast<CDMi::IRobustnessExtension*>(system);
-+                   
-+                        if (extension != nullptr) {
-+                            std::list<std::string> levels;
-+                            TRACE(Trace::Information, ("Get Supported Robustness()"));
-+                            result = static_cast<Exchange::OCDM_RESULT>(_impl->GetSupportedRobustness(levels));
++                    if (extension != nullptr) {
++                        std::list<std::string> levels;
++                        TRACE(Trace::Information, ("Get Supported Robustness()"));
++                        result = static_cast<Exchange::OCDM_RESULT>(extension->GetSupportedRobustness(levels));
 +
-+                            if (result == Exchange::OCDM_RESULT::OCDM_SUCCESS && !levels.empty()) {
-+                                robustness = Core::Service<RPC::StringIterator>::Create<RPC::IStringIterator>(levels);
-+                            }
-+                        }
++                       if (result == Exchange::OCDM_RESULT::OCDM_SUCCESS && !levels.empty()) {
++                           robustness = Core::Service<RPC::StringIterator>::Create<RPC::IStringIterator>(levels);
++                       }
 +                    }
-+                    return result;
-+                }
++                 }
 +
-+                BEGIN_INTERFACE_MAP(RobustnessExtensionProxy)
-+                INTERFACE_ENTRY(Exchange::IRobustnessExtension)
-+                END_INTERFACE_MAP
-+            };
-+
-         public:
-             AccessorOCDM(OCDMImplementation* parent, const string& name, const uint32_t defaultSize)
-                 : _parent(*parent)
-@@ -812,6 +850,7 @@ namespace Plugin {
-                 , _defaultSize(defaultSize)
-                 , _sessionList()
-                 , _googleCastAuthExtension(GoogleCastAuthExtensionProxy::Create(parent->GoogleCastAuthExtension()))
-+                , _robustnessExtension(RobustnessExtensionProxy::Create(parent->RobustnessExtension()))
-             {
-                 ASSERT(parent != nullptr);
-             }
-@@ -821,6 +860,11 @@ namespace Plugin {
-                     _googleCastAuthExtension->Release();
-                     _googleCastAuthExtension = nullptr;
-                 }
-+
-+                if (_robustnessExtension) {
-+                    _robustnessExtension->Release();
-+                    _robustnessExtension = nullptr;
-+                }
-                 TRACE(Trace::Information, (_T("Released the AccessorOCDM server side [%d]"), __LINE__));
-             }
- 
-@@ -1090,7 +1134,8 @@ namespace Plugin {
-             BEGIN_INTERFACE_MAP(AccessorOCDM)
-             INTERFACE_ENTRY(Exchange::IAccessorOCDM)
-             INTERFACE_AGGREGATE(Exchange::IGoogleCastAuthExtension, _googleCastAuthExtension)
--            END_INTERFACE_MAP
-+            INTERFACE_AGGREGATE(Exchange::IRobustnessExtension, _robustnessExtension)
-+	    END_INTERFACE_MAP
- 
-         private:
-             Exchange::ISession* FindSession(const CommonEncryptionData& keyIds, const string& keySystem) const
-@@ -1162,6 +1207,7 @@ namespace Plugin {
-             uint32_t _defaultSize;
-             std::list<SessionImplementation*> _sessionList;
-             Exchange::IGoogleCastAuthExtension* _googleCastAuthExtension;
-+            Exchange::IRobustnessExtension*  _robustnessExtension;
-         };
- 
-         class Config : public Core::JSON::Container {
-@@ -1565,6 +1611,19 @@ namespace Plugin {
-             return result;
-         }
- 
-+        CDMi::IRobustnessExtension* RobustnessExtension()
-+        {
-+            CDMi::IRobustnessExtension* result = nullptr;
-+            std::map<const std::string, SystemFactory>::const_iterator index(_systemToFactory.begin());
-+            while (index != _systemToFactory.end()) {
-+                auto instance = index->second.Factory->Instance();
-+                if ((result = dynamic_cast<CDMi::IRobustnessExtension*>(instance)) != nullptr)
-+                    break;
-+                index++;
++                 return result;
 +            }
-+            return result;
-+        }
 +
-     private:
-         void LoadDesignators(const string& keySystem, std::list<string>& designators) const
-         {
+             uint32_t DefaultSize() const {
+                 return _defaultSize;
+             }
 -- 
 2.44.4
 
