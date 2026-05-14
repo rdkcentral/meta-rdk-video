@@ -1,0 +1,98 @@
+From 748219cf4197dfdb06584960f340f6f93f690e50 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Thu, 14 May 2026 10:53:40 +0200
+Subject: [PATCH] comcast - RDK-61055 - Print HDR caps check
+
+---
+ .../WebCore/css/query/MediaQueryFeatures.cpp  |  4 +-
+ .../gstreamer/GStreamerRegistryScanner.cpp    | 37 +++++++++++++------
+ 2 files changed, 29 insertions(+), 12 deletions(-)
+
+diff --git a/Source/WebCore/css/query/MediaQueryFeatures.cpp b/Source/WebCore/css/query/MediaQueryFeatures.cpp
+index 450c429a76a9..b170c95e7841 100644
+--- a/Source/WebCore/css/query/MediaQueryFeatures.cpp
++++ b/Source/WebCore/css/query/MediaQueryFeatures.cpp
+@@ -347,7 +347,9 @@ const FeatureSchema& dynamicRange()
+                     return true;
+                 if (frame->settings().forcedSupportsHighDynamicRangeValue() == ForcedAccessibilityValue::Off)
+                     return false;
+-                return screenSupportsHighDynamicRange(frame->mainFrame().protectedVirtualView().get());
++                auto ret = screenSupportsHighDynamicRange(frame->mainFrame().protectedVirtualView().get());
++                WTFLogAlways("[HDR] MediaQuery Screen supports high dynamic range: %d", ret);
++                return ret;
+             }();
+ 
+             MatchingIdentifiers identifiers { CSSValueStandard };
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index 99d8d7bab48a..44ac401ec3a8 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -836,8 +836,11 @@ GStreamerRegistryScanner::CodecLookupResult GStreamerRegistryScanner::isCodecSup
+     else if (codecName.startsWith("hev1"_s) || codecName.startsWith("hvc1"_s))
+         result = isHEVCCodecSupported(configuration, codecName, shouldCheckForHardwareUse);
+ #if PLATFORM(WPE)
+-    else if ((codecName.startsWith("dvhe"_s) || codecName.startsWith("dvh1"_s)) && !supportsDVHCodec)
+-        result = { false, nullptr };
++    else if ((codecName.startsWith("dvhe"_s) || codecName.startsWith("dvh1"_s))) {
++        WTFLogAlways("[HDR] Checking DVH codec support for codec %s, screenSupportsHighDynamicRange: %s", codecName.utf8().data(), supportsDVHCodec ? "true" : "false");
++        if (!supportsDVHCodec)
++            result = { false, nullptr };
++    }
+ #endif // PLATFORM(WPE)
+     else if (codecName.startsWith("ac-4"_s) && !parseAC4LevelAndProfile(codecName))
+         result = { false, nullptr };
+@@ -902,6 +905,10 @@ MediaPlayerEnums::SupportsType GStreamerRegistryScanner::isContentTypeSupported(
+     if (!ok)
+         frameRate = 0;
+ 
++    if (width > 0 || height > 0 || frameRate > 0) {
++        WTFLogAlways("[HDR] Content type \"%s\" has dimensions %fx%f at %ffps", contentType.raw().utf8().data(), width, height, frameRate);
++    }
++
+     if (videoDecodingLimits && (width > videoDecodingLimits->mediaMaxWidth || height > videoDecodingLimits->mediaMaxHeight
+         || frameRate > videoDecodingLimits->mediaMaxFrameRate))
+         return SupportsType::IsNotSupported;
+@@ -1109,6 +1116,9 @@ GStreamerRegistryScanner::RegistryLookupResult GStreamerRegistryScanner::isConfi
+ #endif
+ 
+         if (configuration == Configuration::Decoding) {
++            if (videoConfiguration.width > 0 || videoConfiguration.height > 0 || videoConfiguration.framerate > 0) {
++                WTFLogAlways("[HDR] Video configuration has dimensions %ux%u at %ffps", videoConfiguration.width, videoConfiguration.height, videoConfiguration.framerate);
++            }
+             if (auto* videoDecodingLimits = resolveVideoDecodingLimits()) {
+                 if (videoConfiguration.width > videoDecodingLimits->mediaMaxWidth
+                     || videoConfiguration.height > videoDecodingLimits->mediaMaxHeight
+@@ -1124,16 +1134,21 @@ GStreamerRegistryScanner::RegistryLookupResult GStreamerRegistryScanner::isConfi
+ 
+ #if PLATFORM(WPE)
+         auto* scrData = screenData(primaryScreenDisplayID());
+-        if (!scrData || !scrData->screenSupportsHighDynamicRange) {
+-            // Check HDR metadata field
+-            if (videoConfiguration.hdrMetadataType.has_value())
++        bool screenHDR = scrData && scrData->screenSupportsHighDynamicRange;
++        bool hasHdrMetadata = videoConfiguration.hdrMetadataType.has_value();
++        bool hasPQorHLG = false;
++        if (videoConfiguration.transferFunction.has_value()) {
++            auto tf = videoConfiguration.transferFunction.value();
++            hasPQorHLG = (tf == TransferFunction::PQ || tf == TransferFunction::HLG);
++        }
++        if (hasHdrMetadata || hasPQorHLG) {
++            WTFLogAlways("[HDR] MediaCapabilities screenSupportsHighDynamicRange=%s, hdrMetadataType=%s, transferFunction PQ/HLG=%s, contentType=\"%s\"",
++                screenHDR ? "true" : "false",
++                hasHdrMetadata ? "yes" : "no",
++                hasPQorHLG ? "yes" : "no",
++                videoConfiguration.contentType.utf8().data());
++            if (!screenHDR) {
+                 return { false, false, nullptr };
+-            // Transfer function (EOTF)
+-            if (videoConfiguration.transferFunction.has_value()) {
+-                auto tf = videoConfiguration.transferFunction.value();
+-                // compare to your enum values for PQ/HLG; adjust names if different
+-                if (tf == TransferFunction::PQ || tf == TransferFunction::HLG)
+-                    return { false, false, nullptr };
+             }
+         }
+ #endif
+-- 
+2.51.0
+
