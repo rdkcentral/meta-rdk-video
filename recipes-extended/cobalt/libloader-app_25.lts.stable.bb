@@ -27,9 +27,6 @@ SRC_URI += "file://25/0005-Use-Yocto-host-toolchain.patch"
 SRC_URI += "file://25/0006-Use-certifi-to-tell-urllib-where-to-find-CA-file-397.patch"
 SRC_URI += "file://25/0007-Prevent-cobalt-unloading.patch"
 
-# May 12, 2026, develop
-LARBOARD_SRCREV_DEV = "75a30a5d09dcbf99b1dab5b86f68653fe8cf2336"
-
 CR = "30"
 PR = "r${CR}"
 SRCREV_cobalt = "25.lts.${CR}"
