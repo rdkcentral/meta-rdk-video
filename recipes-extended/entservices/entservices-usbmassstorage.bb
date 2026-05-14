@@ -12,7 +12,6 @@ inherit cmake pkgconfig
 SRCREV = "31b54c0b442fb8104abc163e148509224c860c27"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usbmassstorage;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
