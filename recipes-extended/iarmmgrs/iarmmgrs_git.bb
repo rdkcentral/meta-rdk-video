@@ -11,7 +11,7 @@ PR = "r3"
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
-SRCREV = "67bb3e1fe089a7d5ccba7a12b0938697249c3138"
+SRCREV = "915d32061fb1a69f30c350aca90813bd48764c4e"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
 #SRC_URI:append = " file://irmgr.diff"
