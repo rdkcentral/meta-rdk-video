@@ -9,10 +9,11 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           "
+           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+          "
 
 # Release version - 1.2.2
-SRCREV = "e90f5030d8c798270d689cfd130c040c29e04781"
+SRCREV = "9e7c159d37f0bad1a213d81622b5a8091399f054"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
