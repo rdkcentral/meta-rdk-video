@@ -47,7 +47,7 @@ inherit features_check
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG[persistent_store]     = "-DPLUGIN_PERSISTENTSTORE=ON,-DPLUGIN_PERSISTENTSTORE=OFF,sqlite3 entservices-apis iarmbus iarmmgrs protobuf,entservices-apis iarmbus"
+PACKAGECONFIG[persistent_store]     = "-DPLUGIN_PERSISTENTSTORE=ON,-DPLUGIN_PERSISTENTSTORE=OFF,sqlite3 entservices-apis entservices-helpers iarmbus iarmmgrs protobuf,entservices-apis entservices-helpers iarmbus"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 
 # ----------------------------------------------------------------------------

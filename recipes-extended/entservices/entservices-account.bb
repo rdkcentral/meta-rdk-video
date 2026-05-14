@@ -29,7 +29,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 "
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
-PACKAGECONFIG[account] = "-DPLUGIN_ACCOUNT=ON,,entservices-apis,entservices-apis"
+PACKAGECONFIG[account] = "-DPLUGIN_ACCOUNT=ON,,entservices-apis entservices-helpers,entservices-apis entservices-helpers"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \

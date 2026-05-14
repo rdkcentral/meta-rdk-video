@@ -43,7 +43,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[hdmicecsink]          = "-DPLUGIN_HDMICECSINK=ON,-DPLUGIN_HDMICECSINK=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader,iarmbus devicesettings hdmicec"
+PACKAGECONFIG[hdmicecsink]          = "-DPLUGIN_HDMICECSINK=ON,-DPLUGIN_HDMICECSINK=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader entservices-helpers,iarmbus devicesettings hdmicec entservices-helpers"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \

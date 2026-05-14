@@ -31,7 +31,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 "
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
-PACKAGECONFIG[backupmanager] = "-DPLUGIN_BACKUPMANAGER=ON,,entservices-apis,entservices-apis"
+PACKAGECONFIG[backupmanager] = "-DPLUGIN_BACKUPMANAGER=ON,,entservices-apis entservices-helpers,entservices-apis entservices-helpers"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \

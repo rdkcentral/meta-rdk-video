@@ -39,7 +39,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[miracast]             = "-DPLUGIN_MIRACAST=ON,-DPLUGIN_MIRACAST=OFF,iarmbus iarmmgrs networkmanager-plugin wpa-supplicant virtual/vendor-miracast-soc gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app, iarmbus networkmanager-plugin wpa-supplicant virtual/vendor-miracast-soc gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app"
+PACKAGECONFIG[miracast]             = "-DPLUGIN_MIRACAST=ON,-DPLUGIN_MIRACAST=OFF,iarmbus iarmmgrs networkmanager-plugin wpa-supplicant virtual/vendor-miracast-soc gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app entservices-helpers, iarmbus networkmanager-plugin wpa-supplicant virtual/vendor-miracast-soc gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-base-app entservices-helpers"
 
 # ----------------------------------------------------------------------------
 

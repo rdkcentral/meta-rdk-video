@@ -51,7 +51,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agen
 # TODO: As advised, 'ocicontainer' plugin has been modified to build unconditionally. It will be revisited in the upcoming sprint to control it via DISTRO_FEATURES."
 #PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'DAC_SUPPORT', 'ocicontainer', '', d)}"
 # ----------------------------------------------------------------------------
-PACKAGECONFIG[ocicontainer]         = "-DPLUGIN_OCICONTAINER=ON, -DPLUGIN_OCICONTAINER=OFF, dobby entservices-apis systemd, dobby entservices-apis systemd"
+PACKAGECONFIG[ocicontainer]         = "-DPLUGIN_OCICONTAINER=ON, -DPLUGIN_OCICONTAINER=OFF, dobby entservices-apis entservices-helpers systemd, dobby entservices-apis entservices-helpers systemd"
 PACKAGECONFIG[ocicontainersec]      = "                        ,                          ,   omi,   omi"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 # ----------------------------------------------------------------------------

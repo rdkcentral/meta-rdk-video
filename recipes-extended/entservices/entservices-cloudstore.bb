@@ -54,8 +54,8 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agen
 
 PACKAGECONFIG ?= "telemetrysupport"
 
-PACKAGECONFIG[cloudstore_us]        = "-DPLUGIN_CLOUDSTORE=ON -DPLUGIN_CLOUDSTORE_MODE=Local -DPLUGIN_CLOUDSTORE_URI=${CLOUD_STORE_URI},,entservices-apis iarmbus iarmmgrs rfc grpc grpc-native,entservices-apis iarmbus rfc"
-PACKAGECONFIG[cloudstore_eu]        = "-DPLUGIN_CLOUDSTORE=ON -DPLUGIN_CLOUDSTORE_MODE=Local -DPLUGIN_CLOUDSTORE_URI=${CLOUD_STORE_URI},,entservices-apis iarmbus iarmmgrs rfc grpc grpc-native,entservices-apis iarmbus rfc"
+PACKAGECONFIG[cloudstore_us]        = "-DPLUGIN_CLOUDSTORE=ON -DPLUGIN_CLOUDSTORE_MODE=Local -DPLUGIN_CLOUDSTORE_URI=${CLOUD_STORE_URI},,entservices-apis entservices-helpers iarmbus iarmmgrs rfc grpc grpc-native,entservices-apis entservices-helpers iarmbus rfc"
+PACKAGECONFIG[cloudstore_eu]        = "-DPLUGIN_CLOUDSTORE=ON -DPLUGIN_CLOUDSTORE_MODE=Local -DPLUGIN_CLOUDSTORE_URI=${CLOUD_STORE_URI},,entservices-apis entservices-helpers iarmbus iarmmgrs rfc grpc grpc-native,entservices-apis entservices-helpers iarmbus rfc"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 
 # ----------------------------------------------------------------------------
