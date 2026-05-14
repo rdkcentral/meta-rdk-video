@@ -11,7 +11,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-backupmanager;${CMF_GITHUB_SRC_URI_SUFFIX}"
           
 # Release version - 1.0.2
-SRCREV = "2163d5257683d018ad273f766092caa21c03df83"
+SRCREV = "9a1c0d3d40fe6a763e7467c54879a2c4a2b6b754"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
