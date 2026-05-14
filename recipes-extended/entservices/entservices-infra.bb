@@ -125,10 +125,11 @@ python () {
 
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
-    install -m 0644 ${WORKDIR}/rdkshell_post_startup.conf ${D}${sysconfdir}
-    if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
-    then
-      install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell', 'true', 'false', d)}; then
+        install -m 0644 ${WORKDIR}/rdkshell_post_startup.conf ${D}${sysconfdir}
+    fi
+    if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}; then
+        install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
     fi
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
