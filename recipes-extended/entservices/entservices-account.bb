@@ -11,7 +11,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-account;${CMF_GITHUB_SRC_URI_SUFFIX}"
           
 # Release version - 1.0.4
-SRCREV = "e6f5fff3e3678e6870dcb45ddc3eb9d50e2d9663"
+SRCREV = "f297a47ffe7dee9fccccac0b07911774ca40d667"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
