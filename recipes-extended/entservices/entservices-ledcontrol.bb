@@ -14,7 +14,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-ledcontrol;${CMF_GITHUB_SRC_URI_SUFFIX
           "
 
 # Release version - 1.0.1
-SRCREV = "e4d538e81c125d20b927a04975436b7ee89d295d"
+# feature/RDKEMW-18113-AIDL: compile AIDL indicator stubs into implementation library
+SRCREV = "f87ea9771dd220f0a3e9916b146135f46b81e118"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
