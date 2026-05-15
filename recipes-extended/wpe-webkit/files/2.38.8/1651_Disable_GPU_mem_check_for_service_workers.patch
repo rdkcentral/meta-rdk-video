@@ -1,0 +1,90 @@
+From 0d98656bc01929f0f3aea4d1bdd07c9710797954 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Tue, 28 Apr 2026 11:50:29 +0200
+Subject: [PATCH] MemoryPressureHandler/glib: Disable GPU memory accounting for
+ service workers.
+
+MemoryPressureHandler accounts for GPU memory in every WPEWebProcess
+and has no way to distinguish whether it is the main web process
+or a service worker. In conjunction with s_videoMemoryInFootprint,
+footprint calculations subtract high GPU memory usage of the main web process
+from the low RSS memory value of a service worker, which results in an overflow
+and triggers critical memory pressure for the service worker.
+
+Resolve this by disabling GPU memory accounting for service workers
+---
+ Source/WTF/wtf/MemoryPressureHandler.cpp      | 21 ++++++++++++++++++-
+ Source/WTF/wtf/MemoryPressureHandler.h        |  1 +
+ .../WebKit/WebProcess/glib/WebProcessGLib.cpp |  4 ++++
+ 3 files changed, 25 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WTF/wtf/MemoryPressureHandler.cpp b/Source/WTF/wtf/MemoryPressureHandler.cpp
+index 29959d47f452..ccb731f9833e 100644
+--- a/Source/WTF/wtf/MemoryPressureHandler.cpp
++++ b/Source/WTF/wtf/MemoryPressureHandler.cpp
+@@ -258,8 +258,17 @@ size_t MemoryPressureHandler::calculateFootprintForPolicyDecision(size_t footpri
+     // Some devices accounts video memory into the process memory footprint (as file mappings - RSSFile).
+     // In such cases, we need to subtract the video memory from the process memory footprint
+     // to make the memory pressure policy decision based on the process memory footprint only.
+-    if (s_videoMemoryInFootprint)
++    if (s_videoMemoryInFootprint) {
++        if (footprintVideo > footprint) {
++            // This means that s_videoMemoryInFootprint should not be set for this device
++            // or footprint and footprintVideo are coming from two different processes
++            // and shouldn't be compared with each other. Both cases are misconfigurations.
++            WTFLogAlways("Video memory footprint (%zu MB) is larger than total memory footprint (%zu MB). "
++                "Check MemoryPressureHandler configuration\n", footprintVideo / MB, footprint / MB);
++            return footprint;
++        }
+         footprint -= footprintVideo;
++    }
+     return footprint;
+ }
+ 
+@@ -412,6 +421,16 @@ void MemoryPressureHandler::setConfiguration(const Configuration& configuration)
+         m_configuration.pollInterval.value());         
+ }
+ 
++void MemoryPressureHandler::disableGPUMemoryAccounting()
++{
++    // Reset the GPU memory file to stop accounting video memory for this process
++    s_GPUMemoryFile = String();
++    s_envBaseThresholdVideo = 0;
++    s_videoMemoryInFootprint = false;
++
++    RELEASE_LOG(MemoryPressure, "GPU memory accounting disabled (PID=%d)", getpid());
++}
++
+ void MemoryPressureHandler::releaseMemory(Critical critical, Synchronous synchronous)
+ {
+     if (!m_lowMemoryHandler)
+diff --git a/Source/WTF/wtf/MemoryPressureHandler.h b/Source/WTF/wtf/MemoryPressureHandler.h
+index 0fd1a5d53a50..7b26af4cea6b 100644
+--- a/Source/WTF/wtf/MemoryPressureHandler.h
++++ b/Source/WTF/wtf/MemoryPressureHandler.h
+@@ -227,6 +227,7 @@ public:
+     };
+     void setConfiguration(Configuration&& configuration);
+     void setConfiguration(const Configuration& configuration);
++    void disableGPUMemoryAccounting();
+ 
+     WTF_EXPORT_PRIVATE void releaseMemory(Critical, Synchronous = Synchronous::No);
+ 
+diff --git a/Source/WebKit/WebProcess/glib/WebProcessGLib.cpp b/Source/WebKit/WebProcess/glib/WebProcessGLib.cpp
+index 3cd6ea5fb8e2..a593d62525be 100644
+--- a/Source/WebKit/WebProcess/glib/WebProcessGLib.cpp
++++ b/Source/WebKit/WebProcess/glib/WebProcessGLib.cpp
+@@ -150,6 +150,10 @@ void WebProcess::platformInitializeWebProcess(WebProcessCreationParameters& para
+     if (parameters.memoryPressureHandlerConfiguration)
+         MemoryPressureHandler::singleton().setConfiguration(WTFMove(*parameters.memoryPressureHandlerConfiguration));
+ 
++    // Service worker processes are not expected to use GPU - disable GPU memory accounting
++    if (parameters.isServiceWorkerProcess)
++        MemoryPressureHandler::singleton().disableGPUMemoryAccounting();
++
+     if (!parameters.applicationID.isEmpty())
+         WebCore::setApplicationID(parameters.applicationID);
+ 
+-- 
+2.51.0
+
