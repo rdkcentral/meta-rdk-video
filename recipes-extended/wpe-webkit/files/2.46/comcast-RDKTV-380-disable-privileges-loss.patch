@@ -1,0 +1,28 @@
+From 1835e4f74213c05c5f83de1eb9d17d8f36181545 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Mon, 25 Apr 2022 15:35:57 +0000
+Subject: [PATCH] comcast RDKTV-380: disable privileges loss
+
+Introduced in RDKTV-380. this is also needed for containerized web apps,
+when dynamic switch between container and root env could leave cookies
+storage under different user ownership, preventing root user access.
+---
+ Source/WebCore/PAL/pal/crypto/gcrypt/Initialization.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Source/WebCore/PAL/pal/crypto/gcrypt/Initialization.h b/Source/WebCore/PAL/pal/crypto/gcrypt/Initialization.h
+index ef9a09d178ad..1b812b1f6972 100644
+--- a/Source/WebCore/PAL/pal/crypto/gcrypt/Initialization.h
++++ b/Source/WebCore/PAL/pal/crypto/gcrypt/Initialization.h
+@@ -37,6 +37,8 @@ static inline void initialize()
+     // returned version string.
+     gcry_check_version(nullptr);
+ 
++    // Set GCRY_SECMEM_FLAG_NO_PRIV_DROP to make sure no privileges loss
++    gcry_control(GCRYCTL_DISABLE_PRIV_DROP, nullptr);
+     // Pre-allocate 16kB of secure memory and finish the initialization.
+     gcry_control(GCRYCTL_INIT_SECMEM, 16384, nullptr);
+     gcry_control(GCRYCTL_INITIALIZATION_FINISHED, nullptr);
+-- 
+2.25.1
+

@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 SECTION = "base"
-DEPENDS = "sqlite3 curl rdkversion jansson glib-2.0 systemd iarmbus iarmmgrs breakpad util-linux devicesettings nopoll rfc libarchive safec-common-wrapper gperf-native xr-voice-sdk libsyswrapper xr-voice-sdk-headers"
+DEPENDS = "sqlite3 curl rdkversion jansson glib-2.0 systemd iarmbus iarmmgrs util-linux devicesettings nopoll rfc libarchive safec-common-wrapper gperf-native xr-voice-sdk libsyswrapper xr-voice-sdk-headers"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 RDEPENDS:${PN}:append = " devicesettings iarmbus"
@@ -12,19 +12,20 @@ PROVIDES = "ctrlm"
 RPROVIDES:${PN} = "ctrlm"
 
 
-inherit cmake pkgconfig ${@bb.utils.contains("DISTRO_FEATURES", "kirkstone", "python3native", "pythonnative", d)} syslog-ng-config-gen breakpad-wrapper breakpad-logmapper logrotate_config
-
-# Breakpad processname and logfile mapping
-BREAKPAD_LOGMAPPER_PROCLIST = "controlMgr"
-BREAKPAD_LOGMAPPER_LOGLIST = "ctrlm_log.txt"
+inherit cmake pkgconfig ${@bb.utils.contains("DISTRO_FEATURES", "kirkstone", "python3native", "pythonnative", d)} syslog-ng-config-gen logrotate_config
 
 SYSLOG-NG_FILTER = "ctrlm"
 SYSLOG-NG_SERVICE_ctrlm = "ctrlm-main.service"
 SYSLOG-NG_DESTINATION_ctrlm = "ctrlm_log.txt"
 SYSLOG-NG_LOGRATE_ctrlm = "medium"
 
-PV ?= "1.0.1"
-PR ?= "r0"
+include ctrlm.inc
+
+PACKAGE_ARCH   = "${MIDDLEWARE_ARCH}"
+PV            := "${CTRLM_PV}"
+PR            := "${CTRLM_PR}"
+SRCREV        := "${CTRLM_SRCREV}"
+SRCREV_FORMAT  = "ctrlm-main"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/control;${CMF_GITHUB_SRC_URI_SUFFIX};name=ctrlm-main"
 
@@ -44,9 +45,6 @@ SRC_URI:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' ${RDK_ART
 SRC_URI[test_tones.md5sum]    = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', 'd9e7829785f011214ec948f417873825', '', d)}"
 SRC_URI[test_tones.sha256sum] = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', 'ef10d7174a8bc79aff71b30980cd1304a2a33cf10afc38049c13cb11d1a309cc', '', d)}"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-SRCREV_FORMAT = "ctrlm-main"
-
 S = "${WORKDIR}/git"
 
 FILES:${PN} += "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', '${datadir}/tone_1khz.wav', '', d)}"
@@ -61,12 +59,20 @@ inherit ${@bb.utils.contains('DISTRO_FEATURES', 'comcast-gperftools-heapcheck-wp
 
 inherit systemd coverity
 
-BREAKPAD_BIN = "controlMgr"
+# Breakpad Support
+BREAKPAD           ??= "true"
+inherit ${@bb.utils.contains('BREAKPAD', 'true', 'breakpad-wrapper breakpad-logmapper', '', d)}
+DEPENDS:append       = "${@bb.utils.contains('BREAKPAD', 'true', ' breakpad', '', d)}"
+EXTRA_OECMAKE:append = "${@bb.utils.contains('BREAKPAD', 'true', ' -DBREAKPAD=ON', ' -DBREAKPAD=OFF', d)}"
+BREAKPAD_BIN         = "controlMgr"
+
+# Breakpad processname and logfile mapping
+BREAKPAD_LOGMAPPER_PROCLIST = "controlMgr"
+BREAKPAD_LOGMAPPER_LOGLIST  = "ctrlm_log.txt"
 
 EXTRA_OECMAKE:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' -DUSE_SAFEC=ON', '', d)}"
 
 #EXTRA_OECMAKE:append = " -DMEM_DEBUG=ON"
-#EXTRA_OECMAKE:append = " -DANSI_CODES_DISABLED=ON"
 
 
 # Thunder Dependency
@@ -74,7 +80,7 @@ THUNDER             ??= "true"
 DEPENDS:append        = "${@bb.utils.contains('THUNDER', 'true', ' wpeframework', '', d)}"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE:append  = "${@bb.utils.contains('THUNDER', 'true', bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', " -DWPE_FRAMEWORK_COM_SOCKET=ON", " -DWPE_FRAMEWORK_PROTO_TRACING=ON", d), " ", d)}"
-EXTRA_OECMAKE:append  = "${@bb.utils.contains('THUNDER', 'true', ' -DTHUNDER=ON', '', d)}"
+EXTRA_OECMAKE:append  = "${@bb.utils.contains('THUNDER', 'true', ' -DTHUNDER=ON', ' -DTHUNDER=OFF', d)}"
 
 THUNDER_SECURITY  ??= "${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', 'false', 'true', d)}"
 DEPENDS:append      = "${@bb.utils.contains('THUNDER_SECURITY', 'true', ' wpeframework-clientlibraries', '', d)}"
@@ -90,18 +96,20 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' -DTE
 ##################################################
 # BLE support BEGIN
 
-RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' bluez5', '', d)}"
+BLE_ENABLED      ??= "true"
 
-RDEPENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' bluetooth-mgr', '', d)}"
-DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' bluetooth-mgr', '', d)}"
-LDFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' -lBTMgr', '', d)}"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluez5', '', d)}"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluetooth-mgr', '', d)}"
 
-EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' -DBLE_ENABLED=ON', '', d)}"
-SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' file://2_bluetooth.conf', '', d)}"
-FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', '${systemd_unitdir}/system/ctrlm-main.service.d/2_bluetooth.conf', '', d)}"
+DEPENDS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' bluetooth-mgr', '', d)}"
+LDFLAGS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' -lBTMgr', '', d)}"
+
+EXTRA_OECMAKE:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' -DBLE_ENABLED=ON', ' -DBLE_ENABLED=OFF', d)}"
+SRC_URI:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' file://2_bluetooth.conf', '', d)}"
+FILES:${PN} += "${@bb.utils.contains('BLE_ENABLED', 'true', '${systemd_unitdir}/system/ctrlm-main.service.d/2_bluetooth.conf', '', d)}"
 
 #100 byte ADPCM coming from BLE remote needs to be decoded to PCM before sending to endpoint
-CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', ' -DAUDIO_DECODE', '', d)}"
+CXXFLAGS:append = "${@bb.utils.contains('BLE_ENABLED', 'true', ' -DAUDIO_DECODE', '', d)}"
 
 # BLE Services Implementation
 BLE_SERVICES       ??= "false"
@@ -120,30 +128,15 @@ EXTRA_OECMAKE:append = "${@bb.utils.contains('AUTH', 'true', ' -DAUTH_ENABLED=ON
 AUTH_ACTIVATION_STATUS ?= "false"
 EXTRA_OECONF:append = "${@bb.utils.contains('AUTH_ACTIVATION_STATUS', 'true', ' -DAUTH_ACTIVACTION_STATUS', '', d)}"
 
-
-RF4CE_PACKET_ANALYSIS ??= "true"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('RF4CE_PACKET_ANALYSIS', 'true', ' -DRF4CE_PACKET_ANALYSIS=ON', '', d)}"
-
-VOICE_NEXTGEN_MAC ??= "true"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('VOICE_NEXTGEN_MAC', 'true', ' -DVOICE_NEXTGEN_MAC=ON', '', d)}"
-
-VOICE_KEYWORD_BEEP ??= "false"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('VOICE_KEYWORD_BEEP', 'true', ' -DVOICE_KEYWORD_BEEP=ON', '', d)}"
-
-# Enable breakpad
-EXTRA_OECMAKE:append = " -DBREAKPAD=ON"
-
 SUPPORT_VOICE_DEST_HTTP   ?= "false"
 SUPPORT_VOICE_DEST_ALSA   ?= "false"
 
 EXTRA_OECMAKE:append = "${@ ' -DXRSR_SDT=ON' if (d.getVar('SUPPORT_VOICE_DEST_ALSA', expand=False) == "true") else ''}"
 EXTRA_OECMAKE:append = "${@ ' -DXRSR_HTTP=ON' if (d.getVar('SUPPORT_VOICE_DEST_HTTP', expand=False) == "true") else ''}"
+DEPENDS:append   = "${@ ' virtual-mic' if (d.getVar('SUPPORT_VOICE_DEST_ALSA',   expand=False) == "true") else ''}"
 
 BUILD_FACTORY_TEST ??= "true"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' -DBUILD_FACTORY_TEST=ON', '', d)}"
-
-AUDIO_CONTROL         ?= "false"
-EXTRA_OECMAKE:append   = "${@bb.utils.contains('AUDIO_CONTROL', 'true', ' -DFACTORY_AUDIO_CONTROL=ON', '', d)}"
+EXTRA_OECMAKE:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' -DBUILD_FACTORY_TEST=ON', ' -DBUILD_FACTORY_TEST=OFF', d)}"
 
 export CTRLM_UTILS_JSON_TO_HEADER  = "${RECIPE_SYSROOT}/usr/include/vsdk_json_to_header.py"
 export CTRLM_UTILS_JSON_COMBINE    = "${RECIPE_SYSROOT}/usr/include/vsdk_json_combine.py"
@@ -152,49 +145,32 @@ export STAGING_BINDIR_NATIVE
 
 CTRLM_CONFIG_VSDK     = "${PKG_CONFIG_SYSROOT_DIR}/usr/include/xrsr_config.json"
 CTRLM_CONFIG_CPC      = "${PKG_CONFIG_SYSROOT_DIR}/usr/include/ctrlm_cpc_config.json"
-CTRLM_CONFIG_OEM_ADD  = "${S}/../ctrlm_config_oem.add.json"
-CTRLM_CONFIG_OEM_SUB  = "${S}/../ctrlm_config_oem.sub.json"
 CTRLM_CONFIG_CPC_ADD  = "${S}/../ctrlm_config_cpc.add.json"
 CTRLM_CONFIG_CPC_SUB  = "${S}/../ctrlm_config_cpc.sub.json"
 CTRLM_CONFIG_MAIN_ADD = "${S}/../ctrlm_config_main.add.json"
 CTRLM_CONFIG_MAIN_SUB = "${S}/../ctrlm_config_main.sub.json"
 
-EXTRA_OECMAKE:append  = " -DCTRLM_UTILS_JSON_COMBINE=${CTRLM_UTILS_JSON_COMBINE} -DCTRLM_UTILS_JSON_TO_HEADER=${CTRLM_UTILS_JSON_TO_HEADER} -DCTRLM_CONFIG_JSON_VSDK=${CTRLM_CONFIG_VSDK} -DCTRLM_CONFIG_JSON_CPC=${CTRLM_CONFIG_CPC} -DCTRLM_CONFIG_JSON_OEM_SUB=${CTRLM_CONFIG_OEM_SUB} -DCTRLM_CONFIG_JSON_OEM_ADD=${CTRLM_CONFIG_OEM_ADD} -DCTRLM_CONFIG_JSON_CPC_SUB=${CTRLM_CONFIG_CPC_SUB} -DCTRLM_CONFIG_JSON_CPC_ADD=${CTRLM_CONFIG_CPC_ADD} -DCTRLM_CONFIG_JSON_MAIN_ADD=${CTRLM_CONFIG_MAIN_ADD} -DCTRLM_CONFIG_JSON_MAIN_SUB=${CTRLM_CONFIG_MAIN_SUB}"
-EXTRA_OECMAKE:append = "${@ ' -DXRSR_HTTP=ON' if (d.getVar('SUPPORT_VOICE_DEST_HTTP', expand=False) == "true") else ''}"
-EXTRA_OECMAKE:append = "${@ ' -DXRSR_SDT=ON' if (d.getVar('SUPPORT_VOICE_DEST_ALSA', expand=False) == "true") else ''}"
+EXTRA_OECMAKE:append  = " -DCTRLM_UTILS_JSON_COMBINE=${CTRLM_UTILS_JSON_COMBINE} -DCTRLM_UTILS_JSON_TO_HEADER=${CTRLM_UTILS_JSON_TO_HEADER} -DCTRLM_CONFIG_JSON_VSDK=${CTRLM_CONFIG_VSDK} -DCTRLM_CONFIG_JSON_CPC=${CTRLM_CONFIG_CPC} -DCTRLM_CONFIG_JSON_CPC_SUB=${CTRLM_CONFIG_CPC_SUB} -DCTRLM_CONFIG_JSON_CPC_ADD=${CTRLM_CONFIG_CPC_ADD} -DCTRLM_CONFIG_JSON_MAIN_ADD=${CTRLM_CONFIG_MAIN_ADD} -DCTRLM_CONFIG_JSON_MAIN_SUB=${CTRLM_CONFIG_MAIN_SUB}"
 
-DEPENDS:append   = "${@ ' virtual-mic' if (d.getVar('SUPPORT_VOICE_DEST_ALSA',   expand=False) == "true") else ''}"
-
-EXTRA_OECMAKE:append = " -DCMAKE_SYSROOT=${RECIPE_SYSROOT}"
-EXTRA_OECMAKE:append = " -DGIT_BRANCH=${CMF_GIT_BRANCH}"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm_mic_tap', ' -DMIC_TAP=ON', '', d)}"
+EXTRA_OECMAKE:append = " -DCMAKE_SYSROOT=${RECIPE_SYSROOT} -DCMAKE_PROJECT_VERSION=${PV}"
 
 addtask ctrlm_config after do_configure before do_compile
 do_ctrlm_config() {
 }
 
-FACTORY_AUDIO_PLAYBACK ?= "false"
-EXTRA_OECMAKE:append   = "${@bb.utils.contains('AUDIO_PLAYBACK', 'true', ' -DFACTORY_AUDIO_PLAYBACK=ON', '', d)}"
-
-CUSTOM_AUDIO_ANALYSIS_LIB ?= ""
-EXTRA_OECMAKE:append       = "${@ ' -DCUSTOM_AUDIO_ANALYSIS_LIB=${CUSTOM_AUDIO_ANALYSIS_LIB}' if (d.getVar('CUSTOM_AUDIO_ANALYSIS_LIB', expand=False) != "") else ''}"
-
-CUSTOM_AUTH_LIB      ?= ""
-EXTRA_OECMAKE:append  = "${@ ' -DCUSTOM_AUTH_LIB=${CUSTOM_AUTH_LIB}' if (d.getVar('CUSTOM_AUTH_LIB', expand=False) != "") else ''}"
-
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
 
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'true', 'false', d)}; then
+    if [ "${BLE_ENABLED}" = "true" ]; then
        install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
        install -m 0644 ${WORKDIR}/2_bluetooth.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
     fi
 }
 
-addtask clean_oem_config after do_unpack before do_configure
+addtask clean_cpc_config after do_unpack before do_configure
 
-do_clean_oem_config() {
-    rm -f ${CTRLM_CONFIG_CPC_ADD} ${CTRLM_CONFIG_CPC_SUB} ${CTRLM_CONFIG_OEM_ADD} ${CTRLM_CONFIG_OEM_SUB}
+do_clean_cpc_config() {
+    rm -f ${CTRLM_CONFIG_CPC_ADD} ${CTRLM_CONFIG_CPC_SUB}
 }
 

@@ -1,0 +1,21 @@
+--- a/Source/core/WorkerPool.h  2026-03-02 15:22:41.681308655 +0000
++++ b/Source/core/WorkerPool.h  2026-03-02 15:26:18.768978587 +0000
+@@ -365,10 +365,14 @@
+             uint32_t report = _threadPool.Revoke(job, waitTime);
+
+             if (report == Core::ERROR_UNKNOWN_KEY) {
+-                report = _external.Completed(job, waitTime);
+-                
+-                if ( (report != Core::ERROR_UNKNOWN_KEY) && (result == Core::ERROR_UNKNOWN_KEY) ) {
+-                    result = report;
++                if ( _joined == Thread::ThreadId()) {
++                    result = Core::ERROR_NONE;
++                } else {
++                    report = _external.Completed(job, waitTime);
++
++                    if ( (report != Core::ERROR_UNKNOWN_KEY) && (result == Core::ERROR_UNKNOWN_KEY) ) {
++                        result = report;
++                    }
+                 }
+             }
+

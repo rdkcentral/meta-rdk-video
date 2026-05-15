@@ -1,0 +1,186 @@
+From ae22d69a316c2b533285592d3b31a2ed45e5dae2 Mon Sep 17 00:00:00 2001
+From: Przemyslaw Gorszkowski <pgorszkowski@igalia.com>
+Date: Wed, 22 Jan 2025 10:25:09 +0100
+Subject: [PATCH] Added API to get and set screen-supports-HDR setting
+
+---
+ .../Scripts/Preferences/WebPreferences.yaml   | 10 ++++
+ Source/WebCore/platform/PlatformScreen.h      |  2 +-
+ .../platform/wpe/PlatformScreenWPE.cpp        |  9 +++
+ .../UIProcess/API/glib/WebKitSettings.cpp     | 57 +++++++++++++++++++
+ .../WebKit/UIProcess/API/wpe/WebKitSettings.h |  7 +++
+ 5 files changed, 84 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WTF/Scripts/Preferences/WebPreferences.yaml b/Source/WTF/Scripts/Preferences/WebPreferences.yaml
+index 18a5d3eb93c6..18e7d6277005 100644
+--- a/Source/WTF/Scripts/Preferences/WebPreferences.yaml
++++ b/Source/WTF/Scripts/Preferences/WebPreferences.yaml
+@@ -1918,6 +1918,16 @@ SansSerifFontFamily:
+     WebCore:
+       default: '""'
+ 
++ScreenSupportsHDR:
++  type: bool
++  defaultValue:
++    WebKitLegacy:
++      default: false
++    WebKit:
++      default: false
++    WebCore:
++      default: false
++
+ ScrollAnimatorEnabled:
+   type: bool
+   defaultValue:
+diff --git a/Source/WebCore/platform/PlatformScreen.h b/Source/WebCore/platform/PlatformScreen.h
+index 44799e0b2a93..177bb197676a 100644
+--- a/Source/WebCore/platform/PlatformScreen.h
++++ b/Source/WebCore/platform/PlatformScreen.h
+@@ -95,7 +95,7 @@ WEBCORE_EXPORT DynamicRangeMode preferredDynamicRangeMode(Widget* = nullptr);
+ constexpr DynamicRangeMode preferredDynamicRangeMode(Widget* = nullptr) { return DynamicRangeMode::Standard; }
+ #endif
+ 
+-#if PLATFORM(MAC) || PLATFORM(IOS_FAMILY)
++#if PLATFORM(MAC) || PLATFORM(IOS_FAMILY) || PLATFORM(WPE)
+ WEBCORE_EXPORT bool screenSupportsHighDynamicRange(Widget* = nullptr);
+ #else
+ constexpr bool screenSupportsHighDynamicRange(Widget* = nullptr) { return false; }
+diff --git a/Source/WebCore/platform/wpe/PlatformScreenWPE.cpp b/Source/WebCore/platform/wpe/PlatformScreenWPE.cpp
+index bbdd1ce76241..8d8579be437a 100644
+--- a/Source/WebCore/platform/wpe/PlatformScreenWPE.cpp
++++ b/Source/WebCore/platform/wpe/PlatformScreenWPE.cpp
+@@ -28,6 +28,8 @@
+ 
+ #include "DestinationColorSpace.h"
+ #include "FloatRect.h"
++#include "Frame.h"
++#include "FrameView.h"
+ #include "NotImplemented.h"
+ #include "Widget.h"
+ 
+@@ -104,4 +106,11 @@ bool screenIsTouchPrimaryInputDevice()
+ }
+ #endif
+ 
++bool screenSupportsHighDynamicRange(Widget* widget)
++{
++    if(!widget || !widget->root())
++        return false;
++
++    return widget->root()->frame().settings().screenSupportsHDR();
++}
+ } // namespace WebCore
+diff --git a/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp b/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
+index 7b5eda70b39d..937b2be5f9a6 100644
+--- a/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
++++ b/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp
+@@ -188,6 +188,7 @@ enum {
+     PROP_ENABLE_SERVICE_WORKER,
+     PROP_ENABLE_ICE_CANDIDATE_FILTERING,
+     PROP_WEBRTC_UDP_PORTS_RANGE,
++    PROP_SCREEN_SUPPORTS_HDR,
+     N_PROPERTIES,
+ };
+ 
+@@ -448,6 +449,9 @@ ALLOW_DEPRECATED_DECLARATIONS_END
+     case PROP_WEBRTC_UDP_PORTS_RANGE:
+         webkit_settings_set_webrtc_udp_ports_range(settings, g_value_get_string(value));
+         break;
++    case PROP_SCREEN_SUPPORTS_HDR:
++        webkit_settings_set_screen_supports_hdr(settings, g_value_get_boolean(value));
++        break;
+     default:
+         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, propId, paramSpec);
+         break;
+@@ -679,6 +683,9 @@ ALLOW_DEPRECATED_DECLARATIONS_END
+     case PROP_WEBRTC_UDP_PORTS_RANGE:
+         g_value_set_string(value, webkit_settings_get_webrtc_udp_ports_range(settings));
+         break;
++    case PROP_SCREEN_SUPPORTS_HDR:
++        g_value_set_boolean(value, webkit_settings_get_screen_supports_hdr(settings));
++        break;
+     default:
+         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, propId, paramSpec);
+         break;
+@@ -1807,6 +1814,19 @@ static void webkit_settings_class_init(WebKitSettingsClass* klass)
+         nullptr, // A null string forces the default value.
+         readWriteConstructParamFlags);
+ 
++     /**
++     * WebKitSettings:screen-supports-hdr:
++     *
++     * Screen supports HDR.
++     *
++     */
++    sObjProperties[PROP_SCREEN_SUPPORTS_HDR] = g_param_spec_boolean(
++        "screen-supports-hdr",
++        _("Screen supports HDR"),
++        _("Does screen support HDR."),
++        FALSE,
++        readWriteConstructParamFlags);
++
+     g_object_class_install_properties(gObjectClass, N_PROPERTIES, sObjProperties);
+ }
+ 
+@@ -4547,3 +4567,40 @@ webkit_settings_set_webrtc_udp_ports_range(WebKitSettings* settings, const gchar
+     UNUSED_PARAM(udpPortsRange);
+ #endif
+ }
++
++/**
++ * webkit_settings_get_screen_supports_hdr:
++ * @settings: a #WebKitSettings
++ *
++ * Get the [property@Settings:screen-supports-hdr] property.
++ *
++ * Returns: Screen supports HDR, or FALSE if un-set.
++ *
++ */
++gboolean
++webkit_settings_get_screen_supports_hdr(WebKitSettings* settings)
++{
++    g_return_val_if_fail(WEBKIT_IS_SETTINGS(settings), FALSE);
++    return settings->priv->preferences->screenSupportsHDR();
++}
++
++/**
++ * webkit_settings_set_screen_supports_hdr:
++ * @settings: a #WebKitSettings
++ * @screenSupportsHDR: Value to be set
++ *
++ * Set the [property@Settings:screen-supports-hdr] property.
++ *
++ */
++void
++webkit_settings_set_screen_supports_hdr(WebKitSettings* settings, gboolean screenSupportsHDR)
++{
++    g_return_if_fail(WEBKIT_IS_SETTINGS(settings));
++    WebKitSettingsPrivate* priv = settings->priv;
++    bool currentValue = priv->preferences->screenSupportsHDR();
++    if (currentValue == screenSupportsHDR)
++        return;
++
++    priv->preferences->setScreenSupportsHDR(screenSupportsHDR);
++    g_object_notify_by_pspec(G_OBJECT(settings), sObjProperties[PROP_SCREEN_SUPPORTS_HDR]);
++}
+diff --git a/Source/WebKit/UIProcess/API/wpe/WebKitSettings.h b/Source/WebKit/UIProcess/API/wpe/WebKitSettings.h
+index 3549908f103d..847d95318620 100644
+--- a/Source/WebKit/UIProcess/API/wpe/WebKitSettings.h
++++ b/Source/WebKit/UIProcess/API/wpe/WebKitSettings.h
+@@ -547,6 +547,13 @@ WEBKIT_API void
+ webkit_settings_set_webrtc_udp_ports_range                     (WebKitSettings *settings,
+                                                                 const gchar    *udp_port_range);
+ 
++WEBKIT_API gboolean
++webkit_settings_get_screen_supports_hdr                        (WebKitSettings* settings);
++
++WEBKIT_API void
++webkit_settings_set_screen_supports_hdr                        (WebKitSettings* settings,
++                                                                gboolean screenSupportsHDR);
++
+ G_END_DECLS
+ 
+ #endif /* WebKitSettings_h */
+-- 
+2.48.1
+

@@ -1,0 +1,54 @@
+From d75e6701ffc74b3710963878dd931fb383ed8b01 Mon Sep 17 00:00:00 2001
+From: sivarajappan-siva <sivarajappan_siva@comcast.com>
+Date: Wed, 8 Oct 2025 12:02:54 +0000
+Subject: [PATCH] To handle truncated UTF code on parsing empty null terminated
+ or uninitialized input (#1950)
+
+---
+ Source/core/JSON.h                  |  6 +++++-
+ Tests/unit/core/test_jsonparser.cpp | 12 ++++++++++++
+ 2 files changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/Source/core/JSON.h b/Source/core/JSON.h
+index 7819a309..81eac716 100644
+--- a/Source/core/JSON.h
++++ b/Source/core/JSON.h
+@@ -1868,7 +1868,11 @@ namespace Core {
+                                 if (codeSize < 0) {
+                                     // Oops it is a bad code thingy, Skip it..
+                                     // TODO: report an error
+-                                    codeSize = -codeSize;
++                                    if((static_cast<uint32_t>(-codeSize)) <= length) {
++                                        codeSize = -codeSize;
++                                    } else {
++                                        codeSize = length;
++                                    }
+                                 }
+ 
+                                 ASSERT(codeSize <= 7);
+diff --git a/Tests/unit/core/test_jsonparser.cpp b/Tests/unit/core/test_jsonparser.cpp
+index e200f6e7..f4b489f8 100644
+--- a/Tests/unit/core/test_jsonparser.cpp
++++ b/Tests/unit/core/test_jsonparser.cpp
+@@ -2899,6 +2899,18 @@ namespace Tests {
+             printf("output %zd --- = %s \n", output.length(), output.c_str());
+ 
+             EXPECT_STREQ(input.c_str(), output.c_str());
++            
++            uint8_t data[] = { 0xD0, 0x9F, 0x80, 0xFF, 0xFE, 0x41, 0x42, 0x43 };
++            JsonObject response;
++            input = string(reinterpret_cast<const char*>(data), sizeof(data));
++            response["state"] = input;
++            const char expected_output[] = "{\"state\":\"\\u041F\\u0000\\u0020\"}";
++            response.ToString(output);
++            printf("\n\n Case 19: \n");
++            printf("     input  %zd --- = %s \n", input.length(), input.c_str());
++            printf("     output %zd --- = %s \n", output.length(), output.c_str());
++            printf("     expected_output --- = %s \n", expected_output);
++            EXPECT_STREQ(expected_output, output.c_str());
+         }
+     }
+ }
+-- 
+2.43.0
+

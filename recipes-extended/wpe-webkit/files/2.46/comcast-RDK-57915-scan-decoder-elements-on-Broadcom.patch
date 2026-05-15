@@ -1,0 +1,43 @@
+From a7aac5dd7f50228bf4a33e34ccec95e9ad05f349 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Thu, 22 Feb 2024 14:10:41 +0000
+Subject: [PATCH] comcast - RDK-57915 - scan decoder elements on Broadcom as
+ well
+
+Include some SW decoders and decoding sinks
+
+Issue : No Video is played in Dolby internal app
+Steps to launch Dolby App:
+
+curl 'http://127.0.0.1:9005/as/system/setting/appCatalogueURI' -X POST -H 'Content-Type: application/json' -d '{ "appCatalogueURI": "https://content.integration.gb.services.skyq.sky.com/softcat/appsint_soip_Q024/softwarecatalogue.xml"}'
+curl 'http://127.0.0.1:9005/as/apps/action/launch?appId=DolbyCert' -X POST -d '{"origin":"APP", "args": {"stream":https://soip.staging.si.producthub.sky/dolby/data/streams.txt}}'
+
+Expected result : On selecting any stream AV should be decoded
+Actual result : Only audio is heard , no video
+
+The problem seem to be in "supportsType" check in WPEWebKit.
+
+0:00:05.024036849 ^[[34m   39^[[00m 0xeee038a0 ^[[37mDEBUG  ^[[00m ^[[00m   webkitmediaplayer MediaPlayerPrivateGStreamer.cpp:2870:supportsType:^[[00m Checking mime-type "video/x-dvb"
+0:00:05.024145886 ^[[34m   39^[[00m 0xeee038a0 ^[[37mDEBUG  ^[[00m ^[[00m   webkitmediaplayer MediaPlayerPrivateGStreamer.cpp:2875:supportsType:^[[00m Supported: IsNotSupported
+
+On Broadcom, browser is checking parser elements for supported codecs. Which is leaving asplayer sink element out. So, the player output is not fully initialized.
+---
+ Source/WebCore/platform/gstreamer/GStreamerQuirkBroadcom.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirkBroadcom.h b/Source/WebCore/platform/gstreamer/GStreamerQuirkBroadcom.h
+index c251480b6163..6ac4b5061335 100644
+--- a/Source/WebCore/platform/gstreamer/GStreamerQuirkBroadcom.h
++++ b/Source/WebCore/platform/gstreamer/GStreamerQuirkBroadcom.h
+@@ -36,7 +36,7 @@ public:
+ 
+     void configureElement(GstElement*, const OptionSet<ElementRuntimeCharacteristics>&) final;
+     std::optional<bool> isHardwareAccelerated(GstElementFactory*) final;
+-    std::optional<GstElementFactoryListType> audioVideoDecoderFactoryListType() const final { return GST_ELEMENT_FACTORY_TYPE_PARSER; }
++    std::optional<GstElementFactoryListType> audioVideoDecoderFactoryListType() const final { return GST_ELEMENT_FACTORY_TYPE_PARSER | GST_ELEMENT_FACTORY_TYPE_DECODER; }
+     Vector<String> disallowedWebAudioDecoders() const final { return m_disallowedWebAudioDecoders; }
+     unsigned getAdditionalPlaybinFlags() const final { return getGstPlayFlag("text") | getGstPlayFlag("native-audio"); }
+     bool shouldParseIncomingLibWebRTCBitStream() const final { return false; }
+-- 
+2.48.1
+

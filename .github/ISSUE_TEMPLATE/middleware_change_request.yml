@@ -1,0 +1,81 @@
+name: RDK-E Middleware Change Request
+description: Change Request for RDK-E Middleware
+title: "<JIRA TICKET>:<Ticket Title> "
+labels: ["MW Change Request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Change Request for RDK-E Middleware
+  
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Provide a clear and concise description of the feature or bug ticket
+      placeholder: Describe the changes you are bringing
+    validations:
+      required: true
+  
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or examples about the feature request
+      placeholder: Any other relevant information
+    validations:
+      required: false
+  
+  - type: textarea
+    id: dod-checklist
+    attributes:
+      label: Definition of Done (DoD)
+      description: Mark items with [x] and replace the placeholder text on Details lines with actual information.
+      value: |
+        Please complete the following Middleware Layer Integration checklist items to ensure all requirements for changes to be merged.
+
+        **IMPORTANT:** Do NOT provide any proprietary information including:
+        - Links to internal Automatics/CI builds
+        - Links to internal Confluence pages
+        - Any other Comcast/Sky proprietary or confidential information
+        - Development Build/Setup Details
+
+        Only provide publicly accessible information and links. All proprietary information should be added to JIRA Ticket.
+        
+        ---
+
+        - [ ] **Middleware component tags with changelog**
+          - Details: For instance https://github.com/rdkcentral/hdmicec/blob/1.0.7/CHANGELOG.md. Include all components that need to go together for Builds to work.
+
+        - [ ] **Tested on STBs**
+        
+        - [ ] **Tested on TVs**
+
+        - [ ] **Dependent Layer tags (App Layer, OSS, Product, Halif Headers, Vendor Layers)**
+          - Details: (e.g. https://github.com/rdk-e/meta-image-support/blob/4.1.1/CHANGELOG.md)
+
+        - [ ] **Do Widgets Need Publishing**
+          - Details: (Provide context if widgets are involved)
+
+        - [ ] **Copilot review for Components**
+          - Details: (Any comments on the review)
+          
+        - [ ] **Component Test**
+          - Details: Share Testing done as part of components release
+
+        - [ ] **Integration Testing**
+          - Details: Provide details on Integration testing done within Middleware layer
+          
+        - [ ] **E2E Testing**
+          - Details: Provide details on end to end testing done across all layers
+
+        - [ ] **Performance Testing**
+          - Details: Provide details on performance testing done
+
+        - [ ] **Static code analysis/Coverity**
+          - Details: Share Coverity runs for components affected
+          
+        - [ ] **Manual Functional Test**
+        
+    validations:
+      required: true
