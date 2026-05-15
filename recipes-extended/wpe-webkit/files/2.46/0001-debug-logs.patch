@@ -1,0 +1,80 @@
+From 0fccd6115c33e7d20f01068a43addec17a498e41 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Fri, 15 May 2026 09:20:41 +0000
+Subject: [PATCH] debug logs
+
+---
+ Source/WebCore/platform/GStreamer.cmake       |  8 +++++
+ .../graphics/gstreamer/eme/CDMThunder.cpp     | 33 +++++++++++++++++++
+ 2 files changed, 41 insertions(+)
+
+diff --git a/Source/WebCore/platform/GStreamer.cmake b/Source/WebCore/platform/GStreamer.cmake
+index 55f7c973771b..85e0591bc647 100644
+--- a/Source/WebCore/platform/GStreamer.cmake
++++ b/Source/WebCore/platform/GStreamer.cmake
+@@ -175,10 +175,18 @@ if (ENABLE_ENCRYPTED_MEDIA AND ENABLE_THUNDER)
+     # Globally add thunder libraries, required for the check_cxx_symbol_exists call.
+     set(CMAKE_REQUIRED_LIBRARIES ${THUNDER_LIBRARIES})
+ 
++    check_cxx_symbol_exists(opencdm_system_supported_robustness ${THUNDER_INCLUDE_DIR}/open_cdm.h HAS_OCDM_SUPPORTED_ROBUSTNESS)
++    if (HAS_OCDM_SUPPORTED_ROBUSTNESS)
++      list(APPEND WebCore_PRIVATE_DEFINITIONS THUNDER_HAS_OCDM_SUPPORTED_ROBUSTNESS=1)
++    else ()
++      list(APPEND WebCore_PRIVATE_DEFINITIONS THUNDER_HAS_OCDM_SUPPORTED_ROBUSTNESS=0)
++    endif ()
++    
+     check_cxx_symbol_exists(opencdm_gstreamer_session_decrypt_buffer ${THUNDER_INCLUDE_DIR}/open_cdm_adapter.h HAS_OCDM_DECRYPT_BUFFER)
+     if (HAS_OCDM_DECRYPT_BUFFER)
+       list(APPEND WebCore_PRIVATE_DEFINITIONS THUNDER_HAS_OCDM_DECRYPT_BUFFER=1)
+     else ()
+       list(APPEND WebCore_PRIVATE_DEFINITIONS THUNDER_HAS_OCDM_DECRYPT_BUFFER=0)
+     endif ()
++
+ endif ()
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
+index 139a26be65c7..4469e5564d44 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
+@@ -171,6 +171,39 @@ bool CDMPrivateThunder::supportsConfiguration(const CDMKeySystemConfiguration& c
+ 
+ Vector<AtomString> CDMPrivateThunder::supportedRobustnesses() const
+ {
++#if THUNDER_HAS_OCDM_SUPPORTED_ROBUSTNESS
++    Vector<AtomString> robustnesses = { emptyAtom() };
++
++    printf("%d %s KKP:KKP_INSIDE: Robustness level\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
++    if (!m_thunderSystem) {
++        WTFLogAlways("CDMPrivateThunder: No active OpenCDM system for %s. Returning default robustness only.", m_keySystem.utf8().data());
++        return robustnesses;
++    }
++
++    char** buffer = nullptr;
++    uint16_t count = 0;
++
++    if (opencdm_system_supported_robustness(m_thunderSystem.get(), &buffer, &count) == ERROR_NONE && buffer != nullptr && count > 0) {
++        robustnesses.reserveCapacity(robustnesses.size() + count);
++        for (uint16_t i = 0; i < count; ++i) {
++            if (buffer[i] != nullptr) {
++                robustnesses.append(AtomString { String::fromUTF8(buffer[i]) });
++                free(buffer[i]);
++	    }
++        }
++    }
++    if (buffer != nullptr) {
++        free(buffer);
++    }
++   
++    for (const auto& level : robustnesses) {
++        printf("%d %s KKP:CDMThunder: Robustness level: %s\n",__LINE__,__PRETTY_FUNCTION__,level.string().utf8().data());fflush(stdout);
++    }
++
++    return robustnesses;
++#endif
++
++    printf("%d %s KKP:KKP_OUTSIDE: Robustness level\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+     return { emptyAtom(), "SW_SECURE_DECODE"_s, "SW_SECURE_CRYPTO"_s, "HW_SECURE_DECODE"_s, "HW_SECURE_CRYPTO"_s, "HW_SECURE_ALL"_s };
+ }
+ 
+-- 
+2.44.4
+

@@ -44,15 +44,15 @@ index 65e337d..7bf21fa 100644
 +       result = static_cast<OpenCDMError>(accessor->GetSupportedRobustness(system->keySystem(),iterator));
 +
 +       if (result == ERROR_NONE && iterator != nullptr) {
-+	   uint16_t size = iterator->Count();
-+	   if (size > 0) {
-+	       char** results = static_cast<char**>(calloc(size,sizeof(char*)));
-+	       std::string entry;
-+	       for (uint16_t i = 0; i < size && iterator->Next(entry); ++i) {
-+                   results[i] = strdup(entry.c_str());
-+	       }
-+	       *robustness = results;
-+	       *count = size;
++          uint16_t size = iterator->Count();
++          if (size > 0) {
++              char** results = static_cast<char**>(calloc(size,sizeof(char*)));
++              std::string entry;
++              for (uint16_t i = 0; i < size && iterator->Next(entry); ++i) {
++                  results[i] = strdup(entry.c_str());
++              }
++              *robustness = results;
++              *count = size;
 +           }
 +           iterator->Release();
 +       }
