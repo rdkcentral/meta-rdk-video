@@ -62,6 +62,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-appgateway.service \
     wpeframework-appnotifications.service \
     wpeframework-appgatewaycommon.service \
+    wpeframework-appactions.service \
     wpeframework-downloadmanager.service \
     wpeframework-preinstallmanager.service \
     wpeframework-telemetrymetrics.service \
