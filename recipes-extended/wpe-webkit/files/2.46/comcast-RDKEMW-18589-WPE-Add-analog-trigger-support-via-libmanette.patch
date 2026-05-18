@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Petar Tijanic <petar_tijanic@comcast.com>
+Date: Mon, 18 May 2026 00:00:00 +0000
+Subject: [PATCH] RDKEMW-18589: [WPE] Add analog trigger support to the
+ libmanette gamepad backend
+
+Backports analog trigger value reporting to the libmanette-based WPE
+gamepad path that was introduced by RDKEMW-16580. Mirrors the binary-vs-
+analog split that GamepadLibWPE already uses on the libwpe path:
+a separate analogButtonChanged() method handles continuous 0..1 trigger
+values while buttonPressedOrReleased() remains the digital 1.0 / 0.0 path.
+
+The analog source data is already produced by the comcast libmanette
+downstream patch
+  meta-rdk-oss-reference/recipes-extended/libmanette/files/
+    0003-button-values-for-gas-brake.patch
+which exposes manette_event_get_button_value() -- a 0.0..1.0 normalized
+value attached to MANETTE_EVENT_BUTTON_PRESS / RELEASE events whose
+source is an analog axis (real analog triggers).
+
+For LeftTrigger / RightTrigger the on*Event callbacks pull the analog
+value and route it through analogButtonChanged(), which clamps and
+writes it to m_buttonValues -- exactly the libwpe pattern. All other
+buttons stay on the binary buttonPressedOrReleased() path.
+
+libmanette equivalent of upstream libwpe PRs:
+  WebPlatformForEmbedded/libwpe#134 (analog button callback)
+  WebPlatformForEmbedded/libwpe#135 (ABI fix-up)
+and matching WPEWebKit PR #1442 (GamepadLibWPE::analogButtonChanged).
+
+* Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp:
+(WebCore::onButtonPressEvent):
+(WebCore::onButtonReleaseEvent):
+(WebCore::ManetteGamepad::analogButtonChanged):
+* Source/WebCore/platform/gamepad/manette/ManetteGamepad.h:
+---
+diff --git a/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp b/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp
+--- a/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp
++++ b/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp
+@@ -111,7 +111,19 @@
+     if (!manette_event_get_button(event, &button))
+         return;
+
+-    gamepad->buttonPressedOrReleased(device, toStandardGamepadButton(button), true);
++    auto standardButton = toStandardGamepadButton(button);
++    // L2 / R2 carry an analog 0..1 value via the comcast libmanette patch
++    // (manette_event_get_button_value). Route them through the analog path,
++    // mirroring how GamepadLibWPE splits binary vs analog button events.
++    if (standardButton == ManetteGamepad::StandardGamepadButton::LeftTrigger
++        || standardButton == ManetteGamepad::StandardGamepadButton::RightTrigger) {
++        gdouble value = 1.0;
++        if (manette_event_get_button_value(event, &value) && value > 0.0) {
++            gamepad->analogButtonChanged(device, standardButton, value);
++            return;
++        }
++    }
++    gamepad->buttonPressedOrReleased(device, standardButton, true);
+ }
+
+ static void onButtonReleaseEvent(ManetteDevice* device, ManetteEvent* event, ManetteGamepad* gamepad)
+@@ -120,7 +132,15 @@
+     if (!manette_event_get_button(event, &button))
+         return;
+
+-    gamepad->buttonPressedOrReleased(device, toStandardGamepadButton(button), false);
++    auto standardButton = toStandardGamepadButton(button);
++    if (standardButton == ManetteGamepad::StandardGamepadButton::LeftTrigger
++        || standardButton == ManetteGamepad::StandardGamepadButton::RightTrigger) {
++        gdouble value = 0.0;
++        manette_event_get_button_value(event, &value);
++        gamepad->analogButtonChanged(device, standardButton, value);
++        return;
++    }
++    gamepad->buttonPressedOrReleased(device, standardButton, false);
+ }
+
+ ManetteGamepad::ManetteGamepad(ManetteDevice* device, unsigned index)
+@@ -168,6 +188,17 @@
+     ManetteGamepadProvider::singleton().gamepadHadInput(*this, pressed ? ManetteGamepadProvider::ShouldMakeGamepadsVisible::Yes : ManetteGamepadProvider::ShouldMakeGamepadsVisible::No);
+ }
+
++void ManetteGamepad::analogButtonChanged(ManetteDevice*, StandardGamepadButton button, double value)
++{
++    if (button == StandardGamepadButton::Unknown)
++        return;
++
++    m_lastUpdateTime = MonotonicTime::now();
++    m_buttonValues[static_cast<int>(button)].setValue(clampTo(value, 0.0, 1.0));
++
++    ManetteGamepadProvider::singleton().gamepadHadInput(*this, ManetteGamepadProvider::ShouldMakeGamepadsVisible::Yes);
++}
++
+ void ManetteGamepad::absoluteAxisChanged(ManetteDevice*, StandardGamepadAxis axis, double value)
+ {
+     if (axis == StandardGamepadAxis::Unknown)
+diff --git a/Source/WebCore/platform/gamepad/manette/ManetteGamepad.h b/Source/WebCore/platform/gamepad/manette/ManetteGamepad.h
+--- a/Source/WebCore/platform/gamepad/manette/ManetteGamepad.h
++++ b/Source/WebCore/platform/gamepad/manette/ManetteGamepad.h
+@@ -74,6 +74,7 @@
+
+     void absoluteAxisChanged(ManetteDevice*, StandardGamepadAxis, double value);
+     void buttonPressedOrReleased(ManetteDevice*, StandardGamepadButton, bool pressed);
++    void analogButtonChanged(ManetteDevice*, StandardGamepadButton, double value);
+
+ private:
+     const Vector<SharedGamepadValue>& axisValues() const final { return m_axisValues; }
