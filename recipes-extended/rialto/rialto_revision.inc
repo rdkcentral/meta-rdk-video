@@ -7,8 +7,8 @@
 #
 # Please contact DL-Rialto@sky.uk if you want to change this file or in case of problems
 
-RIALTO_SRCREV ?= "d45e77d2b75b0c651eb3e8e6fef803bd264d66a6"
-RIALTO_BRANCH ?= "topic/DecryptLoop"
+RIALTO_SRCREV ?= "5eee279616b3f35a5afdf513131aa830543d1e28"
+RIALTO_BRANCH ?= "feature/RialtoHDMIIssue"
 RIALTO_VERSION ?= "v0.21.0"
 RIALTO_PR ?= "r0"
 
