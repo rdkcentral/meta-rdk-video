@@ -16,7 +16,7 @@ PR = "r42"
 PV = "4.4.5"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git@github.com:Karthick-Somasundaresan/Thunder.git;protocol=https;branch=Debug_RDKEMW-17962;name=thunder"
+SRC_URI = "git://github.com:Karthick-Somasundaresan/Thunder.git;protocol=https;branch=Debug_RDKEMW-17962;name=thunder"
 
 SRCREV_thunder = "40ca385fc33bae7ca21e315bf6bbdf837e66f367"
 
