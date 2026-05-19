@@ -17,7 +17,7 @@ PV = "${RIALTO_GSTREAMER_VERSION}"
 PR = "${RIALTO_GSTREAMER_PR}"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "${RIALTO_GSTREAMER_SRCREV}"
+SRCREV = "5fc5cf711e841d7d2c4803656ca6ff13de18129b"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto-gstreamer;protocol=${CMF_GIT_PROTOCOL};branch=${RIALTO_GSTREAMER_BRANCH}"
 
 DEPENDS = "openssl jsoncpp glib-2.0 gstreamer1.0 gstreamer1.0-plugins-base wpeframework-clientlibraries protobuf protobuf-native rialto rialto-ocdm"
