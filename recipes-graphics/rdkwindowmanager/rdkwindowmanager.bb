@@ -26,6 +26,7 @@ do_install() {
     install -d ${D}/${libdir}
     install -d ${D}${libdir}/plugins/westeros
     install -d ${D}/${includedir}
+    install -d ${D}${datadir}/rdkwindowmanager-protocol
 
     install -m 755 ${B}/librdkwindowmanager.so ${D}/${libdir}/
 
@@ -57,6 +58,9 @@ do_install() {
         install -m 0755 ${B}/rdkwmtest ${D}/${bindir}/
     fi
 
+   if [ -f ${S}/extensions/firebolt_wm/protocol/firebolt_wm.xml ]; then
+      install -m 644 ${S}/extensions/firebolt_wm/protocol/firebolt_wm.xml ${D}${datadir}/rdkwindowmanager-protocol/
+   fi
     install -d ${D}${includedir}/rdkwindowmanager/include/
     install -m 644 ${S}/include/*.h ${D}${includedir}/rdkwindowmanager/include/
 }
@@ -76,4 +80,4 @@ FILES:${PN} += "${libdir}/plugins/westeros/libwstplugin_rdkwmfireboltwm.so"
 FILES:${PN} += "${bindir}/rdkwindowmanager"
 FILES:${PN} += "${bindir}/rdkwindowmanagertest"
 FILES:${PN} += "${bindir}/rdkwmtest"
-
+SYSROOT_DIRS:append = " ${datadir}/rdkwindowmanager-protocol"
