@@ -71,6 +71,7 @@ PACKAGECONFIG[securityagent] = "rdk_enable_securityagent=true,rdk_enable_securit
 PACKAGECONFIG[qa]            = ",,nodejs-native,"
 PACKAGECONFIG[asan]          = "use_asan=true,,gcc-sanitizers"
 PACKAGECONFIG[gold]          = ""
+PACKAGECONFIG[firebolt]      = "rdk_enable_wpecryptography=false rdk_enable_rdkservices_api=false rdk_enable_firebolt_api=true,,firebolt-cpp-client firebolt-cpp-transport"
 
 GN_ARGS_EXTRA ?= ""
 GN_ARGS_EXTRA:append = " sb_enable_cpp20_audit=false"
