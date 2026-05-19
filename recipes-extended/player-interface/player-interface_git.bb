@@ -8,7 +8,7 @@ PR = "r0"
 
 SRCREV = "4e914b2150ecf513d995c504ae3990e8f6b4da3d"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "main"
+PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-16544"
 
 inherit pkgconfig
 inherit cmake
