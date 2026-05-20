@@ -7,7 +7,7 @@
 #
 # Please contact DL-Rialto@sky.uk if you want to change this file or in case of problems
 
-RIALTO_SRCREV ?= "5eee279616b3f35a5afdf513131aa830543d1e28"
+RIALTO_SRCREV ?= "a6011f89f1dc5e8ead0d86d61018ee80f75faccd"
 RIALTO_BRANCH ?= "feature/RialtoHDMIIssue"
 RIALTO_VERSION ?= "v0.21.0"
 RIALTO_PR ?= "r0"
