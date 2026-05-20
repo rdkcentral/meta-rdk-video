@@ -11,8 +11,9 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-xcast;${CMF_GITHUB_SRC_URI_SUFFIX}\
           "
 
-# Release version - 2.1.0
-SRCREV = "08b1b2e6b9b8d0ddba2e4970a3b414b48abf7032"
+# Release version - 2.0.2
+#SRCREV = "0d2bbf0d3236aa06b254cbd4456043f4e5580f2b"
+SRCREV = "d350a564fdc50dcff71d7247412bdf2dd6552c71"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
