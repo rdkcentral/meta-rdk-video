@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-helpers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-SRCREV = "2c0dbbc7191bc2f514d35489f565c4fe7ccdc985"
+SRCREV = "651841eebb3a25110542600884aa81d7de18c473"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -22,6 +22,7 @@ DEPENDS += "wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/ds "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/ds-hal "
+CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/iarmbus"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
