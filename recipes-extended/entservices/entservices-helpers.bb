@@ -22,6 +22,7 @@ DEPENDS += "wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/ds "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/ds-hal "
+CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/iarmbus"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
