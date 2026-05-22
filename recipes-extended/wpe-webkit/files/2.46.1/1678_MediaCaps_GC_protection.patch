@@ -1,0 +1,169 @@
+From 53edfff6e5a4e96ac617aee1530559be4c26958d Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Thu, 21 May 2026 13:20:47 +0200
+Subject: [PATCH] [MediaCapabilities] Protect MediaCapabilities JS wrapper from
+ GC
+
+Add GenerateIsReachable=ReachableFromNavigator to prevent wrapper GC.
+The MediaCapabilities interface is annotated [SameObject] in the spec,
+meaning navigator.mediaCapabilities must return the same object on every
+access. Without GC protection, the JS wrapper can be collected when no
+JS reference holds it, causing a new wrapper to be created on next access.
+This breaks object identity and loses any user-set properties.
+---
+ .../Modules/mediacapabilities/MediaCapabilities.cpp   | 11 +++++++++++
+ .../Modules/mediacapabilities/MediaCapabilities.h     |  8 ++++++--
+ .../Modules/mediacapabilities/MediaCapabilities.idl   |  3 ++-
+ .../mediacapabilities/NavigatorMediaCapabilities.cpp  |  6 +++---
+ .../mediacapabilities/NavigatorMediaCapabilities.h    |  2 +-
+ .../WorkerNavigatorMediaCapabilities.cpp              |  6 +++---
+ .../WorkerNavigatorMediaCapabilities.h                |  2 +-
+ 7 files changed, 27 insertions(+), 11 deletions(-)
+
+diff --git a/Source/WebCore/Modules/mediacapabilities/MediaCapabilities.cpp b/Source/WebCore/Modules/mediacapabilities/MediaCapabilities.cpp
+index 6eca6dd6b30f..a3cfa014b792 100644
+--- a/Source/WebCore/Modules/mediacapabilities/MediaCapabilities.cpp
++++ b/Source/WebCore/Modules/mediacapabilities/MediaCapabilities.cpp
+@@ -42,11 +42,22 @@
+ #include "Page.h"
+ #include "Settings.h"
+ #include "WebRTCProvider.h"
++#include "NavigatorBase.h"
+ #include <wtf/Logger.h>
+ #include <wtf/SortedArrayMap.h>
+ 
+ namespace WebCore {
+ 
++MediaCapabilities::MediaCapabilities(NavigatorBase& navigator)
++    : m_navigator(navigator)
++{
++}
++
++NavigatorBase* MediaCapabilities::navigator()
++{
++    return m_navigator.get();
++}
++
+ static bool isValidMediaMIMEType(const ContentType& contentType)
+ {
+     // A "bucket" MIME types is one whose container type does not uniquely specify a codec.
+diff --git a/Source/WebCore/Modules/mediacapabilities/MediaCapabilities.h b/Source/WebCore/Modules/mediacapabilities/MediaCapabilities.h
+index b9579019c1a7..0ab7a7ad3c44 100644
+--- a/Source/WebCore/Modules/mediacapabilities/MediaCapabilities.h
++++ b/Source/WebCore/Modules/mediacapabilities/MediaCapabilities.h
+@@ -33,18 +33,22 @@
+ namespace WebCore {
+ 
+ class DeferredPromise;
++class NavigatorBase;
+ class ScriptExecutionContext;
+ 
+ class MediaCapabilities : public RefCounted<MediaCapabilities>, public CanMakeWeakPtr<MediaCapabilities> {
+ public:
+-    static Ref<MediaCapabilities> create() { return adoptRef(*new MediaCapabilities); }
++    static Ref<MediaCapabilities> create(NavigatorBase& navigator) { return adoptRef(*new MediaCapabilities(navigator)); }
++
++    NavigatorBase* navigator();
+ 
+     void decodingInfo(ScriptExecutionContext&, MediaDecodingConfiguration&&, Ref<DeferredPromise>&&);
+     void encodingInfo(ScriptExecutionContext&, MediaEncodingConfiguration&&, Ref<DeferredPromise>&&);
+ 
+ private:
+-    MediaCapabilities() = default;
++    explicit MediaCapabilities(NavigatorBase&);
+ 
++    WeakPtr<NavigatorBase> m_navigator;
+     uint64_t m_nextTaskIdentifier { 0 };
+     HashMap<uint64_t, MediaEngineConfigurationFactory::DecodingConfigurationCallback> m_decodingTasks;
+     HashMap<uint64_t, MediaEngineConfigurationFactory::EncodingConfigurationCallback> m_encodingTasks;
+diff --git a/Source/WebCore/Modules/mediacapabilities/MediaCapabilities.idl b/Source/WebCore/Modules/mediacapabilities/MediaCapabilities.idl
+index 05fc7ea634a8..02c367959f19 100644
+--- a/Source/WebCore/Modules/mediacapabilities/MediaCapabilities.idl
++++ b/Source/WebCore/Modules/mediacapabilities/MediaCapabilities.idl
+@@ -25,7 +25,8 @@
+ 
+ [
+     EnabledBySetting=MediaCapabilitiesEnabled,
+-    Exposed=(Window,DedicatedWorker)
++    Exposed=(Window,DedicatedWorker),
++    GenerateIsReachable=ReachableFromNavigator
+ ] interface MediaCapabilities {
+     [CallWith=CurrentScriptExecutionContext] Promise<MediaCapabilitiesDecodingInfo> decodingInfo(MediaDecodingConfiguration configuration);
+     [CallWith=CurrentScriptExecutionContext] Promise<MediaCapabilitiesEncodingInfo> encodingInfo(MediaEncodingConfiguration configuration);
+diff --git a/Source/WebCore/Modules/mediacapabilities/NavigatorMediaCapabilities.cpp b/Source/WebCore/Modules/mediacapabilities/NavigatorMediaCapabilities.cpp
+index fce51add8aa6..6608175e1094 100644
+--- a/Source/WebCore/Modules/mediacapabilities/NavigatorMediaCapabilities.cpp
++++ b/Source/WebCore/Modules/mediacapabilities/NavigatorMediaCapabilities.cpp
+@@ -31,8 +31,8 @@
+ 
+ namespace WebCore {
+ 
+-NavigatorMediaCapabilities::NavigatorMediaCapabilities()
+-    : m_mediaCapabilities(MediaCapabilities::create())
++NavigatorMediaCapabilities::NavigatorMediaCapabilities(Navigator& navigator)
++    : m_mediaCapabilities(MediaCapabilities::create(navigator))
+ {
+ }
+ 
+@@ -47,7 +47,7 @@ NavigatorMediaCapabilities& NavigatorMediaCapabilities::from(Navigator& navigato
+ {
+     NavigatorMediaCapabilities* supplement = static_cast<NavigatorMediaCapabilities*>(Supplement<Navigator>::from(&navigator, supplementName()));
+     if (!supplement) {
+-        auto newSupplement = makeUnique<NavigatorMediaCapabilities>();
++        auto newSupplement = makeUnique<NavigatorMediaCapabilities>(navigator);
+         supplement = newSupplement.get();
+         provideTo(&navigator, supplementName(), WTFMove(newSupplement));
+     }
+diff --git a/Source/WebCore/Modules/mediacapabilities/NavigatorMediaCapabilities.h b/Source/WebCore/Modules/mediacapabilities/NavigatorMediaCapabilities.h
+index 76d598e18af9..3b8baad4b592 100644
+--- a/Source/WebCore/Modules/mediacapabilities/NavigatorMediaCapabilities.h
++++ b/Source/WebCore/Modules/mediacapabilities/NavigatorMediaCapabilities.h
+@@ -35,7 +35,7 @@ class Navigator;
+ class NavigatorMediaCapabilities final : public Supplement<Navigator> {
+     WTF_MAKE_FAST_ALLOCATED;
+ public:
+-    NavigatorMediaCapabilities();
++    explicit NavigatorMediaCapabilities(Navigator&);
+     ~NavigatorMediaCapabilities();
+ 
+     static MediaCapabilities& mediaCapabilities(Navigator&);
+diff --git a/Source/WebCore/Modules/mediacapabilities/WorkerNavigatorMediaCapabilities.cpp b/Source/WebCore/Modules/mediacapabilities/WorkerNavigatorMediaCapabilities.cpp
+index 7a617b33a87b..1c4606d27ba1 100644
+--- a/Source/WebCore/Modules/mediacapabilities/WorkerNavigatorMediaCapabilities.cpp
++++ b/Source/WebCore/Modules/mediacapabilities/WorkerNavigatorMediaCapabilities.cpp
+@@ -31,8 +31,8 @@
+ 
+ namespace WebCore {
+ 
+-WorkerNavigatorMediaCapabilities::WorkerNavigatorMediaCapabilities()
+-    : m_mediaCapabilities(MediaCapabilities::create())
++WorkerNavigatorMediaCapabilities::WorkerNavigatorMediaCapabilities(WorkerNavigator& navigator)
++    : m_mediaCapabilities(MediaCapabilities::create(navigator))
+ {
+ }
+ 
+@@ -47,7 +47,7 @@ WorkerNavigatorMediaCapabilities& WorkerNavigatorMediaCapabilities::from(WorkerN
+ {
+     auto* supplement = static_cast<WorkerNavigatorMediaCapabilities*>(Supplement<WorkerNavigator>::from(&navigator, supplementName()));
+     if (!supplement) {
+-        auto newSupplement = makeUnique<WorkerNavigatorMediaCapabilities>();
++        auto newSupplement = makeUnique<WorkerNavigatorMediaCapabilities>(navigator);
+         supplement = newSupplement.get();
+         provideTo(&navigator, supplementName(), WTFMove(newSupplement));
+     }
+diff --git a/Source/WebCore/Modules/mediacapabilities/WorkerNavigatorMediaCapabilities.h b/Source/WebCore/Modules/mediacapabilities/WorkerNavigatorMediaCapabilities.h
+index 98fffdb05096..f1d698e73cf9 100644
+--- a/Source/WebCore/Modules/mediacapabilities/WorkerNavigatorMediaCapabilities.h
++++ b/Source/WebCore/Modules/mediacapabilities/WorkerNavigatorMediaCapabilities.h
+@@ -35,7 +35,7 @@ class WorkerNavigator;
+ class WorkerNavigatorMediaCapabilities final : public Supplement<WorkerNavigator> {
+     WTF_MAKE_FAST_ALLOCATED;
+ public:
+-    WorkerNavigatorMediaCapabilities();
++    explicit WorkerNavigatorMediaCapabilities(WorkerNavigator&);
+     ~WorkerNavigatorMediaCapabilities();
+ 
+     static MediaCapabilities& mediaCapabilities(WorkerNavigator&);
+-- 
+2.51.0
+
