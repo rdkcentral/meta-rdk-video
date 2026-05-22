@@ -14,8 +14,8 @@ SRCREV_FORMAT = "hdmicec"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 
 #remove vendor-hdmicec-hal depends
-DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
-RDEPENDS:${PN} = " devicesettings telemetry"
+DEPENDS = "glib-2.0 dbus iarmbus hdmicecheader virtual/vendor-hdmicec-hal telemetry"
+RDEPENDS:${PN} = " telemetry"
 
 DEPENDS += "safec-common-wrapper"
 
