@@ -2,12 +2,12 @@ DESCRIPTION = "Apparmor generic profiles RDK"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://rdk-apparmor-profiles/LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "2.4.0"
+PV = "2.4.1"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit pkgconfig autotools systemd
-SRCREV_rdk-apparmor-profiles = "772b7090262672edf6c66f801cb7ec9ce8796519"
+SRCREV_rdk-apparmor-profiles = "1486b2e08e26b540bf7be71b1b6bcf1697c3d329"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdk-apparmor-profiles.git;${CMF_GITHUB_SRC_URI_SUFFIX};destsuffix=git/rdk-apparmor-profiles;name=rdk-apparmor-profiles"
 
 S = "${WORKDIR}/git"
