@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-helpers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-SRCREV = "81146cc6bacc357f6d0e98f90d793d619bcfa465"
+SRCREV = "4597e2bdcc0b81a63c794d625b32cc8d15746801"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
