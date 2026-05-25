@@ -11,7 +11,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-account;${CMF_GITHUB_SRC_URI_SUFFIX}"
           
 # Release version - 1.0.4
-SRCREV = "e6f5fff3e3678e6870dcb45ddc3eb9d50e2d9663"
+SRCREV = "a3eb7ff6920aab8b9dc6933cebf32d806be2eb40"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -29,7 +29,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 "
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
-PACKAGECONFIG[account] = "-DPLUGIN_ACCOUNT=ON,,entservices-apis,entservices-apis"
+PACKAGECONFIG[account] = "-DPLUGIN_ACCOUNT=ON,,entservices-apis entservices-helpers,entservices-apis entservices-helpers"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \

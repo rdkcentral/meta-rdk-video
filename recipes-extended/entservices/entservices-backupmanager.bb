@@ -11,7 +11,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-backupmanager;${CMF_GITHUB_SRC_URI_SUFFIX}"
           
 # Release version - 1.0.2
-SRCREV = "2163d5257683d018ad273f766092caa21c03df83"
+SRCREV = "581ea7a734e4c24301ecb82f4e570eb89213acca"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -31,7 +31,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 "
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
-PACKAGECONFIG[backupmanager] = "-DPLUGIN_BACKUPMANAGER=ON,,entservices-apis,entservices-apis"
+PACKAGECONFIG[backupmanager] = "-DPLUGIN_BACKUPMANAGER=ON,,entservices-apis entservices-helpers,entservices-apis entservices-helpers"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \

@@ -9,11 +9,10 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-warehouse;${CMF_GITHUB_SRC_URI_SUFFIX}\
-    file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
     file://rdkservices.ini \
     "
 # Release version - 1.0.4
-SRCREV = "c2982b472824dc5d5bea8e595a906598fee9ba60"
+SRCREV = "3e4a737e970c95d7b5f00cb06b658843d3190e51"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -44,7 +43,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc entservices-apis devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc entservices-apis devicesettings"
+PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc entservices-apis entservices-helpers devicesettings"
 
 # ----------------------------------------------------------------------------
 

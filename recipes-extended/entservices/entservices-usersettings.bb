@@ -8,10 +8,9 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "${PV}"
+SRCREV = "a6650997751333e876edbf4efc69161d119e332f"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usersettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -54,7 +53,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agen
 
 # ----------------------------------------------------------------------------
 # Define plugin configurations
-PACKAGECONFIG[usersettings]         = "-DPLUGIN_USERSETTINGS=ON,-DPLUGIN_USERSETTINGS=OFF,"
+PACKAGECONFIG[usersettings]         = "-DPLUGIN_USERSETTINGS=ON,-DPLUGIN_USERSETTINGS=OFF,entservices-helpers,entservices-helpers"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 # ----------------------------------------------------------------------------
 
