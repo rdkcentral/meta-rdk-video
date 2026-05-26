@@ -1,13 +1,13 @@
-From 87b5186c6447e29bf091bdd52cfeb146d210a0f8 Mon Sep 17 00:00:00 2001
+From 2b9e95f517b34c30f129ec74919f1a1d788798f3 Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Tue, 26 May 2026 10:22:07 +0000
+Date: Wed, 27 May 2026 08:39:50 +0000
 Subject: [PATCH] add opencdm_system_supported_robustness to rialto-ocdm
 
 ---
  .../include/MediaKeysCapabilitiesBackend.h    |  1 +
  .../source/MediaKeysCapabilitiesBackend.cpp   | 11 +++++
- library/source/open_cdm.cpp                   | 43 +++++++++++++++++++
- 3 files changed, 55 insertions(+)
+ library/source/open_cdm.cpp                   | 42 +++++++++++++++++++
+ 3 files changed, 54 insertions(+)
 
 diff --git a/library/include/MediaKeysCapabilitiesBackend.h b/library/include/MediaKeysCapabilitiesBackend.h
 index baf3706..3d05217 100644
@@ -44,17 +44,16 @@ index f0dd064..ad66d4f 100644
  {
      std::shared_ptr<firebolt::rialto::IMediaKeysCapabilitiesFactory> factory =
 diff --git a/library/source/open_cdm.cpp b/library/source/open_cdm.cpp
-index 95fb919..c2a5824 100644
+index 95fb919..23f2eeb 100644
 --- a/library/source/open_cdm.cpp
 +++ b/library/source/open_cdm.cpp
-@@ -82,6 +82,49 @@ OpenCDMError opencdm_destruct_system(struct OpenCDMSystem *system)
+@@ -82,6 +82,48 @@ OpenCDMError opencdm_destruct_system(struct OpenCDMSystem *system)
      return ERROR_NONE;
  }
  
 +OpenCDMError opencdm_system_supported_robustness(struct OpenCDMSystem *system, char ***robustness,
 +                                                  uint16_t *count)
 +{
-+    printf("%d %s KKP:Rialto\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
 +    kLog << debug << __func__;
 +    if (!system || !robustness || !count)
 +    {
