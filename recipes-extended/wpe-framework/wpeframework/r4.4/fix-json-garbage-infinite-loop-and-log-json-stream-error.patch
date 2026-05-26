@@ -173,7 +173,7 @@ index 00000000..ffe2a555
 +)
 +
 +set_target_properties(StreamJSONGarbageTest PROPERTIES
-+    CXX_STANDARD ${CXX_STD}
++    CXX_STANDARD 11
 +    CXX_STANDARD_REQUIRED YES
 +)
 +
