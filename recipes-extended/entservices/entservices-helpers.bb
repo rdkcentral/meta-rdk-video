@@ -27,6 +27,7 @@ CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/iarmbus"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
+    -DUSE_THUNDER_COMMUNICATION=ON \
 "
 
 # ----------------------------------------------------------------------------
