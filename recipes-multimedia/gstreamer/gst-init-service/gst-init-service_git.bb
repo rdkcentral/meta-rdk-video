@@ -3,7 +3,7 @@ DESCRIPTION = "GStreamer registry cleanup service for post-CDL bootup"
 SECTION = "console/utils"
 
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://${LAYERDIR}/LICENSE;md5=5bfad6e034e497ee148eec56e175c6e8"
+LIC_FILES_CHKSUM = "file://${THISDIR}/../../../licenses/Apache-2.0;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 PV = "1.0.0"
 PR = "r0"
