@@ -12,14 +12,14 @@ index be4c18a0..4ae9af40 100644
                      break;
                  }
 diff --git a/Source/core/StreamJSON.h b/Source/core/StreamJSON.h
-index 97eb5918..efd3a5d4 100644
+index 97eb5918..8a49cb7c 100644
 --- a/Source/core/StreamJSON.h
 +++ b/Source/core/StreamJSON.h
 @@ -23,6 +23,7 @@
  #include "JSON.h"
  #include "Module.h"
  #include "Portability.h"
-+#include "syslog.h"
++#include <syslog.h>
  
  namespace WPEFramework {
  namespace Core {
@@ -122,10 +122,10 @@ index 97eb5918..efd3a5d4 100644
              return (handled);
          }
 diff --git a/Source/core/Trace.h b/Source/core/Trace.h
-index be535723..976513d4 100644
+index be535723..015f94f4 100644
 --- a/Source/core/Trace.h
 +++ b/Source/core/Trace.h
-@@ -205,6 +205,22 @@ namespace WPEFramework {
+@@ -205,6 +205,23 @@ namespace WPEFramework {
              Core::LogMessage(Core::ToString(__FILE__).c_str(), __LINE__, MESSAGE)); \
      }
  
@@ -138,6 +138,7 @@ index be535723..976513d4 100644
 +#ifdef __WINDOWS__
 +    #define CC_SYSLOG(format, ...) CC_SYSLOG_COMMON(format, ##__VA_ARGS__)
 +#else
++#include <syslog.h>
 +    #define CC_SYSLOG(format, ...)                                          \
 +        do {                                                                \
 +            syslog(LOG_ERR, "CRITICAL CONDITION! " format, ##__VA_ARGS__);  \
@@ -563,16 +564,3 @@ index 00000000..613ea64f
 +
 +#undef EXTERNAL
 +#define EXTERNAL
-diff --git a/Source/core/StreamJSON.h b/Source/core/StreamJSON.h
-index efd3a5d4..8a49cb7c 100644
---- a/Source/core/StreamJSON.h
-+++ b/Source/core/StreamJSON.h
-@@ -23,7 +23,7 @@
- #include "JSON.h"
- #include "Module.h"
- #include "Portability.h"
--#include "syslog.h"
-+#include <syslog.h>
- 
- namespace WPEFramework {
- namespace Core {
