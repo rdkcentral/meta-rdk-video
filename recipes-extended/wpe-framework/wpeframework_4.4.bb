@@ -70,6 +70,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/PR-2057-RDKEMW-14229_apply_sysinfo_mem_unit.patch \
             file://r4.4/0001-LIMIT-Limit-handing-out-interfaces-of-Plugins-only-i.patch \
             file://r4.4/StartCOMServerAfterControllerInit.patch \
+            file://r4.4/fix_stream_json_error.patch \
            "
 
 S = "${WORKDIR}/git"
