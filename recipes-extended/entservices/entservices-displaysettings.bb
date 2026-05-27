@@ -2,7 +2,7 @@ SUMMARY = "ENTServices displaysettings plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.4.1"
+PV = "1.5.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_S
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://rdkservices.ini \
           "
-# Release version - 1.4.1
-SRCREV = "5241c73cb096b37fd3f8ebbc6003c8d58ea55637"
+# Release version - 1.5.0
+SRCREV = "f4c9f645b4860f115a45c5f16e9a24af94ffa991"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
