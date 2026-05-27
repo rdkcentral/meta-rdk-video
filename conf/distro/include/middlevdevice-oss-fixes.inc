@@ -60,10 +60,8 @@ BBMASK .= "|meta-middleware-restricted-support/recipes-core/packagegroups/packag
 BBMASK .= "|meta-middleware-generic-support/recipes-core/images/middleware-test-image.bb"
 
 # Mask rdk-halif-aidl from meta-vendor-vdevice (using BSP version)
-BBMASK += "|meta-vendor-vdevice/recipes-media/rdk-halif-aidl/rdk-halif-aidl.bb"
 BBMASK += "|meta-vendor-vdevice/recipes-multimedia/.*"
 BBMASK += "|meta-vendor-vdevice/recipes-media/.*"
-BBMASK += "|meta-vendor-vdevice/recipes-vendor-aidl-hal/rdk-hdmi-hal/hdmicec/hdmicec_git.bb"
 # ============================================================================
 # DISTRO_FEATURES adjustments
 # ============================================================================
