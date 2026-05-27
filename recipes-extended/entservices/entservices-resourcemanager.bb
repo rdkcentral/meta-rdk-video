@@ -83,6 +83,8 @@ do_install:append() {
 # ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
+# Keep explicit plugin file entries to avoid installed-vs-shipped QA on unversioned plugin .so files.
+FILES:${PN} += "${libdir}/wpeframework/plugins/libWPEFrameworkResourceManager.so"
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
