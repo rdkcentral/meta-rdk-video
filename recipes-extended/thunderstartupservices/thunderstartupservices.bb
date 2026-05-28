@@ -35,6 +35,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-persistentstore.service \
     wpeframework-playerinfo.service \
     wpeframework-sharedstorage.service \
+    wpeframework-migration.service \
     wpeframework-system.service \
     wpeframework-migration.service \
     wpeframework-systemaudioplayer.service \
