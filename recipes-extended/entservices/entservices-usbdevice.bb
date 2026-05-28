@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "72feee517fd0c28ed437d5fde0363777ecbef799"
+SRCREV = "e92cd5f8eec28cdcd51a02fdec5ba4bab2ccac5e"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usbdevice;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
