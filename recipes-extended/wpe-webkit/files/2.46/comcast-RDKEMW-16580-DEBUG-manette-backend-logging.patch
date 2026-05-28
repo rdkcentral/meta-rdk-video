@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Petar Tijanic <petar_tijanic@comcast.com>
+Date: Thu, 28 May 2026 00:00:00 +0000
+Subject: [PATCH] RDKEMW-16580: [WPE][DEBUG] Log libmanette gamepad backend activity
+
+Temporary debug logging to confirm at runtime that the libmanette gamepad
+backend (not libwpe) is active on the device, and to trace haptics. Uses
+WTFLogAlways so the lines are printed even in release builds. Emits on:
+ - provider construction (backend active)
+ - device connect
+ - ManetteGamepad construction (rumble capability)
+ - analog trigger updates (verbose)
+ - playEffect / startRumble (haptics)
+
+Drop this patch once the gamepad/haptics path is confirmed on the box.
+---
+diff --git a/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp b/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp
+index a9c987c..8cddc6e 100644
+--- a/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp
++++ b/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp
+@@ -167,6 +167,8 @@ ManetteGamepad::ManetteGamepad(ManetteDevice* device, unsigned index)
+     if (manette_device_has_rumble(m_device.get()))
+         m_supportedEffectTypes.add(GamepadHapticEffectType::DualRumble);
+
++    WTFLogAlways("[GAMEPAD][manette] ManetteGamepad created index=%u id='%s' hasRumble=%d", index, m_id.utf8().data(), manette_device_has_rumble(m_device.get()));
++
+     g_signal_connect(device, "button-press-event", G_CALLBACK(onButtonPressEvent), this);
+     g_signal_connect(device, "button-release-event", G_CALLBACK(onButtonReleaseEvent), this);
+     g_signal_connect(device, "absolute-axis-event", G_CALLBACK(onAbsoluteAxisEvent), this);
+@@ -193,6 +195,7 @@ void ManetteGamepad::analogButtonChanged(ManetteDevice*, StandardGamepadButton b
+     if (button == StandardGamepadButton::Unknown)
+         return;
+
++    WTFLogAlways("[GAMEPAD][manette] analog trigger button=%d value=%.3f", static_cast<int>(button), value);
+     m_lastUpdateTime = MonotonicTime::now();
+     m_buttonValues[static_cast<int>(button)].setValue(clampTo(value, 0.0, 1.0));
+
+@@ -212,6 +215,7 @@ void ManetteGamepad::absoluteAxisChanged(ManetteDevice*, StandardGamepadAxis axi
+
+ void ManetteGamepad::playEffect(GamepadHapticEffectType type, const GamepadEffectParameters& parameters, CompletionHandler<void(bool)>&& completionHandler)
+ {
++    WTFLogAlways("[GAMEPAD][manette] playEffect type=%d strong=%.2f weak=%.2f durationMs=%.0f startDelayMs=%.0f", static_cast<int>(type), parameters.strongMagnitude, parameters.weakMagnitude, parameters.duration, parameters.startDelay);
+     if (!m_supportedEffectTypes.contains(type))
+         return completionHandler(false);
+
+@@ -248,6 +252,7 @@ void ManetteGamepad::effectDelayTimerFired()
+
+ void ManetteGamepad::startRumble(const GamepadEffectParameters& parameters)
+ {
++    WTFLogAlways("[GAMEPAD][manette] startRumble -> manette_device_rumble strong=%.2f weak=%.2f durationMs=%.0f", parameters.strongMagnitude, parameters.weakMagnitude, parameters.duration);
+ #if LIBMANETTE_CHECK_VERSION(0, 2, 13)
+     manette_device_rumble(m_device.get(), parameters.strongMagnitude, parameters.weakMagnitude, static_cast<guint>(parameters.duration));
+ #else
+diff --git a/Source/WebCore/platform/gamepad/manette/ManetteGamepadProvider.cpp b/Source/WebCore/platform/gamepad/manette/ManetteGamepadProvider.cpp
+index 0296ddc..bcd0a45 100644
+--- a/Source/WebCore/platform/gamepad/manette/ManetteGamepadProvider.cpp
++++ b/Source/WebCore/platform/gamepad/manette/ManetteGamepadProvider.cpp
+@@ -61,6 +61,7 @@ ManetteGamepadProvider::ManetteGamepadProvider()
+     , m_initialGamepadsConnectedTimer(RunLoop::current(), this, &ManetteGamepadProvider::initialGamepadsConnectedTimerFired)
+     , m_inputNotificationTimer(RunLoop::current(), this, &ManetteGamepadProvider::inputNotificationTimerFired)
+ {
++    WTFLogAlways("[GAMEPAD][manette] ManetteGamepadProvider active - libmanette backend in use (not libwpe)");
+     g_signal_connect(m_monitor.get(), "device-connected", G_CALLBACK(onDeviceConnected), this);
+     g_signal_connect(m_monitor.get(), "device-disconnected", G_CALLBACK(onDeviceDisconnected), this);
+ }
+@@ -123,6 +124,7 @@ void ManetteGamepadProvider::deviceConnected(ManetteDevice* device)
+     ASSERT(!m_gamepadMap.get(device));
+
+     LOG(Gamepad, "ManetteGamepadProvider device %p added", device);
++    WTFLogAlways("[GAMEPAD][manette] device connected: '%s'", manette_device_get_name(device));
+
+     unsigned index = indexForNewlyConnectedDevice();
+     auto gamepad = makeUnique<ManetteGamepad>(device, index);

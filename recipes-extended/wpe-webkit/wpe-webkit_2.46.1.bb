@@ -62,6 +62,8 @@ SRC_URI += "file://2.46/comcast-RDKTV-28214-Quick-_exit.patch"
 SRC_URI += "file://2.46/comcast-RDKEMW-16580-WPE-Switch-gamepad-backend-from-libwpe-to-libmanette.patch"
 SRC_URI += "file://2.46/comcast-RDKEMW-16580-Backport-Implement-playEffect-via-libmanette-rumble.patch"
 SRC_URI += "file://2.46/comcast-RDKEMW-18589-WPE-Add-analog-trigger-support-via-libmanette.patch"
+# in wpe-webkit_2.46.1.bb, after the analog trigger line, add:
+SRC_URI += "file://2.46/comcast-RDKEMW-16580-DEBUG-manette-backend-logging.patch"
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"
