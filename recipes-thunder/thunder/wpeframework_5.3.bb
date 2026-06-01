@@ -102,9 +102,6 @@ INSANE_SKIP:${PN}-dbg += "dev-so"
 
 # ----------------------------------------------------------------------------
 
-RDEPENDS:${PN}_rpi = "userland"
-RDEPENDS:${PN}:append:rpi = " ${@bb.utils.contains('DISTRO_FEATURES', 'vc4graphics', '', 'userland', d)}"
-
 inherit breakpad-logmapper syslog-ng-config-gen logrotate_config
 
 SYSLOG-NG_FILTER = "thunder"
