@@ -23,9 +23,8 @@ INHERIT_BREAKPAD_WRAPPER := "${@bb.utils.contains('BBLAYERS', '${RDKROOT}/meta-r
 
 inherit cmake pkgconfig coverity ${INHERIT_BREAKPAD_WRAPPER}
 
-DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', '', d)}"
-CFLAGS:append  = "${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --cflags libsafec`', ' -DSAFEC_DUMMY_API', d)}"
-LDFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
+DEPENDS:append       = "${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', '', d)}"
+EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' -DUSE_SAFEC=ON', '', d)}"
 
 # Set to "1" in recipe append to enable/disable HTTP or WS support
 ENABLE_HTTP_SUPPORT    ?= "0"
