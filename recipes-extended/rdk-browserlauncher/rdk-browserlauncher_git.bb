@@ -6,7 +6,7 @@ S = "${WORKDIR}/git/BrowserLauncher"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-runtime;${CMF_GITHUB_SRC_URI_SUFFIX}"
-SRCREV = "3966f4f7c23ab29f86f5ae8a764a9aac6344d8b9"
+SRCREV = "8218ba93979a914f17c75bb7a65e4a9f83327b0b"
 PV .= "+${@bb.fetch2.get_srcrev(d).replace('AUTOINC+','')}"
 
 inherit pkgconfig cmake
