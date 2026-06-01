@@ -1,0 +1,50 @@
+From 8a4d4c22e96b75669c2b0cb3e8d7f9d8625a5b36 Mon Sep 17 00:00:00 2001
+From: Copilot <copilot@local>
+Date: Mon, 1 Jun 2026 09:00:00 +0000
+Subject: [PATCH] hdmicec: guard 1-byte frames on AIDL backend
+
+AIDL HdmiCecControllerImpl rejects 1-byte CEC frames with
+EX_ILLEGAL_ARGUMENT ("Invalid message size: 1").
+
+Protect both writeAsync() and write() from forwarding 1-byte
+frames to sendMessage(). For synchronous write, map this case to
+CECNoAckException so caller ping/poll flows treat it as unreachable.
+
+---
+ ccec/src/DriverImpl.cpp | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/ccec/src/DriverImpl.cpp b/ccec/src/DriverImpl.cpp
+index 4ec84df..22b2e95 100644
+--- a/ccec/src/DriverImpl.cpp
++++ b/ccec/src/DriverImpl.cpp
+@@ -309,6 +309,13 @@ void  DriverImpl::writeAsync(const CECFrame &frame)  noexcept(false)
+ 	frame.getBuffer(&buf, &length);
+ 	printFrameDetails(frame);
+ 
++	if (length <= 1) {
++		/* AIDL sendMessage rejects 1-byte CEC poll frames. */
++		CCEC_LOG(LOG_WARN,
++			"DriverImpl::writeAsync skipping unsupported 1-byte CEC frame on AIDL backend.\\r\\n");
++		return;
++	}
++
+     {AutoLock lock_(mutex);
+     	if (status != OPENED) {
+     		throw InvalidStateException();
+@@ -354,6 +361,13 @@ void  DriverImpl::write(const CECFrame &frame)  noexcept(false)
+ 	frame.getBuffer(&buf, &length);
+ 	printFrameDetails(frame);
+ 
++	if (length <= 1) {
++		/* Preserve ping/poll semantics as a no-ack condition on AIDL backend. */
++		CCEC_LOG(LOG_WARN,
++			"DriverImpl::write blocking unsupported 1-byte CEC frame on AIDL backend. Returning no-ack.\\r\\n");
++		throw CECNoAckException();
++	}
++
+     {AutoLock lock_(mutex);
+     	if (status != OPENED) {
+     		throw InvalidStateException();
+-- 
+2.43.0

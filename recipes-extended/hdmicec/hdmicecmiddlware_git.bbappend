@@ -1,4 +1,6 @@
 DEPENDS:append:x86-64 = " rdk-halif-aidl libbinder"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+SRC_URI:append:x86-64 = " file://0001-hdmicec-guard-1byte-aidl-sendMessage.patch"
 
 # Force the x86/vdevice build to fetch the AIDL-based hdmicec source instead of the
 # legacy recipe-pinned SHA from meta-rdk-video.
