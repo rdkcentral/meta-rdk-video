@@ -12,18 +12,10 @@ index be4c18a0..4ae9af40 100644
                      break;
                  }
 diff --git a/Source/core/StreamJSON.h b/Source/core/StreamJSON.h
-index 97eb5918..8a49cb7c 100644
+index 97eb5918..3bb48ce7 100644
 --- a/Source/core/StreamJSON.h
 +++ b/Source/core/StreamJSON.h
-@@ -23,6 +23,7 @@
- #include "JSON.h"
- #include "Module.h"
- #include "Portability.h"
-+#include <syslog.h>
- 
- namespace WPEFramework {
- namespace Core {
-@@ -113,6 +114,7 @@ namespace Core {
+@@ -113,6 +113,7 @@ namespace Core {
                  , _factory(slotSize)
                  , _current()
                  , _offset(0)
@@ -31,7 +23,7 @@ index 97eb5918..8a49cb7c 100644
              {
              }
              DeserializerImpl(ParentClass& parent, ALLOCATOR allocator)
-@@ -120,6 +122,7 @@ namespace Core {
+@@ -120,6 +121,7 @@ namespace Core {
                  , _factory(allocator)
                  , _current()
                  , _offset(0)
@@ -39,7 +31,7 @@ index 97eb5918..8a49cb7c 100644
              {
  			}
              ~DeserializerImpl()
-@@ -140,10 +143,29 @@ namespace Core {
+@@ -140,10 +142,29 @@ namespace Core {
                      _offset = 0;
                  }
                  if (_current.IsValid() == true) {
@@ -73,7 +65,7 @@ index 97eb5918..8a49cb7c 100644
                      }
                  }
  
-@@ -151,18 +173,27 @@ namespace Core {
+@@ -151,18 +172,27 @@ namespace Core {
              }
  
          private:
@@ -104,7 +96,7 @@ index 97eb5918..8a49cb7c 100644
          };
  
          class HandlerType : public SOURCE {
-@@ -287,12 +318,14 @@ POP_WARNING()
+@@ -287,12 +317,14 @@ POP_WARNING()
          uint16_t ReceiveData(uint8_t* dataFrame, const uint16_t receivedSize)
          {
              uint16_t handled = 0;
@@ -121,23 +113,6 @@ index 97eb5918..8a49cb7c 100644
  
              return (handled);
          }
-diff --git a/Source/core/Trace.h b/Source/core/Trace.h
-index be535723..eddcd847 100644
---- a/Source/core/Trace.h
-+++ b/Source/core/Trace.h
-@@ -205,6 +205,12 @@ namespace WPEFramework {
-             Core::LogMessage(Core::ToString(__FILE__).c_str(), __LINE__, MESSAGE)); \
-     }
- 
-+#define CC_SYSLOG(format, ...)                                              \
-+    do {                                                                    \
-+        fprintf(stderr, "CRITICAL CONDITION! " format "\n", ##__VA_ARGS__); \
-+        fflush(stderr);                                                     \
-+    } while(0)
-+
- namespace WPEFramework {
- namespace Core {
-     class TextFragment;
 diff --git a/Tests/CMakeLists.txt b/Tests/CMakeLists.txt
 index 9a82f9c6..a682386b 100644
 --- a/Tests/CMakeLists.txt
@@ -172,7 +147,7 @@ index 00000000..ffe2a555
 +)
 +
 +set_target_properties(StreamJSONGarbageTest PROPERTIES
-+    CXX_STANDARD 11
++    CXX_STANDARD ${CXX_STD}
 +    CXX_STANDARD_REQUIRED YES
 +)
 +
@@ -553,3 +528,45 @@ index 00000000..613ea64f
 +
 +#undef EXTERNAL
 +#define EXTERNAL
+diff --git a/Source/core/Trace.h b/Source/core/Trace.h
+index be535723..5dc7147e 100644
+--- a/Source/core/Trace.h
++++ b/Source/core/Trace.h
+@@ -205,6 +205,12 @@ namespace WPEFramework {
+             Core::LogMessage(Core::ToString(__FILE__).c_str(), __LINE__, MESSAGE)); \
+     }
+ 
++#define CC_SYSLOG(format, ...)                                       \
++    do {                                                                    \
++        fprintf(stderr, "CRITICAL CONDITION! " format "\n", ##__VA_ARGS__); \
++        fflush(stderr);                                                     \
++    } while(0)
++
+ namespace WPEFramework {
+ namespace Core {
+     class TextFragment;
+diff --git a/Tests/CMakeLists.txt b/Tests/CMakeLists.txt
+index a682386b..3e0df854 100644
+--- a/Tests/CMakeLists.txt
++++ b/Tests/CMakeLists.txt
+@@ -26,4 +26,5 @@ endif()
+ 
+ if(STREAMJSON_GARBAGE_TEST)
+     add_subdirectory(streamjson-garbage)
+-endif()
+\ No newline at end of file
++endif()
++
+diff --git a/Tests/streamjson-garbage/CMakeLists.txt b/Tests/streamjson-garbage/CMakeLists.txt
+index ffe2a555..c753571b 100644
+--- a/Tests/streamjson-garbage/CMakeLists.txt
++++ b/Tests/streamjson-garbage/CMakeLists.txt
+@@ -5,7 +5,7 @@ add_executable(StreamJSONGarbageTest
+ )
+ 
+ set_target_properties(StreamJSONGarbageTest PROPERTIES
+-    CXX_STANDARD ${CXX_STD}
++    CXX_STANDARD 11
+     CXX_STANDARD_REQUIRED YES
+ )
+ 
