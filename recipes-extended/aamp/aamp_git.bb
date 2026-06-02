@@ -9,7 +9,7 @@ PR = "r0"
 SRCREV_FORMAT = "aamp"
 
 
-SRCREV_aamp ?= "cb758566a590fe72e77055ba250dbdfe6341ea8c"
+SRCREV_aamp ?= "66a437b8c916223ec5ace6ab5f4dd47a28f19a31"
 
 
 
