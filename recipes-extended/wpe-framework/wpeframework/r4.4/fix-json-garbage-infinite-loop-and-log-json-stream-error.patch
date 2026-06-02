@@ -3,6 +3,8 @@ From: SatheeshkumarG15 <satheeshkumar00150@gmail.com>
 Date: Tue, 2 Jun 2026 10:46:47 +0530
 Subject: [PATCH] Fix infinite loop while processing incomplete JSON data
 
+Signed-off-by: Satheeshkumar G <satheeshkumar_g@comcast.com>
+
 ---
  Source/core/JSON.h                       |   2 +-
  Source/core/StreamJSON.h                 |  50 +++-
