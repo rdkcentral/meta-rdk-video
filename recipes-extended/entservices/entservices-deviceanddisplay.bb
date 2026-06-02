@@ -10,10 +10,11 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+           file://ds-processes-load.sh \
           "
 
 # Release version - 3.4.4.9
-SRCREV = "98c646d46d4e65fe000e59083091d181d24819a9"
+SRCREV = "7b9b3d1c5ec83ac407ab452a131ee695a236a03f"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -106,12 +107,14 @@ do_install:append() {
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
     fi
 
-        install -m 0644 ${THISDIR}/files/displaysettings.ini ${D}${sysconfdir}/rfcdefaults/
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f ! -name "PowerManager.json" | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
     fi
+
+    install -d ${D}${base_libdir}/rdk
+    install -m 0755 ${WORKDIR}/ds-processes-load.sh ${D}${base_libdir}/rdk/ds-processes-load.sh
 }
 
 # ----------------------------------------------------------------------------
