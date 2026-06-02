@@ -9,6 +9,7 @@ PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRCREV_hdmicec = "1ce51f4b0592f75775797e600998419054be6ade"
+SRCREV_hdmicec:vdevice_x86-64 = "f0c27ca6627d00fb3f87d96dfe1624ce00bb0f29"
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
 
@@ -16,6 +17,7 @@ DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmic
 RDEPENDS:${PN} = " devicesettings telemetry"
 
 DEPENDS += "safec-common-wrapper"
+DEPENDS:append:vdevice_x86-64 = " rdk-halif-aidl libbinder"
 
 ASNEEDED = ""
 ALLOW_EMPTY:${PN} = "1"
@@ -47,6 +49,9 @@ LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-confi
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
+CFLAGS:append:vdevice_x86-64 = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+CXXFLAGS:append:vdevice_x86-64 = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+
 INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/ds-hal \
     "
@@ -62,6 +67,30 @@ do_install:append() {
 #        install -m 0644 ${S}/cecdevmgr.service ${D}${systemd_unitdir}/system
 #        install -d ${D}${base_libdir}/rdk
 }
+
+do_configure:append:vdevice_x86-64() {
+    # Patch the generated Makefile to:
+    #  1. link the AIDL stubs archive into libRCEC.so so typeinfo symbols are defined
+    #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
+    #     runtime from libbinder.so (which rdk-halif-aidl installs)
+    sed -i \
+      's|libRCEC_la_LIBADD = -lRCECOSHal|libRCEC_la_LIBADD = -lhal_aidl -lRCECOSHal|' \
+      ${B}/ccec/src/Makefile
+
+    sed -i \
+      's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinder -lutils -llog -lbase|' \
+      ${B}/ccec/src/Makefile
+}
+
+# entservices-hdmicecsource still looks for the legacy HAL soname.
+# On x86 we only build libRCEC/libRCECOSHal, so provide a compatibility symlink.
+do_install:append:vdevice_x86-64() {
+        if [ -e "${D}${libdir}/libRCEC.so" ] && [ ! -e "${D}${libdir}/libRCECHal.so" ]; then
+                ln -sf libRCEC.so ${D}${libdir}/libRCECHal.so
+        fi
+}
+
+FILES:${PN}:append:vdevice_x86-64 = " ${libdir}/libRCECHal.so"
 
 #SYSTEMD_SERVICE:${PN} = "cecdaemon.service"
 #SYSTEMD_SERVICE:${PN} = "cecdevmgr.service"

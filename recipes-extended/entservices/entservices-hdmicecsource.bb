@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUF
           "
 
 # Release version - 1.2.0
-SRCREV = "33f954d95e15a92c85167eb13cdf97da2271e1f9"
+SRCREV = "01397aa7b99b6496d2d7379dcb57eafb664524e9"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -41,9 +41,15 @@ PACKAGECONFIG ?= " breakpadsupport \
     hdmicecsource \
 "
 
+HDMICEC_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmiceheader"
+HDMICEC_DEPS:vdevice_x86-64 = "iarmbus hdmicecmiddleware hdmicecheader"
+
+HDMICEC_RDEPS = "iarmbus devicesettings hdmicec"
+HDMICEC_RDEPS:vdevice_x86-64 = "iarmbus hdmicecmiddleware"
+
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[hdmicecsource]        = "-DPLUGIN_HDMICECSOURCE=ON,-DPLUGIN_HDMICECSOURCE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader,iarmbus devicesettings hdmicec"
+PACKAGECONFIG[hdmicecsource]        = "-DPLUGIN_HDMICECSOURCE=ON,-DPLUGIN_HDMICECSOURCE=OFF,${HDMICEC_DEPS},${HDMICEC_RDEPS}"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
