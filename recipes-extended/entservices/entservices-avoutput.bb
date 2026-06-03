@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avoutput;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 # Release version - 2.0.1
-SRCREV = "e3f1e26d5f3f6979c2769e66eb056f799a14a60d"
+SRCREV = "890128230eb6adeef507a7b9a0d63beaf5be8e4e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
