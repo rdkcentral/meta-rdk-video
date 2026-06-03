@@ -1,10 +1,8 @@
 DEPENDS:append:x86-64 = " rdk-halif-aidl libbinder"
-FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
-SRC_URI:append:x86-64 = " file://DriverImpl.cpp.vdevice"
 
 # Force the x86/vdevice build to fetch the AIDL-based hdmicec source instead of the
 # legacy recipe-pinned SHA from meta-rdk-video.
-SRCREV_hdmicec:x86-64 = "f16c4ef7af0e9342800ee88bcce15ff1c4387bc0"
+SRCREV_hdmicec:x86-64 = "82f231cd32434963f635aa2ffeabfedda6d0341f"
 
 # Add include paths for AIDL-generated HAL headers and binder headers
 CFLAGS:append:x86-64 = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
@@ -17,9 +15,6 @@ CXXFLAGS:append:x86-64 = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_I
 # Fix: compile them into a static archive and inject into libRCEC_la_LIBADD.
 
 do_configure:append:x86-64() {
-        # Override DriverImpl.cpp with vdevice-aware poll ACK logic after patch phase.
-        install -m 0644 ${WORKDIR}/DriverImpl.cpp.vdevice ${S}/ccec/src/DriverImpl.cpp
-
     # Patch the generated Makefile to:
     #  1. link the AIDL stubs archive into libRCEC.so so typeinfo symbols are defined
     #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
