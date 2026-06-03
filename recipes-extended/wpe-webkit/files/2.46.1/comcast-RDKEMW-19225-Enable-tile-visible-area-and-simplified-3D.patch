@@ -1,0 +1,55 @@
+From: Comcast <comcast@comcast.com>
+Date: Tue, 3 Jun 2026 00:00:00 +0000
+Subject: [PATCH] RDKEMW-19225: Enable WPE_TILE_VISIBLE_AREA_ONLY and
+ WPE_SIMPLIFIED_3D_COMPOSITION by default
+
+Hardcode the tile-visible-area-only and simplified-3D-composition
+optimizations to always be enabled, instead of relying on environment
+variables.
+
+This reduces GPU memory usage by ~40% during UI navigation and CPU
+memory spikes by ~30%.
+
+diff --git a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp
+--- a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp
++++ b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp
+@@ -109,7 +109,8 @@
+     m_rootLayer->setDrawsContent(false);
+     m_rootLayer->setSize(m_page.size());
+ 
+-    m_tileVisibleAreaOnly = !g_strcmp0(std::getenv("WPE_TILE_VISIBLE_AREA_ONLY"), "1");
++    m_tileVisibleAreaOnly = true;
++    WTFLogAlways("RDKEMW-19225: WPE_TILE_VISIBLE_AREA_ONLY hardcoded to true");
+ }
+ 
+ CompositingCoordinator::~CompositingCoordinator()
+diff --git a/Source/WebCore/platform/graphics/texmap/TextureMapperLayer.cpp b/Source/WebCore/platform/graphics/texmap/TextureMapperLayer.cpp
+--- a/Source/WebCore/platform/graphics/texmap/TextureMapperLayer.cpp
++++ b/Source/WebCore/platform/graphics/texmap/TextureMapperLayer.cpp
+@@ -64,7 +64,10 @@
+ TextureMapperLayer::TextureMapperLayer(Damage::ShouldPropagate propagateDamage)
+     : m_propagateDamage(propagateDamage)
+ {
+-    m_simplified3DComposition = !g_strcmp0(std::getenv("WPE_SIMPLIFIED_3D_COMPOSITION"), "1");
++    m_simplified3DComposition = true;
++    static bool logged = false;
++    if (!logged) { logged = true;
++        WTFLogAlways("RDKEMW-19225: WPE_SIMPLIFIED_3D_COMPOSITION hardcoded to true"); }
+ }
+ 
+ TextureMapperLayer::~TextureMapperLayer()
+diff --git a/Source/WebCore/platform/graphics/egl/GLContext.cpp b/Source/WebCore/platform/graphics/egl/GLContext.cpp
+--- a/Source/WebCore/platform/graphics/egl/GLContext.cpp
++++ b/Source/WebCore/platform/graphics/egl/GLContext.cpp
+@@ -80,7 +80,10 @@
+     // If simplified composition for preserve3D is enabled, we won't use intermediate surfaces with
+     // depth buffers to render preserve3D scenarios. Those are painted into the default framebuffer
+     // instead, which requires having a depth buffer there.
+-    bool requiresDepthBuffer = !g_strcmp0(std::getenv("WPE_SIMPLIFIED_3D_COMPOSITION"), "1");
++    bool requiresDepthBuffer = true;
++    static bool logged = false;
++    if (!logged) { logged = true;
++        WTFLogAlways("RDKEMW-19225: WPE_SIMPLIFIED_3D_COMPOSITION depth buffer hardcoded to true"); }
+ 
+     EGLint attributeList[] = {
+         EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,

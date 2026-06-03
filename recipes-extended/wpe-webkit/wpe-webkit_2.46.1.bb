@@ -15,8 +15,8 @@ WPE_MICRO_VERSION_SUFFIX = "${@'%02d%02d' % (int((d.getVar('PV').split('.') + ['
 DEPENDS:append = " libtasn1 unifdef-native libsoup fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-# Tip of the branch on May 11, 2026
-SRCREV = "5249e54482622fda0590165ce278d8a7f171be2d"
+# Tip of the branch (includes WPE_TILE_VISIBLE_AREA_ONLY and WPE_SIMPLIFIED_3D_COMPOSITION env vars)
+SRCREV = "76f544b7228eef0e8fcde2711644b179f667c39c"
 
 BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.46"
 SRC_URI = "${BASE_URI}"
@@ -31,6 +31,9 @@ SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
 
 # Comcast specific changes
 SRC_URI += "file://2.46.1/comcast-RDK-60535-Increase-minor-version-of-WPE-lib.patch"
+
+# RDKEMW-19225: Hardcode tile-visible-area-only and simplified-3D-composition to enabled
+SRC_URI += "file://2.46.1/comcast-RDKEMW-19225-Enable-tile-visible-area-and-simplified-3D.patch"
 
 SRC_URI += "file://2.46/comcast-RDKTV-380-disable-privileges-loss.patch"
 SRC_URI += "file://2.46/comcast-WKIT-553-add-video-ave-mimetype-for-holepunc.patch"
