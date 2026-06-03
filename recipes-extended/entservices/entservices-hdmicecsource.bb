@@ -14,7 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUF
 
 # Release version - 1.2.0
 SRCREV = "33f954d95e15a92c85167eb13cdf97da2271e1f9"
-SRCREV_hdmicec:vdevice_x86-64 = "4965c6c976e1cc5a5365ef48a67f706d9a02432e"
+SRCREV:vdevice_x86-64 = "4965c6c976e1cc5a5365ef48a67f706d9a02432e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -42,7 +42,7 @@ PACKAGECONFIG ?= " breakpadsupport \
     hdmicecsource \
 "
 
-HDMICEC_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmiceheader"
+HDMICEC_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader"
 HDMICEC_DEPS:vdevice_x86-64 = "iarmbus hdmicecmiddleware hdmicecheader"
 
 HDMICEC_RDEPS = "iarmbus devicesettings hdmicec"
