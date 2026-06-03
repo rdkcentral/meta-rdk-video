@@ -1,24 +1,34 @@
 From 8a4d4c22e96b75669c2b0cb3e8d7f9d8625a5b36 Mon Sep 17 00:00:00 2001
 From: Copilot <copilot@local>
 Date: Mon, 1 Jun 2026 09:00:00 +0000
-Subject: [PATCH] hdmicec: guard 1-byte frames on AIDL backend
+Subject: [PATCH] hdmicec: emulate ACK for 1-byte poll on AIDL backend
 
-AIDL HdmiCecControllerImpl rejects 1-byte CEC frames with
-EX_ILLEGAL_ARGUMENT ("Invalid message size: 1").
+AIDL HdmiCecControllerImpl rejects 1-byte CEC poll frames with
+EX_ILLEGAL_ARGUMENT ("Invalid message size: 1"). HdmiCecSource uses
+these poll frames for discovery, so forcing no-ack makes every device
+appear disconnected.
 
-Protect both writeAsync() and write() from forwarding 1-byte
-frames to sendMessage(). For synchronous write, map this case to
-CECNoAckException so caller ping/poll flows treat it as unreachable.
+Keep writeAsync() guarded (skip 1-byte frames), but in blocking
+write(), emulate CEC poll ACK by querying IHdmiCec::getLogicalAddresses().
+Return success when destination exists; otherwise throw CECNoAckException.
 
 ---
- ccec/src/DriverImpl.cpp | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+ ccec/src/DriverImpl.cpp | 37 +++++++++++++++++++++++++++++++++++--
+ 1 file changed, 35 insertions(+), 2 deletions(-)
 
 diff --git a/ccec/src/DriverImpl.cpp b/ccec/src/DriverImpl.cpp
-index 4ec84df..22b2e95 100644
+index 4ec84df..9fd62f7 100644
 --- a/ccec/src/DriverImpl.cpp
 +++ b/ccec/src/DriverImpl.cpp
-@@ -309,6 +309,13 @@ void  DriverImpl::writeAsync(const CECFrame &frame)  noexcept(false)
+@@ -39,6 +39,7 @@
+ #include <sys/socket.h>
+ #include <stdlib.h>
+ 
++#include <algorithm>
+ #include "osal/EventQueue.hpp"
+ #include "osal/Exception.hpp"
+ #include "ccec/Util.hpp"
+@@ -309,6 +310,13 @@ void  DriverImpl::writeAsync(const CECFrame &frame)  noexcept(false)
  	frame.getBuffer(&buf, &length);
  	printFrameDetails(frame);
  
@@ -32,14 +42,42 @@ index 4ec84df..22b2e95 100644
      {AutoLock lock_(mutex);
      	if (status != OPENED) {
      		throw InvalidStateException();
-@@ -354,6 +361,13 @@ void  DriverImpl::write(const CECFrame &frame)  noexcept(false)
+@@ -354,13 +362,46 @@ void  DriverImpl::write(const CECFrame &frame)  noexcept(false)
  	frame.getBuffer(&buf, &length);
  	printFrameDetails(frame);
  
 +	if (length <= 1) {
-+		/* Preserve ping/poll semantics as a no-ack condition on AIDL backend. */
++		const uint8_t destination = (buf != NULL) ? (buf[0] & 0x0F) : 0xFF;
++		bool addressPresent = false;
++
++		try {
++			android::sp<IHdmiCec> service = getAidlService();
++			if (service != nullptr) {
++				std::vector<int32_t> addresses;
++				android::binder::Status queryStatus = service->getLogicalAddresses(&addresses);
++				if (queryStatus.isOk()) {
++					addressPresent = (std::find(addresses.begin(), addresses.end(),
++						static_cast<int32_t>(destination)) != addresses.end());
++				} else {
++					CCEC_LOG(LOG_WARN,
++						"DriverImpl::write poll getLogicalAddresses failed: %s\\r\\n",
++						queryStatus.toString8().c_str());
++				}
++			}
++		} catch(...) {
++			CCEC_LOG(LOG_WARN, "DriverImpl::write poll address query threw exception.\\r\\n");
++		}
++
++		if (addressPresent) {
++			CCEC_LOG(LOG_DEBUG,
++				"DriverImpl::write emulating ACK for poll destination 0x%x via logical-address list.\\r\\n",
++				destination);
++			return;
++		}
++
 +		CCEC_LOG(LOG_WARN,
-+			"DriverImpl::write blocking unsupported 1-byte CEC frame on AIDL backend. Returning no-ack.\\r\\n");
++			"DriverImpl::write poll destination 0x%x not present. Returning no-ack.\\r\\n",
++			destination);
 +		throw CECNoAckException();
 +	}
 +
