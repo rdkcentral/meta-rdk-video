@@ -11,7 +11,7 @@ DEPENDS = "subttxrend-common"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "d4c56fca96f91bb3e4286b1d84139294285d7f8b"
+SRCREV = "5045368012f9a37d4ddf5cfce18d9913b951122c"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-protocol"
 
