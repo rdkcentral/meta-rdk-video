@@ -4,9 +4,9 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
 PV = "0.1.3"
-PR = "r1"
+PR = "r2"
 
-SRCREV = "006265580207ff9ea4a665da04d2757498b9dd66"
+SRCREV = "6c21ff4154a9a9269348906eb26be919bc08eebf"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "main"
 
