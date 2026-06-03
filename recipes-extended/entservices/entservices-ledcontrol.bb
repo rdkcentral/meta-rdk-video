@@ -10,13 +10,12 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-ledcontrol;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
-           file://0002-LEDControl-handle-additional-AIDL-indicator-states.patch \
            file://rdkservices.ini \
           "
 
 # Release version - 1.0.1
 # feature/RDKEMW-18113-AIDL: compile AIDL indicator stubs into implementation library
-SRCREV = "f87ea9771dd220f0a3e9916b146135f46b81e118"
+SRCREV = "e57dfcfc3bc51fadac269e838d6dea2d47ab3abd"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
