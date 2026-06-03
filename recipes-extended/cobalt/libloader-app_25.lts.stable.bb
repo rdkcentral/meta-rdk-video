@@ -25,6 +25,7 @@ SRC_URI += "file://25/0003-breakpad-add-mapping-info.patch"
 SRC_URI += "file://25/0004-Build-fix-for-ARM64.patch"
 SRC_URI += "file://25/0005-Use-Yocto-host-toolchain.patch"
 SRC_URI += "file://25/0006-Use-certifi-to-tell-urllib-where-to-find-CA-file-397.patch"
+SRC_URI += "file://25/0007-Prevent-cobalt-unloading.patch"
 
 CR = "30"
 PR = "r${CR}"
@@ -70,6 +71,8 @@ PACKAGECONFIG[securityagent] = "rdk_enable_securityagent=true,rdk_enable_securit
 PACKAGECONFIG[qa]            = ",,nodejs-native,"
 PACKAGECONFIG[asan]          = "use_asan=true,,gcc-sanitizers"
 PACKAGECONFIG[gold]          = ""
+PACKAGECONFIG[firebolt]      = "rdk_enable_firebolt_api=true,,firebolt-cpp-client firebolt-cpp-transport"
+PACKAGECONFIG[fb_rpc_v1]     = "rdk_enable_firebolt_legacy_rpc_v1=true,,"
 
 GN_ARGS_EXTRA ?= ""
 GN_ARGS_EXTRA:append = " sb_enable_cpp20_audit=false"

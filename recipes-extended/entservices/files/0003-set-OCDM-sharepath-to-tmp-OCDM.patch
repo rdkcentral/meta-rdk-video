@@ -4,8 +4,8 @@ Subject: [PATCH] set OCDM sharepath to /tmp/OCDM
 Signed-off-by:  Punam Kumbhar <punam_kumbhar@comcast.com>
 diff --git a/OpenCDMi/OCDM.config b/OpenCDMi/OCDM.config
 index 7b96107..dffd27d 100644
---- a/OpenCDMi/OCDM.config
-+++ b/OpenCDMi/OCDM.config
+--- a/plugin/OCDM.config
++++ b/plugin/OCDM.config
 @@ -17,6 +17,7 @@ end()
  ans(rootobject)
  

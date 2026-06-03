@@ -1,0 +1,118 @@
+diff --git a/Source/plugins/Configuration.h b/Source/plugins/Configuration.h
+index de193193..7638154a 100644
+--- a/Source/plugins/Configuration.h
++++ b/Source/plugins/Configuration.h
+@@ -221,6 +221,7 @@ namespace Plugin {
+             , StartupOrder(50)
+             , Startup(PluginHost::IShell::startup::DEACTIVATED)
+             , Communicator()
++            , Extension(false)
+         {
+             Add(_T("callsign"), &Callsign);
+             Add(_T("locator"), &Locator);
+@@ -238,6 +239,7 @@ namespace Plugin {
+             Add(_T("startuporder"), &StartupOrder);
+             Add(_T("startmode"), &Startup);
+             Add(_T("communicator"), &Communicator);
++            Add(_T("extension"), &Extension);
+         }
+         Config(const Config& copy)
+             : Core::JSON::Container()
+@@ -257,6 +259,7 @@ namespace Plugin {
+             , StartupOrder(copy.StartupOrder)
+             , Startup(copy.Startup)
+             , Communicator(copy.Communicator)
++            , Extension(copy.Extension)
+         {
+             Add(_T("callsign"), &Callsign);
+             Add(_T("locator"), &Locator);
+@@ -274,6 +277,7 @@ namespace Plugin {
+             Add(_T("startuporder"), &StartupOrder);
+             Add(_T("startmode"), &Startup);
+             Add(_T("communicator"), &Communicator);
++            Add(_T("extension"), &Extension);
+         }
+         ~Config() override = default;
+ 
+@@ -295,7 +299,7 @@ namespace Plugin {
+             StartupOrder = RHS.StartupOrder;
+             Startup = RHS.Startup;
+             Communicator = RHS.Communicator;
+-
++            Extension = RHS.Extension;
+             return (*this);
+         }
+ 
+@@ -328,6 +332,7 @@ namespace Plugin {
+         Core::JSON::DecUInt32 StartupOrder;
+         Core::JSON::EnumType<PluginHost::IShell::startup> Startup;
+         Core::JSON::String Communicator;
++        Core::JSON::Boolean Extension;
+ 
+         static Core::NodeId IPV4UnicastNode(const string& ifname);
+ 
+diff --git a/Source/plugins/Service.h b/Source/plugins/Service.h
+index 935fc32c..5e140864 100644
+--- a/Source/plugins/Service.h
++++ b/Source/plugins/Service.h
+@@ -315,6 +315,11 @@ namespace PluginHost {
+         {
+             return (_config.Configuration().StartupOrder.Value());
+         }
++
++        bool Extension() const
++        {
++            return (_config.Configuration().Extension.Value());
++        }
+         inline bool IsActive() const
+         {
+             return (_state == ACTIVATED);
+diff --git a/Source/com/Ids.h b/Source/com/Ids.h
+index 2c910bff..0af1d6b8 100644
+--- a/Source/com/Ids.h
++++ b/Source/com/Ids.h
+@@ -74,7 +74,8 @@ namespace RPC {
+         ID_COMREQUEST_NOTIFICATION      = (ID_OFFSET_INTERNAL + 0x003D),
+         ID_SYSTEM_METADATA              = (ID_OFFSET_INTERNAL + 0x003E),
+ 
+-        ID_EXTERNAL_INTERFACE_OFFSET    = (ID_OFFSET_INTERNAL + 0x0040),
++        ID_EXTENSIONS_INTERFACE_OFFSET    = (ID_OFFSET_INTERNAL + 0x0040),
++        ID_EXTERNAL_INTERFACE_OFFSET    = (ID_OFFSET_INTERNAL + 0x1000),
+        ID_EXTERNAL_CC_INTERFACE_OFFSET = (0xCC00) // ends on 0xDFFF
+     };
+ }
+--- a/Source/WPEFramework/PluginServer.cpp	2026-03-03 01:17:33.451584386 +0000
++++ b/Source/WPEFramework/PluginServer.cpp	2026-03-03 01:20:31.510567940 +0000
+@@ -1148,6 +1148,22 @@
+           {
+             return lhs->StartupOrder() < rhs->StartupOrder();
+           });
++        for (auto service : configured_services)
++        {
++            if (service->State() != PluginHost::Service::state::UNAVAILABLE) {
++                if (service->Extension() == true ) {
++                    if (service->Startup() == PluginHost::IShell::startup::ACTIVATED ) {
++                        SYSLOG(Logging::Startup, (_T("Activating Extension [%s]:[%s]"),
++                            service->ClassName().c_str(), service->Callsign().c_str()));
++                        service->Activate(PluginHost::IShell::STARTUP);
++                    }
++                    else {
++                        SYSLOG(Logging::Startup, (_T("Activation of Extension [%s]:[%s] delayed, autostart is false"),
++                            service->ClassName().c_str(), service->Callsign().c_str()));
++                    }
++                }
++            }
++        }
+ 
+ #if 0
+         for (auto service : configured_services)
+--- a/Source/WPEFramework/Config.h	2026-03-03 01:46:08.920332331 +0000
++++ b/Source/WPEFramework/Config.h	2026-03-03 01:47:03.141240866 +0000
+@@ -981,6 +981,7 @@
+ 
+             SYSLOG(Logging::Startup, (_T("Accessor: %s"), _URL.c_str()));
+             SYSLOG(Logging::Startup, (_T("Interface IP: %s"), hostaddress.c_str()));
++            SYSLOG(Logging::Startup, (_T("ThreadPool Count: %u"), THREADPOOL_COUNT));
+ 
+         }
+ 
