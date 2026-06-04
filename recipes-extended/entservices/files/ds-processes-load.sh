@@ -9,7 +9,7 @@ cleanup() {
 }
 
 trap cleanup EXIT
-trap 'trap - EXIT; cleanup; exit 130' INT TERM
+trap 'trap - EXIT; cleanup; exit 130' INT TERM HUP QUIT
 
 pidstat -h -u -r -d -p ALL 1 > /opt/logs/ds-processes-load.log &
 PIDSTAT_PID=$!
