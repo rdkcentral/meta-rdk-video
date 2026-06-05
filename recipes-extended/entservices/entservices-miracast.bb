@@ -2,7 +2,7 @@ SUMMARY = "ENTServices MiraCast plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV = "2.1.0"
+PV = "2.1.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-miracast;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 2.1.0
-SRCREV = "b520d7d1040e32428f621d6fab8071b782bacb6b"
+# Release version - 2.1.2
+SRCREV = "a2ef88dc21b8e134d74a01d3a028aca25946a0ad"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
