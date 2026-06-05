@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 PV = "1.0.34"
 PR = "r2"
 
-SRCREV_devicesettings = "d66d9cbdd9ebbc713b4347c53c7fe8a90cbb1b12"
+SRCREV_devicesettings = "1cff87c784132b81d3e86b3b3e1fae01c1dc62b5"
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
 
 # devicesettings is not a 'generic' component, as some of its source
