@@ -2,7 +2,7 @@ SUMMARY = "ENTServices XCast plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV = "2.0.6"
+PV = "2.0.7"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-xcast;${CMF_GITHUB_SRC_URI_SUFFIX}\
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 2.0.6
-SRCREV = "b7aee97c63985ed327499624296806eb64a2fbc0"
+# Release version - 2.0.7
+SRCREV = "f0b285ec4b9855f3e7cb1c47ab0f904605676890"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
