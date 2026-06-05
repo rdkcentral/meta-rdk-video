@@ -81,6 +81,18 @@ if [ -f "$PLATFORM_FILE" ]; then
 		file_bootversion_bak="/opt/persistent/migration/.bootversion.bak"
 		migrationDSFile="/opt/persistent/migration/migration_data_store.json"
 		migrationDir="/opt/persistent/migration"
+		#migration directory creation if not already present.
+		if [ ! -d "$migrationDir" ]; then
+			boottypeLog "$migrationDir Directory was not present, Hence creating directory"
+			mkdir "$migrationDir"
+		        if [ "$?" == 0 ]; then
+		             boottypeLog "Directory creation was successful"
+		        else
+		             boottypeLog "Directory creation was not successful"
+		        fi
+		else
+		      boottypeLog "$migrationDir directory is already present"
+		fi
     fi
 else
     boottypeLog "Exiting since this script is not intended for this platform"
