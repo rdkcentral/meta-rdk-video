@@ -15,24 +15,24 @@ Index: git/Source/cryptography/implementation/SecApi/Vault.h
      private:
 +        void EnsureProcessor() const;
          mutable WPEFramework::Core::CriticalSection _lock;
-         Sec_ProcessorHandle* _secProcHandle;
+-        Sec_ProcessorHandle* _secProcHandle;
++        mutable Sec_ProcessorHandle* _secProcHandle;
          std::map<uint32_t, MapStore> _items;
 Index: git/Source/cryptography/implementation/SecApi/Vault.cpp
 ===================================================================
 --- git.orig/Source/cryptography/implementation/SecApi/Vault.cpp
 +++ git/Source/cryptography/implementation/SecApi/Vault.cpp
-@@ -76,6 +76,18 @@ namespace Implementation {
+@@ -76,6 +76,17 @@ namespace Implementation {
  	     _lock.Unlock();
       }
 
 +    void Vault::EnsureProcessor() const
 +    {
 +        if (_secProcHandle == NULL) {
-+            Vault* self = const_cast<Vault*>(this);
-+            Sec_Result sec_res = SecProcessor_GetInstance_Directories(&self->_secProcHandle, globalDir, appDir);
++            Sec_Result sec_res = SecProcessor_GetInstance_Directories(&_secProcHandle, globalDir, appDir);
 +            if (sec_res != SEC_RESULT_SUCCESS) {
 +                TRACE_L1(_T("SEC : processor instance failed retval= %d\n"), sec_res);
-+                self->_secProcHandle = NULL;
++                _secProcHandle = NULL;
 +            }
 +        }
 +    }
