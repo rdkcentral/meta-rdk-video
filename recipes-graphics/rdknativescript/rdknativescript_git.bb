@@ -4,7 +4,7 @@ HOMEPAGE = ""
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${THISDIR}/files/Apache-2.0;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-DEPENDS = "westeros essos rapidjson rtcore libuv gstreamer1.0 uwebsockets javascriptcore websocketpp cjson boost"
+DEPENDS = "westeros essos rapidjson rtcore libuv gstreamer1.0 uwebsockets javascriptcore websocketpp cjson boost libsoup"
 DEPENDS:append = " virtual/egl"
 RDEPENDS:${PN}:append = " essos gstreamer1.0 uwebsockets"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'generate_jsruntime_widget', 'dobby', '', d)}"
@@ -16,10 +16,10 @@ S = "${WORKDIR}/git"
 PV = "2.0.4"
 PR = "r0"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};"
+SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;branch=topic/RDKEMW-18491;"
 
 #Release 2.0.4
-SRCREV = "47ecb4b1aab79825037823dc30eeb0221787c265"
+SRCREV = "ade272b381d58a68c903f1ed58ba9936144fda05"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -29,6 +29,7 @@ EXTRA_OECMAKE += " -DJSRUNTIME_ENGINE_NAME=jsc"
 EXTRA_OECMAKE += " -DBUILD_JSRUNTIME_DESKTOP=OFF"
 EXTRA_OECMAKE += " -DENABLE_JSRUNTIME_ESSOS=ON"
 EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS=ON"
+EXTRA_OECMAKE += " -DREMOTE_INSPECTOR_ENABLE=ON"
 EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS_STATIC=OFF"
 EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS_DYNAMIC=ON"
 EXTRA_OECMAKE += " -DENABLE_JSRUNTIME_PLAYER=ON"
@@ -62,6 +63,7 @@ do_install() {
    cp -a ${S}/utils/utils.js ${D}/home/root/modules/.
    cp -a ${S}/utils/buffer.js ${D}/home/root/modules/.
    cp -a ${S}/utils/process.js ${D}/home/root/modules/.
+   cp -a ${S}/utils/nativejsinspector.html ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/event.js ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/wsenhanced.js ${D}/home/root/modules/.
    cp -a ${S}/src/jsc/modules/linkedjsdom.js ${D}/home/root/modules/.
