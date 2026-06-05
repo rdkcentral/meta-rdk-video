@@ -1,57 +1,52 @@
-SUMMARY = "ENTServices softwareupdate plugin"
+SUMMARY = "ENTServices ResourceManager plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "1.13.2"
+PV = "1.0.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
-inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
+inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-softwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRCREV = "${PV}"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-resourcemanager;${CMF_GITHUB_SRC_URI_SUFFIX} \
+           file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
-
-# Release version - 1.15.0
-SRCREV = "45480b833d5ec7662405affb0bf7c6902f4664cf"
-
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native"
-RDEPENDS:${PN} += "wpeframework"
-
-TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
-
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
+
+DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
+DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
+DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries rfc"
+RDEPENDS:${PN} += "wpeframework rfc"
+DEPENDS += "packager-headers"
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
-# enable filtering for undefined interfaces and link local ip address notifications
+
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-include include/maintenanceMgr.inc
+# ----------------------------------------------------------------------------
+
+PACKAGECONFIG ?= "resourcemanager erm"
+
+inherit features_check
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= " breakpadsupport \
-    telemetrysupport \
-    "
-
-PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'whoami_enabled', 'whoami', '', d)}"
-
-#PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES' , 'enable_maintenance_manager', ' maintenancemanager', '', d)}"
-
-PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
-PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[whoami]        = "-DENABLE_WHOAMI=ON,-DENABLE_WHOAMI=OFF,"
+PACKAGECONFIG[resourcemanager] = "-DPLUGIN_RESOURCEMANAGER=ON,-DPLUGIN_RESOURCEMANAGER=OFF,"
+PACKAGECONFIG[erm]             = "-DBUILD_ENABLE_ERM=ON,-DBUILD_ENABLE_ERM=OFF,essos,essos"
 
 # ----------------------------------------------------------------------------
 
@@ -61,7 +56,11 @@ EXTRA_OECMAKE += " \
     -DSECAPI_LIB=sec_api \
 "
 
-# Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
+EXTRA_OECMAKE += " \
+    -DBUILD_AMLOGIC=ON \
+    -DBUILD_LLAMA=ON \
+"
+
 python () {
     dri_device_name = d.getVar('DRI_DEVICE_NAME')
     if dri_device_name:
@@ -74,7 +73,6 @@ do_install:append() {
     then
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
     fi
-
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
@@ -85,6 +83,8 @@ do_install:append() {
 # ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
+# Keep explicit plugin file entries to avoid installed-vs-shipped QA on unversioned plugin .so files.
+FILES:${PN} += "${libdir}/wpeframework/plugins/libWPEFrameworkResourceManager.so"
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
