@@ -32,6 +32,25 @@ do_install:append:client() {
       install -d ${D}${systemd_unitdir}/system
       install -m 0644 ${WORKDIR}/webconfig.service ${D}${systemd_unitdir}/system
       (${PYTHON} ${WORKDIR}/metadata_parser.py ${WORKDIR}/webconfig_video_metadata.json ${D}/etc/webconfig.properties ${MACHINE})
+
+      # Modify webconfig.service for mTLS boot ordering
+      if [ -f ${D}${systemd_unitdir}/system/webconfig.service ]; then
+          # Add After=mtls.target to [Unit] section (no Wants= to prevent premature target activation)
+          sed -i '/^\[Unit\]/a After=mtls.target' \
+              ${D}${systemd_unitdir}/system/webconfig.service
+
+          # Check if [Install] section exists
+          if grep -q "^\[Install\]" ${D}${systemd_unitdir}/system/webconfig.service; then
+              # Replace existing WantedBy
+              sed -i 's/WantedBy=.*/WantedBy=mtls.target/g' \
+                  ${D}${systemd_unitdir}/system/webconfig.service
+          else
+              # Add new [Install] section
+              echo "" >> ${D}${systemd_unitdir}/system/webconfig.service
+              echo "[Install]" >> ${D}${systemd_unitdir}/system/webconfig.service
+              echo "WantedBy=mtls.target" >> ${D}${systemd_unitdir}/system/webconfig.service
+          fi
+      fi
     fi
 }
 
