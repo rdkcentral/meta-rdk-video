@@ -2,7 +2,7 @@ SUMMARY = "ENTServices firmware download plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.0.1"
+PV = "1.0.3"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwaredownload;${CMF_GITHUB_SRC_URI_
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.1
-SRCREV = "b5802f00ada320b2e813e8411469cf2740930c85"
+# Release version - 1.0.3
+SRCREV = "bdd067bcda9ad4833fa922d97fb27d610d9c9d0b"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
