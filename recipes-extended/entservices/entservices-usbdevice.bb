@@ -2,13 +2,13 @@ SUMMARY = "ENTServices usbdevice plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.3.0"
+PV = "1.3.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "e92cd5f8eec28cdcd51a02fdec5ba4bab2ccac5e"
+SRCREV = "64b6e99ef12722852e6652f7384147b7383a0934"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usbdevice;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
