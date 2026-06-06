@@ -2,7 +2,7 @@ SUMMARY = "ENTServices devicediagnostics plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.4.1"
+PV = "1.4.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicediagnostics;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
-# Release version - 1.2.2
-SRCREV = "d8bae68e15971f7d692814b44131c098ddb72a87"
+# Release version - 1.4.2
+SRCREV = "408dc5725023b64d708ba40097b16b8873bd746f"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
