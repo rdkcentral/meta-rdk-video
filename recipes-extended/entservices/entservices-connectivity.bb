@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Connectivity plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV = "1.7.1"
+PV = "1.7.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
-# Release version - 1.6.0
-SRCREV = "79bc2963dd769d0e61c93490d35ce2701bfd5fda"
+# Release version - 1.7.2
+SRCREV = "7770d71bb3038cc379af3b60d0fcfcebc4ab1206"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
