@@ -2,13 +2,13 @@ SUMMARY = "ENTServices UserSettings plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2b42edef8fa55315f34f2370b4715ca9"
 
-PV = "1.0.6"
+PV = "1.2.5"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "1729c6cc212a97d0f69270abd4674de12eefcff4"
+SRCREV = "${PV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usersettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
