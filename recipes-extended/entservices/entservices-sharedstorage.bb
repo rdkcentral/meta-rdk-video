@@ -2,13 +2,13 @@ SUMMARY = "ENTServices SharedStorage plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
-PV = "1.0.4"
+PV = "1.0.8"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "dae2f72ab2b425faea81b7419f89ebe15d21fbe3"
+SRCREV = "{PV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-sharedstorage;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
