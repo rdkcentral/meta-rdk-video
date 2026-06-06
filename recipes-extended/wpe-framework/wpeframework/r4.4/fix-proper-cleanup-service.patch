@@ -1,5 +1,5 @@
 From 4fc97ba249e950eaef55210bfca5df58a50349a3 Mon Sep 17 00:00:00 2001
-From: SatheeshkumarG15 <satheeshkumar00150@gmail.com>
+From: Satheeshkumar G <satheeshkumar_g@comcast.com>
 Date: Fri, 5 Jun 2026 15:01:01 +0530
 Subject: [PATCH] Used an atomic bool and compare_exchange_strong to make sure
  either ResourceMonitor or Workerpool thread to properly clear out the service
