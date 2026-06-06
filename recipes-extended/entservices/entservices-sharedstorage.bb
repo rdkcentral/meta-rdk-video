@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "{PV}"
+SRCREV = "${PV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-sharedstorage;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
