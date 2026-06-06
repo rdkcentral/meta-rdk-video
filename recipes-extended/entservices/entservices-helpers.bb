@@ -2,7 +2,7 @@ SUMMARY = "ENTServices helpers common shared library"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.0.0"
+PV = "1.0.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-helpers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-SRCREV = "043db260ecb46c7d1e477b9d10febae9e9ebf1ed"
+SRCREV = "5fd74207d873ccf78ecb0f3ed1f17774c0366419"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
