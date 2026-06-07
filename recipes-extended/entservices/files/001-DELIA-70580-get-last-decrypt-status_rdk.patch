@@ -1,0 +1,23 @@
+diff --git a/OpenCDMi/FrameworkRPC.cpp b/OpenCDMi/FrameworkRPC.cpp
+index f117b6f61..c2951adc9 100644
+--- a/OpenCDMi/FrameworkRPC.cpp
++++ b/OpenCDMi/FrameworkRPC.cpp
+@@ -365,9 +365,16 @@ namespace Plugin {
+                                     }
+                                 }
+ 
+-                                // Store the status we have for the other side.
++                                // Preserve the decrypt result used by the existing client-side return path.
+                                 Status(static_cast<uint32_t>(cr));
+ 
++                                // Publish the raw decrypt status reported by the DRM implementation when available.
++                                uint32_t lastDecryptStatus = static_cast<uint32_t>(cr);
++                                if (_mediaKeys->LastDecryptStatus(lastDecryptStatus) != CDMi::CDMi_SUCCESS) {
++                                    lastDecryptStatus = static_cast<uint32_t>(cr);
++                                }
++                                LastDecryptStatus(lastDecryptStatus);
++
+                                 // Whatever the result, we are done with the buffer..
+                                 Consumed();
+                             }
+
