@@ -7,7 +7,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderUI.git"
 PV = "1.0.0"
 PR = "r0"
 #Version on July 22, 2021
-SRCREV = "ae6d061a6a08d97ad3ad8821c422b4f45aeeced1"
+SRCREV = "ae1e4255a458b6b913c6d97f33f57ca0f34029488"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
