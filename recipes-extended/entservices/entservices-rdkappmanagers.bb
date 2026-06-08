@@ -2,13 +2,13 @@ SUMMARY = "ENTServices appmanagers plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "0.5.0.0"
-PR = "r0"
+PV = "0.6.0.0"
+PR = "rc"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "70c6c6d9e722eafc15889d0a48c9261c58ed8017"
+SRCREV = "323af789fd4f6b285f90046307487de3e4636e23"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -115,7 +115,7 @@ RUNTIME_APP_PORTAL ?= "com.sky.as.apps"
 APP_PREINSTALL_DIRECTORY ?= "/opt/preinstall"
 RUNTIME_CONFIG_FILE ?= ""
 APP_DOWNLOAD_DIRECTORY ?= "/opt/CDL/"
-DEFAULT_APP_STORAGE_PATH ?= "/opt/persistent/storageManager"
+DEFAULT_APP_STORAGE_PATH ?= "/media/apps/storageManager"
 NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
 
 EXTRA_OECMAKE += " \
