@@ -1,11 +1,9 @@
 From 76a5432c8dfea3a30e7c8f857d7e120ccb2173b5 Mon Sep 17 00:00:00 2001
-From: SatheeshkumarG15 <satheeshkumar00150@gmail.com>
+From: Satheeshkumar G <satheeshkumar_g@comcast.com>
 Date: Sat, 6 Jun 2026 12:09:35 +0530
-Subject: [PATCH] Used an atomic bool and compare_exchange_strong to make sure
- either ResourceMonitor or Workerpool thread to properly clear out the service
- and to avoid the crash
+Subject: [PATCH] RDKEMW-19135: Fix service cleanup race between ResourceMonitor and WorkerPool
 
-Signed-off-by: SatheeshkumarG15 <satheeshkumar00150@gmail.com>
+Signed-off-by: Satheeshkumar G <satheeshkumar_g@comcast.com>
 ---
  Source/WPEFramework/PluginServer.cpp |  6 ++----
  Source/WPEFramework/PluginServer.h   | 19 ++++++++++++++-----
