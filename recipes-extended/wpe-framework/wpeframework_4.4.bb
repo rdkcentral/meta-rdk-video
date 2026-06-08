@@ -11,7 +11,6 @@ DEPENDS += "breakpad-wrapper"
 
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
-DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', 'ENABLE_CONFIG_OVERRIDE', '', d)}"
 
 PR = "r44"
 PV = "4.4.6"
@@ -111,6 +110,7 @@ EXTRA_OECMAKE += " \
     -DMESSAGING=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', 'ENABLE_CONFIG_OVERRIDE', '', d)}" \
 "
 
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
