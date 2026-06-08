@@ -7,7 +7,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
-WPE_RECIPE_REVISION = "2"
+WPE_RECIPE_REVISION = "99"
 
 PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
@@ -37,7 +37,7 @@ SRC_URI += "file://2.46/comcast-WKIT-553-add-video-ave-mimetype-for-holepunc.pat
 SRC_URI += "file://2.46/comcast-AMLOGIC-628-always-initialze-volume.patch"
 SRC_URI += "file://2.46/comcast-RDK-57261-Disable-optional-parser.patch"
 SRC_URI += "file://2.46/comcast-RDK-57741-sleep-150-microsecs-instead-of-s.patch"
-SRC_URI += "file://2.46/comcast-RDK-56287-rdkat-atspi2.patch"
+#SRC_URI += "file://2.46/comcast-RDK-56287-rdkat-atspi2.patch"
 SRC_URI += "file://2.46/comcast-RDK-57771-Flush-AppendPipeline-resetParserState.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-Increase-html-parser-time-limit.patch"
 SRC_URI += "file://2.46/comcast-RDKTV-1411-force-stop-media-on-loading-about.patch"
@@ -106,7 +106,7 @@ PACKAGECONFIG[indexeddb]    = ""
 PACKAGECONFIG[subtlecrypto] = ""
 PACKAGECONFIG[westeros]     = ""
 
-PACKAGECONFIG:append = " webdriver remoteinspector releaselog accessibility speechsynthesis native_video webaudio woff2 externalholepunch"
+PACKAGECONFIG:append = " webdriver remoteinspector releaselog native_video webaudio woff2 externalholepunch"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'malloc_heap_breakdown', 'malloc_heap_breakdown', '', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-developer-mode', 'developermode tools', '', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('BROWSER_MEMORYPROFILE', 'fhd', 'fhd', '', d)}"
