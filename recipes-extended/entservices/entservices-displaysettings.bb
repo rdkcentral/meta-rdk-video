@@ -2,7 +2,7 @@ SUMMARY = "ENTServices displaysettings plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.4.1"
+PV = "1.5.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_S
            file://rdkservices.ini \
           "
 # Release version - 1.4.1
-SRCREV = "c0e61e208665bdf0be5bbb71568238d534b93f9a"
+SRCREV = "9e50d8073bbe8fd9eaf396112be6b803c9b36e61"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
