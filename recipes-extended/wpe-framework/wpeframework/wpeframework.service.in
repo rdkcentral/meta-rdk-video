@@ -16,7 +16,7 @@ Environment="TTS_USE_THUNDER_CLIENT=1"
 Environment="XDG_DATA_HOME=/opt/QT/home"
 Environment="FORCE_SVP=TRUE"
 Environment="FORCE_SAP=TRUE"
-ExecStartPre=/bin/sh -c 'CDLFILE=$(cat /opt/cdl_flashed_file_name 2>/dev/null || true); PREV_CDLFILE=$(cat /opt/previous_flashed_file_name 2>/dev/null || true); case "$CDLFILE" in *"$PREV_CDLFILE"*) ;; *) echo "Removing override.json/override_V2.json on boot up after CDL"; rm -f /opt/persistent/rdkservices/PluginHost/override*.json ;; esac'
+ExecStartPre=/bin/sh -c 'if [ -f /opt/cdl_flashed_file_name ]; then CDLFILE=$(cat /opt/cdl_flashed_file_name 2>/dev/null || true); PREV_CDLFILE=$(cat /opt/previous_flashed_file_name 2>/dev/null || true); if [ -z "$PREV_CDLFILE" ] || ! printf "%s" "$CDLFILE" | grep -Fq "$PREV_CDLFILE"; then echo "Removing override.json/override_V2.json on bootup after CDL"; rm -f /opt/persistent/rdkservices/PluginHost/override*.json; fi; fi'
 ExecStartPre=-/usr/bin/rdkLogMileStone WPE_FRAMEWORK_START
 SyslogIdentifier=WPEFramework
 ExecStart=/usr/bin/WPEFramework -b
