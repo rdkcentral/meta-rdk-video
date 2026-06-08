@@ -16,7 +16,7 @@ DEPENDS = "wpeframework wpeframework-tools-native"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis"
 
 SRC_URI += "file://RDKEMW-1007.patch \
-            file://0001-Update-IGoogleCast.h.patch \
+            WPEFramework_446_upgrade.patch \
             "
 
 S = "${WORKDIR}/git"
