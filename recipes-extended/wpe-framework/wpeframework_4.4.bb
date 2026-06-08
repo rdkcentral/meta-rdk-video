@@ -75,6 +75,12 @@ PACKAGECONFIG[websocket]       = "-DWEBSOCKET=ON,,"
 
 PACKAGECONFIG[com] = "-DCOM=ON,,,"
 
+PACKAGECONFIG += "${@bb.utils.contains('DISTRO_FEATURES', \
+    'debug-variant', 'configoverride', '', d)}"
+ 
+PACKAGECONFIG[configoverride] = \
+    "-DENABLE_CONFIG_OVERRIDE=ON,-DENABLE_CONFIG_OVERRIDE=OFF"
+
 # FIXME, determine this a little smarter
 # Provision event is required for libprovision and provision plugin
 # Location event is required for locationsync plugin
