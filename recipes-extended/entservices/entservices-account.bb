@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Account plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.0.4"
+PV = "1.0.5"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -10,8 +10,8 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-account;${CMF_GITHUB_SRC_URI_SUFFIX}"
           
-# Release version - 1.0.4
-SRCREV = "a3eb7ff6920aab8b9dc6933cebf32d806be2eb40"
+# Release version - 1.0.5
+SRCREV = "8471e0b2873139bc10b164d68483c29cd0f062c9"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
