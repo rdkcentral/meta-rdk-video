@@ -2,7 +2,7 @@ SUMMARY = "ENTServices ledcontrol plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.0.1"
+PV = "1.0.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-ledcontrol;${CMF_GITHUB_SRC_URI_SUFFIX
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.1
-SRCREV = "eaa1d2abe3af11c855a75187457b9b7bc1e9f16b"
+# Release version - 1.0.2
+SRCREV = "2f089e743db1534d3b9821b621865f65c89a91b0"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
