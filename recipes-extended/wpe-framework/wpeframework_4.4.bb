@@ -11,7 +11,7 @@ DEPENDS += "breakpad-wrapper"
 
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
-DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', '--enable-test-fwupgrader', '', d)}"
+DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', 'ENABLE_CONFIG_OVERRIDE', '', d)}"
 
 PR = "r44"
 PV = "4.4.6"
