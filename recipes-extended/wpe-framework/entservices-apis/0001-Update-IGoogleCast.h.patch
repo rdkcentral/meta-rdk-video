@@ -1,0 +1,22 @@
+From 17cb924d6111d01117dd65e051a29844e314c966 Mon Sep 17 00:00:00 2001
+From: sivarajappan-siva <sivarajappan_siva@comcast.com>
+Date: Mon, 8 Jun 2026 05:51:03 +0530
+Subject: [PATCH] Update IGoogleCast.h
+
+---
+ apis/GoogleCast/IGoogleCast.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/apis/GoogleCast/IGoogleCast.h b/apis/GoogleCast/IGoogleCast.h
+index 19206f4f0..867414067 100644
+--- a/apis/GoogleCast/IGoogleCast.h
++++ b/apis/GoogleCast/IGoogleCast.h
+@@ -113,7 +113,7 @@ namespace Exchange {
+             READY_TO_CAST  // Ready to cast. Cast is functional.
+         };
+ 
+-        // @json
++        // @json:omit
+         // @brief Status of Cast shell.
+         struct EXTERNAL CastStatus {
+             // @brief Build number of the currently running Cast shell.
