@@ -75,9 +75,13 @@ PACKAGECONFIG[websocket]       = "-DWEBSOCKET=ON,,"
 
 PACKAGECONFIG[com] = "-DCOM=ON,,,"
 
-PACKAGECONFIG += "${@bb.utils.contains('DISTRO_FEATURES', \
-    'debug-variant', 'configoverride', '', d)}"
- 
+# FIX 1: Changed from PACKAGECONFIG += to PACKAGECONFIG:append for consistent
+# BitBake semantics — :append is applied after all assignments and cannot be
+# overridden by a later PACKAGECONFIG = "..." in a bbappend.
+# Leading space included in the truthy value to separate from prior entries.
+PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES', \
+    'debug-variant', ' configoverride', '', d)}"
+
 PACKAGECONFIG[configoverride] = \
     "-DENABLE_CONFIG_OVERRIDE=ON,-DENABLE_CONFIG_OVERRIDE=OFF"
 
@@ -116,8 +120,11 @@ EXTRA_OECMAKE += " \
     -DMESSAGING=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', 'ENABLE_CONFIG_OVERRIDE', '', d)}" \
 "
+# FIX 2: Removed the broken bare-string 'ENABLE_CONFIG_OVERRIDE' entry that was
+# previously the last line of the block above. It lacked the required -D prefix
+# and =ON suffix, so CMake never recognised it as a cache variable definition.
+# The PACKAGECONFIG[configoverride] entry above is the correct replacement.
 
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
 
