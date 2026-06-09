@@ -9,12 +9,11 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-framerate;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://rdkservices.ini \
           "
 
 # Release version - 1.1.2
-SRCREV = "c8b81112f804a2b3d95afc5d8e6bed19c87125d1"
+SRCREV = "c360e965090e34afe1ec3a66abcc6c02c597c0f5"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -48,7 +47,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[framerate]            = "-DPLUGIN_FRAMERATE=ON,-DPLUGIN_FRAMERATE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal procps,iarmbus devicesettings procps"
+PACKAGECONFIG[framerate]            = "-DPLUGIN_FRAMERATE=ON,-DPLUGIN_FRAMERATE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal procps entservices-helpers,iarmbus devicesettings procps entservices-helpers"
 
 # ----------------------------------------------------------------------------
 
