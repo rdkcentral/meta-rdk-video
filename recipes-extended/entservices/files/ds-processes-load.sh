@@ -11,10 +11,14 @@ cleanup() {
 trap cleanup EXIT
 trap 'trap - EXIT; cleanup; exit 130' INT TERM HUP QUIT
 
-pidstat -h -u -r -d -p ALL 1 > /opt/logs/ds-processes-load.log &
-PIDSTAT_PID=$!
+if [ -f /opt/pidstat-enable ]; then
+    pidstat -h -u -r -d -p ALL 1 > /opt/logs/ds-processes-load.log &
+    PIDSTAT_PID=$!
+fi
 
-nethogs -t -d 0.5 >> /opt/logs/ds-processes-nethogs.log &
-NETHOGS_PID=$!
+if [ -f /opt/nethogs-enable ]; then
+    nethogs -t -d 0.5 >> /opt/logs/ds-processes-nethogs.log &
+    NETHOGS_PID=$!
+fi
 
 wait
