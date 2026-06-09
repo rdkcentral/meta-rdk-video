@@ -84,7 +84,7 @@ if [ -f "$PLATFORM_FILE" ]; then
 		#migration directory creation if not already present.
 		if [ ! -d "$migrationDir" ]; then
 			boottypeLog "$migrationDir Directory was not present, Hence creating directory"
-			mkdir "$migrationDir"
+			mkdir -p "$migrationDir"
 		        if [ "$?" == 0 ]; then
 		             boottypeLog "Directory creation was successful"
 		        else
