@@ -1,5 +1,5 @@
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index 643c8450d..c3540ad62 100644
+index 643c8450d..60318d73a 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
 @@ -3624,8 +3624,9 @@ POP_WARNING()
@@ -31,21 +31,25 @@ index 643c8450d..c3540ad62 100644
                          Job::Submit(response);
  
                          if (_request->Connection.Value() == Web::Request::CONNECTION_CLOSE) {
-@@ -4126,8 +4131,12 @@ POP_WARNING()
+@@ -4126,8 +4131,15 @@ POP_WARNING()
  
                          if (job.IsValid() == true) {
                              Core::ProxyType<Web::Request> baseRequest(request);
-+                            // bvanav-dbg
-+                            Core::ProxyType<Core::JSONRPC::Message> message(baseRequest->Body<Core::JSONRPC::Message>());
-+                            Core::JsonRpcProfiler::Instance().logRequest(Id(), std::string(message->Designator.Value()));
-                             job->Set(Id(), &_parent, service, baseRequest, _security->Token(), !request->ServiceCall());
+-                            job->Set(Id(), &_parent, service, baseRequest, _security->Token(), !request->ServiceCall());
 -                            _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
-+                            _parent.Submit(Core::ProxyType<Core::IDispatch>(job), Id());
-+                            // _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
++                            // bvanav-dbg
++                            if ((baseRequest->Verb == Web::Request::HTTP_POST) && (baseRequest->HasBody() == true)){
++                                Core::ProxyType<Core::JSONRPC::Message> message(baseRequest->Body<Core::JSONRPC::Message>());
++                                Core::JsonRpcProfiler::Instance().logRequest(Id(), std::string(message->Designator.Value()));
++                                _parent.Submit(Core::ProxyType<Core::IDispatch>(job), Id());
++                            }
++                            else{
++                                _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
++                            }
                          }
                      }
                      break;
-@@ -4572,6 +4581,12 @@ POP_WARNING()
+@@ -4572,6 +4584,12 @@ POP_WARNING()
          {
              _dispatcher.Submit(job);
          }
@@ -79,7 +83,7 @@ index a8ab81fa0..4832a2bac 100644
  
  target_compile_options (${TARGET} PRIVATE -Wno-psabi)
 diff --git a/Source/core/Profiler.cpp b/Source/core/Profiler.cpp
-index e69de29bb..092548975 100644
+index e69de29bb..181a7daad 100644
 --- a/Source/core/Profiler.cpp
 +++ b/Source/core/Profiler.cpp
 @@ -0,0 +1,119 @@
@@ -175,8 +179,8 @@ index e69de29bb..092548975 100644
 +        {
 +            _map[channelId].queueLength = len;
 +        }
-+        else
-+            std::cout << "JsonRpcProfiler [ERROR][logQueue]: Channel Id "  << channelId << " not found !!" << std::endl;
++        // else
++            // std::cout << "JsonRpcProfiler [ERROR][logQueue]: Channel Id "  << channelId << " not found !!" << std::endl;
 +    }
 +
 +    void JsonRpcProfiler::logInvoke(uint32_t channelId)
@@ -185,8 +189,8 @@ index e69de29bb..092548975 100644
 +        {
 +            _map[channelId].invokeTime = std::chrono::system_clock::now();
 +        }
-+        else
-+            std::cout << "JsonRpcProfiler [ERROR][logQueue]: Channel Id "  << channelId << " not found !!" << std::endl;
++        // else
++            // std::cout << "JsonRpcProfiler [ERROR][logQueue]: Channel Id "  << channelId << " not found !!" << std::endl;
 +    }
 +
 +    void JsonRpcProfiler::logResponse(uint32_t channelId)
@@ -197,8 +201,8 @@ index e69de29bb..092548975 100644
 +            log(channelId);
 +            _map.erase(channelId);
 +        }
-+        else
-+            std::cout << "JsonRpcProfiler [ERROR][logResponse]: Channel Id "  << channelId << " not found !!" << std::endl;
++        // else
++            // std::cout << "JsonRpcProfiler [ERROR][logResponse]: Channel Id "  << channelId << " not found !!" << std::endl;
 +    }
 +}
 +} 
