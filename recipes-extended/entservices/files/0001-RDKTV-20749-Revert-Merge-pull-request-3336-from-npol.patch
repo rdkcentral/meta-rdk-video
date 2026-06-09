@@ -1,0 +1,43 @@
+From 920f92c9054fc2f8663f691b73dadc7e57b36dde Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Mon, 21 Nov 2022 13:25:28 +0200
+Subject: [PATCH] (RDKTV-20749) Revert "Merge pull request #3336 from
+ npoltorapavlo/DELIA-57976_main"
+
+This reverts commit 19596b9b321de8700330ed6ef78b20ac623335e6, reversing
+changes made to 457f6e724ca4220191e2eab32e0ec904a651fa69.
+---
+ helpers/UtilsJsonRpc.h | 15 +++------------
+ 1 file changed, 3 insertions(+), 12 deletions(-)
+
+diff --git a/helpers/UtilsJsonRpc.h b/helpers/UtilsJsonRpc.h
+index fb33b50e..a748d767 100644
+--- a/helpers/UtilsJsonRpc.h
++++ b/helpers/UtilsJsonRpc.h
+@@ -4,20 +4,11 @@
+ 
+ #define LOGINFOMETHOD() { std::string json; parameters.ToString(json); LOGINFO( "params=%s", json.c_str() ); }
+ #define LOGTRACEMETHODFIN() { std::string json; response.ToString(json); LOGINFO( "response=%s", json.c_str() ); }
+-
+-/**
+- * DO NOT USE THIS.
+- *
+- * "success" parameter was added for legacy reasons.
+- * Newer APIs should return only error code to match the spec
+- */
+-
+-#define returnResponse(expression) \
++#define returnResponse(success) \
+     { \
+-        bool successBoolean = expression; \
+-        response["success"] = successBoolean; \
++        response["success"] = success; \
+         LOGTRACEMETHODFIN(); \
+-        return (successBoolean ? WPEFramework::Core::ERROR_NONE : WPEFramework::Core::ERROR_GENERAL); \
++        return (WPEFramework::Core::ERROR_NONE); \
+     }
+ #define returnIfParamNotFound(param, name) \
+     if (!param.HasLabel(name)) \
+-- 
+2.34.1
+
