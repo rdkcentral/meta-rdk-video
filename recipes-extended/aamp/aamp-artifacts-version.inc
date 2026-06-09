@@ -2,6 +2,7 @@
 OS_TYPE = "rdke"
 
 PLATFORM_PATH:xione-uk="stream"
+PLATFORM_PATH_xione-sercomm="dhruv"
 PLATFORM_PATH ?= "unknown"
 
 # Try to find the yocto version
