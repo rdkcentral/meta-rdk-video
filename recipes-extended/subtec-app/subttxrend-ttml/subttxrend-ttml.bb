@@ -11,7 +11,7 @@ DEPENDS = "subttxrend-common libxml2 subttxrend-gfx"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "3949db67e6dc141d1ada9f0f610cc493133d1f41"
+SRCREV = "bdde7218711aa900afd151e63b0fd06ecc0df5c0"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-ttml"
 
