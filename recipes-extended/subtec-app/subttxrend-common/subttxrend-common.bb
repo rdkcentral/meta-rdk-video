@@ -11,7 +11,7 @@ DEPENDS = "rdk-logger"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "5045368012f9a37d4ddf5cfce18d9913b951122c"
+SRCREV = "3949db67e6dc141d1ada9f0f610cc493133d1f41"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-common"
 
