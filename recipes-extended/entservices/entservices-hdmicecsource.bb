@@ -40,8 +40,8 @@ PACKAGECONFIG ?= " breakpadsupport \
     hdmicecsource \
 "
 
-HDMICEC_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader"
-HDMICEC_DEPS:vdevice_x86-64 = "iarmbus hdmicec hdmicecheader vdevice-noop"
+HDMICEC_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader entservices-helpers"
+HDMICEC_DEPS:vdevice_x86-64 = "iarmbus hdmicec hdmicecheader vdevice-noop entservices-helpers"
 
 HDMICEC_RDEPS = "iarmbus devicesettings hdmicec"
 HDMICEC_RDEPS:vdevice_x86-64 = "iarmbus hdmicec"
