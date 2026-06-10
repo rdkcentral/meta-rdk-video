@@ -73,7 +73,7 @@ SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
             file://r4.4/PR1832-Thunder-ABBA-Deadlock-Fix.patch \
             file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
             file://r4.4/0001-SmarkLink-Crash-Fix.patch \
-            file://r4.4/002-jsonrpc-profiler-8_2.patch \
+            file://r4.4/003-jsonrpc-profiler-8_2.patch \
            "
 
 S = "${WORKDIR}/git"
