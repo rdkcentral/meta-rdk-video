@@ -1,0 +1,143 @@
+diff --git a/src/third_party/starboard/rdk/shared/player/player_internal.cc b/src/third_party/starboard/rdk/shared/player/player_internal.cc
+index 53ecfb5..a1b4dba 100644
+--- a/src/third_party/starboard/rdk/shared/player/player_internal.cc
++++ b/src/third_party/starboard/rdk/shared/player/player_internal.cc
+@@ -2321,6 +2321,17 @@ void PlayerImpl::AppSrcNeedData(GstAppSrc* src,
+         static_cast<int>(self->GetBothMediaTypeTakingCodecsIntoAccount());
+   }
+ 
++    GST_INFO_OBJECT(
++      src,
++      ">>NeedData request: len=%u, need_mask=0x%x, state=%s, has_enough=0x%x, decoder_state=0x%x, eos=0x%x, video_q=%" G_GUINT64_FORMAT "KB, audio_q=%" G_GUINT64_FORMAT "KB",
++      length,
++      need_data,
++      PrivatePlayerStateToStr(self->state_),
++      self->has_enough_data_,
++      self->decoder_state_data_,
++      self->eos_data_,
++      self->video_appsrc_ ? gst_app_src_get_current_level_bytes(GST_APP_SRC(self->video_appsrc_)) / 1024 : 0,
++      self->audio_appsrc_ ? gst_app_src_get_current_level_bytes(GST_APP_SRC(self->audio_appsrc_)) / 1024 : 0);
+   GST_LOG_OBJECT(src, "===> Really. Give me more data, need: %d", need_data);
+   self->DecoderNeedsData(lock, static_cast<MediaType>(need_data));
+ }
+@@ -2338,6 +2349,12 @@ void PlayerImpl::AppSrcEnoughData(GstAppSrc* src, gpointer user_data) {
+ 
+   GST_DEBUG_OBJECT(src, "===> Enough is enough (enough:%d)",
+                    self->has_enough_data_);
++    GST_INFO_OBJECT(
++      src,
++      ">>EnoughData: enough_mask=0x%x, state=%s, buffered=%" G_GUINT64_FORMAT "KB",
++      self->has_enough_data_,
++      PrivatePlayerStateToStr(self->state_),
++      gst_app_src_get_current_level_bytes(src) / 1024);
+ }
+ 
+ // static
+@@ -2378,12 +2395,17 @@ void PlayerImpl::SetupSource(GstElement* pipeline,
+ void PlayerImpl::OnVideoBufferUnderflow(PlayerImpl* self)
+ {
+   GST_WARNING_OBJECT(self->pipeline_,
+-    "Decoder need data state = 0x%x,"
++    "Video underflow detected; player_state=%s, buffering_state=0x%x, target_min_ts=%" GST_TIME_FORMAT ", decoder_need_data_state=0x%x,"
+     " min sample time = %" GST_TIME_FORMAT ","
++    " position = %" GST_TIME_FORMAT ","
+     " video appsrc level = %" G_GUINT64_FORMAT " kb,"
+     " audio appsrc level = %" G_GUINT64_FORMAT " kb",
++    PrivatePlayerStateToStr(self->state_),
++    self->buffering_state_,
++    GST_TIME_ARGS(self->buf_target_min_ts_),
+     self->decoder_state_data_,
+     GST_TIME_ARGS(self->MinTimestamp(nullptr)),
++    GST_TIME_ARGS(self->GetPosition()),
+     gst_app_src_get_current_level_bytes(GST_APP_SRC(self->video_appsrc_)) / 1024,
+     gst_app_src_get_current_level_bytes(GST_APP_SRC(self->audio_appsrc_)) / 1024);
+ }
+@@ -3096,14 +3118,22 @@ void PlayerImpl::CheckBuffering(GstClockTime position) {
+       GST_STATE(pipeline_) == GST_STATE_PLAYING &&
+       GST_STATE_PENDING(pipeline_) != GST_STATE_PAUSED &&
+       eos_data_ == 0) {
++  GstClockTime target_buffer_time = position + kTargetBufferDurationNs;
+     {
+       ::starboard::ScopedLock lock(mutex_);
+       DecoderNeedsData(lock, origin);
+-      buf_target_min_ts_ = position + kTargetBufferDurationNs;
++      buf_target_min_ts_ = target_buffer_time;
+     }
+     PrintPositionPerSink(pipeline_, GST_LEVEL_INFO);
+-    GST_INFO_OBJECT(pipeline_, "Pause for buffering. Pos: %" GST_TIME_FORMAT
+-                ", min ts:%" GST_TIME_FORMAT, GST_TIME_ARGS(position), GST_TIME_ARGS(min_ts));
++        GST_INFO_OBJECT(
++      pipeline_,
++      ">>Pause for buffering. pos=%" GST_TIME_FORMAT ", min_ts=%" GST_TIME_FORMAT ", origin=%d, target_min_ts=%" GST_TIME_FORMAT ", video_q=%" G_GUINT64_FORMAT "KB, audio_q=%" G_GUINT64_FORMAT "KB",
++      GST_TIME_ARGS(position),
++      GST_TIME_ARGS(min_ts),
++      static_cast<int>(origin),
++      GST_TIME_ARGS(target_buffer_time),
++      video_appsrc_ ? gst_app_src_get_current_level_bytes(GST_APP_SRC(video_appsrc_)) / 1024 : 0,
++      audio_appsrc_ ? gst_app_src_get_current_level_bytes(GST_APP_SRC(audio_appsrc_)) / 1024 : 0);
+     ChangePipelineState(GST_STATE_PAUSED);
+   } else if (GST_CLOCK_TIME_IS_VALID(buf_target_min_ts_) && (min_ts > buf_target_min_ts_ || HasEOSMark())) {
+     double rate;
+@@ -3117,8 +3147,10 @@ void PlayerImpl::CheckBuffering(GstClockTime position) {
+     gst_element_get_state(pipeline_, &state, &pending, 0);
+     if (rate > .0 && state != GST_STATE_PLAYING && pending != GST_STATE_PLAYING) {
+       GST_INFO_OBJECT(
+-        pipeline_, "Resuming playback. min_ts: %" GST_TIME_FORMAT ", buff traget: %" GST_TIME_FORMAT,
+-        GST_TIME_ARGS(min_ts), GST_TIME_ARGS(buf_target_min_ts));
++	pipeline_,"Resuming playback after buffering. min_ts=%" GST_TIME_FORMAT ", target_min_ts=%" GST_TIME_FORMAT ", eos=%s",
++        GST_TIME_ARGS(min_ts),
++	GST_TIME_ARGS(buf_target_min_ts),
++      HasEOSMark() ? "yes" : "no");
+       ChangePipelineState(GST_STATE_PLAYING);
+     }
+   }
+@@ -3330,11 +3362,22 @@ void PlayerImpl::HandleApplicationMessage(GstBus* bus, GstMessage* message) {
+         GST_INFO_OBJECT(pipeline_, "Received '%s' message from %" GST_PTR_FORMAT " with ticket %d", kDidReachBufferingTargetMsgName, GST_MESSAGE_SRC(message), ticket);
+         auto type = GST_MESSAGE_SRC(message) == GST_OBJECT(audio_appsrc_) ? MediaType::kAudio : MediaType::kVideo;
+         bool should_update_playing_state = false;
++	int previous_buffering_state = 0;
+         ::starboard::ScopedLock lock(mutex_);
++	previous_buffering_state = buffering_state_;
+         if (ticket == ticket_ && buffering_state_ != 0) {
+           buffering_state_ &= ~(static_cast<int>(type));
+           should_update_playing_state = (buffering_state_ == 0);
+         }
++	        GST_INFO_OBJECT(
++          pipeline_,
++          ">>Buffering target ack processed: msg_ticket=%d, current_ticket=%d, media=%d, buffering_state=0x%x->0x%x, should_update=%s",
++          ticket,
++          ticket_,
++          static_cast<int>(type),
++          previous_buffering_state,
++          buffering_state_,
++          should_update_playing_state ? "yes" : "no");
+         if (should_update_playing_state) {
+           SchedulePlayingStateUpdate();
+           UpdatePresentingState();
+@@ -3442,7 +3485,13 @@ void PlayerImpl::AddBufferingProbe(GstClockTime target, int ticket) {
+   };
+ 
+   auto buffering_probe_callback = [](GstPad * pad, GstPadProbeInfo * info, gpointer user_data) -> GstPadProbeReturn {
+-    if (GST_PAD_PROBE_INFO_TYPE(info) & GST_PAD_PROBE_TYPE_EVENT_FLUSH)
++    if (GST_PAD_PROBE_INFO_TYPE(info) & GST_PAD_PROBE_TYPE_EVENT_FLUSH){
++      GstObject* parent = gst_pad_get_parent(pad);
++      if (parent) {
++        BufferingProbeData* data = reinterpret_cast<BufferingProbeData*>(user_data);
++        GST_INFO_OBJECT(parent, "Buffering probe removed by FLUSH on pad=%" GST_PTR_FORMAT ", ticket=%d", pad, data->ticket);
++        gst_object_unref(parent);
++      }
+       return GST_PAD_PROBE_REMOVE;
+ 
+     BufferingProbeData* data = reinterpret_cast<BufferingProbeData*>(user_data);
+@@ -3472,9 +3521,8 @@ void PlayerImpl::AddBufferingProbe(GstClockTime target, int ticket) {
+     if ( (pts + duration) >= data->target_time ) {
+       GstObject* parent = gst_pad_get_parent(pad);
+       g_return_val_if_fail(parent != nullptr, GST_PAD_PROBE_REMOVE);
+-      GST_DEBUG_OBJECT(
+-        parent, "Did reach target buffering time:%" GST_TIME_FORMAT ", ticket: %d, on pad: %" GST_PTR_FORMAT,
+-        GST_TIME_ARGS(data->target_time), data->ticket, pad);
++      GST_DEBUG_OBJECT(parent, ">>Did reach target buffering time:%" GST_TIME_FORMAT ", ticket:%d, on pad:%" GST_PTR_FORMAT ", pts:%" GST_TIME_FORMAT ", duration:%" GST_TIME_FORMAT,GST_TIME_ARGS(data->target_time),data->ticket, pad,
++      GST_TIME_ARGS(pts), GST_TIME_ARGS(duration));
+       GstStructure* structure = gst_structure_new(kDidReachBufferingTargetMsgName, "ticket", G_TYPE_INT, data->ticket, nullptr);
+       gst_element_post_message(GST_ELEMENT(parent), gst_message_new_application(parent, structure));
+       gst_object_unref(parent);
