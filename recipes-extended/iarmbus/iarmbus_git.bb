@@ -11,7 +11,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 PV = "1.0.6"
 PR = "r0"
 
-SRCREV_iarmbus = "e1afcc21806556c65c99266be8de60f68f28ee9f"
+SRCREV_iarmbus = "84c9c6c9f12984d2b693dbbe17e839ff121f40bf"
 SRCREV_FORMAT = "iarmbus"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmbus;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmbus"
 
