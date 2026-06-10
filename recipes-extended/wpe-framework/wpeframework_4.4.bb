@@ -73,6 +73,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
            "
 
 SRC_URI += "file://r4.4/fix-proper-cleanup-service.patch \
+	    file://r4.4/Fix-use-after-free-SIGSEGV-in-UnknownProxy-Release.patch \
             "
 
 S = "${WORKDIR}/git"
