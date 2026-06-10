@@ -1,5 +1,5 @@
 diff --git a/apis/OpenCDMi/IContentDecryption.h b/apis/OpenCDMi/IContentDecryption.h
-index c7de450..f0a4031 100644
+index dec0647..f7a9ec2 100644
 --- a/apis/OpenCDMi/IContentDecryption.h
 +++ b/apis/OpenCDMi/IContentDecryption.h
 @@ -73,6 +73,14 @@ namespace Exchange {
@@ -10,7 +10,7 @@ index c7de450..f0a4031 100644
 +	    uint64_t fps_movieID;
 +	    uint64_t fps_cryptorID;
 +	    uint32_t fps_contentType;
-+	    CDMi::Cdmi_FPSSliceInfo fps_sliceInfo[4]; // Lets out an arbitary size for now.  
++	    CDMi::Cdmi_FPSSliceInfo fps_sliceInfo[4]; // Lets out an arbitary size for now.
 +	    uint32_t fps_sliceInfoArrayCount;
 +	    uint32_t fps_svpmemoryHandle;
 +
@@ -149,13 +149,13 @@ index c7de450..f0a4031 100644
 +        }
 +
 +        void SetFPSSvpOut(uint32_t svpmemoryhandle)
-+        { 
++        {
 +            //printf("############SetFPSSvpOut() called ################ \n");
 +            //printf("########svp memory handle = 0x%x ###### \n",svpmemoryhandle);fflush(stdout);
 +            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
 +            admin->fps_svpmemoryHandle = svpmemoryhandle;
 +             //printf("########admin->fps_svpout = %p ###### \n",admin->fps_svpout);fflush(stdout);
-+        } 
++        }
 +
 +	uint32_t FPSSvpOut(void)
 +        {
@@ -167,12 +167,11 @@ index c7de450..f0a4031 100644
      };
  }
  }
-
-diff --git a/interfaces/IOCDM.h b/interfaces/IOCDM.h
-index 25bbe20..600cc83 100644
+diff --git a/apis/OpenCDMi/IOCDM.h b/apis/OpenCDMi/IOCDM.h
+index 5d3fe8c..f2c9031 100644
 --- a/apis/OpenCDMi/IOCDM.h
 +++ b/apis/OpenCDMi/IOCDM.h
-@@ -191,6 +191,17 @@ struct IAccessorOCDM : virtual public Core::IUnknown {
+@@ -191,6 +191,18 @@ struct IAccessorOCDM : virtual public Core::IUnknown {
      // Provides keysystem-specific metadata
      virtual OCDM_RESULT Metadata(const std::string& keySystem, std::string& metadata /* @out */) const = 0;
  
@@ -186,6 +185,7 @@ index 25bbe20..600cc83 100644
 +    virtual OCDM_RESULT DestroyServerExchange(const string& keySystem, uint32_t version, uint8_t* session /* @in @length:4 */) const = 0;
 +    virtual OCDM_RESULT InitLibrary(const string& keySystem) const = 0;
 +    virtual OCDM_RESULT ProcessLicense(const string& keySystem, uint32_t version, uint8_t* session /* @in @length:4 */, const uint8_t* licenseData /* @in @length:licenseDataSize */, uint32_t licenseDataSize, uint8_t *cryptoId /* @inout @length:8 */) const = 0;
++    virtual OCDM_RESULT DestroyCryptor(const string& keySystem, uint32_t version, uint64_t cryptoId) const = 0;
 +
      // Provides keysystem-specific metricdata
      virtual OCDM_RESULT Metricdata(

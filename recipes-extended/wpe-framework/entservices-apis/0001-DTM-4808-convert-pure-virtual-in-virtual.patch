@@ -1,5 +1,5 @@
 diff --git a/apis/OpenCDMi/IDRM.h b/apis/OpenCDMi/IDRM.h
-index a34454a..05fb665 100644
+index a34454a..ec24ed1 100644
 --- a/apis/OpenCDMi/IDRM.h
 +++ b/apis/OpenCDMi/IDRM.h
 @@ -268,6 +268,12 @@ typedef struct {
@@ -30,7 +30,7 @@ index a34454a..05fb665 100644
      virtual CDMi_RESULT ReleaseClearContent(
          const uint8_t* f_pbSessionKey,
          uint32_t f_cbSessionKey,
-@@ -446,6 +460,37 @@ public:
+@@ -446,6 +460,41 @@ public:
      virtual CDMi_RESULT DestroyMediaKeySession(
          IMediaKeySession* f_piMediaKeySession)
          = 0;
@@ -62,6 +62,10 @@ index a34454a..05fb665 100644
 +        return CDMi_METHOD_NOT_IMPLEMENTED;
 +    }
 +    virtual CDMi_RESULT InitLibrary()
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
++    virtual CDMi_RESULT DestroyCryptor(uint32_t version, uint64_t cryptoId)
 +    {
 +        return CDMi_METHOD_NOT_IMPLEMENTED;
 +    }
