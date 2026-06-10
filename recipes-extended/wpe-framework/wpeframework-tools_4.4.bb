@@ -11,7 +11,7 @@ S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderTools.git;protocol=https;branch=R4_4-RDK"
 
-SRCREV = "16b4aff2622b5ff14af6685a32017b52d4c675b2"
+SRCREV = "b52e8b770d42ba9ea6dd444febae3925a745bd04"
 
 inherit cmake pkgconfig python3native
 
