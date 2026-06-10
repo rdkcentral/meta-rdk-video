@@ -1,0 +1,218 @@
+From ac73d33a6774334f05ed6121e7d67fe042f21c11 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Thu, 11 Jun 2026 09:36:54 +0000
+Subject: [PATCH] changes
+
+---
+ .../media/engine/webrtc_video_engine.cc       |  3 +++
+ .../libwebrtc/Source/webrtc/pc/channel.cc     |  3 +++
+ .../mediastream/PeerConnectionBackend.cpp     |  1 +
+ .../gstreamer/GStreamerMediaEndpoint.cpp      |  3 +++
+ .../gstreamer/GStreamerRegistryScanner.cpp    |  3 +++
+ .../gstreamer/GStreamerWebRTCProvider.cpp     |  4 +++
+ .../RealtimeOutgoingVideoSourceGStreamer.cpp  |  1 +
+ .../GStreamerVideoEncoderFactory.cpp          | 27 +++++++++++++++++--
+ 8 files changed, 43 insertions(+), 2 deletions(-)
+
+diff --git a/Source/ThirdParty/libwebrtc/Source/webrtc/media/engine/webrtc_video_engine.cc b/Source/ThirdParty/libwebrtc/Source/webrtc/media/engine/webrtc_video_engine.cc
+index 8a9d6ff95c8e..8369da2d545f 100644
+--- a/Source/ThirdParty/libwebrtc/Source/webrtc/media/engine/webrtc_video_engine.cc
++++ b/Source/ThirdParty/libwebrtc/Source/webrtc/media/engine/webrtc_video_engine.cc
+@@ -183,6 +183,7 @@ std::vector<VideoCodec> GetPayloadTypesAndDefaultCodecs(
+     return {};
+   }
+ 
++  printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+   std::vector<webrtc::SdpVideoFormat> supported_formats =
+       factory->GetSupportedFormats();
+   if (is_decoder_factory) {
+@@ -797,12 +798,14 @@ WebRtcVideoEngine::CreateReceiveChannel(
+ }
+ 
+ std::vector<VideoCodec> WebRtcVideoEngine::send_codecs(bool include_rtx) const {
++  printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+   return GetPayloadTypesAndDefaultCodecs(encoder_factory_.get(),
+                                          /*is_decoder_factory=*/false,
+                                          include_rtx, trials_);
+ }
+ 
+ std::vector<VideoCodec> WebRtcVideoEngine::recv_codecs(bool include_rtx) const {
++  printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+   return GetPayloadTypesAndDefaultCodecs(decoder_factory_.get(),
+                                          /*is_decoder_factory=*/true,
+                                          include_rtx, trials_);
+diff --git a/Source/ThirdParty/libwebrtc/Source/webrtc/pc/channel.cc b/Source/ThirdParty/libwebrtc/Source/webrtc/pc/channel.cc
+index 0024ba0e3572..fef4fe06c467 100644
+--- a/Source/ThirdParty/libwebrtc/Source/webrtc/pc/channel.cc
++++ b/Source/ThirdParty/libwebrtc/Source/webrtc/pc/channel.cc
+@@ -271,6 +271,7 @@ bool BaseChannel::SetRemoteContent(const MediaContentDescription* content,
+                                    std::string& error_desc) {
+   RTC_DCHECK_RUN_ON(worker_thread());
+   TRACE_EVENT0("webrtc", "BaseChannel::SetRemoteContent");
++  printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+   return SetRemoteContent_w(content, type, error_desc);
+ }
+ 
+@@ -1127,6 +1128,7 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
+                                       std::string& error_desc) {
+   TRACE_EVENT0("webrtc", "VideoChannel::SetRemoteContent_w");
+   RTC_LOG(LS_INFO) << "Setting remote video description for " << ToString();
++printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+ 
+   const VideoContentDescription* video = content->as_video();
+ 
+@@ -1213,6 +1215,7 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
+     last_recv_params_ = recv_params;
+   }
+ 
++  printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+   return UpdateRemoteStreams_w(content, type, error_desc);
+ }
+ 
+diff --git a/Source/WebCore/Modules/mediastream/PeerConnectionBackend.cpp b/Source/WebCore/Modules/mediastream/PeerConnectionBackend.cpp
+index e8df268cb625..a4ea847dde0d 100644
+--- a/Source/WebCore/Modules/mediastream/PeerConnectionBackend.cpp
++++ b/Source/WebCore/Modules/mediastream/PeerConnectionBackend.cpp
+@@ -186,6 +186,7 @@ void PeerConnectionBackend::setLocalDescription(const RTCSessionDescription* ses
+ {
+     ASSERT(!m_peerConnection.isClosed());
+ 
++    printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+     m_setDescriptionCallback = WTFMove(callback);
+     doSetLocalDescription(sessionDescription);
+ }
+diff --git a/Source/WebCore/Modules/mediastream/gstreamer/GStreamerMediaEndpoint.cpp b/Source/WebCore/Modules/mediastream/gstreamer/GStreamerMediaEndpoint.cpp
+index 4e53b1c86ebf..4a6a4992931e 100644
+--- a/Source/WebCore/Modules/mediastream/gstreamer/GStreamerMediaEndpoint.cpp
++++ b/Source/WebCore/Modules/mediastream/gstreamer/GStreamerMediaEndpoint.cpp
+@@ -1118,6 +1118,7 @@ ExceptionOr<GStreamerMediaEndpoint::Backends> GStreamerMediaEndpoint::createTran
+             }
+         };
+         if (kind == "video"_s) {
++		printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+             codecs = registryScanner.videoRtpCapabilities(GStreamerRegistryScanner::Configuration::Encoding).codecs;
+             auto decodingCapabilities = registryScanner.videoRtpCapabilities(GStreamerRegistryScanner::Configuration::Decoding).codecs;
+             mergeCodecs(decodingCapabilities);
+@@ -1127,11 +1128,13 @@ ExceptionOr<GStreamerMediaEndpoint::Backends> GStreamerMediaEndpoint::createTran
+             mergeCodecs(decodingCapabilities);
+         }
+     } else if (direction == GST_WEBRTC_RTP_TRANSCEIVER_DIRECTION_SENDONLY) {
++	    printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+         if (kind == "video"_s)
+             codecs = registryScanner.videoRtpCapabilities(GStreamerRegistryScanner::Configuration::Encoding).codecs;
+         else
+             codecs = registryScanner.audioRtpCapabilities(GStreamerRegistryScanner::Configuration::Encoding).codecs;
+     } else if (direction == GST_WEBRTC_RTP_TRANSCEIVER_DIRECTION_RECVONLY) {
++	    printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+         if (kind == "video"_s)
+             codecs = registryScanner.videoRtpCapabilities(GStreamerRegistryScanner::Configuration::Decoding).codecs;
+         else
+diff --git a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+index 52ab5d4ca3aa..fa214a830c9f 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/GStreamerRegistryScanner.cpp
+@@ -1076,6 +1076,7 @@ RTCRtpCapabilities GStreamerRegistryScanner::audioRtpCapabilities(Configuration
+ 
+ RTCRtpCapabilities GStreamerRegistryScanner::videoRtpCapabilities(Configuration configuration)
+ {
++	printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+     RTCRtpCapabilities capabilies;
+     fillVideoRtpCapabilities(configuration, capabilies);
+     return capabilies;
+@@ -1148,6 +1149,7 @@ void GStreamerRegistryScanner::fillVideoRtpCapabilities(Configuration configurat
+         else
+             element = gst_element_factory_make("webkitvideoencoder", nullptr);
+ 
++	printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+         if (element) {
+             Vector<String> profiles = {
+                 "42e01f"_s,
+@@ -1157,6 +1159,7 @@ void GStreamerRegistryScanner::fillVideoRtpCapabilities(Configuration configurat
+             };
+ 
+             for (auto& profileLevelId : profiles) {
++		    printf("KKP profileLevelId = %s\n", profileLevelId.utf8().data());
+                 auto spsAsInteger = parseInteger<uint64_t>(profileLevelId, 16).value_or(0);
+                 uint8_t sps[3];
+                 sps[0] = spsAsInteger >> 16;
+diff --git a/Source/WebCore/platform/mediastream/gstreamer/GStreamerWebRTCProvider.cpp b/Source/WebCore/platform/mediastream/gstreamer/GStreamerWebRTCProvider.cpp
+index 15301b3b8559..8183b73a73ae 100644
+--- a/Source/WebCore/platform/mediastream/gstreamer/GStreamerWebRTCProvider.cpp
++++ b/Source/WebCore/platform/mediastream/gstreamer/GStreamerWebRTCProvider.cpp
+@@ -80,6 +80,8 @@ void GStreamerWebRTCProvider::initializeAudioEncodingCapabilities()
+ 
+ void GStreamerWebRTCProvider::initializeVideoEncodingCapabilities()
+ {
++    printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
++
+     ensureGStreamerInitialized();
+     registerWebKitGStreamerVideoEncoder();
+     m_videoEncodingCapabilities = GStreamerRegistryScanner::singleton().videoRtpCapabilities(GStreamerRegistryScanner::Configuration::Encoding);
+@@ -102,6 +104,8 @@ void GStreamerWebRTCProvider::initializeAudioDecodingCapabilities()
+ 
+ void GStreamerWebRTCProvider::initializeVideoDecodingCapabilities()
+ {
++	printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
++
+     m_videoDecodingCapabilities = GStreamerRegistryScanner::singleton().videoRtpCapabilities(GStreamerRegistryScanner::Configuration::Decoding);
+     m_videoDecodingCapabilities->codecs.removeAllMatching([isSupportingVP9Profile0 = isSupportingVP9Profile0(), isSupportingVP9Profile2 = isSupportingVP9Profile2(), isSupportingH265 = isSupportingH265()](const auto& codec) {
+         if (!isSupportingVP9Profile0 && codec.sdpFmtpLine == "profile-id=0"_s)
+diff --git a/Source/WebCore/platform/mediastream/gstreamer/RealtimeOutgoingVideoSourceGStreamer.cpp b/Source/WebCore/platform/mediastream/gstreamer/RealtimeOutgoingVideoSourceGStreamer.cpp
+index 5f143860c40b..2ac88f951f6f 100644
+--- a/Source/WebCore/platform/mediastream/gstreamer/RealtimeOutgoingVideoSourceGStreamer.cpp
++++ b/Source/WebCore/platform/mediastream/gstreamer/RealtimeOutgoingVideoSourceGStreamer.cpp
+@@ -72,6 +72,7 @@ RealtimeOutgoingVideoSourceGStreamer::RealtimeOutgoingVideoSourceGStreamer(const
+ 
+ RTCRtpCapabilities RealtimeOutgoingVideoSourceGStreamer::rtpCapabilities() const
+ {
++	printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+     auto& registryScanner = GStreamerRegistryScanner::singleton();
+     return registryScanner.videoRtpCapabilities(GStreamerRegistryScanner::Configuration::Encoding);
+ }
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoEncoderFactory.cpp b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoEncoderFactory.cpp
+index 7cbbff3d1bac..1b171678907e 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoEncoderFactory.cpp
++++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoEncoderFactory.cpp
+@@ -405,14 +405,37 @@ struct NoopEncoder : public webrtc::VideoEncoder
+         info.implementation_name = "Noop";
+         return info;
+     }
+-    void AddCodecIfSupported(std::vector<webrtc::SdpVideoFormat>* supportedFormats)
++   /* void AddCodecIfSupported(std::vector<webrtc::SdpVideoFormat>* supportedFormats)
+     {
+         auto h264Format = webrtc::SdpVideoFormat(cricket::kH264CodecName,
+             { { cricket::kH264FmtpProfileLevelId, cricket::kH264ProfileLevelConstrainedBaseline },
+                 { cricket::kH264FmtpLevelAsymmetryAllowed, "1" },
+                 { cricket::kH264FmtpPacketizationMode, "1" } });
+         supportedFormats->push_back(h264Format);
+-    }
++    }*/
++void AddCodecIfSupported(std::vector<webrtc::SdpVideoFormat>* supportedFormats)
++{
++	printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
++    auto constrainedBaseline = webrtc::SdpVideoFormat(
++        cricket::kH264CodecName,
++        {
++            { cricket::kH264FmtpProfileLevelId, cricket::kH264ProfileLevelConstrainedBaseline },
++            { cricket::kH264FmtpLevelAsymmetryAllowed, "1" },
++            { cricket::kH264FmtpPacketizationMode, "1" }
++        });
++
++    supportedFormats->push_back(constrainedBaseline);
++
++    auto constrainedHigh = webrtc::SdpVideoFormat(
++        cricket::kH264CodecName,
++        {
++            { cricket::kH264FmtpProfileLevelId, cricket::kH264ProfileLevelConstrainedHigh },
++            { cricket::kH264FmtpLevelAsymmetryAllowed, "1" },
++            { cricket::kH264FmtpPacketizationMode, "1" }
++        });
++
++    supportedFormats->push_back(constrainedHigh);
++}
+ };
+ 
+ static bool useNoopEncoder() {  return true; }
+-- 
+2.44.4
+
