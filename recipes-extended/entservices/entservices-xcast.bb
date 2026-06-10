@@ -2,18 +2,17 @@ SUMMARY = "ENTServices XCast plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV = "2.0.6"
+PV = "2.0.8"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-xcast;${CMF_GITHUB_SRC_URI_SUFFIX}\
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 2.0.6
-SRCREV = "a7c64e2d154d1ba059c2981cf871ddb60f780a42"
+# Release version - 2.0.8
+SRCREV = "587f31281b511902944627dcc2011b98e64c04e7"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -42,7 +41,7 @@ PACKAGECONFIG:append = " xcast"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[xcast]                = "-DPLUGIN_XCAST=ON,-DPLUGIN_XCAST=OFF,iarmbus iarmmgrs rfc xdial networkmanager-plugin,iarmbus rfc xdial networkmanager-plugin"
+PACKAGECONFIG[xcast]                = "-DPLUGIN_XCAST=ON,-DPLUGIN_XCAST=OFF,iarmbus iarmmgrs rfc xdial networkmanager-plugin entservices-helpers,iarmbus rfc xdial networkmanager-plugin entservices-helpers"
 
 # ----------------------------------------------------------------------------
 

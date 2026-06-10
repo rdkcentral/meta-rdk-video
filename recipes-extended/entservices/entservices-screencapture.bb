@@ -2,7 +2,7 @@ SUMMARY = "ENTServices screencapture plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7df5a8706277b586ca000838046993d1"
 
-PV = "1.1.2"
+PV = "1.1.5"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -13,11 +13,10 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-screencapture;${CMF_GITHUB_SRC_URI_SUF
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
           
-# Release version - 1.1.2
-SRCREV = "7299a09dd907270e3d6a95a993461ed1717d6ef8"
+# Release version - 1.1.5
+SRCREV = "6d61278c0fba48693ef153f1b2ee243993060716"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -62,7 +61,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains("BUILD_VARIANT", "debug", "-DPLUGIN_BUILD
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[screencapture]        = "-DPLUGIN_SCREENCAPTURE=ON,-DPLUGIN_SCREENCAPTURE=OFF,entservices-apis curl libpng drm,entservices-apis curl libpng libdrm"
+PACKAGECONFIG[screencapture]        = "-DPLUGIN_SCREENCAPTURE=ON,-DPLUGIN_SCREENCAPTURE=OFF,entservices-apis entservices-helpers curl libpng drm,entservices-apis entservices-helpers curl libpng libdrm"
 
 # ----------------------------------------------------------------------------
 

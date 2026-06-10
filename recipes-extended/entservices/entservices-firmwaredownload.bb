@@ -1,20 +1,19 @@
 SUMMARY = "ENTServices firmware download plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.0.1"
+PV = "1.0.3"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwaredownload;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.1
-SRCREV = "67d21e95fd738b2c0e218d4c2f0e1a58cdbe8dff"
+# Release version - 1.0.3
+SRCREV = "bdd067bcda9ad4833fa922d97fb27d610d9c9d0b"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -39,7 +38,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 PACKAGECONFIG ?= " firmwaredownload \
     "
 
-PACKAGECONFIG[firmwaredownload] = "-DPLUGIN_FIRMWAREDOWNLOAD=ON,-DPLUGIN_FIRMWAREDOWNLOAD=OFF,wpeframework-clientlibraries"
+PACKAGECONFIG[firmwaredownload] = "-DPLUGIN_FIRMWAREDOWNLOAD=ON,-DPLUGIN_FIRMWAREDOWNLOAD=OFF,wpeframework-clientlibraries entservices-helpers"
 
 # ----------------------------------------------------------------------------
 
