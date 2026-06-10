@@ -1,8 +1,8 @@
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index 643c8450d..b5994640d 100644
+index abb666b8b..5ac41262c 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
-@@ -3624,8 +3624,9 @@ POP_WARNING()
+@@ -3660,8 +3660,9 @@ POP_WARNING()
                      ASSERT(_service.IsValid() == true);
                      return _service->Callsign();
                  }
@@ -13,7 +13,7 @@ index 643c8450d..b5994640d 100644
                  Server* _server;
                  Core::ProxyType<Service> _service;
              };
-@@ -3681,6 +3682,8 @@ POP_WARNING()
+@@ -3717,6 +3718,8 @@ POP_WARNING()
                              }
  
                              if (message->IsSet()) {
@@ -22,7 +22,7 @@ index 643c8450d..b5994640d 100644
                                  Core::ProxyType<Core::JSONRPC::Message> body = Job::Process(_token, message);
  
                                  // If we have no response body, it looks like an async-call...
-@@ -3726,6 +3729,8 @@ POP_WARNING()
+@@ -3762,6 +3765,8 @@ POP_WARNING()
                          if (response->CacheControl.IsSet() == false)
                              response->CacheControl = _T("no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0");
  
@@ -31,7 +31,7 @@ index 643c8450d..b5994640d 100644
                          Job::Submit(response);
  
                          if (_request->Connection.Value() == Web::Request::CONNECTION_CLOSE) {
-@@ -4126,8 +4131,15 @@ POP_WARNING()
+@@ -4173,8 +4178,15 @@ POP_WARNING()
  
                          if (job.IsValid() == true) {
                              Core::ProxyType<Web::Request> baseRequest(request);
@@ -49,7 +49,7 @@ index 643c8450d..b5994640d 100644
                          }
                      }
                      break;
-@@ -4572,6 +4584,12 @@ POP_WARNING()
+@@ -4616,6 +4628,12 @@ POP_WARNING()
          {
              _dispatcher.Submit(job);
          }
@@ -63,7 +63,7 @@ index 643c8450d..b5994640d 100644
          {
              _dispatcher.Schedule(time, job);
 diff --git a/Source/core/CMakeLists.txt b/Source/core/CMakeLists.txt
-index a8ab81fa0..4832a2bac 100644
+index fce82ab41..1d22e2a7e 100644
 --- a/Source/core/CMakeLists.txt
 +++ b/Source/core/CMakeLists.txt
 @@ -55,6 +55,7 @@ add_library(${TARGET} SHARED
