@@ -11,7 +11,7 @@ S = "${WORKDIR}/git"
 PV = "1.1.0"
 PR = "r0"
 
-SRCREV = "5ef1e5102434f1f325aa93abcebd4c519e0b3935"
+SRCREV = "6cc6fb35c291b4c48cf454ff5e2d831a3d508f6d"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdk-window-manager;${CMF_GITHUB_SRC_URI_SUFFIX}"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -21,6 +21,7 @@ EXTRA_OECMAKE += "-DRDK_WINDOW_MANAGER_BUILD_TEST_APP=OFF"
 inherit cmake pkgconfig
 
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_WINDOW_MANAGER_VNC_SERVER=OFF', '-DRDK_WINDOW_MANAGER_VNC_SERVER=ON', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DDENABLE_RDKWINDOWMANAGER_VNCSERVER2=OFF', '-DENABLE_RDKWINDOWMANAGER_VNCSERVER2=ON', d)}"
 
 do_install() {
     install -d ${D}/${libdir}
