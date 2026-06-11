@@ -1,0 +1,377 @@
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index 2a2cf9a9..ac987c4c 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -57,6 +57,10 @@ ENUM_CONVERSION_END(PluginHost::InputHandler::type)
+ 
+ namespace PluginHost
+ {
++    #ifdef __CORE_WARNING_REPORTING__
++    // Counts plugins currently going through Initialize() to detect burst-startup saturation.
++    static std::atomic<uint8_t> _sParallelActivations(0);
++    #endif
+     /* static */ Core::ProxyType<Web::Response> Server::Channel::_missingCallsign(Core::ProxyType<Web::Response>::Create());
+     /* static */ Core::ProxyType<Web::Response> Server::Channel::_incorrectVersion(Core::ProxyType<Web::Response>::Create());
+     /* static */ Core::ProxyType<Web::Response> Server::Channel::WebRequestJob::_missingResponse(Core::ProxyType<Web::Response>::Create());
+@@ -409,7 +413,16 @@ namespace PluginHost
+ 
+                 Unlock();
+ 
++                #ifdef __CORE_WARNING_REPORTING__
++                {
++                    const uint8_t activationCount = ++_sParallelActivations;
++                    REPORT_OUTOFBOUNDS_WARNING_EX(WarningReporting::TooManyParallelPluginActivations, callSign.c_str(), static_cast<uint32_t>(activationCount));
++                }
++                #endif
+                 REPORT_DURATION_WARNING( { ErrorMessage(_handler->Initialize(this)); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::ACTIVATION, callSign.c_str());
++                #ifdef __CORE_WARNING_REPORTING__
++                --_sParallelActivations;
++                #endif
+ 
+                 if (HasError() == true) {
+                     result = Core::ERROR_GENERAL;
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index 643c8450..03196bb7 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -3539,6 +3539,9 @@ POP_WARNING()
+                     : _ID(~0)
+                     , _server(nullptr)
+                     , _service()
++#ifdef __CORE_WARNING_REPORTING__
++                    , _queuedTime(0)
++#endif
+                 {
+                 }
+                 ~Job() override
+@@ -3575,6 +3578,9 @@ POP_WARNING()
+                     if (_service.IsValid() == true) {
+                         _service.Release();
+                     }
++#ifdef __CORE_WARNING_REPORTING__
++                    _queuedTime = 0;
++#endif
+                 }
+                 void Set(const uint32_t id, Server* server, Core::ProxyType<Service>& service)
+                 {
+@@ -3585,6 +3591,9 @@ POP_WARNING()
+                     _ID = id;
+                     _service = service;
+                     _server = server;
++#ifdef __CORE_WARNING_REPORTING__
++                    _queuedTime = Core::Time::Now().Ticks();
++#endif
+                 }
+                 string Process(const string& message)
+                 {
+@@ -3595,6 +3604,15 @@ POP_WARNING()
+                 Core::ProxyType<Core::JSONRPC::Message> Process(const string& token, const Core::ProxyType<Core::JSONRPC::Message>& message)
+                 {
+                     Core::ProxyType<Core::JSONRPC::Message> result;
++#ifdef __CORE_WARNING_REPORTING__
++                    if (_queuedTime != 0) {
++                        const uint32_t queueWaitMs = static_cast<uint32_t>(
++                            (Core::Time::Now().Ticks() - _queuedTime) / Core::Time::TicksPerMillisecond);
++                        REPORT_OUTOFBOUNDS_WARNING_EX(WarningReporting::JSONRPCQueueWait, _service->Callsign().c_str(),
++                            queueWaitMs, message->Designator.Value());
++                        _queuedTime = 0;
++                    }
++#endif
+                     REPORT_DURATION_WARNING( { result = _service->Invoke(_ID, token, *message); }, WarningReporting::TooLongInvokeMessage, *message);  
+                     return result;
+                 }
+@@ -3628,6 +3646,9 @@ POP_WARNING()
+                 uint32_t _ID;
+                 Server* _server;
+                 Core::ProxyType<Service> _service;
++#ifdef __CORE_WARNING_REPORTING__
++                uint64_t _queuedTime;
++#endif
+             };
+             class WebRequestJob : public Job {
+             public:
+diff --git a/Source/WPEFramework/WarningReportingCategories.cpp b/Source/WPEFramework/WarningReportingCategories.cpp
+index 4af47f96..5f01904c 100644
+--- a/Source/WPEFramework/WarningReportingCategories.cpp
++++ b/Source/WPEFramework/WarningReportingCategories.cpp
+@@ -36,6 +36,8 @@ namespace WarningReporting {
+             {
+                 ANNOUNCE_WARNING(TooLongPluginState);
+                 ANNOUNCE_WARNING(TooLongInvokeMessage);
++                ANNOUNCE_WARNING(TooManyParallelPluginActivations);
++                ANNOUNCE_WARNING(JSONRPCQueueWait);
+             }
+         } ControlsRegistration;
+ 
+diff --git a/Source/WPEFramework/WarningReportingCategories.h b/Source/WPEFramework/WarningReportingCategories.h
+index a79e4e31..de5c767d 100644
+--- a/Source/WPEFramework/WarningReportingCategories.h
++++ b/Source/WPEFramework/WarningReportingCategories.h
+@@ -236,5 +236,88 @@ namespace WarningReporting {
+         Type _type;
+         string _content;
+     };
++
++    class EXTERNAL TooManyParallelPluginActivations {
++    public:
++        TooManyParallelPluginActivations(const TooManyParallelPluginActivations&) = delete;
++        TooManyParallelPluginActivations& operator=(const TooManyParallelPluginActivations&) = delete;
++        TooManyParallelPluginActivations() = default;
++        ~TooManyParallelPluginActivations() = default;
++
++        // Nothing extra to serialize — bounds category carries the count as actualValue
++        uint16_t Serialize(uint8_t[], const uint16_t) const
++        {
++            return 0;
++        }
++
++        uint16_t Deserialize(const uint8_t[], const uint16_t)
++        {
++            return 0;
++        }
++
++        void ToString(string& visitor, const int64_t actualValue, const int64_t maxValue) const
++        {
++            visitor = Core::Format(_T("Too many plugins activating in parallel: %" PRId64 " concurrent activations"), actualValue);
++            visitor += Core::Format(_T(", value %" PRId64 " [parallel activations], max allowed %" PRId64), actualValue, maxValue);
++        };
++
++        // Report (info) at 4+, Warning at 6+ simultaneous plugin activations
++        static constexpr uint32_t DefaultWarningBound = { 6 };
++        static constexpr uint32_t DefaultReportBound = { 4 };
++    };
++
++    class EXTERNAL JSONRPCQueueWait {
++    public:
++        JSONRPCQueueWait(const JSONRPCQueueWait&) = delete;
++        JSONRPCQueueWait& operator=(const JSONRPCQueueWait&) = delete;
++
++        JSONRPCQueueWait()
++            : _designator()
++        {
++        }
++        ~JSONRPCQueueWait() = default;
++
++        // Captures the JSONRPC method designator for output (e.g. "Plugin.1.Method")
++        bool Analyze(const char[], const char[], const string& designator)
++        {
++            _designator = designator.substr(0, 64);
++            return true;
++        }
++
++        uint16_t Serialize(uint8_t buffer[], const uint16_t length) const
++        {
++            uint16_t len = static_cast<uint16_t>(_designator.size() + 1);
++            if (len <= length) {
++                std::copy(_designator.begin(), _designator.end(), buffer);
++                buffer[_designator.size()] = 0;
++                return len;
++            }
++            return 0;
++        }
++
++        uint16_t Deserialize(const uint8_t buffer[], const uint16_t length)
++        {
++            string designator = reinterpret_cast<const char*>(buffer);
++            uint16_t len = static_cast<uint16_t>(designator.size() + 1);
++            if (len <= length) {
++                _designator = designator;
++                return len;
++            }
++            return 0;
++        }
++
++        void ToString(string& visitor, const int64_t actualValue, const int64_t maxValue) const
++        {
++            visitor = Core::Format(_T("JSONRPC request [%s] waited too long in plugin dispatch queue"), _designator.c_str());
++            visitor += Core::Format(_T(", value %" PRId64 " [ms], max allowed %" PRId64 " [ms]"), actualValue, maxValue);
++        };
++
++        // Report at 100 ms, Warning at 200 ms queue wait
++        static constexpr uint32_t DefaultWarningBound = { 200 };
++        static constexpr uint32_t DefaultReportBound = { 100 };
++
++    private:
++        string _designator;
++    };
+ }
+ }
+diff --git a/Source/com/CMakeLists.txt b/Source/com/CMakeLists.txt
+index bcf9489d..63d623bb 100644
+--- a/Source/com/CMakeLists.txt
++++ b/Source/com/CMakeLists.txt
+@@ -17,7 +17,7 @@
+ 
+ set(TARGET ${NAMESPACE}COM)
+ set(PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+-ProxyStubGenerator(NAMESPACE "WPEFramework::RPC" INPUT "${CMAKE_CURRENT_SOURCE_DIR}/ICOM.h" OUTDIR "${CMAKE_CURRENT_BINARY_DIR}/generated" PROJECT_DIR ${PROJECT_DIR})
++ProxyStubGenerator(NAMESPACE "WPEFramework::RPC" INPUT "${CMAKE_CURRENT_SOURCE_DIR}/ICOM.h" OUTDIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+ 
+ add_library(${TARGET} SHARED
+     Administrator.cpp
+diff --git a/Source/core/ThreadPool.h b/Source/core/ThreadPool.h
+index 1287ae98..b0f593e1 100644
+--- a/Source/core/ThreadPool.h
++++ b/Source/core/ThreadPool.h
+@@ -610,6 +610,21 @@ POP_WARNING()
+         {
+             ASSERT(job.IsValid() == true);
+             ASSERT(_queue.HasEntry(job) == false);
++#ifdef __CORE_WARNING_REPORTING__
++            {
++                uint32_t pending = Pending();
++                if (pending > 0) {
++                    uint8_t total = Count();
++                    uint8_t active = 0;
++                    std::list<Executor>::const_iterator it = _units.cbegin();
++                    while (it != _units.cend()) {
++                        if (it->IsActive()) { ++active; }
++                        ++it;
++                    }
++                    REPORT_OUTOFBOUNDS_WARNING(WarningReporting::WorkerPoolSaturation, pending, active, total);
++                }
++            }
++#endif
+ 
+             if (Thread::ThreadId() == ResourceMonitor::Instance().Id()) {
+                 _queue.Post(job);
+diff --git a/Source/core/WarningReportingCategories.cpp b/Source/core/WarningReportingCategories.cpp
+index e18bf2ee..7629f6a8 100644
+--- a/Source/core/WarningReportingCategories.cpp
++++ b/Source/core/WarningReportingCategories.cpp
+@@ -42,6 +42,8 @@ namespace WarningReporting {
+                 ANNOUNCE_WARNING(JobTooLongWaitingInQueue);
+                 ANNOUNCE_WARNING(TooLongDecrypt);
+                 ANNOUNCE_WARNING(JobActiveForTooLong);
++                ANNOUNCE_WARNING(WorkerPoolSaturation);
++                ANNOUNCE_WARNING(ChannelQueueBacklog);
+             }
+         } ControlsRegistration;
+ 
+diff --git a/Source/core/WarningReportingCategories.h b/Source/core/WarningReportingCategories.h
+index cc7620fc..9a95005e 100644
+--- a/Source/core/WarningReportingCategories.h
++++ b/Source/core/WarningReportingCategories.h
+@@ -193,8 +193,8 @@ namespace WarningReporting {
+             visitor += Core::Format(_T(", value %" PRId64 " [ms], max allowed %" PRId64 " [ms]"), actualValue, maxValue);
+         };
+ 
+-        static constexpr uint32_t DefaultWarningBound = { 400 };
+-        static constexpr uint32_t DefaultReportBound = { 200 };
++        static constexpr uint32_t DefaultWarningBound = { 100 };
++        static constexpr uint32_t DefaultReportBound = { 50 };
+     };
+ 
+     class EXTERNAL TooLongDecrypt {
+@@ -249,6 +249,111 @@ namespace WarningReporting {
+             visitor = (_T("Job is taking too long to complete the execution, a potentail deadlock issue.."));
+             visitor += Core::Format(_T(", value %" PRId64 " [ms], max allowed %" PRId64 " [ms]"), actualValue, maxValue);
+         };
++    class EXTERNAL WorkerPoolSaturation {
++    public:
++        WorkerPoolSaturation(const WorkerPoolSaturation&) = delete;
++        WorkerPoolSaturation& operator=(const WorkerPoolSaturation&) = delete;
++
++        WorkerPoolSaturation()
++            : _active(0)
++            , _total(0)
++        {
++        }
++        ~WorkerPoolSaturation() = default;
++
++        // Returns true only when all threads are busy (saturation confirmed)
++        bool Analyze(const char[], const char[], const uint8_t active, const uint8_t total)
++        {
++            _active = active;
++            _total = total;
++            return (active >= total);
++        }
++
++        uint16_t Serialize(uint8_t buffer[], const uint16_t length) const
++        {
++            if (static_cast<uint16_t>(sizeof(_active) + sizeof(_total)) <= length) {
++                memcpy(buffer, &_active, sizeof(_active));
++                memcpy(buffer + sizeof(_active), &_total, sizeof(_total));
++                return static_cast<uint16_t>(sizeof(_active) + sizeof(_total));
++            }
++            return 0;
++        }
++
++        uint16_t Deserialize(const uint8_t buffer[], const uint16_t length)
++        {
++            if (static_cast<uint16_t>(sizeof(_active) + sizeof(_total)) <= length) {
++                memcpy(&_active, buffer, sizeof(_active));
++                memcpy(&_total, buffer + sizeof(_active), sizeof(_total));
++                return static_cast<uint16_t>(sizeof(_active) + sizeof(_total));
++            }
++            return 0;
++        }
++
++        void ToString(string& visitor, const int64_t actualValue, const int64_t maxValue) const
++        {
++            visitor = Core::Format(_T("WorkerPool saturated: %u/%u threads busy, %" PRId64 " jobs pending in global queue"),
++                static_cast<uint32_t>(_active), static_cast<uint32_t>(_total), actualValue);
++            visitor += Core::Format(_T(", value %" PRId64 " [pending jobs], max allowed %" PRId64), actualValue, maxValue);
++        };
++
++        // Fires (report) when any job is already pending AND all threads are active.
++        // Fires (warning) when pending backlog exceeds 4 jobs under full saturation.
++        static constexpr uint32_t DefaultWarningBound = { 4 };
++        static constexpr uint32_t DefaultReportBound = { 0 };
++
++    private:
++        uint8_t _active;
++        uint8_t _total;
++    };
++
++    class EXTERNAL ChannelQueueBacklog {
++    public:
++        ChannelQueueBacklog(const ChannelQueueBacklog&) = delete;
++        ChannelQueueBacklog& operator=(const ChannelQueueBacklog&) = delete;
++
++        ChannelQueueBacklog()
++            : _channelId(0)
++        {
++        }
++        ~ChannelQueueBacklog() = default;
++
++        bool Analyze(const char[], const char[], const uint32_t channelId)
++        {
++            _channelId = channelId;
++            return true;
++        }
++
++        uint16_t Serialize(uint8_t buffer[], const uint16_t length) const
++        {
++            if (sizeof(_channelId) <= length) {
++                memcpy(buffer, &_channelId, sizeof(_channelId));
++                return static_cast<uint16_t>(sizeof(_channelId));
++            }
++            return 0;
++        }
++
++        uint16_t Deserialize(const uint8_t buffer[], const uint16_t length)
++        {
++            if (sizeof(_channelId) <= length) {
++                memcpy(&_channelId, buffer, sizeof(_channelId));
++                return static_cast<uint16_t>(sizeof(_channelId));
++            }
++            return 0;
++        }
++
++        void ToString(string& visitor, const int64_t actualValue, const int64_t maxValue) const
++        {
++            visitor = Core::Format(_T("Channel [%u] outgoing queue backlog"), _channelId);
++            visitor += Core::Format(_T(", value %" PRId64 " [messages], max allowed %" PRId64), actualValue, maxValue);
++        };
++
++        // Report at 20 messages, Warning at 50 messages backlog
++        static constexpr uint32_t DefaultWarningBound = { 50 };
++        static constexpr uint32_t DefaultReportBound = { 20 };
++
++    private:
++        uint32_t _channelId;
++    };
+ 
+         static constexpr uint32_t DefaultWarningBound = { 20000 };
+         static constexpr uint32_t DefaultReportBound = { 15000 };
