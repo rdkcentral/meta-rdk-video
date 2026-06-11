@@ -1,7 +1,7 @@
 DEPENDS += " rdk-halif-aidl"
 
 # Keep arm aligned with the newer AIDL-based hdmicec source used on x86.
-SRCREV_hdmicec = "1e1d6961c0dc7ef7dd37b2d71e50157a3f20b94c"
+SRCREV_hdmicec = "ba51587deb6b9f81cb51527e9219918298d299c9"
 
 # Add include paths for AIDL-generated HAL headers and binder headers.
 CFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
