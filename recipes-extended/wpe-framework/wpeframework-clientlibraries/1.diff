@@ -1,0 +1,53 @@
+diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
+index fb9ce2a..0ea6ce9 100644
+--- a/Source/ocdm/open_cdm_impl.h
++++ b/Source/ocdm/open_cdm_impl.h
+@@ -527,6 +527,7 @@ private:
+ 
+                     // Get the status of the last decrypt.
+                     ret = Status();
++                    printf("VRN Decrypt() status: [%d] \n", ret);
+ 
+                     // And free the lock, for the next production Scenario..
+                     Consumed();
+@@ -722,9 +723,13 @@ public:
+                 properties);
+             if(result)
+             {
+-                TRACE_L1("Decrypt() failed with return code: %x", result);
++                printf("VRN Decrypt() failed with return code: %x -> [%d] \n", result, OpenCDMError::ERROR_UNKNOWN);
+                 result = OpenCDMError::ERROR_UNKNOWN;
+             }
++            else
++            {
++                printf("VRN Decrypt() succeeded with return code: %x -> [%d] \n", result, OpenCDMError::ERROR_NONE);
++            }
+         }
+         return (result);
+     }
+@@ -850,7 +855,7 @@ protected:
+     void OnKeyMessage(const uint8_t keyMessage[], const uint16_t length, const std::string& URL)
+     {
+         _URL = URL;
+-        TRACE_L1("Received URL: [%s]", _URL.c_str());
++        printf("Received URL: [%s] \n", _URL.c_str());
+ 
+         if (_callback != nullptr && _callback->process_challenge_callback != nullptr) {
+             _callback->process_challenge_callback(this, _userData, _URL.c_str(), keyMessage, length);
+@@ -863,6 +868,7 @@ protected:
+     {
+         _errorCode = error;
+         _sysError = sysError;
++        printf("VRN OnError: [%d] -> [%d] \n", error, sysError);
+ 
+         if (_callback != nullptr && _callback->error_message_callback != nullptr) {
+             _callback->error_message_callback(this, _userData, errorMessage.c_str());
+@@ -883,6 +889,7 @@ protected:
+         else {
+             index->Status(status);
+         }
++        printf("VRN KeyStatusUpdate: [%s] -> [%d] \n", keyID, status);
+ 
+         if ((_callback != nullptr) && (_callback->key_update_callback != nullptr) && (status != Exchange::ISession::StatusPending)) {
+             _callback->key_update_callback(this, _userData, keyID, keyIDLength);
+
