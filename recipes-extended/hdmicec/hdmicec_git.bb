@@ -17,7 +17,7 @@ DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmic
 RDEPENDS:${PN} = " devicesettings telemetry"
 
 DEPENDS += "safec-common-wrapper"
-DEPENDS:append:vdevice_x86-64-mw = " safec-common-wrapper rdk-halif-aidl libbinder"
+DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinder"
 
 ASNEEDED = ""
 ALLOW_EMPTY:${PN} = "1"
