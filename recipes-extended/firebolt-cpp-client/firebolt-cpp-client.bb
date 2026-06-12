@@ -12,7 +12,7 @@ PV = "0.6.2"
 PR = "r0"
 
 SRC_URI = "https://github.com/rdkcentral/firebolt-cpp-client/releases/download/${PV}/firebolt-cpp-client-${PV}.tar.gz"
-SRC_URI[sha256sum] = "fcffa3908572d605c176692d7cf2145c71a771325333022a68cdca5120c01e37"
+SRC_URI[sha256sum] = "eb6ebc42e52ed5e3b5375260bf82b973e332c5b0021d7c604c6e2db8d0767cc1"
 
 S = "${WORKDIR}/firebolt-cpp-client-${PV}"
 
