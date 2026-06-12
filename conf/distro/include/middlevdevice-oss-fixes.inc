@@ -118,3 +118,5 @@ LDFLAGS:append = " ${@LOG_BACKTRACE == "y" and BACKTRACE_LDFLAGS or ""}"
 # ============================================================================
 
 RDKROOT = "${TOPDIR}/.."
+
+INHERIT += "fix-host-contamination"
