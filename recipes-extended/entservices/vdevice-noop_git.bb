@@ -10,14 +10,34 @@ S = "${WORKDIR}/git"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-# Release version - 1.2.0
-SRCREV = "57388d5b829f5a7e8ca3f420e286dd31357fafaa"
+# Commit with test cases - f35bd2be9f70f2384f5a9053943cf1121a249564
+SRCREV = "fa1966da3c31f1f57faf674ad1326597de2b255f"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-# This is a header-only package, no compilation needed
+# Need C++ compiler for stub implementations
+
+# Skip configure, we'll compile stubs directly
 do_configure[noexec] = "1"
-do_compile[noexec] = "1"
+
+do_compile() {
+    # Compile DeviceSettings stub library (from repo stubs/ directory)
+    ${CXX} ${CXXFLAGS} -fPIC -shared \
+        -I${S}/stubs \
+        ${S}/stubs/devicesettings-stub.cpp \
+        -o ${B}/libds.so \
+        ${LDFLAGS}
+    
+    # Compile DeviceSettings HAL stub library (from repo stubs/ directory)
+    ${CC} ${CFLAGS} -fPIC -shared \
+        -I${S}/stubs \
+        ${S}/stubs/dshal-stub.cpp \
+        -o ${B}/libds-hal.so \
+        ${LDFLAGS}
+    
+    # Create dshalcli as a copy of ds-hal (often they're linked together)
+    cp ${B}/libds-hal.so ${B}/libdshalcli.so
+}
 
 do_install() {
     # Install stub headers from repository
@@ -25,28 +45,28 @@ do_install() {
     install -m 0644 ${S}/stubs/*.h ${D}${includedir}/hdmicecsource/stubs/
     install -m 0644 ${S}/stubs/*.hpp ${D}${includedir}/hdmicecsource/stubs/
     
-    # Create/install DeviceSettings (DS) headers expected by FindDS.cmake
+    # Install DeviceSettings stub headers to expected paths
     install -d ${D}${includedir}/rdk/ds
-    install -d ${D}${includedir}/rdk/halif/ds-hal
-    install -d ${D}${includedir}/rdk/ds-rpc
-    install -d ${D}${includedir}/rdk/iarmmgrs/receiver
-
     install -m 0644 ${S}/stubs/manager.hpp ${D}${includedir}/rdk/ds/
-    install -m 0644 ${S}/stubs/dsTypes.h ${D}${includedir}/rdk/halif/ds-hal/
-    install -m 0644 ${S}/stubs/dsMgr.h ${D}${includedir}/rdk/ds-rpc/
-    install -m 0644 ${S}/stubs/receiverMgr.h ${D}${includedir}/rdk/iarmmgrs/receiver/
-                                       
-
-    # HdmiCecSourceImplementation includes these directly
     install -m 0644 ${S}/stubs/host.hpp ${D}${includedir}/rdk/ds/
     install -m 0644 ${S}/stubs/videoOutputPort.hpp ${D}${includedir}/rdk/ds/
-    install -m 0644 ${S}/stubs/dsDisplay.h ${D}${includedir}/rdk/ds/
     
-    # Create empty stub libraries
+    install -d ${D}${includedir}/rdk/halif/ds-hal
+    install -m 0644 ${S}/stubs/dsTypes.h ${D}${includedir}/rdk/halif/ds-hal/
+    install -m 0644 ${S}/stubs/dsDisplay.h ${D}${includedir}/rdk/halif/ds-hal/
+    
+    install -d ${D}${includedir}/rdk/ds-rpc
+    install -m 0644 ${S}/stubs/dsMgr.h ${D}${includedir}/rdk/ds-rpc/
+    
+    # Install IARMBUS receiver stub header
+    install -d ${D}${includedir}/rdk/iarmmgrs/receiver
+    install -m 0644 ${S}/stubs/receiverMgr.h ${D}${includedir}/rdk/iarmmgrs/receiver/
+    
+    # Install compiled stub libraries
     install -d ${D}${libdir}
-    touch ${D}${libdir}/libds.so
-    touch ${D}${libdir}/libdshalcli.so
-    touch ${D}${libdir}/libds-hal.so
+    install -m 0755 ${B}/libds.so ${D}${libdir}/
+    install -m 0755 ${B}/libds-hal.so ${D}${libdir}/
+    install -m 0755 ${B}/libdshalcli.so ${D}${libdir}/
 }
 
 # Allow the package to ship headers and libraries

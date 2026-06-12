@@ -136,7 +136,7 @@ do_install:append() {
     fi
 }
 
-EXTRA_VERSIONS_PATH:vdevice_x86-64 = "${D}${sysconfdir}/versions"
+EXTRA_VERSIONS_PATH:vdevice_x86-64-mw = "${D}${sysconfdir}/versions"
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
 
 # ----------------------------------------------------------------------------
