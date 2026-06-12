@@ -16,8 +16,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-cryptography;${CMF_GITHUB_SRC_URI_SUFF
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
           
-# Release version - 1.0.2
-SRCREV = "4c84cc95a443c4c5d9b704631688c741d6fb07e1"
+# RDKEMW-19048: pinned to entservices-cryptography PR #10 head
+SRCREV = "db7b7d96a3d00fcf65413b76988207e6f1fa870e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
