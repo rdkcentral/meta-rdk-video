@@ -1,7 +1,7 @@
-# middlevdevice-oss-fixes.inc
+# vdevice_x86.inc
 # ============================================================================
-# Fixes for meta-rdk-oss-reference layer incompatibilities with DISTRO=poky.
-# Auto-included via layer.conf when meta-product-middlevdevice is in BBLAYERS.
+# Fixes for vdevice incompatibilities with DISTRO=poky.
+# included via machine.conf
 # ============================================================================
 
 # ============================================================================
@@ -59,9 +59,8 @@ BBMASK .= "|meta-rdk-restricted/recipes-raspberrypi/mediaframework/rmfhalheaders
 BBMASK .= "|meta-middleware-restricted-support/recipes-core/packagegroups/packagegroup-middleware-layer.bbappend"
 BBMASK .= "|meta-middleware-generic-support/recipes-core/images/middleware-test-image.bb"
 
-# Mask rdk-halif-aidl from meta-vendor-vdevice (using BSP version)
-BBMASK += "|meta-vendor-vdevice/recipes-multimedia/.*"
-BBMASK += "|meta-vendor-vdevice/recipes-media/.*"
+BBMASK .= "|meta-vendor-vdevice/recipes-multimedia/.*"
+BBMASK .= "|meta-vendor-vdevice/recipes-media/.*"
 # ============================================================================
 # DISTRO_FEATURES adjustments
 # ============================================================================
@@ -82,6 +81,37 @@ PREFERRED_PROVIDER:virtual/vendor-hdmicec-hal = "rdk-halif-aidl"
 require ${MANIFEST_PATH_META_RDK}/conf/distro/include/rdk-versions.inc
 require ${MANIFEST_PATH_META_RDK}/conf/distro/include/rdk_security_flags.inc
 require ${MANIFEST_PATH_RDK_HALIF_HEADERS}/conf/include/rdk-headers-versions.inc
+
+PROVIDES:pn-rdk-halif-aidl += "virtual/vendor-hdmicec-hal" 
+
+CFLAGS:append:pn-telemetry = " -Wno-unused-result -Wno-format-security"
+CXXFLAGS:append:pn-telemetry = " -Wno-unused-result -Wno-format-security"
+
+CFLAGS:remove:pn-telemetry = "-Werror -Werror=format-security"
+CXXFLAGS:remove:pn-telemetry = "-Werror -Werror=format-security"
+
+CFLAGS:append:pn-commonutilities = " -Wno-error"
+
+CFLAGS:append:pn-webconfig-framework = " -Wno-stringop-truncation -Wno-error=stringop-truncation"
+CXXFLAGS:append:pn-webconfig-framework = " -Wno-stringop-truncation -Wno-error=stringop-truncation"
+
+CFLAGS:remove:pn-webconfig-framework = " -Werror"
+CXXFLAGS:remove:pn-webconfig-framework = " -Werror"
+
+INSANE_SKIP:pn-iarmbus += " host-user-contaminated"
+
+# added this because in aidl provides was not added and for hdmicec aidl is the hal Provider
+
+LOG_BACKTRACE = "${@bb.utils.contains('DISTRO_FEATURES', 'logbacktrace', 'y', 'n', d)}"
+
+BACKTRACE_LDFLAGS ?= ""
+BACKTRACE_DEPENDS ?= ""
+
+BACKTRACE_LDFLAGS:pn-wpeframework = "-Wl,--no-as-needed -lbreakpadwrapper -Wl,--as-needed"
+BACKTRACE_DEPENDS:pn-wpeframework = " breakpad-wrapper"
+
+DEPENDS:append = " ${@LOG_BACKTRACE == "y" and BACKTRACE_DEPENDS or ""}"
+LDFLAGS:append = " ${@LOG_BACKTRACE == "y" and BACKTRACE_LDFLAGS or ""}"
 
 # ============================================================================
 # Build fixes
