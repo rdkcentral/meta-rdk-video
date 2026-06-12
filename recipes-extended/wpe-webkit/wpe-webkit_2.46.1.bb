@@ -13,6 +13,9 @@ PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
 WPE_MICRO_VERSION_SUFFIX = "${@'%02d%02d' % (int((d.getVar('PV').split('.') + ['0'])[2]), int(d.getVar('WPE_RECIPE_REVISION')))}"
 DEPENDS:append = " libtasn1 unifdef-native libsoup fontconfig"
+# entservices-opencdmi now provides opencdm/open_cdm.h and ocdm.pc (moved from wpeframework-clientlibraries)
+DEPENDS:append += " entservices-opencdmi "
+
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 # Tip of the branch on Jun 9, 2026
