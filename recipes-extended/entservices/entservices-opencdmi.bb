@@ -2,7 +2,7 @@ SUMMARY = "ENTServices opencdmi plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=c03d0e6d700b63b51bf8da6b61dac850"
 
-PV = "1.0.7"
+PV = "2.0.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -23,8 +23,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://0001-set-OCDM-process-thread-name.patch \
           "
           
-# Release version - 1.0.7
-SRCREV = "13e4ffe01735e4e9fc3fe5f19fd572ddc0b85270"
+# Release version - 2.0.2
+SRCREV = "96df114e4b6006ef384697bca56104e52e228648"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
