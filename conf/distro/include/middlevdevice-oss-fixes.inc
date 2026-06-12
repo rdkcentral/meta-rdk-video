@@ -98,8 +98,6 @@ CXXFLAGS:append:pn-webconfig-framework = " -Wno-stringop-truncation -Wno-error=s
 CFLAGS:remove:pn-webconfig-framework = " -Werror"
 CXXFLAGS:remove:pn-webconfig-framework = " -Werror"
 
-INSANE_SKIP:pn-iarmbus += " host-user-contaminated"
-
 # added this because in aidl provides was not added and for hdmicec aidl is the hal Provider
 
 LOG_BACKTRACE = "${@bb.utils.contains('DISTRO_FEATURES', 'logbacktrace', 'y', 'n', d)}"
