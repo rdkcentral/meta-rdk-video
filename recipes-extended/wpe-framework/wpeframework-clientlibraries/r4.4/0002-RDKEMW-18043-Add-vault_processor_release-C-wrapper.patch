@@ -1,0 +1,33 @@
+RDKEMW-18043: Add vault_processor_release() C wrapper to release the
+Cryptography Vault singleton's SecProcessor handle before deep-sleep entry.
+
+The default Implementation::Vault is a process-lifetime singleton (static
+local in vault_instance()); its destructor never runs at deep sleep, so the
+SA2 SecProcessor handle stays open across S3.  On BCM Dhruv with Network
+Standby OFF this triggers SOFTWARE_MASTER_RESET because SAGE refuses S3
+entry while the handle is held.
+
+Implementation::Vault::ProcessorRelease() already exists (paired with
+ProcessorAcquire() added by 0001-SecAPI-Re-acquire-sec-handle-after-flush.patch).
+This wrapper exposes it via C ABI so the CryptographyExtAccess plugin can
+call it from onPowerModeChanged.  Re-acquire on wake is automatic via the
+existing factory.
+
+Index: git/Source/cryptography/implementation/SecApi/Vault.cpp
+===================================================================
+--- git.orig/Source/cryptography/implementation/SecApi/Vault.cpp
++++ git/Source/cryptography/implementation/SecApi/Vault.cpp
+@@ -748,5 +748,13 @@ extern "C" {
+             return (Thunder::Core::ERROR_UNAVAILABLE);
+         }
+ 
+     }
++
++    void vault_processor_release(void)
++    {
++        VaultImplementation* impl = vault_instance(CRYPTOGRAPHY_VAULT_DEFAULT);
++        if (impl != nullptr) {
++            reinterpret_cast<Implementation::Vault*>(impl)->ProcessorRelease();
++        }
++    }
+ } // extern "C"

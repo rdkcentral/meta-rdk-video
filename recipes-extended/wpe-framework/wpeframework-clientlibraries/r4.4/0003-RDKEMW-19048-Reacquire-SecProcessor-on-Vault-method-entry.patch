@@ -1,0 +1,114 @@
+RDKEMW-19048: reacquire SecProcessor at Vault method entry so callers
+that hold a cached VaultImplementation* (bypassing vault_instance) do
+not crash on _secProcHandle deref after ProcessorRelease.
+
+Upstream-Status: Pending
+Signed-off-by: Sergiy Gladkyy <sgladkyy@productengine.com>
+
+Index: git/Source/cryptography/implementation/SecApi/Vault.h
+===================================================================
+--- git.orig/Source/cryptography/implementation/SecApi/Vault.h
++++ git/Source/cryptography/implementation/SecApi/Vault.h
+@@ -122,6 +122,7 @@ namespace Implementation {
+ 	void ProcessorAcquire();
+
+     private:
++        void EnsureProcessor() const;
+         mutable WPEFramework::Core::CriticalSection _lock;
+-        Sec_ProcessorHandle* _secProcHandle;
++        mutable Sec_ProcessorHandle* _secProcHandle;
+         std::map<uint32_t, MapStore> _items;
+Index: git/Source/cryptography/implementation/SecApi/Vault.cpp
+===================================================================
+--- git.orig/Source/cryptography/implementation/SecApi/Vault.cpp
++++ git/Source/cryptography/implementation/SecApi/Vault.cpp
+@@ -76,6 +76,17 @@ namespace Implementation {
+ 	     _lock.Unlock();
+      }
+
++    void Vault::EnsureProcessor() const
++    {
++        if (_secProcHandle == NULL) {
++            Sec_Result sec_res = SecProcessor_GetInstance_Directories(&_secProcHandle, globalDir, appDir);
++            if (sec_res != SEC_RESULT_SUCCESS) {
++                TRACE_L1(_T("SEC : processor instance failed retval= %d\n"), sec_res);
++                _secProcHandle = NULL;
++            }
++        }
++    }
++
+     /*********************************************************************
+      * @function Size
+      *
+@@ -90,6 +103,7 @@ namespace Implementation {
+         uint16_t size = 0;
+
+         _lock.Lock();
++        EnsureProcessor();
+         auto it = _items.find(id);
+         if (it != _items.end()) {
+             if ((allowSealed == true) || (*it).second.IsExportable() == true) {
+@@ -140,6 +154,7 @@ namespace Implementation {
+         uint32_t id = 0;
+
+         _lock.Lock();
++        EnsureProcessor();
+             if (size > 0) {
+                 id = (_lastHandle + 1);
+                 if (id != 0) {
+@@ -225,6 +240,7 @@ namespace Implementation {
+         uint32_t id = 0;
+
+         _lock.Lock();
++        EnsureProcessor();
+         SEC_OBJECTID idcheck = 0x0;
+         struct IdStore ids;
+         string kFile(keyFile);
+@@ -286,6 +302,7 @@ namespace Implementation {
+         bool ret =false;
+
+         _lock.Lock();
++        EnsureProcessor();
+         SEC_OBJECTID idcheck = 0x0;
+         string kFile(keyFile);
+         string fileName = kFile.substr(0,SEC_ID_SIZE);
+@@ -329,6 +346,7 @@ namespace Implementation {
+         uint32_t id = 0;
+
+         _lock.Lock();
++        EnsureProcessor();
+         struct IdStore ids;
+         Sec_KeyType key = SEC_KEYTYPE_AES_128; //DEFAULT
+
+@@ -409,6 +427,7 @@ namespace Implementation {
+         uint16_t outSize = 0;
+         if (size > 0) {
+             _lock.Lock();
++            EnsureProcessor();
+             auto it = _items.find(id);
+             if (it != _items.end()) {
+                 if (((allowSealed == true) || (*it).second.IsExportable() == true) && ((*it).second.KeyLength() != 0)) {
+@@ -465,6 +484,7 @@ namespace Implementation {
+
+         if (size > 0) {
+             _lock.Lock();
++            EnsureProcessor();
+             id = (_lastHandle + 1);
+             if (id != 0) {
+                 SEC_BYTE store[SEC_KEYCONTAINER_MAX_LEN];
+@@ -506,6 +526,7 @@ namespace Implementation {
+
+         if (size > 0) {
+             _lock.Lock();
++            EnsureProcessor();
+             auto it = _items.find(id);
+             if (it != _items.end()) {
+                 SEC_BYTE* buff = const_cast<SEC_BYTE*>((*it).second.Buffer());
+@@ -548,6 +569,7 @@ namespace Implementation {
+         bool result = false;
+
+         _lock.Lock();
++        EnsureProcessor();
+         auto it = _items.find(id);
+         if (it != _items.end()) {
+             IdStore* ids = const_cast<IdStore*>((*it).second.getIdStore());
