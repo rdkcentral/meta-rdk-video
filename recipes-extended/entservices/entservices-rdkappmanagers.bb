@@ -2,13 +2,13 @@ SUMMARY = "ENTServices appmanagers plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "0.5.0.0"
-PR = "r0"
+PV = "0.6.0.0"
+PR = "rc"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "70c6c6d9e722eafc15889d0a48c9261c58ed8017"
+SRCREV = "395f9fe9de3a58d513ab80aea670087fef2ee9aa"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -20,12 +20,11 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_APPMANAGERS_DEBUG=OFF', '-DRDK_APPMANAGERS_DEBUG=ON', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers_runtimeconfig', ' -DENABLE_RDKAPPMANAGERS_RUNTIMECONFIG=ON', '', d)}"
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
-DEPENDS += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers_runtimeconfig', 'yaml-cpp', '', d)}"
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
 DEPENDS += "iptables"
+DEPENDS += "yaml-cpp"
 
 CFLAGS  += " \
     -I=${includedir}/rdk/halif/power-manager \
@@ -115,7 +114,7 @@ RUNTIME_APP_PORTAL ?= "com.sky.as.apps"
 APP_PREINSTALL_DIRECTORY ?= "/opt/preinstall"
 RUNTIME_CONFIG_FILE ?= ""
 APP_DOWNLOAD_DIRECTORY ?= "/opt/CDL/"
-DEFAULT_APP_STORAGE_PATH ?= "/opt/persistent/storageManager"
+DEFAULT_APP_STORAGE_PATH ?= "/media/apps/storageManager"
 NATIVEJS_CLIENTIDENTIFIER ?= "wst-nativejs"
 
 EXTRA_OECMAKE += " \
