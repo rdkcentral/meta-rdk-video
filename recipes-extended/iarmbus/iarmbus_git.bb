@@ -67,3 +67,5 @@ do_install:append() {
 
 SYSTEMD_SERVICE:${PN} = "iarmbusd.service"
 FILES:${PN} += "${systemd_unitdir}/system/iarmbusd.service"
+
+INSANE_SKIP:${PN} += "host-user-contaminated"
