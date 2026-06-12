@@ -12,15 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://index.html \
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
-           file://0003-set-OCDM-sharepath-to-tmp-OCDM.patch \
-           file://0001-RDK-31882-Add-GstCaps-parsing-in-OCDM-to-rdkservices.patch \
-           file://0001-add_gstcaps_forcobalt_mediatype.patch \
            file://rdkservices.ini \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
-           file://0001-rdkservices_cbcs_changes.patch \
-           file://0002-Adding-Support-For-R4.patch \
-           file://0001-Add-a-new-metrics-punch-through-on-the-OCDM-framework-rdkservice.patch \
-           file://0001-set-OCDM-process-thread-name.patch \
           "
           
 # Release version - 1.0.6
