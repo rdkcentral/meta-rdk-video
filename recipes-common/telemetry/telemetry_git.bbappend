@@ -30,3 +30,4 @@ do_install:append () {
 }
 
 SYSTEMD_SERVICE:${PN} += "telemetry2_0.service"
+SYSTEMD_AUTO_ENABLE:${PN} = "disable"
