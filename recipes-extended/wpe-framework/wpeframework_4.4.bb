@@ -66,7 +66,7 @@ SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
             file://r4.4/Revert_PR-665_support_JSON_Parsing.patch \
             file://r4.4/RDKEMW-8889-Avoid-LoadMeta-On-Boot.patch \
             file://r4.4/RDKEMW-13752_apply_sysinfo_mem_unit.patch \
-            file://r4.4/003-jsonrpc-profiler-8_3.patch \
+            file://r4.4/004-jsonrpc-profiler-8_3.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -208,9 +208,9 @@ SYSLOG-NG_LOGRATE_wpeframework = "high"
 LOGROTATE_NAME="wpeframework"
 LOGROTATE_LOGNAME_wpeframework="wpeframework.log"
 LOGROTATE_SIZE_wpeframework="1572864"
-LOGROTATE_ROTATION_wpeframework="3"
+LOGROTATE_ROTATION_wpeframework="8"
 LOGROTATE_SIZE_MEM_wpeframework="1572864"
-LOGROTATE_ROTATION_MEM_wpeframework="3"
+LOGROTATE_ROTATION_MEM_wpeframework="8"
 
 # Breakpad processname and logfile mapping
 BREAKPAD_LOGMAPPER_PROCLIST = "WPEFramework,WorkerPool::Thr,WPEProcess,WPEWebProcess,startWPE,WPENetworkProcess,WideVine.drm,PlayReady.drm,NetworkManager,Monitor::IResou"
