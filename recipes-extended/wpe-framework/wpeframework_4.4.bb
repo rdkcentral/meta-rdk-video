@@ -73,7 +73,7 @@ SRC_URI += "file://r4.4/PR-1633-Clone-functionality-fix.patch \
             file://r4.4/PR1832-Thunder-ABBA-Deadlock-Fix.patch \
             file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
             file://r4.4/0001-SmarkLink-Crash-Fix.patch \
-            file://r4.4/003-jsonrpc-profiler-8_2.patch \
+            file://r4.4/004-jsonrpc-profiler-8_2.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -215,9 +215,9 @@ SYSLOG-NG_LOGRATE_wpeframework = "high"
 LOGROTATE_NAME="wpeframework"
 LOGROTATE_LOGNAME_wpeframework="wpeframework.log"
 LOGROTATE_SIZE_wpeframework="1572864"
-LOGROTATE_ROTATION_wpeframework="3"
+LOGROTATE_ROTATION_wpeframework="8"
 LOGROTATE_SIZE_MEM_wpeframework="1572864"
-LOGROTATE_ROTATION_MEM_wpeframework="3"
+LOGROTATE_ROTATION_MEM_wpeframework="8"
 
 # Breakpad processname and logfile mapping
 BREAKPAD_LOGMAPPER_PROCLIST = "WPEFramework,WorkerPool::Thr,WPEProcess,WPEWebProcess,startWPE,WPENetworkProcess,WideVine.drm,PlayReady.drm,NetworkManager,Monitor::IResou"
