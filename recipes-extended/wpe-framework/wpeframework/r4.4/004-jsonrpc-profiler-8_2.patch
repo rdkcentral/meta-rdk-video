@@ -67,7 +67,7 @@ index abb666b8b..fcc773199 100644
 -                            job->Set(Id(), &_parent, service, baseRequest, _security->Token(), !request->ServiceCall());
 +                            job->Set(Id(), &_parent, service, baseRequest, _security->Token(), !request->ServiceCall(),this); // bvanav-dbg
 +                            // bvanav-dbg
-+                            if ((!request->ServiceCall() && baseRequest->Verb == Web::Request::HTTP_POST) && (baseRequest->HasBody() == true))
++                            if (!request->ServiceCall() && (baseRequest->HasBody() == true))
 +                            {
 +                                Core::ProxyType<Core::JSONRPC::Message> message(baseRequest->Body<Core::JSONRPC::Message>());
 +                                setJsonRpcMethod(message->Designator.Value());
