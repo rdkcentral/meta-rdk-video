@@ -29,7 +29,7 @@ do_compile() {
         ${LDFLAGS}
     
     # Compile DeviceSettings HAL stub library (from repo stubs/ directory)
-    ${CC} ${CFLAGS} -fPIC -shared \
+    ${CXX} ${CFLAGS} -fPIC -shared \
         -I${S}/stubs \
         ${S}/stubs/dshal-stub.cpp \
         -o ${B}/libds-hal.so \
