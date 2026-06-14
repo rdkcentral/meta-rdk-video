@@ -14,7 +14,7 @@ index dc867b1db..c577e21cf 100644
              _dispatcher = new PluginHost::Server(*_config, _background);
  
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index abb666b8b..fcc773199 100644
+index abb666b8b..a4e85c817 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
 @@ -3674,6 +3674,7 @@ POP_WARNING()
@@ -60,14 +60,51 @@ index abb666b8b..fcc773199 100644
  
                  static Core::ProxyType<Web::Response> _missingResponse;
              };
-@@ -4173,7 +4178,14 @@ POP_WARNING()
+@@ -3816,7 +3821,7 @@ POP_WARNING()
+                 }
+ 
+             public:
+-                void Set(const uint32_t id, Server* server, Core::ProxyType<Service>& service, Core::ProxyType<Core::JSON::IElement>& element, const string& token, const bool JSONRPC)
++                void Set(const uint32_t id, Server* server, Core::ProxyType<Service>& service, Core::ProxyType<Core::JSON::IElement>& element, const string& token, const bool JSONRPC, Channel* outer) // bvanav-dbg
+                 {
+                     Job::Set(id, server, service);
+ 
+@@ -3825,6 +3830,7 @@ POP_WARNING()
+                     _element = element;
+                     _jsonrpc = JSONRPC;
+                     _token = token;
++		    _outer = outer; // bvanav-dbg
+                 }
+                 void Dispatch() override
+                 {
+@@ -3842,8 +3848,10 @@ POP_WARNING()
+                         if (HasService() == true) {
+                             message->ImplicitCallsign(GetService().Callsign());
+                         }
+-
++			// bvanav-dbg
++			_outer->setInvokeTime(START);
+                         _element = Core::ProxyType<Core::JSON::IElement>(Job::Process(_token, message));
++			_outer->setInvokeTime(END); 
+ 
+ #if THUNDER_PERFORMANCE
+                         tracking->Execution();
+@@ -3877,6 +3885,7 @@ POP_WARNING()
+                 Core::ProxyType<Core::JSON::IElement> _element;
+                 string _token;
+                 bool _jsonrpc;
++		Channel* _outer; // bvanav-dbg
+             };
+             class TextJob : public Job {
+             public:
+@@ -4173,7 +4182,14 @@ POP_WARNING()
  
                          if (job.IsValid() == true) {
                              Core::ProxyType<Web::Request> baseRequest(request);
 -                            job->Set(Id(), &_parent, service, baseRequest, _security->Token(), !request->ServiceCall());
 +                            job->Set(Id(), &_parent, service, baseRequest, _security->Token(), !request->ServiceCall(),this); // bvanav-dbg
 +                            // bvanav-dbg
-+                            if (!request->ServiceCall() && (baseRequest->HasBody() == true))
++                            if ((!request->ServiceCall() && baseRequest->Verb == Web::Request::HTTP_POST) && (baseRequest->HasBody() == true))
 +                            {
 +                                Core::ProxyType<Core::JSONRPC::Message> message(baseRequest->Body<Core::JSONRPC::Message>());
 +                                setJsonRpcMethod(message->Designator.Value());
@@ -76,7 +113,23 @@ index abb666b8b..fcc773199 100644
                              _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
                          }
                      }
-@@ -4361,7 +4373,41 @@ POP_WARNING()
+@@ -4249,7 +4265,14 @@ POP_WARNING()
+                     ASSERT(job.IsValid() == true);
+ 
+                     if ((_service.IsValid() == true) && (job.IsValid() == true)) {
+-                        job->Set(Id(), &_parent, _service, element, _security->Token(), ((State() & Channel::JSONRPC) != 0));
++                        job->Set(Id(), &_parent, _service, element, _security->Token(), ((State() & Channel::JSONRPC) != 0), this); // bvanav-dbg
++			// bvanav-dbg
++			Core::ProxyType<Core::JSONRPC::Message> message(element);
++			if (message.IsValid())
++			{
++			    setJsonRpcMethod(message->Designator.Value());
++			    setQueueLength(_parent.WorkerPool().queueLength());
++			}
+                         _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
+                     }
+                 }
+@@ -4361,7 +4384,42 @@ POP_WARNING()
              {
                  SetId(id);
              }
@@ -96,15 +149,16 @@ index abb666b8b..fcc773199 100644
 +            }
 +            inline void setResponseTime()
 +            {
-+                responseTime = Core::Time::Now();
- 
 +                if(!jsonRpcMethod.empty())
 +                {
++		    responseTime = Core::Time::Now();
+ 
 +                    Core::Time::nanoseconds thunderLatency =  (invokeTimeStart.nanosec() - requestTime.nanosec()) 
 +                                                                + (responseTime.nanosec() - invokeTimeEnd.nanosec());
 +                    Core::Time::nanoseconds pluginLatency =  invokeTimeEnd.nanosec() - invokeTimeStart.nanosec();
 +                    Core::Time::nanoseconds totalLatency = thunderLatency + pluginLatency;
 +                    SYSLOG(Logging::JsonRpcProfiler, (_T("%s, %d, %ld, %ld, %ld"), jsonRpcMethod.c_str(), queueSize, thunderLatency, pluginLatency, totalLatency));
++		    jsonRpcMethod.clear();
 +                }
 +            }
 +            inline void setJsonRpcMethod(string method)
@@ -118,7 +172,7 @@ index abb666b8b..fcc773199 100644
          private:
              inline string SelectSupportedProtocol(const Web::ProtocolsArray& protocols)
              {
-@@ -4393,6 +4439,14 @@ POP_WARNING()
+@@ -4393,6 +4451,14 @@ POP_WARNING()
              Core::ProxyType<Service> _service;
              bool _requestClose;
  
