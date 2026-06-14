@@ -48,35 +48,35 @@ do_install() {
    install -d ${D}/home/root
 
    if [ "${BUILD_CLIENT}" = "1" ]; then
-      cp -a ${B}/JSRuntimeClient ${D}/home/root/JSRuntimeClient
+      cp -R ${B}/JSRuntimeClient ${D}/home/root/JSRuntimeClient
    fi
 
-   cp -a ${B}/JSRuntimeJSC ${D}/home/root/JSRuntimeJSC
-   cp -a ${B}/JSRuntimeContainer ${D}/home/root/JSRuntimeContainer
+   cp -R ${B}/JSRuntimeJSC ${D}/home/root/JSRuntimeJSC
+   cp -R ${B}/JSRuntimeContainer ${D}/home/root/JSRuntimeContainer
    
-   cp -a ${S}/utils/xhr.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/punycode.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/http.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/https.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/ws.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/utils.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/buffer.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/process.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/event.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/wsenhanced.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/linkedjsdom.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/linkedjsdomwrapper.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/node-fetch.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/url.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
-   cp -a ${S}/src/jsc/modules/minified_linkedjsdom.js ${D}/home/root/modules/. 
+   cp -R ${S}/utils/xhr.js ${D}/home/root/modules/.
+   cp -R ${S}/utils/punycode.js ${D}/home/root/modules/.
+   cp -R ${S}/utils/http.js ${D}/home/root/modules/.
+   cp -R ${S}/utils/https.js ${D}/home/root/modules/.
+   cp -R ${S}/utils/ws.js ${D}/home/root/modules/.
+   cp -R ${S}/utils/utils.js ${D}/home/root/modules/.
+   cp -R ${S}/utils/buffer.js ${D}/home/root/modules/.
+   cp -R ${S}/utils/process.js ${D}/home/root/modules/.
+   cp -R ${S}/src/jsc/modules/event.js ${D}/home/root/modules/.
+   cp -R ${S}/src/jsc/modules/wsenhanced.js ${D}/home/root/modules/.
+   cp -R ${S}/src/jsc/modules/linkedjsdom.js ${D}/home/root/modules/.
+   cp -R ${S}/src/jsc/modules/linkedjsdomwrapper.js ${D}/home/root/modules/.
+   cp -R ${S}/src/jsc/modules/node-fetch.js ${D}/home/root/modules/.
+   cp -R ${S}/src/jsc/modules/url.js ${D}/home/root/modules/.
+   cp -R ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
+   cp -R ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
+   cp -R ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
+   cp -R ${S}/src/jsc/modules/minified_linkedjsdom.js ${D}/home/root/modules/. 
 
    install -d ${D}/${libdir}
-   cp -a ${B}/libJSRuntimeJSC.so ${D}/${libdir}
-   cp -a ${B}/libJSRuntimeContainer.so ${D}/${libdir}
-   cp -a ${B}/libjsclib.so ${D}/${libdir}
+   cp -R ${B}/libJSRuntimeJSC.so ${D}/${libdir}
+   cp -R ${B}/libJSRuntimeContainer.so ${D}/${libdir}
+   cp -R ${B}/libjsclib.so ${D}/${libdir}
 
 
    install -d ${D}/${libdir}
@@ -85,7 +85,7 @@ do_install() {
    mkdir -p ${D}${includedir}/jsruntime/modules
 
    install -m 0644 ${S}/include/*.h ${D}${includedir}/jsruntime
-   cp -a ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
+   cp -R ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
 
    install -d ${D}${datadir}/rdknativescript
    echo "${PV}" > ${D}${datadir}/rdknativescript/version.txt
