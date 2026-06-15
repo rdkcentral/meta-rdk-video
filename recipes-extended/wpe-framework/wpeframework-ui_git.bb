@@ -4,9 +4,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=66fe57b27abb01505f399ce4405cfea0"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderUI.git"
 
-PV = "1.0.0"
-PR = "r0"
-#Version on July 22, 2021
+PV = "4.4.6"
+PR = "r1"
+
 SRCREV = "e1e4255a458b6b913c6d97f33f57ca0f34029488"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
