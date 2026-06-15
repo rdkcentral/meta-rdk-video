@@ -12,12 +12,28 @@ trap cleanup EXIT
 trap 'trap - EXIT; cleanup; exit 130' INT TERM HUP QUIT
 
 if [ -f /opt/pidstat-enable ]; then
-    pidstat -h -u -r -d -p ALL 1 > /opt/logs/ds-processes-load.log &
+    PIDSTAT_DELAY=$(tr -d '[:space:]' < /opt/pidstat-enable 2>/dev/null)
+
+    case "$PIDSTAT_DELAY" in
+        ''|0|*[!0-9]*)
+            PIDSTAT_DELAY=1
+            ;;
+    esac
+
+    pidstat -h -u -r -d -p ALL "$PIDSTAT_DELAY" > /opt/logs/ds-processes-load.log &
     PIDSTAT_PID=$!
 fi
 
 if [ -f /opt/nethogs-enable ]; then
-    nethogs -t -d 0.5 >> /opt/logs/ds-processes-nethogs.log &
+    NETHOGS_DELAY=$(tr -d '[:space:]' < /opt/nethogs-enable 2>/dev/null)
+
+    case "$NETHOGS_DELAY" in
+        ''|0|.*|*[!0-9.]*|*.*.*)
+            NETHOGS_DELAY=0.5
+            ;;
+    esac
+
+    nethogs -t -d "$NETHOGS_DELAY" >> /opt/logs/ds-processes-nethogs.log &
     NETHOGS_PID=$!
 fi
 
