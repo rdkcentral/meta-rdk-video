@@ -69,7 +69,7 @@ do_install() {
    install -m 0644 ${S}/src/jsc/modules/node-fetch.js ${D}/home/root/modules/.
    install -m 0644 ${S}/src/jsc/modules/url.js ${D}/home/root/modules/.
    install -m 0644 ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
+   cp -R ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
    install -m 0644 ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
    install -m 0644 ${S}/src/jsc/modules/minified_linkedjsdom.js ${D}/home/root/modules/. 
 
