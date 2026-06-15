@@ -59,6 +59,9 @@ do_install:append() {
 	install -m 0644 ${S}/core/*.h ${D}${includedir}/rdk/iarmbus
 	install -d ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/conf/iarmbusd.service ${D}${systemd_unitdir}/system
+	install -d ${D}${libdir}
+	install -m 0755 ${S}/conf/iarm-reboot.sh ${D}${libdir}/
+	install -m 0755 ${S}/conf/iarm-monitor.sh ${D}${libdir}/
 }
 
 SYSTEMD_SERVICE:${PN} = "iarmbusd.service"
