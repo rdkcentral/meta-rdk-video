@@ -66,3 +66,5 @@ do_install:append() {
 
 SYSTEMD_SERVICE:${PN} = "iarmbusd.service"
 FILES:${PN} += "${systemd_unitdir}/system/iarmbusd.service"
+FILES:${PN} += "${libdir}/iarm-reboot.sh"
+FILES:${PN} += "${libdir}/iarm-monitor.sh"
