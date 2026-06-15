@@ -15,7 +15,7 @@ SRCREV_FORMAT = "hdmicec"
 DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
 RDEPENDS:${PN} = " devicesettings telemetry"
 
-DEPENDS += "safec-common-wrapper libbinder"
+DEPENDS += "safec-common-wrapper libbinde"
 
 
 ASNEEDED = ""
