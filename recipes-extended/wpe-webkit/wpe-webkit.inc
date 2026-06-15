@@ -144,7 +144,6 @@ SELECTED_OPTIMIZATION:remove =  "${@bb.utils.contains('DISTRO_FEATURES', 'wpe-we
 SELECTED_OPTIMIZATION:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', '-g', '-g1', d)}"
 WPE_WEBKIT_LTO:remove = "${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-debugfission', '-flto=auto', '', d)}"
 do_install:append() {
-    #test
     # Ensure the recipe version is installed into version.txt
     install -d ${D}${sysconfdir}/${PN}
     echo "WPE_WEBKIT_VERSION=${PV}-${PR}" > ${D}${sysconfdir}/${PN}/version.txt
