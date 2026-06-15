@@ -14,7 +14,7 @@ index dc867b1db..c577e21cf 100644
              _dispatcher = new PluginHost::Server(*_config, _background);
  
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index abb666b8b..a4e85c817 100644
+index abb666b8b..8ce527e7b 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
 @@ -3674,6 +3674,7 @@ POP_WARNING()
@@ -60,7 +60,15 @@ index abb666b8b..a4e85c817 100644
  
                  static Core::ProxyType<Web::Response> _missingResponse;
              };
-@@ -3816,7 +3821,7 @@ POP_WARNING()
+@@ -3804,6 +3809,7 @@ POP_WARNING()
+                     : Job()
+                     , _element()
+                     , _jsonrpc(false)
++                    , _outer() // bvanav-dbg
+                 {
+                 }
+                 ~JSONElementJob() override
+@@ -3816,7 +3822,7 @@ POP_WARNING()
                  }
  
              public:
@@ -69,42 +77,42 @@ index abb666b8b..a4e85c817 100644
                  {
                      Job::Set(id, server, service);
  
-@@ -3825,6 +3830,7 @@ POP_WARNING()
+@@ -3825,6 +3831,7 @@ POP_WARNING()
                      _element = element;
                      _jsonrpc = JSONRPC;
                      _token = token;
-+		    _outer = outer; // bvanav-dbg
++		            _outer = outer; // bvanav-dbg
                  }
                  void Dispatch() override
                  {
-@@ -3842,8 +3848,10 @@ POP_WARNING()
+@@ -3842,8 +3849,10 @@ POP_WARNING()
                          if (HasService() == true) {
                              message->ImplicitCallsign(GetService().Callsign());
                          }
 -
-+			// bvanav-dbg
-+			_outer->setInvokeTime(START);
++			            // bvanav-dbg
++			            _outer->setInvokeTime(START);
                          _element = Core::ProxyType<Core::JSON::IElement>(Job::Process(_token, message));
-+			_outer->setInvokeTime(END); 
++			            _outer->setInvokeTime(END); 
  
  #if THUNDER_PERFORMANCE
                          tracking->Execution();
-@@ -3877,6 +3885,7 @@ POP_WARNING()
+@@ -3877,6 +3886,7 @@ POP_WARNING()
                  Core::ProxyType<Core::JSON::IElement> _element;
                  string _token;
                  bool _jsonrpc;
-+		Channel* _outer; // bvanav-dbg
++		        Channel* _outer; // bvanav-dbg
              };
              class TextJob : public Job {
              public:
-@@ -4173,7 +4182,14 @@ POP_WARNING()
+@@ -4173,7 +4183,14 @@ POP_WARNING()
  
                          if (job.IsValid() == true) {
                              Core::ProxyType<Web::Request> baseRequest(request);
 -                            job->Set(Id(), &_parent, service, baseRequest, _security->Token(), !request->ServiceCall());
 +                            job->Set(Id(), &_parent, service, baseRequest, _security->Token(), !request->ServiceCall(),this); // bvanav-dbg
 +                            // bvanav-dbg
-+                            if ((!request->ServiceCall() && baseRequest->Verb == Web::Request::HTTP_POST) && (baseRequest->HasBody() == true))
++                            if (!request->ServiceCall() && (baseRequest->HasBody() == true))
 +                            {
 +                                Core::ProxyType<Core::JSONRPC::Message> message(baseRequest->Body<Core::JSONRPC::Message>());
 +                                setJsonRpcMethod(message->Designator.Value());
@@ -113,23 +121,23 @@ index abb666b8b..a4e85c817 100644
                              _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
                          }
                      }
-@@ -4249,7 +4265,14 @@ POP_WARNING()
+@@ -4249,7 +4266,14 @@ POP_WARNING()
                      ASSERT(job.IsValid() == true);
  
                      if ((_service.IsValid() == true) && (job.IsValid() == true)) {
 -                        job->Set(Id(), &_parent, _service, element, _security->Token(), ((State() & Channel::JSONRPC) != 0));
 +                        job->Set(Id(), &_parent, _service, element, _security->Token(), ((State() & Channel::JSONRPC) != 0), this); // bvanav-dbg
-+			// bvanav-dbg
-+			Core::ProxyType<Core::JSONRPC::Message> message(element);
-+			if (message.IsValid())
-+			{
-+			    setJsonRpcMethod(message->Designator.Value());
-+			    setQueueLength(_parent.WorkerPool().queueLength());
-+			}
++			            // bvanav-dbg
++			            Core::ProxyType<Core::JSONRPC::Message> message(element);
++			            if (message.IsValid())
++			            {
++			                setJsonRpcMethod(message->Designator.Value());
++			                setQueueLength(_parent.WorkerPool().queueLength());
++			            }
                          _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
                      }
                  }
-@@ -4361,7 +4384,42 @@ POP_WARNING()
+@@ -4361,7 +4385,46 @@ POP_WARNING()
              {
                  SetId(id);
              }
@@ -137,52 +145,56 @@ index abb666b8b..a4e85c817 100644
 +        public:
 +            inline void setRequestTime()
 +            {
-+                requestTime = Core::Time::Now();
++                _requestTime = Core::Time::Now();
 +            }
-+            enum invokeTime {START, END};
-+            inline void setInvokeTime(invokeTime time)
++            enum InvokeTime {START, END};
++            inline void setInvokeTime(InvokeTime time)
 +            {
 +                if(time == START)
-+                    invokeTimeStart = Core::Time::Now();
++                    _invokeTimeStart = Core::Time::Now();
 +                else if(time == END)
-+                    invokeTimeEnd = Core::Time::Now();
++                    _invokeTimeEnd = Core::Time::Now();
 +            }
 +            inline void setResponseTime()
 +            {
-+                if(!jsonRpcMethod.empty())
++                if(!_jsonRpcMethod.empty())
 +                {
-+		    responseTime = Core::Time::Now();
++		            _responseTime = Core::Time::Now();
  
-+                    Core::Time::nanoseconds thunderLatency =  (invokeTimeStart.nanosec() - requestTime.nanosec()) 
-+                                                                + (responseTime.nanosec() - invokeTimeEnd.nanosec());
-+                    Core::Time::nanoseconds pluginLatency =  invokeTimeEnd.nanosec() - invokeTimeStart.nanosec();
-+                    Core::Time::nanoseconds totalLatency = thunderLatency + pluginLatency;
-+                    SYSLOG(Logging::JsonRpcProfiler, (_T("%s, %d, %ld, %ld, %ld"), jsonRpcMethod.c_str(), queueSize, thunderLatency, pluginLatency, totalLatency));
-+		    jsonRpcMethod.clear();
++                    // auto pluginLatency =  std::chrono::duration_cast<std::chrono::nanoseconds>(_invokeTimeEnd - _invokeTimeStart).count();
++                    Core::Time::nanosecondsfromepoch thunderLatency =  (_invokeTimeStart.NanoSeconds() - _requestTime.NanoSeconds()) 
++                                                                 + (_responseTime.NanoSeconds() - _invokeTimeEnd.NanoSeconds());
++                    Core::Time::nanosecondsfromepoch  pluginLatency =  _invokeTimeEnd.NanoSeconds() - _invokeTimeStart.NanoSeconds();
++                    Core::Time::nanosecondsfromepoch  totalLatency = thunderLatency + pluginLatency;
++
++                    SYSLOG(Logging::JsonRpcProfiler, (_T("%s, %ld, %lld, %lld, %lld"), _jsonRpcMethod.c_str(), _queueSize, thunderLatency, pluginLatency, totalLatency));
++                    
++                    // fprintf(stderr, "bvanav-dbg: nsec ReqTime: %lld, InvoSt: %lld, InvoEd: %lld, ResTime: %lld\n", _requestTime.NanoSeconds(), _invokeTimeStart.NanoSeconds(), _invokeTimeEnd.NanoSeconds(), _responseTime.NanoSeconds());
++		            _jsonRpcMethod.clear();
 +                }
 +            }
 +            inline void setJsonRpcMethod(string method)
 +            {
-+                jsonRpcMethod = method;
++                _jsonRpcMethod = method;
 +            }
 +            inline void setQueueLength(uint32_t size)
 +            {
-+                queueSize = size; 
++                _queueSize = size; 
 +            }
          private:
              inline string SelectSupportedProtocol(const Web::ProtocolsArray& protocols)
              {
-@@ -4393,6 +4451,14 @@ POP_WARNING()
+@@ -4393,6 +4456,14 @@ POP_WARNING()
              Core::ProxyType<Service> _service;
              bool _requestClose;
  
 +            // bvanav-dbg
-+            Core::Time requestTime;
-+            Core::Time invokeTimeStart;
-+            Core::Time invokeTimeEnd;
-+            Core::Time responseTime;
-+            string jsonRpcMethod;
-+            uint32_t queueSize;
++            Core::Time _requestTime;
++            Core::Time _invokeTimeStart;
++            Core::Time _invokeTimeEnd;
++            Core::Time _responseTime;
++            string _jsonRpcMethod;
++            uint32_t _queueSize;
 +
              // Factories for creating jobs that can be placed on the PluginHost Worker pool.
              static Core::ProxyPoolType<WebRequestJob> _webJobs;
@@ -247,7 +259,7 @@ index 103816293..6bd95023d 100644
                  SocketListner& _parent;
              };
 diff --git a/Source/core/Time.cpp b/Source/core/Time.cpp
-index 97a59c4ae..6acfde98d 100644
+index 97a59c4ae..11ba4fff8 100644
 --- a/Source/core/Time.cpp
 +++ b/Source/core/Time.cpp
 @@ -1025,6 +1025,12 @@ POP_WARNING()
@@ -255,16 +267,16 @@ index 97a59c4ae..6acfde98d 100644
      }
  
 +    // bvanav-dbg
-+    Time::nanoseconds Time::nanosec() const
++    Time::nanosecondsfromepoch Time::NanoSeconds() const
 +    {
-+        return ((static_cast<nanoseconds>(_time.tv_sec) * NanoSecondsPerSecond ) + static_cast<nanoseconds>(_time.tv_nsec));
++        return ((static_cast<nanosecondsfromepoch>(_time.tv_sec) * NanoSecondsPerSecond ) + static_cast<nanosecondsfromepoch>(_time.tv_nsec));
 +    }
 +
      uint8_t Time::DayOfWeek() const
      {
          return DayOfWeek(TMHandle());
 diff --git a/Source/core/Time.h b/Source/core/Time.h
-index 3ef93a5d9..4d8049cfc 100644
+index 3ef93a5d9..b63222eaf 100644
 --- a/Source/core/Time.h
 +++ b/Source/core/Time.h
 @@ -51,6 +51,8 @@ namespace Core {
@@ -280,7 +292,7 @@ index 3ef93a5d9..4d8049cfc 100644
  
          // relative to 1st of January 1970, 00:00:00 in microseconds
          using microsecondsfromepoch = uint64_t;
-+        using nanoseconds = uint64_t; // bvanav-dbg
++        using nanosecondsfromepoch = uint64_t; // bvanav-dbg
  
  #ifdef __POSIX__
  
@@ -289,7 +301,7 @@ index 3ef93a5d9..4d8049cfc 100644
          // UTC time
          microsecondsfromepoch Ticks() const;
 +        // bvanav-dbg
-+        nanoseconds nanosec() const;
++        nanosecondsfromepoch NanoSeconds() const;
  
          bool FromRFC1123(const string& buffer);
          bool FromRFC1036(const string& buffer);
