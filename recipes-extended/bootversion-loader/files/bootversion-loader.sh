@@ -22,6 +22,12 @@
 file_version="/version.txt"
 file_bootType="/tmp/bootType"
 file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
+file_bootversion="/opt/.bootversion"
+file_updateStatus="/opt/.updateStatus"
+file_bootversion_bak="/opt/.bootversion.bak"
+migrationDSFile="/opt/secure/migration/migration_data_store.json"
+migrationDir="/opt/secure/migration"
+file_copycheck="/opt/persistent/migration/copy_backup_to_original"
 BOOTTYPE_LOG_FILE="/opt/logs/boottypescript.log"
 
 boottypeLog() {
@@ -67,31 +73,18 @@ PLATFORM_FILE="/etc/migration/boot_FSR.platform"
 if [ -f "$PLATFORM_FILE" ]; then
     file_platform="$(tr -d '\r' < "$PLATFORM_FILE" | tr -d ' \t\n')"
     boottypeLog "Running the bootversion-loader script for $file_platform devices"
-	if [ "$file_platform" == "xumotv" ]; then
-		boottypeLog "Setting the file path for xumotv devices"
-		file_bootversion="/opt/.bootversion"
-		file_updateStatus="/opt/.updateStatus"
-		file_bootversion_bak="/opt/.bootversion.bak"
-		migrationDSFile="/opt/secure/migration/migration_data_store.json"
-		migrationDir="/opt/secure/migration"
-	elif [ "$file_platform" == "flex" ]; then
-		boottypeLog "Setting the file path for flex devices"
-		file_bootversion="/opt/persistent/migration/.bootversion"
-		file_updateStatus="/opt/persistent/migration/.updateStatus"
-		file_bootversion_bak="/opt/persistent/migration/.bootversion.bak"
-		migrationDSFile="/opt/persistent/migration/migration_data_store.json"
-		migrationDir="/opt/persistent/migration"
-		#migration directory creation if not already present.
-		if [ ! -d "$migrationDir" ]; then
-			boottypeLog "$migrationDir Directory was not present, Hence creating directory"
-			mkdir -p "$migrationDir"
-		        if [ "$?" == 0 ]; then
-		             boottypeLog "Directory creation was successful"
-		        else
-		             boottypeLog "Directory creation was not successful"
-		        fi
+	if [ "$file_platform" == "flexxi6" ]; then
+		boottypeLog "Checking if copy flag is present in Xi6 platforms"
+		if [ ! -e "$file_copycheck" ]; then
+			cp -r /opt/persistent/migration/* /opt/
+			if [ $? -eq 0 ]; then
+				boottypeLog "Contents of backup directory is copied to it original location"
+			else
+				boottypeLog "failed to copy the contents"
+			fi
+			rm -rf "$file_copycheck"
 		else
-		      boottypeLog "$migrationDir directory is already present"
+			boottypeLog "$file_copycheck flag is not present proceeding with the script"
 		fi
     fi
 else
