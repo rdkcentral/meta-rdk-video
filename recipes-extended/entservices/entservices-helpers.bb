@@ -23,11 +23,11 @@ RDEPENDS:${PN} += "wpeframework"
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/ds "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/ds-hal "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/iarmbus"
+CXXFLAGS += "-DUSE_THUNDER_COMMUNICATION"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
-    -DUSE_THUNDER_COMMUNICATION=ON \
 "
 
 # ----------------------------------------------------------------------------
