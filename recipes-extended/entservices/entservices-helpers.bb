@@ -34,7 +34,13 @@ EXTRA_OECMAKE += " \
 
 PACKAGECONFIG ?= "helpers"
 
-PACKAGECONFIG[helpers] = "-DPLUGIN_HELPERS=ON,-DPLUGIN_HELPERS=OFF,entservices-apis iarmbus devicesettings virtual/vendor-devicesettings-hal,entservices-apis devicesettings"
+HELPERS_DEPS = "entservices-apis iarmbus devicesettings virtual/vendor-devicesettings-hal"
+HELPERS_DEPS:vdevice_x86-64-mw = "entservices-apis iarmbus"
+
+HELPERS_RDEPS = "entservices-apis devicesettings"
+HELPERS_RDEPS:vdevice_x86-64-mw = "entservices-apis"
+
+PACKAGECONFIG[helpers] = "-DPLUGIN_HELPERS=ON,-DPLUGIN_HELPERS=OFF,${HELPERS_DEPS},${HELPERS_RDEPS}"
 
 # ----------------------------------------------------------------------------
 
