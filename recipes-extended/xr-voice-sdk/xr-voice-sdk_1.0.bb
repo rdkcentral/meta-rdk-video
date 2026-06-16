@@ -17,7 +17,10 @@ SRC_URI = "${CMF_GITHUB_ROOT}/xr-voice-sdk;${CMF_GITHUB_SRC_URI_SUFFIX};name=xr-
 
 S = "${WORKDIR}/git"
 
-DEPENDS = "libbsd util-linux safec-common-wrapper gperf-native jansson rdkversion openssl webrtc-audio-processing"
+DEPENDS = "libbsd util-linux safec-common-wrapper gperf-native jansson rdkversion openssl"
+
+# uncomment when webrtc-audio-processing is added to OSS release
+#DEPENDS:append = "webrtc-audio-processing"
 
 INHERIT_BREAKPAD_WRAPPER := "${@bb.utils.contains('BBLAYERS', '${RDKROOT}/meta-rdk', 'breakpad-wrapper', '',d)}"
 
