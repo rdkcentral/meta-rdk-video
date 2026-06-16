@@ -5,70 +5,23 @@ HOMEPAGE = "https://github.com/rdkcentral/Thunder"
 
 LIC_FILES_CHKSUM = "file://LICENSE;md5=85bcfede74b96d9a58c6ea5d4b607e58"
 
-DEPENDS = "zlib wpeframework-tools-native rfc thunder-hang-recovery"
+DEPENDS = "zlib wpeframework-tools-native rfc"
 DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
 
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r40"
-PV = "4.4.3"
+PR = "r43"
+PV = "4.4.5"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4;name=thunder"
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder"
 
-SRCREV_thunder = "19100433e5517c743738bb2a9ed8ce2f79c10eaf"
+SRCREV_thunder = "1bfb85b75cb20409dbd69d34ea056171c9cdf565"
 
 SRC_URI += "file://wpeframework-init \
-           file://wpeframework.service.in \
-           file://r4.4/Library_version_matched_with_release_tag.patch \
-           file://r4.4/Remove_versioning_for_executables.patch \
-           file://r4.4/wpeframework_version.patch \
-           file://r4.4/0001_Remove_DEBUG_Macro_Definition.patch \
-           file://r4.4/0003-OCDM-increase-RPC-comm-timeout.patch \
-           file://r4.4/wpeframework_added_optimization_flag_improvement.patch \
-           file://r4.4/LLAMA-2254_fix_netlink_buffer_size_error.patch \
-           file://r4.4/1001-Disable-MessageDispatcher-Enable-stderr.patch \
-           file://r4.4/1002-Update-CMake-Module-Path.patch \
-           file://r4.4/Use-Monotonic-Clock-Time-Now.patch \
-           file://r4.4/RDKTV-15803-WPEFramework-crash-malloc-printerr.patch \
-           file://r4.4/DELIA-54331-Do-not-set-the-receive-buffer.patch \
-           file://r4.4/RDKTV-16992-Added_timeout-and-synchronisation-when-stopping-containers.patch \
-           file://r4.4/0001-WPEFramework-Regex-Removal-r4.4.1.patch \
-           file://r4.4/crash_debug_callstack_R4_4.patch \
-           file://r4.4/wpeframework_persistentpathchanges.patch \
-           file://r4.4/1004-Add-support-for-project-dir.patch \
-           file://r4.4/Enable_Thunder_Logging_R4.4.1.patch \
-           file://r4.4/Thunder_FirmwareUpdate_USB_Mount_Error_codes.patch \
-           file://r4.4/R4-wpeframework-sd_notify.patch \
-           file://r4.4/RDKEMW-733-Add-ENTOS-IDS.patch \
-           file://r4.4/Update-Trace-Level-Logging-Logic.patch \
-           file://r4.4/Activating_plugins_Logs_COMRPC.patch \
-           file://r4.4/Removed_Autostart_Check_From_WPEFramework.patch \
-           file://r4.4/Append_WorkerPool_Info.patch \
-           file://r4.4/Revert_PR-665_support_JSON_Parsing.patch \
-           "
-
-SRC_URI += "file://r4.4/PR-1369-Wait-for-Open-in-Communication-Channel.patch \
-            file://r4.4/PR-1756-Remove-Recursive-Function-From-SmartLinkType.patch \
-            file://r4.4/PR-1586-Use-Monotonic-Clocks.patch\
-            file://r4.4/PR-1533-Refernce-counted-Library-COMRPC-objects.patch  \
-            file://r4.4/PR-1751-Load-Library-ThunderR4.patch \
-            file://r4.4/PR-1785-Reduce_scope_of_adminlock.patch \
-            file://r4.4/PR-1791-Thunder-hung-SocketPort-close-Delete-channel.patch \
-            file://r4.4/PR-1797-SocketPort-Closed.patch \
-            file://r4.4/PR1832-Thunder-ABBA-Deadlock-Fix.patch \
-            file://r4.4/0001-DELIA-65784-Hibernation-fixes-for-R4.4.patch \
-            file://r4.4/0001-SmarkLink-Crash-Fix.patch \
-            file://r4.4/Jsonrpc_dynamic_error_handling.patch \
-            file://r4.4/PR-1923-RDKEMW-6261-to-improve-system-shutdown-time-upon-R4.4.3.patch \
-            file://r4.4/rdkemw-124-Link-Breakpad-wrapper.patch \
-            file://r4.4/RDKEMW-8889-Avoid-LoadMeta-On-Boot.patch \
-            file://r4.4/0001-To-handle-truncated-UTF-code-on-parsing-empty-null-t.patch \
-            file://r4.4/0002-Print-Log-Upon-Time-ComRPC-Timeout.patch \
-            file://r4.4/RDKEMW-10951_WPEFramework_Config_Override.patch \
-            file://r4.4/PR-2057-RDKEMW-14228_apply_sysinfo_mem_unit.patch \
+            file://wpeframework.service.in \
            "
 
 S = "${WORKDIR}/git"
@@ -82,7 +35,7 @@ WPEFRAMEWORK_SYSTEM_PREFIX = "OE"
 WPEFRAMEWORK_PORT = "9998"
 WPEFRAMEWORK_BINDING = "127.0.0.1"
 WPEFRAMEWORK_IDLE_TIME = "0"
-WPEFRAMEWORK_THREADPOOL_COUNT ?= "32"
+WPEFRAMEWORK_THREADPOOL_COUNT ?= "16"
 WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
 
 
@@ -140,7 +93,7 @@ ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'Securit
 EXTRA_OECMAKE += " \
     -DINSTALL_HEADERS_TO_TARGET=ON \
     -DEXTERN_EVENTS="${WPEFRAMEWORK_EXTERN_EVENTS}" \
-    -DEXCEPTIONS_ENABLE=ON \  
+    -DEXCEPTIONS_ENABLE=ON \
     -DBUILD_SHARED_LIBS=ON \
     -DRPC=ON \
     -DBUILD_REFERENCE=${SRCREV} \
@@ -166,6 +119,21 @@ EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
+
+    # Propagate configured keymap via parent service environment to rdkwindowmanager plugin.
+    if [ -n "${WINDOWMANAGER_RCU_KEYMAP_FILE}" ]; then
+        WPEFW_SERVICE="${D}${systemd_unitdir}/system/wpeframework.service"
+
+        if [ -f "$WPEFW_SERVICE" ]; then
+            if grep -Eq '^[[:space:]]*Environment="?RDK_WINDOW_MANAGER_KEYMAP_FILE=' "${WPEFW_SERVICE}"; then
+                bbnote "Updating Windowmanager KEYMAP env in wpeframework.service"
+                sed -i -E "s|^[[:space:]]*Environment=\"?RDK_WINDOW_MANAGER_KEYMAP_FILE=.*$|Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"|" "${WPEFW_SERVICE}"
+            else
+                bbnote "Adding Windowmanager KEYMAP env in wpeframework.service"
+                sed -i "/^\[Service\]/a Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"" "${WPEFW_SERVICE}"
+            fi
+        fi
+    fi
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
@@ -190,17 +158,14 @@ INSANE_SKIP:${PN}-dbg += "dev-so"
 
 # ----------------------------------------------------------------------------
 
-RDEPENDS:${PN}_rpi = "userland"
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)} thunder-hang-recovery"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 # Should be able to remove this when generic rdk_svp flag
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'sage_svp', 'gst-svp-ext', '', d)}"
-
-RDEPENDS:${PN}:append:rpi = " ${@bb.utils.contains('DISTRO_FEATURES', 'vc4graphics', '', 'userland', d)}"
 
 inherit breakpad-logmapper syslog-ng-config-gen logrotate_config
 
 SYSLOG-NG_FILTER = "wpeframework"
-SYSLOG-NG_SERVICE_wpeframework = "wpeframework.service thunderHangRecovery.service"
+SYSLOG-NG_SERVICE_wpeframework = "wpeframework.service"
 SYSLOG-NG_DESTINATION_wpeframework = "wpeframework.log"
 SYSLOG-NG_LOGRATE_wpeframework = "high"
 
@@ -219,4 +184,3 @@ BREAKPAD_LOGMAPPER_LOGLIST = "wpeframework.log"
 do_add_version () {
     echo "WPEFRAMEWORK-VERSION=${THUNDER_RELEASE_TAG_NAME}" > ${EXTRA_VERSIONS_PATH}/${PN}.txt
 }
-

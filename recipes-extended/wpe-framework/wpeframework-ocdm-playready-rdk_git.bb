@@ -5,6 +5,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=19a2b3c39737289f92c7991b16599360"
 
 include recipes-extended/wpe-framework/include/wpeframework-plugins.inc
 
+PR = "r0"
+PV = "1.0.2"
+
 DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native entservices-apis"
 DEPENDS += "  gst-svp-ext gstreamer1.0"
 
@@ -22,7 +25,8 @@ TOOLCHAIN = "gcc"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/playready-rdk.git;${CMF_GITHUB_SRC_URI_SUFFIX};name=pr-source"
-SRCREV = "1dbf957f4f6a7ce8a2708fa241c189a890fa6e58"
+# TAG version 1.0.2
+SRCREV = "29ce2675534eb2a6c364d7eb396282250abe9342"
 SRCREV_FORMAT = "pr-source pr-header"
 S = "${WORKDIR}/git"
 
