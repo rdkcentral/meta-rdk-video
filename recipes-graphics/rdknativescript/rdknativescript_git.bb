@@ -85,7 +85,7 @@ do_install() {
    mkdir -p ${D}${includedir}/jsruntime/modules
 
    install -m 0644 ${S}/include/*.h ${D}${includedir}/jsruntime
-   for file in ${D}/home/root/modules/*; do install -m 0644 "$file" -t ${D}${includedir}/jsruntime/modules/; done
+   install -m 0644  ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
 
    install -d ${D}${datadir}/rdknativescript
    echo "${PV}" > ${D}${datadir}/rdknativescript/version.txt
