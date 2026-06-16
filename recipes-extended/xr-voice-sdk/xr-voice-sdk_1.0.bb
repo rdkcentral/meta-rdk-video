@@ -19,15 +19,13 @@ S = "${WORKDIR}/git"
 
 DEPENDS = "libbsd util-linux safec-common-wrapper gperf-native jansson rdkversion openssl"
 
-# uncomment when webrtc-audio-processing is added to OSS release
-#DEPENDS:append = "webrtc-audio-processing"
-
 INHERIT_BREAKPAD_WRAPPER := "${@bb.utils.contains('BBLAYERS', '${RDKROOT}/meta-rdk', 'breakpad-wrapper', '',d)}"
 
 inherit cmake pkgconfig coverity ${INHERIT_BREAKPAD_WRAPPER}
 
-DEPENDS:append       = "${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', '', d)}"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' -DUSE_SAFEC=ON', '', d)}"
+DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', '', d)}"
+CFLAGS:append  = "${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --cflags libsafec`', ' -DSAFEC_DUMMY_API', d)}"
+LDFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
 
 # Set to "1" in recipe append to enable/disable HTTP or WS support
 ENABLE_HTTP_SUPPORT    ?= "0"
