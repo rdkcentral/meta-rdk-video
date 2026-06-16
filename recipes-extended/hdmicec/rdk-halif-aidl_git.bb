@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PV = "1.0.11"
 PR = "r0"
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+PACKAGE_ARCH = "${OSS_ARCH}"
 
 # 1) Binder tools + libs repo
 SRC_URI = "git://github.com/rdkcentral/linux_binder_idl.git;branch=develop;protocol=https;name=binder"
