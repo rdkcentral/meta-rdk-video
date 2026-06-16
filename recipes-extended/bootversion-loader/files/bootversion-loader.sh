@@ -75,7 +75,7 @@ if [ -f "$PLATFORM_FILE" ]; then
     boottypeLog "Running the bootversion-loader script for $file_platform devices"
 	if [ "$file_platform" == "flexxi6" ]; then
 		boottypeLog "Checking if copy flag is present in Xi6 platforms"
-		if [ ! -e "$file_copycheck" ]; then
+		if [ -e "$file_copycheck" ]; then
 			cp -r /opt/persistent/migration/* /opt/
 			if [ $? -eq 0 ]; then
 				boottypeLog "Contents of backup directory is copied to it original location"
