@@ -44,6 +44,10 @@ PACKAGECONFIG[breakpad] = "-DENABLE_BREAKPAD=ON, -DENABLE_BREAKPAD=OFF, breakpad
 PACKAGECONFIG[wpeframework_opencdm] = "-DENABLE_THUNDER=ON,-DENABLE_THUNDER=OFF,wpeframework-clientlibraries,"
 PACKAGECONFIG[debugfission] = "-DDEBUG_FISSION=ON,-DDEBUG_FISSION=OFF,"
 PACKAGECONFIG[uselld] = "-DTRY_USE_LD_LLD=ON -DUSE_LD_LLD=ON,,${MLPREFIX}clang-cross-${TARGET_ARCH}"
+PACKAGECONFIG[js_shell] = "-DSHOULD_INSTALL_JS_SHELL=ON,,,"
+
+WPE_WEBKIT_JS_SHELL ?= ""
+PACKAGECONFIG:append = " ${@'js_shell' if d.getVar('WPE_WEBKIT_JS_SHELL') else ''}"
 
 RDEPENDS:${PN} += "\
   libatomic \
