@@ -20,57 +20,94 @@ jobs:
         # Define valid ticket IDs
         VALID_TICKET_IDS=("RDKEMW" "RDKEVD" "IMMUI" "RDK" "RDKMVE" "RDKDEV")
         
-        # Function to validate ticket format and ID
+        # Function to validate ticket format and ID(s)
         validate_ticket() {
           local text="$1"
           local field_name="$2"
           
           echo "Validating $field_name: $text"
           
-          # Check if text matches the pattern <TICKETID>-<ticketno.> : <desc>
-          if [[ ! "$text" =~ ^[A-Z0-9]+-[0-9]+[[:space:]]*:[[:space:]]*.+ ]]; then
+          # Check if text matches the pattern <TICKETID>-<ticketno.>[, <TICKETID>-<ticketno.>] : <desc>
+          if [[ ! "$text" =~ ^([A-Z0-9]+-[0-9]+)([[:space:]]*,[[:space:]]*[A-Z0-9]+-[0-9]+)*[[:space:]]*:[[:space:]]*.+ ]]; then
             echo "ERROR: $field_name format is invalid."
-            echo "Expected format: <TICKETID>-<ticketno.> : <description>"
-            echo "Example: RDKEMW-123 : Fix playbook issue"
+            echo "Expected format: <TICKETID>-<ticketno.>[, <TICKETID>-<ticketno.>] : <description>"
+            echo "Example (single): RDKEMW-123 : Fix playbook issue"
+            echo "Example (multiple): RDKEMW-123, RDKDEV-45 : Fix playbook issue"
             echo ""
             echo "Valid ticket IDs are:"
             printf "%s\n" "${VALID_TICKET_IDS[@]}"
             return 1
           fi
           
-          # Extract ticket ID from the text
-          local ticket_prefix=$(echo "$text" | sed -n 's/^\([A-Z0-9]\+\)-[0-9]\+[[:space:]]*:.*$/\1/p')
-          
-          if [ -z "$ticket_prefix" ]; then
-            echo "ERROR: Could not extract ticket ID from $field_name."
-            echo "Expected format: <TICKETID>-<ticketno.> : <description>"
+          # Extract only the ticket list (before ':')
+          local ticket_list="${text%%:*}"
+
+          # Extract all ticket IDs from the ticket list
+          mapfile -t tickets < <(echo "$ticket_list" | grep -oE '[A-Z0-9]+-[0-9]+')
+
+          if [ "${#tickets[@]}" -eq 0 ]; then
+            echo "ERROR: Could not extract ticket ID(s) from $field_name."
+            echo "Expected format: <TICKETID>-<ticketno.>[, <TICKETID>-<ticketno.>] : <description>"
+            echo "Example (single): RDKEMW-123 : Fix playbook issue"
+            echo "Example (multiple): RDKEMW-123, RDKDEV-45 : Fix playbook issue"
             echo ""
             echo "Valid ticket IDs are:"
             printf "%s\n" "${VALID_TICKET_IDS[@]}"
             return 1
           fi
-          
-          # Check if extracted ticket ID is in the valid list
-          local valid=false
-          for valid_id in "${VALID_TICKET_IDS[@]}"; do
-            if [ "$ticket_prefix" = "$valid_id" ]; then
-              valid=true
-              break
+
+          # Check for duplicate ticket IDs
+          declare -A ticket_count=()
+          local duplicates=()
+          for ticket in "${tickets[@]}"; do
+            if [ -n "${ticket_count[$ticket]}" ]; then
+              duplicates+=("$ticket")
+            fi
+            ticket_count["$ticket"]=1
+          done
+
+          if [ "${#duplicates[@]}" -ne 0 ]; then
+            echo "ERROR: Duplicate ticket ID(s) found in $field_name: ${duplicates[*]}"
+            echo "Each ticket ID should appear only once."
+            echo "Example (single): RDKEMW-123 : Fix playbook issue"
+            echo "Example (multiple): RDKEMW-123, RDKDEV-45 : Fix playbook issue"
+            return 1
+          fi
+
+          # Check if extracted ticket IDs are in the valid list
+          declare -A invalid_prefix_set=()
+          declare -A invalid_token_set=()
+          for ticket in "${tickets[@]}"; do
+            local ticket_prefix="${ticket%%-*}"
+            local valid=false
+            for valid_id in "${VALID_TICKET_IDS[@]}"; do
+              if [ "$ticket_prefix" = "$valid_id" ]; then
+                valid=true
+                break
+              fi
+            done
+            if [ "$valid" = false ]; then
+              invalid_prefix_set["$ticket_prefix"]=1
+              invalid_token_set["$ticket"]=1
             fi
           done
-          
-          if [ "$valid" = false ]; then
-            echo "ERROR: Invalid ticket ID '$ticket_prefix' in $field_name"
+
+          if [ "${#invalid_prefix_set[@]}" -ne 0 ]; then
+            local invalid_prefixes=("${!invalid_prefix_set[@]}")
+            local invalid_tokens=("${!invalid_token_set[@]}")
+            echo "ERROR: Invalid ticket ID(s) in $field_name: ${invalid_prefixes[*]}"
+            echo "Invalid ticket token(s): ${invalid_tokens[*]}"
             echo ""
             echo "Valid ticket IDs are:"
             printf "%s\n" "${VALID_TICKET_IDS[@]}"
             echo ""
             echo "Your $field_name should start with one of the above ticket IDs followed by a number."
-            echo "Example: RDKEMW-123 : Fix playbook issue"
+            echo "Example (single): RDKEMW-123 : Fix playbook issue"
+            echo "Example (multiple): RDKEMW-123, RDKDEV-45 : Fix playbook issue"
             return 1
           fi
-          
-          echo "$field_name validation passed! Ticket ID: $ticket_prefix"
+
+          echo "$field_name validation passed! Ticket ID(s): ${tickets[*]}"
           return 0
         }
         

@@ -1,6 +1,6 @@
 DESCRIPTION = "RDK Window Manager"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=9b36bf6cc7d5808435a27926d9dc6f7d"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=5a302d945c4b4ee2960872c471d41400"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}:"
 DEPENDS = "westeros wayland essos virtual/egl rapidjson jpeg libpng curl"
@@ -8,10 +8,10 @@ DEPENDS = "westeros wayland essos virtual/egl rapidjson jpeg libpng curl"
 DEPENDS:append = "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '', 'libsoup-2.4 boost libsyswrapper', d)}"
 
 S = "${WORKDIR}/git"
-PV = "1.9.0"
+PV = "1.1.0"
 PR = "r0"
 
-SRCREV = "e6ece3d8d186d68d600710f44af8ff5bfbf59241"
+SRCREV = "5ef1e5102434f1f325aa93abcebd4c519e0b3935"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdk-window-manager;${CMF_GITHUB_SRC_URI_SUFFIX}"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
