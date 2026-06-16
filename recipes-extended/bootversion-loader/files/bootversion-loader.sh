@@ -73,16 +73,17 @@ PLATFORM_FILE="/etc/migration/boot_FSR.platform"
 if [ -f "$PLATFORM_FILE" ]; then
     file_platform="$(tr -d '\r' < "$PLATFORM_FILE" | tr -d ' \t\n')"
     boottypeLog "Running the bootversion-loader script for $file_platform devices"
-	if [ "$file_platform" == "flexxi6" ]; then
+	if [ "$file_platform" == "flex_xi6" ]; then
 		boottypeLog "Checking if copy flag is present in Xi6 platforms"
 		if [ -e "$file_copycheck" ]; then
 			cp -r /opt/persistent/migration/* /opt/
 			if [ $? -eq 0 ]; then
 				boottypeLog "Contents of backup directory is copied to it original location"
+				rm -rf "$file_copycheck"
 			else
 				boottypeLog "failed to copy the contents"
+				update_boottype_status "Copy operation failure in Xi6"
 			fi
-			rm -rf "$file_copycheck"
 		else
 			boottypeLog "$file_copycheck flag is not present proceeding with the script"
 		fi
