@@ -53,7 +53,6 @@ do_install() {
 
    install -m 0644 ${B}/JSRuntimeJSC ${D}/home/root/JSRuntimeJSC
    install -m 0644 ${B}/JSRuntimeContainer ${D}/home/root/JSRuntimeContainer
-   
    install -m 0644 ${S}/utils/xhr.js ${D}/home/root/modules/.
    install -m 0644 ${S}/utils/punycode.js ${D}/home/root/modules/.
    install -m 0644 ${S}/utils/http.js ${D}/home/root/modules/.
@@ -85,8 +84,7 @@ do_install() {
    mkdir -p ${D}${includedir}/jsruntime/modules
 
    install -m 0644 ${S}/include/*.h ${D}${includedir}/jsruntime
-   install -m 0644  ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
-
+   cp -R  ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
    install -d ${D}${datadir}/rdknativescript
    echo "${PV}" > ${D}${datadir}/rdknativescript/version.txt
 }
