@@ -47,8 +47,8 @@ SRCREV_wpeframework-clientlibraries = "09a75a85e1263e0520f182dea6dc19c673e070a1"
 
 PACKAGECONFIG:remove = "opencdm opencdmi_rdk_svp opencdm_gst"
 
-# Backwards-compatible runtime dependency — entservices-opencdmi now provides libocdm.so
-RDEPENDS:${PN} += "entservices-opencdmi"
+# Backwards-compatible runtime recommendation — entservices-opencdmi now provides libocdm.so
+RRECOMMENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'entservices-opencdmi', '', d)}"
 
 # Remove OCDM-only patches from meta-rdk-video base recipe
 SRC_URI:remove = " \
