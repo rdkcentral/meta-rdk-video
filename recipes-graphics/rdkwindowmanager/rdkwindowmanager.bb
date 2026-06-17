@@ -21,7 +21,6 @@ EXTRA_OECMAKE += "-DRDK_WINDOW_MANAGER_BUILD_TEST_APP=OFF"
 inherit cmake pkgconfig
 
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_WINDOW_MANAGER_VNC_SERVER=OFF', '-DRDK_WINDOW_MANAGER_VNC_SERVER=ON', d)}"
-#EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DDENABLE_RDKWINDOWMANAGER_VNCSERVER2=OFF', '-DENABLE_RDKWINDOWMANAGER_VNCSERVER2=ON', d)}"
 
 do_install() {
     install -d ${D}/${libdir}
