@@ -36,6 +36,7 @@ EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 
 DEPENDS += "wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
+RDEPENDS:${PN}:append = " wpeframework-ocdm-fairplay"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
