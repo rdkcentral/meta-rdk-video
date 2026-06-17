@@ -1,0 +1,1117 @@
+From a1b41a1427b4cbc5f453850fad4f39d55137b255 Mon Sep 17 00:00:00 2001
+From: Radenko Mihajlovic <Radenko_Mihajlovic@comcast.com>
+Date: Wed, 17 Jun 2026 11:16:37 +0000
+Subject: [PATCH] 
+ DTM-4265-DTM-4808-ocdm-fairplay-interfaces-support-and-convert-pr-in-virtual
+
+---
+ apis/OpenCDMi/IContentDecryption.h | 155 +++++++++++++++---
+ apis/OpenCDMi/IDRM.h               | 243 +++++++++++++++++------------
+ apis/OpenCDMi/IOCDM.h              |  99 ++++++------
+ 3 files changed, 336 insertions(+), 161 deletions(-)
+
+diff --git a/apis/OpenCDMi/IContentDecryption.h b/apis/OpenCDMi/IContentDecryption.h
+index dec0647..2560363 100644
+--- a/apis/OpenCDMi/IContentDecryption.h
++++ b/apis/OpenCDMi/IContentDecryption.h
+@@ -16,47 +16,47 @@
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-
++ 
+ #pragma once
+-
++ 
+ #include "Module.h"
+ #include "IDRM.h"
+-
++ 
+ namespace WPEFramework {
+-
++ 
+ namespace Exchange {
+-
++ 
+     // This interface gives direct access to a OpenCDMi server instance, running as a plugin in the framework.
+     struct EXTERNAL IContentDecryption : virtual public Core::IUnknown {
+         enum { ID = ID_CONTENTDECRYPTION };
+-
++ 
+         virtual uint32_t Initialize(PluginHost::IShell* service) = 0;
+         virtual void Deinitialize(PluginHost::IShell* service) = 0;
+         virtual uint32_t Reset() = 0;
+         virtual RPC::IStringIterator* Systems() const = 0;
+         virtual RPC::IStringIterator* Designators(const string& keySystem) const = 0;
+         virtual RPC::IStringIterator* Sessions(const string& keySystem) const = 0;
+-
++ 
+         enum Status : uint8_t {
+             BUSY,
+             SUCCESS,
+             FAILED
+         };
+-
++ 
+         /* @event */
+         struct EXTERNAL INotification : virtual public Core::IUnknown {
+-
++ 
+             enum {ID = ID_CONTENTDECRYPTION_NOTIFICATION};
+-
++ 
+             /* @brief initialization status. */
+             virtual void initializationStatus(const std::string& drm,
+                                               const Status status) = 0;
+         };
+-
++ 
+         virtual uint32_t Register(IContentDecryption::INotification* notification VARIABLE_IS_NOT_USED) { return Core::ERROR_NOT_SUPPORTED; };
+         virtual uint32_t Unregister(IContentDecryption::INotification* notification VARIABLE_IS_NOT_USED) { return Core::ERROR_NOT_SUPPORTED; };
+     };
+-
++ 
+     class DataExchange : public Core::SharedBuffer {
+     private:
+         struct Administration {
+@@ -73,19 +73,27 @@ namespace Exchange {
+             uint16_t StreamHeight;
+             uint16_t StreamWidth;
+             uint8_t  StreamType;
++        uint32_t fps_version;
++        uint64_t fps_movieID;
++        uint64_t fps_cryptorID;
++        uint32_t fps_contentType;
++        CDMi::Cdmi_FPSSliceInfo fps_sliceInfo[4]; // Lets out an arbitary size for now.
++        uint32_t fps_sliceInfoArrayCount;
++        uint32_t fps_svpmemoryHandle;
++ 
+         };
+-
++ 
+     public:
+         DataExchange() = delete;
+         DataExchange(const DataExchange&) = delete;
+         DataExchange& operator=(const DataExchange&) = delete;
+-
++ 
+         DataExchange(const string& name)
+             : Core::SharedBuffer(name.c_str())
+         {
+         }
+         DataExchange(const string& name, const uint32_t bufferSize)
+-            : Core::SharedBuffer(name.c_str(), 
++            : Core::SharedBuffer(name.c_str(),
+                 Core::File::USER_READ    |
+                 Core::File::USER_WRITE   |
+                 Core::File::USER_EXECUTE |
+@@ -101,9 +109,9 @@ namespace Exchange {
+             ::memset(admin, 0, sizeof(Administration));
+         }
+         ~DataExchange() = default;
+-
++ 
+     public:
+-        void Clear() 
++        void Clear()
+         {
+             Administration* admin = reinterpret_cast<Administration*>(AdministrationBuffer());
+             admin->SubSampleLength = 0;
+@@ -112,6 +120,24 @@ namespace Exchange {
+             admin->StreamHeight = 0;
+             admin->StreamWidth = 0;
+             admin->StreamType = 0;
++        admin->fps_version = 0;
++        admin->fps_movieID = 0;
++        admin->fps_cryptorID = 0;
++        admin->fps_contentType = 0;
++        admin->fps_sliceInfo[0].offset = 0;
++            admin->fps_sliceInfo[0].size   = 0;
++ 
++            admin->fps_sliceInfo[1].offset = 0;
++            admin->fps_sliceInfo[1].size   = 0;
++ 
++        admin->fps_sliceInfo[2].offset = 0;
++            admin->fps_sliceInfo[2].size   = 0;
++ 
++        admin->fps_sliceInfo[3].offset = 0;
++            admin->fps_sliceInfo[3].size   = 0;
++ 
++        admin->fps_sliceInfoArrayCount = 0;
++        admin->fps_svpmemoryHandle = 0;
+         }
+         void Status(uint32_t status)
+         {
+@@ -168,7 +194,7 @@ namespace Exchange {
+             encBlocks = admin->PatternEncBlocks;
+             clearBlocks = admin->PatternClearBlocks;
+         }
+-        uint16_t SubSampleLength() const 
++        uint16_t SubSampleLength() const
+         {
+             const Administration* admin = reinterpret_cast<const Administration*>(AdministrationBuffer());
+             return (admin->SubSampleLength);
+@@ -238,6 +264,97 @@ namespace Exchange {
+             VERIFY(length <= 16);
+             return (length > 0 ? &admin->KeyId[1] : nullptr);
+         }
++ 
++        // FPS specific
++        void SetFPSVersion(const uint32_t version)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_version = version;
++        }
++ 
++        uint32_t FPSVersion() const
++        {
++            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
++            return (admin->fps_version);
++        }
++ 
++        void SetFPSMovieId(const uint64_t movieId)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_movieID = movieId;
++        }
++ 
++        uint64_t FPSMovieId() const
++        {
++            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
++            return (admin->fps_movieID);
++        }
++ 
++        void SetFPSCryptorId(const uint64_t cryptorId)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_cryptorID = cryptorId;
++        }
++ 
++        uint64_t FPSCryptorId() const
++        {
++            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
++            return (admin->fps_cryptorID);
++        }
++ 
++        void SetFPSContentType(const uint32_t contentType)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_contentType = contentType;
++        }
++ 
++        uint32_t FPSContentType() const
++        {
++            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
++            return (admin->fps_contentType);
++        }
++ 
++       void SetFPSSliceInfoArray(const uint32_t sliceinfocount, const CDMi::Cdmi_FPSSliceInfo sliceInfo[])
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_sliceInfoArrayCount = sliceinfocount;
++            for (uint8_t index = 0; index < sliceinfocount; index++)
++            {
++                admin->fps_sliceInfo[index].offset = sliceInfo[index].offset;
++                admin->fps_sliceInfo[index].size = sliceInfo[index].size;
++            }
++        }
++ 
++        const CDMi::Cdmi_FPSSliceInfo *FPSSliceInfoArray() const
++        {
++            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
++            return (&(admin->fps_sliceInfo[0]));
++        }
++ 
++        void SetFPSSliceInfoArrayCount(const uint32_t sliceInfoArrayCount)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_sliceInfoArrayCount = sliceInfoArrayCount;
++        }
++ 
++        uint32_t FPSSliceInfoArrayCoun() const
++        {
++            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
++            return (admin->fps_sliceInfoArrayCount);
++        }
++ 
++        void SetFPSSvpOut(uint32_t svpmemoryhandle)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_svpmemoryHandle = svpmemoryhandle;
++        }
++ 
++    uint32_t FPSSvpOut(void)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            return (admin->fps_svpmemoryHandle);
++        }
++ 
+     };
+ }
+-}
++}
+\ No newline at end of file
+diff --git a/apis/OpenCDMi/IDRM.h b/apis/OpenCDMi/IDRM.h
+index f8b8a7d..9e177a5 100644
+--- a/apis/OpenCDMi/IDRM.h
++++ b/apis/OpenCDMi/IDRM.h
+@@ -35,26 +35,26 @@
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-
++ 
+ #pragma once
+-
++ 
+ // @stubgen:skip
+-
++ 
+ // For the support of portable data types such as uint8_t.
+ #include <stdint.h>
+ #include <string>
+ #include <type_traits>
+ #include <typeinfo>
+ #include <vector>
+-
++ 
+ #include <interfaces/Portability.h>
+-
++ 
+ class BufferReader {
+ private:
+     BufferReader() = delete;
+     BufferReader(const BufferReader&) = delete;
+     BufferReader& operator=(const BufferReader&) = delete;
+-
++ 
+     // Internal implementation of multi-byte reads
+     template <typename T>
+     bool Read(T* v)
+@@ -70,7 +70,7 @@ private:
+         }
+         return false;
+     }
+-
++ 
+ public:
+     inline BufferReader(const uint8_t* buf, size_t size)
+         : buf_(buf)
+@@ -79,14 +79,14 @@ public:
+     {
+     }
+     inline ~BufferReader() = default;
+-
++ 
+ public:
+     inline bool HasBytes(size_t count) const { return pos_ + count <= size_; }
+     inline bool IsEOF() const { return pos_ >= size_; }
+     inline const uint8_t* data() const { return buf_; }
+     inline size_t size() const { return size_; }
+     inline size_t pos() const { return pos_; }
+-
++ 
+     // Read a value from the stream, performing endian correction,
+     // and advance the stream pointer.
+     inline bool Read1(uint8_t* v) WARNING_RESULT_NOT_USED { return Read(v); }
+@@ -96,7 +96,7 @@ public:
+     inline bool Read4s(int32_t* v) WARNING_RESULT_NOT_USED { return Read(v); }
+     inline bool Read8(uint64_t* v) WARNING_RESULT_NOT_USED { return Read(v); }
+     inline bool Read8s(int64_t* v) WARNING_RESULT_NOT_USED { return Read(v); }
+-
++ 
+     inline bool ReadString(std::string* str, size_t count) WARNING_RESULT_NOT_USED
+     {
+         if ((str != nullptr) && (HasBytes(count) == true)) {
+@@ -116,7 +116,7 @@ public:
+         }
+         return false;
+     }
+-
++ 
+     // These variants read a 4-byte integer of the corresponding signedness and
+     // store it in the 8-byte return type.
+     inline bool Read4Into8(uint64_t* v) WARNING_RESULT_NOT_USED
+@@ -137,7 +137,7 @@ public:
+         }
+         return false;
+     }
+-
++ 
+     // Advance the stream by this many bytes.
+     inline bool SkipBytes(size_t bytes) WARNING_RESULT_NOT_USED
+     {
+@@ -147,13 +147,13 @@ public:
+         }
+         return false;
+     }
+-
++ 
+ private:
+     const uint8_t* buf_;
+     size_t size_;
+     size_t pos_;
+ };
+-
++ 
+ namespace WPEFramework
+ {
+    namespace PluginHost
+@@ -161,9 +161,9 @@ namespace WPEFramework
+       struct IShell;
+    }
+ }
+-
++ 
+ namespace CDMi {
+-
++ 
+ // EME error code to which CDMi errors are mapped. Please
+ // refer to the EME spec for details of the errors
+ // https://dvcs.w3.org/hg/html-media/raw-file/tip/encrypted-media/encrypted-media.html
+@@ -173,13 +173,13 @@ namespace CDMi {
+ #define MEDIA_KEYERR_OUTPUT 4
+ #define MEDIA_KEYERR_HARDWARECHANGE 5
+ #define MEDIA_KEYERR_DOMAIN 6
+-
++ 
+ // More CDMi status codes can be defined. In general
+ // CDMi status codes should use the same PK error codes.
+-
++ 
+ #define CDMi_FAILED(Status) ((CDMi_RESULT)(Status) < 0)
+ #define CDMi_SUCCEEDED(Status) ((CDMi_RESULT)(Status) >= 0)
+-
++ 
+ /* Media Key status required by EME */
+ #define MEDIA_KEY_STATUS_USABLE 0
+ #define MEDIA_KEY_STATUS_INTERNAL_ERROR 1
+@@ -188,7 +188,7 @@ namespace CDMi {
+ #define MEDIA_KEY_STATUS_OUTPUT_DOWNSCALED 4
+ #define MEDIA_KEY_STATUS_KEY_STATUS_PENDING 5
+ #define MEDIA_KEY_STATUS_KEY_STATUS_MAX KEY_STATUS_PENDING
+-
++ 
+ typedef enum {
+     CDMi_SUCCESS = 0,
+     CDMi_S_FALSE = 1,
+@@ -208,34 +208,34 @@ typedef enum {
+     CDMi_SERVER_SERVICE_SPECIFIC = 0x8004C604,
+     CDMi_BUSY_CANNOT_INITIALIZE = 0x8004DD00,
+ } CDMi_RESULT;
+-
++ 
+ typedef enum {
+     Temporary,
+     PersistentUsageRecord,
+     PersistentLicense
+ } LicenseType;
+-
++ 
+ typedef enum {
+     Invalid = 0,
+     LimitedDuration,
+     Standard
+ } LicenseTypeExt;
+-
++ 
+ typedef enum {
+     LicenseAcquisitionState = 0,
+     InactiveDecryptionState,
+     ActiveDecryptionState,
+     InvalidState
+ } SessionStateExt;
+-
+-typedef enum 
++ 
++typedef enum
+ {
+     Unknown = 0,
+     Video,
+     Audio,
+     Data
+ } MediaType;
+-
++ 
+ // ISO/IEC 23001-7 defines two Common Encryption Schemes with Full Sample and Subsample modes
+ typedef enum : uint8_t {
+     Clear = 0,
+@@ -244,19 +244,19 @@ typedef enum : uint8_t {
+     AesCtr_Cens,    // AES-CTR mode and Sub-Sample + patterned encryption
+     AesCbc_Cbcs     // AES-CBC mode and Sub-Sample + patterned encryption + Constant IV
+ } EncryptionScheme;
+-
++ 
+ // CBCS & CENC3.0 pattern is a number of encrypted blocks followed a number of clear
+ // blocks after which the pattern repeats.
+ typedef struct {
+     uint32_t clear_blocks;
+     uint32_t encrypted_blocks;
+ } EncryptionPattern;
+-
++ 
+ typedef struct {
+     uint16_t clear_bytes;
+     uint32_t encrypted_bytes;
+ } SubSampleInfo;
+-
++ 
+ typedef struct {
+     EncryptionScheme   scheme;          // Encryption scheme used in this sample
+     EncryptionPattern pattern;          // Encryption Pattern used in this sample
+@@ -267,85 +267,91 @@ typedef struct {
+     uint8_t            subSampleCount;  // Number or Sub-Samples in this sample
+     SubSampleInfo*     subSample;       // SubSample mapping - Repeating pair of Clear bytes and Encrypted Bytes representing each subsample.
+ } SampleInfo;
+-
++ 
++//FPS
++typedef struct {
++  uint32_t offset;
++  uint32_t size;
++} Cdmi_FPSSliceInfo;
++ 
+ // IStreamProperties to provide information about the current stream
+ class IStreamProperties {
+ public:
+     virtual ~IStreamProperties (void) = default;
+-
++ 
+     // Get stream video size
+     virtual uint16_t GetHeight() const = 0;
+     virtual uint16_t GetWidth() const = 0;
+-
++ 
+     // Get stream type
+     virtual MediaType GetMediaType() const = 0;
+-
+-    // Deprecated method for backwards compatibility. 
++ 
++    // Deprecated method for backwards compatibility.
+     virtual uint8_t InitLength() const = 0;
+ };
+-
++ 
+ // IMediaKeySessionCallback defines the callback interface to receive
+ // events originated from MediaKeySession.
+ class IMediaKeySessionCallback {
+ public:
+     virtual ~IMediaKeySessionCallback(void) = default;
+-
++ 
+     // Event fired when a key message is successfully created.
+     virtual void OnKeyMessage(
+         const uint8_t* f_pbKeyMessage, //__in_bcount(f_cbKeyMessage)
+         uint32_t f_cbKeyMessage, //__in
+         const char* f_pszUrl)
+         = 0; //__in_z_opt
+-
++ 
+     // Event fired when MediaKeySession encounters an error.
+     virtual void OnError(
+         int16_t f_nError,
+         CDMi_RESULT f_crSysError,
+         const char* errorMessage)
+         = 0;
+-
++ 
+     //Event fired on key status update
+     virtual void OnKeyStatusUpdate(const char* keyMessage, const uint8_t* buffer, const uint8_t length) = 0;
+     virtual void OnKeyStatusesUpdated() const = 0;
+ };
+-
++ 
+ // IMediaKeySession defines the MediaKeySession interface.
+ class IMediaKeySession {
+ public:
+     IMediaKeySession(void) = default;
+     virtual ~IMediaKeySession(void) = default;
+-
++ 
+     // Retrieves keysystem-specific metadata of the session
+     virtual std::string GetMetadata() const { return std::string(); }
+-
++ 
+     // Kicks off the process of acquiring a key. A MediaKeySession callback is supplied
+     // to receive notifications during the process.
+     virtual void Run(
+         const IMediaKeySessionCallback* f_piMediaKeySessionCallback)
+         = 0; //__in
+-
++ 
+     // Loads the data stored for the specified session into the cdm object
+     virtual CDMi_RESULT Load() = 0;
+-
++ 
+     // Process a key message response.
+     virtual void Update(
+         const uint8_t* f_pbKeyMessageResponse, //__in_bcount(f_cbKeyMessageResponse)
+         uint32_t f_cbKeyMessageResponse)
+         = 0; //__in
+-
++ 
+     //Removes all license(s) and key(s) associated with the session
+     virtual CDMi_RESULT Remove() = 0;
+-
++ 
+     // Explicitly release all resources associated with the MediaKeySession.
+     virtual CDMi_RESULT Close(void) = 0;
+-
++ 
+     // Return the session ID of the MediaKeySession. The returned pointer
+     // is valid as long as the associated MediaKeySession still exists.
+     virtual const char* GetSessionId(void) const = 0;
+-
++ 
+     // Return the key system of the MediaKeySession.
+     virtual const char* GetKeySystem(void) const = 0;
+-
++ 
+     DEPRECATED virtual CDMi_RESULT Decrypt(
+         const uint8_t* f_pbSessionKey VARIABLE_IS_NOT_USED,
+         uint32_t f_cbSessionKey VARIABLE_IS_NOT_USED,
+@@ -360,10 +366,10 @@ public:
+         const uint8_t keyIdLength VARIABLE_IS_NOT_USED,
+         const uint8_t* keyId VARIABLE_IS_NOT_USED,
+         bool initWithLast15 /*=0*/ VARIABLE_IS_NOT_USED) {
+-
++ 
+         return (CDMi_METHOD_NOT_IMPLEMENTED);
+     }
+-
++ 
+     virtual CDMi_RESULT Decrypt(
+         uint8_t*                 inData,          // Incoming encrypted data
+         const uint32_t           inDataLength,    // Incoming encrypted data length
+@@ -371,7 +377,7 @@ public:
+         uint32_t*                outDataLength,   // Outgoing decrypted data length
+         const SampleInfo*        sampleInfo,      // Information required to decrypt Sample
+         const IStreamProperties* properties) {    // Stream Properties
+-
++ 
+ PUSH_WARNING(DISABLE_WARNING_DEPRECATED_USE)
+         return (Decrypt(sampleInfo->keyId, sampleInfo->keyIdLength,
+                 sampleInfo->scheme, sampleInfo->pattern,
+@@ -382,48 +388,54 @@ PUSH_WARNING(DISABLE_WARNING_DEPRECATED_USE)
+                 properties->InitLength()));
+ POP_WARNING()
+     }
+-
++ 
++    virtual CDMi_RESULT Decrypt(uint64_t MovieId,uint64_t CryptorId, uint32_t ContentTyp, uint8_t *encryptedData, uint32_t encryptedDataSize, const Cdmi_FPSSliceInfo *SliceInfoArray,uint32_t SliceInfoArrayCount, uint8_t *iv, void *svphan)
++    {
++        return (CDMi_METHOD_NOT_IMPLEMENTED);
++    }
++ 
++ 
+     virtual CDMi_RESULT ReleaseClearContent(
+         const uint8_t* f_pbSessionKey,
+         uint32_t f_cbSessionKey,
+         const uint32_t f_cbClearContentOpaque,
+         uint8_t* f_pbClearContentOpaque)
+         = 0;
+-
++ 
+     virtual CDMi_RESULT ResetOutputProtection() { return (CDMi_METHOD_NOT_IMPLEMENTED); }
+     virtual CDMi_RESULT SetParameter(const std::string& name VARIABLE_IS_NOT_USED, const std::string& value VARIABLE_IS_NOT_USED) { return (CDMi_METHOD_NOT_IMPLEMENTED); }
+ };
+-
++ 
+ // IMediaKeySession defines the MediaKeySession interface.
+ class IMediaKeySessionExt {
+ public:
+     IMediaKeySessionExt(void) = default;
+     virtual ~IMediaKeySessionExt(void) = default;
+-
++ 
+     virtual uint32_t GetSessionIdExt(void) const = 0;
+-
++ 
+     virtual CDMi_RESULT SetDrmHeader(const uint8_t drmHeader[], uint32_t drmHeaderLength) = 0;
+-
++ 
+     virtual CDMi_RESULT GetChallengeDataExt(uint8_t* challenge, uint32_t& challengeSize, uint32_t isLDL) = 0;
+-
++ 
+     virtual CDMi_RESULT CancelChallengeDataExt() = 0;
+-
++ 
+     virtual CDMi_RESULT StoreLicenseData(const uint8_t licenseData[], uint32_t licenseDataSize, uint8_t* secureStopId) = 0;
+-
++ 
+     virtual CDMi_RESULT SelectKeyId(const uint8_t keyLength, const uint8_t keyId[]) = 0;
+-
++ 
+     virtual CDMi_RESULT CleanDecryptContext() = 0;
+ };
+-
++ 
+ // IMediaKeys defines the MediaKeys interface.
+ class IMediaKeys {
+ public:
+     IMediaKeys(void) = default;
+     virtual ~IMediaKeys(void) = default;
+-
++ 
+     // Retrieves keysystem-specific metadata
+     virtual std::string GetMetadata() const { return std::string(); }
+-
++ 
+     // Create a MediaKeySession using the supplied init data and CDM data.
+     virtual CDMi_RESULT CreateMediaKeySession(
+         const std::string& keySystem,
+@@ -435,81 +447,116 @@ public:
+         uint32_t f_cbCDMData,
+         IMediaKeySession** f_ppiMediaKeySession)
+         = 0;
+-
++ 
+     // Set Server Certificate
+     virtual CDMi_RESULT SetServerCertificate(
+         const uint8_t* f_pbServerCertificate,
+         uint32_t f_cbServerCertificate)
+         = 0;
+-
++ 
+     // Destroy a MediaKeySession instance.
+     virtual CDMi_RESULT DestroyMediaKeySession(
+         IMediaKeySession* f_piMediaKeySession)
+         = 0;
++ 
++    // fairplay
++    virtual CDMi_RESULT CreateMovieSession(uint32_t version, const uint8_t* cert, uint32_t certificatesize,
++        const uint32_t* versionlist, uint32_t versionListSize, uint64_t* movieIdOut)
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
++    virtual CDMi_RESULT DestroyMovieSession(uint32_t version, uint64_t movieId)
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
++    virtual CDMi_RESULT GenerateChallengeWithVersionList(uint32_t version, uint64_t movieId,
++        const uint8_t* assetidData, uint32_t assetidSize, const uint32_t* versionlist, uint32_t versionListSize,
++        const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize,
++        uint64_t cryptorId, uint8_t* licenseChallengeBuffer, uint8_t* licenseSize, uint8_t* session)
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
++    virtual CDMi_RESULT DestroyServerExchange(uint32_t version, uint8_t* session)
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
++    virtual CDMi_RESULT ProcessLicense(uint32_t version, uint8_t* session,
++        const uint8_t* licenseData, uint32_t licenseDataSize, uint8_t* cryptoId)
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
++    virtual CDMi_RESULT InitLibrary()
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
++    virtual CDMi_RESULT DestroyCryptor(uint32_t version, uint64_t cryptoId)
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
+ };
+-
++ 
+ // IMediaKeySession defines the MediaKeySessionExt interface.
+ class IMediaKeysExt {
+ public:
+     IMediaKeysExt(void) = default;
+     virtual ~IMediaKeysExt(void) = default;
+-
++ 
+     virtual uint64_t GetDrmSystemTime() const = 0;
+-
++ 
+     virtual std::string GetVersionExt() const = 0;
+-
++ 
+     virtual uint32_t GetLdlSessionLimit() const = 0;
+-
++ 
+     virtual bool IsSecureStopEnabled() = 0;
+-
++ 
+     virtual CDMi_RESULT EnableSecureStop(bool enable) = 0;
+-
++ 
+     virtual uint32_t ResetSecureStops() = 0;
+-
++ 
+     virtual CDMi_RESULT GetSecureStopIds(
+         uint8_t ids[],
+         uint16_t idsLength,
+         uint32_t& count)
+         = 0;
+-
++ 
+     virtual CDMi_RESULT GetSecureStop(
+         const uint8_t sessionID[],
+         uint32_t sessionIDLength,
+         uint8_t* rawData,
+         uint16_t& rawSize)
+         = 0;
+-
++ 
+     virtual CDMi_RESULT CommitSecureStop(
+         const uint8_t sessionID[],
+         uint32_t sessionIDLength,
+         const uint8_t serverResponse[],
+         uint32_t serverResponseLength)
+         = 0;
+-
++ 
+     virtual CDMi_RESULT DeleteKeyStore() = 0;
+-
++ 
+     virtual CDMi_RESULT DeleteSecureStore() = 0;
+-
++ 
+     virtual CDMi_RESULT GetKeyStoreHash(
+         uint8_t secureStoreHash[],
+         uint32_t secureStoreHashLength)
+         = 0;
+-
++ 
+     virtual CDMi_RESULT GetSecureStoreHash(
+         uint8_t secureStoreHash[],
+         uint32_t secureStoreHashLength)
+         = 0;
+ };
+-
++ 
+ struct IMediaSystemMetrics {
+     virtual ~IMediaSystemMetrics() = default;
+-
++ 
+     virtual CDMi_RESULT Metrics (uint32_t& bufferLength, uint8_t buffer[]) const = 0;
+ };
+-
++ 
+ struct IMediaSessionMetrics {
+     virtual ~IMediaSessionMetrics() = default;
+-
++ 
+     virtual CDMi_RESULT Metrics (uint32_t& bufferLength, uint8_t buffer[]) const = 0;
+ };
+ 
+@@ -615,10 +662,10 @@ private:
+     void Deinitialize(const WPEFramework::PluginHost::IShell * service, std::true_type) {
+         _instance.Deinitialize(service);
+     }
+-
++ 
+     void Deinitialize(const WPEFramework::PluginHost::IShell *, std::false_type) {
+     }
+-
++ 
+     template <typename T>
+     struct HasEnable{
+         template <typename U, CDMi_RESULT (U::*)()>
+@@ -630,15 +677,15 @@ private:
+         static uint32_t Test(...);
+         static const bool Has = sizeof(Test<T>(0)) == sizeof(uint8_t);
+     };
+-
++ 
+     CDMi_RESULT Enable(std::true_type) {
+         return(_instance.Enable());
+     }
+-
++ 
+     CDMi_RESULT Enable(std::false_type) {
+         return(CDMi_KEYSYSTEM_NOT_SUPPORTED);
+     }
+-
++ 
+     template <typename T>
+     struct HasDisable{
+         template <typename U, CDMi_RESULT (U::*)()>
+@@ -650,25 +697,25 @@ private:
+         static uint32_t Test(...);
+         static const bool Has = sizeof(Test<T>(0)) == sizeof(uint8_t);
+     };
+-
++ 
+     CDMi_RESULT Disable(std::true_type) {
+         return(_instance.Enable());
+     }
+-
++ 
+     CDMi_RESULT Disable(std::false_type) {
+         return(CDMi_KEYSYSTEM_NOT_SUPPORTED);
+     }
+-
++ 
+     const std::vector<std::string> _mimes;
+     IMPLEMENTATION _instance;
+ };
+-
++ 
+ } // namespace CDMi
+-
++ 
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+-
++ 
+ #ifndef EXTERNAL
+ #ifdef _MSVC_LANG
+ __declspec(dllexport) CDMi::ISystemFactory* GetSystemFactory();
+@@ -678,8 +725,8 @@ __attribute__ ((visibility ("default"))) CDMi::ISystemFactory* GetSystemFactory(
+ #else
+ EXTERNAL CDMi::ISystemFactory* GetSystemFactory();
+ #endif
+-
+-
++ 
++ 
+ #ifdef __cplusplus
+ }
+-#endif
++#endif
+\ No newline at end of file
+diff --git a/apis/OpenCDMi/IOCDM.h b/apis/OpenCDMi/IOCDM.h
+index 27cb4c1..ef3c15a 100644
+--- a/apis/OpenCDMi/IOCDM.h
++++ b/apis/OpenCDMi/IOCDM.h
+@@ -1,4 +1,4 @@
+- /*
++/*
+  * If not stated otherwise in this file or this component's LICENSE file the
+  * following copyright and licenses apply:
+  *
+@@ -73,19 +73,19 @@ struct ISession : virtual public Core::IUnknown {
+ 
+         // Event fired when MediaKeySession encounters an error.
+         virtual void OnError(const int16_t error, const OCDM_RESULT sysError, const std::string& errorMessage) = 0;
+-
++ 
+         // Event fired on key status update
+         virtual void OnKeyStatusUpdate(const uint8_t keyID[] /* @length:keyIDLength */,
+                                        const uint8_t keyIDLength,
+                                        const ISession::KeyStatus status) = 0;
+-
++ 
+         virtual void OnKeyStatusesUpdated() const = 0;
+     };
+-
++ 
+     enum { ID = ID_SESSION };
+ 
+     ~ISession(void) override = default;
+-
++ 
+     // Loads the data stored for the specified session into the cdm object
+     virtual OCDM_RESULT Load() = 0;
+ 
+@@ -94,83 +94,83 @@ struct ISession : virtual public Core::IUnknown {
+     Update(const uint8_t* keyMessage /* @length:keyLength */, //__in_bcount(f_cbKeyMessageResponse)
+         const uint16_t keyLength)
+         = 0; //__in
+-
++ 
+     // Removes all license(s) and key(s) associated with the session
+     virtual OCDM_RESULT Remove() = 0;
+ 
+     // Provides keysystem-specific metadata of the session
+     virtual std::string Metadata() const = 0;
+-
++ 
+     // Provides keysystem-specific metricdata of the session
+     virtual OCDM_RESULT Metricdata(
+         uint32_t& bufferSize /* @inout */,
+         uint8_t buffer[] /* @out @length:bufferSize */) const
+         = 0;
+-
++ 
+     // Report the current status of the Session with respect to the KeyExchange.
+     virtual KeyStatus Status() const = 0;
+     virtual KeyStatus Status(const uint8_t keyID[] /* @length:keyIDLength */, const uint8_t keyIDLength) const = 0;
+-
++ 
+     // Lazy Create the decryption buffer
+     virtual OCDM_RESULT CreateSessionBuffer(string& bufferID /* @out */ ) = 0;
+-
++ 
+     // Report the name to be used for the Shared Memory for exchanging the
+     // Encrypted fragements.
+     virtual std::string BufferId() const = 0;
+-
++ 
+     // Report the name to be used for the Shared Memory for exchanging the
+     // Encrypted fragements.
+     virtual std::string SessionId() const = 0;
+-
++ 
+     // We are completely done with the session, it can be closed.
+     virtual void Close() = 0;
+-
++ 
+     // Let the CDM know playback has stopped in order to disable output protection
+     virtual void ResetOutputProtection() = 0;
+-
++ 
+     // Set a name/value pair into the CDM
+     virtual void SetParameter(const std::string& name, const std::string& value) = 0;
+-
++ 
+     // During instantiation a callback is set, here we can decouple.
+     virtual void Revoke(ISession::ICallback* callback) = 0;
+ };
+-
++ 
+ struct ISessionExt : virtual public Core::IUnknown {
+     enum { ID = ID_SESSION_EXTENSION };
+-
++ 
+     enum LicenseTypeExt { Invalid = 0,
+         LimitedDuration,
+         Standard };
+-
++ 
+     enum SessionStateExt {
+         LicenseAcquisitionState = 0,
+         InactiveDecryptionState,
+         ActiveDecryptionState,
+         InvalidState
+     };
+-
++ 
+     virtual uint32_t SessionIdExt() const = 0;
+-
++ 
+     // Report the name to be used for the Shared Memory for exchanging the
+     // Encrypted fragements.
+     virtual std::string BufferIdExt() const = 0;
+-
++ 
+     virtual OCDM_RESULT SetDrmHeader(const uint8_t drmHeader[] /* @length:drmHeaderLength */,
+         uint16_t drmHeaderLength)
+         = 0;
+-
++ 
+     virtual OCDM_RESULT GetChallengeDataExt(uint8_t* challenge /* @inout @length:challengeSize */,
+         uint16_t& challengeSize /* @inout */,
+         uint32_t isLDL)
+         = 0;
+-
++ 
+     virtual OCDM_RESULT CancelChallengeDataExt() = 0;
+-
++ 
+     virtual OCDM_RESULT StoreLicenseData(const uint8_t licenseData[] /* @length:licenseDataSize */,
+         uint16_t licenseDataSize,
+         uint8_t* secureStopId /* @out @length:16 */)
+         = 0;
+-
++ 
+     virtual OCDM_RESULT SelectKeyId(const uint8_t keyLength,
+         const uint8_t keyId[] /* @length:keyLength */)
+         = 0;
+@@ -178,26 +178,38 @@ struct ISessionExt : virtual public Core::IUnknown {
+ 
+     virtual OCDM_RESULT CleanDecryptContext() = 0;
+ };
+-
++ 
+ struct IAccessorOCDM : virtual public Core::IUnknown {
+-
++ 
+     enum { ID = ID_ACCESSOROCDM };
+-
++ 
+     ~IAccessorOCDM() override = default;
+-
++ 
+     virtual bool IsTypeSupported(const std::string& keySystem,
+         const std::string& mimeType) const = 0;
+-
++ 
+     // Provides keysystem-specific metadata
+     virtual OCDM_RESULT Metadata(const std::string& keySystem, std::string& metadata /* @out */) const = 0;
+-
++ 
++    // fairplay
++    virtual OCDM_RESULT CreateMovieSession(const string& keySystem, uint32_t version, const uint8_t* cert /* @in @length:certificateLength */, uint32_t certificateLength, const uint8_t* versionlist /* @in @length:versionListSize */, uint32_t versionListSize, uint8_t* movieIdOut /* @out @length:8 */) const = 0;
++    virtual OCDM_RESULT DestroyMovieSession(const string& keySystem, uint32_t version, uint64_t movieId) const = 0;
++    virtual OCDM_RESULT GenerateChallengeWithVersionList(const string& keySystem, uint32_t version, uint64_t movieId,
++        const uint8_t* assetidData /* @in @length:assetidSize */, uint32_t assetidSize,  const uint8_t* versionlist /* @in @length:versionListSize */, uint32_t versionListSize,
++        const uint8_t* streamerChallengeData /* @in @length:streamerChallengeSize */, uint32_t streamerChallengeSize,
++        uint64_t cryptorId, uint8_t* licenseChallengeBuffer /* @out @length:12000 */, uint8_t *licenseSize /* @out @length:4 */, uint8_t *session /* @out @length:4 */) const = 0;
++    virtual OCDM_RESULT DestroyServerExchange(const string& keySystem, uint32_t version, uint8_t* session /* @in @length:4 */) const = 0;
++    virtual OCDM_RESULT InitLibrary(const string& keySystem) const = 0;
++    virtual OCDM_RESULT ProcessLicense(const string& keySystem, uint32_t version, uint8_t* session /* @in @length:4 */, const uint8_t* licenseData /* @in @length:licenseDataSize */, uint32_t licenseDataSize, uint8_t *cryptoId /* @inout @length:8 */) const = 0;
++    virtual OCDM_RESULT DestroyCryptor(const string& keySystem, uint32_t version, uint64_t cryptoId) const = 0;
++ 
+     // Provides keysystem-specific metricdata
+     virtual OCDM_RESULT Metricdata(
+         const std::string& keySystem,
+         uint32_t& bufferSize /* @inout */,
+         uint8_t buffer[] /* @out @length:bufferSize */) const
+         = 0;
+-
++ 
+     // Create a MediaKeySession using the supplied init data and CDM data.
+     virtual OCDM_RESULT
+     CreateSession(const string& keySystem, const int32_t licenseType,
+@@ -206,38 +218,38 @@ struct IAccessorOCDM : virtual public Core::IUnknown {
+         const uint16_t CDMDataLength, ISession::ICallback* callback,
+         std::string& sessionId /* @out */, ISession*& session /* @out */)
+         = 0;
+-
++ 
+     // Set Server Certificate
+     virtual OCDM_RESULT
+     SetServerCertificate(const string& keySystem, const uint8_t* serverCertificate /* @length:serverCertificateLength */,
+         const uint16_t serverCertificateLength)
+         = 0;
+-
++ 
+     virtual uint64_t GetDrmSystemTime(const std::string& keySystem) const = 0;
+-
++ 
+     virtual std::string GetVersionExt(const std::string& keySystem) const = 0;
+-
++ 
+     virtual uint32_t GetLdlSessionLimit(const std::string& keySystem) const = 0;
+-
++ 
+     virtual bool IsSecureStopEnabled(const std::string& keySystem) = 0;
+-
++ 
+     virtual OCDM_RESULT EnableSecureStop(const std::string& keySystem,
+         bool enable)
+         = 0;
+-
++ 
+     virtual uint32_t ResetSecureStops(const std::string& keySystem) = 0;
+-
++ 
+     virtual OCDM_RESULT GetSecureStopIds(const std::string& keySystem,
+         uint8_t ids[] /* @out @length:idsLength */, uint16_t idsLength,
+         uint32_t& count /* @inout */)
+         = 0;
+-
++ 
+     virtual OCDM_RESULT GetSecureStop(const std::string& keySystem,
+         const uint8_t sessionID[] /* @length:sessionIDLength */,
+         uint16_t sessionIDLength, uint8_t* rawData /* @out @length:rawSize */,
+         uint16_t& rawSize /* @inout */)
+         = 0;
+-
++ 
+     virtual OCDM_RESULT CommitSecureStop(const std::string& keySystem,
+         const uint8_t sessionID[] /* @length:sessionIDLength */,
+         uint16_t sessionIDLength,
+@@ -412,5 +424,4 @@ struct EXTERNAL IGoogleCastAuthExtension : virtual public Core::IUnknown {
+ };
+ 
+ } //namespace Exchange
+-} //namespace WPEFramework
+-
++} //namespace WPEFramework
+\ No newline at end of file
