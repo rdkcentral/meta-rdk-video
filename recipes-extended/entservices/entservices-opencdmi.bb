@@ -50,9 +50,17 @@ include include/ocdm.inc
 
 # ----------------------------------------------------------------------------
 
+def get_cdmi_adapter(d):
+    if bb.utils.contains("DISTRO_FEATURES", "rdk_svp", "true", "false", d) == "true":
+        return "opencdmi_rdk_svp"
+    else:
+        return "opencdm_gst"
+
+WPE_CDMI_ADAPTER_IMPL = "${@get_cdmi_adapter(d)}"
+
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm',              'opencdmi', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi ${WPE_CDMI_ADAPTER_IMPL}', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'playready_nexus_svp',  'opencdmi_prnx_svp', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'widevine_nexus_svp',   'opencdmi_wv_svp', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'clearkey',             'opencdmi_ck', '', d)} \
@@ -68,13 +76,16 @@ REQUIRED_DISTRO_FEATURES = "${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec', '
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', ' -DCDMI_ADAPTER_IMPLEMENTATION=rdk', '', d)}"
+#EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', ' -DCDMI_ADAPTER_IMPLEMENTATION=rdk', '', d)}"
 # Enable the RDKShell memcr feature support flags
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DPLUGIN_HIBERNATESUPPORT=ON -DPLUGIN_HIBERNATE_NATIVE_APPS_ON_SUSPENDED=ON','',d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains("BUILD_VARIANT", "debug", "-DPLUGIN_BUILD_TYPE=Debug", "-DPLUGIN_BUILD_TYPE=Release", d)}"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
+
+PACKAGECONFIG[opencdm_gst]      = '-DCDMI_ADAPTER_IMPLEMENTATION="gstreamer",,gstreamer1.0'
+PACKAGECONFIG[opencdmi_rdk_svp] = '-DCDMI_ADAPTER_IMPLEMENTATION="rdk",,gst-svp-ext'
 
 # ----------------------------------------------------------------------------
 
