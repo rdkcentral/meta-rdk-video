@@ -41,10 +41,10 @@ PACKAGECONFIG ?= " breakpadsupport \
 "
 
 HDMICEC_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader entservices-helpers"
-HDMICEC_DEPS:vdevice_x86-64-mw = "iarmbus hdmicec hdmicecheader vdevice-noop entservices-helpers"
+HDMICEC_DEPS:vdevice_x86-64-mw = "iarmbus hdmicecmiddleware hdmicecheader vdevice-noop entservices-helpers"
 
 HDMICEC_RDEPS = "iarmbus devicesettings hdmicec entservices-helpers"
-HDMICEC_RDEPS:vdevice_x86-64-mw = "iarmbus hdmicec entservices-helpers"
+HDMICEC_RDEPS:vdevice_x86-64-mw = "iarmbus hdmicecmiddleware entservices-helpers"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
