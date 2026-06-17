@@ -36,6 +36,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-implement-api-to-get-supported-robustness.patch \
            file://r4.4/0001-DTM-4265-ocdm-fairplay-clientlibraries-support.patch \
            file://r4.4/open_cdm_impl.patch \
+           file://0001-remove_logs_cleanup.patch \
            "
 
 # Oct 17, 2023
