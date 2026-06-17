@@ -21,7 +21,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://0002-Adding-Support-For-R4.patch \
            file://0001-Add-a-new-metrics-punch-through-on-the-OCDM-framework-rdkservice.patch \
            file://0001-set-OCDM-process-thread-name.patch \
-          "
+           file://0001-DTM-4265-ocdm-fairplay-plugin-framework-support-66.patch \
+           "
           
 # Release version - 1.0.7
 SRCREV = "13e4ffe01735e4e9fc3fe5f19fd572ddc0b85270"
