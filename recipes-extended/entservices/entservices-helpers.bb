@@ -23,18 +23,24 @@ RDEPENDS:${PN} += "wpeframework"
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/ds "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/ds-hal "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/iarmbus"
+CXXFLAGS += "-DUSE_THUNDER_COMMUNICATION"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
-    -DUSE_THUNDER_COMMUNICATION=ON \
 "
 
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= "helpers"
 
-PACKAGECONFIG[helpers] = "-DPLUGIN_HELPERS=ON,-DPLUGIN_HELPERS=OFF,entservices-apis iarmbus devicesettings virtual/vendor-devicesettings-hal,entservices-apis devicesettings"
+HELPERS_DEPS = "entservices-apis iarmbus devicesettings virtual/vendor-devicesettings-hal"
+HELPERS_DEPS:vdevice_x86-64-mw = "entservices-apis iarmbus"
+
+HELPERS_RDEPS = "entservices-apis devicesettings"
+HELPERS_RDEPS:vdevice_x86-64-mw = "entservices-apis"
+
+PACKAGECONFIG[helpers] = "-DPLUGIN_HELPERS=ON,-DPLUGIN_HELPERS=OFF,${HELPERS_DEPS},${HELPERS_RDEPS}"
 
 # ----------------------------------------------------------------------------
 
