@@ -2,19 +2,18 @@ SUMMARY = "ENTServices deviceinfo plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
-PV = "1.1.0"
+PV = "1.1.3"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceinfo;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://rdkservices.ini \
           "
 
-# Release version - 1.1.0
-SRCREV = "42cc243d0ab242fbd036804d04450faec705915a"
+# Release version - 1.1.3
+SRCREV = "6b8919a4c97d73d01ba363fc7f004cfcf6af2fcc"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -51,7 +50,7 @@ PACKAGECONFIG:append = " deviceinfo"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[deviceinfo]           = "-DPLUGIN_DEVICEINFO=ON,-DPLUGIN_DEVICEINFO=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-apis,iarmbus rfc devicesettings entservices-apis"
+PACKAGECONFIG[deviceinfo]           = "-DPLUGIN_DEVICEINFO=ON,-DPLUGIN_DEVICEINFO=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-apis entservices-helpers,iarmbus rfc devicesettings entservices-apis entservices-helpers"
 
 # ----------------------------------------------------------------------------
 
