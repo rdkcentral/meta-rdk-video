@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "e8495255d91934645f5d40be94d76eb5750b38c0"
+SRCREV = "ba0b406ab9304b0dc2184bfd29f65cab88f314f3"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -20,9 +20,8 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_APPMANAGERS_DEBUG=OFF', '-DRDK_APPMANAGERS_DEBUG=ON', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers_runtimeconfig', ' -DENABLE_RDKAPPMANAGERS_RUNTIMECONFIG=ON', '', d)}"
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
-DEPENDS += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers_runtimeconfig', 'yaml-cpp', '', d)}"
+DEPENDS += "yaml-cpp"
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
 DEPENDS += "iptables"
