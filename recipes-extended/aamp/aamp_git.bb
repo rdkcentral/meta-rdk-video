@@ -72,6 +72,32 @@ do_install:append() {
     rm -f ${D}${libdir}/libtsb.a
 }
 
+BREAKPAD_BIN = "lib.so"
+BREAKPAD_DEBUG_DIR = "${D}${libdir}/.debug"
+
+do_install:append() {
+    echo "Generating .sym from unstripped libaamp.so"
+    ${STAGINGBINDIRNATIVE}/dumpsyms \
+        ${D}${libdir}/libaamp.so \
+        > ${WORKDIR}/libaamp.so.sym || echo "dump_syms failed"
+   echo "Generating .sym from unstripped libaampjsbindings.so"
+    ${STAGINGBINDIRNATIVE}/dumpsyms \
+        ${D}${libdir}/libaampjsbindings.so \
+        > ${WORKDIR}/libaampjsbindings.so.sym || echo "dump_syms failed"
+}
+
+do_deploy_symbols() {
+    echo "Deploying libaamp.so.sym"
+    install -d ${TMPDIR}/deploy/breakpadsymbols/${MACHINE}
+    install -m 0644 ${WORKDIR}/libaamp.so.sym \
+        ${TMPDIR}/deploy/breakpadsymbols/${MACHINE}/libaamp.so.sym
+    echo "Deploying libaampjsbindings.so.sym"
+    install -d ${TMPDIR}/deploy/breakpadsymbols/${MACHINE}
+    install -m 0644 ${WORKDIR}/libaampjsbindings.so.sym \
+        ${TMPDIR}/deploy/breakpadsymbols/${MACHINE}/libaampjsbindings.so.sym
+}
+addtask deploy_symbols after do_package
+
 # Directory for deploying artifacts
 DEPLOY_DIR_WGT = "${DEPLOY_DIR}/widgets"
 ARTIFACT_FILES_DIR = "${WORKDIR}/artifact-files"
