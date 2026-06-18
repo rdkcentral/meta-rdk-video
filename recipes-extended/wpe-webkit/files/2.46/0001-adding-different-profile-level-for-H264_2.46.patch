@@ -1,0 +1,63 @@
+From ae4932eafc00bab7b40969af91c822afe9b4882d Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Wed, 17 Jun 2026 07:48:32 +0000
+Subject: [PATCH] adding different profile level for H264_2.46
+
+---
+ .../gstreamer/GStreamerVideoCommon.cpp        | 39 ++++++++++++-------
+ 1 file changed, 25 insertions(+), 14 deletions(-)
+
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoCommon.cpp b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoCommon.cpp
+index 6062abcc5a0c..713155400424 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoCommon.cpp
++++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoCommon.cpp
+@@ -41,21 +41,32 @@ static webrtc::SdpVideoFormat createH264Format(webrtc::H264Profile profile, webr
+ 
+ std::vector<webrtc::SdpVideoFormat> supportedH264Formats()
+ {
+-    // @TODO Create from encoder src pad caps template
+-    //
+-    // We only support encoding Constrained Baseline Profile (CBP), but the decoder supports more
+-    // profiles. We can list all profiles here that are supported by the decoder and that are also
+-    // supersets of CBP, i.e. the decoder for that profile is required to be able to decode
+-    // CBP. This means we can encode and send CBP even though we negotiated a potentially higher
+-    // profile. See the H264 spec for more information.
+-    //
+-    // We support both packetization modes 0 (mandatory) and 1 (optional, preferred).
+-    return {
+-        createH264Format(webrtc::H264Profile::kProfileBaseline, webrtc::H264Level::kLevel3_1, "1"),
+-        createH264Format(webrtc::H264Profile::kProfileBaseline, webrtc::H264Level::kLevel3_1, "0"),
+-        createH264Format(webrtc::H264Profile::kProfileConstrainedBaseline, webrtc::H264Level::kLevel3_1, "1"),
+-        createH264Format(webrtc::H264Profile::kProfileConstrainedBaseline, webrtc::H264Level::kLevel3_1, "0"),
++    // We support both packetization modes 0 (mandatory) and 1 (optional, preferred)
++    // for each profile, at levels 3.1 and 4.0. MergeCodecs deduplicates by profile +
++    // packetization-mode (ignoring level), so only the first entry per combination
++    // survives into video_sendrecv_codecs_. H264GenerateProfileLevelIdForAnswer then
++    // negotiates the answer level as min(local_level, remote_level).
++    static const webrtc::H264Profile kProfiles[] = {
++        webrtc::H264Profile::kProfileConstrainedBaseline,
++        webrtc::H264Profile::kProfileBaseline,
++        webrtc::H264Profile::kProfileMain,
++        webrtc::H264Profile::kProfileConstrainedHigh,
++        webrtc::H264Profile::kProfileHigh,
++        webrtc::H264Profile::kProfilePredictiveHigh444,
+     };
++    static const webrtc::H264Level kLevels[] = {
++        webrtc::H264Level::kLevel3_1,
++        webrtc::H264Level::kLevel4,
++    };
++
++    std::vector<webrtc::SdpVideoFormat> formats;
++    for (auto profile : kProfiles) {
++        for (auto level : kLevels) {
++            formats.push_back(createH264Format(profile, level, "1"));
++            formats.push_back(createH264Format(profile, level, "0"));
++        }
++    }
++    return formats;
+ }
+ 
+ } // namespace WebCore
+-- 
+2.44.4
+
