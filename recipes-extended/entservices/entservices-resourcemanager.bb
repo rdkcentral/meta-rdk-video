@@ -1,15 +1,15 @@
-SUMMARY = "ENTServices messagecontrol plugin"
+SUMMARY = "ENTServices ResourceManager plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "1.0.3"
+PV = "1.0.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "b4ba13d32edeb27e396b3720f434447ec9abf70e"
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-messagecontrol;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRCREV = "${PV}"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-resourcemanager;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
@@ -23,17 +23,14 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_dis
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
-DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
-RDEPENDS:${PN} += "wpeframework"
+DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries rfc"
+RDEPENDS:${PN} += "wpeframework rfc"
 DEPENDS += "packager-headers"
-
-TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
-
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
-# enable filtering for undefined interfaces and link local ip address notifications
+
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
@@ -41,33 +38,29 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG ?= "telemetrysupport \
-    messagecontrol \
-"
+PACKAGECONFIG ?= "resourcemanager erm"
 
 inherit features_check
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
 
-
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG[messagecontrol]       = "-DPLUGIN_MESSAGECONTROL=ON,-DPLUGIN_MESSAGECONTROL=OFF,entservices-apis,entservices-apis"
-PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
+PACKAGECONFIG[resourcemanager] = "-DPLUGIN_RESOURCEMANAGER=ON,-DPLUGIN_RESOURCEMANAGER=OFF,"
+PACKAGECONFIG[erm]             = "-DBUILD_ENABLE_ERM=ON,-DBUILD_ENABLE_ERM=OFF,essos,essos"
+
 # ----------------------------------------------------------------------------
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
-   "
+"
 
-# TBD - set SECAPI_LIB to hw secapi once RDK-12682 changes are available
 EXTRA_OECMAKE += " \
     -DBUILD_AMLOGIC=ON \
     -DBUILD_LLAMA=ON \
 "
 
-# Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
 python () {
     dri_device_name = d.getVar('DRI_DEVICE_NAME')
     if dri_device_name:
@@ -90,6 +83,8 @@ do_install:append() {
 # ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
+# Keep explicit plugin file entries to avoid installed-vs-shipped QA on unversioned plugin .so files.
+FILES:${PN} += "${libdir}/wpeframework/plugins/libWPEFrameworkResourceManager.so"
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
