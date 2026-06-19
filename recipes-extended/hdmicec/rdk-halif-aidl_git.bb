@@ -223,7 +223,9 @@ do_install() {
     fi
 }
 
-do_populate_sysroot:append() {
+SYSROOT_PREPROCESS_FUNCS += "stage_binder_link_libs"
+
+stage_binder_link_libs() {
     # builds still need binder link libraries in the sysroot so
     # hdmicec can link against -lbinder/-lutils/-llog/-lbase during recipe
     # builds, but these runtime files must not be packaged by rdk-halif-aidl.
