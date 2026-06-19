@@ -7,7 +7,7 @@ PV = "1.7.0"
 PR = "r0"
 
 
-SRCREV_rdkfw = "7184306166f61831c7ac792cc67d20e014b5b482"
+SRCREV_rdkfw = "4b9d08f852afffa33e34b9a471c93bfb3f40a0c7"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkfwupdater;${CMF_GITHUB_SRC_URI_SUFFIX};name=rdkfw"
 
