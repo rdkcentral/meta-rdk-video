@@ -226,12 +226,21 @@ do_install() {
 SYSROOT_PREPROCESS_FUNCS:append:class-target = " stage_binder_link_libs"
 
 stage_binder_link_libs() {
+    if [ "${PN}" = "${BPN}-native" ]; then
+        return 0
+    fi
+
     # builds still need binder link libraries in the sysroot so
     # hdmicec can link against -lbinder/-lutils/-llog/-lbase during recipe
     # builds, but these runtime files must not be packaged by rdk-halif-aidl.
     install -d ${SYSROOT_DESTDIR}${libdir}
     if [ -d ${B}/install/lib ]; then
-        cp -a ${B}/install/lib/*.so ${SYSROOT_DESTDIR}${libdir}/
+        for staged_lib in ${B}/install/lib/*.so; do
+            if [ ! -e "${staged_lib}" ]; then
+                return 0
+            fi
+            cp -a "${staged_lib}" ${SYSROOT_DESTDIR}${libdir}/
+        done
     fi
 }
 
