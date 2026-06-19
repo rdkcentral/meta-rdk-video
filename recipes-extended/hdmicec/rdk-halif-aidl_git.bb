@@ -40,7 +40,7 @@ SRC_URI += "file://0002-skip-build-aidl-generator-tool-on-yocto.patch"
 # payload (shared libs + servicemanager). This recipe should provide the
 # generated HAL interfaces and build-time sysroot content, not a second copy
 # of the runtime files.
-RDEPENDS:${PN} = "libbinder"
+RDEPENDS:${PN}:class-target = "libbinder"
 
 BBCLASSEXTEND = "native"
 
