@@ -1,7 +1,7 @@
 DEPENDS:append = " rdk-halif-aidl"
 
 # New recipe for hdmicec - legacy and aidl
-SRCREV_hdmicec = "d6b7f4b7d4b82dbdcde80d33f0f48ce02218cc0d"
+SRCREV_hdmicec = "9e492e849977fb9d37dfa52d8cf1af69186325a9"
 
 # Add include paths for AIDL-generated HAL headers and binder headers
 CFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
