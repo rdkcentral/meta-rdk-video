@@ -36,6 +36,12 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SRC_URI += "file://0001-use-found-flexbison.patch"
 SRC_URI += "file://0002-skip-build-aidl-generator-tool-on-yocto.patch"
 
+# libbinder already owns the binder runtime
+# payload (shared libs + servicemanager). This recipe should provide the
+# generated HAL interfaces and build-time sysroot content, not a second copy
+# of the runtime files.
+RDEPENDS:${PN} = "libbinder"
+
 BBCLASSEXTEND = "native"
 
 # We need cmake/flex/bison for binder, plus the native aidl tool for RDK HAL
@@ -180,15 +186,6 @@ do_install() {
     cp -a ${S}/android/core/libcutils/include/cutils/* \
         ${D}${includedir}/cutils/
 
-    # Binder libs + servicemanager
-    install -d ${D}${libdir} ${D}${bindir}
-
-    cp -a ${B}/install/lib/*.so ${D}${libdir}/
-
-    if [ -f ${B}/install/bin/servicemanager ]; then
-        install -m 0755 ${B}/install/bin/servicemanager ${D}${bindir}/
-    fi
-
     # =========
     # Install RDK HAL AIDL generated files (as data)
     # matches: gen/<target>/<version>/
@@ -226,16 +223,18 @@ do_install() {
     fi
 }
 
+do_populate_sysroot:append() {
+    # builds still need binder link libraries in the sysroot so
+    # hdmicec can link against -lbinder/-lutils/-llog/-lbase during recipe
+    # builds, but these runtime files must not be packaged by rdk-halif-aidl.
+    install -d ${SYSROOT_DESTDIR}${libdir}
+    cp -a ${B}/install/lib/*.so ${SYSROOT_DESTDIR}${libdir}/
+}
+
 # Stop Yocto from putting unversioned .so into -dev
 FILES_SOLIBSDEV = ""
 
 FILES:${PN} += "\
-    ${libdir}/libbase.so \
-    ${libdir}/libbinder.so \
-    ${libdir}/libcutils.so \
-    ${libdir}/libcutils_sockets.so \
-    ${libdir}/liblog.so \
-    ${libdir}/libutils.so \
     ${datadir}/rdk/aidl \
 "
 
