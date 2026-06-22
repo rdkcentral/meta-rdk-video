@@ -14,18 +14,28 @@ index dc867b1db..c577e21cf 100644
              _dispatcher = new PluginHost::Server(*_config, _background);
  
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index abb666b8b..50aa40b72 100644
+index abb666b8b..cfa846715 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
-@@ -26,6 +26,7 @@
+@@ -26,6 +26,8 @@
  #include "IRemoteInstantiation.h"
  #include "WarningReportingCategories.h"
  #include "PostMortem.h"
 +#include <cinttypes> // bvanav-dbg
++#include <chrono> // bvanav-dbg
  
  #ifdef PROCESSCONTAINERS_ENABLED
  #include "../processcontainers/ProcessContainer.h"
-@@ -3674,6 +3675,7 @@ POP_WARNING()
+@@ -3566,6 +3568,8 @@ POP_WARNING()
+         // not find it and just "flush" the presented work.
+         class Channel : public PluginHost::Channel {
+         public:
++            using Clock = std::chrono::steady_clock; // bvanav-dbg
++
+             class Job : public Core::IDispatch {
+             public:
+                 Job(const Job&) = delete;
+@@ -3674,6 +3678,7 @@ POP_WARNING()
                      : Job()
                      , _request()
                      , _jsonrpc(false)
@@ -33,7 +43,7 @@ index abb666b8b..50aa40b72 100644
                  {
                  }
                  ~WebRequestJob() override
-@@ -3691,7 +3693,7 @@ POP_WARNING()
+@@ -3691,7 +3696,7 @@ POP_WARNING()
                      _missingResponse->ErrorCode = Web::STATUS_INTERNAL_SERVER_ERROR;
                      _missingResponse->Message = _T("There is no response from the requested service.");
                  }
@@ -42,7 +52,7 @@ index abb666b8b..50aa40b72 100644
                  {
                      Job::Set(id, server, service);
  
-@@ -3700,6 +3702,7 @@ POP_WARNING()
+@@ -3700,6 +3705,7 @@ POP_WARNING()
                      _request = request;
                      _jsonrpc = JSONRPC && (_request->HasBody() == true);
                      _token = token;
@@ -50,7 +60,7 @@ index abb666b8b..50aa40b72 100644
                  }
                  void Dispatch() override
                  {
-@@ -3717,7 +3720,9 @@ POP_WARNING()
+@@ -3717,7 +3723,9 @@ POP_WARNING()
                              }
  
                              if (message->IsSet()) {
@@ -60,7 +70,7 @@ index abb666b8b..50aa40b72 100644
  
                                  // If we have no response body, it looks like an async-call...
                                  if (body.IsValid() == false) {
-@@ -3792,6 +3797,7 @@ POP_WARNING()
+@@ -3792,6 +3800,7 @@ POP_WARNING()
                  Core::ProxyType<Web::Request> _request;
                  string _token;
                  bool _jsonrpc;
@@ -68,7 +78,7 @@ index abb666b8b..50aa40b72 100644
  
                  static Core::ProxyType<Web::Response> _missingResponse;
              };
-@@ -3804,6 +3810,7 @@ POP_WARNING()
+@@ -3804,6 +3813,7 @@ POP_WARNING()
                      : Job()
                      , _element()
                      , _jsonrpc(false)
@@ -76,7 +86,7 @@ index abb666b8b..50aa40b72 100644
                  {
                  }
                  ~JSONElementJob() override
-@@ -3816,7 +3823,7 @@ POP_WARNING()
+@@ -3816,7 +3826,7 @@ POP_WARNING()
                  }
  
              public:
@@ -85,7 +95,7 @@ index abb666b8b..50aa40b72 100644
                  {
                      Job::Set(id, server, service);
  
-@@ -3825,6 +3832,7 @@ POP_WARNING()
+@@ -3825,6 +3835,7 @@ POP_WARNING()
                      _element = element;
                      _jsonrpc = JSONRPC;
                      _token = token;
@@ -93,7 +103,7 @@ index abb666b8b..50aa40b72 100644
                  }
                  void Dispatch() override
                  {
-@@ -3842,8 +3850,10 @@ POP_WARNING()
+@@ -3842,8 +3853,10 @@ POP_WARNING()
                          if (HasService() == true) {
                              message->ImplicitCallsign(GetService().Callsign());
                          }
@@ -105,7 +115,7 @@ index abb666b8b..50aa40b72 100644
  
  #if THUNDER_PERFORMANCE
                          tracking->Execution();
-@@ -3877,6 +3887,7 @@ POP_WARNING()
+@@ -3877,6 +3890,7 @@ POP_WARNING()
                  Core::ProxyType<Core::JSON::IElement> _element;
                  string _token;
                  bool _jsonrpc;
@@ -113,7 +123,7 @@ index abb666b8b..50aa40b72 100644
              };
              class TextJob : public Job {
              public:
-@@ -4173,7 +4184,14 @@ POP_WARNING()
+@@ -4173,7 +4187,22 @@ POP_WARNING()
  
                          if (job.IsValid() == true) {
                              Core::ProxyType<Web::Request> baseRequest(request);
@@ -125,11 +135,19 @@ index abb666b8b..50aa40b72 100644
 +                                Core::ProxyType<Core::JSONRPC::Message> message(baseRequest->Body<Core::JSONRPC::Message>());
 +                                setJsonRpcMethod(message->Designator.Value());
 +                                setQueueLength(_parent.WorkerPool().queueLength());
++                                if(_jsonRpcMethod == "Controller.1.activate" || _jsonRpcMethod == "activate")
++                                {
++                                    SYSLOG(Logging::JsonRpcProfiler, (_T("HTTP Request method: %s, params: %s, queuelen: %ld"), _jsonRpcMethod.c_str(), message->Parameters.Value().c_str(), _queueSize));
++                                }
++                                else
++                                {
++                                    SYSLOG(Logging::JsonRpcProfiler, (_T("HTTP Request method: %s, queuelen: %ld"), _jsonRpcMethod.c_str(), _queueSize));
++                                }
 +                            }
                              _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
                          }
                      }
-@@ -4249,7 +4267,14 @@ POP_WARNING()
+@@ -4249,7 +4278,22 @@ POP_WARNING()
                      ASSERT(job.IsValid() == true);
  
                      if ((_service.IsValid() == true) && (job.IsValid() == true)) {
@@ -141,11 +159,19 @@ index abb666b8b..50aa40b72 100644
 +			            {
 +			                setJsonRpcMethod(message->Designator.Value());
 +			                setQueueLength(_parent.WorkerPool().queueLength());
++                            if(_jsonRpcMethod == "activate" || _jsonRpcMethod == "Controller.1.activate")
++                            {
++                                SYSLOG(Logging::JsonRpcProfiler, (_T("WS Request method: %s, params: %s, queuelen: %ld"), _jsonRpcMethod.c_str(), message->Parameters.Value().c_str(), _queueSize));
++                            }
++                            else
++                            {
++                                SYSLOG(Logging::JsonRpcProfiler, (_T("WS Request method: %s, queuelen: %ld"), _jsonRpcMethod.c_str(), _queueSize));
++                            }
 +			            }
                          _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
                      }
                  }
-@@ -4361,7 +4386,44 @@ POP_WARNING()
+@@ -4361,7 +4405,44 @@ POP_WARNING()
              {
                  SetId(id);
              }
@@ -153,26 +179,26 @@ index abb666b8b..50aa40b72 100644
 +        public:
 +            inline void setRequestTime()
 +            {
-+                _requestTime = Core::Time::Now();
++                _requestTime = Clock::now();
 +            }
 +            enum InvokeTime {START, END};
 +            inline void setInvokeTime(InvokeTime time)
 +            {
 +                if(time == START)
-+                    _invokeTimeStart = Core::Time::Now();
++                    _invokeTimeStart = Clock::now();
 +                else if(time == END)
-+                    _invokeTimeEnd = Core::Time::Now();
++                    _invokeTimeEnd = Clock::now();
 +            }
 +            inline void setResponseTime()
 +            {
-+                if(!_jsonRpcMethod.empty())
++                if(!_jsonRpcMethod.empty() && _invokeTimeEnd != Clock::time_point{})
 +                {
-+		            _responseTime = Core::Time::Now();
++		            _responseTime = Clock::now();
  
-+                    Core::Time::nanosecondsfromepoch thunderLatency =  (_invokeTimeStart.NanoSeconds() - _requestTime.NanoSeconds()) 
-+                                                                 + (_responseTime.NanoSeconds() - _invokeTimeEnd.NanoSeconds());
-+                    Core::Time::nanosecondsfromepoch  pluginLatency =  _invokeTimeEnd.NanoSeconds() - _invokeTimeStart.NanoSeconds();
-+                    Core::Time::nanosecondsfromepoch  totalLatency = thunderLatency + pluginLatency;
++                    uint64_t thunderLatency =  static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(_invokeTimeStart - _requestTime).count()
++                                                                + std::chrono::duration_cast<std::chrono::nanoseconds>(_responseTime - _invokeTimeEnd).count());
++                    uint64_t pluginLatency =  static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(_invokeTimeEnd - _invokeTimeStart).count());
++                    uint64_t totalLatency = thunderLatency + pluginLatency;
 +
 +                    SYSLOG(Logging::JsonRpcProfiler, (_T("%s, %ld, %" PRIu64", %" PRIu64", %" PRIu64), _jsonRpcMethod.c_str(), _queueSize, thunderLatency, pluginLatency, totalLatency));
 +		            
@@ -190,15 +216,15 @@ index abb666b8b..50aa40b72 100644
          private:
              inline string SelectSupportedProtocol(const Web::ProtocolsArray& protocols)
              {
-@@ -4393,6 +4455,14 @@ POP_WARNING()
+@@ -4393,6 +4474,14 @@ POP_WARNING()
              Core::ProxyType<Service> _service;
              bool _requestClose;
  
 +            // bvanav-dbg
-+            Core::Time _requestTime;
-+            Core::Time _invokeTimeStart;
-+            Core::Time _invokeTimeEnd;
-+            Core::Time _responseTime;
++            Clock::time_point _requestTime;
++            Clock::time_point _invokeTimeStart;
++            Clock::time_point _invokeTimeEnd;
++            Clock::time_point _responseTime;
 +            string _jsonRpcMethod;
 +            uint32_t _queueSize;
 +
