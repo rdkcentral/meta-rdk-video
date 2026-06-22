@@ -12,13 +12,13 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r44"
+PR = "r45"
 PV = "4.4.6"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder"
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4_6-RDK;name=thunder"
 
-SRCREV_thunder = "c92cffa3b4d08ef385d7c74c505ce69d5152b24b"
+SRCREV_thunder = "2560f44edb2b411b05016cd437fc9cddb6e740c2"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
@@ -98,6 +98,7 @@ ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'Securit
 
 EXTRA_OECMAKE += " \
     -DINSTALL_HEADERS_TO_TARGET=ON \
+    -DWARNING_REPORTING=ON \
     -DEXTERN_EVENTS="${WPEFRAMEWORK_EXTERN_EVENTS}" \
     -DEXCEPTIONS_ENABLE=ON \
     -DBUILD_SHARED_LIBS=ON \
