@@ -17,8 +17,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
           
 # Release version - 1.0.6
 #SRCREV = "e9ec1482a1d5e2302433c24b2bf9b6a921525c15"
-# feature/RDKEMW-19729-ocdm-client-migration
-SRCREV = "33c6c9b0a9d1f95294f617d8c8ce11002b0d7501"
+# feature/RDKEMW-20230-test
+SRCREV = "3cda1cb5015aa9bfbfe54f1fe5dfccbd71667309"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
