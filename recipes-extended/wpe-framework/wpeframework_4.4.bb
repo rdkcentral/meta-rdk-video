@@ -98,7 +98,6 @@ ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'Securit
 
 EXTRA_OECMAKE += " \
     -DINSTALL_HEADERS_TO_TARGET=ON \
-    -DWARNING_REPORTING=ON \
     -DEXTERN_EVENTS="${WPEFRAMEWORK_EXTERN_EVENTS}" \
     -DEXCEPTIONS_ENABLE=ON \
     -DBUILD_SHARED_LIBS=ON \
