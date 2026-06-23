@@ -91,7 +91,7 @@ do_deploy_symbols() {
     install -m 0644 "${WORKDIR}/libaamp.so.sym" "${DEPLOY_DIR}/breakpad_symbols/${MACHINE}/libaamp.so.sym"
     install -m 0644 "${WORKDIR}/libaampjsbindings.so.sym" "${DEPLOY_DIR}/breakpad_symbols/${MACHINE}/libaampjsbindings.so.sym"
 }
-addtask deploy_symbols after do_package
+addtask deploy_symbols after do_package before do_build
 
 # Directory for deploying artifacts
 DEPLOY_DIR_WGT = "${DEPLOY_DIR}/widgets"
