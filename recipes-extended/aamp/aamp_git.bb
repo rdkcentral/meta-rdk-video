@@ -86,14 +86,10 @@ do_install:append() {
 }
 
 do_deploy_symbols() {
-    echo "Deploying libaamp.so.sym"
-    install -d ${TMPDIR}/deploy/breakpadsymbols/${MACHINE}
-    install -m 0644 ${WORKDIR}/libaamp.so.sym \
-        ${TMPDIR}/deploy/breakpadsymbols/${MACHINE}/libaamp.so.sym
-    echo "Deploying libaampjsbindings.so.sym"
-    install -d ${TMPDIR}/deploy/breakpadsymbols/${MACHINE}
-    install -m 0644 ${WORKDIR}/libaampjsbindings.so.sym \
-        ${TMPDIR}/deploy/breakpadsymbols/${MACHINE}/libaampjsbindings.so.sym
+    bbnote "Deploying Breakpad symbols"
+    install -d "${DEPLOY_DIR}/breakpad_symbols/${MACHINE}"
+    install -m 0644 "${WORKDIR}/libaamp.so.sym" "${DEPLOY_DIR}/breakpad_symbols/${MACHINE}/libaamp.so.sym"
+    install -m 0644 "${WORKDIR}/libaampjsbindings.so.sym" "${DEPLOY_DIR}/breakpad_symbols/${MACHINE}/libaampjsbindings.so.sym"
 }
 addtask deploy_symbols after do_package
 
