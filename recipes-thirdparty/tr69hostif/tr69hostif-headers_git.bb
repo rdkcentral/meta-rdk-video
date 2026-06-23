@@ -2,7 +2,7 @@ SUMMARY = "TR69 hostif Headers"
 SECTION = "console/utils"
 
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=99e7c83e5e6f31c2cbb811e186972945"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=76ae13a6bce633447ea2284294f073c2"
 
 PV = "1.4.6"
 PR = "r0"
