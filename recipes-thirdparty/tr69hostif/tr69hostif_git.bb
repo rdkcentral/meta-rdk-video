@@ -167,7 +167,7 @@ do_install:append() {
 	install -m 0644 ${S}/conf/mgrlist.conf ${D}${sysconfdir}
         install -d ${D}${base_libdir}/rdk
         install -m 0644 ${S}/src/hostif/parodusClient/parodus.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/src/hostif/parodusClient/parodus.path ${D}${systemd_unitdir}/system
+        #install -m 0644 ${S}/src/hostif/parodusClient/parodus.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/src/hostif/parodusClient/parodus_v4.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/src/hostif/parodusClient/parodus_v6.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/src/hostif/parodusClient/parodus_bsp.path ${D}${systemd_unitdir}/system
@@ -206,12 +206,12 @@ FILES:${PN} += "${systemd_unitdir}/system/tr69hostif.service"
 SYSTEMD_SERVICE:${PN} += "ip-iface-monitor.service"
 FILES:${PN} += "${systemd_unitdir}/system/ip-iface-monitor.service"
 SYSTEMD_SERVICE:${PN} += "parodus.service" 
-SYSTEMD_SERVICE:${PN} += "parodus.path" 
+#SYSTEMD_SERVICE:${PN} += "parodus.path" 
 SYSTEMD_SERVICE:${PN} += "parodus_v4.path"
 SYSTEMD_SERVICE:${PN} += "parodus_v6.path"
 SYSTEMD_SERVICE:${PN} += "parodus_bsp.path"
 FILES:${PN} += "${systemd_unitdir}/system/parodus.service" 
-FILES:${PN} += "${systemd_unitdir}/system/parodus.path" 
+#FILES:${PN} += "${systemd_unitdir}/system/parodus.path" 
 FILES:${PN} += "${systemd_unitdir}/system/parodus_v4.path"
 FILES:${PN} += "${systemd_unitdir}/system/parodus_v6.path"
 FILES:${PN} += "${systemd_unitdir}/system/parodus_bsp.path"
