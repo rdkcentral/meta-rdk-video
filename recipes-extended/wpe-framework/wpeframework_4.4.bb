@@ -13,7 +13,7 @@ DEPENDS += "breakpad-wrapper"
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
 PR = "r45"
-PV = "4.4.6"
+PV = "4.4.5"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=comrpc-logging;name=thunder"
