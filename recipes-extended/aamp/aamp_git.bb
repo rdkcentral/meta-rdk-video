@@ -72,18 +72,17 @@ do_install:append() {
     rm -f ${D}${libdir}/libtsb.a
 }
 
-BREAKPAD_BIN = "lib.so"
+BREAKPAD_BIN = "libaamp.so libaampjsbindings.so"
 BREAKPAD_DEBUG_DIR = "${D}${libdir}/.debug"
 
+DEPENDS:append = " breakpad-native"
+
 do_install:append() {
-    echo "Generating .sym from unstripped libaamp.so"
-    ${STAGINGBINDIRNATIVE}/dumpsyms \
-        ${D}${libdir}/libaamp.so \
-        > ${WORKDIR}/libaamp.so.sym || echo "dump_syms failed"
-   echo "Generating .sym from unstripped libaampjsbindings.so"
-    ${STAGINGBINDIRNATIVE}/dumpsyms \
-        ${D}${libdir}/libaampjsbindings.so \
-        > ${WORKDIR}/libaampjsbindings.so.sym || echo "dump_syms failed"
+    bbnote "Generating Breakpad .sym from unstripped libaamp.so"
+    dump_syms "${D}${libdir}/libaamp.so" > "${WORKDIR}/libaamp.so.sym" || bbfatal "dump_syms failed for libaamp.so"
+
+    bbnote "Generating Breakpad .sym from unstripped libaampjsbindings.so"
+    dump_syms "${D}${libdir}/libaampjsbindings.so" > "${WORKDIR}/libaampjsbindings.so.sym" || bbfatal "dump_syms failed for libaampjsbindings.so"
 }
 
 do_deploy_symbols() {
