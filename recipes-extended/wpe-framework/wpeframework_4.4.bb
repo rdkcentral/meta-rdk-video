@@ -13,12 +13,12 @@ DEPENDS += "breakpad-wrapper"
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
 PR = "r45"
-PV = "4.4.5"
+PV = "4.4.6"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=comrpc-logging;name=thunder"
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=development/comrpc-logging;name=thunder"
 
-SRCREV_thunder = "322d4f645f7942347b876886dac6338d2eeb0f3a"
+SRCREV_thunder = "ebe9d20bfb8c1dfde9ed275f0866f29910be9bfd"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
