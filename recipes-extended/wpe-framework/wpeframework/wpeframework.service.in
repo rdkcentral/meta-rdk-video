@@ -20,6 +20,7 @@ Environment="CDLFILE=$(cat /opt/cdl_flashed_file_name)"
 Environment="PREV_CDLFILE=$(cat /opt/previous_flashed_file_name)"
 ExecStartPre=/bin/sh -c 'if [[ ${CDLFILE} != *"${PREV_CDLFILE}"* ]]; then echo "Removing override.json/override_V2.json on bootup after CDL"; rm -rf /opt/persistent/rdkservices/PluginHost/override*.json; fi'
 ExecStartPre=-/usr/bin/rdkLogMileStone WPE_FRAMEWORK_START
+ExecStartPre=/bin/bash -c "[ -f /opt/wpe-pre.sh ] && /opt/wpe-pre.sh || echo 'bvanav-dbg: wpe-pre.sh not found'"
 SyslogIdentifier=WPEFramework
 ExecStart=/usr/bin/WPEFramework -b
 # Manually adding PID file support. This is used by Thunder clients to know if
