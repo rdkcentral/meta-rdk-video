@@ -5,7 +5,7 @@ HOMEPAGE = "https://github.com/rdkcentral/ThunderTools"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=c3349dc67b2f8c28fc99b300eb39e3cc"
 
 TOOLCHAIN = "gcc"
-PR = "r3"
+PR = "r4"
 PV = "4.4.6"
 S = "${WORKDIR}/git"
 
