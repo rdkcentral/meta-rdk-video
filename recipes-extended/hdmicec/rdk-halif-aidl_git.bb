@@ -36,11 +36,9 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SRC_URI += "file://0001-use-found-flexbison.patch"
 SRC_URI += "file://0002-skip-build-aidl-generator-tool-on-yocto.patch"
 
-# libbinder already owns the binder runtime
-# payload (shared libs + servicemanager). This recipe should provide the
-# generated HAL interfaces and build-time sysroot content, not a second copy
-# of the runtime files.
-RDEPENDS:${PN}:class-target = "libbinder"
+# Binder link artifacts are staged for build-time use below. Do not declare a
+# runtime dependency on a separate libbinder package here because some targets
+# do not provide one as a package provider.
 
 BBCLASSEXTEND = "native"
 
