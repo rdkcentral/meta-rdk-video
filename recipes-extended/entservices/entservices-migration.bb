@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "a2c2c79bd1e2fe07b8f7b91309056604bef1a8db"
+SRCREV = "1c7579ee2d59020911f729d9810352b1cebd2e5f"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-migration;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
            "
