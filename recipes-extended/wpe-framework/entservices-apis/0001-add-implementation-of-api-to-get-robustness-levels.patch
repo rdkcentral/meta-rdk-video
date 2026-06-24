@@ -1,0 +1,53 @@
+From 527c3bc21a5107eef0f66cb9dd20bad942eff29f Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Thu, 14 May 2026 18:25:51 +0000
+Subject: [PATCH] add implementation of api to get robustness levels
+
+---
+ apis/OpenCDMi/IDRM.h  | 6 ++++++
+ apis/OpenCDMi/IOCDM.h | 5 +++++
+ 2 files changed, 11 insertions(+)
+
+diff --git a/apis/OpenCDMi/IDRM.h b/apis/OpenCDMi/IDRM.h
+index f8b8a7d..cd3ef9e 100644
+--- a/apis/OpenCDMi/IDRM.h
++++ b/apis/OpenCDMi/IDRM.h
+@@ -45,6 +45,7 @@
+ #include <string>
+ #include <type_traits>
+ #include <typeinfo>
++#include <list>
+ #include <vector>
+ 
+ #include <interfaces/Portability.h>
+@@ -521,6 +522,11 @@ struct IGoogleCastAuthExtension {
+     virtual CDMi_RESULT GetSystemId(uint32_t& id /* @out */) const = 0;
+ };
+ 
++struct IRobustnessExtension {
++    virtual ~IRobustnessExtension() = default;
++    virtual CDMi_RESULT GetSupportedRobustness(std::list<std::string>& levels) const = 0;
++};
++
+ struct ISystemFactory {
+     virtual ~ISystemFactory() = default;
+     virtual IMediaKeys* Instance() = 0;
+diff --git a/apis/OpenCDMi/IOCDM.h b/apis/OpenCDMi/IOCDM.h
+index 27cb4c1..7edc06f 100644
+--- a/apis/OpenCDMi/IOCDM.h
++++ b/apis/OpenCDMi/IOCDM.h
+@@ -198,6 +198,11 @@ struct IAccessorOCDM : virtual public Core::IUnknown {
+         uint8_t buffer[] /* @out @length:bufferSize */) const
+         = 0;
+ 
++    // Get the Robustness level from Widevine DRM
++    virtual OCDM_RESULT GetSupportedRobustness(
++        const std::string& keySystem,
++        RPC::IStringIterator*& robustness /* @out */) const = 0;
++
+     // Create a MediaKeySession using the supplied init data and CDM data.
+     virtual OCDM_RESULT
+     CreateSession(const string& keySystem, const int32_t licenseType,
+-- 
+2.44.4
+

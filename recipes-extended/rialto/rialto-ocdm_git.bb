@@ -19,6 +19,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRCREV = "${RIALTO_OCDM_SRCREV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto-ocdm;protocol=${CMF_GIT_PROTOCOL};branch=${RIALTO_OCDM_BRANCH}"
+SRC_URI += "file://0001-add-opencdm_system_supported_robustness-to-rialto-ocdm.patch"
 
 DEPENDS = "openssl jsoncpp glib-2.0 gstreamer1.0 gstreamer1.0-plugins-base wpeframework-tools-native wpeframework-clientlibraries protobuf protobuf-native rialto"
 

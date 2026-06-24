@@ -1,0 +1,101 @@
+From 2b9e95f517b34c30f129ec74919f1a1d788798f3 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Wed, 27 May 2026 08:39:50 +0000
+Subject: [PATCH] add opencdm_system_supported_robustness to rialto-ocdm
+
+---
+ .../include/MediaKeysCapabilitiesBackend.h    |  1 +
+ .../source/MediaKeysCapabilitiesBackend.cpp   | 11 +++++
+ library/source/open_cdm.cpp                   | 42 +++++++++++++++++++
+ 3 files changed, 54 insertions(+)
+
+diff --git a/library/include/MediaKeysCapabilitiesBackend.h b/library/include/MediaKeysCapabilitiesBackend.h
+index baf3706..3d05217 100644
+--- a/library/include/MediaKeysCapabilitiesBackend.h
++++ b/library/include/MediaKeysCapabilitiesBackend.h
+@@ -35,6 +35,7 @@ public:
+     OpenCDMError supportsKeySystem(const std::string &keySystem);
+     bool getSupportedKeySystemVersion(const std::string &keySystem, std::string &version);
+     bool isServerCertificateSupported(const std::string &keySystem);
++    bool getSupportedRobustnessLevels(const std::string &keySystem, std::vector<std::string> &robustnessLevels);
+ 
+ private:
+     MediaKeysCapabilitiesBackend();
+diff --git a/library/source/MediaKeysCapabilitiesBackend.cpp b/library/source/MediaKeysCapabilitiesBackend.cpp
+index f0dd064..ad66d4f 100644
+--- a/library/source/MediaKeysCapabilitiesBackend.cpp
++++ b/library/source/MediaKeysCapabilitiesBackend.cpp
+@@ -69,6 +69,17 @@ bool MediaKeysCapabilitiesBackend::isServerCertificateSupported(const std::strin
+     return result;
+ }
+ 
++bool MediaKeysCapabilitiesBackend::getSupportedRobustnessLevels(const std::string &keySystem,
++                                                                std::vector<std::string> &robustnessLevels)
++{
++    bool result{false};
++    if (m_mediaKeysCapabilities)
++    {
++        result = m_mediaKeysCapabilities->getSupportedRobustnessLevels(keySystem, robustnessLevels);
++    }
++    return result;
++}
++
+ MediaKeysCapabilitiesBackend::MediaKeysCapabilitiesBackend()
+ {
+     std::shared_ptr<firebolt::rialto::IMediaKeysCapabilitiesFactory> factory =
+diff --git a/library/source/open_cdm.cpp b/library/source/open_cdm.cpp
+index 95fb919..23f2eeb 100644
+--- a/library/source/open_cdm.cpp
++++ b/library/source/open_cdm.cpp
+@@ -82,6 +82,48 @@ OpenCDMError opencdm_destruct_system(struct OpenCDMSystem *system)
+     return ERROR_NONE;
+ }
+ 
++OpenCDMError opencdm_system_supported_robustness(struct OpenCDMSystem *system, char ***robustness,
++                                                  uint16_t *count)
++{
++    kLog << debug << __func__;
++    if (!system || !robustness || !count)
++    {
++        kLog << error << __func__ << ": system, robustness or count is NULL";
++        return ERROR_FAIL;
++    }
++
++    *robustness = nullptr;
++    *count = 0;
++
++    std::vector<std::string> levels;
++    if (!MediaKeysCapabilitiesBackend::instance().getSupportedRobustnessLevels(system->keySystem(), levels))
++    {
++        kLog << warn << __func__ << ": getSupportedRobustnessLevels failed or returned no levels";
++        return ERROR_FAIL;
++    }
++
++    if (levels.empty())
++    {
++        return ERROR_NONE;
++    }
++
++    char **results = static_cast<char **>(calloc(levels.size(), sizeof(char *)));
++    if (!results)
++    {
++        kLog << error << __func__ << ": failed to allocate robustness buffer";
++        return ERROR_FAIL;
++    }
++
++    for (size_t i = 0; i < levels.size(); ++i)
++    {
++        results[i] = strdup(levels[i].c_str());
++    }
++
++    *robustness = results;
++    *count = static_cast<uint16_t>(levels.size());
++    return ERROR_NONE;
++}
++
+ OpenCDMError opencdm_is_type_supported(const char keySystem[], const char mimeType[])
+ {
+     kLog << debug << __func__;
+-- 
+2.44.4
+

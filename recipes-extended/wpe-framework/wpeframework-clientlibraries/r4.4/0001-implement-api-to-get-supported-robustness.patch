@@ -1,0 +1,114 @@
+From 4b39d864cd63dd9edb084c3a372785987cbcd400 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Fri, 15 May 2026 05:47:42 +0000
+Subject: [PATCH] implement api to get supported robustness
+
+---
+ Source/ocdm/open_cdm.cpp    | 46 +++++++++++++++++++++++++++++++++++++
+ Source/ocdm/open_cdm.h      | 12 ++++++++++
+ Source/ocdm/open_cdm_impl.h |  9 ++++++++
+ 3 files changed, 67 insertions(+)
+
+diff --git a/Source/ocdm/open_cdm.cpp b/Source/ocdm/open_cdm.cpp
+index 65e337d..7bf21fa 100644
+--- a/Source/ocdm/open_cdm.cpp
++++ b/Source/ocdm/open_cdm.cpp
+@@ -144,6 +144,52 @@ OpenCDMError opencdm_destruct_system(struct OpenCDMSystem* system)
+     return (result);
+ }
+ 
++/**
++ * Gets the robustness level supported by underlying CDM system.
++ *
++ * \param system \ref OpenCDMAccessor instance
++ * \param[out] robustness On sucess,set supported robustness levels(e.g:"SW_SECURE_DECODE,SW_SECURE_CRYPTO").
++ *     caller must free this bufferSet to NULL if the CDM reports no robustness levels.
++ * \param[out] len On sucess,return the length of the returned buffer.Set to 0 of no robustness
++ *     levels are reported.
++ */
++OpenCDMError opencdm_system_supported_robustness(struct OpenCDMSystem* system,
++     char*** robustness, uint16_t* count)
++{
++    assert(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system == nullptr || robustness == nullptr || count == nullptr)
++        return (result);
++ 
++    OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++    *robustness = nullptr;
++    *count = 0;
++     
++    if (accessor != nullptr) {
++       RPC::IStringIterator* iterator = nullptr;
++       result = static_cast<OpenCDMError>(accessor->GetSupportedRobustness(system->keySystem(),iterator));
++
++       if (result == ERROR_NONE && iterator != nullptr) {
++          uint16_t size = iterator->Count();
++          if (size > 0) {
++              char** results = static_cast<char**>(calloc(size,sizeof(char*)));
++              std::string entry;
++              for (uint16_t i = 0; i < size && iterator->Next(entry); ++i) {
++                  results[i] = strdup(entry.c_str());
++              }
++              *robustness = results;
++              *count = size;
++           }
++           iterator->Release();
++       }
++    } else {
++       return OpenCDMError::ERROR_INVALID_ACCESSOR;
++    }
++
++    return (result);
++}
++
+ /**
+  * \brief Checks if a DRM system is supported.
+  *
+diff --git a/Source/ocdm/open_cdm.h b/Source/ocdm/open_cdm.h
+index ef8c03c..f11ea7f 100644
+--- a/Source/ocdm/open_cdm.h
++++ b/Source/ocdm/open_cdm.h
+@@ -271,6 +271,18 @@ EXTERNAL OpenCDMError opencdm_create_system_extended(const char keySystem[], str
+  */
+ EXTERNAL OpenCDMError opencdm_destruct_system(struct OpenCDMSystem* system);
+ 
++/**
++ * Gets the robustness level supported by underlying CDM system.
++ *
++ * \param system \ref OpenCDMAccessor instance
++ * \param[out] robustness On success,set supported robustness levels(e.g:"SW_SECURE_DECODE,SW_SECURE_CRYPTO").
++ *     caller must free this bufferSet to NULL if the CDM reports no robustness levels.
++ * \param[out] count On success,return the length of the returned buffer.Set to 0 of no robustness 
++ *     levels are reported.
++ * \return ERROR_NONE on success
++ */
++EXTERNAL OpenCDMError opencdm_system_supported_robustness(struct OpenCDMSystem* system, char*** roubustness, uint16_t* count);
++
+ /**
+  * \brief Checks if a DRM system is supported.
+  *
+diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
+index fb9ce2a..344209b 100644
+--- a/Source/ocdm/open_cdm_impl.h
++++ b/Source/ocdm/open_cdm_impl.h
+@@ -173,6 +173,15 @@ public:
+         return (result);
+     }
+ 
++    virtual Exchange::OCDM_RESULT GetSupportedRobustness(const string& keySystem,RPC::IStringIterator*& robustness) const {
++        Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
++
++        if (_remote != nullptr) {
++               return(_remote->GetSupportedRobustness(keySystem,robustness));
++        }
++        return (result);
++    }
++
+     // Create a MediaKeySession using the supplied init data and CDM data.
+     virtual Exchange::OCDM_RESULT
+     CreateSession(const string& keySystem, const int32_t licenseType,
+-- 
+2.44.4
+

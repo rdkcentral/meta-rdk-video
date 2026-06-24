@@ -1,0 +1,44 @@
+From a4b619d3595dc92031b7d944b1e87185caca16bc Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Thu, 14 May 2026 18:54:20 +0000
+Subject: [PATCH] add implementation of api to get robustnesslevel
+
+---
+ plugin/FrameworkRPC.cpp | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
+index c17bdea..4bb7e95 100644
+--- a/plugin/FrameworkRPC.cpp
++++ b/plugin/FrameworkRPC.cpp
+@@ -866,6 +866,27 @@ namespace Plugin {
+                 return(result);
+             }
+ 
++            Exchange::OCDM_RESULT GetSupportedRobustness(const std::string& keySystem, RPC::IStringIterator*& robustness) const override {                    
++                Exchange::OCDM_RESULT result = Exchange::OCDM_INTERFACE_NOT_IMPLEMENTED;
++
++                CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);                        
++                if (system != nullptr) {
++                    CDMi::IRobustnessExtension* extension = dynamic_cast<CDMi::IRobustnessExtension*>(system);
++
++                    if (extension != nullptr) {
++                        std::list<std::string> levels;
++                        TRACE(Trace::Information, ("Get Supported Robustness()"));
++                        result = static_cast<Exchange::OCDM_RESULT>(extension->GetSupportedRobustness(levels));
++
++                       if (result == Exchange::OCDM_RESULT::OCDM_SUCCESS && !levels.empty()) {
++                           robustness = Core::Service<RPC::StringIterator>::Create<RPC::IStringIterator>(levels);
++                       }
++                    }
++                 }
++
++                 return result;
++            }
++
+             uint32_t DefaultSize() const {
+                 return _defaultSize;
+             }
+-- 
+2.44.4
+
