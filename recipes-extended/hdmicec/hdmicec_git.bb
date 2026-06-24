@@ -23,20 +23,19 @@ DEPENDS += "safec-common-wrapper"
 DEPENDS:append = " rdk-halif-aidl"
 DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinder"
 
-# libRCEC.so links against the binder runtime libraries (libbinder/libutils/
-# liblog/libbase). Declare a runtime dependency on their provider package so the
-# image actually contains them and do_package_qa[file-rdeps] is satisfied.
-# On vbinder devices the binder runtime (incl. liblog.so) is shipped by Layer V's
-# single 'libbinder' package; on the M-layer-binder device the rdk-halif-aidl
-# bbappend builds and packages binder into a package also named 'libbinder', so a
-# single RDEPENDS value resolves on every chipset. Override per MACHINE/DISTRO if
-# your binder runtime is split across differently named packages.
-HDMICEC_BINDER_RDEPENDS ?= "libbinder"
-HDMICEC_BINDER_RDEPENDS:vdevice_x86-64-mw = ""
-RDEPENDS:${PN}:append = " ${HDMICEC_BINDER_RDEPENDS}"
-
 ASNEEDED = ""
 ALLOW_EMPTY:${PN} = "1"
+
+# libRCEC.so links the binder runtime (libbinder/libutils/liblog/libbase), which
+# is packaged by meta-binder's 'libbinder'. meta-binder is part of the Layer V and
+# x86 builds but is intentionally NOT included in the Jenkins Layer M+A ARM build,
+# so there is no packaged binder provider there; the binder runtime is supplied by
+# Layer V on real devices. Skip the file-rdeps QA for those externally-provided
+# sonames on ARM so the M+A build succeeds without shipping binder. On x86 the
+# real 'libbinder' package is present, so its dependency is auto-resolved by the
+# shlibs mechanism and full QA is kept.
+INSANE_SKIP:${PN} += "file-rdeps"
+INSANE_SKIP:${PN}:remove:vdevice_x86-64-mw = "file-rdeps"
 
 S = "${WORKDIR}/git"
 
