@@ -17,6 +17,9 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name
 
 SRC_URI += "file://RDKEMW-1007.patch"
 
+# Release version - 3.8.1
+SRCREV = "e132a071c26a7e827aac8131041de87dcf943062"
+
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
 # ----------------------------------------------------------------------------
