@@ -1,8 +1,10 @@
 SUMMARY = "entservices-apis"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
-PV = "3.6.6"
+PV = "3.8.1"
 PR = "r0"
+SRCREV_entservices-apis = "${PV}"
+
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -15,9 +17,6 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name
 
 SRC_URI += "file://RDKEMW-1007.patch"
 SRC_URI += "file://0001-add-implementation-of-api-to-get-robustness-levels.patch"
-
-# Tag 3.6.6
-SRCREV_entservices-apis = "9b9a44493f502eb1cfc5af5e80255ac9781da185"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"

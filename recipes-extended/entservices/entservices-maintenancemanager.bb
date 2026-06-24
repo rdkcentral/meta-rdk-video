@@ -1,34 +1,32 @@
-SUMMARY = "ENTServices messagecontrol plugin"
+SUMMARY = "ENTServices maintenancemanager plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
-PV = "1.0.3"
+PV = "1.13.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
-inherit cmake pkgconfig
+inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
-SRCREV = "b4ba13d32edeb27e396b3720f434447ec9abf70e"
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-messagecontrol;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://rdkservices.ini \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-maintenancemanager;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
+
+# Release version - 1.15.0
+SRCREV = "45480b833d5ec7662405affb0bf7c6902f4664cf"
+
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
-
-DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
-DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
-DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
+DEPENDS += "wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
-DEPENDS += "packager-headers"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
@@ -39,32 +37,28 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-# ----------------------------------------------------------------------------
-
-PACKAGECONFIG ?= "telemetrysupport \
-    messagecontrol \
-"
-
-inherit features_check
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
-
+include include/maintenanceMgr.inc
 
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG[messagecontrol]       = "-DPLUGIN_MESSAGECONTROL=ON,-DPLUGIN_MESSAGECONTROL=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG ?= " breakpadsupport \
+    telemetrysupport \
+    "
+
+PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'whoami_enabled', 'whoami', '', d)}"
+
+#PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES' , 'enable_maintenance_manager', ' maintenancemanager', '', d)}"
+
+PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
+PACKAGECONFIG[whoami]        = "-DENABLE_WHOAMI=ON,-DENABLE_WHOAMI=OFF,"
+
 # ----------------------------------------------------------------------------
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
-   "
-
-# TBD - set SECAPI_LIB to hw secapi once RDK-12682 changes are available
-EXTRA_OECMAKE += " \
-    -DBUILD_AMLOGIC=ON \
-    -DBUILD_LLAMA=ON \
 "
 
 # Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
@@ -80,6 +74,7 @@ do_install:append() {
     then
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
     fi
+
     if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
         if [ -d "${D}/etc/WPEFramework/plugins" ]; then
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
