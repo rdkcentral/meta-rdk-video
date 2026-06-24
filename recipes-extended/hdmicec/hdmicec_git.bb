@@ -23,6 +23,18 @@ DEPENDS += "safec-common-wrapper"
 DEPENDS:append = " rdk-halif-aidl"
 DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinder"
 
+# libRCEC.so links against the binder runtime libraries (libbinder/libutils/
+# liblog/libbase). Declare a runtime dependency on their provider package so the
+# image actually contains them and do_package_qa[file-rdeps] is satisfied.
+# On vbinder devices the binder runtime (incl. liblog.so) is shipped by Layer V's
+# single 'libbinder' package; on the M-layer-binder device the rdk-halif-aidl
+# bbappend builds and packages binder into a package also named 'libbinder', so a
+# single RDEPENDS value resolves on every chipset. Override per MACHINE/DISTRO if
+# your binder runtime is split across differently named packages.
+HDMICEC_BINDER_RDEPENDS ?= "libbinder"
+HDMICEC_BINDER_RDEPENDS:vdevice_x86-64-mw = ""
+RDEPENDS:${PN}:append = " ${HDMICEC_BINDER_RDEPENDS}"
+
 ASNEEDED = ""
 ALLOW_EMPTY:${PN} = "1"
 
@@ -154,3 +166,4 @@ FILES:${PN}:append:vdevice_x86-64-mw = " ${libdir}/libRCECHal.so"
 # Breakpad processname and logfile mapping
 #BREAKPAD_LOGMAPPER_PROCLIST = "CecDaemonMain"
 #BREAKPAD_LOGMAPPER_LOGLIST = "cec_log.txt"
+
