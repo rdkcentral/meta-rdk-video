@@ -2,13 +2,13 @@ SUMMARY = "ENTServices Migration plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.0.4"
+PV = "1.1.4"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "1c7579ee2d59020911f729d9810352b1cebd2e5f"
+SRCREV = "2dabe48e2f002ff6b1611b4b46d179398a290123"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-migration;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
            "
