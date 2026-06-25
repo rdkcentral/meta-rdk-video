@@ -1,4 +1,4 @@
-#Todo: Move this into another meta layer.
+# Todo: Move this into another meta layer.
 
 SUMMARY = "Linux binder AIDL generator, libs, and RDK HAL AIDL interfaces"
 DESCRIPTION = "Builds AIDL compiler, binder libs from linux_binder_idl, and RDK HAL AIDL interfaces."
