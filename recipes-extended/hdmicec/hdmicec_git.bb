@@ -26,16 +26,11 @@ DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinder"
 ASNEEDED = ""
 ALLOW_EMPTY:${PN} = "1"
 
-# libRCEC.so links the binder runtime (libbinder/libutils/liblog/libbase), which
-# is packaged by meta-binder's 'libbinder'. meta-binder is part of the Layer V and
-# x86 builds but is intentionally NOT included in the Jenkins Layer M+A ARM build,
-# so there is no packaged binder provider there; the binder runtime is supplied by
-# Layer V on real devices. Skip the file-rdeps QA for those externally-provided
-# sonames on ARM so the M+A build succeeds without shipping binder. On x86 the
-# real 'libbinder' package is present, so its dependency is auto-resolved by the
-# shlibs mechanism and full QA is kept.
+
 INSANE_SKIP:${PN} += "file-rdeps"
 INSANE_SKIP:${PN}:remove:vdevice_x86-64-mw = "file-rdeps"
+
+RRECOMMENDS:${PN} += "libbinder"
 
 S = "${WORKDIR}/git"
 
@@ -165,4 +160,3 @@ FILES:${PN}:append:vdevice_x86-64-mw = " ${libdir}/libRCECHal.so"
 # Breakpad processname and logfile mapping
 #BREAKPAD_LOGMAPPER_PROCLIST = "CecDaemonMain"
 #BREAKPAD_LOGMAPPER_LOGLIST = "cec_log.txt"
-
