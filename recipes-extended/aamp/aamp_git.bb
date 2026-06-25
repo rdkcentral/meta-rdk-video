@@ -7,7 +7,7 @@ PV = "3.6.0"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "065180a4dfcd0262ee0c4d41616196b01c520016"
+SRCREV_aamp ?= "97f8fe52dcf6e1acd289763973176eaddbeb00cd"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "feature/EnableDrmlog"
