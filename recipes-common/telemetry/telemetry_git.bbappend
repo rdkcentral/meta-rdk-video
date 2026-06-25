@@ -27,26 +27,6 @@ do_install:append () {
 
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/telemetry2_0.service ${D}${systemd_unitdir}/system
-
-    # Modify telemetry2_0.service for mTLS boot ordering
-    # Per RDKEMW-15410 AC: telemetry2_0.service is hard-gated and MUST NOT start before mtls.target
-    if [ -f ${D}${systemd_unitdir}/system/telemetry2_0.service ]; then
-        # Add After=mtls.target to [Unit] section (no Wants= to prevent premature target activation)
-        sed -i '/^\[Unit\]/a After=mtls.target' \
-            ${D}${systemd_unitdir}/system/telemetry2_0.service
-
-        # Check if [Install] section exists
-        if grep -q "^\[Install\]" ${D}${systemd_unitdir}/system/telemetry2_0.service; then
-            # Replace existing WantedBy
-            sed -i 's/WantedBy=.*/WantedBy=mtls.target/g' \
-                ${D}${systemd_unitdir}/system/telemetry2_0.service
-        else
-            # Add new [Install] section
-            echo "" >> ${D}${systemd_unitdir}/system/telemetry2_0.service
-            echo "[Install]" >> ${D}${systemd_unitdir}/system/telemetry2_0.service
-            echo "WantedBy=mtls.target" >> ${D}${systemd_unitdir}/system/telemetry2_0.service
-        fi
-    fi
 }
 
 SYSTEMD_SERVICE:${PN} += "telemetry2_0.service"
