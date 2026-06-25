@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 PV = "1.4.0.1.pincontrol"
 PR = "r0"
 # Release version - 1.3.0.0
-SRCREV = "0d4b412f0b449acf26cd7698fb7b1e90018571c7"
+SRCREV = "700b2e9c37ae81f2201b3cd25b27b94d9e768ae0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
