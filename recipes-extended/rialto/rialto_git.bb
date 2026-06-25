@@ -16,8 +16,8 @@ require rialto_revision.inc
 PV = "${RIALTO_VERSION}"
 PR = "${RIALTO_PR}"
 
-SRCREV = "${RIALTO_SRCREV}"
-SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${RIALTO_BRANCH}"
+SRCREV = "ea59e78343151f06a4804cb3511e5dfeaa010a66"
+SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=feature/RDKEMW-19706"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
 DEPENDS = "openssl jsoncpp protobuf protobuf-native"
