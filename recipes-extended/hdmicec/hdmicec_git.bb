@@ -26,6 +26,9 @@ DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinder"
 ASNEEDED = ""
 ALLOW_EMPTY:${PN} = "1"
 
+INSANE_SKIP:${PN} += "file-rdeps"
+INSANE_SKIP:${PN}:remove:vdevice_x86-64-mw = "file-rdeps"
+
 S = "${WORKDIR}/git"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
