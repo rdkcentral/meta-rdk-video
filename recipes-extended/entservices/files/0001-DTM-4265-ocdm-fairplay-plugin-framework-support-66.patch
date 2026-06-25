@@ -1,16 +1,16 @@
-From 64991eca5573030c67d14e3e7928953e599faae5 Mon Sep 17 00:00:00 2001
+From e360ac510b5af696208617bfb4437cd8c784bb70 Mon Sep 17 00:00:00 2001
 From: Radenko Mihajlovic <Radenko_Mihajlovic@comcast.com>
 Date: Wed, 17 Jun 2026 11:31:40 +0000
 Subject: [PATCH] DTM-4265-ocdm-fairplay-plugin-framework-support-66
 
 ---
- plugin/FrameworkRPC.cpp | 315 +++++++++++++++++++++++++++++++++++++---
+ plugin/FrameworkRPC.cpp | 326 +++++++++++++++++++++++++++++++++++++---
  plugin/OCDM.conf.in     |  38 +++--
  plugin/OCDM.config      |  37 +++--
- 3 files changed, 342 insertions(+), 48 deletions(-)
+ 3 files changed, 353 insertions(+), 48 deletions(-)
 
 diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
-index c17bdea..78db9bb 100644
+index c17bdea..e5a40a7 100644
 --- a/plugin/FrameworkRPC.cpp
 +++ b/plugin/FrameworkRPC.cpp
 @@ -70,6 +70,39 @@ namespace Plugin {
@@ -407,7 +407,7 @@ index c17bdea..78db9bb 100644
              Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& bufferSize, uint8_t buffer[]) const override {
                  Exchange::OCDM_RESULT result = Exchange::OCDM_KEYSYSTEM_NOT_SUPPORTED;
  
-@@ -899,10 +1176,12 @@ namespace Plugin {
+@@ -899,10 +1176,23 @@ namespace Plugin {
                       {
                           if (sessionInterface != nullptr)
                           {
@@ -417,8 +417,19 @@ index c17bdea..78db9bb 100644
                                                   keySystem, sessionInterface,
 -                                                callback, &keyIds);
 +                                                callback, &keyIds);*/
-+                                 SessionImplementation *newEntry = Core::Service<SessionImplementation>::Create<SessionImplementation>(this,keySystem, sessionInterface,&keyIds);
++                                //  SessionImplementation *newEntry = Core::Service<SessionImplementation>::Create<SessionImplementation>(this,keySystem, sessionInterface,&keyIds);
++                                SessionImplementation* newEntry = nullptr;
 +
++                                if(strcmp(keySystem.c_str(),"com.apple.fps") == 0 )
++                                {
++                                   printf("********FPS FPS FPS Session Implementatio”******** \n");
++                                   newEntry = Core::Service<SessionImplementation>::Create<SessionImplementation>(this, keySystem, sessionInterface,&keyIds);
++                                }
++                                else
++                                {
++                                   printf("******** Non FPS Non FPS Non FPS Non FPS Session Implementatio******** \n");
++                                   Core::Service<SessionImplementation>::Create<SessionImplementation>(this, keySystem, sessionInterface, callback, &keyIds);
++                                }
  
                                   session = newEntry;
                                   sessionId = newEntry->SessionId();
