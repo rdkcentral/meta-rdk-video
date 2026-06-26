@@ -60,6 +60,7 @@ SRC_URI:remove = " \
     file://r4.4/0001-DELIA-64727-Prealloc-secure-memory-before-decrypt.patch \
     file://r4.4/0001-RDKEMW-7064-Dont-decrypt-fake-buffer-is-revoke-has-b.patch \
     file://r4.4/0001-RDKEMW-13372-Support-for-additional-clear-data-after.patch \
+    file://r4.4/0001-implement-api-to-get-supported-robustness.patch \
     file://r4.4/0001-check-_session-has-a-valid-pointer.patch \
     file://r4.4/0001-reconnect-if-connection-establishment-is-failed.patch \
     file://0001-error-handling-if-invalid-external-input.patch \
