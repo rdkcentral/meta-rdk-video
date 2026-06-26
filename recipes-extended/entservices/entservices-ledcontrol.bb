@@ -20,7 +20,7 @@ TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis  libbinder rdk-halif-aidl"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
@@ -31,6 +31,8 @@ CXXFLAGS += " -DRFC_ENABLED "
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
+CFLAGS:append = " -I${STAGING_INCDIR} -I${STAGING_INCDIR}/binder"
+CXXFLAGS:append = " -I${STAGING_INCDIR} -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/wpeframework/helpers"
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 
@@ -40,8 +42,7 @@ PACKAGECONFIG ?= " breakpadsupport \
    "
 
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[ledcontrol]           = "-DPLUGIN_LEDCONTROL=ON,,iarmbus iarmmgrs devicesettings entservices-apis entservices-helpers virtual/vendor-devicesettings-hal,iarmbus devicesettings entservices-apis entservices-helpers"
-
+PACKAGECONFIG[ledcontrol]           = "-DPLUGIN_LEDCONTROL=ON, entservices-apis entservices-helpers , entservices-apis entservices-helpers"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
