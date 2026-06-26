@@ -2,7 +2,7 @@ SUMMARY = "ENTServices maintenancemanager plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
-PV = "1.13.2"
+PV = "1.15.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-maintenancemanager;${CMF_GITHUB_SRC_UR
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.15.0
-SRCREV = "81f6cb3cd969a4f6aaf10e74e6c132725ed6b4a0"
+# Release version - 1.15.1
+SRCREV = "6541f9b0cbc7a43c0075a7bf48dcf21437172028"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
