@@ -5,10 +5,10 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PV = "1.0.11"
-PR = "r0"
+PR = "r1_Test"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV_hdmicec = "e36b4909b25dda88eef12091c03d8c54b5b5fd8b"
+SRCREV_hdmicec = "107fd78b4366be34263e53753ccec67165d99bda"
 SRCREV_hdmicec:vdevice_x86-64-mw = "82f231cd32434963f635aa2ffeabfedda6d0341f"
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
