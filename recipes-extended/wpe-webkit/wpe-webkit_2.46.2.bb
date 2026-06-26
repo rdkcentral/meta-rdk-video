@@ -6,7 +6,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
-WPE_RECIPE_REVISION = "2"
+WPE_RECIPE_REVISION = "3"
 
 PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
@@ -58,6 +58,10 @@ SRC_URI += "file://2.46/comcast-WebRTC-keep-render-time-interpolation.patch"
 SRC_URI += "file://2.46/comcast-DELIA-59087-Disable-pausing-playback-for-buf.patch"
 SRC_URI += "file://2.46/comcast-RDKTV-28214-Quick-_exit.patch"
 #SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
+# RDKEMW-18589: libmanette gamepad backend (patches must be applied in order)
+SRC_URI += "file://2.46/comcast-RDKEMW-18589-Toggle-ManetteGamepadProvider.patch"
+SRC_URI += "file://2.46/comcast-RDKEMW-18589-Implement-playEffect-via-libmanette-rumble.patch"
+SRC_URI += "file://2.46/comcast-RDKEMW-18589-Support-libmanette-1.0-API-with-0.2-fallback.patch"
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"
@@ -98,6 +102,7 @@ PACKAGECONFIG[wpeqtapi]              = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_A
 PACKAGECONFIG[cairo]                 = "-DUSE_CAIRO=ON -DUSE_SKIA=OFF,-DUSE_CAIRO=OFF,cairo"
 PACKAGECONFIG[externalholepunch]     = "-DUSE_EXTERNAL_HOLEPUNCH=ON,-DUSE_EXTERNAL_HOLEPUNCH=OFF,"
 PACKAGECONFIG[ftrace]                = "-DUSE_LINUX_FTRACE=ON,-DUSE_LINUX_FTRACE=OFF,"
+PACKAGECONFIG[manette-gamepad]       = "-DUSE_MANETTE_GAMEPAD_PROVIDER=ON,-DUSE_MANETTE_GAMEPAD_PROVIDER=OFF,libmanette,"
 
 # Config options are no longer available in 2.46
 PACKAGECONFIG[2dcanvas]     = ""
@@ -108,6 +113,7 @@ PACKAGECONFIG[westeros]     = ""
 PACKAGECONFIG:append = " webdriver remoteinspector releaselog accessibility speechsynthesis native_video webaudio woff2 externalholepunch"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'malloc_heap_breakdown', 'malloc_heap_breakdown', '', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-developer-mode', 'developermode tools', '', d)}"
+PACKAGECONFIG:append = " ${@'manette-gamepad' if (d.getVar('PREFERRED_VERSION_libmanette') or '').startswith('1.0') or (d.getVar('MANETTE_GAMEPAD_PROVIDER') or '') == '1' else ''}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('BROWSER_MEMORYPROFILE', 'fhd', 'fhd', '', d)}"
 
 PACKAGECONFIG:append:aarch64 = " webassembly"
