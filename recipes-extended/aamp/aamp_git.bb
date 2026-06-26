@@ -6,6 +6,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV = "3.6.0"
 PR = "r0"
 
+# Currently building with local middleware build
+DISTRO_FEATURES:remove = "build_external_player_interface"
+
 SRCREV_FORMAT = "aamp"
 SRCREV_aamp ?= "7d4228f66d6e27541c6528b25eb2379538baa43c"
 
