@@ -22,6 +22,7 @@ SRCREV_thunder = "a46b1083b3a7480ce3aed71f688a9c966b56d9c6"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
+            file://r4.4/001-jsonrpc-profiler-8-6.patch \
            "
 
 S = "${WORKDIR}/git"
@@ -180,9 +181,9 @@ SYSLOG-NG_LOGRATE_wpeframework = "high"
 LOGROTATE_NAME="wpeframework"
 LOGROTATE_LOGNAME_wpeframework="wpeframework.log"
 LOGROTATE_SIZE_wpeframework="1572864"
-LOGROTATE_ROTATION_wpeframework="3"
+LOGROTATE_ROTATION_wpeframework="6"
 LOGROTATE_SIZE_MEM_wpeframework="1572864"
-LOGROTATE_ROTATION_MEM_wpeframework="3"
+LOGROTATE_ROTATION_MEM_wpeframework="6"
 
 # Breakpad processname and logfile mapping
 BREAKPAD_LOGMAPPER_PROCLIST = "WPEFramework,WorkerPool::Thr,WPEProcess,WPEWebProcess,startWPE,WPENetworkProcess,WideVine.drm,PlayReady.drm,NetworkManager,Monitor::IResou"
