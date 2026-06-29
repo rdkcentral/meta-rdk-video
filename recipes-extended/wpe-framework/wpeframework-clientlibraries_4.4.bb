@@ -99,18 +99,7 @@ DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl',""
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl','', 'virtual/vendor-secapi3', d)}"
 CRYPTOGRAPHY_IMPLEMENTATION = "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl','OpenSSL', 'SecApi', d)}"
 
-
-def get_cdmi_adapter(d):
-    if bb.utils.contains("DISTRO_FEATURES", "rdk_svp", "true", "false", d) == "true":
-        return "opencdmi_rdk_svp"
-    else:
-        return "opencdm_gst"
-    fi
-
-WPE_CDMI_ADAPTER_IMPL = "${@get_cdmi_adapter(d)}"
-
 PACKAGECONFIG ?= " \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdm ${WPE_CDMI_ADAPTER_IMPL}', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'provisioning', 'provisionproxy', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'securityagent', d)} \
     cryptography \
@@ -124,11 +113,6 @@ PACKAGECONFIG[provisionproxy]   = "-DPROVISIONPROXY=ON,-DPROVISIONPROXY=OFF,libp
 PACKAGECONFIG[securityagent]    = "-DSECURITYAGENT=ON, -DSECURITYAGENT=OFF"
 PACKAGECONFIG[cryptography]     = "-DCRYPTOGRAPHY=ON, -DCRYPTOGRAPHY=OFF,"
 PACKAGECONFIG[powercontroller]     = "-DPOWERCONTROLLER=ON, -DPOWERCONTROLLER=OFF,"
-
-# OCDM
-PACKAGECONFIG[opencdm]          = "-DCDMI=ON,-DCDMI=OFF,"
-PACKAGECONFIG[opencdm_gst]      = '-DCDMI_ADAPTER_IMPLEMENTATION="gstreamer",,gstreamer1.0'
-PACKAGECONFIG[opencdmi_rdk_svp]= '-DCDMI_ADAPTER_IMPLEMENTATION="rdk",,'
 
 # ----------------------------------------------------------------------------
 
