@@ -61,7 +61,7 @@ INCLUDE_DIRS = " \
 
 
 do_compile:prepend:vdevice_x86-64-mw() {
-        OBJ_DIR="${B}/aidl_stubs"
+        OBJ_DIR="${B}/aidl_helpers"
         mkdir -p "${OBJ_DIR}"
         AIDL_CPP_DIR=$(find ${TMPDIR}/work \
                 -path "*/rdk-halif-aidl/*/build/current/cpp/com/rdk/hal" \
@@ -72,16 +72,16 @@ do_compile:prepend:vdevice_x86-64-mw() {
         if [ -z "${AIDL_CPP_DIR}" ]; then
                 bbfatal "Unable to locate generated AIDL C++ sources for rdk-halif-aidl under ${TMPDIR}/work"
         fi
-        STUB_DIR="${AIDL_CPP_DIR}/hdmicec"
+        HELPER_DIR="${AIDL_CPP_DIR}/hdmicec"
         HAL_DIR="${AIDL_CPP_DIR}"
         INCFLAGS="-I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
         for f in IHdmiCec IHdmiCecController IHdmiCecEventListener Property SendMessageStatus State; do
                 ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
-                        -c "${STUB_DIR}/${f}.cpp" -o "${OBJ_DIR}/${f}.o"
+                        -c "${HELPER_DIR}/${f}.cpp" -o "${OBJ_DIR}/${f}.o"
         done
         ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
                 -c "${HAL_DIR}/PropertyValue.cpp" -o "${OBJ_DIR}/PropertyValue.o"
-        ${AR} rcs "${B}/libhdmicec_aidl_stubs.a" \
+        ${AR} rcs "${B}/libhdmicec_aidl_helpers.a" \
                 "${OBJ_DIR}/IHdmiCec.o" \
                 "${OBJ_DIR}/IHdmiCecController.o" \
                 "${OBJ_DIR}/IHdmiCecEventListener.o" \
@@ -105,11 +105,11 @@ do_install:append() {
 
 do_configure:append:vdevice_x86-64-mw() {
     # Patch the generated Makefile to:
-    #  1. link the AIDL stubs archive into libRCEC.so so typeinfo symbols are defined
+        #  1. link the AIDL helpers archive into libRCEC.so so typeinfo symbols are defined
     #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
                 #     runtime from libbinder.so
     sed -i \
-                        "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = ${B}/libhdmicec_aidl_stubs.a \${top_builddir}/osal/src/libRCECOSHal.la|" \
+                                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = ${B}/libhdmicec_aidl_helpers.a \${top_builddir}/osal/src/libRCECOSHal.la|" \
       ${B}/ccec/src/Makefile
 
     sed -i \
