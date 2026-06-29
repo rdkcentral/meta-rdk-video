@@ -82,8 +82,10 @@ EXTRA_OECMAKE += "${@bb.utils.contains("BUILD_VARIANT", "debug", "-DPLUGIN_BUILD
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 
-PACKAGECONFIG[opencdm_gst]      = '-DCDMI_ADAPTER_IMPLEMENTATION="gstreamer",,gstreamer1.0'
-PACKAGECONFIG[opencdmi_rdk_svp] = '-DCDMI_ADAPTER_IMPLEMENTATION="rdk",,gst-svp-ext'
+# Override include/ocdm.inc to avoid pulling wpeframework-clientlibraries; libocdm.so is now built here.
+PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON -DPLUGIN_OPENCDMI_AUTOSTART=true -DPLUGIN_OPENCDMI_MODE=Local,,,"
+PACKAGECONFIG[opencdm_gst]          = '-DCDMI_ADAPTER_IMPLEMENTATION="gstreamer",,gstreamer1.0'
+PACKAGECONFIG[opencdmi_rdk_svp]     = '-DCDMI_ADAPTER_IMPLEMENTATION="rdk",,gst-svp-ext'
 
 # ----------------------------------------------------------------------------
 
