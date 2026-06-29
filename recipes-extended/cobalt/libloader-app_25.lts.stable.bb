@@ -42,8 +42,6 @@ DEPENDS += "virtual/libgles2 virtual/egl essos gstreamer1.0 gstreamer1.0-plugins
 DEPENDS += " wpeframework entservices-apis wpeframework-clientlibraries"
 DEPENDS += " ninja-native bison-native openssl-native gn-native ccache-native"
 DEPENDS += " python3-six-native python3-urllib3-native"
-# entservices-opencdmi provides opencdm/open_cdm.h and ocdm.pc (previously provided by wpeframework-clientlibraries)
-DEPENDS:append += " entservices-opencdmi "
 
 RDEPENDS:${PN} += "gstreamer1.0-plugins-base-app gstreamer1.0-plugins-base-playback"
 
@@ -69,7 +67,7 @@ PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_securi
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_asan', 'asan', '', d)}"
 PACKAGECONFIG:append = " wpecryptography rdkservices"
 
-PACKAGECONFIG[opencdm]       = "rdk_enable_ocdm=true,rdk_enable_ocdm=false,,"
+PACKAGECONFIG[opencdm]       = "rdk_enable_ocdm=true,rdk_enable_ocdm=false,entservices-opencdmi,"
 PACKAGECONFIG[securityagent] = "rdk_enable_securityagent=true,rdk_enable_securityagent=false,,"
 PACKAGECONFIG[qa]            = ",,nodejs-native,"
 PACKAGECONFIG[asan]          = "use_asan=true,,gcc-sanitizers"
