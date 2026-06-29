@@ -1,6 +1,6 @@
 SUMMARY = "ENTServices opencdmi plugins"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=c03d0e6d700b63b51bf8da6b61dac850"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=7a65e8e9836ac44d082594220a9a3883"
 
 PV = "2.0.2"
 PR = "r0"
