@@ -42,7 +42,7 @@ DEPENDS += "virtual/libgles2 virtual/egl essos gstreamer1.0 gstreamer1.0-plugins
 DEPENDS += " wpeframework entservices-apis wpeframework-clientlibraries"
 DEPENDS += " ninja-native bison-native openssl-native gn-native ccache-native"
 DEPENDS += " python3-six-native python3-urllib3-native"
-# entservices-opencdmi now provides opencdm/open_cdm.h and ocdm.pc (moved from wpeframework-clientlibraries)
+# entservices-opencdmi provides opencdm/open_cdm.h and ocdm.pc (previously provided by wpeframework-clientlibraries)
 DEPENDS:append += " entservices-opencdmi "
 
 RDEPENDS:${PN} += "gstreamer1.0-plugins-base-app gstreamer1.0-plugins-base-playback"
