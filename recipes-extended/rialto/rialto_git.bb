@@ -22,7 +22,7 @@ SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
 DEPENDS = "openssl jsoncpp protobuf protobuf-native"
 DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform "
-# entservices-opencdmi now provides opencdm/open_cdm.h and ocdm.pc (moved from wpeframework-clientlibraries)
+# entservices-opencdmi provides opencdm/open_cdm.h and ocdm.pc; wpeframework-clientlibraries is still used for other Thunder components (see PACKAGECONFIG[server]).
 DEPENDS:append += " entservices-opencdmi "
 
 S = "${WORKDIR}/git"
