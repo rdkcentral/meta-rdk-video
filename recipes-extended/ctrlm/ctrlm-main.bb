@@ -3,15 +3,20 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 SECTION = "base"
-DEPENDS = "sqlite3 curl rdkversion jansson glib-2.0 systemd iarmbus iarmmgrs util-linux devicesettings nopoll rfc libarchive safec-common-wrapper gperf-native xr-voice-sdk libsyswrapper xr-voice-sdk-headers"
+DEPENDS = "sqlite3 curl rdkversion jansson glib-2.0 systemd util-linux devicesettings nopoll rfc libarchive safec-common-wrapper gperf-native xr-voice-sdk libsyswrapper xr-voice-sdk-headers"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
-RDEPENDS:${PN}:append = " devicesettings iarmbus"
+RDEPENDS:${PN}:append = " devicesettings"
 
 PROVIDES = "ctrlm"
 RPROVIDES:${PN} = "ctrlm"
 
 BUILD_LIBRARY = "true"
+IARMBUS_ENABLED = "true"
+
+DEPENDS:append = "${@bb.utils.contains('IARMBUS_ENABLED', 'true', ' iarmbus iarmmgrs', '', d)}"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('IARMBUS_ENABLED', 'true', '', ' iarmbus', '', d)}"
+EXTRA_OECMAKE:append = "${@bb.utils.contains('IARMBUS_ENABLED', 'true', ' -DIARMBUS_ENABLED=ON', ' -DIARMBUS_ENABLED=OFF', d)}"
 
 inherit cmake pkgconfig ${@bb.utils.contains("DISTRO_FEATURES", "kirkstone", "python3native", "pythonnative", d)} syslog-ng-config-gen logrotate_config
 
