@@ -10,7 +10,7 @@ PR = "r0"
 DISTRO_FEATURES:remove = "build_external_player_interface"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "7d4228f66d6e27541c6528b25eb2379538baa43c"
+SRCREV_aamp ?= "e77f32a7bcb2bf0d14cde2e959e0d9277e480e12"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "feature/RDKEMW-17870_DEBUG"
