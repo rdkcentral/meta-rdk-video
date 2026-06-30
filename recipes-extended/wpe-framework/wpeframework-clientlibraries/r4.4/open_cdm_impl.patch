@@ -1,5 +1,5 @@
 diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
-index fb9ce2a..d3b86af 100644
+index fb9ce2a..7c41428 100644
 --- a/Source/ocdm/open_cdm_impl.h
 +++ b/Source/ocdm/open_cdm_impl.h
 @@ -31,6 +31,40 @@ using namespace WPEFramework;
@@ -75,7 +75,7 @@ index fb9ce2a..d3b86af 100644
                  TRACE_L1("Failed to open a channel to OCDM implementation");
                  if (_client.IsValid()) {
                    _client.Release();
-@@ -154,16 +195,116 @@ public:
+@@ -154,16 +195,130 @@ public:
  
      virtual Exchange::OCDM_RESULT Metadata(const string& keySystem, string& metadata) const override
      {
@@ -189,10 +189,24 @@ index fb9ce2a..d3b86af 100644
 +        }
 +    }
 +
++    virtual Exchange::OCDM_RESULT GetLibraryVersion(const std::string& keySystem, uint32_t version) const override
++    {
++        Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++        if (_remote == nullptr) {
++            Reconnect();
++        }
++        if (_remote == nullptr) {
++            return Exchange::OCDM_RESULT::OCDM_S_FALSE;
++        } else {
++            result = _remote->GetLibraryVersion(keySystem, version);
++            return result;
++        }
++    }
++
      virtual Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& length, uint8_t buffer[]) const override {
          Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
   
-@@ -182,11 +323,16 @@ public:
+@@ -182,11 +337,16 @@ public:
          Exchange::ISession::ICallback* callback, std::string& sessionId, 
          Exchange::ISession*& session) override
      {
@@ -209,7 +223,7 @@ index fb9ce2a..d3b86af 100644
          }
          return (result);
      }
-@@ -461,6 +607,85 @@ private:
+@@ -461,6 +621,85 @@ private:
          }
  
      public:
@@ -295,7 +309,7 @@ index fb9ce2a..d3b86af 100644
          uint32_t Decrypt(uint8_t* encryptedData, uint32_t encryptedDataLength,
              const ::SampleInfo* sampleInfo,
              uint32_t initWithLast15,
-@@ -575,22 +800,33 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+@@ -575,22 +814,33 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
          , _system(system)
          , _pvtData(nullptr)
      {
@@ -329,7 +343,7 @@ index fb9ce2a..d3b86af 100644
      }
  
      virtual ~OpenCDMSession();
-@@ -729,6 +965,57 @@ public:
+@@ -729,6 +979,57 @@ public:
          return (result);
      }
  
@@ -387,7 +401,7 @@ index fb9ce2a..d3b86af 100644
      void* SessionPrivateData() const
      {
          return _pvtData;
-@@ -823,16 +1110,20 @@ protected:
+@@ -823,16 +1124,20 @@ protected:
      }
      void DecryptSession(Exchange::ISession* session)
      {
@@ -409,7 +423,7 @@ index fb9ce2a..d3b86af 100644
                  _decryptSession = new DataExchange(bufferid); 
              }
              else if ( result == 1 ) {
-@@ -843,6 +1134,7 @@ protected:
+@@ -843,6 +1148,7 @@ protected:
              else {
                  ASSERT (_decryptSession == nullptr);
                  TRACE_L1("DecryptSession could not be created!");

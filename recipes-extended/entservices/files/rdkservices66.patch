@@ -1,5 +1,5 @@
 diff --git a/OpenCDMi/FrameworkRPC.cpp b/OpenCDMi/FrameworkRPC.cpp
-index bb4254b..5230aa1 100644
+index bb4254b..d3f89eb 100644
 --- a/OpenCDMi/FrameworkRPC.cpp
 +++ b/OpenCDMi/FrameworkRPC.cpp
 @@ -70,6 +70,39 @@ namespace Plugin {
@@ -321,7 +321,7 @@ index bb4254b..5230aa1 100644
                          _adminLock.Unlock();
                          TRACE(Trace::Information, ("Buffer already created Server::Session::CreateSessionBuffer(%s,%s,%s) => %p", _keySystem.c_str(), _sessionId.c_str(), BufferId().c_str(), this));
                          bufferID = _buffer->Name();
-@@ -791,18 +975,176 @@ namespace Plugin {
+@@ -791,18 +975,194 @@ namespace Plugin {
                  const std::string& keySystem,
                  std::string& metadata) const override
              {
@@ -335,11 +335,11 @@ index bb4254b..5230aa1 100644
                      metadata = system->GetMetadata();
                      result = Exchange::OCDM_SUCCESS;
 +		    //printf("********return success****** \n");fflush(stdout);
-                 }
- 
-                 return result;
-             }
- 
++                }
++
++                return result;
++            }
++
 +            Exchange::OCDM_RESULT InitLibrary(const std::string& keySystem) const override
 +            {
 +		//printf("*********entservices InitLibrary********** \n");fflush(stdout);
@@ -420,8 +420,8 @@ index bb4254b..5230aa1 100644
 +                    }
 +
 +                    return result;
-+                }
-+
+                 }
+ 
 +           Exchange::OCDM_RESULT DestroyMovieSession(const std::string& keySystem, uint32_t version, uint64_t movieId) const override
 +           {
 +                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
@@ -454,9 +454,9 @@ index bb4254b..5230aa1 100644
 +                        result = Exchange::OCDM_S_FALSE;
 +                    }
 +                }
-+                return result;
-+            }
-+
+                 return result;
+             }
+ 
 +           Exchange::OCDM_RESULT ProcessLicense(const std::string& keySystem, uint32_t version, uint8_t *session, const uint8_t *licenseData, uint32_t licenseDataSize, uint8_t *cryptoId) const override
 +           {
 +                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
@@ -495,10 +495,28 @@ index bb4254b..5230aa1 100644
 +                    return result;
 +            }
 +
++           Exchange::OCDM_RESULT GetLibraryVersion(const std::string& keySystem, uint32_t version) const override
++           {
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                    if (system != nullptr) {
++                        CDMi::CDMi_RESULT mediasystem_return = system->GetLibraryVersion(version);
++                        if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                        {
++                            result = Exchange::OCDM_SUCCESS;
++                        }
++                        else
++                        {
++                            result = Exchange::OCDM_S_FALSE;
++                        }
++                    }
++
++                    return result;
++            }
              Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& bufferSize, uint8_t buffer[]) const override {
                  Exchange::OCDM_RESULT result = Exchange::OCDM_KEYSYSTEM_NOT_SUPPORTED;
  
-@@ -838,6 +1180,9 @@ namespace Plugin {
+@@ -838,6 +1198,9 @@ namespace Plugin {
                  Exchange::ISession*& session) override
              {
                   CDMi::IMediaKeys *system = _parent.KeySystem(keySystem);
@@ -508,7 +526,7 @@ index bb4254b..5230aa1 100644
  
                   session = nullptr;
                   if (system != nullptr)
-@@ -847,26 +1192,36 @@ namespace Plugin {
+@@ -847,26 +1210,36 @@ namespace Plugin {
  
                       // OKe we got a buffer machanism to transfer the raw data, now create
                       // the session.
@@ -547,7 +565,7 @@ index bb4254b..5230aa1 100644
                                      CommonEncryptionData::Iterator index(keyIds.Keys());
                                      while (index.Next() == true) {
                                          const CommonEncryptionData::KeyId& entry(index.Current());
-@@ -881,6 +1236,7 @@ namespace Plugin {
+@@ -881,6 +1254,7 @@ namespace Plugin {
                   if (session == nullptr) {
                       TRACE(Trace::Error, (_T("Could not create a DRM session! [%d]"), __LINE__));
                   }
