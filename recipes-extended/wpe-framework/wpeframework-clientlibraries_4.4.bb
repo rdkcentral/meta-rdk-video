@@ -71,6 +71,7 @@ SRC_URI:remove = " \
     file://0007-OCDM-added-keysystem-parser-to-facilitate-overriding.patch \
     file://wpeframework-clientlibraries_dth.patch \
     file://wpeframework-clientlibraries_dual_pipeline.patch \
+    file://0001-SERXIONE-8400-Add-retry-logic-to-adapter-to-handle-H.patch \
 "
 # ------------------------------------- End of OCDM migration changes
 
