@@ -177,8 +177,10 @@ do_ctrlm_config() {
 }
 
 do_install:append() {
+    install -d ${D}${systemd_unitdir}/system
+    install -m 0644 ${WORKDIR}/ctrlm-server.service ${D}${systemd_unitdir}/system/
+
     if [ "${BUILD_LIBRARY}" != "true" ]; then
-       install -d ${D}${systemd_unitdir}/system
        install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
 
        if [ "${BLE_ENABLED}" = "true" ]; then
