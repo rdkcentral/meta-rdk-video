@@ -15,7 +15,7 @@ BUILD_LIBRARY = "true"
 IARMBUS_ENABLED = "true"
 
 DEPENDS:append = "${@bb.utils.contains('IARMBUS_ENABLED', 'true', ' iarmbus iarmmgrs', '', d)}"
-RDEPENDS:${PN}:append = "${@bb.utils.contains('IARMBUS_ENABLED', 'true', '', ' iarmbus', '', d)}"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('IARMBUS_ENABLED', 'true', ' iarmbus', '', d)}"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('IARMBUS_ENABLED', 'true', ' -DIARMBUS_ENABLED=ON', ' -DIARMBUS_ENABLED=OFF', d)}"
 
 inherit cmake pkgconfig ${@bb.utils.contains("DISTRO_FEATURES", "kirkstone", "python3native", "pythonnative", d)} syslog-ng-config-gen logrotate_config
