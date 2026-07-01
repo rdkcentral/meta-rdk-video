@@ -50,29 +50,6 @@ PACKAGECONFIG:remove = "opencdm opencdmi_rdk_svp opencdm_gst"
 # Backwards-compatible runtime dependency — entservices-opencdmi now provides libocdm.so
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'entservices-opencdmi', '', d)}"
 
-# Remove OCDM-only patches from meta-rdk-video base recipe
-SRC_URI:remove = " \
-    file://r4.4/0001-RDK-OCDM-adapter.patch \
-    file://r4.4/0003_MediaType_name_changed.patch \
-    file://r4.4/0001-OCDM-enhancement-for-ocdm-adapter.patch \
-    file://r4.4/0001-add-svp-header-to-data-before-decryption.patch \
-    file://r4.4/0001-Add-functionality-to-construct-Session-private-data.patch \
-    file://r4.4/0001-DELIA-64727-Prealloc-secure-memory-before-decrypt.patch \
-    file://r4.4/0001-RDKEMW-7064-Dont-decrypt-fake-buffer-is-revoke-has-b.patch \
-    file://r4.4/0001-RDKEMW-13372-Support-for-additional-clear-data-after.patch \
-    file://r4.4/0001-implement-api-to-get-supported-robustness.patch \
-    file://r4.4/0001-check-_session-has-a-valid-pointer.patch \
-    file://r4.4/0001-reconnect-if-connection-establishment-is-failed.patch \
-    file://0001-error-handling-if-invalid-external-input.patch \
-"
-
-# Remove OCDM-only patches from meta-rdk-comcast-video bbappend
-SRC_URI:remove = " \
-    file://0007-OCDM-added-keysystem-parser-to-facilitate-overriding.patch \
-    file://wpeframework-clientlibraries_dth.patch \
-    file://wpeframework-clientlibraries_dual_pipeline.patch \
-    file://0001-SERXIONE-8400-Add-retry-logic-to-adapter-to-handle-H.patch \
-"
 # ------------------------------------- End of OCDM migration changes
 
 
