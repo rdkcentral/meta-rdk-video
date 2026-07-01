@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicesettings;${CMF_GITHUB_SRC_URI_SU
           "
 
 # Release version - 1.0.0
-SRCREV = "2b5a80f3ea53895c815fa3e4920f6ef7adb03359"
+SRCREV = "2c43a72c20ba32f7ca15c8954aaef7f9e0d405b1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
