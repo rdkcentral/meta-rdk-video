@@ -49,34 +49,34 @@ do_install() {
    install -d ${D}/home/root
 
    if [ "${BUILD_CLIENT}" = "1" ]; then
-      install -m 0644 ${B}/JSRuntimeClient ${D}/home/root/JSRuntimeClient
+      install -m 0755 ${B}/JSRuntimeClient ${D}/home/root/JSRuntimeClient
    fi
 
-   install -m 0644 ${B}/JSRuntimeJSC ${D}/home/root/JSRuntimeJSC
-   install -m 0644 ${B}/JSRuntimeContainer ${D}/home/root/JSRuntimeContainer
-   install -m 0644 ${S}/utils/xhr.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/utils/punycode.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/utils/http.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/utils/https.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/utils/ws.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/utils/utils.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/utils/buffer.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/utils/process.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/src/jsc/modules/event.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/src/jsc/modules/wsenhanced.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/src/jsc/modules/linkedjsdom.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/src/jsc/modules/linkedjsdomwrapper.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/src/jsc/modules/node-fetch.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/src/jsc/modules/url.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
+   install -m 0755 ${B}/JSRuntimeJSC ${D}/home/root/JSRuntimeJSC
+   install -m 0755 ${B}/JSRuntimeContainer ${D}/home/root/JSRuntimeContainer
+   install -m 0755 ${S}/utils/xhr.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/utils/punycode.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/utils/http.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/utils/https.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/utils/ws.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/utils/utils.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/utils/buffer.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/utils/process.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/event.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/wsenhanced.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/linkedjsdom.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/linkedjsdomwrapper.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/node-fetch.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/url.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
    cp -R ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
-   install -m 0644 ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
-   install -m 0644 ${S}/src/jsc/modules/minified_linkedjsdom.js ${D}/home/root/modules/. 
+   install -m 0755 ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
+   install -m 0755 ${S}/src/jsc/modules/minified_linkedjsdom.js ${D}/home/root/modules/. 
 
    install -d ${D}/${libdir}
-   install -m 0644 ${B}/libJSRuntimeJSC.so ${D}/${libdir}
-   install -m 0644 ${B}/libJSRuntimeContainer.so ${D}/${libdir}
-   install -m 0644 ${B}/libjsclib.so ${D}/${libdir}
+   install -m 0755 ${B}/libJSRuntimeJSC.so ${D}/${libdir}
+   install -m 0755 ${B}/libJSRuntimeContainer.so ${D}/${libdir}
+   install -m 0755 ${B}/libjsclib.so ${D}/${libdir}
 
 
    install -d ${D}/${libdir}
@@ -84,7 +84,7 @@ do_install() {
    mkdir -p ${D}${includedir}/jsruntime
    mkdir -p ${D}${includedir}/jsruntime/modules
 
-   install -m 0644 ${S}/include/*.h ${D}${includedir}/jsruntime
+   install -m 0755 ${S}/include/*.h ${D}${includedir}/jsruntime
    cp -R  ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
    install -d ${D}${datadir}/rdknativescript
    echo "${PV}" > ${D}${datadir}/rdknativescript/version.txt
