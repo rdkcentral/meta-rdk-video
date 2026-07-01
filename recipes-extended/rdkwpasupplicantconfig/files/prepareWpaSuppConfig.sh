@@ -95,11 +95,15 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
         else
             sed -i "2acountry=$COUNTRY_CODE" $WPA_SUPP_CONF_FILE
         fi
+        if grep -q "wps_cred_processing=" "$WPA_SUPP_CONF_FILE"; then
+            sed -i "s/wps_cred_processing=.*/wps_cred_processing=1/" $WPA_SUPP_CONF_FILE
+        fi
     else
         log "$WPA_SUPP_CONF_FILE file exists, Updating missing configurations..."
         echo "ctrl_interface=/var/run/wpa_supplicant" > $WPA_SUPP_CONF_FILE
         echo "update_config=1" >> $WPA_SUPP_CONF_FILE
         echo "country=$COUNTRY_CODE" >> $WPA_SUPP_CONF_FILE
+	echo "wps_cred_processing=1" >> $WPA_SUPP_CONF_FILE
     fi
     # Enable 802.11w on wpa_supplicant
     if [[ `grep "pmf=" $WPA_SUPP_CONF_FILE` ]]; then
@@ -108,6 +112,13 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
         echo "pmf=$PMF_CONFIG" >> $WPA_SUPP_CONF_FILE
         echo "PMF is enabled and set to mode "optional"."
     fi
+    # Set wps_cred_processing to 1
+    if grep -q "wps_cred_processing=" "$WPA_SUPP_CONF_FILE"; then
+        sed -i 's/wps_cred_processing=.*/wps_cred_processing=1/' $WPA_SUPP_CONF_FILE
+    else
+        echo "wps_cred_processing=1" >> $WPA_SUPP_CONF_FILE
+    fi
+
     #Delete roaming_enable and kvr_enable in wpa_supplicant.conf as RDKE doesn't support
     sed -i '/roaming_enable/d' $WPA_SUPP_CONF_FILE
     sed -i '/kvr_enable/d' $WPA_SUPP_CONF_FILE
@@ -134,6 +145,7 @@ else
     echo "update_config=1" >> $WPA_SUPP_CONF_FILE
     echo "country=$COUNTRY_CODE" >> $WPA_SUPP_CONF_FILE
     echo "pmf=$PMF_CONFIG" >> $WPA_SUPP_CONF_FILE
+    echo "wps_cred_processing=1" >> $WPA_SUPP_CONF_FILE
 	echo "wowlan_triggers=any" >> $WPA_SUPP_CONF_FILE
 fi
 # Configuring wpa_supplicant log levels
