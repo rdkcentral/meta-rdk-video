@@ -12,13 +12,13 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r43"
-PV = "4.4.5"
+PR = "r45"
+PV = "4.4.6"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder"
 
-SRCREV_thunder = "1bfb85b75cb20409dbd69d34ea056171c9cdf565"
+SRCREV_thunder = "a46b1083b3a7480ce3aed71f688a9c966b56d9c6"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
@@ -35,7 +35,7 @@ WPEFRAMEWORK_SYSTEM_PREFIX = "OE"
 WPEFRAMEWORK_PORT = "9998"
 WPEFRAMEWORK_BINDING = "127.0.0.1"
 WPEFRAMEWORK_IDLE_TIME = "0"
-WPEFRAMEWORK_THREADPOOL_COUNT ?= "16"
+WPEFRAMEWORK_THREADPOOL_COUNT ?= "32"
 WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
 
 
@@ -75,6 +75,12 @@ PACKAGECONFIG[websocket]       = "-DWEBSOCKET=ON,,"
 
 PACKAGECONFIG[com] = "-DCOM=ON,,,"
 
+PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES', \
+    'debug-variant', ' configoverride', '', d)}"
+
+PACKAGECONFIG[configoverride] = \
+    "-DENABLE_CONFIG_OVERRIDE=ON,-DENABLE_CONFIG_OVERRIDE=OFF"
+
 # FIXME, determine this a little smarter
 # Provision event is required for libprovision and provision plugin
 # Location event is required for locationsync plugin
@@ -110,6 +116,8 @@ EXTRA_OECMAKE += " \
     -DMESSAGING=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
+    -DAUTHORIZEDEXTENSIONS='MessagingControl;PluginInitializerService;Systemd' \
+    -DDISABLEPLUGINAUTOACTIVATION=true \
 "
 
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
