@@ -67,7 +67,7 @@ do_install() {
    install -d ${D}/${libdir}
    install -d ${D}/${libdir}/javascriptcore
    rm -f ${B}/lib/libJavaScriptCore.so*.ltrans*
-   install -m 0644 ${B}/lib/libJavaScriptCore.so* ${D}/${libdir}/javascriptcore/.
+   install -m 0755 ${B}/lib/libJavaScriptCore.so* ${D}/${libdir}/javascriptcore/.
 
    install -d ${D}${includedir}
    mkdir -p ${D}${includedir}/JavaScriptCore
