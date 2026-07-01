@@ -49,7 +49,7 @@ do_install() {
    install -d ${D}/home/root
 
    if [ "${BUILD_CLIENT}" = "1" ]; then
-      install -m 0755 ${B}/JSRuntimeClient ${D}/home/root/JSRuntimeClient
+      install -m 0644 ${B}/JSRuntimeClient ${D}/home/root/JSRuntimeClient
    fi
 
    install -m 0755 ${B}/JSRuntimeJSC ${D}/home/root/JSRuntimeJSC
@@ -84,7 +84,7 @@ do_install() {
    mkdir -p ${D}${includedir}/jsruntime
    mkdir -p ${D}${includedir}/jsruntime/modules
 
-   install -m 0755 ${S}/include/*.h ${D}${includedir}/jsruntime
+   install -m 0644 ${S}/include/*.h ${D}${includedir}/jsruntime
    cp -R  ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
    install -d ${D}${datadir}/rdknativescript
    echo "${PV}" > ${D}${datadir}/rdknativescript/version.txt
