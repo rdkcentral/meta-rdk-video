@@ -90,8 +90,8 @@ PACKAGECONFIG[video]                 = "-DENABLE_VIDEO=ON,-DENABLE_VIDEO=OFF,gst
 PACKAGECONFIG[webassembly]           = "-DENABLE_WEBASSEMBLY=ON,-DENABLE_WEBASSEMBLY=OFF, "
 PACKAGECONFIG[webdriver]             = "-DENABLE_WEBDRIVER=ON,-DENABLE_WEBDRIVER=OFF,"
 PACKAGECONFIG[woff2]                 = "-DUSE_WOFF2=ON,-DUSE_WOFF2=OFF,woff2"
-PACKAGECONFIG[wpeframework_opencdm]  = "-DENABLE_THUNDER=ON,-DENABLE_THUNDER=OFF,wpeframework-clientlibraries virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins,"
-PACKAGECONFIG[rialto_opencdm]        = "-DENABLE_THUNDER=ON,-DENABLE_THUNDER=OFF,rialto-ocdm,rialto-ocdm"
+PACKAGECONFIG[wpeframework_opencdm]  = "-DENABLE_THUNDER=ON,,wpeframework-clientlibraries virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins,"
+PACKAGECONFIG[rialto_opencdm]        = "-DENABLE_THUNDER=ON,,rialto-ocdm,rialto-ocdm"
 PACKAGECONFIG[wpeplatform]           = "-DENABLE_WPE_PLATFORM=ON,-DENABLE_WPE_PLATFORM=OFF -DUSE_LIBDRM=OFF -DUSE_GBM=OFF,libdrm,"
 PACKAGECONFIG[wpeqtapi]              = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[cairo]                 = "-DUSE_CAIRO=ON -DUSE_SKIA=OFF,-DUSE_CAIRO=OFF,cairo"
@@ -111,6 +111,8 @@ PACKAGECONFIG:append = " ${@bb.utils.contains('BROWSER_MEMORYPROFILE', 'fhd', 'f
 
 PACKAGECONFIG:append:aarch64 = " webassembly"
 PACKAGECONFIG:append:toolchain-clang = " uselld"
+
+EXTRA_OECMAKE += "${@bb.utils.contains_any('PACKAGECONFIG', 'wpeframework_opencdm rialto_opencdm', '', '-DENABLE_THUNDER=OFF', d)}"
 
 EXTRA_OECMAKE += " \
   -DPYTHON_EXECUTABLE=${STAGING_BINDIR_NATIVE}/python3-native/python3 \
