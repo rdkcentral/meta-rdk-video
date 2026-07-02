@@ -39,6 +39,7 @@ LOGROTATE_SIZE_ctrlm_log="20971520"
 LOGROTATE_ROTATION_ctrlm_log="25"
 
 SRC_URI:append = " file://ctrlm-main.service"
+SRC_URI:append = " file://ctrlm-server.service"
 
 VERSION_TEST_TONES = "20220616"
 SRC_URI:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' ${RDK_ARTIFACTS_BASE_URL}/generic/components/yocto/ctrlm_factory/test_tones/test_tones_${VERSION_TEST_TONES}/2.1/test_tones_${VERSION_TEST_TONES}-2.1.tar.bz2;name=test_tones', '', d)}"
@@ -49,9 +50,10 @@ S = "${WORKDIR}/git"
 
 FILES:${PN} += "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', '${datadir}/tone_1khz.wav', '', d)}"
 FILES:${PN} += "${systemd_unitdir}/system/ctrlm-main.service "
+FILES:${PN} += "${systemd_unitdir}/system/ctrlm-server.service "
 
 SYSTEMD_PACKAGES += " ctrlm-main"
-SYSTEMD_SERVICE:ctrlm-main  = "ctrlm-main.service"
+SYSTEMD_SERVICE:ctrlm-main  = "ctrlm-main.service ctrlm-server.service"
 
 ENABLE_GPERFTOOLS_HEAPCHECK_WP_DISTRO = "1"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES_RDK', 'comcast-gperftools-heapcheck-wp', ' -DFDC_ENABLED=ON', '', d)}"
@@ -138,6 +140,9 @@ DEPENDS:append   = "${@ ' virtual-mic' if (d.getVar('SUPPORT_VOICE_DEST_ALSA',  
 BUILD_FACTORY_TEST ??= "true"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' -DBUILD_FACTORY_TEST=ON', ' -DBUILD_FACTORY_TEST=OFF', d)}"
 
+BUILD_CTRLM_SERVER ??= "true"
+EXTRA_OECMAKE:append = "${@bb.utils.contains('BUILD_CTRLM_SERVER', 'true', ' -DBUILD_CTRLM_SERVER=ON', ' -DBUILD_CTRLM_SERVER=OFF', d)}"
+
 export CTRLM_UTILS_JSON_TO_HEADER  = "${RECIPE_SYSROOT}/usr/include/vsdk_json_to_header.py"
 export CTRLM_UTILS_JSON_COMBINE    = "${RECIPE_SYSROOT}/usr/include/vsdk_json_combine.py"
 
@@ -161,6 +166,7 @@ do_ctrlm_config() {
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
+    install -m 0644 ${WORKDIR}/ctrlm-server.service ${D}${systemd_unitdir}/system/
 
     if [ "${BLE_ENABLED}" = "true" ]; then
        install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
