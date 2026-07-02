@@ -63,13 +63,13 @@ do_install() {
    install -m 0644 ${S}/utils/buffer.js ${D}/home/root/modules/.
    install -m 0644 ${S}/utils/process.js ${D}/home/root/modules/.
    install -m 0644 ${S}/utils/nativejsinspector.html ${D}/home/root/modules/nativevjsinspector.html
-   install -m 0644 ${S}/src/jsc/modules/event.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/event.js ${D}/home/root/modules/.
    install -m 0644 ${S}/src/jsc/modules/wsenhanced.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/src/jsc/modules/linkedjsdom.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/src/jsc/modules/linkedjsdomwrapper.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/src/jsc/modules/node-fetch.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/linkedjsdom.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/linkedjsdomwrapper.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/node-fetch.js ${D}/home/root/modules/.
    install -m 0644 ${S}/src/jsc/modules/url.js ${D}/home/root/modules/.
-   install -m 0644 ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
    cp -R ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
    install -m 0644 ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
    install -m 0644 ${S}/src/jsc/modules/minified_linkedjsdom.js ${D}/home/root/modules/. 
