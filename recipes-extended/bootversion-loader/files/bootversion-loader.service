@@ -1,7 +1,7 @@
 [Unit]
 Description=Boot version loader for RDK
 After=ecfs-init.service
-Before=NM_Bootstrap.service
+After=NM_Bootstrap.service
 Requires=ecfs-init.service
 Requires=NM_Bootstrap.service
 RequiresMountsFor=/opt/secure /opt /tmp
