@@ -17,7 +17,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-playerinfo;${CMF_GITHUB_SRC_URI_SUFFIX
           "
           
 # Release version - 1.0.3
-SRCREV = "95060f41ee4b3e71b6167f66464c7eb9332c6f39"
+SRCREV = "075f3df2f07d7653825e75cdb7d29261c327b615"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -66,7 +66,8 @@ EXTRA_OECMAKE += "${@bb.utils.contains("BUILD_VARIANT", "debug", "-DPLUGIN_BUILD
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[playerinfo]           = "-DPLUGIN_PLAYERINFO=ON -DUSE_DEVICESETTINGS=1,-DPLUGIN_PLAYERINFO=OFF,iarmbus iarmmgrs entservices-apis devicesettings virtual/vendor-devicesettings-hal gstreamer1.0,iarmbus entservices-apis devicesettings gstreamer1.0"
+PACKAGECONFIG[playerinfo]           = "-DPLUGIN_PLAYERINFO=ON -DUSE_DEVICESETTINGS=1,-DPLUGIN_PLAYERINFO=OFF,iarmbus iarmmgrs entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal gstreamer1.0,iarmbus entservices-apis entservices-helpers devicesettings gstreamer1.0"
+EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 
 # ----------------------------------------------------------------------------
 
