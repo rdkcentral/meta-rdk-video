@@ -1,35 +1,26 @@
-SUMMARY = "ENTServices systemservices plugin"
+SUMMARY = "ENTServices devicesettings plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.5.7"
+PV = "1.0.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-systemservices;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
 
-# Release version - 1.5.7
-SRCREV = "a4bd59df7915835656505cde833324071baf14a4"
+# Release version - 1.0.0
+SRCREV = "2c43a72c20ba32f7ca15c8954aaef7f9e0d405b1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-
-EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON" 
-EXTRA_OECMAKE += " -DBUILD_ENABLE_THERMAL_PROTECTION=ON "
-EXTRA_OECMAKE += "-DDISABLE_GEOGRAPHY_TIMEZONE=ON"
-EXTRA_OECMAKE += " -DENABLE_SYSTEM_GET_STORE_DEMO_LINK=ON "
-EXTRA_OECMAKE += " -DBUILD_ENABLE_DEVICE_MANUFACTURER_INFO=ON "
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
-
-DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
@@ -43,33 +34,20 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-# ----------------------------------------------------------------------------
-
 PACKAGECONFIG ?= " breakpadsupport \
-   telemetrysupport \
-   systemservices \
-   ${@bb.utils.contains('DISTRO_FEATURES', 'systimemgr', 'systimemgrsupport', '', d)} \
+    telemetrysupport \
+    devicesettings \
 "
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[systemservices]       = "-DPLUGIN_SYSTEMSERVICES=ON,-DPLUGIN_SYSTEMSERVICES=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal curl procps entservices-apis entservices-helpers,tzcode iarmbus rfc devicesettings curl procps entservices-apis entservices-helpers"
-PACKAGECONFIG[systimemgrsupport]    = "-DBUILD_ENABLE_SYSTIMEMGR_SUPPORT=ON,,systimemgrinetrface,"
-EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
-# ----------------------------------------------------------------------------
+PACKAGECONFIG[devicesettings]       = "-DPLUGIN_DEVICESETTINGS=ON,-DPLUGIN_DEVICESETTINGS=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus devicesettings entservices-helpers"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
 "
-
-# Check if DisplayInfo backend is defined.
-python () {
-    machine_name = d.getVar('MACHINE')
-    if 'raspberrypi4' in machine_name:
-        d.appendVar('EXTRA_OECMAKE', ' -DBUILD_RPI=ON')
-}
 
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
@@ -84,8 +62,6 @@ do_install:append() {
         fi
     fi
 }
-
-# ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
