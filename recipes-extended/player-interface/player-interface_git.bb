@@ -7,7 +7,7 @@ PV = "0.2.0"
 PR = "r0"
 
 
-SRCREV = "a8130c43bb28f54532741d8144be8d92c5bba65b"
+SRCREV = "4db99b2a1ef301639388d268fe356200bb9a760c"
 # Support to build from a different branch by overriding both and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "main"
 
