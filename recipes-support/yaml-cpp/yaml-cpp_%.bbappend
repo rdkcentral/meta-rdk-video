@@ -1,0 +1,5 @@
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
+RPROVIDES:${PN} += "yaml-cpp"
+
+ALLOW_EMPTY:${PN} = "1"
