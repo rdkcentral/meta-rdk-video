@@ -4,7 +4,7 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=76ae13a6bce633447ea2284294f073c2"
 
-SRCREV = "f8893bb79020ec74aa90e99cc6c2f668c9f023c8"
+SRCREV = "24908f62b8ec35830b59a0220ad575ac9c2ce6e5"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
 PV = "1.4.6"
@@ -101,7 +101,7 @@ EXTRA_OECONF:append = " --enable-powercontroller=yes"
 EXTRA_OECONF:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', '--enable-systemd-notify', '', d)}"
 EXTRA_OECONF:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'NEW_HTTP_SERVER_DISABLE', '--disable-new-http-server', '', d)}"
 
-PACKAGECONFIG ??= "thunder"
+PACKAGECONFIG ??= ""
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wifi','wifi', '',d)}"
 PACKAGECONFIG[wifi] = "--enable-wifi,,,"
 PACKAGECONFIG[xre] = "--enable-xre,,"
@@ -115,6 +115,7 @@ RDEPENDS:${PN}:append  = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth','
 
 PACKAGECONFIG[emmc] = "--enable-emmc,--disable-emmc"
 
+PACKAGECONFIG:append = "thunder"
 PACKAGECONFIG[thunder] = "--enable-thunder,,"
 
 INCLUDE_DIRS += "\
