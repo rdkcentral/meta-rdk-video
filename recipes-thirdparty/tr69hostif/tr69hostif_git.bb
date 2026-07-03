@@ -101,7 +101,7 @@ EXTRA_OECONF:append = " --enable-powercontroller=yes"
 EXTRA_OECONF:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', '--enable-systemd-notify', '', d)}"
 EXTRA_OECONF:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'NEW_HTTP_SERVER_DISABLE', '--disable-new-http-server', '', d)}"
 
-PACKAGECONFIG ??= ""
+PACKAGECONFIG ??= "thunder"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wifi','wifi', '',d)}"
 PACKAGECONFIG[wifi] = "--enable-wifi,,,"
 PACKAGECONFIG[xre] = "--enable-xre,,"
@@ -114,6 +114,8 @@ DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetoo
 RDEPENDS:${PN}:append  = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetooth-mgr', '',d)}"
 
 PACKAGECONFIG[emmc] = "--enable-emmc,--disable-emmc"
+
+PACKAGECONFIG[thunder] = "--enable-thunder,,"
 
 INCLUDE_DIRS += "\
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds \
