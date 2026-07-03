@@ -27,7 +27,7 @@ SYSLOG-NG_SERVICE_sceneset = "sceneset.service"
 SYSLOG-NG_DESTINATION_sceneset = "sceneset.log"
 SYSLOG-NG_LOGRATE_sceneset = "high"
 
-SRCREV = "9fbbd7f01c9548582108eb11bfbe86012aa75eb8"
+SRCREV = "eb9aa44f8d0efb7ca907a5179907089ba54ae61a"
 SRC_URI = "${CMF_GITHUB_ROOT}/sceneset;${CMF_GITHUB_SRC_URI_SUFFIX};name=sceneset"
 SRCREV_FORMAT = "sceneset"
 
