@@ -13,7 +13,7 @@ index 4b8d3d52a..e1a55c355 100644
  
              // If we have handlers open up the gates to analyze...
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index b6a9d4604..092d0c935 100644
+index b6a9d4604..ba655dd0a 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
 @@ -27,6 +27,8 @@
@@ -58,18 +58,20 @@ index b6a9d4604..092d0c935 100644
                  }
                  void Dispatch() override
                  {
-@@ -3868,7 +3873,10 @@ POP_WARNING()
+@@ -3868,7 +3873,12 @@ POP_WARNING()
                              }
  
                              if (message->IsSet()) {
++                                SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg HTTP %ld, %s invoke-start"), _outer->Id(), _outer->_jsonRpcMethod.c_str()));
 +                                Clock::time_point invokeStart = Clock::now(); // bvanav-dbg
                                  Core::ProxyType<Core::JSONRPC::Message> body = Job::Process(_token, message);
 +                                Clock::time_point invokeEnd = Clock::now();  // bvanav-dbg
++                                SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg HTTP %ld, %s invoke-end"), _outer->Id(), _outer->_jsonRpcMethod.c_str()));
 +                                _outer->setpluginLatency(static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(invokeEnd - invokeStart).count())); // bvanav-dbg
  
                                  // If we have no response body, it looks like an async-call...
                                  if (body.IsValid() == false) {
-@@ -3943,6 +3951,7 @@ POP_WARNING()
+@@ -3943,6 +3953,7 @@ POP_WARNING()
                  Core::ProxyType<Web::Request> _request;
                  string _token;
                  bool _jsonrpc;
@@ -77,7 +79,7 @@ index b6a9d4604..092d0c935 100644
  
                  static Core::ProxyType<Web::Response> _missingResponse;
              };
-@@ -3955,6 +3964,7 @@ POP_WARNING()
+@@ -3955,6 +3966,7 @@ POP_WARNING()
                      : Job()
                      , _element()
                      , _jsonrpc(false)
@@ -85,7 +87,7 @@ index b6a9d4604..092d0c935 100644
                  {
                  }
                  ~JSONElementJob() override
-@@ -3967,7 +3977,7 @@ POP_WARNING()
+@@ -3967,7 +3979,7 @@ POP_WARNING()
                  }
  
              public:
@@ -94,7 +96,7 @@ index b6a9d4604..092d0c935 100644
                  {
                      Job::Set(id, server, service);
  
-@@ -3976,6 +3986,7 @@ POP_WARNING()
+@@ -3976,6 +3988,7 @@ POP_WARNING()
                      _element = element;
                      _jsonrpc = JSONRPC;
                      _token = token;
@@ -102,20 +104,22 @@ index b6a9d4604..092d0c935 100644
                  }
                  void Dispatch() override
                  {
-@@ -3993,9 +4004,10 @@ POP_WARNING()
+@@ -3993,9 +4006,12 @@ POP_WARNING()
                          if (HasService() == true) {
                              message->ImplicitCallsign(GetService().Callsign());
                          }
 -
++                        SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg WS %ld, %s invoke-start"), _outer->Id(), _outer->_jsonRpcMethod.c_str()));
 +                        Clock::time_point invokeStart = Clock::now(); // bvanav-dbg
                          _element = Core::ProxyType<Core::JSON::IElement>(Job::Process(_token, message));
 -
 +                        Clock::time_point invokeEnd = Clock::now();  // bvanav-dbg
++                        SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg WS %ld, %s invoke-end"), _outer->Id(), _outer->_jsonRpcMethod.c_str()));
 +                        _outer->setpluginLatency(static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(invokeEnd - invokeStart).count())); // bvanav-dbg
  #if THUNDER_PERFORMANCE
                          tracking->Execution();
  #endif
-@@ -4028,6 +4040,7 @@ POP_WARNING()
+@@ -4028,6 +4044,7 @@ POP_WARNING()
                  Core::ProxyType<Core::JSON::IElement> _element;
                  string _token;
                  bool _jsonrpc;
@@ -123,7 +127,7 @@ index b6a9d4604..092d0c935 100644
              };
              class TextJob : public Job {
              public:
-@@ -4315,7 +4328,22 @@ POP_WARNING()
+@@ -4315,7 +4332,22 @@ POP_WARNING()
  
                          if (job.IsValid() == true) {
                              Core::ProxyType<Web::Request> baseRequest(request);
@@ -147,7 +151,7 @@ index b6a9d4604..092d0c935 100644
                              _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
                          }
                      }
-@@ -4392,7 +4420,22 @@ POP_WARNING()
+@@ -4392,7 +4424,22 @@ POP_WARNING()
                      ASSERT(job.IsValid() == true);
  
                      if ((_service.IsValid() == true) && (job.IsValid() == true)) {
@@ -171,7 +175,7 @@ index b6a9d4604..092d0c935 100644
                          _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
                      }
                  }
-@@ -4512,6 +4555,42 @@ POP_WARNING()
+@@ -4512,6 +4559,43 @@ POP_WARNING()
                  }
              }
  
@@ -187,6 +191,7 @@ index b6a9d4604..092d0c935 100644
 +            }
 +            inline void setpluginLatency(uint64_t ns)
 +            {
++                SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg setpluginLatency")));
 +                _pluginLatency = ns;
 +            }
 +            inline void setResponseTime()
@@ -214,11 +219,12 @@ index b6a9d4604..092d0c935 100644
          private:
              inline string SelectSupportedProtocol(const Web::ProtocolsArray& protocols)
              {
-@@ -4544,6 +4623,16 @@ POP_WARNING()
+@@ -4544,6 +4628,19 @@ POP_WARNING()
              bool _requestClose;
              std::atomic<bool> _serviceCleanedUp;
  
-+            // bvanav-dbg
++        // bvanav-dbg
++        public:
 +            Clock::time_point _requestTime;
 +            Clock::time_point _responseTime;
 +            string _jsonRpcMethod;
@@ -228,6 +234,8 @@ index b6a9d4604..092d0c935 100644
 +            uint32_t _queueSize;
 +            uint16_t _remotePort;
 +
++        // bvanav-dbg
++        private:
              // Factories for creating jobs that can be placed on the PluginHost Worker pool.
              static Core::ProxyPoolType<WebRequestJob> _webJobs;
              static Core::ProxyPoolType<JSONElementJob> _jsonJobs;

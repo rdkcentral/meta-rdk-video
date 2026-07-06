@@ -22,7 +22,7 @@ SRCREV_thunder = "a46b1083b3a7480ce3aed71f688a9c966b56d9c6"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
-            file://r4.4/002-jsonrpc-profiler-8-6.patch \
+            file://r4.4/003-jsonrpc-profiler-8-6.patch \
            "
 
 S = "${WORKDIR}/git"
