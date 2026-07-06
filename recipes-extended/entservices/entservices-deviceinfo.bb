@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceinfo;${CMF_GITHUB_SRC_URI_SUFFIX
           "
 
 # Release version - 1.1.3
-SRCREV = "6b8919a4c97d73d01ba363fc7f004cfcf6af2fcc"
+SRCREV = "1c0cada298ee5d55dce99ed37848a6df6d85dd16"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -24,6 +24,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 EXTRA_OECMAKE += " -DBUILD_ENABLE_DEVICE_MANUFACTURER_INFO=ON "
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
+EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 
 DEPENDS += "wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
