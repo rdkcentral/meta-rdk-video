@@ -1,0 +1,38 @@
+diff --git a/apis/GoogleCast/IGoogleCast.h b/apis/GoogleCast/IGoogleCast.h
+index 19206f4..2d4ddbd 100644
+--- a/apis/GoogleCast/IGoogleCast.h
++++ b/apis/GoogleCast/IGoogleCast.h
+@@ -113,7 +113,6 @@ namespace Exchange {
+             READY_TO_CAST  // Ready to cast. Cast is functional.
+         };
+ 
+-        // @json
+         // @brief Status of Cast shell.
+         struct EXTERNAL CastStatus {
+             // @brief Build number of the currently running Cast shell.
+diff --git a/apis/RDKWindowManager/IRDKWindowManager.h b/apis/RDKWindowManager/IRDKWindowManager.h
+index df5e123..94c52df 100755
+--- a/apis/RDKWindowManager/IRDKWindowManager.h
++++ b/apis/RDKWindowManager/IRDKWindowManager.h
+@@ -107,7 +107,7 @@ struct EXTERNAL IRDKWindowManager : virtual public Core::IUnknown {
+   // @param focus: Optional flag indicating whether the client needs focus
+   // @retval Core::ERROR_NONE: Display window created successfully
+   // @retval Core::ERROR_GENERAL: Failed to create the display window
+-  virtual Core::hresult CreateDisplay(const string &clientId, const string &displayName, const uint32_t displayWidth /* @optional */, const uint32_t displayHeight /* @optional */, const bool virtualDisplay /* @optional */, const uint32_t virtualWidth /* @optional */, const uint32_t virtualHeight /* @optional */, const uint32_t ownerId /* @optional */, const uint32_t groupId /* @optional */, const bool topmost /* @optional */, const bool focus /* @optional */) = 0;
++  virtual Core::hresult CreateDisplay(const string &clientId, const string &displayName, const uint32_t displayWidth /* @optional */, const uint32_t displayHeight /* @optional */, const bool virtualDisplay, const uint32_t virtualWidth /* @optional */, const uint32_t virtualHeight /* @optional */, const uint32_t ownerId /* @optional */, const uint32_t groupId /* @optional */, const bool topmost, const bool focus) = 0;
+ 
+   /** Get the list of active Apps */
+   // @text getApps
+diff --git a/apis/XCast/IXCast.h b/apis/XCast/IXCast.h
+index 8202e70..9958da6 100644
+--- a/apis/XCast/IXCast.h
++++ b/apis/XCast/IXCast.h
+@@ -69,7 +69,7 @@ namespace WPEFramework {
+ 			struct EXTERNAL INotification : virtual public Core::IUnknown {
+ 				enum { ID = ID_XCAST_NOTIFICATION };
+ 
+-				// @text onApplicationLaunchRequest
++				// @text onApplicationLaunchRequestWithLaunchParam
+ 				// @brief Triggered when the cast service receives a launch request from a client with launch params
+ 				// @param applicationName: Registered application name
+ 				// @param strPayLoad: Payload string to be passed to the application
