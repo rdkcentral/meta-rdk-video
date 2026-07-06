@@ -13,7 +13,7 @@ index 4b8d3d52a..e1a55c355 100644
  
              // If we have handlers open up the gates to analyze...
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index b6a9d4604..ba655dd0a 100644
+index b6a9d4604..a3ed0bf62 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
 @@ -27,6 +27,8 @@
@@ -67,7 +67,7 @@ index b6a9d4604..ba655dd0a 100644
                                  Core::ProxyType<Core::JSONRPC::Message> body = Job::Process(_token, message);
 +                                Clock::time_point invokeEnd = Clock::now();  // bvanav-dbg
 +                                SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg HTTP %ld, %s invoke-end"), _outer->Id(), _outer->_jsonRpcMethod.c_str()));
-+                                _outer->setpluginLatency(static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(invokeEnd - invokeStart).count())); // bvanav-dbg
++                                _outer->setpluginLatency(static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(invokeEnd - invokeStart).count()), invokeEnd); // bvanav-dbg
  
                                  // If we have no response body, it looks like an async-call...
                                  if (body.IsValid() == false) {
@@ -115,7 +115,7 @@ index b6a9d4604..ba655dd0a 100644
 -
 +                        Clock::time_point invokeEnd = Clock::now();  // bvanav-dbg
 +                        SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg WS %ld, %s invoke-end"), _outer->Id(), _outer->_jsonRpcMethod.c_str()));
-+                        _outer->setpluginLatency(static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(invokeEnd - invokeStart).count())); // bvanav-dbg
++                        _outer->setpluginLatency(static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(invokeEnd - invokeStart).count()), invokeEnd); // bvanav-dbg
  #if THUNDER_PERFORMANCE
                          tracking->Execution();
  #endif
@@ -175,7 +175,7 @@ index b6a9d4604..ba655dd0a 100644
                          _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
                      }
                  }
-@@ -4512,6 +4559,43 @@ POP_WARNING()
+@@ -4512,6 +4559,44 @@ POP_WARNING()
                  }
              }
  
@@ -189,21 +189,22 @@ index b6a9d4604..ba655dd0a 100644
 +                    SYSLOG(Logging::JsonRpcProfiler, (_T("Warn Port Number < 0")));
 +                _requestTime = Clock::now();
 +            }
-+            inline void setpluginLatency(uint64_t ns)
++            inline void setpluginLatency(uint64_t ns, Clock::time_point& invokeTime)
 +            {
 +                SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg setpluginLatency")));
 +                _pluginLatency = ns;
++                _invokeFinishTime = invokeTime;
 +            }
 +            inline void setResponseTime()
 +            {
-+                if(!_jsonRpcMethod.empty())
++                if(!_jsonRpcMethod.empty() && _responseTime >= _invokeFinishTime)
 +                {
 +		            _responseTime = Clock::now();
 +
 +                    _thunderLatency =  static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(_responseTime - _requestTime).count()) - _pluginLatency;
 +                    _totalLatency = _thunderLatency + _pluginLatency;
 +                    SYSLOG(Logging::JsonRpcProfiler, (_T("Response %ld, %ld, %s, %" PRIu64", %" PRIu64", %" PRIu64), Id(), _queueSize, _jsonRpcMethod.c_str(), _thunderLatency, _pluginLatency, _totalLatency));
-+		            
++                    
 +                    _jsonRpcMethod.clear();
 +                }
 +            }
@@ -219,7 +220,7 @@ index b6a9d4604..ba655dd0a 100644
          private:
              inline string SelectSupportedProtocol(const Web::ProtocolsArray& protocols)
              {
-@@ -4544,6 +4628,19 @@ POP_WARNING()
+@@ -4544,6 +4629,20 @@ POP_WARNING()
              bool _requestClose;
              std::atomic<bool> _serviceCleanedUp;
  
@@ -227,6 +228,7 @@ index b6a9d4604..ba655dd0a 100644
 +        public:
 +            Clock::time_point _requestTime;
 +            Clock::time_point _responseTime;
++            Clock::time_point _invokeFinishTime;
 +            string _jsonRpcMethod;
 +            uint64_t _pluginLatency;
 +            uint64_t _thunderLatency;
