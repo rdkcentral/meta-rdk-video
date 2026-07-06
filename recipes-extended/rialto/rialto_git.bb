@@ -20,13 +20,13 @@ SRCREV = "${RIALTO_SRCREV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${RIALTO_BRANCH}"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
-DEPENDS = "openssl jsoncpp protobuf protobuf-native"
+DEPENDS = "openssl jsoncpp protobuf protobuf-native telemetry"
 DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform "
 
 S = "${WORKDIR}/git"
 inherit pkgconfig cmake coverity features_check
 
-EXTRA_OECMAKE += " ${@bb.utils.contains("IMAGE_FEATURES", "prod", "-DRIALTO_BUILD_TYPE=Release", "-DRIALTO_BUILD_TYPE=Debug", d)} "
+EXTRA_OECMAKE += " ${@bb.utils.contains("IMAGE_FEATURES", "prod", "-DRIALTO_BUILD_TYPE=Release", "-DRIALTO_BUILD_TYPE=Debug", "-DCMAKE_TELEMETRY_2_0_REQUIRED=1", d)} "
 
 PACKAGES =+ "${PN}-client ${PN}-server ${PN}-servermanager-lib ${PN}-servermanager ${PN}-client-dev ${PN}-server-dev ${PN}-servermanager-lib-dev ${PN}-servermanager-dev "
 
@@ -39,7 +39,7 @@ PACKAGECONFIG[servermanager] = "-DENABLE_SERVER_MANAGER=ON,-DENABLE_SERVER_MANAG
 # requires the 'server' package config to be enabled as well.
 PACKAGECONFIG ??= "server servermanager"
 
-RDEPENDS:${PN} += "protobuf mongoose"
+RDEPENDS:${PN} += "protobuf mongoose telemetry"
 RDEPENDS:${PN}-server += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
 RDEPENDS:${PN}-servermanager += "${PN}-server"
 RDEPENDS:${PN}-servermanager-lib += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
