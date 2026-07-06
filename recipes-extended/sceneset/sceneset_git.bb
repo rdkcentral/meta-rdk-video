@@ -17,7 +17,7 @@ EXTRA_OECMAKE += "-DSCENESET_DEFAULT_APPNAME='${SCENESET_DEFAULT_APPNAME}' \
 
 DEPENDS += "wpeframework entservices-apis ralf-utils telemetry"
 
-#sceneset t2 telemetry support
+# Sceneset T2 telemetry support
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 EXTRA_OECMAKE += " -DSCENESET_TELEMETRY_METRICS_SUPPORT=ON"
