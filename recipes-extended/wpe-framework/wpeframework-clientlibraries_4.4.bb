@@ -67,7 +67,7 @@ CRYPTOGRAPHY_IMPLEMENTATION = "${@bb.utils.contains('DISTRO_FEATURES', 'enable_i
 
 
 def get_cdmi_adapter(d):
-    if bb.utils.contains("DISTRO_FEATURES", "rdk_svp", "true", "false", d) == "true":
+    if bb.utils.contains("DISTRO_FEATURES", "rdk_svp", "false", "false", d) == "true":
         return "opencdmi_rdk_svp"
     else:
         return "opencdm_gst"

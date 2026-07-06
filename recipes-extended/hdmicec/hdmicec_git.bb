@@ -21,7 +21,7 @@ RDEPENDS:${PN} = " devicesettings telemetry"
 RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
 
 DEPENDS += "safec-common-wrapper"
-DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinder"
+DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinder hdmicecheader-aidl"
 
 ASNEEDED = ""
 ALLOW_EMPTY:${PN} = "1"
@@ -65,7 +65,7 @@ do_compile:prepend:vdevice_x86-64-mw() {
         OBJ_DIR="${B}/aidl_helpers"
         mkdir -p "${OBJ_DIR}"
         AIDL_CPP_DIR=$(find ${TMPDIR}/work \
-                -path "*/rdk-halif-aidl/*/build/current/cpp/com/rdk/hal" \
+                -path "*/hdmicecheader-aidl/*/rdk-halif-aidl-build/current/cpp/com/rdk/hal" \
                 ! -path "*/package/*" \
                 ! -path "*/packages-split/*" \
                 ! -path "*/image/*" \
