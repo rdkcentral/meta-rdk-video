@@ -24,6 +24,7 @@ SRC_URI = "${BASE_URI}"
 # Drop after PR is accepted
 SRC_URI += "file://2.46/1629.patch"
 SRC_URI += "file://2.46.1/1678_MediaCaps_GC_protection.patch"
+SRC_URI += "file://2.46.1/1695_Benchmarks_fixes.patch"
 
 # Drop after westeros change is approved and released
 SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"

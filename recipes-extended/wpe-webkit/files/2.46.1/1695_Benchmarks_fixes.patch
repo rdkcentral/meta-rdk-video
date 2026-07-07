@@ -1,0 +1,435 @@
+From f8ace0261114ab95cd0d0bc63317a80c53aee18e Mon Sep 17 00:00:00 2001
+From: Justin Michaud <jmichaud@igalia.com>
+Date: Thu, 2 Jul 2026 15:36:39 -0600
+Subject: [PATCH] Fix: Regression in benchmarks JetStream, ARES, speedometer
+ #1691 Reviewed by aoikonomopoulos.
+
+This patch makes some simple fixes to improve 32-bit performance on 2.46.
+
+1) Disable concurrent JIT if we cannot write 64-bit values atomically.
+
+Most of the chips we run on have no problem doing 64-bit atomic writes,
+and in that case, we completely recover the perf lost from enabling
+concurrent JIT (and in fact gain perf).
+
+We detect LPAE, and if it is present, skip the store barriers that
+were previously needed to guarantee we didn't dereference a bad cell.
+
+2) Clear value profiles
+
+The 0 value is not the empty JSValue, poluting our profiles. We manually
+clear them, and our profiling works much better.
+
+3) Tune various options
+
+I tuned many thresholds based on what worked on my machine. This probably
+requires a second round of tuning on a smaller device.
+
+4) Turn off SIMD
+
+SIMD::find is a regression on 32-bit due to some fallback paths.
+
+Overall, on my Neoverse N1, I get that after this patch, 2.46 is 26% faster
+than 2.38 when excluding wasm subtests. There are still some regressed
+subtests worth investigating, with as much as an 11% regression.
+---
+ Source/JavaScriptCore/assembler/CPU.cpp       | 16 ++++++
+ Source/JavaScriptCore/assembler/CPU.h         |  9 +++
+ Source/JavaScriptCore/bytecode/CodeBlock.cpp  |  9 +++
+ Source/JavaScriptCore/jit/AssemblyHelpers.h   | 25 ++-------
+ .../llint/LowLevelInterpreter.asm             |  4 +-
+ .../llint/LowLevelInterpreter32_64.asm        | 56 ++++++++-----------
+ Source/JavaScriptCore/runtime/JSCJSValue.h    | 35 +++---------
+ Source/JavaScriptCore/runtime/Options.cpp     | 14 ++++-
+ Source/WTF/wtf/SIMDHelpers.h                  | 22 +++++---
+ 9 files changed, 99 insertions(+), 91 deletions(-)
+
+diff --git a/Source/JavaScriptCore/assembler/CPU.cpp b/Source/JavaScriptCore/assembler/CPU.cpp
+index 0e625f877a515..020d088805f0f 100644
+--- a/Source/JavaScriptCore/assembler/CPU.cpp
++++ b/Source/JavaScriptCore/assembler/CPU.cpp
+@@ -31,6 +31,14 @@
+ #include <sys/sysctl.h>
+ #endif
+ 
++#if CPU(ARM_THUMB2) && OS(LINUX) && __has_include(<sys/auxv.h>)
++#include <asm/hwcap.h>
++#include <sys/auxv.h>
++#ifndef HWCAP_LPAE
++#define HWCAP_LPAE (1 << 20)
++#endif
++#endif
++
+ #if ENABLE(ASSEMBLER)
+ #include "MacroAssembler.h"
+ #endif
+@@ -145,4 +153,12 @@ bool isX86_64_AVX()
+ }
+ #endif
+ 
++#if CPU(ARM_THUMB2) && OS(LINUX) && __has_include(<sys/auxv.h>)
++bool isARMv7_LPAE()
++{
++    static const bool result = getauxval(AT_HWCAP) & HWCAP_LPAE;
++    return result;
++}
++#endif
++
+ } // namespace JSC
+diff --git a/Source/JavaScriptCore/assembler/CPU.h b/Source/JavaScriptCore/assembler/CPU.h
+index cfb5a5f3eb4bf..3431dbd50f9ef 100644
+--- a/Source/JavaScriptCore/assembler/CPU.h
++++ b/Source/JavaScriptCore/assembler/CPU.h
+@@ -120,6 +120,15 @@ constexpr bool isX86_64_AVX()
+ }
+ #endif
+ 
++#if CPU(ARM_THUMB2) && OS(LINUX) && __has_include(<sys/auxv.h>)
++JS_EXPORT_PRIVATE bool isARMv7_LPAE();
++#else
++constexpr bool isARMv7_LPAE()
++{
++    return false;
++}
++#endif
++
+ constexpr bool isRISCV64()
+ {
+ #if CPU(RISCV64)
+diff --git a/Source/JavaScriptCore/bytecode/CodeBlock.cpp b/Source/JavaScriptCore/bytecode/CodeBlock.cpp
+index 2371380fae878..3dcd14be76a06 100644
+--- a/Source/JavaScriptCore/bytecode/CodeBlock.cpp
++++ b/Source/JavaScriptCore/bytecode/CodeBlock.cpp
+@@ -378,6 +378,15 @@ bool CodeBlock::finishCreation(VM& vm, ScriptExecutable* ownerExecutable, Unlink
+ 
+     ASSERT(vm.heap.isDeferred());
+ 
++    if constexpr (is32Bit()) {
++        // The metadata table is memset(0)-initialized, but on JSVALUE32_64 the empty JSValue is not 0.
++        if (m_metadata) {
++            forEachValueProfile([](auto& profile, bool) {
++                profile.clearBuckets();
++            });
++        }
++    }
++
+     auto throwScope = DECLARE_THROW_SCOPE(vm);
+ 
+     if (m_unlinkedCode->wasCompiledWithTypeProfilerOpcodes() || m_unlinkedCode->wasCompiledWithControlFlowProfilerOpcodes())
+diff --git a/Source/JavaScriptCore/jit/AssemblyHelpers.h b/Source/JavaScriptCore/jit/AssemblyHelpers.h
+index 6dc9303108256..e73083d69dbf0 100644
+--- a/Source/JavaScriptCore/jit/AssemblyHelpers.h
++++ b/Source/JavaScriptCore/jit/AssemblyHelpers.h
+@@ -86,25 +86,12 @@ class AssemblyHelpers : public MacroAssembler {
+     void storeAndFence32(Tag&& tag, Payload&& payload, Dst&& dst)
+     {
+         static_assert(!PayloadOffset && TagOffset == 4, "Assumes little-endian system");
+-
+-        auto const finish = [&](auto&& tagDst) {
+-            if (Options::useConcurrentJIT()) {
+-                store32(TrustedImm32(JSValue::InvalidTag), tagDst);
+-                storeFence();
+-                store32(payload, dst);
+-                storeFence();
+-                store32(tag, tagDst);
+-            } else {
+-                store32(payload, dst);
+-                store32(tag, tagDst);
+-            }
+-        };
+-
+-        if constexpr (std::is_pointer_v<std::remove_reference_t<Dst>>) {
+-            void* tagAddr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(dst) + TagOffset);
+-            finish(tagAddr);
+-        } else
+-            finish(dst.withOffset(TagOffset));
++        // CJIT is only enabled when LPAE is enabled (such as for armv8l). In this case,
++        // 64-bit aligned stores are atomic: https://developer.arm.com/documentation/ddi0406/c/Application-Level-Architecture/Application-Level-Memory-Model/Memory-types-and-attributes-and-the-memory-order-model/Atomicity-in-the-ARM-architecture
++        // > In an implementation that includes the Large Physical Address Extension
++        // ... The system designer must ensure that all writable memory locations that
++        // might be used to hold translations, such as bulk SDRAM, can be accessed with 64-bit single-copy atomicity.
++        storePair32(payload, tag, dst);
+     }
+ #endif
+ 
+diff --git a/Source/JavaScriptCore/llint/LowLevelInterpreter.asm b/Source/JavaScriptCore/llint/LowLevelInterpreter.asm
+index 94c5690c347c6..ef78b2bf8ae05 100644
+--- a/Source/JavaScriptCore/llint/LowLevelInterpreter.asm
++++ b/Source/JavaScriptCore/llint/LowLevelInterpreter.asm
+@@ -1622,8 +1622,8 @@ macro functionInitialization(profileArgSkip)
+         loadi ThisArgumentOffset + TagOffset - 8 + profileArgSkip * 8[cfr, t0], t1
+         loadi ThisArgumentOffset + PayloadOffset - 8 + profileArgSkip * 8[cfr, t0], t2
+         storeJSValueConcurrent(
+-            macro (val, offset)
+-                storei val, profileArgSkip * sizeof ArgumentValueProfile + ValueProfile::m_buckets + offset[t3]
++            macro (tagReg, payloadReg)
++                store2ia payloadReg, tagReg, profileArgSkip * sizeof ArgumentValueProfile + ValueProfile::m_buckets[t3]
+             end,
+             t1,
+             t2
+diff --git a/Source/JavaScriptCore/llint/LowLevelInterpreter32_64.asm b/Source/JavaScriptCore/llint/LowLevelInterpreter32_64.asm
+index b3fe8b0da4905..39c765f5d9a18 100644
+--- a/Source/JavaScriptCore/llint/LowLevelInterpreter32_64.asm
++++ b/Source/JavaScriptCore/llint/LowLevelInterpreter32_64.asm
+@@ -67,16 +67,8 @@ macro getOperandWide32Wasm(opcodeStruct, fieldName, dst)
+ end
+ 
+ macro storeJSValueConcurrent(store, tag, payload)
+-    if JIT
+-        store(InvalidTag, TagOffset)
+-        writefence
+-        store(payload, PayloadOffset)
+-        writefence
+-        store(tag, TagOffset)
+-    else
+-        store(payload, PayloadOffset)
+-        store(tag, TagOffset)
+-    end
++    # See storeAndFence32 comment
++    store(tag, payload)
+ end
+ 
+ macro makeReturn(get, dispatch, fn)
+@@ -696,8 +688,8 @@ macro valueProfile(size, opcodeStruct, profileName, tag, payload, scratch)
+     getu(size, opcodeStruct, profileName, scratch)
+     muli constexpr (-sizeof(ValueProfile)), scratch
+     storeJSValueConcurrent(
+-        macro(val, offset)
+-            storei val, constexpr (-sizeof(UnlinkedMetadataTable::LinkingData)) + ValueProfile::m_buckets + offset[metadataTable, scratch, 1]
++        macro(tagReg, payloadReg)
++            store2ia payloadReg, tagReg, constexpr (-sizeof(UnlinkedMetadataTable::LinkingData)) + ValueProfile::m_buckets[metadataTable, scratch, 1]
+         end,
+         tag,
+         payload
+@@ -1480,8 +1472,8 @@ macro storePropertyAtVariableOffset(propertyOffsetAsInt, objectAndStorage, tag,
+     addp sizeof JSObject - (firstOutOfLineOffset - 2) * 8, objectAndStorage
+ .ready:
+     storeJSValueConcurrent(
+-        macro(val, offset)
+-            storei val, (firstOutOfLineOffset - 2) * 8 + offset[objectAndStorage, propertyOffsetAsInt, 8]
++        macro(tagReg, payloadReg)
++            store2ia payloadReg, tagReg, (firstOutOfLineOffset - 2) * 8[objectAndStorage, propertyOffsetAsInt, 8]
+         end,
+         tag,
+         payload
+@@ -1966,8 +1958,8 @@ macro putByValOp(opcodeName, opcodeStruct, osrExitPoint)
+                 const payload = operand
+                 loadConstantOrVariable2Reg(size, operand, tag, payload)
+                 storeJSValueConcurrent(
+-                    macro (val, offset)
+-                        storei val, offset[base, index, 8]
++                    macro (tagReg, payloadReg)
++                        store2ia payloadReg, tagReg, [base, index, 8]
+                     end,
+                     tag,
+                     payload
+@@ -1982,8 +1974,8 @@ macro putByValOp(opcodeName, opcodeStruct, osrExitPoint)
+         get(m_value, t2)
+         loadConstantOrVariable2Reg(size, t2, t1, t2)
+         storeJSValueConcurrent(
+-            macro (val, offset)
+-                storei val, ArrayStorage::m_vector + offset[t0, t3, 8]
++            macro (tagReg, payloadReg)
++                store2ia payloadReg, tagReg, ArrayStorage::m_vector[t0, t3, 8]
+             end,
+             t1,
+             t2
+@@ -2872,8 +2864,8 @@ llintOpWithMetadata(op_put_to_scope, OpPutToScope, macro (size, get, dispatch, m
+     .noVariableWatchpointSet:
+         loadp OpPutToScope::Metadata::m_operand[t5], t0
+         storeJSValueConcurrent(
+-            macro (val, offset)
+-                storei val, offset[t0]
++            macro (tagReg, payloadReg)
++                store2ia payloadReg, tagReg, [t0]
+             end,
+             t1,
+             t2
+@@ -2885,8 +2877,8 @@ llintOpWithMetadata(op_put_to_scope, OpPutToScope, macro (size, get, dispatch, m
+         loadConstantOrVariable(size, t1, t2, t3)
+         loadp OpPutToScope::Metadata::m_operand[t5], t1
+         storeJSValueConcurrent(
+-            macro (val, offset)
+-                storei val, JSLexicalEnvironment_variables + offset[t0, t1, 8]
++            macro (tagReg, payloadReg)
++                store2ia payloadReg, tagReg, JSLexicalEnvironment_variables[t0, t1, 8]
+             end,
+             t2,
+             t3
+@@ -2902,8 +2894,8 @@ llintOpWithMetadata(op_put_to_scope, OpPutToScope, macro (size, get, dispatch, m
+     .noVariableWatchpointSet:
+         loadp OpPutToScope::Metadata::m_operand[t5], t1
+         storeJSValueConcurrent(
+-            macro (val, offset)
+-                storei val, JSLexicalEnvironment_variables + offset[t0, t1, 8]
++            macro (tagReg, payloadReg)
++                store2ia payloadReg, tagReg, JSLexicalEnvironment_variables[t0, t1, 8]
+             end,
+             t2,
+             t3
+@@ -3022,8 +3014,8 @@ llintOp(op_put_to_arguments, OpPutToArguments, macro (size, get, dispatch)
+     loadConstantOrVariable(size, t1, t2, t3)
+     getu(size, OpPutToArguments, m_index, t1)
+     storeJSValueConcurrent(
+-        macro (val, offset)
+-            storei val, DirectArguments_storage + offset[t0, t1, 8]
++        macro (tagReg, payloadReg)
++            store2ia payloadReg, tagReg, DirectArguments_storage[t0, t1, 8]
+         end,
+         t2,
+         t3
+@@ -3058,8 +3050,8 @@ llintOpWithMetadata(op_profile_type, OpProfileType, macro (size, get, dispatch,
+ 
+     # Store the JSValue onto the log entry.
+     storeJSValueConcurrent(
+-        macro (val, offset)
+-            storei val, TypeProfilerLog::LogEntry::value + offset[t2]
++        macro (tagReg, payloadReg)
++            store2ia payloadReg, tagReg, TypeProfilerLog::LogEntry::value[t2]
+         end,
+         t5,
+         t0
+@@ -3280,8 +3272,8 @@ llintOp(op_put_internal_field, OpPutInternalField, macro (size, get, dispatch)
+     loadConstantOrVariable(size, t1, t2, t3)
+     getu(size, OpPutInternalField, m_index, t1)
+     storeJSValueConcurrent(
+-        macro (val, offset)
+-            storei val, JSInternalFieldObjectImpl_internalFields + offset[t0, t1, SlotSize]
++        macro (tagReg, payloadReg)
++            store2ia payloadReg, tagReg, JSInternalFieldObjectImpl_internalFields[t0, t1, SlotSize]
+         end,
+         t2,
+         t3
+@@ -3314,8 +3306,8 @@ llintOp(op_log_shadow_chicken_tail, OpLogShadowChickenTail, macro (size, get, di
+     storep ShadowChickenTailMarker, ShadowChicken::Packet::callee[t0]
+     loadVariable(get, m_thisValue, t3, t2, t1)
+     storeJSValueConcurrent(
+-        macro (val, offset)
+-            storei val, ShadowChicken::Packet::thisValue + offset[t0]
++        macro (tagReg, payloadReg)
++            store2ia payloadReg, tagReg, ShadowChicken::Packet::thisValue[t0]
+         end,
+         t2,
+         t1
+diff --git a/Source/JavaScriptCore/runtime/JSCJSValue.h b/Source/JavaScriptCore/runtime/JSCJSValue.h
+index d630a61354602..1253b46014b06 100644
+--- a/Source/JavaScriptCore/runtime/JSCJSValue.h
++++ b/Source/JavaScriptCore/runtime/JSCJSValue.h
+@@ -799,41 +799,24 @@ ALWAYS_INLINE void clearEncodedJSValueConcurrent(EncodedJSValue& dest)
+ 
+ #elif USE(JSVALUE32_64)
+ 
+-inline JSValue JSValue::decodeConcurrent(const volatile EncodedJSValue *encodedJSValue)
++inline JSValue JSValue::decodeConcurrent(const volatile EncodedJSValue* encodedJSValue)
+ {
+-    for (;;) {
+-        auto v = JSValue::decode(reinterpret_cast<const volatile std::atomic<EncodedJSValue>*>(encodedJSValue)->load());
+-        if (v.tag() != InvalidTag)
+-            return v;
+-    }
++    // A volatile 64-bit access compiles to a single LDRD, which is single-copy atomic on ARM
++    // with LPAE
++    ASSERT(is8ByteAligned(const_cast<EncodedJSValue*>(encodedJSValue)));
++    return JSValue::decode(*encodedJSValue);
+ }
+ 
+ inline void updateEncodedJSValueConcurrent(EncodedJSValue& dest, EncodedJSValue value)
+ {
+-    auto destDesc = const_cast<volatile EncodedValueDescriptor*>(reinterpret_cast<EncodedValueDescriptor*>(&dest));
+-
+-    EncodedValueDescriptor desc;
+-    memcpy(&desc, &value, sizeof(value));
+-
+-    auto destTag = const_cast<volatile int32_t*>(&destDesc->asBits.tag);
+-    auto destPayload = const_cast<volatile int32_t*>(&destDesc->asBits.payload);
+-
+-    *destTag = JSValue::InvalidTag;
+-    WTF::storeStoreFence();
+-    *destPayload = desc.asBits.payload;
+-    WTF::storeStoreFence();
+-    *destTag = desc.asBits.tag;
++    ASSERT(is8ByteAligned(&dest));
++    *const_cast<volatile EncodedJSValue*>(&dest) = value;
+ }
+ 
+ inline void clearEncodedJSValueConcurrent(EncodedJSValue& dest)
+ {
+-    auto destDesc = const_cast<volatile EncodedValueDescriptor*>(reinterpret_cast<EncodedValueDescriptor*>(&dest));
+-    auto destTag = const_cast<volatile int32_t*>(&destDesc->asBits.tag);
+-    auto destPayload = const_cast<volatile int32_t*>(&destDesc->asBits.payload);
+-
+-    *destTag = JSValue::EmptyValueTag;
+-    WTF::storeStoreFence();
+-    *destPayload = 0;
++    ASSERT(is8ByteAligned(&dest));
++    *const_cast<volatile EncodedJSValue*>(&dest) = JSValue::encode(JSValue());
+ }
+ 
+ #else
+diff --git a/Source/JavaScriptCore/runtime/Options.cpp b/Source/JavaScriptCore/runtime/Options.cpp
+index 51ccc94ae0996..c8126be73cac2 100644
+--- a/Source/JavaScriptCore/runtime/Options.cpp
++++ b/Source/JavaScriptCore/runtime/Options.cpp
+@@ -595,9 +595,12 @@ static void overrideDefaults()
+ #endif
+ 
+ #if OS(LINUX) && CPU(ARM)
+-    Options::maximumFunctionForCallInlineCandidateBytecodeCostForDFG() = 77;
+-    Options::maximumOptimizationCandidateBytecodeCost() = 42403;
+-    Options::maximumFunctionForClosureCallInlineCandidateBytecodeCostForDFG() = 68;
++    Options::thresholdForOptimizeAfterWarmUp() = 250;
++    Options::thresholdForOptimizeAfterLongWarmUp() = 250;
++    Options::thresholdForOptimizeSoon() = 250;
++    Options::maximumFunctionForCallInlineCandidateBytecodeCostForDFG() = 120;
++    Options::maximumOptimizationCandidateBytecodeCost() = 80000;
++    Options::maximumFunctionForClosureCallInlineCandidateBytecodeCostForDFG() = 120;
+     Options::maximumInliningCallerBytecodeCost() = 9912;
+     Options::maximumInliningDepth() = 8;
+     Options::maximumInliningRecursion() = 3;
+@@ -915,6 +918,11 @@ void Options::notifyOptionsChanged()
+     if (Options::useProfiler())
+         Options::useConcurrentJIT() = false;
+ 
++#if USE(JSVALUE32_64)
++    if (!isARMv7_LPAE())
++        Options::useConcurrentJIT() = false;
++#endif
++
+     if (Options::alwaysUseShadowChicken())
+         Options::maximumInliningDepth() = 1;
+         
+diff --git a/Source/WTF/wtf/SIMDHelpers.h b/Source/WTF/wtf/SIMDHelpers.h
+index 1344580fd21a7..5ef2f42e7e05a 100644
+--- a/Source/WTF/wtf/SIMDHelpers.h
++++ b/Source/WTF/wtf/SIMDHelpers.h
+@@ -594,16 +594,20 @@ ALWAYS_INLINE const CharacterType* find(std::span<const CharacterType> span, con
+     static_assert(threshold >= stride);
+     const auto* cursor = span.data();
+     const auto* end = span.data() + span.size();
+-    if (span.size() >= threshold) {
+-        for (; cursor + stride <= end; cursor += stride) {
+-            if (auto index = vectorMatch(SIMD::load(std::bit_cast<const UnsignedType*>(cursor))))
+-                return cursor + index.value();
+-        }
+-        if (cursor < end) {
+-            if (auto index = vectorMatch(SIMD::load(std::bit_cast<const UnsignedType*>(end - stride))))
+-                return end - stride + index.value();
++
++    constexpr bool is32Bit = sizeof(void*) == 4;
++    if constexpr (!is32Bit) {
++        if (span.size() >= threshold) {
++            for (; cursor + stride <= end; cursor += stride) {
++                if (auto index = vectorMatch(SIMD::load(std::bit_cast<const UnsignedType*>(cursor))))
++                    return cursor + index.value();
++            }
++            if (cursor < end) {
++                if (auto index = vectorMatch(SIMD::load(std::bit_cast<const UnsignedType*>(end - stride))))
++                    return end - stride + index.value();
++            }
++            return end;
+         }
+-        return end;
+     }
+ 
+     for (; cursor != end; ++cursor) {
+
