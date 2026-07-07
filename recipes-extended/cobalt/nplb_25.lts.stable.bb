@@ -25,7 +25,6 @@ SRC_URI[clang.sha256sum] = "1ac590c011158940037ce9442d4bf12943dc14a7ddaab6094e75
 CR = "40"
 PR = "r${CR}"
 SRCREV_cobalt = "25.lts.${CR}"
-PV .= "+git${SRCPV}"
 do_fetch[vardeps] += " SRCREV_FORMAT SRCREV_cobalt"
 
 DEPENDS  = "ninja-native bison-native openssl-native gn-native ccache-native nodejs-native"
