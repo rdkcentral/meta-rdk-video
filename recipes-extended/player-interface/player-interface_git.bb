@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV = "0.2.0"
 PR = "r0"
 
-SRCREV = "5144dda2f152bbea21da8fa15370e7cd2550c645"
+SRCREV = "397057aa2ac7287c6c7f40af5d10895f7abc172e"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "main"
 
@@ -41,6 +41,7 @@ EXTRA_OECMAKE += " -DCMAKE_WPEFRAMEWORK_REQUIRED=1"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'sec_manager', ' -DCMAKE_USE_SECMANAGER=1 ', '', d)}"
 
 # Flag for Migrate libds to thunder API
+EXTRA_OECMAKE += " -DCMAKE_DS_EVENT_SUPPORTED=1 "
 EXTRA_OECMAKE += " -DCMAKE_DS_THUNDER_PLUGIN=ON"
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', ' -DCMAKE_RDK_SVP=1 ', '', d)}"
