@@ -7,7 +7,7 @@ PV = "3.6.0"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "79b2a2ef0c9274960aca828928d4cd0214ff068d"
+SRCREV_aamp ?= "60b945bdb60a1708c7138a198b7146dfc281f3eb"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "feature/RDKEMW-17870_DEBUG"
