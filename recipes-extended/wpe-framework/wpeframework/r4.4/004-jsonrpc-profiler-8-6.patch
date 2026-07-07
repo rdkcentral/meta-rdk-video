@@ -13,7 +13,7 @@ index 4b8d3d52a..e1a55c355 100644
  
              // If we have handlers open up the gates to analyze...
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index b6a9d4604..a3ed0bf62 100644
+index b6a9d4604..eacc4bdaa 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
 @@ -27,6 +27,8 @@
@@ -197,10 +197,10 @@ index b6a9d4604..a3ed0bf62 100644
 +            }
 +            inline void setResponseTime()
 +            {
++                _responseTime = Clock::now();
++                
 +                if(!_jsonRpcMethod.empty() && _responseTime >= _invokeFinishTime)
 +                {
-+		            _responseTime = Clock::now();
-+
 +                    _thunderLatency =  static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(_responseTime - _requestTime).count()) - _pluginLatency;
 +                    _totalLatency = _thunderLatency + _pluginLatency;
 +                    SYSLOG(Logging::JsonRpcProfiler, (_T("Response %ld, %ld, %s, %" PRIu64", %" PRIu64", %" PRIu64), Id(), _queueSize, _jsonRpcMethod.c_str(), _thunderLatency, _pluginLatency, _totalLatency));
