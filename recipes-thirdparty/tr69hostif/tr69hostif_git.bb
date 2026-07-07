@@ -115,7 +115,7 @@ RDEPENDS:${PN}:append  = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth','
 
 PACKAGECONFIG[emmc] = "--enable-emmc,--disable-emmc"
 
-PACKAGECONFIG:append = "thunder"
+PACKAGECONFIG:append = " thunder"
 PACKAGECONFIG[thunder] = "--enable-thunder,,"
 
 INCLUDE_DIRS += "\
