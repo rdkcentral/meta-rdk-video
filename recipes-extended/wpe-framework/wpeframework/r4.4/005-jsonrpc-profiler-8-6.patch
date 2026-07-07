@@ -13,7 +13,7 @@ index 4b8d3d52a..e1a55c355 100644
  
              // If we have handlers open up the gates to analyze...
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index b6a9d4604..eacc4bdaa 100644
+index b6a9d4604..8353fee9b 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
 @@ -27,6 +27,8 @@
@@ -175,7 +175,7 @@ index b6a9d4604..eacc4bdaa 100644
                          _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
                      }
                  }
-@@ -4512,6 +4559,44 @@ POP_WARNING()
+@@ -4512,6 +4559,45 @@ POP_WARNING()
                  }
              }
  
@@ -191,7 +191,7 @@ index b6a9d4604..eacc4bdaa 100644
 +            }
 +            inline void setpluginLatency(uint64_t ns, Clock::time_point& invokeTime)
 +            {
-+                SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg setpluginLatency")));
++                SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg setpluginLatency Id: %ld, method: %s"), Id(), _jsonRpcMethod.c_str()));
 +                _pluginLatency = ns;
 +                _invokeFinishTime = invokeTime;
 +            }
@@ -199,11 +199,12 @@ index b6a9d4604..eacc4bdaa 100644
 +            {
 +                _responseTime = Clock::now();
 +                
-+                if(!_jsonRpcMethod.empty() && _responseTime >= _invokeFinishTime)
++                if(!_jsonRpcMethod.empty() && _responseTime >= _requestTime && _responseTime >= _invokeFinishTime)
 +                {
++                    uint64_t totalTime = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(_responseTime - _requestTime).count());
 +                    _thunderLatency =  static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(_responseTime - _requestTime).count()) - _pluginLatency;
 +                    _totalLatency = _thunderLatency + _pluginLatency;
-+                    SYSLOG(Logging::JsonRpcProfiler, (_T("Response %ld, %ld, %s, %" PRIu64", %" PRIu64", %" PRIu64), Id(), _queueSize, _jsonRpcMethod.c_str(), _thunderLatency, _pluginLatency, _totalLatency));
++                    SYSLOG(Logging::JsonRpcProfiler, (_T("Response %ld, %ld, %s, %" PRIu64", %" PRIu64", %" PRIu64", %" PRIu64), Id(), _queueSize, _jsonRpcMethod.c_str(), _thunderLatency, _pluginLatency, _totalLatency, totalTime));
 +                    
 +                    _jsonRpcMethod.clear();
 +                }
@@ -220,7 +221,7 @@ index b6a9d4604..eacc4bdaa 100644
          private:
              inline string SelectSupportedProtocol(const Web::ProtocolsArray& protocols)
              {
-@@ -4544,6 +4629,20 @@ POP_WARNING()
+@@ -4544,6 +4630,20 @@ POP_WARNING()
              bool _requestClose;
              std::atomic<bool> _serviceCleanedUp;
  
