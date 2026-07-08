@@ -16,9 +16,9 @@ PR = "r46"
 PV = "4.4.6"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder"
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=test/postmortemdump;name=thunder"
 
-SRCREV_thunder = "2c0fcc5529e7da734be558ca6efa05d934dcce31"
+SRCREV_thunder = "0d0cc251e8e89679d2797d8619c75a46e4cc39e1"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
@@ -123,6 +123,7 @@ EXTRA_OECMAKE += " \
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
 
 EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
+EXTRA_OECMAKE:append = ' -DPOSTMORTEM_WORKERPOOL_SINK=LOG -DPOSTMORTEM_CALLSTACK_SINK=LOG'
 
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
