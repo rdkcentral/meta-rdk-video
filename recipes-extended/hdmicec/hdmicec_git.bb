@@ -59,6 +59,43 @@ INCLUDE_DIRS = " \
     "
 
 
+do_compile:prepend() {
+        case ":${OVERRIDES}:" in
+                *:vdevice_x86-64-mw:*)
+                        return 0
+                        ;;
+        esac
+
+        OBJ_DIR="${B}/aidl_helpers"
+        mkdir -p "${OBJ_DIR}"
+        AIDL_CPP_DIR=$(find ${TMPDIR}/work \
+                -path "*/rdk-halif-aidl/*/build/0.1.0.0/src/com/rdk/hal" \
+                ! -path "*/package/*" \
+                ! -path "*/packages-split/*" \
+                ! -path "*/image/*" \
+                -type d 2>/dev/null | head -n 1)
+        if [ -z "${AIDL_CPP_DIR}" ]; then
+                bbfatal "Unable to locate generated AIDL C++ sources for rdk-halif-aidl under ${TMPDIR}/work"
+        fi
+        HELPER_DIR="${AIDL_CPP_DIR}/hdmicec"
+        HAL_DIR="${AIDL_CPP_DIR}"
+        INCFLAGS="-I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+        for f in IHdmiCec IHdmiCecController IHdmiCecEventListener Property SendMessageStatus State; do
+                ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
+                        -c "${HELPER_DIR}/${f}.cpp" -o "${OBJ_DIR}/${f}.o"
+        done
+        ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
+                -c "${HAL_DIR}/PropertyValue.cpp" -o "${OBJ_DIR}/PropertyValue.o"
+        ${AR} rcs "${B}/libhdmicec_aidl_helpers.a" \
+                "${OBJ_DIR}/IHdmiCec.o" \
+                "${OBJ_DIR}/IHdmiCecController.o" \
+                "${OBJ_DIR}/IHdmiCecEventListener.o" \
+                "${OBJ_DIR}/Property.o" \
+                "${OBJ_DIR}/SendMessageStatus.o" \
+                "${OBJ_DIR}/State.o" \
+                "${OBJ_DIR}/PropertyValue.o"
+}
+
 do_compile:prepend:vdevice_x86-64-mw() {
         OBJ_DIR="${B}/aidl_helpers"
         mkdir -p "${OBJ_DIR}"
