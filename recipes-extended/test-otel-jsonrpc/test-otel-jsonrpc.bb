@@ -15,7 +15,7 @@ S = "${WORKDIR}"
 inherit cmake
 
 DEPENDS = " \
-    wpe-framework \
+    wpeframework \
     opentelemetry-cpp \
 "
 
