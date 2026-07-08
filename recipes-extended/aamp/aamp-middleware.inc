@@ -6,6 +6,9 @@ DEPENDS += "iarmmgrs wpeframework ${@bb.utils.contains('DISTRO_FEATURES', 'gstre
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec_cc', 'subttxrend-app', '', d)}"
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
+# entservices-opencdmi now provides opencdm/open_cdm.h and ocdm.pc (moved from wpeframework-clientlibraries)
+DEPENDS:append += " entservices-opencdmi"
+
 PACKAGECONFIG[opencdm]   = "-DCMAKE_USE_OPENCDM=1,-DCMAKE_USE_OPENCDM=0,wpeframework"
 PACKAGECONFIG[playready] = "-DCMAKE_USE_PLAYREADY=1,-DCMAKE_USE_PLAYREADY=0,wpeframework"
 PACKAGECONFIG[widevine]  = "-DCMAKE_USE_WIDEVINE=1,-DCMAKE_USE_WIDEVINE=0,wpeframework"
