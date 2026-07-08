@@ -7,7 +7,8 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=85bcfede74b96d9a58c6ea5d4b607e58"
 
 DEPENDS = "zlib wpeframework-tools-native rfc"
 DEPENDS:append:libc-musl = " libexecinfo"
-DEPENDS += "breakpad-wrapper"
+DEPENDS += "breakpad-wrapper opentelemetry-cpp"
+RDEPENDS:${PN}:append = " rdk-otel-collector"
 
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
