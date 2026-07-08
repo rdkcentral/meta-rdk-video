@@ -1,8 +1,8 @@
 SUMMARY = "ENTServices opencdmi plugins"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=c03d0e6d700b63b51bf8da6b61dac850"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=7a65e8e9836ac44d082594220a9a3883"
 
-PV = "1.0.7"
+PV = "2.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,19 +12,11 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://index.html \
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
-           file://0003-set-OCDM-sharepath-to-tmp-OCDM.patch \
-           file://0001-RDK-31882-Add-GstCaps-parsing-in-OCDM-to-rdkservices.patch \
-           file://0001-add_gstcaps_forcobalt_mediatype.patch \
            file://rdkservices.ini \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
-           file://0001-rdkservices_cbcs_changes.patch \
-           file://0002-Adding-Support-For-R4.patch \
-           file://0001-Add-a-new-metrics-punch-through-on-the-OCDM-framework-rdkservice.patch \
-           file://0001-set-OCDM-process-thread-name.patch \
           "
-          
-# Release version - 1.0.7
-SRCREV = "13e4ffe01735e4e9fc3fe5f19fd572ddc0b85270"
+         
+# Release version - 2.0.1
+SRCREV = "eb10dd508c4ec351dcf34d97677a9a3d93dcce55" 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -56,9 +48,17 @@ include include/ocdm.inc
 
 # ----------------------------------------------------------------------------
 
+def get_cdmi_adapter(d):
+    if bb.utils.contains("DISTRO_FEATURES", "rdk_svp", "true", "false", d) == "true":
+        return "opencdmi_rdk_svp"
+    else:
+        return "opencdm_gst"
+
+WPE_CDMI_ADAPTER_IMPL = "${@get_cdmi_adapter(d)}"
+
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm',              'opencdmi', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi ${WPE_CDMI_ADAPTER_IMPL}', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'playready_nexus_svp',  'opencdmi_prnx_svp', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'widevine_nexus_svp',   'opencdmi_wv_svp', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'clearkey',             'opencdmi_ck', '', d)} \
@@ -82,6 +82,11 @@ PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 
 # ----------------------------------------------------------------------------
+
+# Override include/ocdm.inc to avoid pulling wpeframework-clientlibraries; libocdm.so is now built here.
+PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON -DPLUGIN_OPENCDMI_AUTOSTART=true -DPLUGIN_OPENCDMI_MODE=Local,,,"
+PACKAGECONFIG[opencdm_gst]          = '-DCDMI_ADAPTER_IMPLEMENTATION="gstreamer",,gstreamer1.0'
+PACKAGECONFIG[opencdmi_rdk_svp]     = '-DCDMI_ADAPTER_IMPLEMENTATION="rdk",,gst-svp-ext'
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
