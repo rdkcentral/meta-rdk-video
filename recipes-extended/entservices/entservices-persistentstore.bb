@@ -11,6 +11,7 @@ inherit cmake pkgconfig
 SRCREV = "7b07b1221c6eb3ce881de3fca922b4b6f3500e33"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-persistentstore;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
+           file://0001-extra-logging.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
