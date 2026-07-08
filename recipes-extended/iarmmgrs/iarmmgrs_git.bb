@@ -157,8 +157,8 @@ do_compile() {
             echo "mfr resolved versioned_lib: ${versioned_lib}"
             MFR_VERSIONED_LIB="\"$(basename ${versioned_lib})\""
         fi
+        MFR_VERSIONED_LIB="\"libRDKMfrLib.so.0\""
         echo "mfr versioned lib: ${MFR_VERSIONED_LIB}"
-
         export COMCAST_PLATFORM=XI4
         export CFLAGS="${CFLAGS} -DENABLE_SD_NOTIFY -DRDK_MFRLIB_NAME='${MFR_VERSIONED_LIB}'"
         export LDFLAGS="${LDFLAGS} ${MFR_LIB_NAME} -L${S}/utils -liarmUtils -lsystemd -ldl"
