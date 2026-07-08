@@ -1,0 +1,164 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Petar Tijanic <petar_tijanic@comcast.com>
+Date: Wed, 6 May 2026 00:00:00 +0000
+Subject: [PATCH] RDKEMW-16580: [WPE] Switch gamepad backend from libwpe to
+ libmanette
+
+Switch the WPE port to use libmanette as the gamepad backend, matching what
+the GTK port already does. This is a prerequisite for backporting upstream
+gamepad rumble/haptic support (commit 2e1369350dab) to WPE 2.46.
+
+Drops the libwpe-based GamepadProvider/UIGamepadProvider from the WPE
+build, wires up the Manette equivalents in WebCore and WebKit, and adapts
+WPEWebViewLegacy::platformWebPageProxyForGamepadInput() so it no longer
+depends on GamepadProviderLibWPE::inputView() for view correlation.
+With manette there is no per-view backend, so input is routed to the
+first focused+visible view.
+
+* Source/WebCore/SourcesWPE.txt: Replace libwpe gamepad sources with
+  manette equivalents.
+* Source/WebKit/SourcesWPE.txt: Replace UIGamepadProviderLibWPE.cpp with
+  UIGamepadProviderManette.cpp.
+* Source/WebCore/PlatformWPE.cmake: Use the manette include path,
+  expose ManetteGamepadProvider.h, and link Manette::Manette.
+* Source/cmake/OptionsWPE.cmake: Add find_package(Manette 0.2.4) and
+  SET_AND_EXPOSE_TO_BUILD(USE_MANETTE TRUE) when ENABLE_GAMEPAD is set.
+* Source/WebKit/UIProcess/Gamepad/manette/UIGamepadProviderManette.cpp:
+  Add a PLATFORM(WPE) implementation of platformWebPageProxyForGamepadInput()
+  that delegates to WKWPE::ViewLegacy.
+(WebKit::UIGamepadProvider::platformWebPageProxyForGamepadInput):
+* Source/WebKit/UIProcess/API/wpe/WPEWebViewLegacy.cpp: Drop the libwpe
+  GamepadProviderLibWPE include and inputView()-driven view selection.
+(WKWPE::ViewLegacy::platformWebPageProxyForGamepadInput):
+---
+diff --git a/Source/WebCore/SourcesWPE.txt b/Source/WebCore/SourcesWPE.txt
+--- a/Source/WebCore/SourcesWPE.txt
++++ b/Source/WebCore/SourcesWPE.txt
+@@ -49,8 +49,8 @@
+ page/linux/ResourceUsageOverlayLinux.cpp
+ page/linux/ResourceUsageThreadLinux.cpp
+
+-platform/gamepad/libwpe/GamepadLibWPE.cpp
+-platform/gamepad/libwpe/GamepadProviderLibWPE.cpp
++platform/gamepad/manette/ManetteGamepad.cpp
++platform/gamepad/manette/ManetteGamepadProvider.cpp
+
+ platform/generic/ScrollbarsControllerGeneric.cpp
+
+diff --git a/Source/WebKit/SourcesWPE.txt b/Source/WebKit/SourcesWPE.txt
+--- a/Source/WebKit/SourcesWPE.txt
++++ b/Source/WebKit/SourcesWPE.txt
+@@ -220,7 +220,7 @@
+
+ UIProcess/CoordinatedGraphics/DrawingAreaProxyCoordinatedGraphics.cpp
+
+-UIProcess/Gamepad/libwpe/UIGamepadProviderLibWPE.cpp
++UIProcess/Gamepad/manette/UIGamepadProviderManette.cpp
+
+ UIProcess/geoclue/GeoclueGeolocationProvider.cpp
+
+diff --git a/Source/WebKit/UIProcess/Gamepad/manette/UIGamepadProviderManette.cpp b/Source/WebKit/UIProcess/Gamepad/manette/UIGamepadProviderManette.cpp
+--- a/Source/WebKit/UIProcess/Gamepad/manette/UIGamepadProviderManette.cpp
++++ b/Source/WebKit/UIProcess/Gamepad/manette/UIGamepadProviderManette.cpp
+@@ -32,6 +32,10 @@
+ #include <WebCore/ManetteGamepadProvider.h>
+ #include <wtf/ProcessPrivilege.h>
+
++#if PLATFORM(WPE)
++#include "WPEWebViewLegacy.h"
++#endif
++
+ namespace WebKit {
+
+ using namespace WebCore;
+@@ -47,7 +51,11 @@
+ #if !PLATFORM(GTK)
+ WebPageProxy* UIGamepadProvider::platformWebPageProxyForGamepadInput()
+ {
++#if PLATFORM(WPE)
++    return WKWPE::ViewLegacy::platformWebPageProxyForGamepadInput();
++#else
+     return nullptr;
++#endif
+ }
+ #endif
+
+diff --git a/Source/WebKit/UIProcess/API/wpe/WPEWebViewLegacy.cpp b/Source/WebKit/UIProcess/API/wpe/WPEWebViewLegacy.cpp
+--- a/Source/WebKit/UIProcess/API/wpe/WPEWebViewLegacy.cpp
++++ b/Source/WebKit/UIProcess/API/wpe/WPEWebViewLegacy.cpp
+@@ -38,10 +38,6 @@
+ #include <wpe/wpe.h>
+ #include <wtf/NeverDestroyed.h>
+
+-#if ENABLE(GAMEPAD)
+-#include <WebCore/GamepadProviderLibWPE.h>
+-#endif
+-
+ using namespace WebKit;
+
+ namespace WKWPE {
+@@ -389,22 +385,10 @@
+     if (views.isEmpty())
+         return nullptr;
+
+-    struct wpe_view_backend* viewBackend = WebCore::GamepadProviderLibWPE::singleton().inputView();
+-
+-    size_t index = notFound;
+-
+-    if (viewBackend) {
+-        index = views.findIf([&](ViewLegacy* view) {
+-            return view->backend() == viewBackend
+-                && view->viewState().contains(WebCore::ActivityState::IsVisible)
+-                && view->viewState().contains(WebCore::ActivityState::IsFocused);
+-        });
+-    } else {
+-        index = views.findIf([](ViewLegacy* view) {
+-            return view->viewState().contains(WebCore::ActivityState::IsVisible)
+-                && view->viewState().contains(WebCore::ActivityState::IsFocused);
+-        });
+-    }
++    auto index = views.findIf([](ViewLegacy* view) {
++        return view->viewState().contains(WebCore::ActivityState::IsVisible)
++            && view->viewState().contains(WebCore::ActivityState::IsFocused);
++    });
+
+     if (index != notFound)
+         return &(views[index]->page());
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -232,6 +232,14 @@
+     message(FATAL_ERROR "libwpe>=1.16.2 is required for ENABLE_GAMEPAD")
+ endif ()
+
++if (ENABLE_GAMEPAD)
++    find_package(Manette 0.2.4)
++    if (NOT Manette_FOUND)
++        message(FATAL_ERROR "libmanette is required for ENABLE_GAMEPAD")
++    endif ()
++    SET_AND_EXPOSE_TO_BUILD(USE_MANETTE TRUE)
++endif ()
++
+ if (ENABLE_SPEECH_SYNTHESIS)
+     if (USE_FLITE)
+         if (USE_TTS_CLIENT)
+diff --git a/Source/WebCore/PlatformWPE.cmake b/Source/WebCore/PlatformWPE.cmake
+--- a/Source/WebCore/PlatformWPE.cmake
++++ b/Source/WebCore/PlatformWPE.cmake
+@@ -136,11 +136,14 @@
+
+ if (ENABLE_GAMEPAD)
+     list(APPEND WebCore_PRIVATE_INCLUDE_DIRECTORIES
+-        "${WEBCORE_DIR}/platform/gamepad/libwpe"
++        "${WEBCORE_DIR}/platform/gamepad/manette"
+     )
+
+     list(APPEND WebCore_PRIVATE_FRAMEWORK_HEADERS
+-        platform/gamepad/libwpe/GamepadProviderLibWPE.h
++        platform/gamepad/manette/ManetteGamepadProvider.h
++    )
++    list(APPEND WebCore_LIBRARIES
++        Manette::Manette
+     )
+ endif ()
+

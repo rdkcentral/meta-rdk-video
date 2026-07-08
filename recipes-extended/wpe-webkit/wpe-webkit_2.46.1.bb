@@ -58,6 +58,9 @@ SRC_URI += "file://2.46/comcast-WebRTC-keep-render-time-interpolation.patch"
 SRC_URI += "file://2.46/comcast-DELIA-59087-Disable-pausing-playback-for-buf.patch"
 SRC_URI += "file://2.46/comcast-RDKTV-28214-Quick-_exit.patch"
 #SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
+SRC_URI += "file://2.46/comcast-RDKEMW-16580-WPE-Switch-gamepad-backend-from-libwpe-to-libmanette.patch"
+SRC_URI += "file://2.46/comcast-RDKEMW-16580-Backport-Implement-playEffect-via-libmanette-rumble.patch"
+SRC_URI += "file://2.46/comcast-RDKEMW-18589-WPE-Add-analog-trigger-support-via-libmanette.patch"
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"
@@ -98,6 +101,7 @@ PACKAGECONFIG[wpeqtapi]              = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_A
 PACKAGECONFIG[cairo]                 = "-DUSE_CAIRO=ON -DUSE_SKIA=OFF,-DUSE_CAIRO=OFF,cairo"
 PACKAGECONFIG[externalholepunch]     = "-DUSE_EXTERNAL_HOLEPUNCH=ON,-DUSE_EXTERNAL_HOLEPUNCH=OFF,"
 PACKAGECONFIG[ftrace]                = "-DUSE_LINUX_FTRACE=ON,-DUSE_LINUX_FTRACE=OFF,"
+PACKAGECONFIG[gamepad]               = "-DENABLE_GAMEPAD=ON,-DENABLE_GAMEPAD=OFF,libmanette,"
 
 # Config options are no longer available in 2.46
 PACKAGECONFIG[2dcanvas]     = ""
