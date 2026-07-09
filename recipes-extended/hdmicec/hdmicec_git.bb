@@ -51,8 +51,8 @@ LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-confi
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
-CFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
-CXXFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+CFLAGS:append = " -I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec"
+CXXFLAGS:append = " -I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec"
 
 INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/ds-hal \
@@ -68,18 +68,37 @@ do_compile:prepend() {
 
         OBJ_DIR="${B}/aidl_helpers"
         mkdir -p "${OBJ_DIR}"
-        AIDL_CPP_DIR=$(find ${TMPDIR}/work \
-                -path "*/rdk-halif-aidl/*/build/0.1.0.0/src/com/rdk/hal" \
-                ! -path "*/package/*" \
-                ! -path "*/packages-split/*" \
-                ! -path "*/image/*" \
-                -type d 2>/dev/null | head -n 1)
+        AIDL_CPP_DIR="${STAGING_INCDIR}/com/rdk/hal"
+        if [ ! -f "${AIDL_CPP_DIR}/hdmicec/IHdmiCec.cpp" ]; then
+                AIDL_CPP_DIR=$(find ${TMPDIR}/sysroots-components \
+                        -path "*/*rdk-halif-aidl/usr/include/com/rdk/hal" \
+                        -type d 2>/dev/null | head -n 1)
+        fi
+        if [ -z "${AIDL_CPP_DIR}" ] || [ ! -f "${AIDL_CPP_DIR}/hdmicec/IHdmiCec.cpp" ]; then
+                AIDL_CPP_DIR=$(find ${TMPDIR}/work \
+                        -path "*/*rdk-halif-aidl/*/image/usr/include/com/rdk/hal" \
+                        ! -path "*/package/*" \
+                        ! -path "*/packages-split/*" \
+                        -type d 2>/dev/null | head -n 1)
+        fi
         if [ -z "${AIDL_CPP_DIR}" ]; then
                 bbfatal "Unable to locate generated AIDL C++ sources for rdk-halif-aidl under ${TMPDIR}/work"
         fi
         HELPER_DIR="${AIDL_CPP_DIR}/hdmicec"
         HAL_DIR="${AIDL_CPP_DIR}"
-        INCFLAGS="-I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+        AIDL_INC_ROOT=$(dirname "$(dirname "$(dirname "${AIDL_CPP_DIR}")")")
+        if [ -d "${AIDL_INC_ROOT}/com/rdk/hal" ] && [ ! -d "${STAGING_INCDIR}/com/rdk/hal" ]; then
+                install -d "${STAGING_INCDIR}/com/rdk"
+                cp -a "${AIDL_INC_ROOT}/com/rdk/hal" "${STAGING_INCDIR}/com/rdk/"
+        fi
+        for aidl_inc_dir in binder android android-base utils log cutils; do
+                if [ -d "${AIDL_INC_ROOT}/${aidl_inc_dir}" ] && [ ! -d "${STAGING_INCDIR}/${aidl_inc_dir}" ]; then
+                        cp -a "${AIDL_INC_ROOT}/${aidl_inc_dir}" "${STAGING_INCDIR}/"
+                fi
+        done
+        CFLAGS="${CFLAGS} -I${AIDL_INC_ROOT}"
+        CXXFLAGS="${CXXFLAGS} -I${AIDL_INC_ROOT}"
+        INCFLAGS="-I${AIDL_INC_ROOT} -I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
         for f in IHdmiCec IHdmiCecController IHdmiCecEventListener Property SendMessageStatus State; do
                 ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
                         -c "${HELPER_DIR}/${f}.cpp" -o "${OBJ_DIR}/${f}.o"
@@ -99,18 +118,28 @@ do_compile:prepend() {
 do_compile:prepend:vdevice_x86-64-mw() {
         OBJ_DIR="${B}/aidl_helpers"
         mkdir -p "${OBJ_DIR}"
-        AIDL_CPP_DIR=$(find ${TMPDIR}/work \
-                -path "*/rdk-halif-aidl/*/build/current/cpp/com/rdk/hal" \
-                ! -path "*/package/*" \
-                ! -path "*/packages-split/*" \
-                ! -path "*/image/*" \
-                -type d 2>/dev/null | head -n 1)
+        AIDL_CPP_DIR="${STAGING_INCDIR}/com/rdk/hal"
+        if [ ! -f "${AIDL_CPP_DIR}/hdmicec/IHdmiCec.cpp" ]; then
+                AIDL_CPP_DIR=$(find ${TMPDIR}/sysroots-components \
+                        -path "*/*rdk-halif-aidl/usr/include/com/rdk/hal" \
+                        -type d 2>/dev/null | head -n 1)
+        fi
+        if [ -z "${AIDL_CPP_DIR}" ] || [ ! -f "${AIDL_CPP_DIR}/hdmicec/IHdmiCec.cpp" ]; then
+                AIDL_CPP_DIR=$(find ${TMPDIR}/work \
+                        -path "*/*rdk-halif-aidl/*/image/usr/include/com/rdk/hal" \
+                        ! -path "*/package/*" \
+                        ! -path "*/packages-split/*" \
+                        -type d 2>/dev/null | head -n 1)
+        fi
         if [ -z "${AIDL_CPP_DIR}" ]; then
                 bbfatal "Unable to locate generated AIDL C++ sources for rdk-halif-aidl under ${TMPDIR}/work"
         fi
         HELPER_DIR="${AIDL_CPP_DIR}/hdmicec"
         HAL_DIR="${AIDL_CPP_DIR}"
-        INCFLAGS="-I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+        AIDL_INC_ROOT=$(dirname "$(dirname "$(dirname "${AIDL_CPP_DIR}")")")
+        CFLAGS="${CFLAGS} -I${AIDL_INC_ROOT}"
+        CXXFLAGS="${CXXFLAGS} -I${AIDL_INC_ROOT}"
+        INCFLAGS="-I${AIDL_INC_ROOT} -I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
         for f in IHdmiCec IHdmiCecController IHdmiCecEventListener Property SendMessageStatus State; do
                 ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
                         -c "${HELPER_DIR}/${f}.cpp" -o "${OBJ_DIR}/${f}.o"
