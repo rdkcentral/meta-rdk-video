@@ -12,6 +12,10 @@ find_library(RDK_OTLP_LIB rdk_otlp REQUIRED)
 
 add_executable(${PROJECT_NAME} main.cpp)
 
+# Thunder R4_4-RDK uses "namespace Thunder" in source but compiles with -DThunder=WPEFramework
+# to remap the C++ namespace. We must do the same or symbol resolution will fail.
+target_compile_definitions(${PROJECT_NAME} PRIVATE Thunder=WPEFramework)
+
 if(TARGET WPEFrameworkCore::WPEFrameworkCore)
     target_link_libraries(${PROJECT_NAME}
         PRIVATE
