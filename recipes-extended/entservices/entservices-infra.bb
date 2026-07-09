@@ -57,6 +57,7 @@ PACKAGECONFIG ?= " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_bolt_apps', '
 PACKAGECONFIG:append = " erm"
 PACKAGECONFIG:append = " rustadapter "
 PACKAGECONFIG:append = " rmtestharness "
+PACKAGECONFIG:append = " rdkshell "
 
 inherit features_check
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
