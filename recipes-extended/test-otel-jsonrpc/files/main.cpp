@@ -22,7 +22,7 @@
 #include <thread>
 #include <chrono>
 
-using namespace WPEFramework;
+using namespace Thunder;
 
 static constexpr const char* COMPONENT_NAME    = "otel-jsonrpc-test";
 static constexpr const char* COMPONENT_VERSION = "1.0.0";
