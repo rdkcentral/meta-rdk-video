@@ -9,8 +9,10 @@ require wpe-webkit.inc
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
 WPE_RECIPE_REVISION = "0"
 
-DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
-DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
+PR = "r${WPE_RECIPE_REVISION}"
+# Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
+WPE_MICRO_VERSION_SUFFIX = "${@'%02d%02d' % (int((d.getVar('PV').split('.') + ['0'])[2]), int(d.getVar('WPE_RECIPE_REVISION')))}"
+DEPENDS:append = " libtasn1 unifdef-native libsoup fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 # Tip of the branch on Jul 2, 2026
@@ -89,6 +91,7 @@ PACKAGECONFIG[webassembly]           = "-DENABLE_WEBASSEMBLY=ON,-DENABLE_WEBASSE
 PACKAGECONFIG[webdriver]             = "-DENABLE_WEBDRIVER=ON,-DENABLE_WEBDRIVER=OFF,"
 PACKAGECONFIG[woff2]                 = "-DUSE_WOFF2=ON,-DUSE_WOFF2=OFF,woff2"
 PACKAGECONFIG[wpeframework_opencdm]  = "-DENABLE_THUNDER=ON,-DENABLE_THUNDER=OFF,entservices-opencdmi,"
+PACKAGECONFIG[rialto_opencdm]        = "-DENABLE_THUNDER=ON,,rialto-ocdm,rialto-ocdm"
 PACKAGECONFIG[wpeplatform]           = "-DENABLE_WPE_PLATFORM=ON,-DENABLE_WPE_PLATFORM=OFF -DUSE_LIBDRM=OFF -DUSE_GBM=OFF,libdrm,"
 PACKAGECONFIG[wpeqtapi]              = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[cairo]                 = "-DUSE_CAIRO=ON -DUSE_SKIA=OFF,-DUSE_CAIRO=OFF,cairo"
