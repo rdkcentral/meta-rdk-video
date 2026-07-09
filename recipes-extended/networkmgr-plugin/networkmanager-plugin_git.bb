@@ -17,9 +17,9 @@ PR = "r0"
 PV = "v3.3.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=main"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/deug-ipsettings"
 
-SRCREV = "a6e6508abd1f2f20f87b76e5aa7ce8ba997f612c"
+SRCREV = "30c729bc4c163b0bf112ed8bad13d1332f36ef05"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
