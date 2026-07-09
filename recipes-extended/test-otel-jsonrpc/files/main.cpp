@@ -29,7 +29,7 @@ static constexpr const char* COMPONENT_VERSION = "1.0.0";
 static constexpr uint32_t    CALL_TIMEOUT_MS   = 5000;
 
 // Target plugin callsign - change to match your test environment
-static const std::string TARGET_CALLSIGN = "org.rdk.System";
+static const std::string TARGET_CALLSIGN = "DisplayInfo.1";
 
 /**
  * Test 1: 10 independent parent traces, each with one JSON-RPC call.
@@ -51,7 +51,7 @@ static void test_independent_parent_traces(JSONRPC::LinkType<Core::JSON::IElemen
 
         // Invoke JSON-RPC - the Thunder websocket layer auto-injects traceparent
         Core::ProxyType<Core::JSONRPC::Message> response;
-        uint32_t result = link.Invoke(CALL_TIMEOUT_MS, "getSystemVersions", "{}", response);
+        uint32_t result = link.Invoke(CALL_TIMEOUT_MS, "tvcapabilities", "{}", response);
 
         if (result == Core::ERROR_NONE && response.IsValid()) {
             std::cout << "[" << i << "] Response OK" << std::endl;
@@ -89,11 +89,11 @@ static void test_single_parent_multiple_calls(JSONRPC::LinkType<Core::JSON::IEle
 
     // Call several different methods under the same parent
     const char* methods[] = {
-        "getSystemVersions",
-        "getDeviceInfo",
-        "getMilestones",
-        "getCoreTemperature",
-        "getLastDeepSleepReason"
+        "tvcapabilities",
+        "framerate",
+        "totalgpuram",
+        "isaudiopassthrough",
+        "hdrsetting"
     };
 
     for (const char* method : methods) {
