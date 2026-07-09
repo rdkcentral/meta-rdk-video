@@ -2,9 +2,9 @@ SUMMARY = "TR69 Host Interface"
 SECTION = "console/utils"
 
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=99e7c83e5e6f31c2cbb811e186972945"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=76ae13a6bce633447ea2284294f073c2"
 
-SRCREV = "99a8fa60956782429065782102622333364391c3"
+SRCREV = "1c72b60fc2cd3f25347b752448ace257e99acd81"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
 PV = "1.4.6"
@@ -107,7 +107,6 @@ PACKAGECONFIG[wifi] = "--enable-wifi,,,"
 PACKAGECONFIG[xre] = "--enable-xre,,"
 PACKAGECONFIG[moca] = "--enable-moca,,virtual/mocadriver"
 PACKAGECONFIG[moca2] = "--enable-moca2,,virtual/mocadriver"
-PACKAGECONFIG[rf4ce] = "--enable-rf4ce,,"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth','bluetooth', '',d)}"
 PACKAGECONFIG[bluetooth] = "--enable-bt,,bluetooth-mgr,bluetooth-mgr"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetooth-mgr', '',d)}"
@@ -167,9 +166,6 @@ do_install:append() {
 	install -m 0644 ${S}/conf/mgrlist.conf ${D}${sysconfdir}
         install -d ${D}${base_libdir}/rdk
         install -m 0644 ${S}/src/hostif/parodusClient/parodus.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/src/hostif/parodusClient/parodus.path ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/src/hostif/parodusClient/parodus_v4.path ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/src/hostif/parodusClient/parodus_v6.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/src/hostif/parodusClient/parodus_bsp.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/src/hostif/parodusClient/conf/notify_webpa_cfg.json ${D}${sysconfdir}
         install -m 0644 ${S}/src/hostif/parodusClient/conf/webpa_cfg.json ${D}${sysconfdir}
@@ -206,14 +202,8 @@ FILES:${PN} += "${systemd_unitdir}/system/tr69hostif.service"
 SYSTEMD_SERVICE:${PN} += "ip-iface-monitor.service"
 FILES:${PN} += "${systemd_unitdir}/system/ip-iface-monitor.service"
 SYSTEMD_SERVICE:${PN} += "parodus.service" 
-SYSTEMD_SERVICE:${PN} += "parodus.path" 
-SYSTEMD_SERVICE:${PN} += "parodus_v4.path"
-SYSTEMD_SERVICE:${PN} += "parodus_v6.path"
 SYSTEMD_SERVICE:${PN} += "parodus_bsp.path"
 FILES:${PN} += "${systemd_unitdir}/system/parodus.service" 
-FILES:${PN} += "${systemd_unitdir}/system/parodus.path" 
-FILES:${PN} += "${systemd_unitdir}/system/parodus_v4.path"
-FILES:${PN} += "${systemd_unitdir}/system/parodus_v6.path"
 FILES:${PN} += "${systemd_unitdir}/system/parodus_bsp.path"
 FILES:${PN} += "${base_libdir}/*"
 FILES:${PN} += "${sysconfdir}/*"
