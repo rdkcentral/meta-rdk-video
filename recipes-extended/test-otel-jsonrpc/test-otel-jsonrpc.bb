@@ -15,13 +15,12 @@ S = "${WORKDIR}"
 inherit cmake
 
 DEPENDS = " \
-    wpeframework \
     opentelemetry-cpp \
 "
 
 RDEPENDS:${PN} = " \
-    wpeframework \
     rdk-otel-collector \
+    curl \
 "
 
 # Ensure Thunder and rdk_otlp headers/libs are found
