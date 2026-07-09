@@ -8,34 +8,75 @@
  * Test 2: Creates a single parent trace and invokes multiple different
  *          JSON-RPC methods under it. Validates all child spans share
  *          the same parent trace ID.
+ *
+ * Uses curl to send JSON-RPC requests to Thunder's HTTP endpoint,
+ * injecting traceparent into params. This tests the full E2E path:
+ *   test app (parent span) -> Thunder PluginServer (child span)
  */
-
-#define MODULE_NAME OtelJsonRpcTest
 
 #include <rdk_otlp_instrumentation.h>
 
-#include <core/core.h>
-#include <websocket/websocket.h>
-
 #include <iostream>
 #include <string>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <thread>
 #include <chrono>
-
-using namespace Thunder;
+#include <sstream>
+#include <array>
 
 static constexpr const char* COMPONENT_NAME    = "otel-jsonrpc-test";
 static constexpr const char* COMPONENT_VERSION = "1.0.0";
-static constexpr uint32_t    CALL_TIMEOUT_MS   = 5000;
 
-// Target plugin callsign - change to match your test environment
-static const std::string TARGET_CALLSIGN = "DisplayInfo.1";
+static std::string g_thunder_url = "http://127.0.0.1:9998/jsonrpc";
+
+/**
+ * Execute a curl command and return the response body.
+ */
+static std::string exec_curl(const std::string& json_body, const std::string& callsign)
+{
+    std::string url = g_thunder_url + "/" + callsign;
+
+    std::string cmd = "curl -s -X POST "
+                      "-H 'Content-Type: application/json' "
+                      "-d '" + json_body + "' "
+                      "'" + url + "' 2>&1";
+
+    std::array<char, 4096> buffer;
+    std::string result;
+    FILE* pipe = popen(cmd.c_str(), "r");
+    if (!pipe) return "(popen failed)";
+    while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
+        result += buffer.data();
+    }
+    pclose(pipe);
+    return result;
+}
+
+/**
+ * Build a JSON-RPC request body with traceparent injected into params.
+ */
+static std::string build_jsonrpc_request(const std::string& method,
+                                          const char* traceparent,
+                                          int id)
+{
+    std::ostringstream oss;
+    oss << "{\"jsonrpc\":\"2.0\",\"id\":" << id
+        << ",\"method\":\"" << method << "\"";
+
+    if (traceparent) {
+        oss << ",\"params\":{\"traceparent\":\"" << traceparent << "\"}";
+    }
+
+    oss << "}";
+    return oss.str();
+}
 
 /**
  * Test 1: 10 independent parent traces, each with one JSON-RPC call.
- * Rapid-fire to stress-test trace context propagation.
  */
-static void test_independent_parent_traces(JSONRPC::LinkType<Core::JSON::IElement>& link)
+static void test_independent_parent_traces(const std::string& callsign)
 {
     std::cout << "\n=== TEST 1: Independent parent traces (10 iterations) ===" << std::endl;
 
@@ -45,28 +86,20 @@ static void test_independent_parent_traces(JSONRPC::LinkType<Core::JSON::IElemen
         // Start a new parent trace
         rdk_otlp_start_distributed_trace(key.c_str(), "get");
 
-        // Get the traceparent that will be injected
+        // Get the traceparent for this parent span
         const char* tp = rdk_otlp_get_current_traceparent();
         std::cout << "[" << i << "] traceparent: " << (tp ? tp : "(null)") << std::endl;
 
-        // Invoke JSON-RPC - the Thunder websocket layer auto-injects traceparent
-        Core::ProxyType<Core::JSONRPC::Message> response;
-        uint32_t result = link.Invoke(CALL_TIMEOUT_MS, "tvcapabilities", "{}", response);
-
-        if (result == Core::ERROR_NONE && response.IsValid()) {
-            std::cout << "[" << i << "] Response OK" << std::endl;
-        } else {
-            std::cout << "[" << i << "] Call failed: " << result << std::endl;
-        }
+        // Send JSON-RPC request with traceparent
+        std::string body = build_jsonrpc_request("tvcapabilities", tp, i + 1);
+        std::string resp = exec_curl(body, callsign);
+        std::cout << "[" << i << "] response: " << resp.substr(0, 120) << std::endl;
 
         // Finish the parent trace
         rdk_otlp_finish_distributed_trace();
-
-        // Clear shared memory entry for this key
         rdk_otlp_clear_trace_context(key.c_str());
     }
 
-    // Flush to ensure all spans are exported before next test
     rdk_otlp_force_flush();
     std::cout << "=== TEST 1 COMPLETE ===" << std::endl;
 }
@@ -75,7 +108,7 @@ static void test_independent_parent_traces(JSONRPC::LinkType<Core::JSON::IElemen
  * Test 2: Single parent trace with multiple different JSON-RPC calls.
  * All child spans should map to the same parent trace ID.
  */
-static void test_single_parent_multiple_calls(JSONRPC::LinkType<Core::JSON::IElement>& link)
+static void test_single_parent_multiple_calls(const std::string& callsign)
 {
     std::cout << "\n=== TEST 2: Single parent, multiple children ===" << std::endl;
 
@@ -87,7 +120,6 @@ static void test_single_parent_multiple_calls(JSONRPC::LinkType<Core::JSON::IEle
     const char* tp = rdk_otlp_get_current_traceparent();
     std::cout << "Parent traceparent: " << (tp ? tp : "(null)") << std::endl;
 
-    // Call several different methods under the same parent
     const char* methods[] = {
         "tvcapabilities",
         "framerate",
@@ -96,15 +128,11 @@ static void test_single_parent_multiple_calls(JSONRPC::LinkType<Core::JSON::IEle
         "hdrsetting"
     };
 
+    int id = 100;
     for (const char* method : methods) {
-        Core::ProxyType<Core::JSONRPC::Message> response;
-        uint32_t result = link.Invoke(CALL_TIMEOUT_MS, method, "{}", response);
-
-        if (result == Core::ERROR_NONE && response.IsValid()) {
-            std::cout << "  " << method << " -> OK" << std::endl;
-        } else {
-            std::cout << "  " << method << " -> failed (" << result << ")" << std::endl;
-        }
+        std::string body = build_jsonrpc_request(method, tp, id++);
+        std::string resp = exec_curl(body, callsign);
+        std::cout << "  " << method << " -> " << resp.substr(0, 100) << std::endl;
     }
 
     // Finish the parent trace
@@ -117,43 +145,30 @@ static void test_single_parent_multiple_calls(JSONRPC::LinkType<Core::JSON::IEle
 
 int main(int argc, char* argv[])
 {
-    std::string callsign = TARGET_CALLSIGN;
+    std::string callsign = "DisplayInfo.1";
     if (argc > 1) {
         callsign = argv[1];
     }
 
+    const char* thunder_url_env = std::getenv("THUNDER_URL");
+    if (thunder_url_env) {
+        g_thunder_url = thunder_url_env;
+    }
+
     std::cout << "OTEL JSON-RPC Trace Propagation Test" << std::endl;
     std::cout << "Target callsign: " << callsign << std::endl;
+    std::cout << "Thunder URL: " << g_thunder_url << std::endl;
 
     // Initialize OTEL tracer
     rdk_otlp_init(COMPONENT_NAME, COMPONENT_VERSION);
-
-    // Allow tracer startup
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    // Create Thunder JSON-RPC client
-    // Requires THUNDER_ACCESS env var (e.g. "127.0.0.1:9998")
-    const char* thunder_access = std::getenv("THUNDER_ACCESS");
-    if (!thunder_access) {
-        // Default to localhost Thunder
-        Core::SystemInfo::SetEnvironment("THUNDER_ACCESS", "127.0.0.1:9998");
-        std::cout << "THUNDER_ACCESS not set, defaulting to 127.0.0.1:9998" << std::endl;
-    } else {
-        std::cout << "THUNDER_ACCESS: " << thunder_access << std::endl;
-    }
-
-    JSONRPC::LinkType<Core::JSON::IElement> link(callsign, false);
-
-    // Wait for connection
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-
     // Run tests
-    test_independent_parent_traces(link);
+    test_independent_parent_traces(callsign);
 
-    // Brief pause between tests
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-    test_single_parent_multiple_calls(link);
+    test_single_parent_multiple_calls(callsign);
 
     // Final flush and shutdown
     std::this_thread::sleep_for(std::chrono::seconds(2));
