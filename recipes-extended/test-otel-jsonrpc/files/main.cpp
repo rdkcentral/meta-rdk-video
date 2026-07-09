@@ -10,6 +10,8 @@
  *          the same parent trace ID.
  */
 
+#define MODULE_NAME OtelJsonRpcTest
+
 #include <rdk_otlp_instrumentation.h>
 
 #include <core/core.h>
