@@ -1,1 +1,1 @@
-RDEPENDS:${PN} += "libstdc++6"
+RDEPENDS:${PN} += "libstdc++6 libgcc"
