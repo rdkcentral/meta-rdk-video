@@ -1,0 +1,131 @@
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index d6feee441..cfe7366b5 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -431,14 +431,16 @@ namespace PluginHost
+             Unlock();
+         } else if ((currentState == IShell::state::DEACTIVATED) || (currentState == IShell::state::PRECONDITION)) {
+ 
++            const string callSign(PluginHost::Service::Configuration().Callsign.Value());
++            const string className(PluginHost::Service::Configuration().ClassName.Value());
++
+             // Load the interfaces, If we did not load them yet...
+             if (_handler == nullptr) {
++                SYSLOG(Logging::BvanavDbg, (_T("AcquireInterface for Plugin: classname: %s, callsign: %s"), className.c_str(), callSign.c_str()));
+                 AcquireInterfaces();
+             }
+ 
+-            const string callSign(PluginHost::Service::Configuration().Callsign.Value());
+-            const string className(PluginHost::Service::Configuration().ClassName.Value());
+-
++            
+             if (_handler == nullptr) {
+                 SYSLOG(Logging::Startup, (_T("Loading of plugin [%s]:[%s], failed. Error [%s]"), className.c_str(), callSign.c_str(), ErrorMessage().c_str()));
+                 result = Core::ERROR_UNAVAILABLE;
+@@ -477,7 +479,7 @@ namespace PluginHost
+                 Unlock();
+ 
+             } else {
+-
++                SYSLOG(Logging::BvanavDbg, (_T("Activating Plugin: classname: %s, callsign: %s"), className.c_str(), callSign.c_str()));
+                 // Before we dive into the "new" initialize lets see if this has a pending OOP running, if so forcefully kill it now, no time to wait !
+                 if (_lastId != 0) {
+                     _administrator.Destroy(_lastId);
+@@ -492,7 +494,9 @@ namespace PluginHost
+ 
+                 Unlock();
+ 
++                SYSLOG(Logging::BvanavDbg, (_T("Plugin Init Start: classname: %s, callsign: %s"), className.c_str(), callSign.c_str()));
+                 REPORT_DURATION_WARNING( { ErrorMessage(_handler->Initialize(this)); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::ACTIVATION, callSign.c_str());
++                SYSLOG(Logging::BvanavDbg, (_T("Plugin Init End: classname: %s, callsign: %s"), className.c_str(), callSign.c_str()));
+ 
+                 if (HasError() == true) {
+                     result = Core::ERROR_GENERAL;
+@@ -527,7 +531,7 @@ namespace PluginHost
+                             TRACE(Trace::Error, (_T("Could not open the external connector for %s"), Callsign().c_str()));
+                         }
+                     }
+-
++                    SYSLOG(Logging::BvanavDbg, (_T("Activated Plugin: classname: %s, callsign: %s"), className.c_str(), callSign.c_str()));
+                     SYSLOG(Logging::Startup, (_T("Activated plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
+                     Lock();
+                     State(ACTIVATED);
+diff --git a/Source/core/Library.cpp b/Source/core/Library.cpp
+index b38ffe78e..daf8f7681 100644
+--- a/Source/core/Library.cpp
++++ b/Source/core/Library.cpp
+@@ -20,6 +20,7 @@
+ #include "Library.h"
+ #include "Sync.h"
+ #include "Trace.h"
++#include "messaging/messaging.h"
+ 
+ #ifdef __LINUX__
+ #include <fstream>
+@@ -101,7 +102,9 @@ namespace Core {
+         , _error()
+     {
+ #ifdef __LINUX__
++        SYSLOG(Logging::BvanavDbg, (_T("Dlopen Start: %s"), fileName));
+         void* handle = dlopen(fileName, RTLD_LAZY);
++        SYSLOG(Logging::BvanavDbg, (_T("Dlopen End: %s"), fileName));
+ #endif
+ #ifdef __WINDOWS__
+         HMODULE handle = ::LoadLibrary(fileName);
+diff --git a/Source/core/Services.h b/Source/core/Services.h
+index 8fa3c8d67..a970cbb60 100644
+--- a/Source/core/Services.h
++++ b/Source/core/Services.h
+@@ -31,6 +31,7 @@
+ #include "Proxy.h"
+ #include "SystemInfo.h"
+ #include "Thread.h"
++// #include "messaging/messaging.h"
+ 
+ #include "WarningReportingControl.h"
+ #include "WarningReportingCategories.h"
+@@ -334,6 +335,8 @@ namespace Core {
+             : _version((major << 16) | (minor << 8) | patch)
+             , _Id(Core::ClassNameOnly(typeid(ACTUALSERVICE).name()).Text())
+         {
++            // SYSLOG(Logging::BvanavDbg, (_T("Service Meta Data Init: %s"), _Id.c_str()));
++            fprintf(stderr, "BvanavDbg: Service Meta Data Init: %s\n", _Id.c_str());
+             Core::ServiceAdministrator::Instance().Register(this, &_factory);
+         }
+         ~ServiceMetadata()
+diff --git a/Source/messaging/Logging.cpp b/Source/messaging/Logging.cpp
+index 7fdd08890..c95c2ac2a 100644
+--- a/Source/messaging/Logging.cpp
++++ b/Source/messaging/Logging.cpp
+@@ -42,6 +42,7 @@ namespace Logging {
+                 SYSLOG_ANNOUNCE(Error)
+                 SYSLOG_ANNOUNCE(ParsingError)
+                 SYSLOG_ANNOUNCE(Notification)
++                SYSLOG_ANNOUNCE(BvanavDbg); // bvanav-dbg
+             }
+         } ControlsRegistration;
+ 
+diff --git a/Source/messaging/LoggingCategories.h b/Source/messaging/LoggingCategories.h
+index 38584f199..e7d4e2e14 100644
+--- a/Source/messaging/LoggingCategories.h
++++ b/Source/messaging/LoggingCategories.h
+@@ -33,6 +33,7 @@ namespace Logging {
+     DEFINE_LOGGING_CATEGORY(ParsingError)
+     DEFINE_LOGGING_CATEGORY(Fatal)
+     DEFINE_LOGGING_CATEGORY(Crash)
++    DEFINE_LOGGING_CATEGORY(BvanavDbg); // bvanav-dbg
+ 
+ } // namespace Logging
+ }
+diff --git a/Source/plugins/MetaData.h b/Source/plugins/MetaData.h
+index 206b4f6d3..a54886863 100644
+--- a/Source/plugins/MetaData.h
++++ b/Source/plugins/MetaData.h
+@@ -447,6 +447,7 @@ namespace Plugin {
+             , _precondition(precondition)
+             , _termination(termination)
+             , _control(control) {
++            SYSLOG(Logging::BvanavDbg, (_T("Meta Data Init: %s"), _Id.c_str()));
+             ASSERT(Core::System::ROOT_META_DATA == nullptr);
+             Core::System::ROOT_META_DATA = this;
+             Core::ServiceAdministrator::Instance().Register(this, &_factory);
