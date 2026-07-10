@@ -12,13 +12,13 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r48"
+PR = "r49"
 PV = "4.4.6"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=PIS_TA;name=thunder"
 
-SRCREV_thunder = "740afcccf57785e318f6cdffb682f75f8eef4b4c"
+SRCREV_thunder = "e67944858a06f90c7dc051c075df8a73efb344e8"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
@@ -114,6 +114,7 @@ EXTRA_OECMAKE += " \
     -DHIDE_NON_EXTERNAL_SYMBOLS=OFF \
     -DEXIT_REASONS=${WPEFRAMEWORK_EXIT_REASONS} \
     -DMESSAGING=ON \
+    -DFLUSH_LOGS=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
     -DAUTHORIZEDEXTENSIONS='MessagingControl;PluginInitializerService;Systemd' \
