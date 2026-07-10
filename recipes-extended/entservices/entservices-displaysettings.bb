@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_S
            file://rdkservices.ini \
           "
 # Release version - 1.6.0
-SRCREV = "f1cc0b6f097c15076692d273f47dbf039a420fe6"
+SRCREV = "d23df0ef3e73c69cb8f3e28ed95e41a533dac29a"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -48,7 +48,7 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[displaysettings]      = "-DPLUGIN_DISPLAYSETTINGS=ON,-DPLUGIN_DISPLAYSETTINGS=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus rfc devicesettings entservices-helpers"
 
 # ----------------------------------------------------------------------------
-
+EXTRA_OECMAKE += " -DDS_COMRPC=ON"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
