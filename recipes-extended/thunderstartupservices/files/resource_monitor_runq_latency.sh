@@ -37,7 +37,8 @@
 set -u
 
 # ---- tunables --------------------------------------------------------------
-COMM="${COMM:-Monitor::IResou}"          # truncated (<=15 char) thread name
+COMM="${COMM:-Monitor::IResou}"          # Linux truncates Monitor::IResource to 15 chars
+FULL_COMM="Monitor::IResource"             # full thread name (display only)
 METHOD="${METHOD:-ftrace}"               # ftrace | perf
 DURATION="${DURATION:-30}"               # seconds to trace during start-up
 OUTDIR="${OUTDIR:-/opt/logs}"
@@ -235,22 +236,33 @@ parse_ftrace() {
         }
         END{
             print ""
-            print "=== ResourceMonitor run-queue latency ("want") ==="
+            print "======================================================"
+            print "  WPEFramework Monitor::IResource thread latency"
+            print "======================================================"
             if (n>0){
-                printf "wakeup->run pairs : %d\n", n
-                printf "  FIRST: %.1f us  (tid %s, first scheduled at t=%.6f)\n", first, first_tid, first_ts
-                printf "  min  : %.1f us\n", min
-                printf "  avg  : %.1f us\n", sum/n
-                printf "  max  : %.1f us  (tid %s)\n", max, maxpid
+                print ""
+                print ">>> FIRST-TIME STARTUP RUN-QUEUE LATENCY <<<"
+                printf "    Thread   : WPEFramework Monitor::IResource  (tid %s)\n", first_tid
+                printf "    Latency  : %.1f us\n", first
+                printf "    At boot  : t = %.6f s (kernel uptime when first scheduled)\n", first_ts
+                print ""
+                print "--- All wakeup->run pairs (this boot) ---"
+                printf "    total    : %d\n", n
+                printf "    min      : %.1f us\n", min
+                printf "    avg      : %.1f us\n", sum/n
+                printf "    max      : %.1f us  (tid %s)\n", max, maxpid
             } else {
-                print "No wakeup->run pairs captured for "want"."
-                print "  * Check the thread name (COMM=...) and that Thunder started"
-                print "    inside the trace window."
+                print "No wakeup->run pairs captured for WPEFramework Monitor::IResource (comm=" want ")."
+                print "  * Verify Thunder started inside the trace window."
+                print "  * Check: /opt/logs/runq_boot_armed.txt"
             }
             if (sw_n>0){
-                printf "sched_stat_wait   : n=%d  avg=%.1f us  max=%.1f us (kernel runq wait)\n", \
+                print ""
+                printf "--- kernel sched_stat_wait (run-queue wait, CONFIG_SCHEDSTATS) ---\n"
+                printf "    n=%d  avg=%.1f us  max=%.1f us\n", \
                        sw_n, (sw_sum/sw_n)/1000.0, sw_max/1000.0
             }
+            print "======================================================"
         }
     ' "$raw"
 }
@@ -358,7 +370,7 @@ arm_filtered_trace() {
 # Runs at boot from the systemd unit.
 arm_boot() {
     arm_filtered_trace || exit 1
-    echo "armed $(date)" > "$OUTDIR/runq_boot_armed.txt" 2>/dev/null
+    echo "armed $(date) — targeting WPEFramework Monitor::IResource (comm=$COMM) tracefs=$TRACEFS" > "$OUTDIR/runq_boot_armed.txt" 2>/dev/null
 }
 
 # Measure ONLY the running WPEFramework Monitor::IResource thread (no restart).
