@@ -1,19 +1,19 @@
 diff --git a/Source/WPEFramework/PluginHost.cpp b/Source/WPEFramework/PluginHost.cpp
-index 4b8d3d52a..e1a55c355 100644
+index 4b8d3d52a..dc077b2bc 100644
 --- a/Source/WPEFramework/PluginHost.cpp
 +++ b/Source/WPEFramework/PluginHost.cpp
 @@ -785,6 +785,9 @@ POP_WARNING()
              // Startup/load/initialize what we found in the configuration.
              _dispatcher = new PluginHost::Server(*_config, _background);
  
-+            SYSLOG(Logging::JsonRpcProfiler, (string(_T("ActivateRequest-Fromat: Type, ChannelId, SrcPort, QueueLength, Method, Params")))); // bvanav-dbg
-+            SYSLOG(Logging::JsonRpcProfiler, (string(_T("PluginRequest-Fromat: Type, ChannelId, SrcPort, QueueLength, Method")))); // bvanav-dbg
-+            SYSLOG(Logging::JsonRpcProfiler, (string(_T("Response-Fromat: ChannelId, QueueLength, Method, ThunderLatency(ns), PluginLatency(ns), TotalLatency(ns)")))); // bvanav-dbg
++            SYSLOG(Logging::JsonRpcProfiler, (string(_T("ActivateRequest-Fromat: Type, ChannelId, RequestCount, SrcPort, QueueLength, Method, Params")))); // bvanav-dbg
++            SYSLOG(Logging::JsonRpcProfiler, (string(_T("PluginRequest-Fromat: Type, ChannelId, RequestCount, SrcPort, QueueLength, Method")))); // bvanav-dbg
++            SYSLOG(Logging::JsonRpcProfiler, (string(_T("Response-Fromat: ChannelId, RequestCount, QueueLength, Method, ThunderLatency(ns), PluginLatency(ns), TotalLatency(ns)")))); // bvanav-dbg
              SYSLOG(Logging::Startup, (_T(EXPAND_AND_QUOTE(APPLICATION_NAME) " actively listening.")));
  
              // If we have handlers open up the gates to analyze...
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index b6a9d4604..21bd70c6c 100644
+index b6a9d4604..fed265c3b 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
 @@ -27,6 +27,10 @@
@@ -164,11 +164,11 @@ index b6a9d4604..21bd70c6c 100644
 +                                requestCount = setJsonRpcMethod(message->Designator.Value(), queueSize);
 +                                if(_jsonRpcTracerMap[requestCount].api == "Controller.1.activate" || _jsonRpcTracerMap[requestCount].api == "activate")
 +                                {
-+                                    SYSLOG(Logging::JsonRpcProfiler, (_T("ActivateRequest HTTP, %ld, %ld, %ld, %s, %s"), Id(), _remotePort, _jsonRpcTracerMap[requestCount].pendingQueue, _jsonRpcTracerMap[requestCount].api.c_str(), message->Parameters.Value().c_str()));
++                                    SYSLOG(Logging::JsonRpcProfiler, (_T("ActivateRequest HTTP, %ld, %d, %ld, %ld, %s, %s"), Id(), requestCount, _remotePort, _jsonRpcTracerMap[requestCount].pendingQueue, _jsonRpcTracerMap[requestCount].api.c_str(), message->Parameters.Value().c_str()));
 +                                }
 +                                else
 +                                {
-+                                    SYSLOG(Logging::JsonRpcProfiler, (_T("PluginRequest HTTP, %ld, %ld, %ld, %s"), Id(), _remotePort, _jsonRpcTracerMap[requestCount].pendingQueue, _jsonRpcTracerMap[requestCount].api.c_str()));
++                                    SYSLOG(Logging::JsonRpcProfiler, (_T("PluginRequest HTTP, %ld, %d, %ld, %ld, %s"), Id(), requestCount, _remotePort, _jsonRpcTracerMap[requestCount].pendingQueue, _jsonRpcTracerMap[requestCount].api.c_str()));
 +                                }
 +                            }
 +                            job->Set(Id(), &_parent, service, baseRequest, _security->Token(), !request->ServiceCall(), this, requestCount); // bvanav-dbg
@@ -191,18 +191,18 @@ index b6a9d4604..21bd70c6c 100644
 +                            requestCount = setJsonRpcMethod(message->Designator.Value(), queueSize);
 +                            if(_jsonRpcTracerMap[requestCount].api == "activate" || _jsonRpcTracerMap[requestCount].api == "Controller.1.activate")
 +                            {
-+                                SYSLOG(Logging::JsonRpcProfiler, (_T("ActivateRequest WS, %ld, %ld, %ld, %s, %s"), Id(), _remotePort, _jsonRpcTracerMap[requestCount].pendingQueue, _jsonRpcTracerMap[requestCount].api.c_str(), message->Parameters.Value().c_str()));
++                                SYSLOG(Logging::JsonRpcProfiler, (_T("ActivateRequest WS, %ld, %d, %ld, %ld, %s, %s"), Id(), requestCount, _remotePort, _jsonRpcTracerMap[requestCount].pendingQueue, _jsonRpcTracerMap[requestCount].api.c_str(), message->Parameters.Value().c_str()));
 +                            }
 +                            else
 +                            {
-+                                SYSLOG(Logging::JsonRpcProfiler, (_T("PluginRequest WS, %ld, %ld, %ld, %s"), Id(), _remotePort, _jsonRpcTracerMap[requestCount].pendingQueue, _jsonRpcTracerMap[requestCount].api.c_str()));
++                                SYSLOG(Logging::JsonRpcProfiler, (_T("PluginRequest WS, %ld, %d, %ld, %ld, %s"), Id(), requestCount, _remotePort, _jsonRpcTracerMap[requestCount].pendingQueue, _jsonRpcTracerMap[requestCount].api.c_str()));
 +                            }
 +                        }
 +                        job->Set(Id(), &_parent, _service, element, _security->Token(), ((State() & Channel::JSONRPC) != 0), this, requestCount); // bvanav-dbg
                          _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
                      }
                  }
-@@ -4512,6 +4572,44 @@ POP_WARNING()
+@@ -4512,6 +4572,45 @@ POP_WARNING()
                  }
              }
  
@@ -213,7 +213,7 @@ index b6a9d4604..21bd70c6c 100644
 +                if(port > 0)
 +                    _remotePort = port;
 +                else
-+                    SYSLOG(Logging::JsonRpcProfiler, (_T("Warn Port Number < 0")));
++                    SYSLOG(Logging::JsonRpcProfiler, (_T("Warn port number less than 0")));
 +                _requestTime = Clock::now();
 +            }
 +            inline void setpluginLatency(uint64_t latency /*ns*/, uint8_t requestCount)
@@ -225,12 +225,12 @@ index b6a9d4604..21bd70c6c 100644
 +            {
 +                _responseTime = Clock::now();
 +                
-+                if(_jsonRpcTracerMap.find(requestCount) != _jsonRpcTracerMap.end())
++                if(_jsonRpcTracerMap.find(requestCount) != _jsonRpcTracerMap.end() && _jsonRpcTracerMap[requestCount].pluginLatency > 0)
 +                {
 +                    _responseTime = Clock::now();
 +                    _thunderLatency =  static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(_responseTime - _jsonRpcTracerMap[requestCount].requestTime).count()) - _jsonRpcTracerMap[requestCount].pluginLatency;
 +                    _totalLatency = _thunderLatency + _jsonRpcTracerMap[requestCount].pluginLatency;
-+                    SYSLOG(Logging::JsonRpcProfiler, (_T("Response %ld, %ld, %s, %" PRIu64", %" PRIu64", %" PRIu64), Id(), _jsonRpcTracerMap[requestCount].pendingQueue, _jsonRpcTracerMap[requestCount].api.c_str(), _thunderLatency, _jsonRpcTracerMap[requestCount].pluginLatency, _totalLatency));
++                    SYSLOG(Logging::JsonRpcProfiler, (_T("Response %ld, %d, %ld, %s, %" PRIu64", %" PRIu64", %" PRIu64), Id(), requestCount, _jsonRpcTracerMap[requestCount].pendingQueue, _jsonRpcTracerMap[requestCount].api.c_str(), _thunderLatency, _jsonRpcTracerMap[requestCount].pluginLatency, _totalLatency));
 +                    
 +                    _jsonRpcTracerMap.erase(requestCount);
 +                }
@@ -241,13 +241,14 @@ index b6a9d4604..21bd70c6c 100644
 +                _jsonRpcTracerMap[_requestCount].api = method;
 +                _jsonRpcTracerMap[_requestCount].pendingQueue = queueLen; 
 +                _jsonRpcTracerMap[_requestCount].requestTime = _requestTime;
++                _jsonRpcTracerMap[_requestCount].pluginLatency = 0;
 +                return _requestCount;
 +            }
 +
          private:
              inline string SelectSupportedProtocol(const Web::ProtocolsArray& protocols)
              {
-@@ -4544,6 +4642,22 @@ POP_WARNING()
+@@ -4544,6 +4643,22 @@ POP_WARNING()
              bool _requestClose;
              std::atomic<bool> _serviceCleanedUp;
  
