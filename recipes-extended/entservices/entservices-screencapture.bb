@@ -25,8 +25,10 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 
-DEPENDS += "wpeframework wpeframework-tools-native"
+DEPENDS += "wpeframework wpeframework-tools-native libdrm gcc-runtime virtual/libc"
 RDEPENDS:${PN} += "wpeframework"
+# Explicit runtime deps for plugin .so ELF requirements (libstdc++, libgcc, libc, libdrm).
+RDEPENDS:${PN} += "libstdc++ libgcc glibc libdrm"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
