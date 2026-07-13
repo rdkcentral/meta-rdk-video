@@ -22,7 +22,7 @@ SRCREV_thunder = "2c0fcc5529e7da734be558ca6efa05d934dcce31"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
-            file://001-long-bootup-8-6.patch \
+            file://r4.4/001-long-bootup-8-6.patch \
            "
 
 S = "${WORKDIR}/git"
