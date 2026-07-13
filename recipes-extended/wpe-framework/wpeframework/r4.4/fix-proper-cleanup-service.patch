@@ -1,0 +1,90 @@
+From 5617d3909674c34183d3fb4130b0c44e824c92f1 Mon Sep 17 00:00:00 2001
+From: Satheeshkumar G <satheeshkumar_g@comcast.com>
+Date: Mon, 13 Jul 2026 13:36:20 +0530
+Subject: [PATCH] RDKEMW-21475 Fix service cleanup race between ResourceMonitor and WorkerPool
+
+Signed-off-by: Satheeshkumar G <satheeshkumar_g@comcast.com>
+---
+ Source/WPEFramework/PluginServer.cpp |  6 ++----
+ Source/WPEFramework/PluginServer.h   | 19 ++++++++++++++-----
+ 2 files changed, 16 insertions(+), 9 deletions(-)
+
+diff --git a/Source/WPEFramework/PluginServer.cpp b/Source/WPEFramework/PluginServer.cpp
+index 2d597421..44a2fdd4 100644
+--- a/Source/WPEFramework/PluginServer.cpp
++++ b/Source/WPEFramework/PluginServer.cpp
+@@ -949,6 +949,7 @@ namespace PluginHost
+         , _security(_parent.Officer())
+         , _service()
+         , _requestClose(false)
++        , _serviceCleanedUp(false)
+     {
+         TRACE(Activity, (_T("Construct a link with ID: [%d] to [%s]"), Id(), remoteId.QualifiedName().c_str()));
+     }
+@@ -958,11 +959,8 @@ namespace PluginHost
+         TRACE(Activity, (_T("Destruct a link with ID [%d] to [%s]"), Id(), RemoteId().c_str()));
+ 
+         // If we are still atatched to a service, detach, we are out of scope...
+-        if (_service.IsValid() == true) {
+-            _service->Unsubscribe(*this);
++        CleanupService();
+ 
+-            _service.Release();
+-        }
+         if (_security != nullptr) {
+             _security->Release();
+             _security = nullptr;
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index eed7ce8f..8e7fc4b2 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -26,6 +26,7 @@
+ #include "IRemoteInstantiation.h"
+ #include "WarningReportingCategories.h"
+ #include "PostMortem.h"
++#include <atomic>
+ 
+ #ifdef PROCESSCONTAINERS_ENABLED
+ #include "../processcontainers/ProcessContainer.h"
+@@ -4266,11 +4267,7 @@ POP_WARNING()
+ 
+                 // If we are closing (or closed) do the clean up
+                 if (IsOpen() == false) {
+-                    if (_service.IsValid() == true) {
+-                        _service->Unsubscribe(*this);
+-
+-                        _service.Release();
+-                    }
++                    CleanupService();
+ 
+                     State(CLOSED, false);
+                     _parent.Closed(Id());
+@@ -4322,6 +4319,17 @@ POP_WARNING()
+                 SetId(id);
+             }
+ 
++            void CleanupService()
++            {
++                bool expected = false;
++                if (_serviceCleanedUp.compare_exchange_strong(expected, true, std::memory_order_acq_rel)) {
++                    if (_service.IsValid() == true) {
++                        _service->Unsubscribe(*this);
++                        _service.Release();
++                    }
++                }
++            }
++
+         private:
+             inline string SelectSupportedProtocol(const Web::ProtocolsArray& protocols)
+             {
+@@ -4352,6 +4360,7 @@ POP_WARNING()
+             PluginHost::ISecurity* _security;
+             Core::ProxyType<Service> _service;
+             bool _requestClose;
++            std::atomic<bool> _serviceCleanedUp;
+ 
+             // Factories for creating jobs that can be placed on the PluginHost Worker pool.
+             static Core::ProxyPoolType<WebRequestJob> _webJobs;
+-- 
+2.34.1
+
