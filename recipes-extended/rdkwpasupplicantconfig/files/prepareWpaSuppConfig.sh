@@ -86,7 +86,7 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
     elif ! cmp "$WPA_SUPP_CONF_FILE" /opt/secure/wifi/wpa_supplicant.conf; then
         log "TELEMETRY_WIFI_WPA_SUPPLICANT_CONF_FILES_DIFFER $WPA_SUPP_CONF_FILE /opt/secure/wifi/wpa_supplicant.conf"
     fi
-    if [[ `grep "ctrl_interface=/var/run/wpa_supplicant" $WPA_SUPP_CONF_FILE` ]] && [[ `grep "update_config=1" $WPA_SUPP_CONF_FILE` ]]; then
+    if [[ `grep "ctrl_interface=/var/run/wpa_supplicant" $WPA_SUPP_CONF_FILE` ]]; then
         log "$WPA_SUPP_CONF_FILE file exists and configurations are present"
 		sed -i "/update_config/d" $WPA_SUPP_CONF_FILE
 		sed -i '/network={/,/}/d' $WPA_SUPP_CONF_FILE
