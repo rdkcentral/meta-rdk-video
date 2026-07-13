@@ -90,8 +90,6 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
         log "$WPA_SUPP_CONF_FILE file exists and configurations are present"
 		sed -i "/update_config/d" $WPA_SUPP_CONF_FILE
 		sed -i '/network={/,/}/d' $WPA_SUPP_CONF_FILE
-        sed -i "/bssid=/d" $WPA_SUPP_CONF_FILE
-        sed -i "s/key_mgmt=OPEN/key_mgmt=NONE/g" $WPA_SUPP_CONF_FILE
         if grep "country=" "$WPA_SUPP_CONF_FILE"; then
             log "Country code is present , No need to change"
         else
