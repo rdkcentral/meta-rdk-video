@@ -33,6 +33,6 @@ EXTRA_OECMAKE = " \
 "
 
 FILES:${PN} += " \
-    ${libdir}/WPEFramework/plugins/OtelPluginTest.so \
+    ${libdir}/wpeframework/plugins/libWPEFrameworkOtelPluginTest.so \
     ${sysconfdir}/WPEFramework/plugins/OtelPluginTest.json \
 "
