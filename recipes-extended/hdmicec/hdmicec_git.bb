@@ -20,8 +20,8 @@ RDEPENDS:${PN} = " devicesettings telemetry"
 RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
 
 DEPENDS += "safec-common-wrapper"
-DEPENDS:append = " rdk-halif-aidl"
-DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinder"
+DEPENDS:append = " rdk-halif-aidl binderhelp"
+DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl binderhelp"
 
 ASNEEDED = ""
 ALLOW_EMPTY:${PN} = "1"
@@ -56,8 +56,8 @@ LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-confi
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
-CFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
-CXXFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+CFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/halif/hdmicec/current/include -I${TMPDIR}/sysroots-ipk-components/usr/include/halif/hdmicec/current/include -I${TMPDIR}/sysroots-ipk-components/usr/include/halif/common/current/include -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+CXXFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/halif/hdmicec/current/include -I${TMPDIR}/sysroots-ipk-components/usr/include/halif/hdmicec/current/include -I${TMPDIR}/sysroots-ipk-components/usr/include/halif/common/current/include -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
 CFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
 CXXFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
 
@@ -73,25 +73,19 @@ do_compile:prepend() {
                         ;;
         esac
 
-        OBJ_DIR="${B}/aidl_stubs"
-        mkdir -p "${OBJ_DIR}"
-        STUB_DIR="${STAGING_INCDIR}/com/rdk/hal/hdmicec"
-        HAL_DIR="${STAGING_INCDIR}/com/rdk/hal"
-        INCFLAGS="-I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
-        for f in IHdmiCec IHdmiCecController IHdmiCecEventListener Property SendMessageStatus State; do
-                ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
-                        -c "${STUB_DIR}/${f}.cpp" -o "${OBJ_DIR}/${f}.o"
-        done
-        ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
-                -c "${HAL_DIR}/PropertyValue.cpp" -o "${OBJ_DIR}/PropertyValue.o"
-        ${AR} rcs "${B}/libhdmicec_aidl_stubs.a" \
-                "${OBJ_DIR}/IHdmiCec.o" \
-                "${OBJ_DIR}/IHdmiCecController.o" \
-                "${OBJ_DIR}/IHdmiCecEventListener.o" \
-                "${OBJ_DIR}/Property.o" \
-                "${OBJ_DIR}/SendMessageStatus.o" \
-                "${OBJ_DIR}/State.o" \
-                "${OBJ_DIR}/PropertyValue.o"
+        AIDL_CPP_ARCHIVE="${TMPDIR}/sysroots-ipk-components/usr/lib/libhdmicec-vcurrent-cpp.a"
+        AIDL_HALIF_INCDIR="${TMPDIR}/sysroots-ipk-components/usr/include/halif/hdmicec/current/include"
+
+        if [ ! -f "${AIDL_CPP_ARCHIVE}" ]; then
+                bbfatal "AIDL archive not found: ${AIDL_CPP_ARCHIVE}"
+        fi
+
+        if [ ! -d "${AIDL_HALIF_INCDIR}" ]; then
+                bbfatal "AIDL halif include dir not found: ${AIDL_HALIF_INCDIR}"
+        fi
+
+        # Link against the prebuilt AIDL static archive from sysroots-ipk-components.
+        cp -a "${AIDL_CPP_ARCHIVE}" "${B}/libhdmicec_aidl_stubs.a"
 }
 
 
