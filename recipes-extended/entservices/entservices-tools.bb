@@ -11,7 +11,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-tools;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 # Initial release baseline
-SRCREV = "4f1bdc037170fdc64f4799bcaf7c50d2294482f6"
+SRCREV = "3450402afe48d8bc532c7867b76334880f01505e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -34,7 +34,15 @@ EXTRA_OECMAKE += " \
 "
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
+FILES:${PN} += " \
+	${libdir}/wpeframework/plugins/*.so \
+	${libdir}/thunder/plugins/*.so \
+	${prefix}/lib/wpeframework/plugins/*.so \
+	${prefix}/lib/thunder/plugins/*.so \
+	${libdir}/*.so \
+	${datadir}/WPEFramework/* \
+	${datadir}/Thunder/* \
+"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
