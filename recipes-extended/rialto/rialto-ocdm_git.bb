@@ -22,7 +22,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/rialto-ocdm;protocol=${CMF_GIT_PROTOCOL};branch=${
 
 DEPENDS = "openssl jsoncpp glib-2.0 gstreamer1.0 gstreamer1.0-plugins-base wpeframework-tools-native wpeframework-clientlibraries protobuf protobuf-native rialto"
 # entservices-opencdmi now provides opencdm/open_cdm.h and ocdm.pc (moved from wpeframework-clientlibraries)
-DEPENDS:append += " entservices-opencdmi "
+DEPENDS:append = " entservices-opencdmi "
 
 S = "${WORKDIR}/git"
 
