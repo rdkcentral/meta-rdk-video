@@ -12,7 +12,7 @@ SRC_URI = " \
 
 S = "${WORKDIR}"
 
-inherit cmake
+inherit cmake pkgconfig
 
 DEPENDS = " \
     opentelemetry-cpp \
