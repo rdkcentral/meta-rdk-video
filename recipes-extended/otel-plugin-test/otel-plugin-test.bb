@@ -24,7 +24,7 @@ DEPENDS = " \
 "
 
 RDEPENDS:${PN} = " \
-    wpe-framework \
+    wpeframework \
     rdk-otel-collector \
 "
 
