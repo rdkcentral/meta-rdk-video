@@ -75,9 +75,44 @@ do_compile:prepend() {
 
         OBJ_DIR="${B}/aidl_stubs"
         mkdir -p "${OBJ_DIR}"
+        
         STUB_DIR="${STAGING_INCDIR}/com/rdk/hal/hdmicec"
         HAL_DIR="${STAGING_INCDIR}/com/rdk/hal"
-        INCFLAGS="-I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+        # Base include root containing com/rdk/hal — same as STAGING_INCDIR in the
+        # normal case; overridden below when using a fallback location.
+        BASE_INCDIR="${STAGING_INCDIR}"
+
+        # Walk four locations for AIDL-generated cpp stubs in priority order:
+        #  1. recipe sysroot       (normal fully-assembled build)
+        #  2. sysroots-components  (stale sysroot on developer machine)
+        #  3. rdk-halif-aidl image/ (fresh build, do_populate_sysroot pending)
+        #  4. rdk-halif-aidl cmake out/ (cmake output before do_install runs)
+        if [ ! -f "${STUB_DIR}/IHdmiCec.cpp" ]; then
+            _sc=$(find "${TMPDIR}/sysroots-components" \
+                    -path "*rdk-halif-aidl/usr/include/com/rdk/hal/hdmicec" \
+                    -type d 2>/dev/null | head -1)
+            if [ -z "${_sc}" ]; then
+                _sc=$(find "${TMPDIR}/work" \
+                        -path "*rdk-halif-aidl/*/image/usr/include/com/rdk/hal/hdmicec" \
+                        -type d 2>/dev/null | head -1)
+            fi
+            if [ -z "${_sc}" ]; then
+                _sc=$(find "${TMPDIR}/work" \
+                        -path "*rdk-halif-aidl*/rdk-halif-aidl/out/hdmicec/*/cpp/com/rdk/hal/hdmicec" \
+                        -type d 2>/dev/null | head -1)
+            fi
+            if [ -n "${_sc}" ]; then
+                bbnote "AIDL cpp stubs not in recipe sysroot; using: ${_sc}"
+                STUB_DIR="${_sc}"
+                HAL_DIR=$(dirname "${_sc}")
+                # The include root is 4 levels above STUB_DIR (.../usr/include/com/rdk/hal/hdmicec)
+                BASE_INCDIR=$(dirname $(dirname $(dirname $(dirname "${_sc}"))))
+            else
+                bbfatal "Cannot find AIDL hdmicec cpp stubs; check that rdk-halif-aidl:do_compile succeeded"
+            fi
+        fi
+
+        INCFLAGS="-I${BASE_INCDIR} -I${STUB_DIR} -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
         for f in IHdmiCec IHdmiCecController IHdmiCecEventListener Property SendMessageStatus State; do
                 ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
                         -c "${STUB_DIR}/${f}.cpp" -o "${OBJ_DIR}/${f}.o"
@@ -92,6 +127,51 @@ do_compile:prepend() {
                 "${OBJ_DIR}/SendMessageStatus.o" \
                 "${OBJ_DIR}/State.o" \
                 "${OBJ_DIR}/PropertyValue.o"
+
+        # If any rdk-halif-aidl headers or link libraries are missing from the
+        # recipe sysroot (stale sysroot), copy them from sysroots-components or
+        # rdk-halif-aidl image.  Check each subdirectory independently so a
+        # partially-populated sysroot still gets the missing pieces.
+        _NEED_HDRS=0
+        for _d in binder com android utils android-base log cutils; do
+            if [ ! -d "${STAGING_INCDIR}/${_d}" ]; then
+                _NEED_HDRS=1
+                break
+            fi
+        done
+        _NEED_LIBS=0
+        if [ ! -f "${STAGING_LIBDIR}/libbinder.so" ]; then
+            _NEED_LIBS=1
+        fi
+        if [ "${_NEED_HDRS}" = "1" ] || [ "${_NEED_LIBS}" = "1" ]; then
+            _broot=$(find "${TMPDIR}/sysroots-components" \
+                    -path "*rdk-halif-aidl/usr/include/binder" \
+                    -type d 2>/dev/null | head -1)
+            if [ -z "${_broot}" ]; then
+                _broot=$(find "${TMPDIR}/work" \
+                        -path "*rdk-halif-aidl/*/image/usr/include/binder" \
+                        -type d 2>/dev/null | head -1)
+            fi
+            if [ -n "${_broot}" ]; then
+                _inc=$(dirname "${_broot}")
+                _lib=$(dirname "${_inc}")/lib
+                bbnote "rdk-halif-aidl headers/libs missing from recipe sysroot; copying from $(dirname ${_inc})"
+                if [ "${_NEED_HDRS}" = "1" ]; then
+                    for _d in binder android utils android-base log cutils com; do
+                        if [ -d "${_inc}/${_d}" ] && [ ! -d "${STAGING_INCDIR}/${_d}" ]; then
+                            cp -r "${_inc}/${_d}" "${STAGING_INCDIR}/${_d}"
+                        fi
+                    done
+                fi
+                if [ "${_NEED_LIBS}" = "1" ] && [ -d "${_lib}" ]; then
+                    for _so in "${_lib}"/*.so; do
+                        [ -e "${_so}" ] && cp -a "${_so}" "${STAGING_LIBDIR}/"
+                    done
+                fi
+            else
+                bbwarn "rdk-halif-aidl headers/libs not found in sysroots-components or image"
+            fi
+        fi
 }
 
 

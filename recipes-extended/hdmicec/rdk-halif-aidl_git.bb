@@ -17,11 +17,11 @@ SRCREV_binder = "8ed54005e11f24079ade4311fffb44375966acd9"
 S = "${WORKDIR}/git"
 
 # 2) RDK HAL AIDL CMake project
-SRC_URI += "git://github.com/rdkcentral/rdk-halif-aidl.git;branch=develop;protocol=https;destsuffix=rdk-hal-aidl;name=hal"
+SRC_URI += "git://github.com/rdkcentral/rdk-halif-aidl.git;branch=develop;protocol=https;destsuffix=rdk-halif-aidl;name=hal"
 SRCREV_hal  = "8ab4217b36a2a614384f5276343fc67226a3a236"
 
 # Directory containing CMakeLists.txt and build 6.sh originally
-RDK_HAL_S = "${WORKDIR}/rdk-hal-aidl"
+RDK_HAL_S = "${WORKDIR}/rdk-halif-aidl"
 
 # Build bits for binder libs
 BINDER_BITS = "64"
@@ -191,12 +191,17 @@ do_install() {
     # matches: gen/<target>/<version>/
     # =========
     GEN_DIR="${RDK_HAL_S}/gen/${AIDL_TARGET}/${AIDL_SRC_VERSION}"
+    # cmake writes generated files to ${RDK_HAL_S}/out/<target>/<version>/
+    #GEN_DIR="${RDK_HAL_S}/out/${AIDL_TARGET}/${AIDL_SRC_VERSION}"
+    if [ ! -d "${GEN_DIR}" ]; then
+        GEN_DIR="${RDK_HAL_S}/build/gen/${AIDL_TARGET}/${AIDL_SRC_VERSION}"
+    fi
 
     if [ -d "${GEN_DIR}" ]; then
         install -d ${D}${datadir}/rdk/aidl/${AIDL_TARGET}/${AIDL_SRC_VERSION}
         cp -r ${GEN_DIR}/* ${D}${datadir}/rdk/aidl/${AIDL_TARGET}/${AIDL_SRC_VERSION}/
     else
-        bbwarn "RDK HAL AIDL gen dir ${GEN_DIR} not found; check CMake output path."
+        bbfatal "RDK HAL AIDL gen dir not found under ${RDK_HAL_S}/gen/ or ${RDK_HAL_S}/build/gen/ — cmake AIDL generation failed."
     fi
 
     # =========
@@ -209,7 +214,7 @@ do_install() {
         install -d ${D}${includedir}
         cp -r ${GEN_CPP_DIR}/com ${D}${includedir}/
     else
-        bbwarn "RDK HAL AIDL cpp dir ${GEN_CPP_DIR}/com not found; check generator output."
+        bbfatal "RDK HAL AIDL cpp dir ${GEN_CPP_DIR}/com not found — check aidl generator output."
     fi
 
     GEN_H_DIR="${GEN_DIR}/h"
@@ -219,6 +224,8 @@ do_install() {
         install -d ${D}${includedir}
         cp -r "${GEN_H_DIR}/com" "${D}${includedir}/"
     else
+
+
         bbwarn "HAL AIDL header dir ${GEN_H_DIR}/com not found; check generator output."
     fi
 }
