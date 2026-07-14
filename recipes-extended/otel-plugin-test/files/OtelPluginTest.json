@@ -1,6 +1,6 @@
 {
     "callsign": "OtelPluginTest",
-    "locator": "libOtelPluginTest.so",
+    "locator": "libWPEFrameworkOtelPluginTest.so",
     "classname": "OtelPluginTest",
     "autostart": false,
     "configuration": {}
