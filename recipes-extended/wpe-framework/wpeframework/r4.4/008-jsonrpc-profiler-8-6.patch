@@ -1,5 +1,5 @@
 diff --git a/Source/WPEFramework/PluginHost.cpp b/Source/WPEFramework/PluginHost.cpp
-index 4b8d3d52a..dc077b2bc 100644
+index 4b8d3d52a..7abce176f 100644
 --- a/Source/WPEFramework/PluginHost.cpp
 +++ b/Source/WPEFramework/PluginHost.cpp
 @@ -785,6 +785,9 @@ POP_WARNING()
@@ -8,12 +8,12 @@ index 4b8d3d52a..dc077b2bc 100644
  
 +            SYSLOG(Logging::JsonRpcProfiler, (string(_T("ActivateRequest-Fromat: Type, ChannelId, RequestCount, SrcPort, QueueLength, Method, Params")))); // bvanav-dbg
 +            SYSLOG(Logging::JsonRpcProfiler, (string(_T("PluginRequest-Fromat: Type, ChannelId, RequestCount, SrcPort, QueueLength, Method")))); // bvanav-dbg
-+            SYSLOG(Logging::JsonRpcProfiler, (string(_T("Response-Fromat: ChannelId, RequestCount, QueueLength, Method, ThunderLatency(ns), PluginLatency(ns), TotalLatency(ns)")))); // bvanav-dbg
++            SYSLOG(Logging::JsonRpcProfiler, (string(_T("Response-Fromat: Type, ChannelId, RequestCount, QueueLength, Method, ThunderLatency(ns), PluginLatency(ns), TotalLatency(ns)")))); // bvanav-dbg
              SYSLOG(Logging::Startup, (_T(EXPAND_AND_QUOTE(APPLICATION_NAME) " actively listening.")));
  
              // If we have handlers open up the gates to analyze...
 diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
-index b6a9d4604..fed265c3b 100644
+index b6a9d4604..b4e2424a5 100644
 --- a/Source/WPEFramework/PluginServer.h
 +++ b/Source/WPEFramework/PluginServer.h
 @@ -27,6 +27,10 @@
@@ -27,15 +27,16 @@ index b6a9d4604..fed265c3b 100644
  
  #ifdef PROCESSCONTAINERS_ENABLED
  #include "../processcontainers/ProcessContainer.h"
-@@ -3716,6 +3720,7 @@ POP_WARNING()
+@@ -3716,6 +3720,8 @@ POP_WARNING()
          // (is closed) during the service process, the ChannelMap will
          // not find it and just "flush" the presented work.
          class Channel : public PluginHost::Channel {
 +            using Clock = std::chrono::steady_clock; // bvanav-dbg
++            enum RequestType {HTTP, WS}; // bvanav-dbg
          public:
              class Job : public Core::IDispatch {
              public:
-@@ -3825,6 +3830,7 @@ POP_WARNING()
+@@ -3825,6 +3831,7 @@ POP_WARNING()
                      : Job()
                      , _request()
                      , _jsonrpc(false)
@@ -43,7 +44,7 @@ index b6a9d4604..fed265c3b 100644
                  {
                  }
                  ~WebRequestJob() override
-@@ -3842,7 +3848,7 @@ POP_WARNING()
+@@ -3842,7 +3849,7 @@ POP_WARNING()
                      _missingResponse->ErrorCode = Web::STATUS_INTERNAL_SERVER_ERROR;
                      _missingResponse->Message = _T("There is no response from the requested service.");
                  }
@@ -52,7 +53,7 @@ index b6a9d4604..fed265c3b 100644
                  {
                      Job::Set(id, server, service);
  
-@@ -3851,6 +3857,8 @@ POP_WARNING()
+@@ -3851,6 +3858,8 @@ POP_WARNING()
                      _request = request;
                      _jsonrpc = JSONRPC && (_request->HasBody() == true);
                      _token = token;
@@ -61,20 +62,20 @@ index b6a9d4604..fed265c3b 100644
                  }
                  void Dispatch() override
                  {
-@@ -3868,7 +3876,12 @@ POP_WARNING()
+@@ -3868,7 +3877,12 @@ POP_WARNING()
                              }
  
                              if (message->IsSet()) {
-+                                SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg HTTP %ld, %s, %d invoke-start"), _outer->Id(), _outer->_jsonRpcTracerMap[_requestCount].api.c_str(), _requestCount));
++                                // SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg HTTP %ld, %s, %d invoke-start"), _outer->Id(), _outer->_jsonRpcTracerMap[_requestCount].api.c_str(), _requestCount));
 +                                Clock::time_point invokeStart = Clock::now(); // bvanav-dbg
                                  Core::ProxyType<Core::JSONRPC::Message> body = Job::Process(_token, message);
 +                                Clock::time_point invokeEnd = Clock::now();  // bvanav-dbg
-+                                SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg HTTP %ld, %s, %d invoke-end"), _outer->Id(), _outer->_jsonRpcTracerMap[_requestCount].api.c_str(), _requestCount));
-+                                _outer->setpluginLatency(static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(invokeEnd - invokeStart).count()), _requestCount); // bvanav-dbg
++                                // SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg HTTP %ld, %s, %d invoke-end"), _outer->Id(), _outer->_jsonRpcTracerMap[_requestCount].api.c_str(), _requestCount));
++                                _outer->setpluginLatency(static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(invokeEnd - invokeStart).count()), _requestCount, RequestType::HTTP); // bvanav-dbg
  
                                  // If we have no response body, it looks like an async-call...
                                  if (body.IsValid() == false) {
-@@ -3913,6 +3926,7 @@ POP_WARNING()
+@@ -3913,6 +3927,7 @@ POP_WARNING()
                          if (response->CacheControl.IsSet() == false)
                              response->CacheControl = _T("no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0");
  
@@ -82,7 +83,7 @@ index b6a9d4604..fed265c3b 100644
                          Job::Submit(response);
  
                          if (_request->Connection.Value() == Web::Request::CONNECTION_CLOSE) {
-@@ -3943,6 +3957,8 @@ POP_WARNING()
+@@ -3943,6 +3958,8 @@ POP_WARNING()
                  Core::ProxyType<Web::Request> _request;
                  string _token;
                  bool _jsonrpc;
@@ -91,7 +92,7 @@ index b6a9d4604..fed265c3b 100644
  
                  static Core::ProxyType<Web::Response> _missingResponse;
              };
-@@ -3955,6 +3971,7 @@ POP_WARNING()
+@@ -3955,6 +3972,7 @@ POP_WARNING()
                      : Job()
                      , _element()
                      , _jsonrpc(false)
@@ -99,7 +100,7 @@ index b6a9d4604..fed265c3b 100644
                  {
                  }
                  ~JSONElementJob() override
-@@ -3967,7 +3984,7 @@ POP_WARNING()
+@@ -3967,7 +3985,7 @@ POP_WARNING()
                  }
  
              public:
@@ -108,7 +109,7 @@ index b6a9d4604..fed265c3b 100644
                  {
                      Job::Set(id, server, service);
  
-@@ -3976,6 +3993,8 @@ POP_WARNING()
+@@ -3976,6 +3994,8 @@ POP_WARNING()
                      _element = element;
                      _jsonrpc = JSONRPC;
                      _token = token;
@@ -117,22 +118,22 @@ index b6a9d4604..fed265c3b 100644
                  }
                  void Dispatch() override
                  {
-@@ -3993,9 +4012,12 @@ POP_WARNING()
+@@ -3993,9 +4013,12 @@ POP_WARNING()
                          if (HasService() == true) {
                              message->ImplicitCallsign(GetService().Callsign());
                          }
 -
-+                        SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg WS %ld, %s, %d invoke-start"), _outer->Id(), _outer->_jsonRpcTracerMap[_requestCount].api.c_str(), _requestCount));
++                        // SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg WS %ld, %s, %d invoke-start"), _outer->Id(), _outer->_jsonRpcTracerMap[_requestCount].api.c_str(), _requestCount));
 +                        Clock::time_point invokeStart = Clock::now(); // bvanav-dbg
                          _element = Core::ProxyType<Core::JSON::IElement>(Job::Process(_token, message));
 -
 +                        Clock::time_point invokeEnd = Clock::now();  // bvanav-dbg
-+                        SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg WS %ld, %s, %d invoke-end"), _outer->Id(), _outer->_jsonRpcTracerMap[_requestCount].api.c_str(), _requestCount));
-+                        _outer->setpluginLatency(static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(invokeEnd - invokeStart).count()), _requestCount); // bvanav-dbg
++                        // SYSLOG(Logging::JsonRpcProfiler, (_T("bvanavdbg WS %ld, %s, %d invoke-end"), _outer->Id(), _outer->_jsonRpcTracerMap[_requestCount].api.c_str(), _requestCount));
++                        _outer->setpluginLatency(static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(invokeEnd - invokeStart).count()), _requestCount, RequestType::WS); // bvanav-dbg
  #if THUNDER_PERFORMANCE
                          tracking->Execution();
  #endif
-@@ -4006,6 +4028,7 @@ POP_WARNING()
+@@ -4006,6 +4029,7 @@ POP_WARNING()
  
                      if (_element.IsValid()) {
                          // Fire and forget, We are done !!!
@@ -140,7 +141,7 @@ index b6a9d4604..fed265c3b 100644
                          Job::Submit(_element);
                          _element.Release();
                      }
-@@ -4028,6 +4051,8 @@ POP_WARNING()
+@@ -4028,6 +4052,8 @@ POP_WARNING()
                  Core::ProxyType<Core::JSON::IElement> _element;
                  string _token;
                  bool _jsonrpc;
@@ -149,7 +150,7 @@ index b6a9d4604..fed265c3b 100644
              };
              class TextJob : public Job {
              public:
-@@ -4315,7 +4340,25 @@ POP_WARNING()
+@@ -4315,7 +4341,25 @@ POP_WARNING()
  
                          if (job.IsValid() == true) {
                              Core::ProxyType<Web::Request> baseRequest(request);
@@ -176,7 +177,7 @@ index b6a9d4604..fed265c3b 100644
                              _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
                          }
                      }
-@@ -4392,7 +4435,24 @@ POP_WARNING()
+@@ -4392,7 +4436,24 @@ POP_WARNING()
                      ASSERT(job.IsValid() == true);
  
                      if ((_service.IsValid() == true) && (job.IsValid() == true)) {
@@ -202,7 +203,7 @@ index b6a9d4604..fed265c3b 100644
                          _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
                      }
                  }
-@@ -4512,6 +4572,45 @@ POP_WARNING()
+@@ -4512,6 +4573,43 @@ POP_WARNING()
                  }
              }
  
@@ -210,16 +211,14 @@ index b6a9d4604..fed265c3b 100644
 +        public:
 +            inline void setRequestTime(uint16_t port = 0)
 +            {
-+                if(port > 0)
-+                    _remotePort = port;
-+                else
-+                    SYSLOG(Logging::JsonRpcProfiler, (_T("Warn port number less than 0")));
++                _remotePort = port;
 +                _requestTime = Clock::now();
 +            }
-+            inline void setpluginLatency(uint64_t latency /*ns*/, uint8_t requestCount)
++            inline void setpluginLatency(uint64_t latency /*ns*/, uint8_t requestCount, RequestType type)
 +            {
 +                std::lock_guard<std::mutex> lock(_invokeMtx); 
 +                _jsonRpcTracerMap[requestCount].pluginLatency = latency;
++                _jsonRpcTracerMap[requestCount].type = type;
 +            }
 +            inline void setResponseTime(uint8_t requestCount)
 +            {
@@ -230,7 +229,7 @@ index b6a9d4604..fed265c3b 100644
 +                    _responseTime = Clock::now();
 +                    _thunderLatency =  static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(_responseTime - _jsonRpcTracerMap[requestCount].requestTime).count()) - _jsonRpcTracerMap[requestCount].pluginLatency;
 +                    _totalLatency = _thunderLatency + _jsonRpcTracerMap[requestCount].pluginLatency;
-+                    SYSLOG(Logging::JsonRpcProfiler, (_T("Response %ld, %d, %ld, %s, %" PRIu64", %" PRIu64", %" PRIu64), Id(), requestCount, _jsonRpcTracerMap[requestCount].pendingQueue, _jsonRpcTracerMap[requestCount].api.c_str(), _thunderLatency, _jsonRpcTracerMap[requestCount].pluginLatency, _totalLatency));
++                    SYSLOG(Logging::JsonRpcProfiler, (_T("Response %s, %ld, %d, %ld, %s, %" PRIu64", %" PRIu64", %" PRIu64), (_jsonRpcTracerMap[requestCount].type == RequestType::HTTP ? "HTTP" : "WS"), Id(), requestCount, _jsonRpcTracerMap[requestCount].pendingQueue, _jsonRpcTracerMap[requestCount].api.c_str(), _thunderLatency, _jsonRpcTracerMap[requestCount].pluginLatency, _totalLatency));
 +                    
 +                    _jsonRpcTracerMap.erase(requestCount);
 +                }
@@ -248,7 +247,7 @@ index b6a9d4604..fed265c3b 100644
          private:
              inline string SelectSupportedProtocol(const Web::ProtocolsArray& protocols)
              {
-@@ -4544,6 +4643,22 @@ POP_WARNING()
+@@ -4544,6 +4642,22 @@ POP_WARNING()
              bool _requestClose;
              std::atomic<bool> _serviceCleanedUp;
  
@@ -263,7 +262,7 @@ index b6a9d4604..fed265c3b 100644
 +            uint32_t _queueSize;
 +            uint16_t _remotePort;
 +            uint8_t _requestCount;
-+            struct TraceInfo {string api; uint32_t pendingQueue; Clock::time_point requestTime; uint64_t pluginLatency;};
++            struct TraceInfo {RequestType type; string api; uint32_t pendingQueue; Clock::time_point requestTime; uint64_t pluginLatency;};
 +            std::unordered_map<uint8_t, TraceInfo> _jsonRpcTracerMap;
 +            std::mutex _invokeMtx;
 +        
@@ -397,6 +396,19 @@ index 38584f199..58c734459 100644
  
  } // namespace Logging
  }
+diff --git a/Source/plugins/Channel.h b/Source/plugins/Channel.h
+index 7ab9cf0db..18feeb7c4 100644
+--- a/Source/plugins/Channel.h
++++ b/Source/plugins/Channel.h
+@@ -288,7 +288,7 @@ namespace PluginHost {
+                 BaseClass::Unlock();
+ 
+                 if (trigger == true) {
+-                    BaseClass::Trigger();
++                    BaseClass::Trigger(entry); // bvanav-dbg
+                 }
+             }
+         }
 diff --git a/Source/websocket/WebResponse.h b/Source/websocket/WebResponse.h
 index aa51ea776..7207f0abb 100644
 --- a/Source/websocket/WebResponse.h
@@ -422,7 +434,7 @@ index aa51ea776..7207f0abb 100644
  }
  }
 diff --git a/Source/websocket/WebSocketLink.h b/Source/websocket/WebSocketLink.h
-index 0d4bb1898..9f4906ccf 100644
+index 0d4bb1898..90ad02f83 100644
 --- a/Source/websocket/WebSocketLink.h
 +++ b/Source/websocket/WebSocketLink.h
 @@ -508,7 +508,7 @@ POP_WARNING()
@@ -434,7 +446,22 @@ index 0d4bb1898..9f4906ccf 100644
                  if ((IsSuspended() == false) && (IsOpen() == true) && (_serializerImpl.Submit(element) == true)) {
  
                      _adminLock.Unlock();
-@@ -714,6 +714,16 @@ POP_WARNING()
+@@ -518,6 +518,14 @@ POP_WARNING()
+                     _adminLock.Unlock();
+                 }
+             }
++            using ACTUALLINK::Trigger; // bvanav-dbg
++            void Trigger(const Core::ProxyType<Core::JSON::IElement>& element) // bvanav-dbg
++            {
++                // _adminLock.Lock();
++                _requestCount = element->getRequestCount();
++                // _adminLock.Unlock();
++                ACTUALLINK::Trigger();
++            }
+             uint32_t Close(const uint32_t waitTime)
+             {
+                 uint32_t result = 0;
+@@ -714,6 +722,16 @@ POP_WARNING()
                  _adminLock.Unlock();
              }
  
@@ -451,7 +478,7 @@ index 0d4bb1898..9f4906ccf 100644
          private:
              inline uint16_t State() const
              {
-@@ -932,6 +942,7 @@ POP_WARNING()
+@@ -932,6 +950,7 @@ POP_WARNING()
              string _commandData;
              Core::ProxyType<typename OUTBOUND::BaseElement> _webSocketMessage;
              uint64_t _pingFireTime;
@@ -459,7 +486,18 @@ index 0d4bb1898..9f4906ccf 100644
          };
  
      public:
-@@ -1105,6 +1116,13 @@ POP_WARNING()
+@@ -1083,6 +1102,10 @@ POP_WARNING()
+         {
+             _channel.Ping();
+         }
++        void Trigger(const Core::ProxyType<Core::JSON::IElement>& entry) // bvanav-dbg
++        {
++            _channel.Trigger(entry);
++        }
+         void Trigger()
+         {
+             _channel.Trigger();
+@@ -1105,6 +1128,13 @@ POP_WARNING()
          virtual bool IsIdle() const = 0;
  
      protected:
