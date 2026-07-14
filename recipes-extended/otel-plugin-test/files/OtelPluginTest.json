@@ -1,0 +1,7 @@
+{
+    "callsign": "OtelPluginTest",
+    "locator": "libOtelPluginTest.so",
+    "classname": "OtelPluginTest",
+    "autostart": false,
+    "configuration": {}
+}
