@@ -75,7 +75,7 @@ log "Setting WiFi Regulatory domain to $COUNTRY_CODE."
 # Generate wpa_supplicant.conf
 # 1. If the file is not present, create one and fill it with the ctrl_interface/country values
 # 2. If the file is present and ctrl_interface is missing, recreate the file with proper values
-# 3. If the file is present and ctrl_interface is present, remove update_config and stored network blocks; ensure country is set
+# 3. If the file is present and ctrl_interface is present, remove update_config; ensure country is set
 if [ -f $WPA_SUPP_CONF_FILE ]; then
     if ! systemctl is-active securemount.service; then
         log "TELEMETRY_WIFI_SECUREMOUNT_SERVICE_NOT_ACTIVE"
