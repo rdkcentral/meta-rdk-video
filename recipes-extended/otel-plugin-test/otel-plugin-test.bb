@@ -30,6 +30,7 @@ RDEPENDS:${PN} = " \
 
 EXTRA_OECMAKE = " \
     -DNAMESPACE=WPEFramework \
+    -DCMAKE_INSTALL_SYSCONFDIR=${sysconfdir} \
 "
 
 FILES:${PN} += " \
