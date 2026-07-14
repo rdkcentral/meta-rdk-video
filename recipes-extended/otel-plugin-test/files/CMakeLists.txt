@@ -4,34 +4,44 @@ project(OtelPluginTest VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(WPEFramework REQUIRED)
+if (USE_THUNDER_R5)
+    find_package(Thunder REQUIRED)
+else ()
+    find_package(WPEFramework REQUIRED)
+endif()
+
+find_package(${NAMESPACE}Core REQUIRED)
 find_package(${NAMESPACE}Plugins REQUIRED)
 
 find_library(RDK_OTLP_LIB rdk_otlp)
 
-add_library(${PROJECT_NAME} MODULE OtelPluginTest.cpp)
+set(MODULE_NAME ${NAMESPACE}OtelPluginTest)
 
-target_link_libraries(${PROJECT_NAME}
+add_library(${MODULE_NAME} SHARED OtelPluginTest.cpp)
+
+target_link_libraries(${MODULE_NAME}
     PRIVATE
-        ${NAMESPACE}::${NAMESPACE}Core
-        ${NAMESPACE}::${NAMESPACE}Plugins
-        $<$<BOOL:${RDK_OTLP_LIB}>:rdk_otlp>
+        ${NAMESPACE}Core::${NAMESPACE}Core
+        ${NAMESPACE}Plugins::${NAMESPACE}Plugins
+        $<$<BOOL:${RDK_OTLP_LIB}>:${RDK_OTLP_LIB}>
 )
 
 # Pick up rdk_otlp_instrumentation.h if present
 if(RDK_OTLP_LIB)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE RDK_OTEL_ENABLED=1)
+    target_compile_definitions(${MODULE_NAME} PRIVATE RDK_OTEL_ENABLED=1)
 endif()
 
-set_target_properties(${PROJECT_NAME} PROPERTIES
+set_target_properties(${MODULE_NAME} PROPERTIES
     CXX_STANDARD 14
-    PREFIX ""
+    CXX_STANDARD_REQUIRED YES
 )
 
-install(TARGETS ${PROJECT_NAME}
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${NAMESPACE}/plugins
-)
+if (USE_THUNDER_R5)
+    install(TARGETS ${MODULE_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/thunder/plugins)
+else ()
+    install(TARGETS ${MODULE_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/wpeframework/plugins)
+endif()
 
 install(FILES OtelPluginTest.json
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/etc/${NAMESPACE}/plugins
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/etc/WPEFramework/plugins
 )
