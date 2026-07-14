@@ -71,7 +71,7 @@ namespace WPEFramework
                 rdk_otlp_start_distributed_trace(opName.c_str(), "invoke");
 #endif
 
-                auto link = std::make_shared<JSONRPC::SmartLinkType<Core::JSON::IElement>>(
+                auto link = std::make_shared<WPEFramework::JSONRPC::SmartLinkType<Core::JSON::IElement>>(
                     callsign, _T("OtelPluginTest"), _T(""));
 
                 JsonObject params;
@@ -88,8 +88,10 @@ namespace WPEFramework
 #endif
 
                 if (errorCode == Core::ERROR_NONE) {
+                    string resultStr;
+                    result.ToString(resultStr);
                     response["success"] = true;
-                    response["result"]  = result.ToString();
+                    response["result"]  = resultStr;
                 } else {
                     response["success"]   = false;
                     response["errorCode"] = static_cast<uint32_t>(errorCode);
@@ -120,19 +122,18 @@ namespace WPEFramework
             {
                 string callsign = parameters.HasLabel("callsign") ? parameters["callsign"].String() : "TVSettings";
 
-                Core::JSON::ArrayType<Core::JSON::String> methodArray;
-                if (parameters.HasLabel("methods")) {
-                    parameters["methods"].Array(methodArray);
-                }
-
-                // Default methods if not provided
+                // Default methods - passed as comma-separated string: "methods":"m1,m2,m3"
                 std::vector<string> methods;
-                if (methodArray.Length() > 0) {
-                    auto it = methodArray.Elements();
-                    while (it.Next()) {
-                        methods.push_back(it.Current().Value());
+                if (parameters.HasLabel("methods")) {
+                    string methodsStr = parameters["methods"].String();
+                    size_t pos = 0, found;
+                    while ((found = methodsStr.find(',', pos)) != string::npos) {
+                        methods.push_back(methodsStr.substr(pos, found - pos));
+                        pos = found + 1;
                     }
-                } else {
+                    methods.push_back(methodsStr.substr(pos));
+                }
+                if (methods.empty()) {
                     methods = { "tvcapabilities", "framerate", "totalgpuram", "isaudiopassthrough", "hdrsetting" };
                 }
 
@@ -144,7 +145,7 @@ namespace WPEFramework
                 rdk_otlp_start_distributed_trace(opName.c_str(), "multi-invoke");
 #endif
 
-                auto link = std::make_shared<JSONRPC::SmartLinkType<Core::JSON::IElement>>(
+                auto link = std::make_shared<WPEFramework::JSONRPC::SmartLinkType<Core::JSON::IElement>>(
                     callsign, _T("OtelPluginTest"), _T(""));
 
                 Core::JSON::ArrayType<Core::JSON::String> results;
@@ -176,8 +177,10 @@ namespace WPEFramework
                 rdk_otlp_finish_distributed_trace();
 #endif
 
+                string resultsStr;
+                results.ToString(resultsStr);
                 response["success"] = (lastError == Core::ERROR_NONE);
-                response["results"] = results.ToString();
+                response["results"] = resultsStr;
 
 #if RDK_OTEL_ENABLED
                 {
