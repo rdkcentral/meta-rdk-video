@@ -43,5 +43,5 @@ else ()
 endif()
 
 install(FILES OtelPluginTest.json
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/etc/WPEFramework/plugins
+    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/WPEFramework/plugins
 )
