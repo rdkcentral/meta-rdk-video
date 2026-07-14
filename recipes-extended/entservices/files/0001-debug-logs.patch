@@ -1,0 +1,126 @@
+From 71557d3b48b4de2336c2f19ee54ee07689c93914 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Tue, 14 Jul 2026 20:00:25 +0000
+Subject: [PATCH] debug logs
+
+---
+ TextToSpeech/TextToSpeechImplementation.cpp | 12 +++++++++++-
+ TextToSpeech/TextToSpeechJsonRpc.cpp        | 14 +++++++++++---
+ TextToSpeech/impl/TTSSpeaker.cpp            |  5 ++++-
+ 3 files changed, 26 insertions(+), 5 deletions(-)
+
+diff --git a/TextToSpeech/TextToSpeechImplementation.cpp b/TextToSpeech/TextToSpeechImplementation.cpp
+index 7048a3b..a1d9e2c 100644
+--- a/TextToSpeech/TextToSpeechImplementation.cpp
++++ b/TextToSpeech/TextToSpeechImplementation.cpp
+@@ -445,11 +445,14 @@ namespace Plugin {
+     {
+         CHECK_TTS_MANAGER_RETURN_ON_FAIL();
+ 
++        TTSLOG_INFO("KKP-debug Speak:%d acquiring _adminLock for callsign=%s\n", __LINE__, callsign.c_str());
+         _adminLock.Lock();
++        TTSLOG_INFO("KKP-debug Speak:%d _adminLock acquired\n", __LINE__);
+         speechid = nextSpeechId();
+         auto status = _ttsManager->speak(speechid,callsign,text);
+         ttsStatus = (Exchange::ITextToSpeech::TTSErrorDetail) status;
+         _adminLock.Unlock();
++        TTSLOG_INFO("KKP-debug Speak:%d _adminLock released, speechid=%d status=%d\n", __LINE__, speechid, status);
+ 
+         if(status != TTS::TTS_OK)
+             speechid = -1;
+@@ -527,16 +530,20 @@ namespace Plugin {
+ 
+     void TextToSpeechImplementation::dispatchEvent(Event event, string callsign, const JsonValue &params)
+     {
++        TTSLOG_INFO("KKP-debug dispatchEvent:%d submitting event=%d to worker pool\n", __LINE__, event);
+         Core::IWorkerPool::Instance().Submit(Job::Create(this, event, callsign, params));
+     }
+ 
+     void TextToSpeechImplementation::Dispatch(Event event, string callsign, const JsonValue params)
+     {
++        TTSLOG_INFO("KKP-debug Dispatch:%d acquiring _adminLock for event=%d\n", __LINE__, event);
+         _adminLock.Lock();
++        TTSLOG_INFO("KKP-debug Dispatch:%d _adminLock acquired, event=%d, notificationClients=%zu\n", __LINE__, event, _notificationClients.size());
+ 
+         std::list<Exchange::ITextToSpeech::INotification*>::iterator index(_notificationClients.begin());
+ 
+         while (index != _notificationClients.end()) {
++            TTSLOG_INFO("KKP-debug Dispatch:%d BEFORE COM-RPC notification callback, event=%d\n", __LINE__, event);
+             switch(event) {
+                 case STATE_CHANGED:     (*index)->OnTTSStateChanged(params.Boolean()); break;
+                 case VOICE_CHANGED:     (*index)->OnVoiceChanged(params.String()); break;
+@@ -550,13 +557,14 @@ namespace Plugin {
+                 case SPEECH_COMPLETE:   (*index)->OnSpeechComplete(params.Number()); break;
+                 default: break;
+             }
++            TTSLOG_INFO("KKP-debug Dispatch:%d AFTER COM-RPC notification callback, event=%d\n", __LINE__, event);
+             ++index;
+         }
+ 
+         //notification to client with callsign
+         std::map<string,Exchange::ITextToSpeech::INotification*>::iterator callsignindex(_notificationCallsignClients.find(callsign));
+         if (callsignindex != _notificationCallsignClients.end()) {
+-             TTSLOG_INFO("Delivering event to callsign %s \n", (callsignindex->first).c_str());
++             TTSLOG_INFO("KKP-debug Dispatch:%d Delivering event=%d to callsign %s\n", __LINE__, event, (callsignindex->first).c_str());
+              switch(event) {
+                 case WILL_SPEAK:        (callsignindex->second)->OnSpeechReady(params.Number()); break;
+                 case SPEECH_START:      (callsignindex->second)->OnSpeechStarted(params.Number()); break;
+@@ -568,9 +576,11 @@ namespace Plugin {
+                 case SPEECH_COMPLETE:   (callsignindex->second)->OnSpeechComplete(params.Number()); break;
+                 default: break;            
+              }
++             TTSLOG_INFO("KKP-debug Dispatch:%d AFTER callsign COM-RPC callback, event=%d\n", __LINE__, event);
+          }
+ 
+         _adminLock.Unlock();
++        TTSLOG_INFO("KKP-debug Dispatch:%d _adminLock released, event=%d\n", __LINE__, event);
+ 
+     }
+ 
+diff --git a/TextToSpeech/TextToSpeechJsonRpc.cpp b/TextToSpeech/TextToSpeechJsonRpc.cpp
+index c53db58..1eb4ab3 100644
+--- a/TextToSpeech/TextToSpeechJsonRpc.cpp
++++ b/TextToSpeech/TextToSpeechJsonRpc.cpp
+@@ -260,9 +260,17 @@ uint32_t TextToSpeech::SetACL(const JsonObject& parameters, JsonObject& response
+     {
+         CHECK_TTS_PARAMETER_RETURN_ON_FAIL("text");
+         if(_tts) {
+-            uint32_t speechid;
+-            Exchange::ITextToSpeech::TTSErrorDetail status;
+-            _tts->Speak(parameters["callsign"].String(),parameters["text"].String(),speechid,status);
++            uint32_t speechid = 0;
++            Exchange::ITextToSpeech::TTSErrorDetail status = Exchange::ITextToSpeech::TTSErrorDetail::TTS_FAIL;
++            TTSLOG_INFO("KKP-debug Speak:%d BEFORE COM-RPC _tts->Speak() callsign=%s\n", __LINE__, parameters["callsign"].String().c_str());
++            auto ret = _tts->Speak(parameters["callsign"].String(),parameters["text"].String(),speechid,status);
++            TTSLOG_INFO("KKP-debug Speak:%d AFTER COM-RPC _tts->Speak() ret=%d speechid=%d status=%d\n", __LINE__, ret, speechid, status);
++            if(ret != Core::ERROR_NONE) {
++                TTSLOG_ERROR("KKP-debug Speak:%d IPC call FAILED ret=%d, speechid=%d (garbage)\n", __LINE__, ret, speechid);
++                response["speechid"] = -1;
++                response["TTS_Status"] = static_cast<uint32_t>(Exchange::ITextToSpeech::TTSErrorDetail::TTS_FAIL);
++                returnResponse(false);
++            }
+             response["speechid"] = (int) speechid;
+             response["TTS_Status"] = static_cast<uint32_t>(status);
+             returnResponse(status ==  Exchange::ITextToSpeech::TTSErrorDetail::TTS_OK);
+diff --git a/TextToSpeech/impl/TTSSpeaker.cpp b/TextToSpeech/impl/TTSSpeaker.cpp
+index 709b6d9..7ea75f9 100644
+--- a/TextToSpeech/impl/TTSSpeaker.cpp
++++ b/TextToSpeech/impl/TTSSpeaker.cpp
+@@ -438,10 +438,13 @@ int TTSSpeaker::speak(TTSSpeakerClient *client, uint32_t id, std::string callsig
+     TTSLOG_TRACE("id=%d, text=\"%s\"", id, text.c_str());
+ 
+     // If force speak is set, clear old queued data & stop speaking
+-    if(client->configuration()->isPreemptive())
++    if(client->configuration()->isPreemptive()) {
++        TTSLOG_INFO("KKP-debug TTSSpeaker::speak:%d isPreemptive=true, calling reset() before queuing speechId=%d\n", __LINE__, id);
+         reset();
++    }
+ 
+     SpeechData data(client, id, callsign, text, secure,primVolDuck);
++    TTSLOG_INFO("KKP-debug TTSSpeaker::speak:%d queuing speechId=%d, current queue size=%zu\n", __LINE__, id, m_queue.size());
+     queueData(data);
+ 
+     return 0;
+-- 
+2.44.4
+
