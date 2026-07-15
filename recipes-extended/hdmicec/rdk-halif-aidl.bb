@@ -1,5 +1,6 @@
 SUMMARY = "HAL interface definitions for RDK-E (AIDL) + generated C++ headers + libhal_aidl.so"
 DESCRIPTION = "Fetches rdk-halif-aidl AIDL definitions, generates C++ sources/headers using the native aidl compiler, and builds libhal_aidl.so using an integrated Makefile."
+#//TODO this file will remove in once the proper rdk-halif-aidl header are povided by vendor.
 HOMEPAGE = "https://github.com/rdkcentral/rdk-halif-aidl"
 #
 # Upstream repository is open-source (see HOMEPAGE/SRC_URI). The repo ships an
