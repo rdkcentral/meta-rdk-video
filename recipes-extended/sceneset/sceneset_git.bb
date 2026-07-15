@@ -15,7 +15,13 @@ EXTRA_OECMAKE += "-DSCENESET_DEFAULT_APPNAME='${SCENESET_DEFAULT_APPNAME}' \
                  -DFACTORY_APP_PATH='${FACTORY_APPS_PATH}' \
                  -DAPP_PREINSTALL_DIRECTORY='${APP_PREINSTALL_DIRECTORY}'"
 
-DEPENDS += "wpeframework entservices-apis ralf-utils"
+DEPENDS += "wpeframework entservices-apis ralf-utils telemetry"
+
+# Sceneset T2 telemetry support
+CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
+TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
+EXTRA_OECMAKE += " -DSCENESET_TELEMETRY_METRICS_SUPPORT=ON"
+
 RDEPENDS:${PN} += " ralf-utils"
 
 #RDK logging support
@@ -27,7 +33,7 @@ SYSLOG-NG_SERVICE_sceneset = "sceneset.service"
 SYSLOG-NG_DESTINATION_sceneset = "sceneset.log"
 SYSLOG-NG_LOGRATE_sceneset = "high"
 
-SRCREV = "9fbbd7f01c9548582108eb11bfbe86012aa75eb8"
+SRCREV = "d74b2fa6cc23a71be4fb3bfb7e95695abfe7314a"
 SRC_URI = "${CMF_GITHUB_ROOT}/sceneset;${CMF_GITHUB_SRC_URI_SUFFIX};name=sceneset"
 SRCREV_FORMAT = "sceneset"
 
