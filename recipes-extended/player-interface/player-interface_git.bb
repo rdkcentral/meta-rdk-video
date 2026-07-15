@@ -6,9 +6,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV = "0.2.0-r1"
 PR = "r0"
 
-SRCREV = "f66c6faecc85695f70ce4df8d122600eee669bc8"
+SRCREV = "44509c286d422de58cfa72eb66eec859559bca3b"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "main"
+PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-21444_for_VPAAMP-457_to_middleware_8.6"
 
 inherit pkgconfig
 inherit cmake
