@@ -55,12 +55,12 @@ namespace WPEFramework
             }
 
             // JSON-RPC: testTrace
-            // Params: {"callsign":"TVSettings","method":"tvcapabilities"}
+            // Params: {"callsign":"DisplayInfo.1","method":"tvcapabilities"}
             // Starts a distributed trace, invokes one method on a target plugin
             // with traceparent auto-injected, then finishes the trace.
             uint32_t TestTrace(const JsonObject& parameters, JsonObject& response)
             {
-                string callsign = parameters.HasLabel("callsign") ? parameters["callsign"].String() : "TVSettings";
+                string callsign = parameters.HasLabel("callsign") ? parameters["callsign"].String() : "DisplayInfo.1";
                 string method   = parameters.HasLabel("method")   ? parameters["method"].String()   : "tvcapabilities";
 
                 SYSLOG(Logging::Startup, (_T("OtelPluginTest::testTrace callsign=%s method=%s"),
@@ -116,11 +116,11 @@ namespace WPEFramework
             }
 
             // JSON-RPC: testMultiTrace
-            // Params: {"callsign":"TVSettings","methods":["tvcapabilities","framerate","totalgpuram","isaudiopassthrough","hdrsetting"]}
+            // Params: {"callsign":"DisplayInfo.1","methods":["tvcapabilities","framerate","totalgpuram","isaudiopassthrough","hdrsetting"]}
             // Starts ONE distributed trace and invokes all methods under the same trace ID.
             uint32_t TestMultiTrace(const JsonObject& parameters, JsonObject& response)
             {
-                string callsign = parameters.HasLabel("callsign") ? parameters["callsign"].String() : "TVSettings";
+                string callsign = parameters.HasLabel("callsign") ? parameters["callsign"].String() : "DisplayInfo.1";
 
                 // Default methods - passed as comma-separated string: "methods":"m1,m2,m3"
                 std::vector<string> methods;
