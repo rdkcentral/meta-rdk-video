@@ -11,8 +11,9 @@ PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 # 1) Binder tools + libs repo
-SRC_URI = "git://github.com/rdkcentral/linux_binder_idl.git;branch=develop;protocol=https;name=binder"
-SRCREV_binder = "8ed54005e11f24079ade4311fffb44375966acd9"
+SRC_URI = "git://github.com/rdkcentral/linux_binder_idl.git;protocol=https;name=binder;nobranch=1"
+SRCREV_binder = "0f7a23b6b879f0a67d90c9b8b74ecba8dc0c5312"
+SRCREV_FORMAT = "binder"
 
 S = "${WORKDIR}/git"
 

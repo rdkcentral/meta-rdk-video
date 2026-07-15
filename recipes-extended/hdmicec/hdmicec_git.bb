@@ -83,9 +83,6 @@ do_compile:prepend() {
         if [ ! -d "${AIDL_HALIF_INCDIR}" ]; then
                 bbfatal "AIDL halif include dir not found: ${AIDL_HALIF_INCDIR}"
         fi
-
-        # Link against the prebuilt AIDL static archive from sysroots-ipk-components.
-        cp -a "${AIDL_CPP_ARCHIVE}" "${B}/libhdmicec_aidl_stubs.a"
 }
 
 
@@ -107,12 +104,18 @@ do_configure:append() {
                         ;;
         esac
 
+        AIDL_CPP_ARCHIVE="${TMPDIR}/sysroots-ipk-components/usr/lib/libhdmicec-vcurrent-cpp.a"
+
+        if [ ! -f "${AIDL_CPP_ARCHIVE}" ]; then
+                bbfatal "AIDL archive not found: ${AIDL_CPP_ARCHIVE}"
+        fi
+
     # Patch the generated Makefile to:
     #  1. link the AIDL stubs archive into libRCEC.so so typeinfo symbols are defined
     #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
         #     runtime from the binder provider in the target image
     sed -i \
-                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = ${B}/libhdmicec_aidl_stubs.a \${top_builddir}/osal/src/libRCECOSHal.la|" \
+                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = ${AIDL_CPP_ARCHIVE} \${top_builddir}/osal/src/libRCECOSHal.la|" \
                                 "${B}/ccec/src/Makefile"
 
     sed -i \
