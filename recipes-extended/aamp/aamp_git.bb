@@ -3,14 +3,14 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV = "3.6.0"
+PV = "3.6.0.1_VIPA"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "f6208c3886f0b34ecedb14957917490c804d3ef7"
+SRCREV_aamp ?= "77d9dd507dcf1c0925b53393dffc32f0b2a6d3cf"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
-AAMP_BRANCH ?= "develop"
+AAMP_BRANCH ?= "support/3.6.0_8.6_vipa"
 CMF_GITHUB_BRANCH = "branch=${AAMP_BRANCH}"
 
 DEPENDS += "curl libdash libxml2 cjson readline ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
