@@ -20,7 +20,7 @@ RDEPENDS:${PN} = " devicesettings telemetry"
 RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
 
 DEPENDS += "safec-common-wrapper"
-DEPENDS:append = " rdk-halif-aidl"
+DEPENDS:append = " rdk-halif-aidl libbinder"
 DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinder"
 
 ASNEEDED = ""
@@ -64,38 +64,6 @@ CXXFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I
 INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/ds-hal \
     "
-
-
-do_compile:prepend() {
-        case ":${OVERRIDES}:" in
-                *:vdevice_x86-64-mw:*)
-                        return 0
-                        ;;
-        esac
-
-        OBJ_DIR="${B}/aidl_stubs"
-        mkdir -p "${OBJ_DIR}"
-        STUB_DIR="${STAGING_INCDIR}/com/rdk/hal/hdmicec"
-        HAL_DIR="${STAGING_INCDIR}/com/rdk/hal"
-        INCFLAGS="-I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
-        for f in IHdmiCec IHdmiCecController IHdmiCecEventListener Property SendMessageStatus State; do
-                ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
-                        -c "${STUB_DIR}/${f}.cpp" -o "${OBJ_DIR}/${f}.o"
-        done
-        ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
-                -c "${HAL_DIR}/PropertyValue.cpp" -o "${OBJ_DIR}/PropertyValue.o"
-        ${AR} rcs "${B}/libhdmicec_aidl_stubs.a" \
-                "${OBJ_DIR}/IHdmiCec.o" \
-                "${OBJ_DIR}/IHdmiCecController.o" \
-                "${OBJ_DIR}/IHdmiCecEventListener.o" \
-                "${OBJ_DIR}/Property.o" \
-                "${OBJ_DIR}/SendMessageStatus.o" \
-                "${OBJ_DIR}/State.o" \
-                "${OBJ_DIR}/PropertyValue.o"
-}
-
-
-
 do_install:append() {
 #        install -d ${D}${includedir}/rdk/hdmicec
 #        install -d ${D}${includedir}/ccec/drivers
@@ -107,24 +75,39 @@ do_install:append() {
 }
 
 do_configure:append() {
-        case ":${OVERRIDES}:" in
-                *:vdevice_x86-64-mw:*)
-                        return 0
-                        ;;
-        esac
+    case ":${OVERRIDES}:" in
+        *:vdevice_x86-64-mw:*)
+            return 0
+            ;;
+    esac
 
-    # Patch the generated Makefile to:
-    #  1. link the AIDL stubs archive into libRCEC.so so typeinfo symbols are defined
-    #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
-        #     runtime from the binder provider in the target image
-    sed -i \
-                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = ${B}/libhdmicec_aidl_stubs.a \${top_builddir}/osal/src/libRCECOSHal.la|" \
-                                "${B}/ccec/src/Makefile"
+    AIDL_LIB_SYSROOT="${RECIPE_SYSROOT}${libdir}/libhdmicec-vcurrent-cpp.a"
+    AIDL_LIB_IPK="${TMPDIR}/sysroots-ipk-components/usr/lib/libhdmicec-vcurrent-cpp.a"
+
+    bbnote "Checking recipe sysroot: ${AIDL_LIB_SYSROOT}"
+    bbnote "Checking sysroots-ipk-components: ${AIDL_LIB_IPK}"
+
+    if [ -f "${AIDL_LIB_SYSROOT}" ]; then
+        AIDL_CPP_ARCHIVE="${AIDL_LIB_SYSROOT}"
+        bbnote "Using AIDL archive from recipe sysroot"
+    elif [ -f "${AIDL_LIB_IPK}" ]; then
+        AIDL_CPP_ARCHIVE="${AIDL_LIB_IPK}"
+        bbwarn "Using AIDL archive from sysroots-ipk-components (fallback)"
+    else
+        bbfatal "Unable to locate libhdmicec-vcurrent-cpp.a"
+    fi
+
+    bbnote "AIDL_CPP_ARCHIVE=${AIDL_CPP_ARCHIVE}"
 
     sed -i \
-                                's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinder -lutils -llog -lbase|' \
-                                "${B}/ccec/src/Makefile"
+        "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = ${AIDL_CPP_ARCHIVE} \${top_builddir}/osal/src/libRCECOSHal.la|" \
+        "${B}/ccec/src/Makefile"
+
+    sed -i \
+        's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinder -lutils -llog -lbase|' \
+        "${B}/ccec/src/Makefile"
 }
+
 
 do_configure:append:vdevice_x86-64-mw() {
                 # Patch the generated Makefile to:
