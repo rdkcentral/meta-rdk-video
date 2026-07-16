@@ -37,6 +37,9 @@ concurrency:
 jobs:
   monitor-srcrev:
     runs-on: ubuntu-latest
+    outputs:
+      changes_count: ${{ steps.compare.outputs.changes_count }}
+      changed_recipes_json: ${{ steps.compare.outputs.changed_recipes_json }}
     env:
       SCAN_DIR: recipes-extended/entservices
       STATE_FILE: .github/entservices-srcrev-state.json
@@ -106,7 +109,7 @@ jobs:
               summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
           now = int(time.time())
-          now_utc = dt.datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%SZ")
+          now_utc = dt.datetime.fromtimestamp(now, tz=dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
           if not scan_dir.exists():
               write_summary([
@@ -126,15 +129,43 @@ jobs:
           persist_state = "false"
           due = "true"
 
+          def sha_exists(sha):
+              """Return True if sha is a non-zero SHA and reachable in the local repo."""
+              if not sha or sha.strip('0') == '':
+                  return False
+              try:
+                  subprocess.check_output(["git", "cat-file", "-e", sha])
+                  return True
+              except subprocess.CalledProcessError:
+                  return False
+
           if event_name in {"push", "pull_request"}:
               if event_name == "push":
-                  base_ref = event_payload.get("before") or "HEAD^"
+                  base_ref = event_payload.get("before") or ""
                   head_ref = github_sha or "HEAD"
               else:
-                  base_ref = (((event_payload.get("pull_request") or {}).get("base") or {}).get("sha")) or "HEAD^"
+                  base_ref = (((event_payload.get("pull_request") or {}).get("base") or {}).get("sha")) or ""
                   head_ref = (((event_payload.get("pull_request") or {}).get("head") or {}).get("sha")) or (github_sha or "HEAD")
 
-              changed_files_raw = git("diff", "--name-only", f"{base_ref}..{head_ref}", "--", str(scan_dir))
+              # If base_ref doesn't exist (new branch, force push, or zero SHA),
+              # fall back to the parent of head_ref.
+              if not sha_exists(base_ref):
+                  try:
+                      base_ref = git("rev-parse", f"{head_ref}^")
+                  except subprocess.CalledProcessError:
+                      # Single-commit repo — no parent; compare against empty tree
+                      base_ref = git("hash-object", "-t", "tree", "/dev/null")
+
+              try:
+                  changed_files_raw = git("diff", "--name-only", f"{base_ref}..{head_ref}", "--", str(scan_dir))
+              except subprocess.CalledProcessError as exc:
+                  write_summary([
+                      "# EntServices SRCREV Monitor",
+                      "",
+                      f"Warning: could not compute diff ({exc}). Skipping SRCREV check for this run.",
+                  ])
+                  append_outputs(due=due, persist_state=persist_state, changes_count="0")
+                  sys.exit(0)
               changed_files = [line for line in changed_files_raw.splitlines() if line.endswith(".bb")]
 
               for rel_path in sorted(changed_files):
@@ -166,7 +197,11 @@ jobs:
                   lines.append("")
 
               write_summary(lines)
-              append_outputs(due=due, persist_state=persist_state, changes_count=str(len(changes)))
+              recipes_json = json.dumps([
+                  {"name": Path(p).stem, "old_srcrev": o, "new_srcrev": n}
+                  for p, o, n in changes
+              ])
+              append_outputs(due=due, persist_state=persist_state, changes_count=str(len(changes)), changed_recipes_json=recipes_json)
               sys.exit(0)
 
           state = {}
@@ -237,7 +272,11 @@ jobs:
               lines.append("")
 
           write_summary(lines)
-          append_outputs(due="true", persist_state=persist_state, changes_count=str(len(changes)))
+          recipes_json = json.dumps([
+              {"name": Path(p).stem, "old_srcrev": o, "new_srcrev": n}
+              for p, o, n in changes
+          ])
+          append_outputs(due="true", persist_state=persist_state, changes_count=str(len(changes)), changed_recipes_json=recipes_json)
           PY
 
       - name: Commit updated scheduled snapshot
@@ -256,3 +295,19 @@ jobs:
 
           git commit -m "chore(ci): update entservices SRCREV state"
           git push
+
+  trigger-image-build:
+    name: Trigger QEMU image build for changed recipes
+    needs: monitor-srcrev
+    if: needs.monitor-srcrev.outputs.changes_count != '0'
+    uses: ./.github/workflows/build_qemu_image.yml
+    strategy:
+      matrix:
+        recipe: ${{ fromJson(needs.monitor-srcrev.outputs.changed_recipes_json) }}
+    with:
+      changed_recipe: ${{ matrix.recipe.name }}
+      old_srcrev: ${{ matrix.recipe.old_srcrev }}
+      new_srcrev: ${{ matrix.recipe.new_srcrev }}
+    secrets:
+      QEMU_IMAGE_UPDATE_TOKEN: ${{ secrets.QEMU_IMAGE_UPDATE_TOKEN }}
+      REPO_READ_TOKEN: ${{ secrets.REPO_READ_TOKEN }}

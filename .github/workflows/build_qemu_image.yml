@@ -1,0 +1,472 @@
+name: Build QEMU Image on SRCREV Change
+
+# Triggers:
+#   1. Called by EntServices SRCREV Monitor when it detects a SRCREV change.
+#   2. Manual dispatch for ad-hoc image builds.
+on:
+  workflow_call:
+    inputs:
+      changed_recipe:
+        description: 'Name of the .bb recipe whose SRCREV changed (e.g. entservices-hdmicecsource)'
+        required: true
+        type: string
+      old_srcrev:
+        description: 'Previous SRCREV value'
+        required: false
+        type: string
+        default: ''
+      new_srcrev:
+        description: 'New SRCREV value'
+        required: true
+        type: string
+    secrets:
+      QEMU_IMAGE_UPDATE_TOKEN:
+        description: 'GitHub PAT with write access to entservices-hdmicecsource repo'
+        required: false
+      REPO_READ_TOKEN:
+        description: 'GitHub token/PAT with read access to private layer repos'
+        required: false
+
+  workflow_dispatch:
+    inputs:
+      changed_recipe:
+        description: 'Recipe name to build (e.g. entservices-hdmicecsource)'
+        required: true
+        default: 'entservices-hdmicecsource'
+      old_srcrev:
+        description: 'Previous SRCREV (informational only)'
+        required: false
+        default: ''
+      new_srcrev:
+        description: 'New SRCREV'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-publish-qemu-image:
+    name: Bitbake ${{ inputs.changed_recipe }} and publish QEMU image
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/rdkcentral/docker-rdk-ci:latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      RECIPE_NAME: ${{ inputs.changed_recipe }}
+      NEW_SRCREV: ${{ inputs.new_srcrev }}
+      OLD_SRCREV: ${{ inputs.old_srcrev }}
+      BUILD_WORKDIR: /tmp/rdk-build
+      IMAGE_WORKDIR: /tmp/qemu-image-out
+      MACHINE: vdevice_x86-64-mw
+      BITBAKE_IMAGE: core-image-vdevice-xfce
+      # Target repo where the generated image will be committed
+      TARGET_REPO: rdkcentral/entservices-hdmicecsource
+      TARGET_BRANCH: qemu
+      TARGET_IMAGE_PATH: Tests/vDeviceTests/qemu-images
+      HAS_UPDATE_TOKEN: ${{ secrets.QEMU_IMAGE_UPDATE_TOKEN != '' }}
+      HAS_REPO_READ_TOKEN: ${{ secrets.REPO_READ_TOKEN != '' }}
+
+    steps:
+      - name: Checkout meta-rdk-video
+        uses: actions/checkout@v4
+        with:
+          path: meta-rdk-video
+
+      - name: Print SRCREV change summary
+        run: |
+          echo "========================================"
+          echo "SRCREV change detected"
+          echo "Recipe  : $RECIPE_NAME"
+          echo "Old SHA : ${OLD_SRCREV:-<none>}"
+          echo "New SHA : ${NEW_SRCREV:-<unknown>}"
+          echo "========================================"
+
+      - name: Print clone credential diagnostics
+        run: |
+          echo "========================================"
+          echo "Clone credential diagnostics"
+          echo "Event name            : ${{ github.event_name }}"
+          echo "Repository            : ${{ github.repository }}"
+          echo "Actor                 : ${{ github.actor }}"
+          echo "REPO_READ_TOKEN set   : ${{ secrets.REPO_READ_TOKEN != '' }}"
+          echo "QEMU_UPDATE_TOKEN set : ${{ secrets.QEMU_IMAGE_UPDATE_TOKEN != '' }}"
+          echo "GITHUB_TOKEN available: ${{ github.token != '' }}"
+          echo "========================================"
+
+      - name: Set up build environment
+        run: |
+          set -euo pipefail
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            gawk wget git diffstat unzip texinfo gcc build-essential \
+            chrpath socat cpio python3 python3-pip python3-pexpect \
+            xz-utils debianutils iputils-ping python3-git python3-jinja2 \
+            libegl1-mesa libsdl1.2-dev pylint xterm python3-subunit \
+            mesa-common-dev zstd liblz4-tool file lz4 \
+            curl ca-certificates
+
+      - name: Ensure en_US.UTF-8 locale is available
+        run: |
+          set -euo pipefail
+
+          if ! locale -a | grep -qi '^en_US\.utf-\?8$'; then
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends locales
+            grep -q '^en_US.UTF-8 UTF-8$' /etc/locale.gen || echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen
+            locale-gen en_US.UTF-8
+          fi
+
+          update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 || true
+
+          {
+            echo 'LANG=en_US.UTF-8'
+            echo 'LC_ALL=en_US.UTF-8'
+            echo 'LANGUAGE=en_US:en'
+          } >> "$GITHUB_ENV"
+
+          export LANG=en_US.UTF-8
+          export LC_ALL=en_US.UTF-8
+          export LANGUAGE=en_US:en
+
+          echo "Active locale after setup:"
+          locale
+
+      - name: Clone Poky and required layers
+        run: |
+          set -euo pipefail
+          mkdir -p "$BUILD_WORKDIR"
+          cd "$BUILD_WORKDIR"
+
+          repo_read_token='${{ secrets.REPO_READ_TOKEN }}'
+          gh_token='${{ secrets.QEMU_IMAGE_UPDATE_TOKEN }}'
+          gha_token='${{ github.token }}'
+
+          download_github_archive() {
+            local repo_slug="$1"
+            local branch="$2"
+            local dest="$3"
+            local archive_url="https://codeload.github.com/${repo_slug}/tar.gz/refs/heads/${branch}"
+            local archive_file
+            archive_file="$(mktemp)"
+
+            rm -rf "$dest"
+
+            if curl -fsSL "$archive_url" -o "$archive_file"; then
+              mkdir -p "$dest"
+              tar -xzf "$archive_file" --strip-components=1 -C "$dest"
+              rm -f "$archive_file"
+              return 0
+            fi
+
+            rm -f "$archive_file"
+            rm -rf "$dest"
+            return 1
+          }
+
+          fetch_without_auth() {
+            local repo_url="$1"
+            local branch="$2"
+            local dest="$3"
+
+            rm -rf "$dest"
+            mkdir -p "$dest"
+            git -C "$dest" init -q
+            git -C "$dest" remote add origin "$repo_url"
+
+            if GIT_TERMINAL_PROMPT=0 git \
+              -c credential.helper= \
+              -c core.askPass= \
+              -c http.https://github.com/.extraheader= \
+              -C "$dest" fetch --depth 1 origin "$branch"; then
+              git -C "$dest" checkout -q FETCH_HEAD
+              return 0
+            fi
+
+            rm -rf "$dest"
+            return 1
+          }
+
+          clone_with_auth_chain() {
+            local repo_url="$1"
+            local branch="$2"
+            local dest="$3"
+            local repo_slug="$4"
+
+            if [[ -n "$repo_slug" ]] && download_github_archive "$repo_slug" "$branch" "$dest"; then
+              echo "Downloaded archive without auth: $repo_slug@$branch"
+              return 0
+            fi
+
+            if fetch_without_auth "$repo_url" "$branch" "$dest"; then
+              echo "Fetched without auth: $repo_url"
+              return 0
+            fi
+
+            if [[ -n "$gha_token" ]]; then
+              local gha_auth_header_app
+              gha_auth_header_app="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$gha_token" | base64 -w0)"
+              if GIT_TERMINAL_PROMPT=0 git -c http.https://github.com/.extraheader="$gha_auth_header_app" \
+                clone --depth 1 --branch "$branch" "$repo_url" "$dest"; then
+                echo "Cloned with github.token: $repo_url"
+                return 0
+              fi
+            fi
+
+            if [[ -n "$repo_read_token" ]]; then
+              local repo_read_auth_header_app
+              local repo_read_auth_header_user
+              local repo_read_user
+              repo_read_user="${GITHUB_ACTOR:-git}"
+
+              # Try GitHub App style first.
+              repo_read_auth_header_app="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$repo_read_token" | base64 -w0)"
+              if GIT_TERMINAL_PROMPT=0 git -c http.https://github.com/.extraheader="$repo_read_auth_header_app" \
+                clone --depth 1 --branch "$branch" "$repo_url" "$dest"; then
+                echo "Cloned with REPO_READ_TOKEN (app-style auth): $repo_url"
+                return 0
+              fi
+
+              # Then try PAT style basic auth (username:token).
+              repo_read_auth_header_user="AUTHORIZATION: basic $(printf '%s:%s' "$repo_read_user" "$repo_read_token" | base64 -w0)"
+              if GIT_TERMINAL_PROMPT=0 git -c http.https://github.com/.extraheader="$repo_read_auth_header_user" \
+                clone --depth 1 --branch "$branch" "$repo_url" "$dest"; then
+                echo "Cloned with REPO_READ_TOKEN (pat-style auth): $repo_url"
+                return 0
+              fi
+            fi
+
+            if [[ -n "$gh_token" ]]; then
+              local pat_auth_header_app
+              local pat_auth_header_user
+              local pat_user
+              pat_user="${GITHUB_ACTOR:-git}"
+
+              # Try GitHub App style first.
+              pat_auth_header_app="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$gh_token" | base64 -w0)"
+              if GIT_TERMINAL_PROMPT=0 git -c http.https://github.com/.extraheader="$pat_auth_header_app" \
+                clone --depth 1 --branch "$branch" "$repo_url" "$dest"; then
+                echo "Cloned with QEMU_IMAGE_UPDATE_TOKEN (app-style auth): $repo_url"
+                return 0
+              fi
+
+              # Then try PAT style basic auth (username:token).
+              pat_auth_header_user="AUTHORIZATION: basic $(printf '%s:%s' "$pat_user" "$gh_token" | base64 -w0)"
+              if GIT_TERMINAL_PROMPT=0 git -c http.https://github.com/.extraheader="$pat_auth_header_user" \
+                clone --depth 1 --branch "$branch" "$repo_url" "$dest"; then
+                echo "Cloned with QEMU_IMAGE_UPDATE_TOKEN (pat-style auth): $repo_url"
+                return 0
+              fi
+            fi
+
+            echo "ERROR: Clone failed for $repo_url." >&2
+            echo "       Tried: unauthenticated clone, github.token, REPO_READ_TOKEN, QEMU_IMAGE_UPDATE_TOKEN." >&2
+            echo "       Recommended: configure REPO_READ_TOKEN with read access to private layer repos." >&2
+            echo "       Ensure repo read access for at least one credential source." >&2
+            return 1
+          }
+
+          echo "Cloning poky..."
+          git clone --depth 1 --branch scarthgap https://git.yoctoproject.org/poky poky
+
+          echo "Cloning meta-openembedded..."
+          git clone --depth 1 --branch scarthgap https://github.com/openembedded/meta-openembedded.git meta-openembedded
+
+          echo "Cloning meta-vendor-vdevice..."
+          clone_with_auth_chain https://github.com/rdkcentral/meta-vendor-vdevice.git develop meta-vendor-vdevice rdkcentral/meta-vendor-vdevice
+
+          echo "Cloning meta-middleware-development..."
+          clone_with_auth_chain https://github.com/rdk-e/meta-middleware-development.git develop meta-middleware-development rdk-e/meta-middleware-development
+
+          echo "Cloning meta-rdk-video (this checkout)..."
+          cp -a "$GITHUB_WORKSPACE/meta-rdk-video" .
+
+          echo "Layer checkout complete"
+          ls -la "$BUILD_WORKDIR"
+
+      - name: Prepare non-root build user
+        run: |
+          set -euo pipefail
+
+          id -u builder >/dev/null 2>&1 || useradd -m -s /bin/bash builder
+          chown -R builder:builder "$BUILD_WORKDIR"
+
+      - name: Initialise Yocto build directory
+        run: |
+          set -euo pipefail
+          runuser -u builder -m -- bash -s <<'EOF'
+          set -euo pipefail
+          cd "$BUILD_WORKDIR"
+
+          set +u
+          source poky/oe-init-build-env build
+          set -u
+
+          # Add layers required for machine + image + target recipe
+          bitbake-layers add-layer "$BUILD_WORKDIR/meta-openembedded/meta-oe" 2>/dev/null || true
+          bitbake-layers add-layer "$BUILD_WORKDIR/meta-openembedded/meta-python" 2>/dev/null || true
+          bitbake-layers add-layer "$BUILD_WORKDIR/meta-openembedded/meta-networking" 2>/dev/null || true
+          bitbake-layers add-layer "$BUILD_WORKDIR/meta-vendor-vdevice" 2>/dev/null || true
+          bitbake-layers add-layer "$BUILD_WORKDIR/meta-middleware-development" 2>/dev/null || true
+          bitbake-layers add-layer "$BUILD_WORKDIR/meta-rdk-video" 2>/dev/null || true
+
+          # Validate requested MACHINE exists in configured layers
+          if ! find .. -path '*/conf/machine/*.conf' -type f | grep -q "/$MACHINE.conf$"; then
+            echo "ERROR: MACHINE=$MACHINE is invalid or not provided by configured layers" >&2
+            echo "Available machine configs in workspace:" >&2
+            find .. -path '*/conf/machine/*.conf' -type f | sed 's/^/  - /' >&2
+            exit 1
+          fi
+
+          # Set MACHINE and image
+          grep -q '^MACHINE' conf/local.conf \
+            && sed -i "s|^MACHINE.*|MACHINE = \"$MACHINE\"|" conf/local.conf \
+            || echo "MACHINE = \"$MACHINE\"" >> conf/local.conf
+
+          # Pin SRCREV if provided
+          if [[ -n "${NEW_SRCREV:-}" ]]; then
+            echo "SRCREV_${RECIPE_NAME} = \"${NEW_SRCREV}\"" >> conf/local.conf
+            echo "Pinned SRCREV for ${RECIPE_NAME}: ${NEW_SRCREV}"
+          fi
+
+          echo "Build configuration:"
+          cat conf/local.conf
+          EOF
+
+      - name: Run bitbake for changed recipe
+        run: |
+          set -euo pipefail
+          runuser -u builder -m -- bash -s <<'EOF'
+          set -euo pipefail
+          cd "$BUILD_WORKDIR"
+          set +u
+          source poky/oe-init-build-env build
+          set -u
+
+          echo "Building recipe: $RECIPE_NAME"
+          bitbake "$RECIPE_NAME"
+          echo "Recipe build complete: $RECIPE_NAME"
+          EOF
+
+      - name: Run bitbake for QEMU image
+        run: |
+          set -euo pipefail
+          runuser -u builder -m -- bash -s <<'EOF'
+          set -euo pipefail
+          cd "$BUILD_WORKDIR"
+          set +u
+          source poky/oe-init-build-env build
+          set -u
+
+          echo "Building full QEMU image: $BITBAKE_IMAGE (MACHINE=$MACHINE)"
+          bitbake "$BITBAKE_IMAGE"
+          echo "Image build complete"
+          EOF
+
+      - name: Locate and package image artifacts
+        id: package
+        run: |
+          set -euo pipefail
+          cd "$BUILD_WORKDIR"
+
+          deploy_dir="build/tmp/deploy/images/$MACHINE"
+          echo "Searching for artifacts in: $deploy_dir"
+          ls -lh "$deploy_dir" 2>/dev/null || { echo "ERROR: deploy dir missing"; exit 1; }
+
+          # Find kernel
+          kernel_src="$(find "$deploy_dir" -maxdepth 1 -type f \( -name 'bzImage*' -o -name 'vmlinuz*' \) | sort | tail -n 1 || true)"
+          # Find rootfs
+          rootfs_src="$(find "$deploy_dir" -maxdepth 1 -type f \( -name '*.rootfs.ext4' -o -name 'rootfs.ext4' \) | sort | tail -n 1 || true)"
+
+          [[ -n "$kernel_src" && -f "$kernel_src" ]] || {
+            echo "ERROR: kernel image not found in $deploy_dir" >&2
+            find "$deploy_dir" -maxdepth 1 -type f | sed 's/^/  - /' >&2
+            exit 1
+          }
+          [[ -n "$rootfs_src" && -f "$rootfs_src" ]] || {
+            echo "ERROR: rootfs image not found in $deploy_dir" >&2
+            find "$deploy_dir" -maxdepth 1 -type f | sed 's/^/  - /' >&2
+            exit 1
+          }
+
+          echo "Kernel  : $kernel_src ($(du -sh "$kernel_src" | cut -f1))"
+          echo "Rootfs  : $rootfs_src ($(du -sh "$rootfs_src" | cut -f1))"
+
+          # Package into DefaultImage.tar.gz
+          mkdir -p "$IMAGE_WORKDIR/DefaultImage"
+          cp -f "$kernel_src" "$IMAGE_WORKDIR/DefaultImage/"
+          cp -f "$rootfs_src" "$IMAGE_WORKDIR/DefaultImage/"
+
+          tar -czf "$IMAGE_WORKDIR/DefaultImage.tar.gz" -C "$IMAGE_WORKDIR" DefaultImage/
+
+          echo "Packaged tarball:"
+          ls -lh "$IMAGE_WORKDIR/DefaultImage.tar.gz"
+          sha256sum "$IMAGE_WORKDIR/DefaultImage.tar.gz"
+
+          echo "tarball=$IMAGE_WORKDIR/DefaultImage.tar.gz" >> "$GITHUB_OUTPUT"
+          echo "kernel_name=$(basename "$kernel_src")"       >> "$GITHUB_OUTPUT"
+          echo "rootfs_name=$(basename "$rootfs_src")"       >> "$GITHUB_OUTPUT"
+
+      - name: Upload generated QEMU image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DefaultImage-${{ env.RECIPE_NAME }}-${{ github.run_id }}
+          path: ${{ steps.package.outputs.tarball }}
+          if-no-files-found: error
+
+      - name: Checkout entservices-hdmicecsource for image update
+        if: ${{ env.HAS_UPDATE_TOKEN == 'true' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TARGET_REPO }}
+          ref: ${{ env.TARGET_BRANCH }}
+          token: ${{ secrets.QEMU_IMAGE_UPDATE_TOKEN }}
+          path: entservices-hdmicecsource
+
+      - name: Skip publish when token is missing
+        if: ${{ env.HAS_UPDATE_TOKEN != 'true' }}
+        run: |
+          echo "QEMU_IMAGE_UPDATE_TOKEN is not configured."
+          echo "Build and image generation succeeded; publish step is intentionally skipped."
+
+      - name: Copy new image and push directly to target branch
+        if: ${{ env.HAS_UPDATE_TOKEN == 'true' }}
+        run: |
+          set -euo pipefail
+
+          dest="$GITHUB_WORKSPACE/entservices-hdmicecsource/$TARGET_IMAGE_PATH"
+          mkdir -p "$dest"
+
+          cp -f "${{ steps.package.outputs.tarball }}" "$dest/DefaultImage.tar.gz"
+
+          echo "Copied image:"
+          ls -lh "$dest/DefaultImage.tar.gz"
+          sha256sum "$dest/DefaultImage.tar.gz"
+
+          cd "$GITHUB_WORKSPACE/entservices-hdmicecsource"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add "$TARGET_IMAGE_PATH/DefaultImage.tar.gz"
+
+          if git diff --cached --quiet; then
+            echo "No image change detected — tarball is identical to current. Skipping commit."
+            exit 0
+          fi
+
+          cat > /tmp/qemu-image-commit-msg.txt <<EOF
+          ci: update DefaultImage.tar.gz for $RECIPE_NAME SRCREV change
+
+          Recipe: $RECIPE_NAME
+          Old SRCREV: ${OLD_SRCREV:-<none>}
+          New SRCREV: ${NEW_SRCREV:-<unknown>}
+          Kernel: ${{ steps.package.outputs.kernel_name }}
+          Rootfs: ${{ steps.package.outputs.rootfs_name }}
+          Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EOF
+
+          git commit -F /tmp/qemu-image-commit-msg.txt
+
+          git push origin "$TARGET_BRANCH"
+          echo "Image pushed to $TARGET_REPO branch $TARGET_BRANCH"
