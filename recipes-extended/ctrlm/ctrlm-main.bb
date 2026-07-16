@@ -89,14 +89,6 @@ DEPENDS:append      = "${@bb.utils.contains('THUNDER_SECURITY', 'true', ' wpefra
 LDFLAGS:append      = "${@bb.utils.contains('THUNDER_SECURITY', 'true', ' -lWPEFrameworkSecurityUtil', '', d)}"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('THUNDER_SECURITY', 'true', ' -DTHUNDER_SECURITY=ON', '', d)}"
 
-# Thunder DisplaySettings/FrontPanel Support (DS Migration)
-# Only enabled when THUNDER is also enabled
-CTRLM_USE_THUNDER_FR_DS ??= "true"
-EXTRA_OECMAKE:append = "${@bb.utils.contains('THUNDER', 'true', \
-                           bb.utils.contains('CTRLM_USE_THUNDER_FR_DS', 'true', \
-                           ' -DCTRLM_USE_THUNDER_FR_DS=ON', ' -DCTRLM_USE_THUNDER_FR_DS=OFF', d), \
-                           ' -DCTRLM_USE_THUNDER_FR_DS=OFF', d)}"
-
 # Telemetry Support
 TELEMETRY_SUPPORT  ??= "true"
 DEPENDS:append      = "${@bb.utils.contains('TELEMETRY_SUPPORT', 'true', ' telemetry', '', d)}"
