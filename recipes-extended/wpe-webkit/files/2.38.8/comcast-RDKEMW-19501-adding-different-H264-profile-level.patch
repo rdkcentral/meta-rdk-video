@@ -1,7 +1,9 @@
 From 8fe2b4c151ff73916391d2d5e4208d435dfb3021 Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
 Date: Wed, 15 Jul 2026 17:27:16 +0000
-Subject: [PATCH] adding different H264 profile level
+Subject: [PATCH] RDKEMW-19501 webrtc: support additional H.264 profile-level-id values
+
+Extend the advertised/accepted H.264 profile-level-id set to cover additional profile families and levels seen in offers, preventing WebRTC playback failures during SDP negotiation.
 
 ---
  .../webrtc/media/base/media_constants.cc      | 14 +++++++--
