@@ -6,7 +6,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
-WPE_RECIPE_REVISION = "5"
+WPE_RECIPE_REVISION = "6"
 
 PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
@@ -27,6 +27,7 @@ SRC_URI += "file://2.46/1711.patch"
 SRC_URI += "file://2.46.2/1718.patch"
 SRC_URI += "file://2.46.2/1720_webkitwebsrc_queue_size.patch"
 SRC_URI += "file://2.46.2/1715.patch"
+SRC_URI += "file://2.46.2/1700.patch"
 
 # Drop after westeros change is approved and released
 SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
