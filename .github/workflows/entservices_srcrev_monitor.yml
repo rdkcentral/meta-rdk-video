@@ -1,0 +1,258 @@
+name: EntServices SRCREV Monitor
+
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub cron cannot express a true 23h59m interval.
+    # Run every 5 minutes and gate execution in-script to every 1439 minutes.
+    - cron: '*/5 * * * *'
+  push:
+    branches:
+      - main
+      - develop
+      - 'sprint/**'
+      - 'release/**'
+      - 'topic/RDK*'
+      - 'test/**'
+    paths:
+      - 'recipes-extended/entservices/**/*.bb'
+  pull_request:
+    branches:
+      - main
+      - develop
+      - 'sprint/**'
+      - 'release/**'
+      - 'topic/RDK*'
+      - 'test/**'
+    paths:
+      - 'recipes-extended/entservices/**/*.bb'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: entservices-srcrev-monitor-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  monitor-srcrev:
+    runs-on: ubuntu-latest
+    env:
+      SCAN_DIR: recipes-extended/entservices
+      STATE_FILE: .github/entservices-srcrev-state.json
+      INTERVAL_SECONDS: '86340' # 23h59m
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect and compare SRCREV values
+        id: compare
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 << 'PY'
+          import datetime as dt
+          import json
+          import os
+          import re
+          import subprocess
+          import sys
+          import time
+          from pathlib import Path
+
+          scan_dir = Path(os.environ["SCAN_DIR"])
+          state_file = Path(os.environ["STATE_FILE"])
+          interval_seconds = int(os.environ["INTERVAL_SECONDS"])
+          event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+          output_path = Path(os.environ["GITHUB_OUTPUT"])
+          summary_path = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          github_sha = os.environ.get("GITHUB_SHA", "")
+          github_event_path = Path(os.environ.get("GITHUB_EVENT_PATH", ""))
+
+          pattern = re.compile(r'^\s*SRCREV(?::[^\s=]+)?\s*=\s*["\']([^"\']+)["\']\s*$')
+
+          def git(*args):
+              return subprocess.check_output(["git", *args], text=True).strip()
+
+          def extract_srcrev_from_text(text):
+              for line in text.splitlines():
+                  match = pattern.match(line)
+                  if match:
+                      return match.group(1)
+              return "<missing>"
+
+          def extract_srcrev_from_ref(ref, rel_path):
+              try:
+                  text = git("show", f"{ref}:{rel_path}")
+              except subprocess.CalledProcessError:
+                  return "<missing>"
+              return extract_srcrev_from_text(text)
+
+          def extract_current_srcrev(rel_path):
+              file_path = Path(rel_path)
+              if not file_path.exists():
+                  return "<missing>"
+              return extract_srcrev_from_text(file_path.read_text(encoding="utf-8", errors="ignore"))
+
+          def append_outputs(**kwargs):
+              with output_path.open("a", encoding="utf-8") as f:
+                  for key, value in kwargs.items():
+                      f.write(f"{key}={value}\n")
+
+          def write_summary(lines):
+              summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+          now = int(time.time())
+          now_utc = dt.datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+          if not scan_dir.exists():
+              write_summary([
+                  "# EntServices SRCREV Monitor",
+                  "",
+                  f"Error: scan directory not found: {scan_dir}",
+              ])
+              append_outputs(due="true", persist_state="false", changes_count="0")
+              sys.exit(1)
+
+          event_payload = {}
+          if github_event_path.exists():
+              event_payload = json.loads(github_event_path.read_text(encoding="utf-8"))
+
+          changes = []
+          removed = []
+          persist_state = "false"
+          due = "true"
+
+          if event_name in {"push", "pull_request"}:
+              if event_name == "push":
+                  base_ref = event_payload.get("before") or "HEAD^"
+                  head_ref = github_sha or "HEAD"
+              else:
+                  base_ref = (((event_payload.get("pull_request") or {}).get("base") or {}).get("sha")) or "HEAD^"
+                  head_ref = (((event_payload.get("pull_request") or {}).get("head") or {}).get("sha")) or (github_sha or "HEAD")
+
+              changed_files_raw = git("diff", "--name-only", f"{base_ref}..{head_ref}", "--", str(scan_dir))
+              changed_files = [line for line in changed_files_raw.splitlines() if line.endswith(".bb")]
+
+              for rel_path in sorted(changed_files):
+                  old_val = extract_srcrev_from_ref(base_ref, rel_path)
+                  new_val = extract_current_srcrev(rel_path)
+                  if old_val != new_val:
+                      changes.append((rel_path, old_val, new_val))
+
+              lines = [
+                  "# EntServices SRCREV Monitor",
+                  "",
+                  f"Checked at UTC: {now_utc}",
+                  f"Event: {event_name}",
+                  "",
+              ]
+
+              if changes:
+                  lines.append("## Detected SRCREV Updates")
+                  lines.append("")
+                  lines.append("| Recipe | Old SRCREV | New SRCREV | Validation |")
+                  lines.append("|---|---|---|---|")
+                  for path, old, new in changes:
+                      validation = "changed to a different revision" if old != new else "unchanged"
+                      lines.append(f"| {path} | {old} | {new} | {validation} |")
+                      print(f"The SRCREV for recipe '{Path(path).name}' has been updated from '{old}' to '{new}'.")
+                  lines.append("")
+              else:
+                  lines.append("No SRCREV changes detected in modified .bb files.")
+                  lines.append("")
+
+              write_summary(lines)
+              append_outputs(due=due, persist_state=persist_state, changes_count=str(len(changes)))
+              sys.exit(0)
+
+          state = {}
+          if state_file.exists():
+              try:
+                  state = json.loads(state_file.read_text(encoding="utf-8"))
+              except Exception:
+                  state = {}
+
+          last_check_epoch = int(state.get("last_check_epoch", 0))
+          if event_name != "workflow_dispatch" and last_check_epoch and (now - last_check_epoch) < interval_seconds:
+              wait_sec = interval_seconds - (now - last_check_epoch)
+              wait_min = wait_sec // 60
+              write_summary([
+                  "# EntServices SRCREV Monitor",
+                  "",
+                  f"Skipped: next scheduled snapshot due in ~{wait_min} minute(s).",
+                  f"Last scheduled check UTC: {state.get('last_check_utc', 'unknown')}",
+              ])
+              append_outputs(due="false", persist_state="false", changes_count="0")
+              sys.exit(0)
+
+          current = {}
+          for bb in sorted(scan_dir.rglob("*.bb")):
+              current[bb.as_posix()] = extract_current_srcrev(bb.as_posix())
+
+          previous = state.get("files", {}) if isinstance(state.get("files", {}), dict) else {}
+          for path, new_val in current.items():
+              old_val = previous.get(path)
+              if old_val != new_val:
+                  changes.append((path, old_val if old_val is not None else "<none>", new_val))
+
+          removed = sorted(set(previous.keys()) - set(current.keys()))
+
+          state_file.parent.mkdir(parents=True, exist_ok=True)
+          new_state = {
+              "last_check_epoch": now,
+              "last_check_utc": now_utc,
+              "files": current,
+          }
+          state_file.write_text(json.dumps(new_state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          persist_state = "true"
+
+          lines = [
+              "# EntServices SRCREV Monitor",
+              "",
+              f"Checked at UTC: {now_utc}",
+              "Event: scheduled snapshot",
+              "",
+          ]
+          if changes:
+              lines.append("## Scheduled SRCREV Changes")
+              lines.append("")
+              lines.append("| Recipe | Old SRCREV | New SRCREV |")
+              lines.append("|---|---|---|")
+              for path, old, new in changes:
+                  lines.append(f"| {path} | {old} | {new} |")
+              lines.append("")
+          else:
+              lines.append("No SRCREV changes detected.")
+              lines.append("")
+
+          if removed:
+              lines.append("## Removed .bb Files From Previous Snapshot")
+              lines.append("")
+              for path in removed:
+                  lines.append(f"- {path}")
+              lines.append("")
+
+          write_summary(lines)
+          append_outputs(due="true", persist_state=persist_state, changes_count=str(len(changes)))
+          PY
+
+      - name: Commit updated scheduled snapshot
+        if: steps.compare.outputs.persist_state == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$STATE_FILE"
+
+          if git diff --cached --quiet; then
+            echo "No state changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore(ci): update entservices SRCREV state"
+          git push
