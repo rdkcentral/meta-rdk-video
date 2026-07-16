@@ -21,6 +21,8 @@ SRC_URI += "file://2.38.2/1196.patch"
 SRC_URI += "file://2.38.7/1410.patch"
 SRC_URI += "file://2.38.8/1628.patch"
 
+SRC_URI += "file://2.38.8/0001-Enable-NEON-memset-For-webkit.patch"
+
 # Drop after issue is addressed and a corresponding PR is merged
 SRC_URI += "file://2.38.8/1456-RDKTV-35082-Workaround-premature-finishSeek.patch"
 
