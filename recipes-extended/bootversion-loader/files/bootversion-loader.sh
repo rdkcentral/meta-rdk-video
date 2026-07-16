@@ -202,7 +202,7 @@ esac
 #comparing slot1 and slot2 FW Class
 if [ "$v_FW_Class" != "$s1_FW_Class" ]; then
 	# atomic handle for writing Migration status, to ensure proper write in case of power failure
-	writeToFile "NOT_STARTED" "$file_MigrationStatus_tmp" "truncate"
+	echo "NOT_STARTED" > "$file_MigrationStatus_tmp"
     if [ $? -eq 0 ]; then
         mv -f "$file_MigrationStatus_tmp" "$file_MigrationStatus"
         if [ $? -ne 0 ]; then
