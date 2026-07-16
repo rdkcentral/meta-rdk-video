@@ -23,7 +23,7 @@ file_version="/version.txt"
 file_bootversion="/opt/.bootversion"
 file_bootType="/tmp/bootType"
 file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
-file_MigrationStatus_tmp="/tmp/MigrationStatus_tmp"
+file_MigrationStatus_tmp="${file_MigrationStatus}.tmp"
 file_updateStatus="/opt/.updateStatus"
 file_bootversion_bak="/opt/.bootversion.bak"
 migrationDSFile="/opt/secure/migration/migration_data_store.json"
@@ -202,7 +202,7 @@ esac
 #comparing slot1 and slot2 FW Class
 if [ "$v_FW_Class" != "$s1_FW_Class" ]; then
 	# atomic handle for writing Migration status, to ensure proper write in case of power failure
-	writeToFile "NOT_STARTED" "$file_migrationstatus_tmp" "truncate"
+	writeToFile "NOT_STARTED" "$file_MigrationStatus_tmp" "truncate"
     if [ $? -eq 0 ]; then
         mv -f "$file_MigrationStatus_tmp" "$file_MigrationStatus"
         if [ $? -ne 0 ]; then
