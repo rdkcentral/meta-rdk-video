@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdcpprofile;${CMF_GITHUB_SRC_URI_SUFFI
           "
 
 # Release version - 1.1.5
-SRCREV = "ea60412db1e5eb0d2223ff94591a6c465a41be4d"
+SRCREV = "49c640a25de11ef733c3802fd2dd4a074e711f8b"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
