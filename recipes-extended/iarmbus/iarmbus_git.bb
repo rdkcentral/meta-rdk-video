@@ -8,10 +8,11 @@ SECTION = "console/utils"
 
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
-PV = "1.0.3"
+PV = "1.0.6"
 PR = "r0"
 
-SRCREV_iarmbus = "464973a6710837ff03120583da4efdbebf4ab759"
+# Release version - 1.0.6
+SRCREV_iarmbus = "882f9f9b20e6d4ea2417447e372ca34c34eafc87"
 SRCREV_FORMAT = "iarmbus"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmbus;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmbus"
 
@@ -59,7 +60,12 @@ do_install:append() {
 	install -m 0644 ${S}/core/*.h ${D}${includedir}/rdk/iarmbus
 	install -d ${D}${systemd_unitdir}/system
 	install -m 0644 ${S}/conf/iarmbusd.service ${D}${systemd_unitdir}/system
+	install -d ${D}${libdir}
+	install -m 0755 ${S}/conf/iarm-reboot.sh ${D}${libdir}/
+	install -m 0755 ${S}/conf/iarm-monitor.sh ${D}${libdir}/
 }
 
 SYSTEMD_SERVICE:${PN} = "iarmbusd.service"
 FILES:${PN} += "${systemd_unitdir}/system/iarmbusd.service"
+FILES:${PN} += "${libdir}/iarm-reboot.sh"
+FILES:${PN} += "${libdir}/iarm-monitor.sh"
