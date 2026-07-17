@@ -4,6 +4,7 @@
 
 #include <core/core.h>
 #include <plugins/plugins.h>
+#include <plugins/IDispatcher.h>
 #include <chrono>
 #include <vector>
 
@@ -31,6 +32,7 @@ namespace WPEFramework
                 Register(_T("testMultiTrace"), &OtelPluginTest::TestMultiTrace, this);
                 Register(_T("testBurst"),    &OtelPluginTest::TestBurst,    this);
                 Register(_T("testLatency"),  &OtelPluginTest::TestLatency,  this);
+                Register(_T("testComRpc"),   &OtelPluginTest::TestComRpc,   this);
             }
 
             ~OtelPluginTest() override
@@ -39,6 +41,7 @@ namespace WPEFramework
                 Unregister(_T("testMultiTrace"));
                 Unregister(_T("testBurst"));
                 Unregister(_T("testLatency"));
+                Unregister(_T("testComRpc"));
             }
 
             virtual const string Initialize(PluginHost::IShell* service) override
@@ -292,6 +295,86 @@ namespace WPEFramework
                         "avg_without_ms=%.3f avg_with_ms=%.3f overhead_ms=%.3f overhead_pct=%.1f%%\n",
                         callsign.c_str(), iters, methods.size(),
                         avgWithoutUs/1000.0, avgWithUs/1000.0, overheadUs/1000.0, overheadPct);
+                    fclose(fp);
+                }
+                return Core::ERROR_NONE;
+            }
+
+            // ---------------------------------------------------------------
+            // testComRpc: exercise COM-RPC path via QueryInterfaceByCallsign
+            // Use an OOP plugin (e.g. org.rdk.NetworkManager.1) so calls go
+            // through UnknownProxy::Invoke() and generate COM-RPC child spans.
+            // In-process plugins return a direct vtable pointer — no IPC, no span.
+            //
+            // params: callsign (default: org.rdk.NetworkManager.1)
+            //         method   (default: GetAvailableInterfaces)
+            //         count    (default: 5)
+            // ---------------------------------------------------------------
+            uint32_t TestComRpc(const JsonObject& parameters, JsonObject& response)
+            {
+                string callsign = parameters.HasLabel("callsign") ? parameters["callsign"].String() : "org.rdk.NetworkManager.1";
+                string method   = parameters.HasLabel("method")   ? parameters["method"].String()   : "GetAvailableInterfaces";
+                uint32_t count  = parameters.HasLabel("count")    ? static_cast<uint32_t>(parameters["count"].Number()) : 5;
+                if (count == 0 || count > 50) count = 5;
+
+                if (_service == nullptr) {
+                    response["success"] = false;
+                    response["error"]   = string("service not initialized");
+                    return Core::ERROR_UNAVAILABLE;
+                }
+
+                // QueryInterfaceByCallsign returns:
+                //   OOP plugin  → COM-RPC proxy  → UnknownProxy::Invoke() called per method → OTEL span
+                //   In-process  → direct vtable  → no IPC, no span (expected)
+                PluginHost::IDispatcher* dispatcher =
+                    _service->QueryInterfaceByCallsign<PluginHost::IDispatcher>(callsign);
+
+                if (dispatcher == nullptr) {
+                    response["success"] = false;
+                    response["error"]   = string("failed to acquire IDispatcher for ") + callsign;
+                    return Core::ERROR_UNAVAILABLE;
+                }
+
+#if RDK_OTEL_ENABLED
+                string opName = string("comrpc.") + callsign + string(".") + method;
+                rdk_otlp_start_distributed_trace(opName.c_str(), "comrpc-invoke");
+#endif
+
+                uint32_t successCount = 0, failCount = 0;
+                int64_t totalUs = 0;
+
+                for (uint32_t i = 0; i < count; i++) {
+                    string resp;
+                    int64_t t0 = nowUs();
+                    // For OOP plugins this call goes:
+                    //   dispatcher->Invoke() [proxy stub]
+                    //   → UnknownProxy::Invoke() [our new OTEL hook]
+                    //   → channel->Invoke()     [binary IPC to WPEProcess]
+                    Core::hresult rc = dispatcher->Invoke(nullptr, 0, i, _T(""), method, _T("{}"), resp);
+                    totalUs += nowUs() - t0;
+                    if (rc == Core::ERROR_NONE) successCount++;
+                    else failCount++;
+                }
+
+#if RDK_OTEL_ENABLED
+                rdk_otlp_finish_distributed_trace();
+#endif
+                dispatcher->Release();
+
+                int64_t avgUs = count > 0 ? totalUs / count : 0;
+
+                response["success"]       = (failCount == 0);
+                response["count"]         = static_cast<uint32_t>(count);
+                response["success_count"] = static_cast<uint32_t>(successCount);
+                response["fail_count"]    = static_cast<uint32_t>(failCount);
+                response["avg_ms"]        = static_cast<double>(avgUs) / 1000.0;
+                response["transport"]     = string("comrpc");
+
+                FILE* fp = fopen("/opt/logs/otel_plugin_test.log", "a");
+                if (fp) {
+                    fprintf(fp, "[OtelPluginTest] testComRpc: callsign=%s method=%s count=%u avg_ms=%.3f ok=%u fail=%u\n",
+                        callsign.c_str(), method.c_str(), count,
+                        static_cast<double>(avgUs)/1000.0, successCount, failCount);
                     fclose(fp);
                 }
                 return Core::ERROR_NONE;
