@@ -1,34 +1,39 @@
-From 9493c66e52784821ec602b5f30dc01dab64cd9b6 Mon Sep 17 00:00:00 2001
+From becdfaa1a92c173d208f847203743c7b88fd23f9 Mon Sep 17 00:00:00 2001
 From: ssahu777 <satyasundar_sahu@comcast.com>
-Date: Thu, 16 Jul 2026 14:05:46 +0000
-Subject: [PATCH] Enable neon memset for wpe-webkit
+Date: Wed, 15 Jul 2026 09:24:25 +0000
+Subject: [PATCH] Enable NEON memset For webkit
 
 Signed-off-by: ssahu777 <satyasundar_sahu@comcast.com>
 ---
- Source/WTF/wtf/CMakeLists.txt         |   2 +
- Source/WTF/wtf/PlatformWPE.cmake      |   7 ++
+ Source/WTF/wtf/CMakeLists.txt         |   1 +
+ Source/WTF/wtf/PlatformWPE.cmake      |   9 +-
  Source/WTF/wtf/arm/memset_wpewebkit.S | 151 ++++++++++++++++++++++++++
- 3 files changed, 160 insertions(+)
+ 3 files changed, 160 insertions(+), 1 deletion(-)
  create mode 100644 Source/WTF/wtf/arm/memset_wpewebkit.S
 
 diff --git a/Source/WTF/wtf/CMakeLists.txt b/Source/WTF/wtf/CMakeLists.txt
-index a1c4469d7384..c290cab5e65f 100644
+index 01f59d94ed66..36934b3de961 100644
 --- a/Source/WTF/wtf/CMakeLists.txt
 +++ b/Source/WTF/wtf/CMakeLists.txt
-@@ -801,3 +801,5 @@ WEBKIT_COPY_FILES(WTF_CopyPreferences
-     DESTINATION ${WTF_SCRIPTS_DIR}
-     FILES ${WTF_PREFERENCES}
- )
-+
+@@ -607,6 +607,7 @@ WEBKIT_COPY_FILES(WTF_CopyHeaders
+ 
+ WEBKIT_FRAMEWORK(WTF)
+ WEBKIT_FRAMEWORK_TARGET(WTF)
 +enable_language(ASM)
+ 
+ if (MSVC)
+     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
 diff --git a/Source/WTF/wtf/PlatformWPE.cmake b/Source/WTF/wtf/PlatformWPE.cmake
-index 0d71ecb15478..0c16b6b00d8f 100644
+index 1f4707a1dcae..e76f5e7f776b 100644
 --- a/Source/WTF/wtf/PlatformWPE.cmake
 +++ b/Source/WTF/wtf/PlatformWPE.cmake
-@@ -83,3 +83,10 @@ if (USE_SYSPROF_CAPTURE)
-         SysProfCapture::SysProfCapture
+@@ -67,4 +67,11 @@ if (USE_LIBBACKTRACE)
+     list(APPEND WTF_LIBRARIES
+         LIBBACKTRACE::LIBBACKTRACE
      )
- endif ()
+-endif ()
+\ No newline at end of file
++endif ()
 +
 +if (WTF_CPU_ARM)
 +    list(APPEND WTF_SOURCES
