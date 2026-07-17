@@ -202,7 +202,52 @@ wait
 
 ---
 
-## Parameter Reference
+## testComRpc — COM-RPC path via QueryInterfaceByCallsign
+
+Acquires `IDispatcher` via COM-RPC (`QueryInterfaceByCallsign`) instead of JSON-RPC websocket.
+For **OOP plugins** (NetworkManager in WPEProcess) each `Invoke()` call goes through
+`UnknownProxy::Invoke()` in `libWPEFrameworkCOM.so` and generates a child span automatically.
+For **in-process plugins** (DisplayInfo) a direct vtable pointer is returned — no IPC, no span (expected).
+
+### OOP plugin — NetworkManager (triggers COM-RPC child spans)
+```bash
+curl -X POST http://127.0.0.1:9998/jsonrpc \
+  -d '{"jsonrpc":"2.0","id":20,"method":"OtelPluginTest.1.testComRpc","params":{"callsign":"org.rdk.NetworkManager.1","method":"GetAvailableInterfaces","count":5}}'
+```
+
+### OOP plugin — multiple calls to see separate child spans per call
+```bash
+curl -X POST http://127.0.0.1:9998/jsonrpc \
+  -d '{"jsonrpc":"2.0","id":21,"method":"OtelPluginTest.1.testComRpc","params":{"callsign":"org.rdk.NetworkManager.1","method":"GetPrimaryInterface","count":10}}'
+```
+
+### In-process plugin — DisplayInfo (no COM-RPC, no span — verifies guard works)
+```bash
+curl -X POST http://127.0.0.1:9998/jsonrpc \
+  -d '{"jsonrpc":"2.0","id":22,"method":"OtelPluginTest.1.testComRpc","params":{"callsign":"DisplayInfo.1","method":"tvcapabilities","count":5}}'
+```
+
+### Default (NetworkManager, GetAvailableInterfaces, 5 calls)
+```bash
+curl -X POST http://127.0.0.1:9998/jsonrpc \
+  -d '{"jsonrpc":"2.0","id":23,"method":"OtelPluginTest.1.testComRpc","params":{}}'
+```
+
+**Expected response (OOP):**
+```json
+{"success":true,"count":5,"success_count":5,"fail_count":0,"avg_ms":243.5,"transport":"comrpc"}
+```
+
+**Expected in Jaeger (OOP):** One root span `comrpc.org.rdk.NetworkManager.1.GetAvailableInterfaces`
+with N children each named `COMRPC.if0x<InterfaceId>.method0` — one per `Invoke()` call.
+
+**Note:** The `COMRPC.if0x...` span name encodes the interface ID (hex) and method index.
+`IDispatcher::Invoke` is method 0 of the IDispatcher interface, so span name will be
+`COMRPC.if0x<IDispatcher::ID>.method0`.
+
+---
+
+
 
 | Parameter | Methods | Type | Default | Notes |
 |---|---|---|---|---|
