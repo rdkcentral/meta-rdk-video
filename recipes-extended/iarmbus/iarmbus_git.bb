@@ -12,7 +12,7 @@ PV = "1.0.6"
 PR = "r0"
 
 # Release version - 1.0.6
-SRCREV_iarmbus = "1afbabe76b5fa1679b65de9faec31f0b2ff36a59"
+SRCREV_iarmbus = "882f9f9b20e6d4ea2417447e372ca34c34eafc87"
 SRCREV_FORMAT = "iarmbus"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmbus;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmbus"
 
@@ -69,3 +69,4 @@ SYSTEMD_SERVICE:${PN} = "iarmbusd.service"
 FILES:${PN} += "${systemd_unitdir}/system/iarmbusd.service"
 FILES:${PN} += "${libdir}/iarm-reboot.sh"
 FILES:${PN} += "${libdir}/iarm-monitor.sh"
+
