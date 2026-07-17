@@ -2,7 +2,7 @@ SUMMARY = "ENTServices hdmicecsource plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.2.4"
+PV = "1.2.3"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -11,7 +11,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUFFIX} \
            "
 
-# Release version - 1.2.4
+# Release version - 1.2.3
 SRCREV = "3daf4fe7d66f78b3e4417e14e22e213adb1051e3"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -40,20 +40,25 @@ PACKAGECONFIG ?= " breakpadsupport \
     hdmicecsource \
 "
 
-HDMICEC_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader entservices-helpers"
+# DS_COMRPC path: devicesettings + virtual/vendor-devicesettings-hal removed (not needed by COM-RPC client)
+# iarmbus/iarmmgrs/hdmicec/hdmicecheader retained for CEC event infrastructure
+# Rollback: restore 'devicesettings virtual/vendor-devicesettings-hal' to HDMICEC_DEPS
+#           and 'devicesettings' to HDMICEC_RDEPS
+HDMICEC_DEPS = "iarmbus iarmmgrs hdmicec hdmicecheader entservices-helpers"
 HDMICEC_DEPS:vdevice_x86-64-mw = "iarmbus hdmicec hdmicecheader vdevice-noop entservices-helpers"
 
-HDMICEC_RDEPS = "iarmbus devicesettings hdmicec entservices-helpers"
+HDMICEC_RDEPS = "iarmbus hdmicec entservices-helpers"
 HDMICEC_RDEPS:vdevice_x86-64-mw = "iarmbus hdmicec entservices-helpers"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[hdmicecsource]        = "-DPLUGIN_HDMICECSOURCE=ON,-DPLUGIN_HDMICECSOURCE=OFF,${HDMICEC_DEPS},${HDMICEC_RDEPS}"
-EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
+
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
+    -DUSE_DEVICESETTING_PLUGIN=ON \
 "
 
 # Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.

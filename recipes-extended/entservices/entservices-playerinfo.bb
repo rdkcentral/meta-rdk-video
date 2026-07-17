@@ -66,7 +66,10 @@ EXTRA_OECMAKE += "${@bb.utils.contains("BUILD_VARIANT", "debug", "-DPLUGIN_BUILD
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[playerinfo]           = "-DPLUGIN_PLAYERINFO=ON -DUSE_DEVICESETTINGS=1,-DPLUGIN_PLAYERINFO=OFF,iarmbus iarmmgrs entservices-apis devicesettings virtual/vendor-devicesettings-hal gstreamer1.0 entservices-helpers,iarmbus entservices-apis devicesettings gstreamer1.0 entservices-helpers"
+# DS_COMRPC path: devicesettings + virtual/vendor-devicesettings-hal removed (not needed by COM-RPC client)
+# gstreamer1.0 retained (PlayerInfo media pipeline dependency)
+# Rollback: restore the two removed packages to fields 3 and 4 below
+PACKAGECONFIG[playerinfo]           = "-DPLUGIN_PLAYERINFO=ON -DUSE_DEVICESETTINGS=1,-DPLUGIN_PLAYERINFO=OFF,iarmbus iarmmgrs entservices-apis gstreamer1.0 entservices-helpers,iarmbus entservices-apis gstreamer1.0 entservices-helpers"
 
 # ----------------------------------------------------------------------------
 EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
