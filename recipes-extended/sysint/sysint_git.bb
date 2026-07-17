@@ -88,6 +88,7 @@ do_install() {
 	    install -m 0644 ${S}/systemd_units/logrotate.timer ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/dump-backup.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/dbus-monitor.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-secure-upload.service ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-upload.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/systemd_units/coredump-secure-upload.path ${D}${systemd_unitdir}/system
@@ -251,6 +252,7 @@ SYSTEMD_SERVICE:${PN} += "logrotate.timer"
 SYSTEMD_SERVICE:${PN} += "dump-backup.service"
 SYSTEMD_SERVICE:${PN}:append:rdkstb = " disk-check.service "
 SYSTEMD_SERVICE:${PN} += "coredump-upload.service"
+SYSTEMD_SERVICE:${PN} += "dbus-monitor.service"
 SYSTEMD_SERVICE:${PN} += "coredump-secure-upload.service"
 SYSTEMD_SERVICE:${PN} += "coredump-upload.path"
 SYSTEMD_SERVICE:${PN} += "coredump-secure-upload.path"
