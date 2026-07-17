@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Media and DRM plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=16cf2209d4e903e4d5dcd75089d7dfe2"
 
-PV = "1.9.2"
+PV = "1.9.3"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -17,8 +17,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
            ${@bb.utils.contains('DISTRO_FEATURES', 'wpe_r4_4','file://0003-R4.4.1-SystemAudioPlayer-compilation-error.patch','',d)} \
           "
           
-# Release version - 1.9.2
-SRCREV = "5dc772f7d9d663dbddd956a8b579c005c7c551f5"
+# Release version - 1.9.3
+SRCREV = "0725081208162104564aef493b51922f800a780e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
