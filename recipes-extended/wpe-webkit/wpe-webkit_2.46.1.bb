@@ -23,6 +23,8 @@ SRC_URI = "${BASE_URI}"
 
 # Drop after PR is accepted
 SRC_URI += "file://2.46/1629.patch"
+SRC_URI += "file://2.46.1/1654_USAC_gst_query.patch"
+SRC_URI += "file://2.46.1/0001-Enable-NEON-memset-For-webkit.patch"
 SRC_URI += "file://2.46.1/1678_MediaCaps_GC_protection.patch"
 
 # Drop after westeros change is approved and released
