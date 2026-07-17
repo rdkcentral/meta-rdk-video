@@ -1,4 +1,4 @@
-From 191bdcdde6960984fe74ed16ffd763fef6d856f6 Mon Sep 17 00:00:00 2001
+From 50a1bdba474b28af9633c41d4ef04d51d83514b0 Mon Sep 17 00:00:00 2001
 From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
 Date: Mon, 20 Oct 2025 15:04:31 +0100
 Subject: [PATCH] comcast - RDK-57915 - log HTML5 video playback
@@ -11,14 +11,14 @@ The non-WPE (QT) builds had the following information, that were useful.
 %% original patch: comcast-RDK-57915-log-HTML5-video-playback.patch
 ---
  Source/WebCore/page/EventHandler.cpp          |  6 +++
- .../gstreamer/MediaPlayerPrivateGStreamer.cpp | 41 +++++++++++++++++--
+ .../gstreamer/MediaPlayerPrivateGStreamer.cpp | 45 +++++++++++++++++--
  .../gstreamer/MediaPlayerPrivateGStreamer.h   |  6 +++
  .../mse/MediaPlayerPrivateGStreamerMSE.cpp    |  5 +++
- .../gstreamer/GStreamerQuirkWesteros.cpp      | 24 +++++++++++
- 5 files changed, 79 insertions(+), 3 deletions(-)
+ .../gstreamer/GStreamerQuirkWesteros.cpp      | 24 ++++++++++
+ 5 files changed, 83 insertions(+), 3 deletions(-)
 
 diff --git a/Source/WebCore/page/EventHandler.cpp b/Source/WebCore/page/EventHandler.cpp
-index d533129da85e..b31bcb5cb1d5 100644
+index d533129da85e..be70df994405 100644
 --- a/Source/WebCore/page/EventHandler.cpp
 +++ b/Source/WebCore/page/EventHandler.cpp
 @@ -164,6 +164,9 @@
@@ -42,7 +42,7 @@ index d533129da85e..b31bcb5cb1d5 100644
      RefPtr topDocument = frame->document() ? &frame->document()->topDocument() : nullptr;
      MonotonicTime savedLastHandledUserGestureTimestamp;
 diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
-index b5dd44ab736d..08df87abc492 100644
+index 94008f430171..5e275d96bc37 100644
 --- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
 +++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
 @@ -225,6 +225,8 @@ MediaPlayerPrivateGStreamer::MediaPlayerPrivateGStreamer(MediaPlayer* player)
@@ -85,7 +85,7 @@ index b5dd44ab736d..08df87abc492 100644
      if (!m_pipeline)
          createGSTPlayBin(url);
      syncOnClock(true);
-@@ -705,6 +717,10 @@ void MediaPlayerPrivateGStreamer::seekToTarget(const SeekTarget& inTarget)
+@@ -706,6 +718,10 @@ void MediaPlayerPrivateGStreamer::seekToTarget(const SeekTarget& inTarget)
          }
      } else {
          // We can seek now.
@@ -96,23 +96,27 @@ index b5dd44ab736d..08df87abc492 100644
          if (!doSeek(target, player->rate())) {
              GST_DEBUG_OBJECT(pipeline(), "[Seek] seeking to %s failed", toString(target.time).utf8().data());
              return;
-@@ -1088,6 +1104,15 @@ MediaPlayerPrivateGStreamer::ChangePipelineStateResult MediaPlayerPrivateGStream
+@@ -1089,6 +1105,19 @@ MediaPlayerPrivateGStreamer::ChangePipelineStateResult MediaPlayerPrivateGStream
  {
      ASSERT(m_pipeline);
  
 +    if(newState == GST_STATE_PLAYING) {
 +        fprintf(stderr,"HTML5 video: Play [%s]\n", m_url.string().utf8().data());
-+        if (!m_reportedPlaybackStarted)
++        if (playerIsSuspended()){
++            fprintf(stderr, "HTML5 video: suspended [%s]\n",m_url.string().utf8().data());
++        }
++        else if (!m_reportedPlaybackStarted) {
 +            fprintf(stderr, "HTML5 video: Playback started [%s]\n",m_url.string().utf8().data());
-+        m_reportedPlaybackStarted = true;
++            m_reportedPlaybackStarted = true;
++        }
 +    } else if(newState == GST_STATE_PAUSED) {
 +        fprintf(stderr,"HTML5 video: Pause [%s]\n", m_url.string().utf8().data());
 +    }
 +
-     if (m_isPausedByViewport && newState > GST_STATE_PAUSED) {
-         GST_DEBUG_OBJECT(pipeline(), "Saving state for when player becomes visible: %s", gst_element_state_get_name(newState));
-         m_invisiblePlayerState = newState;
-@@ -2058,19 +2083,24 @@ void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
+     if (playerIsSuspended()) {
+         // Save requests to play until we resume.
+         if (newState > GST_STATE_PAUSED) {
+@@ -2072,19 +2101,24 @@ void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
                  || g_error_matches(err.get(), GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED)
                  || g_error_matches(err.get(), GST_CORE_ERROR, GST_CORE_ERROR_MISSING_PLUGIN)
                  || g_error_matches(err.get(), GST_CORE_ERROR, GST_CORE_ERROR_PAD)
@@ -140,7 +144,7 @@ index b5dd44ab736d..08df87abc492 100644
  
              if (attemptNextLocation)
                  issueError = !loadNextLocation();
-@@ -3115,6 +3145,11 @@ void MediaPlayerPrivateGStreamer::didEnd()
+@@ -3129,6 +3163,11 @@ void MediaPlayerPrivateGStreamer::didEnd()
      m_isEndReached = true;
      RefPtr player = m_player.get();
  
@@ -153,10 +157,10 @@ index b5dd44ab736d..08df87abc492 100644
          // From the HTMLMediaElement spec.
          // If an "infinite" stream ends for some reason, then the duration would change from positive Infinity to the
 diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
-index 5dfff9dd9516..2a09557da1ac 100644
+index 8f065e4e95f9..282b22ecf348 100644
 --- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
 +++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h
-@@ -408,6 +408,8 @@ protected:
+@@ -410,6 +410,8 @@ protected:
      bool isPipelineWaitingPreroll(GstState current, GstState pending, GstStateChangeReturn) const;
      bool isPipelineWaitingPreroll() const;
  
@@ -165,7 +169,7 @@ index 5dfff9dd9516..2a09557da1ac 100644
      void didEnd();
  
      Ref<MainThreadNotifier<MainThreadNotification>> m_notifier;
-@@ -622,6 +624,10 @@ private:
+@@ -626,6 +628,10 @@ private:
  
      void textureMapperPlatformLayerProxyWasInvalidated();
  
@@ -177,10 +181,10 @@ index 5dfff9dd9516..2a09557da1ac 100644
      GRefPtr<GstElement> m_textSink;
      GUniquePtr<GstStructure> m_mediaLocations;
 diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
-index 7861a2fe3cfd..20eec45dfbcd 100644
+index e93b67bed069..958059298618 100644
 --- a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
 +++ b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
-@@ -247,6 +247,11 @@ void MediaPlayerPrivateGStreamerMSE::seekToTarget(const SeekTarget& target)
+@@ -254,6 +254,11 @@ void MediaPlayerPrivateGStreamerMSE::seekToTarget(const SeekTarget& target)
  
  bool MediaPlayerPrivateGStreamerMSE::doSeek(const SeekTarget& target, float rate)
  {
@@ -193,7 +197,7 @@ index 7861a2fe3cfd..20eec45dfbcd 100644
  
      // Note: An important difference between seek with WebKitMediaSrc and regular playback is that seeking before
 diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp b/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
-index c7f62b7e33b8..347dc55af173 100644
+index 223fb7c75915..9d2935b42c81 100644
 --- a/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
 +++ b/Source/WebCore/platform/gstreamer/GStreamerQuirkWesteros.cpp
 @@ -31,6 +31,25 @@ namespace WebCore {
@@ -235,5 +239,5 @@ index c7f62b7e33b8..347dc55af173 100644
      // Set stop caps on decodebin3 to prevent it from decoding the stream.
      // Instead, it should expose a pad with encoded caps that platform sink can handle directly as a sink element.
 -- 
-2.43.0
+2.34.1
 

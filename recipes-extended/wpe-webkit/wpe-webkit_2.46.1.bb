@@ -7,7 +7,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
-WPE_RECIPE_REVISION = "1"
+WPE_RECIPE_REVISION = "3"
 
 PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
@@ -15,16 +15,17 @@ WPE_MICRO_VERSION_SUFFIX = "${@'%02d%02d' % (int((d.getVar('PV').split('.') + ['
 DEPENDS:append = " libtasn1 unifdef-native libsoup fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-# Tip of the branch on May 11, 2026
-SRCREV = "5249e54482622fda0590165ce278d8a7f171be2d"
+# Tip of the branch on Jun 9, 2026
+SRCREV = "08587fa3eb99834538b31f333e9a7866dcba0b78"
 
-BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.46"
+BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=https;branch=wpe-2.46"
 SRC_URI = "${BASE_URI}"
 
 # Drop after PR is accepted
 SRC_URI += "file://2.46/1629.patch"
 SRC_URI += "file://2.46.1/1654_USAC_gst_query.patch"
 SRC_URI += "file://2.46.1/0001-Enable-NEON-memset-For-webkit.patch"
+SRC_URI += "file://2.46.1/1678_MediaCaps_GC_protection.patch"
 
 # Drop after westeros change is approved and released
 SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
@@ -52,7 +53,7 @@ SRC_URI += "file://2.46/comcast-RDK-40634-Only-support-decoders-with-hw-support-
 SRC_URI += "file://2.46/comcast-RDK-57915-Include-HW-secure-decrypt-WidevineL1.patch"
 SRC_URI += "file://2.46/comcast-RDK-58053-MSE-skip-seek-to-duration-if-player-not-loaded.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-Fix-init-data-filtering.patch"
-SRC_URI += "file://2.46/comcast-RDK-57915-log-HTML5-video-playback.patch"
+SRC_URI += "file://2.46.1/comcast-RDK-57915-log-HTML5-video-playback.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-EME-generate-MEDIA_ERR_ENCRYPTED.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-Track-encrypted-playback.patch"
 SRC_URI += "file://2.46/comcast-WebRTC-keep-render-time-interpolation.patch"
@@ -92,7 +93,7 @@ PACKAGECONFIG[video]                 = "-DENABLE_VIDEO=ON,-DENABLE_VIDEO=OFF,gst
 PACKAGECONFIG[webassembly]           = "-DENABLE_WEBASSEMBLY=ON,-DENABLE_WEBASSEMBLY=OFF, "
 PACKAGECONFIG[webdriver]             = "-DENABLE_WEBDRIVER=ON,-DENABLE_WEBDRIVER=OFF,"
 PACKAGECONFIG[woff2]                 = "-DUSE_WOFF2=ON,-DUSE_WOFF2=OFF,woff2"
-PACKAGECONFIG[wpeframework_opencdm]  = "-DENABLE_THUNDER=ON,-DENABLE_THUNDER=OFF,wpeframework-clientlibraries virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins,"
+PACKAGECONFIG[wpeframework_opencdm]  = "-DENABLE_THUNDER=ON,-DENABLE_THUNDER=OFF,entservices-opencdmi virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins,"
 PACKAGECONFIG[rialto_opencdm]        = "-DENABLE_THUNDER=ON,-DENABLE_THUNDER=OFF,rialto-ocdm,rialto-ocdm"
 PACKAGECONFIG[wpeplatform]           = "-DENABLE_WPE_PLATFORM=ON,-DENABLE_WPE_PLATFORM=OFF -DUSE_LIBDRM=OFF -DUSE_GBM=OFF,libdrm,"
 PACKAGECONFIG[wpeqtapi]              = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
