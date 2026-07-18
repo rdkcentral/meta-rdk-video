@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 PV = "1.6.0"
-PR = "r0"
+PR = "r1_Test"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_S
            file://rdkservices.ini \
           "
 # Release version - 1.6.0
-SRCREV = "f1cc0b6f097c15076692d273f47dbf039a420fe6"
+SRCREV = "c0a0e34ea1fa3c7e9adba64b6089bf3ad979de87"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -52,6 +52,7 @@ PACKAGECONFIG[displaysettings]      = "-DPLUGIN_DISPLAYSETTINGS=ON,-DPLUGIN_DISP
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
+    -DDS_COMRPC=ON \
     -DSECAPI_LIB=sec_api \
 "
 

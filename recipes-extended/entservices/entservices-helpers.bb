@@ -3,14 +3,14 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PV = "1.0.2"
-PR = "r0"
+PR = "r1_Test"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-helpers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-SRCREV = "5fd74207d873ccf78ecb0f3ed1f17774c0366419"
+SRCREV = "fbe3de9538b5df8c73304d462dbf283d1da984cf"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
