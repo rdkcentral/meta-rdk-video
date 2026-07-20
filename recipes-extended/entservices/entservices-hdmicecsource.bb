@@ -40,10 +40,14 @@ PACKAGECONFIG ?= " breakpadsupport \
     hdmicecsource \
 "
 
-HDMICEC_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader entservices-helpers"
+# DS_COMRPC path: devicesettings + virtual/vendor-devicesettings-hal removed (not needed by COM-RPC client)
+# iarmbus/iarmmgrs/hdmicec/hdmicecheader retained for CEC event infrastructure
+# Rollback: restore 'devicesettings virtual/vendor-devicesettings-hal' to HDMICEC_DEPS
+#           and 'devicesettings' to HDMICEC_RDEPS
+HDMICEC_DEPS = "iarmbus iarmmgrs hdmicec hdmicecheader entservices-helpers"
 HDMICEC_DEPS:vdevice_x86-64-mw = "iarmbus hdmicec hdmicecheader vdevice-noop entservices-helpers"
 
-HDMICEC_RDEPS = "iarmbus devicesettings hdmicec entservices-helpers"
+HDMICEC_RDEPS = "iarmbus hdmicec entservices-helpers"
 HDMICEC_RDEPS:vdevice_x86-64-mw = "iarmbus hdmicec entservices-helpers"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"

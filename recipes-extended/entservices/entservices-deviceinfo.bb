@@ -50,7 +50,9 @@ PACKAGECONFIG:append = " deviceinfo"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[deviceinfo]           = "-DPLUGIN_DEVICEINFO=ON,-DPLUGIN_DEVICEINFO=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-apis entservices-helpers,iarmbus rfc devicesettings entservices-apis entservices-helpers"
+# DS_COMRPC path: devicesettings + virtual/vendor-devicesettings-hal removed (not needed by COM-RPC client)
+# Rollback: restore the two removed packages to fields 3 and 4 below
+PACKAGECONFIG[deviceinfo]           = "-DPLUGIN_DEVICEINFO=ON,-DPLUGIN_DEVICEINFO=OFF,iarmbus iarmmgrs rfc entservices-apis entservices-helpers,iarmbus rfc entservices-apis entservices-helpers"
 EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 # ----------------------------------------------------------------------------
 

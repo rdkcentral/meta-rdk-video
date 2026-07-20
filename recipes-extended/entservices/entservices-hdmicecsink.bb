@@ -48,7 +48,10 @@ HDMICECSINK_RDEPS:vdevice_x86-64-mw = "iarmbus hdmicec entservices-helpers"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[hdmicecsink]          = "-DPLUGIN_HDMICECSINK=ON,-DPLUGIN_HDMICECSINK=OFF,${HDMICECSINK_DEPS},${HDMICECSINK_RDEPS}"
+# DS_COMRPC path: devicesettings + virtual/vendor-devicesettings-hal removed (not needed by COM-RPC client)
+# iarmbus/hdmicec/hdmicecheader retained for CEC event infrastructure
+# Rollback: restore the two removed packages to fields 3 and 4 below
+PACKAGECONFIG[hdmicecsink]          = "-DPLUGIN_HDMICECSINK=ON,-DPLUGIN_HDMICECSINK=OFF,iarmbus iarmmgrs hdmicec hdmicecheader entservices-helpers,iarmbus hdmicec entservices-helpers"
 EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
