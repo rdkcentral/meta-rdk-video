@@ -19,12 +19,19 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis boost devicesettings entservices-helpers"
-RDEPENDS:${PN} += "wpeframework devicesettings"
+# DS_COMRPC path: 'devicesettings' (libds.so + dsMgr) removed from DEPENDS/RDEPENDS.
+# 'devicesettings-hal-headers' kept as build-time-only dep: provides dsError.h,
+# dsTypes.h etc. for shared headers (AVOutputBase.h, AVOutputSTB.h) — no runtime
+# libds.so or dsMgr dependency. Rollback: restore 'devicesettings' to both lines.
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis boost devicesettings-hal-headers entservices-helpers"
+RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
+# ds-hal include path: needed by shared headers (AVOutputBase.h -> dsMgr.h -> dsTypes.h,
+# AVOutputSTB.h -> dsError.h). devicesettings-hal-headers provides the files; this -I
+# exposes them as bare includes. No libds.so or dsMgr runtime dependency.
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/halif/ds-hal/ "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
