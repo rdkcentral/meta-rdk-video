@@ -7,9 +7,9 @@ PV = "0.2.0-r1"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "f66c6faecc85695f70ce4df8d122600eee669bc8"
+SRCREV_player-interface ?= "ba041c8d1054184c1d457f87fb09e34840575ff5"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "main"
+PLAYERINTERFACE_BRANCH ?= "develop"
 
 inherit pkgconfig
 inherit cmake
