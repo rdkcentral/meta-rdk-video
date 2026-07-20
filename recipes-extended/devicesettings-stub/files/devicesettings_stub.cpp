@@ -240,7 +240,8 @@ void Host::IDisplayEvents::OnDisplayRxSense(dsDisplayEvent_t) {}
  * device::AudioOutputPortType
  * ====================================================================== */
 
-AudioOutputPortType::AudioOutputPortType(int id) : _id(id) {}
+/* _id lives in DSConstant base; pass it via DSConstant(id, "") in all derived-class ctors */
+AudioOutputPortType::AudioOutputPortType(int id) : DSConstant(id, "") {}
 AudioOutputPortType::~AudioOutputPortType() {}
 
 AudioOutputPortType& AudioOutputPortType::getInstance(int /*id*/)
@@ -252,9 +253,8 @@ AudioOutputPortType& AudioOutputPortType::getInstance(const std::string& /*name*
 {
     return stubAudioPortType();
 }
-
-int  AudioOutputPortType::getId()   const { return _id; }
-bool AudioOutputPortType::isConnected() const { return false; }
+/* getId() is already inline in DSConstant base — no stub body needed.
+ * isConnected() is not declared in AudioOutputPortType header — removed. */
 
 /* ======================================================================
  * device::AudioOutputPort
@@ -282,10 +282,7 @@ AudioOutputPort& AudioOutputPort::getInstance(const std::string& /*name*/)
 }
 
 const AudioOutputPortType& AudioOutputPort::getType()  const { return stubAudioPortType(); }
-int         AudioOutputPort::getId()                   const { return _id; }
-int         AudioOutputPort::getIndex()                const { return _index; }
-intptr_t    AudioOutputPort::getOutputPortHandle()     const { return _handle; }
-const std::string& AudioOutputPort::getName()          const { return _name; }
+/* getId/getIndex/getOutputPortHandle/getName are already inline in audioOutputPort.hpp */
 
 bool  AudioOutputPort::isEnabled()            const { return true; }
 bool  AudioOutputPort::isConnected()          const { return false; }
@@ -356,27 +353,27 @@ void  AudioOutputPort::setBassEnhancer(int)                      {}
 void  AudioOutputPort::resetBassEnhancer()                       {}
 void  AudioOutputPort::setVolumeLeveller(dsVolumeLeveller_t)     {}
 void  AudioOutputPort::setFaderControl(int)                      {}
-int   AudioOutputPort::getFaderControl(int* v) const             { if (v) *v = 0; return 0; }
+void  AudioOutputPort::getFaderControl(int* v)                   { if (v) *v = 0; }
 void  AudioOutputPort::setAudioDelay(uint32_t)                   {}
-void  AudioOutputPort::enableLEConfig(bool)                      {}
+dsError_t AudioOutputPort::enableLEConfig(const bool)            { return dsERR_NONE; }
 void  AudioOutputPort::enableMS12Config(dsMS12FEATURE_t, bool)   {}
 void  AudioOutputPort::setAudioDucking(dsAudioDuckingAction_t, dsAudioDuckingType_t, uint8_t) {}
-void  AudioOutputPort::setPrimaryLanguage(const std::string&)    {}
-void  AudioOutputPort::setSecondaryLanguage(const std::string&)  {}
+void  AudioOutputPort::setPrimaryLanguage(const std::string pLang)  {}
+void  AudioOutputPort::setSecondaryLanguage(const std::string sLang) {}
 bool  AudioOutputPort::GetLEConfig()                              { return false; }
-void  AudioOutputPort::getPrimaryLanguage(std::string& s) const   { s.clear(); }
-int   AudioOutputPort::getHdmiArcPortId(int* id) const            { if (id) *id = 0; return 0; }
+void  AudioOutputPort::getPrimaryLanguage(std::string& s)         { s.clear(); }
+void  AudioOutputPort::getHdmiArcPortId(int* id)                  { if (id) *id = 0; }
 dsError_t AudioOutputPort::reInitializeAudioOutputPort()          { return dsERR_NONE; }
 
-List<AudioEncoding>    AudioOutputPort::getSupportedEncodings()   const { return List<AudioEncoding>(); }
-List<AudioCompression> AudioOutputPort::getSupportedCompressions()const { return List<AudioCompression>(); }
-List<AudioStereoMode>  AudioOutputPort::getSupportedStereoModes() const { return List<AudioStereoMode>(); }
+const List<AudioEncoding>    AudioOutputPort::getSupportedEncodings()    const { return List<AudioEncoding>(); }
+const List<AudioCompression> AudioOutputPort::getSupportedCompressions() const { return List<AudioCompression>(); }
+const List<AudioStereoMode>  AudioOutputPort::getSupportedStereoModes()  const { return List<AudioStereoMode>(); }
 
 /* ======================================================================
  * device::AudioEncoding
  * ====================================================================== */
 
-AudioEncoding::AudioEncoding(int id) : _id(id) {}
+AudioEncoding::AudioEncoding(int id) : DSConstant(id, "") {}
 AudioEncoding::~AudioEncoding() {}
 
 const AudioEncoding& AudioEncoding::getInstance(int id)
@@ -399,13 +396,13 @@ const AudioEncoding& AudioEncoding::getInstance(const std::string& /*name*/)
     return AudioEncoding::getInstance(dsAUDIO_ENC_PCM);
 }
 
-int AudioEncoding::getId() const { return _id; }
+/* getId() is already inline in DSConstant */
 
 /* ======================================================================
  * device::AudioStereoMode
  * ====================================================================== */
 
-AudioStereoMode::AudioStereoMode(int id) : _id(id) {}
+AudioStereoMode::AudioStereoMode(int id) : DSConstant(id, "") {}
 AudioStereoMode::~AudioStereoMode() {}
 
 const AudioStereoMode& AudioStereoMode::getInstance(int id)
@@ -420,13 +417,13 @@ const AudioStereoMode& AudioStereoMode::getInstance(const std::string& /*name*/)
     return AudioStereoMode::getInstance(dsAUDIO_STEREO_STEREO);
 }
 
-int AudioStereoMode::getId() const { return _id; }
+/* getId() is already inline in DSConstant */
 
 /* ======================================================================
  * device::AudioCompression
  * ====================================================================== */
 
-AudioCompression::AudioCompression(int id) : _id(id) {}
+AudioCompression::AudioCompression(int id) : DSConstant(id, "") {}
 AudioCompression::~AudioCompression() {}
 
 const AudioCompression& AudioCompression::getInstance(int id)
@@ -441,13 +438,13 @@ const AudioCompression& AudioCompression::getInstance(const std::string& /*name*
     return AudioCompression::getInstance(0);
 }
 
-int AudioCompression::getId() const { return _id; }
+/* getId() is already inline in DSConstant */
 
 /* ======================================================================
  * device::VideoOutputPortType
  * ====================================================================== */
 
-VideoOutputPortType::VideoOutputPortType(const int id) : _id(id) {}
+VideoOutputPortType::VideoOutputPortType(const int id) : DSConstant(id, "") {}
 VideoOutputPortType::~VideoOutputPortType() {}
 
 VideoOutputPortType& VideoOutputPortType::getInstance(const int /*id*/)
@@ -460,7 +457,7 @@ VideoOutputPortType& VideoOutputPortType::getInstance(const std::string& /*name*
     return stubVideoPortType();
 }
 
-int  VideoOutputPortType::getId()         const { return _id; }
+/* getId() is already inline in DSConstant */
 bool VideoOutputPortType::isHDCPSupported() const { return false; }
 bool VideoOutputPortType::isDTCPSupported() const { return false; }
 
@@ -489,9 +486,7 @@ VideoOutputPort& VideoOutputPort::getInstance(const std::string& /*name*/)
 }
 
 const VideoOutputPortType& VideoOutputPort::getType() const { return stubVideoPortType(); }
-int  VideoOutputPort::getId()    const { return _id; }
-int  VideoOutputPort::getIndex() const { return _index; }
-const std::string& VideoOutputPort::getName() const { return _name; }
+/* getId/getIndex/getName/setAudioPort are already inline in videoOutputPort.hpp */
 
 bool VideoOutputPort::isDisplayConnected()  const { return false; }
 bool VideoOutputPort::isContentProtected()  const { return false; }
@@ -503,39 +498,31 @@ void VideoOutputPort::enable()  {}
 void VideoOutputPort::disable() {}
 void VideoOutputPort::setResolution(const std::string& res, bool, bool) { _resolution = res; }
 void VideoOutputPort::setDisplayConnected(const bool connected) { _displayConnected = connected; }
-void VideoOutputPort::setAudioPort(int id) { _aPortId = id; }
+/* setAudioPort(int) is already inline in videoOutputPort.hpp */
+#ifndef DS_HEADERS_LEGACY
 void VideoOutputPort::setAllmEnabled(bool) const {}
+#endif
 
 int VideoOutputPort::getHDCPStatus()            { return dsHDCP_STATUS_UNAUTHENTICATED; }
 int VideoOutputPort::getHDCPProtocol()          { return dsHDCP_VERSION_1X; }
 int VideoOutputPort::getHDCPReceiverProtocol()  { return dsHDCP_VERSION_1X; }
 int VideoOutputPort::getHDCPCurrentProtocol()   { return dsHDCP_VERSION_1X; }
 
-int  VideoOutputPort::getPixelResolution()      { return dsVIDEO_PIXELRES_1920x1080; }
 bool VideoOutputPort::IsOutputHDR()             { return false; }
 void VideoOutputPort::ResetOutputToSDR()        {}
 bool VideoOutputPort::setForceHDRMode(dsHDRStandard_t) { return false; }
 int  VideoOutputPort::forceDisable4KSupport(bool)       { return 0; }
 void VideoOutputPort::getTVHDRCapabilities(int* cap) const { if (cap) *cap = 0; }
 void VideoOutputPort::getSupportedTvResolutions(int* res) const { if (res) *res = 0; }
-void VideoOutputPort::SetHdmiPreference(dsHdmiInPreference_t) {}
-void VideoOutputPort::GetHdmiPreference(dsHdmiInPreference_t* pref) { if (pref) *pref = {}; }
-
-bool VideoOutputPort::isInterlaced() const { return false; }
-void VideoOutputPort::getSupportedResolutions(std::list<std::string>& res) const { res.clear(); }
-
-const FrameRate& VideoOutputPort::getFrameRate()
-{
-    return FrameRate::getInstance(dsVIDEO_FRAMERATE_60);
-}
+#ifndef DS_HEADERS_LEGACY
+bool VideoOutputPort::SetHdmiPreference(dsHdcpProtocolVersion_t) { return true; }
+int  VideoOutputPort::GetHdmiPreference()                        { return 0; }
+#endif
+/* getPixelResolution/isInterlaced/getSupportedResolutions/getFrameRate not in headers */
 
 /* ---- VideoOutputPort::Display (inner class) ---- */
 
-VideoOutputPort::Display::Display()
-    : _handle(0), _productCode(0), _serialNumber(0),
-      _manufacturerYear(0), _manufacturerWeek(0), _aspectRatio(0),
-      _hdmiDeviceType(true), _isSurroundCapable(false), _isDeviceRepeater(false)
-{}
+/* Display() no-arg constructor is already inline in videoOutputPort.hpp */
 
 VideoOutputPort::Display::Display(VideoOutputPort& /*vPort*/)
     : _handle(0), _productCode(0), _serialNumber(0),
@@ -551,14 +538,16 @@ void VideoOutputPort::Display::setAVIContentType(dsAviContentType_t) const {}
 void VideoOutputPort::Display::setAVIScanInformation(dsAVIScanInformation_t) const {}
 bool VideoOutputPort::Display::hasSurround() const { return false; }
 int  VideoOutputPort::Display::getSurroundMode() const { return 0; }
+#ifndef DS_HEADERS_LEGACY
 void VideoOutputPort::Display::getPhysicallAddress(uint8_t& a, uint8_t& b, uint8_t& c, uint8_t& d) const
 { a = 1; b = 0; c = 0; d = 0; }
+#endif
 
 /* ======================================================================
  * device::AspectRatio
  * ====================================================================== */
 
-AspectRatio::AspectRatio(int id) : _id(id) {}
+AspectRatio::AspectRatio(int id) : DSConstant(id, "") {}
 AspectRatio::~AspectRatio() {}
 
 const AspectRatio& AspectRatio::getInstance(int id)
@@ -573,13 +562,13 @@ const AspectRatio& AspectRatio::getInstance(const std::string& /*name*/)
     return AspectRatio::getInstance(dsVIDEO_ASPECT_RATIO_16x9);
 }
 
-int AspectRatio::getId() const { return _id; }
+/* getId() is already inline in DSConstant */
 
 /* ======================================================================
  * device::FrameRate
  * ====================================================================== */
 
-FrameRate::FrameRate(int id) : _id(id) {}
+FrameRate::FrameRate(int id) : DSConstant(id, "") {}
 FrameRate::~FrameRate() {}
 
 const FrameRate& FrameRate::getInstance(int id)
@@ -594,13 +583,13 @@ const FrameRate& FrameRate::getInstance(const std::string& /*name*/)
     return FrameRate::getInstance(dsVIDEO_FRAMERATE_60);
 }
 
-int FrameRate::getId() const { return _id; }
+/* getId() is already inline in DSConstant */
 
 /* ======================================================================
  * device::PixelResolution
  * ====================================================================== */
 
-PixelResolution::PixelResolution(int id) : _id(id) {}
+PixelResolution::PixelResolution(int id) : DSConstant(id, "") {}
 PixelResolution::~PixelResolution() {}
 
 const PixelResolution& PixelResolution::getInstance(int id)
@@ -615,13 +604,13 @@ const PixelResolution& PixelResolution::getInstance(const std::string& /*name*/)
     return PixelResolution::getInstance(dsVIDEO_PIXELRES_1920x1080);
 }
 
-int PixelResolution::getId() const { return _id; }
+/* getId() is already inline in DSConstant */
 
 /* ======================================================================
  * device::VideoDevice
  * ====================================================================== */
 
-VideoDevice::VideoDevice(int id) : _id(id) {}
+VideoDevice::VideoDevice(int id) : DSConstant(id, "") {}
 VideoDevice::~VideoDevice() {}
 
 VideoDevice& VideoDevice::getInstance(int /*id*/)
@@ -647,7 +636,7 @@ const VideoDFC& VideoDevice::getDFC()
     return s;
 }
 
-List<VideoDFC> VideoDevice::getSupportedDFCs() const { return List<VideoDFC>(); }
+const List<VideoDFC> VideoDevice::getSupportedDFCs() const { return List<VideoDFC>(); }
 
 void VideoDevice::getHDRCapabilities(int* cap)   { if (cap) *cap = 0; }
 unsigned int VideoDevice::getSupportedVideoCodingFormats() const { return 0; }
@@ -672,7 +661,7 @@ dsVideoCodecInfo_t VideoDevice::getVideoCodecInfo(dsVideoCodingFormat_t /*fmt*/)
  * device::VideoDFC
  * ====================================================================== */
 
-VideoDFC::VideoDFC(int id) : _id(id) {}
+VideoDFC::VideoDFC(int id) : DSConstant(id, "") {}
 VideoDFC::~VideoDFC() {}
 
 const VideoDFC& VideoDFC::getInstance(int id)
@@ -687,7 +676,7 @@ const VideoDFC& VideoDFC::getInstance(const std::string& /*name*/)
     return VideoDFC::getInstance(0);
 }
 
-int VideoDFC::getId() const { return _id; }
+/* getId() is already inline in DSConstant */
 
 /* ======================================================================
  * device::FrontPanelIndicator
@@ -695,7 +684,8 @@ int VideoDFC::getId() const { return _id; }
 
 FrontPanelIndicator::FrontPanelIndicator(int id, int maxBrightness, int maxCycleRate,
                                           int levels, int colorMode)
-    : _id(id), _maxBrightness(maxBrightness), _maxCycleRate(maxCycleRate),
+    : DSConstant(id, ""),
+      _maxBrightness(maxBrightness), _maxCycleRate(maxCycleRate),
       _brightness(50), _levels(levels), _colorMode(colorMode),
       _state(1), _blink(), _color(0)
 {}
@@ -725,14 +715,14 @@ int  FrontPanelIndicator::getColorMode()  { return _colorMode; }
 uint32_t FrontPanelIndicator::getColor()  { return _color; }
 bool FrontPanelIndicator::getState()      { return (_state != 0); }
 
-List<FrontPanelIndicator::Color> FrontPanelIndicator::getSupportedColors() const
+const List<FrontPanelIndicator::Color> FrontPanelIndicator::getSupportedColors() const
 {
     return List<FrontPanelIndicator::Color>();
 }
 
 /* FrontPanelIndicator::Color inner class */
-FrontPanelIndicator::Color::Color(int id) : _id(id) {}
-FrontPanelIndicator::Color::~Color() {}
+FrontPanelIndicator::Color::Color(int id) : DSConstant(id, "") {}
+/* ~Color() is already inline virtual in frontPanelIndicator.hpp */
 
 const FrontPanelIndicator::Color& FrontPanelIndicator::Color::getInstance(int id)
 {
