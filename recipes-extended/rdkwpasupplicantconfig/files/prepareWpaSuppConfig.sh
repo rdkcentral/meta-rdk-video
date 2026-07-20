@@ -100,7 +100,9 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
         log "$WPA_SUPP_CONF_FILE file exists, Updating missing configurations..."
         echo "ctrl_interface=/var/run/wpa_supplicant" > $WPA_SUPP_CONF_FILE
         echo "country=$COUNTRY_CODE" >> $WPA_SUPP_CONF_FILE
-		sed -i "/update_config/d" $WPA_SUPP_CONF_FILE
+		if grep -q "update_config" "$WPA_SUPP_CONF_FILE"; then
+            sed -i "/update_config/d" "$WPA_SUPP_CONF_FILE"
+        fi
     fi
     # Enable 802.11w on wpa_supplicant
     if [[ `grep "pmf=" $WPA_SUPP_CONF_FILE` ]]; then
