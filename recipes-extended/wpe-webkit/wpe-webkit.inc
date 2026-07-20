@@ -78,7 +78,7 @@ PACKAGES =+ "${PN}-web-inspector-plugin"
 
 FILES:${PN}-web-driver += "${bindir}/WPEWebDriver"
 FILES:${PN}-web-inspector-plugin += "${libdir}/libWPEWebInspectorResources.so"
-INSANE_SKIP:${PN}-wpe-webdriver += "file-rdeps"
+INSANE_SKIP:${PN}-web-driver += "file-rdeps"
 INSANE_SKIP:${PN}-web-inspector-plugin = "dev-so"
 INSANE_SKIP:${PN}:append = " rpaths"
 
