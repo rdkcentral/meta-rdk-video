@@ -532,8 +532,20 @@ VideoOutputPort::Display::Display(VideoOutputPort& /*vPort*/)
 
 VideoOutputPort::Display::~Display() {}
 
+const VideoOutputPort::Display& VideoOutputPort::getDisplay()
+{
+    /* Return a stable static Display instance — callers reading
+     * productCode/serialNumber/manufacturerYear/manufacturerWeek will get 0
+     * (initialized in Display default ctor), getAspectRatio() returns 16x9,
+     * hasSurround() returns false.  All safe no-op defaults. */
+    static VideoOutputPort::Display s_display;
+    return s_display;
+}
+
 void VideoOutputPort::Display::getEDIDBytes(std::vector<uint8_t>& edid) const { edid.clear(); }
+#ifndef DS_HEADERS_LEGACY
 void VideoOutputPort::Display::setAllmEnabled(bool) const {}
+#endif
 void VideoOutputPort::Display::setAVIContentType(dsAviContentType_t) const {}
 void VideoOutputPort::Display::setAVIScanInformation(dsAVIScanInformation_t) const {}
 bool VideoOutputPort::Display::hasSurround() const { return false; }
