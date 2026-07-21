@@ -24,8 +24,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
            file://0001-set-OCDM-process-thread-name.patch \
           "
           
-# Release version - 1.3.16
-SRCREV = "726aa2e91f428ab27c455ea5e3417cb6dac90817"
+# RDKEMW-21510 Cryptography deep-sleep - PR #200 head (pre-merge build-input)
+SRCREV = "3d22cb94383bb3f8dd436494c38660a6ef1648a4"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
