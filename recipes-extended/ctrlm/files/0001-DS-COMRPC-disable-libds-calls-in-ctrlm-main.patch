@@ -134,3 +134,95 @@ and FrontPanel LED control via libds are silently skipped.
  
  static IARM_Result_t ctrlm_main_iarm_call_status_get(void *arg);
  static IARM_Result_t ctrlm_main_iarm_call_network_status_get(void *arg);
+--- a/src/factory/CMakeLists.txt
++++ b/src/factory/CMakeLists.txt
+@@ -47,7 +47,11 @@
+    iarm/ctrlmf_iarm_control_manager.cpp
+ )
+ 
+-target_link_libraries(ctrlm-fta c rdkversion dbus-1 glib-2.0 IARMBus xr-voice-sdk pthread nopoll secure_wrapper ds)
++# DS_COMRPC migration: link ds only when DISABLE_DEVICESETTINGS is not set.
++if(NOT DISABLE_DEVICESETTINGS)
++   target_link_libraries(ctrlm-fta ds)
++endif()
++target_link_libraries(ctrlm-fta c rdkversion dbus-1 glib-2.0 IARMBus xr-voice-sdk pthread nopoll secure_wrapper)
+ target_link_libraries(controlFactory c ctrlm-fta secure_wrapper)
+ 
+ if(AUTH_ENABLED)
+--- a/src/factory/ctrlmf_audio_control.cpp
++++ b/src/factory/ctrlmf_audio_control.cpp
+@@ -5,7 +5,8 @@
+ #include <rdkx_logger.h>
+ #include <ctrlm_fta_lib.h>
+ #include <ctrlmf_utils.h>
+-// dsMgr includes
++// dsMgr includes — guarded by DISABLE_DEVICESETTINGS (DS_COMRPC migration)
++#ifndef DISABLE_DEVICESETTINGS
+ #include "host.hpp"
+ #include "exception.hpp"
+ #include "videoOutputPort.hpp"
+@@ -17,9 +18,11 @@
+ #include "dsMgr.h"
+ #include "dsRpc.h"
+ #include "dsDisplay.h"
++#endif /* DISABLE_DEVICESETTINGS */
+ // end dsMgr includes
+ 
+ bool ctrlmf_audio_control_init(void) {
++#ifndef DISABLE_DEVICESETTINGS
+    if(device::Manager::IsInitialized) {
+       XLOGD_INFO("DSMgr already initialized");
+       return(true);
+@@ -33,9 +36,14 @@
+       return(false);
+    }
+    return(true);
++#else
++   XLOGD_INFO("DSMgr disabled (DISABLE_DEVICESETTINGS)");
++   return(true);
++#endif /* DISABLE_DEVICESETTINGS */
+ }
+ 
+ bool ctrlmf_audio_control_term(void) {
++#ifndef DISABLE_DEVICESETTINGS
+    try {
+       if(device::Manager::IsInitialized) {
+          device::Manager::DeInitialize();
+@@ -46,9 +54,13 @@
+       return(false);
+    }
+    return(true);
++#else
++   return(true);
++#endif /* DISABLE_DEVICESETTINGS */
+ }
+ 
+ bool ctrlmf_audio_control_mute(bool mute) {
++#ifndef DISABLE_DEVICESETTINGS
+    if(!ctrlmf_is_initialized()) {
+       XLOGD_ERROR("not initialized");
+       return(false);
+@@ -64,9 +76,14 @@
+      return(false);
+    }
+    return(true);
++#else
++   XLOGD_INFO("Audio mute skipped (DISABLE_DEVICESETTINGS): mute=%d", mute);
++   return(true);
++#endif /* DISABLE_DEVICESETTINGS */
+ }
+ 
+ bool ctrlmf_audio_control_attenuate(bool enable, bool relative, double vol) {
++#ifndef DISABLE_DEVICESETTINGS
+    if(!ctrlmf_is_initialized()) {
+       XLOGD_ERROR("not initialized");
+       return(false);
+@@ -95,4 +112,8 @@
+       return(false);
+    }
+    return(true);
++#else
++   XLOGD_INFO("Audio ducking skipped (DISABLE_DEVICESETTINGS): enable=%d", enable);
++   return(true);
++#endif /* DISABLE_DEVICESETTINGS */
+ }
