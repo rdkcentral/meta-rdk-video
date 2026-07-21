@@ -148,17 +148,8 @@ do_compile() {
 
     if [ "${@bb.utils.contains('PACKAGECONFIG', 'mfr', 'mfr', '', d)}" != "" ]; then
 
-        #Pass the mfr versioned lib
-        libfile=$(echo ${MFR_LIB} | sed 's/^"//' | sed 's/"$//')
-        mfr_build_dep_chain="${RECIPE_SYSROOT}${libdir}/${libfile}"
-        echo "mfr mfr_build_dep_chain: ${mfr_build_dep_chain}"
-        if [ -L "${mfr_build_dep_chain}" ]; then
-            versioned_lib=$(readlink -f "${mfr_build_dep_chain}")
-            echo "mfr resolved versioned_lib: ${versioned_lib}"
-            MFR_VERSIONED_LIB="\"$(basename ${versioned_lib})\""
-        fi
+        MFR_VERSIONED_LIB="\"libRDKMfrLib.so.0\""
         echo "mfr versioned lib: ${MFR_VERSIONED_LIB}"
-
         export COMCAST_PLATFORM=XI4
         export CFLAGS="${CFLAGS} -DENABLE_SD_NOTIFY -DRDK_MFRLIB_NAME='${MFR_VERSIONED_LIB}'"
         export LDFLAGS="${LDFLAGS} ${MFR_LIB_NAME} -L${S}/utils -liarmUtils -lsystemd -ldl"
