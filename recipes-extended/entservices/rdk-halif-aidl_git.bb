@@ -132,6 +132,14 @@ do_install:class-native() {
 }
 
 do_install() {
+    copy_tree_no_ownership() {
+        src="$1"
+        dest="$2"
+
+        install -d "${dest}"
+        cp -R --no-preserve=ownership "${src}/." "${dest}/"
+    }
+
     install -d \
         ${D}${includedir}/binder \
         ${D}${includedir}/android \
@@ -140,30 +148,37 @@ do_install() {
         ${D}${includedir}/log \
         ${D}${includedir}/cutils
 
-    cp -a ${S}/android/native/libs/binder/include/binder/* \
-        ${D}${includedir}/binder/
+    copy_tree_no_ownership \
+        ${S}/android/native/libs/binder/include/binder \
+        ${D}${includedir}/binder
 
-    cp -a ${S}/android/native/libs/binder/ndk/include_cpp/android/* \
-        ${D}${includedir}/android/
+    copy_tree_no_ownership \
+        ${S}/android/native/libs/binder/ndk/include_cpp/android \
+        ${D}${includedir}/android
 
-    cp -a ${S}/android/libbase/include/android-base/* \
-        ${D}${includedir}/android-base/
+    copy_tree_no_ownership \
+        ${S}/android/libbase/include/android-base \
+        ${D}${includedir}/android-base
 
-    cp -a ${S}/android/core/libutils/include/utils/* \
-        ${D}${includedir}/utils/
+    copy_tree_no_ownership \
+        ${S}/android/core/libutils/include/utils \
+        ${D}${includedir}/utils
 
-    cp -a ${S}/android/logging/liblog/include/log/* \
-        ${D}${includedir}/log/
+    copy_tree_no_ownership \
+        ${S}/android/logging/liblog/include/log \
+        ${D}${includedir}/log
 
-    cp -a ${S}/android/logging/liblog/include/android/* \
-        ${D}${includedir}/android/
+    copy_tree_no_ownership \
+        ${S}/android/logging/liblog/include/android \
+        ${D}${includedir}/android
 
-    cp -a ${S}/android/core/libcutils/include/cutils/* \
-        ${D}${includedir}/cutils/
+    copy_tree_no_ownership \
+        ${S}/android/core/libcutils/include/cutils \
+        ${D}${includedir}/cutils
 
     install -d ${D}${libdir} ${D}${bindir}
 
-    cp -a ${B}/install/lib/*.so ${D}${libdir}/
+    install -m 0644 ${B}/install/lib/*.so ${D}${libdir}/
 
     if [ -f ${B}/install/bin/servicemanager ]; then
         install -m 0755 ${B}/install/bin/servicemanager ${D}${bindir}/
@@ -174,7 +189,9 @@ do_install() {
 
         if [ -d "${GEN_DIR}" ]; then
             install -d ${D}${datadir}/rdk/aidl/${aidl_target}/${AIDL_SRC_VERSION}
-            cp -r ${GEN_DIR}/* ${D}${datadir}/rdk/aidl/${aidl_target}/${AIDL_SRC_VERSION}/
+            copy_tree_no_ownership \
+                ${GEN_DIR} \
+                ${D}${datadir}/rdk/aidl/${aidl_target}/${AIDL_SRC_VERSION}
         else
             bbwarn "RDK HAL AIDL gen dir ${GEN_DIR} not found; check generator output path."
         fi
@@ -183,7 +200,9 @@ do_install() {
 
         if [ -d "${GEN_CPP_DIR}/com" ]; then
             install -d ${D}${includedir}
-            cp -r ${GEN_CPP_DIR}/com ${D}${includedir}/
+            copy_tree_no_ownership \
+                ${GEN_CPP_DIR}/com \
+                ${D}${includedir}/com
         else
             bbwarn "RDK HAL AIDL cpp dir ${GEN_CPP_DIR}/com not found; check generator output."
         fi
@@ -192,7 +211,9 @@ do_install() {
 
         if [ -d "${GEN_H_DIR}/com" ]; then
             install -d ${D}${includedir}
-            cp -r "${GEN_H_DIR}/com" "${D}${includedir}/"
+            copy_tree_no_ownership \
+                ${GEN_H_DIR}/com \
+                ${D}${includedir}/com
         else
             bbwarn "HAL AIDL header dir ${GEN_H_DIR}/com not found; check generator output."
         fi
@@ -216,4 +237,3 @@ FILES:${PN}-dev = "\
 "
 
 FILES:${PN}-dev += " ${includedir}/com "
-
