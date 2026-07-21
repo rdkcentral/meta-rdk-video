@@ -1,14 +1,13 @@
-From a1b41a1427b4cbc5f453850fad4f39d55137b255 Mon Sep 17 00:00:00 2001
+From 8ffcec841d2e6c4c8256cf2e996f1698bb53f93f Mon Sep 17 00:00:00 2001
 From: Radenko Mihajlovic <Radenko_Mihajlovic@comcast.com>
-Date: Wed, 17 Jun 2026 11:16:37 +0000
-Subject: [PATCH] 
- DTM-4265-DTM-4808-ocdm-fairplay-interfaces-support-and-convert-pr-in-virtual
+Date: Tue, 21 Jul 2026 10:30:21 +0000
+Subject: [PATCH] DTM-4265-DTM-4808: ocdm fairplay interfaces support
 
 ---
- apis/OpenCDMi/IContentDecryption.h | 155 +++++++++++++++---
- apis/OpenCDMi/IDRM.h               | 243 +++++++++++++++++------------
- apis/OpenCDMi/IOCDM.h              |  99 ++++++------
- 3 files changed, 336 insertions(+), 161 deletions(-)
+ apis/OpenCDMi/IContentDecryption.h | 155 ++++++++++++++++---
+ apis/OpenCDMi/IDRM.h               | 231 +++++++++++++++++------------
+ apis/OpenCDMi/IOCDM.h              |  85 ++++++-----
+ 3 files changed, 323 insertions(+), 148 deletions(-)
 
 diff --git a/apis/OpenCDMi/IContentDecryption.h b/apis/OpenCDMi/IContentDecryption.h
 index dec0647..2560363 100644
@@ -252,43 +251,10 @@ index dec0647..2560363 100644
 +}
 \ No newline at end of file
 diff --git a/apis/OpenCDMi/IDRM.h b/apis/OpenCDMi/IDRM.h
-index f8b8a7d..9e177a5 100644
+index 2cc86dd..af6c413 100644
 --- a/apis/OpenCDMi/IDRM.h
 +++ b/apis/OpenCDMi/IDRM.h
-@@ -35,26 +35,26 @@
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  */
--
-+ 
- #pragma once
--
-+ 
- // @stubgen:skip
--
-+ 
- // For the support of portable data types such as uint8_t.
- #include <stdint.h>
- #include <string>
- #include <type_traits>
- #include <typeinfo>
- #include <vector>
--
-+ 
- #include <interfaces/Portability.h>
--
-+ 
- class BufferReader {
- private:
-     BufferReader() = delete;
-     BufferReader(const BufferReader&) = delete;
-     BufferReader& operator=(const BufferReader&) = delete;
--
-+ 
-     // Internal implementation of multi-byte reads
-     template <typename T>
-     bool Read(T* v)
-@@ -70,7 +70,7 @@ private:
+@@ -71,7 +71,7 @@ private:
          }
          return false;
      }
@@ -297,7 +263,7 @@ index f8b8a7d..9e177a5 100644
  public:
      inline BufferReader(const uint8_t* buf, size_t size)
          : buf_(buf)
-@@ -79,14 +79,14 @@ public:
+@@ -80,14 +80,14 @@ public:
      {
      }
      inline ~BufferReader() = default;
@@ -314,7 +280,7 @@ index f8b8a7d..9e177a5 100644
      // Read a value from the stream, performing endian correction,
      // and advance the stream pointer.
      inline bool Read1(uint8_t* v) WARNING_RESULT_NOT_USED { return Read(v); }
-@@ -96,7 +96,7 @@ public:
+@@ -97,7 +97,7 @@ public:
      inline bool Read4s(int32_t* v) WARNING_RESULT_NOT_USED { return Read(v); }
      inline bool Read8(uint64_t* v) WARNING_RESULT_NOT_USED { return Read(v); }
      inline bool Read8s(int64_t* v) WARNING_RESULT_NOT_USED { return Read(v); }
@@ -323,7 +289,7 @@ index f8b8a7d..9e177a5 100644
      inline bool ReadString(std::string* str, size_t count) WARNING_RESULT_NOT_USED
      {
          if ((str != nullptr) && (HasBytes(count) == true)) {
-@@ -116,7 +116,7 @@ public:
+@@ -117,7 +117,7 @@ public:
          }
          return false;
      }
@@ -332,7 +298,7 @@ index f8b8a7d..9e177a5 100644
      // These variants read a 4-byte integer of the corresponding signedness and
      // store it in the 8-byte return type.
      inline bool Read4Into8(uint64_t* v) WARNING_RESULT_NOT_USED
-@@ -137,7 +137,7 @@ public:
+@@ -138,7 +138,7 @@ public:
          }
          return false;
      }
@@ -341,7 +307,7 @@ index f8b8a7d..9e177a5 100644
      // Advance the stream by this many bytes.
      inline bool SkipBytes(size_t bytes) WARNING_RESULT_NOT_USED
      {
-@@ -147,13 +147,13 @@ public:
+@@ -148,13 +148,13 @@ public:
          }
          return false;
      }
@@ -357,7 +323,7 @@ index f8b8a7d..9e177a5 100644
  namespace WPEFramework
  {
     namespace PluginHost
-@@ -161,9 +161,9 @@ namespace WPEFramework
+@@ -162,9 +162,9 @@ namespace WPEFramework
        struct IShell;
     }
  }
@@ -369,7 +335,7 @@ index f8b8a7d..9e177a5 100644
  // EME error code to which CDMi errors are mapped. Please
  // refer to the EME spec for details of the errors
  // https://dvcs.w3.org/hg/html-media/raw-file/tip/encrypted-media/encrypted-media.html
-@@ -173,13 +173,13 @@ namespace CDMi {
+@@ -174,13 +174,13 @@ namespace CDMi {
  #define MEDIA_KEYERR_OUTPUT 4
  #define MEDIA_KEYERR_HARDWARECHANGE 5
  #define MEDIA_KEYERR_DOMAIN 6
@@ -386,7 +352,7 @@ index f8b8a7d..9e177a5 100644
  /* Media Key status required by EME */
  #define MEDIA_KEY_STATUS_USABLE 0
  #define MEDIA_KEY_STATUS_INTERNAL_ERROR 1
-@@ -188,7 +188,7 @@ namespace CDMi {
+@@ -189,7 +189,7 @@ namespace CDMi {
  #define MEDIA_KEY_STATUS_OUTPUT_DOWNSCALED 4
  #define MEDIA_KEY_STATUS_KEY_STATUS_PENDING 5
  #define MEDIA_KEY_STATUS_KEY_STATUS_MAX KEY_STATUS_PENDING
@@ -395,7 +361,7 @@ index f8b8a7d..9e177a5 100644
  typedef enum {
      CDMi_SUCCESS = 0,
      CDMi_S_FALSE = 1,
-@@ -208,34 +208,34 @@ typedef enum {
+@@ -209,34 +209,34 @@ typedef enum {
      CDMi_SERVER_SERVICE_SPECIFIC = 0x8004C604,
      CDMi_BUSY_CANNOT_INITIALIZE = 0x8004DD00,
  } CDMi_RESULT;
@@ -436,7 +402,7 @@ index f8b8a7d..9e177a5 100644
  // ISO/IEC 23001-7 defines two Common Encryption Schemes with Full Sample and Subsample modes
  typedef enum : uint8_t {
      Clear = 0,
-@@ -244,19 +244,19 @@ typedef enum : uint8_t {
+@@ -245,19 +245,19 @@ typedef enum : uint8_t {
      AesCtr_Cens,    // AES-CTR mode and Sub-Sample + patterned encryption
      AesCbc_Cbcs     // AES-CBC mode and Sub-Sample + patterned encryption + Constant IV
  } EncryptionScheme;
@@ -459,7 +425,7 @@ index f8b8a7d..9e177a5 100644
  typedef struct {
      EncryptionScheme   scheme;          // Encryption scheme used in this sample
      EncryptionPattern pattern;          // Encryption Pattern used in this sample
-@@ -267,85 +267,91 @@ typedef struct {
+@@ -268,85 +268,91 @@ typedef struct {
      uint8_t            subSampleCount;  // Number or Sub-Samples in this sample
      SubSampleInfo*     subSample;       // SubSample mapping - Repeating pair of Clear bytes and Encrypted Bytes representing each subsample.
  } SampleInfo;
@@ -570,7 +536,7 @@ index f8b8a7d..9e177a5 100644
      DEPRECATED virtual CDMi_RESULT Decrypt(
          const uint8_t* f_pbSessionKey VARIABLE_IS_NOT_USED,
          uint32_t f_cbSessionKey VARIABLE_IS_NOT_USED,
-@@ -360,10 +366,10 @@ public:
+@@ -361,10 +367,10 @@ public:
          const uint8_t keyIdLength VARIABLE_IS_NOT_USED,
          const uint8_t* keyId VARIABLE_IS_NOT_USED,
          bool initWithLast15 /*=0*/ VARIABLE_IS_NOT_USED) {
@@ -583,7 +549,7 @@ index f8b8a7d..9e177a5 100644
      virtual CDMi_RESULT Decrypt(
          uint8_t*                 inData,          // Incoming encrypted data
          const uint32_t           inDataLength,    // Incoming encrypted data length
-@@ -371,7 +377,7 @@ public:
+@@ -372,7 +378,7 @@ public:
          uint32_t*                outDataLength,   // Outgoing decrypted data length
          const SampleInfo*        sampleInfo,      // Information required to decrypt Sample
          const IStreamProperties* properties) {    // Stream Properties
@@ -592,7 +558,7 @@ index f8b8a7d..9e177a5 100644
  PUSH_WARNING(DISABLE_WARNING_DEPRECATED_USE)
          return (Decrypt(sampleInfo->keyId, sampleInfo->keyIdLength,
                  sampleInfo->scheme, sampleInfo->pattern,
-@@ -382,48 +388,54 @@ PUSH_WARNING(DISABLE_WARNING_DEPRECATED_USE)
+@@ -383,48 +389,54 @@ PUSH_WARNING(DISABLE_WARNING_DEPRECATED_USE)
                  properties->InitLength()));
  POP_WARNING()
      }
@@ -660,7 +626,7 @@ index f8b8a7d..9e177a5 100644
      // Create a MediaKeySession using the supplied init data and CDM data.
      virtual CDMi_RESULT CreateMediaKeySession(
          const std::string& keySystem,
-@@ -435,81 +447,116 @@ public:
+@@ -436,81 +448,116 @@ public:
          uint32_t f_cbCDMData,
          IMediaKeySession** f_ppiMediaKeySession)
          = 0;
@@ -797,7 +763,7 @@ index f8b8a7d..9e177a5 100644
      virtual CDMi_RESULT Metrics (uint32_t& bufferLength, uint8_t buffer[]) const = 0;
  };
  
-@@ -615,10 +662,10 @@ private:
+@@ -621,10 +668,10 @@ private:
      void Deinitialize(const WPEFramework::PluginHost::IShell * service, std::true_type) {
          _instance.Deinitialize(service);
      }
@@ -810,7 +776,7 @@ index f8b8a7d..9e177a5 100644
      template <typename T>
      struct HasEnable{
          template <typename U, CDMi_RESULT (U::*)()>
-@@ -630,15 +677,15 @@ private:
+@@ -636,15 +683,15 @@ private:
          static uint32_t Test(...);
          static const bool Has = sizeof(Test<T>(0)) == sizeof(uint8_t);
      };
@@ -829,7 +795,7 @@ index f8b8a7d..9e177a5 100644
      template <typename T>
      struct HasDisable{
          template <typename U, CDMi_RESULT (U::*)()>
-@@ -650,25 +697,25 @@ private:
+@@ -656,25 +703,25 @@ private:
          static uint32_t Test(...);
          static const bool Has = sizeof(Test<T>(0)) == sizeof(uint8_t);
      };
@@ -861,7 +827,7 @@ index f8b8a7d..9e177a5 100644
  #ifndef EXTERNAL
  #ifdef _MSVC_LANG
  __declspec(dllexport) CDMi::ISystemFactory* GetSystemFactory();
-@@ -678,8 +725,8 @@ __attribute__ ((visibility ("default"))) CDMi::ISystemFactory* GetSystemFactory(
+@@ -684,8 +731,8 @@ __attribute__ ((visibility ("default"))) CDMi::ISystemFactory* GetSystemFactory(
  #else
  EXTERNAL CDMi::ISystemFactory* GetSystemFactory();
  #endif
@@ -875,7 +841,7 @@ index f8b8a7d..9e177a5 100644
 +#endif
 \ No newline at end of file
 diff --git a/apis/OpenCDMi/IOCDM.h b/apis/OpenCDMi/IOCDM.h
-index 27cb4c1..ef3c15a 100644
+index 6c3ec99..b6c94cf 100644
 --- a/apis/OpenCDMi/IOCDM.h
 +++ b/apis/OpenCDMi/IOCDM.h
 @@ -1,4 +1,4 @@
@@ -1012,29 +978,10 @@ index 27cb4c1..ef3c15a 100644
      virtual OCDM_RESULT SelectKeyId(const uint8_t keyLength,
          const uint8_t keyId[] /* @length:keyLength */)
          = 0;
-@@ -178,26 +178,38 @@ struct ISessionExt : virtual public Core::IUnknown {
- 
-     virtual OCDM_RESULT CleanDecryptContext() = 0;
- };
--
-+ 
- struct IAccessorOCDM : virtual public Core::IUnknown {
--
-+ 
-     enum { ID = ID_ACCESSOROCDM };
--
-+ 
-     ~IAccessorOCDM() override = default;
--
-+ 
-     virtual bool IsTypeSupported(const std::string& keySystem,
-         const std::string& mimeType) const = 0;
--
-+ 
+@@ -191,6 +191,18 @@ struct IAccessorOCDM : virtual public Core::IUnknown {
      // Provides keysystem-specific metadata
      virtual OCDM_RESULT Metadata(const std::string& keySystem, std::string& metadata /* @out */) const = 0;
--
-+ 
+ 
 +    // fairplay
 +    virtual OCDM_RESULT CreateMovieSession(const string& keySystem, uint32_t version, const uint8_t* cert /* @in @length:certificateLength */, uint32_t certificateLength, const uint8_t* versionlist /* @in @length:versionListSize */, uint32_t versionListSize, uint8_t* movieIdOut /* @out @length:8 */) const = 0;
 +    virtual OCDM_RESULT DestroyMovieSession(const string& keySystem, uint32_t version, uint64_t movieId) const = 0;
@@ -1046,19 +993,11 @@ index 27cb4c1..ef3c15a 100644
 +    virtual OCDM_RESULT InitLibrary(const string& keySystem) const = 0;
 +    virtual OCDM_RESULT ProcessLicense(const string& keySystem, uint32_t version, uint8_t* session /* @in @length:4 */, const uint8_t* licenseData /* @in @length:licenseDataSize */, uint32_t licenseDataSize, uint8_t *cryptoId /* @inout @length:8 */) const = 0;
 +    virtual OCDM_RESULT DestroyCryptor(const string& keySystem, uint32_t version, uint64_t cryptoId) const = 0;
-+ 
++
      // Provides keysystem-specific metricdata
      virtual OCDM_RESULT Metricdata(
          const std::string& keySystem,
-         uint32_t& bufferSize /* @inout */,
-         uint8_t buffer[] /* @out @length:bufferSize */) const
-         = 0;
--
-+ 
-     // Create a MediaKeySession using the supplied init data and CDM data.
-     virtual OCDM_RESULT
-     CreateSession(const string& keySystem, const int32_t licenseType,
-@@ -206,38 +218,38 @@ struct IAccessorOCDM : virtual public Core::IUnknown {
+@@ -211,38 +223,38 @@ struct IAccessorOCDM : virtual public Core::IUnknown {
          const uint16_t CDMDataLength, ISession::ICallback* callback,
          std::string& sessionId /* @out */, ISession*& session /* @out */)
          = 0;
@@ -1107,7 +1046,7 @@ index 27cb4c1..ef3c15a 100644
      virtual OCDM_RESULT CommitSecureStop(const std::string& keySystem,
          const uint8_t sessionID[] /* @length:sessionIDLength */,
          uint16_t sessionIDLength,
-@@ -412,5 +424,4 @@ struct EXTERNAL IGoogleCastAuthExtension : virtual public Core::IUnknown {
+@@ -417,5 +429,4 @@ struct EXTERNAL IGoogleCastAuthExtension : virtual public Core::IUnknown {
  };
  
  } //namespace Exchange
