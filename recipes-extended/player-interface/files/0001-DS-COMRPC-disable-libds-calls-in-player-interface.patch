@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DS COMRPC Migration <ds-comrpc@rdk.com>
+Date: Mon, 01 Jan 2024 00:00:00 +0000
+Subject: [PATCH] DS_COMRPC: disable libds calls in player-interface
+
+When DISABLE_DEVICESETTINGS is defined:
+ - Guard all DeviceSettings C++ API includes (manager.hpp, host.hpp, etc.)
+   in PlayerExternalsRdkInterface.h/.cpp with #ifndef DISABLE_DEVICESETTINGS.
+   dsTypes.h is kept unconditionally to preserve dsHdcpProtocolVersion_t type.
+ - Replace SetHDMIStatus() body with a safe stub returning HDCP 2.x defaults
+   (isHDCPEnabled=true, protocol=dsHDCP_VERSION_2X, 1920x1080 resolution).
+ - Guard -lds/-ldshalcli link flags in externals/CMakeLists.txt.
+
+Rollback: revert by removing DISABLE_DEVICESETTINGS from bbappend CXXFLAGS.
+---
+--- a/externals/CMakeLists.txt	2026-07-20 16:20:21.927108142 +0000
++++ b/externals/CMakeLists.txt	2026-07-21 13:14:43.032947933 +0000
+@@ -132,7 +132,10 @@
+     set(EXT_SOURCES "${EXT_SOURCES}" rdk/IIarm/DeviceIARMInterface.cpp)
+     set(EXT_SOURCES "${EXT_SOURCES}" rdk/IFirebolt/DeviceFireboltInterface.cpp)
+     set(EXT_SOURCES "${EXT_SOURCES}" IFirebolt/FireboltInterface.cpp)
+-    list(APPEND LIB_EXT_DEPENDS -lIARMBus -lds -ldshalcli)
++    list(APPEND LIB_EXT_DEPENDS -lIARMBus)
++    if(NOT DISABLE_DEVICESETTINGS)
++        list(APPEND LIB_EXT_DEPENDS -lds -ldshalcli)
++    endif()
+ endif()
+ 
+ if(CMAKE_PLAYER_RFC_REQUIRED)
+--- a/externals/rdk/PlayerExternalsRdkInterface.h	2026-07-20 16:20:21.931108159 +0000
++++ b/externals/rdk/PlayerExternalsRdkInterface.h	2026-07-21 13:15:19.593105921 +0000
+@@ -24,6 +24,7 @@
+ 
+ #ifndef PLAYER_IARM_RDK_INTERFACE_H
+ #define PLAYER_IARM_RDK_INTERFACE_H
++#ifndef DISABLE_DEVICESETTINGS
+ #include "manager.hpp"
+ #include "host.hpp"
+ #include "videoResolution.hpp"
+@@ -33,6 +34,10 @@
+ #include "dsDisplay.h"
+ #include "audioOutputPort.hpp"
+ #include "dsAudio.h"
++#else
++/* DeviceSettings disabled: include only dsTypes.h for dsHdcpProtocolVersion_t */
++#include "dsTypes.h"
++#endif /* DISABLE_DEVICESETTINGS */
+ 
+ #include <memory>
+ #include "PlayerExternalsInterfaceBase.h"
+--- a/externals/rdk/PlayerExternalsRdkInterface.cpp	2026-07-20 16:20:21.931108159 +0000
++++ b/externals/rdk/PlayerExternalsRdkInterface.cpp	2026-07-21 13:15:39.917193748 +0000
+@@ -228,6 +228,8 @@
+  */
+ void PlayerExternalsRdkInterface::SetHDMIStatus()
+ {
++#ifndef DISABLE_DEVICESETTINGS
++
+     bool                    isConnected              = false;
+     bool                    isHDCPCompliant          = false;
+     bool                    isHDCPEnabled            = true;
+@@ -330,6 +332,13 @@
+ 
+ 
+     return;
++#else
++    /* DeviceSettings removed: report HDCP 2.x compliant with 1080p display.
++     * entservices-devicesettings (Thunder COM-RPC) handles real DS queries. */
++    m_isHDCPEnabled       = true;
++    m_hdcpCurrentProtocol = dsHDCP_VERSION_2X;
++    SetResolution(1920, 1080);
++#endif /* DISABLE_DEVICESETTINGS */
+ }
+ 
+ void PlayerExternalsRdkInterface::setHdcpProtocol(dsHdcpProtocolVersion_t t_protocol)

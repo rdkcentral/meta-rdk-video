@@ -4,10 +4,10 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=76ae13a6bce633447ea2284294f073c2"
 
-SRCREV = "f6ccc493d26ec35f1c201546dfc4319aa8ec3048"
+SRCREV = "678547e22e3406db166e67f65401768bcaa6d84f"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
-PV = "1.4.7"
+PV = "1.4.6"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 S = "${WORKDIR}/git"
@@ -115,6 +115,9 @@ RDEPENDS:${PN}:append  = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth','
 
 PACKAGECONFIG[emmc] = "--enable-emmc,--disable-emmc"
 
+PACKAGECONFIG:append = " thunder"
+PACKAGECONFIG[thunder] = "--enable-thunder,,"
+
 INCLUDE_DIRS += "\
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds-hal \
@@ -167,6 +170,9 @@ do_install:append() {
 	install -m 0644 ${S}/conf/mgrlist.conf ${D}${sysconfdir}
         install -d ${D}${base_libdir}/rdk
         install -m 0644 ${S}/src/hostif/parodusClient/parodus.service ${D}${systemd_unitdir}/system
+	#install -m 0644 ${S}/src/hostif/parodusClient/parodus.path ${D}${systemd_unitdir}/system
+        #install -m 0644 ${S}/src/hostif/parodusClient/parodus_v4.path ${D}${systemd_unitdir}/system
+        #install -m 0644 ${S}/src/hostif/parodusClient/parodus_v6.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/src/hostif/parodusClient/parodus_bsp.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/src/hostif/parodusClient/conf/notify_webpa_cfg.json ${D}${sysconfdir}
         install -m 0644 ${S}/src/hostif/parodusClient/conf/webpa_cfg.json ${D}${sysconfdir}
@@ -203,8 +209,14 @@ FILES:${PN} += "${systemd_unitdir}/system/tr69hostif.service"
 SYSTEMD_SERVICE:${PN} += "ip-iface-monitor.service"
 FILES:${PN} += "${systemd_unitdir}/system/ip-iface-monitor.service"
 SYSTEMD_SERVICE:${PN} += "parodus.service" 
+#SYSTEMD_SERVICE:${PN} += "parodus.path" 
+#SYSTEMD_SERVICE:${PN} += "parodus_v4.path"
+#SYSTEMD_SERVICE:${PN} += "parodus_v6.path"
 SYSTEMD_SERVICE:${PN} += "parodus_bsp.path"
 FILES:${PN} += "${systemd_unitdir}/system/parodus.service" 
+#FILES:${PN} += "${systemd_unitdir}/system/parodus.path" 
+#FILES:${PN} += "${systemd_unitdir}/system/parodus_v4.path"
+#FILES:${PN} += "${systemd_unitdir}/system/parodus_v6.path"
 FILES:${PN} += "${systemd_unitdir}/system/parodus_bsp.path"
 FILES:${PN} += "${base_libdir}/*"
 FILES:${PN} += "${sysconfdir}/*"

@@ -1,18 +1,23 @@
-# DS_COMRPC migration: partial devicesettings removal for tr69hostif.
+# DS_COMRPC migration: complete removal of libds (devicesettings) from tr69hostif.
 #
-# dsMgr daemon is masked (dsmgr.service -> /dev/null) so device::Manager::Initialize()
-# will fail at runtime; all STBService component functions have existing try/catch
-# blocks that return NOK on failure — DS TR-069 parameters return errors gracefully.
+# --enable-thunder activates WITH_THUNDER_CLIENT in Makefile.am which:
+#   1. Compiles *_Thunder.cpp files INSTEAD of the libds-based STBService files:
+#        Components_AudioOutput_Thunder.cpp, Components_SPDIF_Thunder.cpp,
+#        Components_HDMI_Thunder.cpp, Components_DisplayDevice_Thunder.cpp,
+#        Components_VideoOutput_Thunder.cpp, Components_VideoDecoder_Thunder.cpp,
+#        Capabilities_Thunder.cpp
+#        — all zero device:: calls, no -lds link needed
+#   2. Defines USE_THUNDER_CLIENT so hostIf_dsClient_ReqHandler.cpp and
+#        Device_DeviceInfo.cpp skip their device:: blocks
+#   3. Does NOT add -I/rdk/ds/ or -I/rdk/ds-hal/ include paths to CFLAGS
 #
-# libds.so is intentionally kept linked: the 8 STBService component files
-# (Components_AudioOutput, VideoOutput, HDMI, DisplayDevice, SPDIF, VideoDecoder,
-# Capabilities) have 50+ embedded device:: calls that require full source patching
-# before the -lds link can be removed. That work is tracked separately.
-#
-# virtual/vendor-devicesettings-hal (the HAL DSO) is removed since we have no
-# vendor HAL for XiOne-UK and it is not needed when dsMgr is masked.
+# No #if 0 source patching needed — upstream already migrated the code.
+# At runtime, Thunder STBService parameters return errors gracefully if
+# the Thunder DS service is unavailable (acceptable — not being validated).
 #
 # Rollback: delete this file.
 
-DEPENDS:remove = "virtual/vendor-devicesettings-hal"
+EXTRA_OECONF:append = " --enable-thunder"
+DEPENDS:remove = "devicesettings virtual/vendor-devicesettings-hal"
+RDEPENDS:${PN}:remove = "devicesettings"
 

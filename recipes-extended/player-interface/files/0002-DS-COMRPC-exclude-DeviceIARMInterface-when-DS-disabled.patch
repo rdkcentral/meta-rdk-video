@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DS_COMRPC Migration <ds_comrpc@migration>
+Date: Mon, 21 Jul 2026 00:00:00 +0000
+Subject: [PATCH] DS_COMRPC: exclude DeviceIARMInterface when DISABLE_DEVICESETTINGS
+
+DeviceIARMInterface.cpp uses DS IARM events (IARM_BUS_DSMGR_*, dsMgr.h).
+When DISABLE_DEVICESETTINGS=1, DS include paths are removed and the file
+cannot compile. Exclude it from the cmake build and guard the IARM else-
+branch in Initialize() so it uses Firebolt when DS is disabled.
+---
+--- a/externals/CMakeLists.txt
++++ b/externals/CMakeLists.txt
+@@ -129,7 +129,10 @@
+     message("PLAYER IARM_MGR set")
+     set(LIB_EXT_DEFINES "${LIB_EXT_DEFINES} -DIARM_MGR=1")
+     set(EXT_SOURCES "${EXT_SOURCES}" rdk/PlayerExternalsRdkInterface.cpp)
+-    set(EXT_SOURCES "${EXT_SOURCES}" rdk/IIarm/DeviceIARMInterface.cpp)
++    if(NOT DISABLE_DEVICESETTINGS)
++        # DeviceIARMInterface uses IARM_BUS_DSMGR_* DS events from dsMgr.h
++        set(EXT_SOURCES "${EXT_SOURCES}" rdk/IIarm/DeviceIARMInterface.cpp)
++    endif()
+     set(EXT_SOURCES "${EXT_SOURCES}" rdk/IFirebolt/DeviceFireboltInterface.cpp)
+     set(EXT_SOURCES "${EXT_SOURCES}" IFirebolt/FireboltInterface.cpp)
+     list(APPEND LIB_EXT_DEPENDS -lIARMBus)
+--- a/externals/rdk/PlayerExternalsRdkInterface.cpp
++++ b/externals/rdk/PlayerExternalsRdkInterface.cpp
+@@ -114,6 +114,7 @@
+     //remove-start
+         m_initialized = PlayerExternalsRdkInterface::InitState::FIREBOLT;
+     }
++#ifndef DISABLE_DEVICESETTINGS
+     else
+     {
+         MW_PRE_LOGGER_LOG("Using IARM \n");
+@@ -121,6 +122,16 @@
+         DeviceIARMInterface::Initialize();
+         m_initialized = PlayerExternalsRdkInterface::InitState::IARM;
+     }
++#else
++    else
++    {
++        /* DS disabled: DeviceIARMInterface not compiled; always use Firebolt */
++        MW_PRE_LOGGER_LOG("DS disabled: forcing Firebolt (DeviceIARMInterface skipped) \n");
++        m_pDeviceInterfaceBase = DeviceFireboltInterface::GetInstance();
++        DeviceFireboltInterface::Initialize();
++        m_initialized = PlayerExternalsRdkInterface::InitState::FIREBOLT;
++    }
++#endif /* DISABLE_DEVICESETTINGS */
+     //remove-end
+ 
+     MW_PRE_LOGGER_LOG("Done getting interface \n");
