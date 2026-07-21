@@ -32,22 +32,6 @@ endif()
 add_library(ds SHARED
     devicesettings_stub.cpp)
 
-# -----------------------------------------------------------------------
-# Detect header version:
-#   Modern (xione-uk style): VideoOutputPort has setAllmEnabled — newer API.
-#   Legacy (sharp-a60 style): setAllmEnabled absent; some methods inline that
-#   are only declared in modern headers.
-# DS_HEADERS_LEGACY guards methods that only exist in modern headers.
-# -----------------------------------------------------------------------
-file(STRINGS "${CMAKE_SYSROOT}/usr/include/rdk/ds/videoOutputPort.hpp"
-     _VOP_CONTENT LIMIT_COUNT 400)
-if(NOT _VOP_CONTENT MATCHES "setAllmEnabled")
-    message(STATUS "devicesettings-stub: legacy headers detected — enabling DS_HEADERS_LEGACY")
-    target_compile_definitions(ds PRIVATE DS_HEADERS_LEGACY=1)
-else()
-    message(STATUS "devicesettings-stub: modern headers detected")
-endif()
-
 target_include_directories(ds PRIVATE
     ${DS_INCLUDE_DIR}
     ${DS_HAL_INCLUDE_DIR}
