@@ -37,8 +37,7 @@
 set -u
 
 # ---- tunables --------------------------------------------------------------
-COMM="${COMM:-Monitor::IResou}"          # Linux truncates Monitor::IResource to 15 chars
-FULL_COMM="Monitor::IResource"             # full thread name (display only)
+COMM="${COMM:-Monitor::IResou}"          # truncated (<=15 char) thread name
 METHOD="${METHOD:-ftrace}"               # ftrace | perf
 DURATION="${DURATION:-30}"               # seconds to trace during start-up
 OUTDIR="${OUTDIR:-/opt/logs}"
@@ -164,8 +163,17 @@ run_ftrace() {
 
 # Parse wakeup->switch pairs and (if present) sched_stat_wait for the thread.
 parse_ftrace() {
-    raw="$1"; comm="$2"
-    awk -v want="$comm" '
+    raw="$1"; comm="$2"; valid_tids="${3:-}"
+    awk -v want="$comm" -v vtids="$valid_tids" '
+        # Build lookup of valid TIDs (WPEFramework main daemon only)
+        BEGIN {
+            ntids = split(vtids, ta)
+            for (i=1;i<=ntids;i++) valid[ta[i]+0] = 1
+        }
+        function tid_ok(p) {
+            if (ntids == 0) return 1      # no filter: accept all (boot mode fallback)
+            return (p+0 in valid)
+        }
         function ts(field,   n) { gsub(/:/,"",field); return field+0 }
         # trace line time is the 4th whitespace field like "  1234.567890:"
         {
@@ -175,23 +183,24 @@ parse_ftrace() {
             if (t==0) next
         }
         /sched_wakeup(_new)?:/ {
-            # ... sched_wakeup: comm=NAME pid=PID prio=.. target_cpu=..
             name=""; pid=""
-            for (i=1;i<=NF;i++){
-                if ($i ~ /^comm=/){ name=substr($i,6) }
-                if ($i ~ /^pid=/){ pid=substr($i,5)+0 }
-            }
-            # comm may contain the ":" so rebuild between comm= and pid=
             if (index($0,"comm=")>0){
                 s=substr($0,index($0,"comm=")+5)
                 p=index(s," pid=")
                 if (p>0) name=substr(s,1,p-1)
             }
-            if (name==want){ wake[pid]=t; wcnt[pid]++ }
+            for (i=1;i<=NF;i++) if ($i ~ /^pid=/) pid=substr($i,5)+0
+            if (name==want){
+                if (tid_ok(pid)) {
+                    wake[pid]=t; wcnt[pid]++
+                    if (first_wake==0) first_wake=t
+                } else {
+                    filtered_tids[pid]=1
+                }
+            }
             next
         }
         /sched_switch:/ {
-            # prev.. ==> next_comm=NAME next_pid=PID next_prio=..
             npid=""; nname=""
             k=index($0,"==>")
             if (k>0){
@@ -207,31 +216,69 @@ parse_ftrace() {
                 }
             }
             if (nname==want && (npid in wake)){
-                d=(t-wake[npid])*1000000.0   # s -> us
+                d=(t-wake[npid])*1000000.0
                 delete wake[npid]
                 if (d>=0){
                     n++; sum+=d
+                    last_switch=t
                     if (n==1){ first=d; first_tid=npid; first_ts=t }
                     if (d>max){max=d; maxpid=npid}
                     if (min==0 || d<min) min=d
                     print "  wakeup->run  tid="npid"  latency="sprintf("%.1f",d)" us"
                 }
+            } else if (nname==want && tid_ok(npid)==0) {
+                filtered_tids[npid]=1
             }
             next
         }
         /sched_stat_wait:/ {
-            # comm=NAME pid=PID delay=NS [ns]
             name=""; dl=0
             if (index($0,"comm=")>0){
-                s=substr($0,index($0,"comm=")+5)
-                p=index(s," pid=")
-                if (p>0) name=substr(s,1,p-1)
+                s=substr($0,index($0,"comm=")+5); p=index(s," pid=")
+                if(p>0) name=substr(s,1,p-1)
             }
-            for (i=1;i<=NF;i++) if ($i ~ /^delay=/){ dl=substr($i,7)+0 }
-            if (name==want){
-                sw_n++; sw_sum+=dl
-                if (dl>sw_max) sw_max=dl
+            for (i=1;i<=NF;i++) if ($i ~ /^delay=/) dl=substr($i,7)+0
+            if (name==want){ sw_n++; sw_sum+=dl; if(dl>sw_max) sw_max=dl }
+            next
+        }
+        /sched_stat_sleep:/ {
+            name=""; dl=0
+            if (index($0,"comm=")>0){
+                s=substr($0,index($0,"comm=")+5); p=index(s," pid=")
+                if(p>0) name=substr(s,1,p-1)
             }
+            for (i=1;i<=NF;i++) if ($i ~ /^delay=/) dl=substr($i,7)+0
+            if (name==want){ sl_n++; sl_sum+=dl; if(dl>sl_max) sl_max=dl }
+            next
+        }
+        /sched_stat_blocked:/ {
+            name=""; dl=0
+            if (index($0,"comm=")>0){
+                s=substr($0,index($0,"comm=")+5); p=index(s," pid=")
+                if(p>0) name=substr(s,1,p-1)
+            }
+            for (i=1;i<=NF;i++) if ($i ~ /^delay=/) dl=substr($i,7)+0
+            if (name==want){ bl_n++; bl_sum+=dl; if(dl>bl_max) bl_max=dl }
+            next
+        }
+        /sched_stat_iowait:/ {
+            name=""; dl=0
+            if (index($0,"comm=")>0){
+                s=substr($0,index($0,"comm=")+5); p=index(s," pid=")
+                if(p>0) name=substr(s,1,p-1)
+            }
+            for (i=1;i<=NF;i++) if ($i ~ /^delay=/) dl=substr($i,7)+0
+            if (name==want){ io_n++; io_sum+=dl; if(dl>io_max) io_max=dl }
+            next
+        }
+        /sched_stat_runtime:/ {
+            name=""; dl=0
+            if (index($0,"comm=")>0){
+                s=substr($0,index($0,"comm=")+5); p=index(s," pid=")
+                if(p>0) name=substr(s,1,p-1)
+            }
+            for (i=1;i<=NF;i++) if ($i ~ /^runtime=/) dl=substr($i,9)+0
+            if (name==want){ rt_n++; rt_sum+=dl; if(dl>rt_max) rt_max=dl }
             next
         }
         END{
@@ -240,31 +287,83 @@ parse_ftrace() {
             print "  WPEFramework Monitor::IResource thread latency"
             print "======================================================"
             if (n>0){
+                window_s = last_switch - first_wake
+                total_ms = sum / 1000.0
                 print ""
                 print ">>> FIRST-TIME STARTUP RUN-QUEUE LATENCY <<<"
                 printf "    Thread   : WPEFramework Monitor::IResource  (tid %s)\n", first_tid
                 printf "    Latency  : %.1f us\n", first
                 printf "    At boot  : t = %.6f s (kernel uptime when first scheduled)\n", first_ts
                 print ""
-                print "--- All wakeup->run pairs (this boot) ---"
-                printf "    total    : %d\n", n
+                print "--- All wakeup->run pairs ---"
+                printf "    total    : %d  (time window: %.3f s  [%.3f s - %.3f s])\n", \
+                       n, window_s, first_wake, last_switch
                 printf "    min      : %.1f us\n", min
                 printf "    avg      : %.1f us\n", sum/n
                 printf "    max      : %.1f us  (tid %s)\n", max, maxpid
+                printf "    total accumulated wait : %.3f ms\n", total_ms
+                printf "      -> Monitor::IResource spent %.3f ms waiting for a CPU\n", total_ms
+                printf "         in %.3f s window  (%.2f%% of window time was CPU starvation)\n", \
+                       window_s, (window_s>0) ? (total_ms/1000.0/window_s*100) : 0
             } else {
-                print "No wakeup->run pairs captured for WPEFramework Monitor::IResource (comm=" want ")."
-                print "  * Verify Thunder started inside the trace window."
-                print "  * Check: /opt/logs/runq_boot_armed.txt"
+                print "No wakeup->run pairs captured for "want"."
+                print "  * Check the thread name (COMM=...) and that Thunder started"
+                print "    inside the trace window."
             }
-            if (sw_n>0){
+            if (length(filtered_tids)>0) {
                 print ""
-                printf "--- kernel sched_stat_wait (run-queue wait, CONFIG_SCHEDSTATS) ---\n"
-                printf "    n=%d  avg=%.1f us  max=%.1f us\n", \
-                       sw_n, (sw_sum/sw_n)/1000.0, sw_max/1000.0
+                print "--- Filtered out (not in main WPEFramework process) ---"
+                for (t in filtered_tids)
+                    printf "    tid %s excluded (WPEProcess plugin host or recreated thread)\n", t
             }
+            print ""
+            print "--- Thread time breakdown (CONFIG_SCHEDSTATS events) ---"
+            if (rt_n>0)
+                printf "    CPU runtime        : n=%d  total=%.3f ms  avg=%.1f us  max=%.1f us\n", \
+                       rt_n, rt_sum/1e6, (rt_sum/rt_n)/1000.0, rt_max/1000.0
+            else print "    CPU runtime        : no sched_stat_runtime events (need CONFIG_SCHEDSTATS)"
+            if (sw_n>0)
+                printf "    Run-queue wait     : n=%d  total=%.3f ms  avg=%.1f us  max=%.1f us\n", \
+                       sw_n, sw_sum/1e6, (sw_sum/sw_n)/1000.0, sw_max/1000.0
+            else print "    Run-queue wait     : no sched_stat_wait events"
+            if (sl_n>0)
+                printf "    Voluntary sleep    : n=%d  total=%.3f ms  avg=%.1f us  max=%.1f us\n", \
+                       sl_n, sl_sum/1e6, (sl_sum/sl_n)/1000.0, sl_max/1000.0
+            else print "    Voluntary sleep    : no sched_stat_sleep events"
+            if (bl_n>0)
+                printf "    Blocked (lock/I/O) : n=%d  total=%.3f ms  avg=%.1f us  max=%.1f us\n", \
+                       bl_n, bl_sum/1e6, (bl_sum/bl_n)/1000.0, bl_max/1000.0
+            else print "    Blocked (lock/I/O) : no sched_stat_blocked events"
+            if (io_n>0)
+                printf "    I/O wait           : n=%d  total=%.3f ms  avg=%.1f us  max=%.1f us\n", \
+                       io_n, io_sum/1e6, (io_sum/io_n)/1000.0, io_max/1000.0
+            else print "    I/O wait           : no sched_stat_iowait events"
             print "======================================================"
         }
     ' "$raw"
+
+    # EPG UI boot milestone: read from RDK standard milestone file
+    log ""
+    log "--- Boot-to-EPG UI milestone ---"
+    _ms_file="/opt/logs/rdk_milestones.log"
+    _epg_ms=$(grep "^EPG_FIRST_FRAME:" "$_ms_file" 2>/dev/null | \
+              awk -F: '{print $2+0; exit}')
+    if [ -n "$_epg_ms" ] && [ "$_epg_ms" -gt 0 ] 2>/dev/null; then
+        _epg_sec=$(awk "BEGIN{printf \"%.3f\", $_epg_ms/1000.0}")
+        log "  EPG_FIRST_FRAME : ${_epg_ms} ms  =  ${_epg_sec} s  after boot"
+        log "  (source: $_ms_file)"
+        # Also print other available milestones for context
+        log ""
+        log "  Other RDK milestones (ms since boot):"
+        grep -E "^(BOOT_|WPE|THUNDER|TUNER|CHANNEL|JSPP|UI_)" "$_ms_file" 2>/dev/null | \
+            awk -F: '{printf "    %-35s : %s ms  (%.3f s)\n", $1, $2, $2/1000.0}'
+    else
+        log "  EPG_FIRST_FRAME not found in $_ms_file"
+        log "  Available milestones:"
+        cat "$_ms_file" 2>/dev/null | \
+            awk -F: '{printf "    %-35s : %s ms  (%.3f s)\n", $1, $2, $2/1000.0}' | head -20
+        log "  (if empty, milestone file not yet written — run show-boot after EPG appears)"
+    fi
 }
 
 # ===========================================================================
@@ -307,7 +406,7 @@ run_perf() {
 # every matching event for the entire boot with no overflow. After the box is
 # up you run `show-boot` to stop tracing, dump and compute the latency.
 # ===========================================================================
-SELF_INSTALL="${SELF_INSTALL:-/usr/bin/resource_monitor_runq_latency.sh}"
+SELF_INSTALL="${SELF_INSTALL:-/opt/resource_monitor_runq_latency.sh}"
 BOOT_UNIT=runq-boottrace.service
 BOOT_UNIT_PATH="/etc/systemd/system/${BOOT_UNIT}"
 
@@ -319,17 +418,15 @@ enable_filtered() {
     echo 1        > "$TRACEFS/events/sched/$_ev/enable" 2>/dev/null
 }
 
-# Resolve the TID of the ResourceMonitor thread (comm==$COMM) that lives inside
-# the WPEFramework daemon. Picks the main daemon (lowest WPEFramework pid) so
-# WPEProcess plugin hosts are ignored.
+# Resolve the TID of Monitor::IResou across ALL WPEFramework processes
+# (main daemon + WPEProcess plugin hosts, since Monitor plugin may run OOP).
 resolve_target_tid() {
-    _mpid=$(pgrep -x "$WPE_PROC" 2>/dev/null | sort -n | head -n1)
-    [ -n "$_mpid" ] || return 1
-    for _c in /proc/"$_mpid"/task/*/comm; do
-        [ -r "$_c" ] || continue
-        if [ "$(cat "$_c" 2>/dev/null)" = "$COMM" ]; then
-            _p=${_c%/comm}; echo "${_p##*/}"; return 0
-        fi
+    for _p in $(pgrep -x "$WPE_PROC" 2>/dev/null); do
+        for _t in /proc/"$_p"/task/*; do
+            if grep -q "$COMM" "$_t/comm" 2>/dev/null; then
+                echo "$(basename "$_t")"; return 0
+            fi
+        done
     done
     return 1
 }
@@ -343,47 +440,47 @@ arm_filtered_trace() {
     echo nop > "$TRACEFS/current_tracer" 2>/dev/null
     : > "$TRACEFS/trace"                 2>/dev/null
     : > "$TRACEFS/set_event"             2>/dev/null
-    # bigger-than-needed buffer; filtered volume is tiny anyway
     echo 4096 > "$TRACEFS/buffer_size_kb" 2>/dev/null
 
-    # Prefer exact-thread scoping: the ResourceMonitor thread that lives inside
-    # the WPEFramework process. Falls back to comm when the TID is not known
-    # yet (e.g. boot, before the thread is created).
-    _tid="${TARGET_TID:-$(resolve_target_tid || true)}"
-    if [ -n "$_tid" ]; then
-        enable_filtered sched_wakeup      "pid == $_tid"
-        enable_filtered sched_wakeup_new  "pid == $_tid"
-        enable_filtered sched_switch      "next_pid == $_tid"
-        enable_filtered sched_stat_wait   "pid == $_tid"
+    if [ -n "${TARGET_TID:-}" ]; then
+        # TID known (live/run mode): filter by exact TID — only this thread
+        enable_filtered sched_wakeup       "pid == $TARGET_TID"
+        enable_filtered sched_wakeup_new   "pid == $TARGET_TID"
+        enable_filtered sched_switch       "next_pid == $TARGET_TID"
+        enable_filtered sched_stat_wait    "pid == $TARGET_TID"
+        enable_filtered sched_stat_sleep   "pid == $TARGET_TID"
+        enable_filtered sched_stat_blocked "pid == $TARGET_TID"
+        enable_filtered sched_stat_iowait  "pid == $TARGET_TID"
+        enable_filtered sched_stat_runtime "pid == $TARGET_TID"
         echo 1 > "$TRACEFS/tracing_on"
-        log "Filtered ftrace armed for $WPE_PROC TID=$_tid (comm=$COMM)."
+        log "ftrace armed: WPEFramework $WPE_PROC tid=$TARGET_TID ($COMM) — TID-exact filter."
     else
-        enable_filtered sched_wakeup      "comm == \"$COMM\""
-        enable_filtered sched_wakeup_new  "comm == \"$COMM\""
-        enable_filtered sched_switch      "next_comm == \"$COMM\""
-        enable_filtered sched_stat_wait   "comm == \"$COMM\""
+        # Boot mode: thread not created yet, use comm filter until TID is assigned
+        enable_filtered sched_wakeup       "comm == \"$COMM\""
+        enable_filtered sched_wakeup_new   "comm == \"$COMM\""
+        enable_filtered sched_switch       "next_comm == \"$COMM\""
+        enable_filtered sched_stat_wait    "comm == \"$COMM\""
+        enable_filtered sched_stat_sleep   "comm == \"$COMM\""
+        enable_filtered sched_stat_blocked "comm == \"$COMM\""
+        enable_filtered sched_stat_iowait  "comm == \"$COMM\""
+        enable_filtered sched_stat_runtime "comm == \"$COMM\""
         echo 1 > "$TRACEFS/tracing_on"
-        log "Filtered ftrace armed for COMM='$COMM' (TID not yet known; will match $WPE_PROC's thread on creation)."
+        log "ftrace armed: comm='$COMM' filter (boot mode — TID not yet known)."
     fi
 }
 
 # Runs at boot from the systemd unit.
 arm_boot() {
     arm_filtered_trace || exit 1
-    echo "armed $(date) — targeting WPEFramework Monitor::IResource (comm=$COMM) tracefs=$TRACEFS" > "$OUTDIR/runq_boot_armed.txt" 2>/dev/null
+    echo "armed $(date)" > "$OUTDIR/runq_boot_armed.txt" 2>/dev/null
 }
 
 # Measure ONLY the running WPEFramework Monitor::IResource thread (no restart).
 run_live() {
-    _tid="${TARGET_TID:-$(resolve_target_tid || true)}"
-    if [ -z "$_tid" ]; then
-        log "ERROR: could not find '$COMM' thread inside $WPE_PROC."
-        log "       Is Thunder running?  pgrep -x $WPE_PROC"
-        exit 1
-    fi
+    # TARGET_TID already set by lock_target_tid before this is called
     _mpid=$(pgrep -x "$WPE_PROC" 2>/dev/null | sort -n | head -n1)
-    log "Target: $WPE_PROC pid=$_mpid  tid=$_tid  comm=$COMM"
-    TARGET_TID="$_tid" arm_filtered_trace || exit 1
+    log "Target: $WPE_PROC pid=$_mpid  tid=$TARGET_TID  comm=$COMM"
+    arm_filtered_trace || exit 1
     log "Tracing this thread for ${DURATION}s ..."
     sleep "$DURATION"
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
@@ -394,38 +491,41 @@ run_live() {
     log "Report: $REPORT"
 }
 
-UNIT_DIR_ETC=/etc/systemd/system
-UNIT_DIR_LOCAL=/usr/local/lib/systemd/system
-
-# Make /etc/systemd/system writable via a tmpfs overlay (squashfs RO rootfs workaround).
-# Upper layer is backed by /opt/systemd-etc-overlay which is persistent across reboots.
-mount_etc_overlay() {
-    _upper=/opt/systemd-etc-overlay/upper
-    _work=/opt/systemd-etc-overlay/work
-    mkdir -p "$_upper" "$_work"
-    # Copy existing unit files into upper so overlay sees them
-    cp -a /etc/systemd/system/. "$_upper/" 2>/dev/null || true
-    if mount -t overlay overlay \
-        -o lowerdir=$UNIT_DIR_ETC,upperdir=$_upper,workdir=$_work \
-        $UNIT_DIR_ETC 2>/dev/null; then
-        log "Overlay mounted on $UNIT_DIR_ETC (upper=$_upper — persistent in /opt/)"
-        return 0
-    fi
+# Pick a systemd unit directory that is actually writable & persistent.
+# RDK rootfs is often read-only, so /etc/systemd/system may be RO.
+pick_unit_dir() {
+    for _d in $(systemctl show -p UnitPath --value 2>/dev/null); do
+        case "$_d" in
+            /run/*|/dev/*|*/generator*) continue ;;   # skip volatile/generated
+        esac
+        if mkdir -p "$_d" 2>/dev/null && ( : > "$_d/.w_test" ) 2>/dev/null; then
+            rm -f "$_d/.w_test"; echo "$_d"; return 0
+        fi
+    done
     return 1
 }
 
-# Write the runq-boottrace.service unit file and enable it.
-# After=opt.mount    — /opt/ is mounted before we run (confirmed on xione-bcm-flex2).
-# Before=wpeframework.service — arms ftrace before WPEFramework binary starts.
-# WantedBy=wpeframework.service — systemd auto-starts this unit on every
-#   wpeframework start (cold boot OR service restart).
-write_unit() {
-    _path="$1"
-    cat > "$_path" <<EOF
+install_boot() {
+    command -v systemctl >/dev/null 2>&1 || { log "systemd required for boot mode."; exit 1; }
+    _dir=$(pick_unit_dir) || {
+        log "ERROR: no writable+persistent systemd unit dir (rootfs read-only)."
+        log "       Available search paths:"
+        systemctl show -p UnitPath --value 2>/dev/null | tr ' ' '\n' | sed 's/^/         /'
+        log "       -> use MANUAL reboot capture instead (see 'boot-cmdline' below),"
+        log "          or tell me a writable dir and set UNIT_DIR=<dir>."
+        exit 1
+    }
+    [ -n "${UNIT_DIR:-}" ] && _dir="$UNIT_DIR"
+    BOOT_UNIT_PATH="$_dir/$BOOT_UNIT"
+    # stable copy of this script the unit can exec after reboot
+    if [ "$0" != "$SELF_INSTALL" ]; then
+        cp "$0" "$SELF_INSTALL" 2>/dev/null && chmod +x "$SELF_INSTALL"
+    fi
+    if ! cat > "$BOOT_UNIT_PATH" <<EOF
 [Unit]
-Description=Arm ftrace for WPEFramework ResourceMonitor run-queue latency
+Description=Arm ftrace for ResourceMonitor run-queue latency across boot
 DefaultDependencies=no
-After=opt.mount
+After=sysinit.target local-fs.target sys-kernel-tracing.mount sys-kernel-debug.mount
 Before=${THUNDER_SVC}.service
 ConditionPathExists=${SELF_INSTALL}
 
@@ -436,97 +536,121 @@ Environment=COMM=${COMM} OUTDIR=${OUTDIR}
 ExecStart=/bin/sh ${SELF_INSTALL} arm-boot
 
 [Install]
-WantedBy=${THUNDER_SVC}.service
+WantedBy=sysinit.target
 EOF
-}
-
-enable_unit() {
-    _path="$1"; _dir="$2"
-    systemctl daemon-reload
-    # Create wpeframework.service.wants symlink directly — works even if
-    # 'systemctl enable' cannot write to /etc/systemd/system/.
-    _wants="$_dir/${THUNDER_SVC}.service.wants"
-    mkdir -p "$_wants" 2>/dev/null
-    ln -sf "$_path" "$_wants/$BOOT_UNIT" 2>/dev/null
-    systemctl enable "$BOOT_UNIT" >/dev/null 2>&1 || true
-    systemctl daemon-reload
-    log "Enabled: $BOOT_UNIT  ->  $THUNDER_SVC.service.wants/"
-}
-
-install_boot() {
-    command -v systemctl >/dev/null 2>&1 || { log "systemd required."; exit 1; }
-    [ "$0" != "$SELF_INSTALL" ] && cp "$0" "$SELF_INSTALL" 2>/dev/null && chmod +x "$SELF_INSTALL"
-
-    # --- Try /etc/systemd/system/ first (standard, persistent after overlay) ---
-    if ( : > "$UNIT_DIR_ETC/.w_test" ) 2>/dev/null; then
-        rm -f "$UNIT_DIR_ETC/.w_test"
-        log "/etc/systemd/system/ is directly writable."
-        _dir="$UNIT_DIR_ETC"
-    else
-        log "/etc/systemd/system/ is read-only — mounting tmpfs overlay backed by /opt/ ..."
-        if mount_etc_overlay; then
-            _dir="$UNIT_DIR_ETC"
-        else
-            log "Overlay failed. Trying /usr/local/lib/systemd/system/ ..."
-            mkdir -p "$UNIT_DIR_LOCAL" 2>/dev/null
-            if ( : > "$UNIT_DIR_LOCAL/.w_test" ) 2>/dev/null; then
-                rm -f "$UNIT_DIR_LOCAL/.w_test"
-                _dir="$UNIT_DIR_LOCAL"
-                log "Using $UNIT_DIR_LOCAL (persistent on BCM/Sky)."
-            else
-                log "WARNING: no persistent dir. Falling back to /run/systemd/system/ (volatile)."
-                _dir="/run/systemd/system"
-            fi
-        fi
+    then
+        log "ERROR: failed to write unit to $BOOT_UNIT_PATH (read-only?)."
+        exit 1
     fi
-
-    BOOT_UNIT_PATH="$_dir/$BOOT_UNIT"
-    write_unit "$BOOT_UNIT_PATH" || { log "ERROR: write failed to $BOOT_UNIT_PATH"; exit 1; }
-    enable_unit "$BOOT_UNIT_PATH" "$_dir"
-    log "Service file : $BOOT_UNIT_PATH"
-    log "Ordering     : After=opt.mount  Before=${THUNDER_SVC}.service"
-    log "Trigger      : WantedBy=${THUNDER_SVC}.service (auto on every wpeframework start)"
-    log ""
-    log "Now: reboot  ->  sh ${SELF_INSTALL} show-boot"
-}
-
-# Re-arm into /run/systemd/system/ — call from any early /opt/ boot hook.
-reinstall_boot() {
-    log "reinstall: writing $BOOT_UNIT to /run/systemd/system/ ..."
-    BOOT_UNIT_PATH="/run/systemd/system/$BOOT_UNIT"
-    write_unit "$BOOT_UNIT_PATH"
-    enable_unit "$BOOT_UNIT_PATH" "/run/systemd/system"
-    systemctl start "$BOOT_UNIT" 2>/dev/null
-    log "reinstall done. ftrace armed for COMM=$COMM."
+    systemctl daemon-reload
+    if ! systemctl enable "$BOOT_UNIT" >/dev/null 2>&1; then
+        # enable may fail if [Install] target dir is RO; add an explicit wants symlink
+        _wants="$_dir/sysinit.target.wants"
+        mkdir -p "$_wants" 2>/dev/null && ln -sf "$BOOT_UNIT_PATH" "$_wants/$BOOT_UNIT" 2>/dev/null
+    fi
+    systemctl daemon-reload
+    if systemctl is-enabled "$BOOT_UNIT" >/dev/null 2>&1; then
+        log "Installed & enabled $BOOT_UNIT at $BOOT_UNIT_PATH (arms before ${THUNDER_SVC}.service)."
+    else
+        log "WARNING: unit written to $BOOT_UNIT_PATH but could not confirm enable."
+        log "         Check: systemctl status $BOOT_UNIT"
+    fi
+    log "Now reboot the STB:   reboot"
+    log "After it boots, run:   sh ${SELF_INSTALL} show-boot"
 }
 
 show_boot() {
-    [ -f "$TRACEFS/tracing_on" ] || { log "tracefs not found."; exit 1; }
+    if [ ! -d "$TRACEFS" ]; then log "tracefs not found."; exit 1; fi
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
     cp "$TRACEFS/trace" "$RAW" 2>/dev/null
+
+    # Determine which TIDs belong to ANY WPEFramework process (daemon + WPEProcess hosts)
+    _valid_tids=""
+    for _p in $(pgrep -x "$WPE_PROC" 2>/dev/null); do
+        for _t in /proc/"$_p"/task/*; do
+            if grep -q "$COMM" "$_t/comm" 2>/dev/null; then
+                _tid=$(basename "$_t")
+                _valid_tids="$_valid_tids $_tid"
+                log "  Found: pid=$_p tid=$_tid comm=$COMM"
+            fi
+        done
+    done
+
     log "Boot trace dumped: $RAW"
-    parse_ftrace "$RAW" "$COMM" | tee "$REPORT"
+    parse_ftrace "$RAW" "$COMM" "$_valid_tids" | tee "$REPORT"
     log "Report: $REPORT"
-    log "Remove hook with:  sh $0 uninstall-boot"
+    log "Re-arm for another reboot is automatic (unit still enabled)."
+    log "Remove with:  sh $0 uninstall-boot"
 }
 
 uninstall_boot() {
     if command -v systemctl >/dev/null 2>&1; then
         systemctl disable "$BOOT_UNIT" >/dev/null 2>&1
-        systemctl stop "$BOOT_UNIT" 2>/dev/null
     fi
-    rm -f "/run/systemd/system/$BOOT_UNIT" \
-          "$UNIT_DIR_ETC/$BOOT_UNIT" \
-          "$UNIT_DIR_LOCAL/$BOOT_UNIT" \
-          "$UNIT_DIR_ETC/${THUNDER_SVC}.service.wants/$BOOT_UNIT" \
-          "$UNIT_DIR_LOCAL/${THUNDER_SVC}.service.wants/$BOOT_UNIT" \
-          "/run/systemd/system/${THUNDER_SVC}.service.wants/$BOOT_UNIT"
+    rm -f "$BOOT_UNIT_PATH"
     command -v systemctl >/dev/null 2>&1 && systemctl daemon-reload
-    # Remove overlay if we mounted one
-    umount "$UNIT_DIR_ETC" 2>/dev/null || true
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
-    : > "$TRACEFS/set_event" 2>/dev/null
+    : > "$TRACEFS/set_event"       2>/dev/null
     log "Removed $BOOT_UNIT and disabled tracing."
+}
+
+# ===========================================================================
+# Resolve and lock onto the exact WPEFramework Monitor::IResource TID.
+# Called once at startup for live/run modes. Fails if thread not found.
+# Sets TARGET_TID globally so every subsequent operation uses that one TID.
+# ===========================================================================
+lock_target_tid() {
+    _all_pids=$(pgrep -x "$WPE_PROC" 2>/dev/null)
+    if [ -z "$_all_pids" ]; then
+        log "ERROR: $WPE_PROC is not running. Start Thunder first."
+        exit 1
+    fi
+
+    # If user supplied TARGET_TID, find which pid owns it and verify comm
+    if [ -n "${TARGET_TID:-}" ]; then
+        for _mpid in $_all_pids; do
+            _comm=$(cat "/proc/$_mpid/task/$TARGET_TID/comm" 2>/dev/null)
+            if [ "$_comm" = "$COMM" ]; then
+                log "Using user-supplied TARGET_TID=$TARGET_TID  comm=$_comm  pid=$_mpid"
+                return 0
+            fi
+        done
+        log "ERROR: TARGET_TID=$TARGET_TID comm '$COMM' not found in any $WPE_PROC process"
+        exit 1
+    fi
+
+    # Auto-resolve: search ALL WPEFramework processes (daemon + WPEProcess hosts)
+    TARGET_TID=""
+    _owner_pid=""
+    for _p in $(pgrep -x "$WPE_PROC" 2>/dev/null); do
+        for _t in /proc/"$_p"/task/*; do
+            if grep -q "$COMM" "$_t/comm" 2>/dev/null; then
+                TARGET_TID=$(basename "$_t")
+                _owner_pid="$_p"
+                break 2
+            fi
+        done
+    done
+
+    if [ -z "$TARGET_TID" ]; then
+        log "ERROR: '$COMM' thread not found in any $WPE_PROC process."
+        log "       Running WPEFramework processes: $_all_pids"
+        exit 1
+    fi
+
+    # Race guard
+    _verify=$(cat "/proc/$_owner_pid/task/$TARGET_TID/comm" 2>/dev/null)
+    if [ "$_verify" != "$COMM" ]; then
+        log "ERROR: TID $TARGET_TID comm changed to '$_verify' (race). Re-run."
+        exit 1
+    fi
+
+    log "Locked target:"
+    log "  Process : $WPE_PROC  pid=$_owner_pid"
+    log "  Thread  : $COMM  (full: Monitor::IResource)"
+    log "  TID     : $TARGET_TID"
+    log "  Verified: /proc/$_mpid/task/$TARGET_TID/comm = '$_verify'"
+    export TARGET_TID
 }
 
 # ===========================================================================
@@ -535,12 +659,14 @@ main() {
     case "$ACTION" in
         install-boot)   install_boot ;;
         arm-boot)       arm_boot ;;
-        reinstall)      reinstall_boot ;;
         show-boot)      show_boot ;;
         uninstall-boot) uninstall_boot ;;
-        live)           run_live ;;
+        live)
+            lock_target_tid
+            run_live ;;
         run)
-            log "COMM='$COMM'  METHOD=$METHOD  DURATION=${DURATION}s  OUTDIR=$OUTDIR"
+            lock_target_tid
+            log "COMM='$COMM'  TID=$TARGET_TID  METHOD=$METHOD  DURATION=${DURATION}s"
             case "$METHOD" in
                 ftrace) run_ftrace ;;
                 perf)   run_perf ;;
@@ -548,7 +674,7 @@ main() {
             esac
             log "Report: $REPORT"
             ;;
-        *) log "Unknown action '$ACTION' (use: run|live|install-boot|reinstall|show-boot|uninstall-boot)"; exit 2 ;;
+        *) log "Unknown action '$ACTION' (use: run|install-boot|show-boot|uninstall-boot)"; exit 2 ;;
     esac
 }
 main "$@"
