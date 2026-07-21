@@ -1,0 +1,140 @@
+From 8fe2b4c151ff73916391d2d5e4208d435dfb3021 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Wed, 15 Jul 2026 17:27:16 +0000
+Subject: [PATCH] RDKEMW-19501 webrtc: support additional H.264 profile-level-id values
+
+Extend the advertised/accepted H.264 profile-level-id set to cover additional profile families and levels seen in offers, preventing WebRTC playback failures during SDP negotiation.
+
+---
+ .../webrtc/media/base/media_constants.cc      | 14 +++++++--
+ .../webrtc/media/base/media_constants.h       | 14 +++++++--
+ .../gstreamer/GStreamerVideoCommon.cpp        | 20 +++++++++++++
+ .../GStreamerVideoEncoderFactory.cpp          | 29 +++++++++++++++----
+ 4 files changed, 68 insertions(+), 9 deletions(-)
+
+diff --git a/Source/ThirdParty/libwebrtc/Source/webrtc/media/base/media_constants.cc b/Source/ThirdParty/libwebrtc/Source/webrtc/media/base/media_constants.cc
+index 2af0295a5a05..d82ffaec0ae0 100644
+--- a/Source/ThirdParty/libwebrtc/Source/webrtc/media/base/media_constants.cc
++++ b/Source/ThirdParty/libwebrtc/Source/webrtc/media/base/media_constants.cc
+@@ -111,8 +111,18 @@ const char kH264FmtpLevelAsymmetryAllowed[] = "level-asymmetry-allowed";
+ const char kH264FmtpPacketizationMode[] = "packetization-mode";
+ const char kH264FmtpSpropParameterSets[] = "sprop-parameter-sets";
+ const char kH264FmtpSpsPpsIdrInKeyframe[] = "sps-pps-idr-in-keyframe";
+-const char kH264ProfileLevelConstrainedBaseline[] = "42e01f";
+-const char kH264ProfileLevelConstrainedHigh[] = "640c1f";
++const char kH264ProfileLevelConstrainedBaselineL3[] = "42e01f";
++const char kH264ProfileLevelConstrainedBaselineL4[] = "42e028";
++const char kH264ProfileLevelBaselineL3[] = "42001f";
++const char kH264ProfileLevelBaselineL4[] = "420028";
++const char kH264ProfileLevelMainL3[] = "4d001f";
++const char kH264ProfileLevelMainL4[] = "4d0028";
++const char kH264ProfileLevelConstrainedHighL3[] = "640c1f";
++const char kH264ProfileLevelConstrainedHighL4[] = "640c28";
++const char kH264ProfileLevelHighL3[] = "64001f";
++const char kH264ProfileLevelHighL4[] = "640028";
++const char kH264ProfileLevelPredictiveHigh444L3[] = "f4001f";
++const char kH264ProfileLevelPredictiveHigh444L4[] = "f40028";
+ 
+ // RFC 7798 RTP Payload Format for H.265 video
+ const char kH265FmtpProfileSpace[] = "profile-space";
+diff --git a/Source/ThirdParty/libwebrtc/Source/webrtc/media/base/media_constants.h b/Source/ThirdParty/libwebrtc/Source/webrtc/media/base/media_constants.h
+index 877cc7a296e3..adb95af18e16 100644
+--- a/Source/ThirdParty/libwebrtc/Source/webrtc/media/base/media_constants.h
++++ b/Source/ThirdParty/libwebrtc/Source/webrtc/media/base/media_constants.h
+@@ -131,8 +131,18 @@ RTC_EXPORT extern const char kH264FmtpLevelAsymmetryAllowed[];
+ RTC_EXPORT extern const char kH264FmtpPacketizationMode[];
+ extern const char kH264FmtpSpropParameterSets[];
+ extern const char kH264FmtpSpsPpsIdrInKeyframe[];
+-extern const char kH264ProfileLevelConstrainedBaseline[];
+-extern const char kH264ProfileLevelConstrainedHigh[];
++extern const char kH264ProfileLevelConstrainedBaselineL3[];
++extern const char kH264ProfileLevelConstrainedBaselineL4[];
++extern const char kH264ProfileLevelBaselineL3[];
++extern const char kH264ProfileLevelBaselineL4[];
++extern const char kH264ProfileLevelMainL3[];
++extern const char kH264ProfileLevelMainL4[];
++extern const char kH264ProfileLevelConstrainedHighL3[];
++extern const char kH264ProfileLevelConstrainedHighL4[];
++extern const char kH264ProfileLevelHighL3[];
++extern const char kH264ProfileLevelHighL4[];
++extern const char kH264ProfileLevelPredictiveHigh444L3[];
++extern const char kH264ProfileLevelPredictiveHigh444L4[];
+ 
+ // RFC 7798 RTP Payload Format for H.265 video.
+ // According to RFC 7742, the sprop parameters MUST NOT be included
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoCommon.cpp b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoCommon.cpp
+index 6062abcc5a0c..cde6e0af8197 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoCommon.cpp
++++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoCommon.cpp
+@@ -53,8 +53,28 @@ std::vector<webrtc::SdpVideoFormat> supportedH264Formats()
+     return {
+         createH264Format(webrtc::H264Profile::kProfileBaseline, webrtc::H264Level::kLevel3_1, "1"),
+         createH264Format(webrtc::H264Profile::kProfileBaseline, webrtc::H264Level::kLevel3_1, "0"),
++        createH264Format(webrtc::H264Profile::kProfileBaseline, webrtc::H264Level::kLevel4, "1"),
++        createH264Format(webrtc::H264Profile::kProfileBaseline, webrtc::H264Level::kLevel4, "0"),
+         createH264Format(webrtc::H264Profile::kProfileConstrainedBaseline, webrtc::H264Level::kLevel3_1, "1"),
+         createH264Format(webrtc::H264Profile::kProfileConstrainedBaseline, webrtc::H264Level::kLevel3_1, "0"),
++        createH264Format(webrtc::H264Profile::kProfileConstrainedBaseline, webrtc::H264Level::kLevel4, "1"),
++        createH264Format(webrtc::H264Profile::kProfileConstrainedBaseline, webrtc::H264Level::kLevel4, "0"),
++        createH264Format(webrtc::H264Profile::kProfileMain, webrtc::H264Level::kLevel3_1, "1"),
++        createH264Format(webrtc::H264Profile::kProfileMain, webrtc::H264Level::kLevel3_1, "0"),
++        createH264Format(webrtc::H264Profile::kProfileMain, webrtc::H264Level::kLevel4, "1"),
++        createH264Format(webrtc::H264Profile::kProfileMain, webrtc::H264Level::kLevel4, "0"),
++        createH264Format(webrtc::H264Profile::kProfileConstrainedHigh, webrtc::H264Level::kLevel3_1, "1"),
++        createH264Format(webrtc::H264Profile::kProfileConstrainedHigh, webrtc::H264Level::kLevel3_1, "0"),
++        createH264Format(webrtc::H264Profile::kProfileConstrainedHigh, webrtc::H264Level::kLevel4, "1"),
++        createH264Format(webrtc::H264Profile::kProfileConstrainedHigh, webrtc::H264Level::kLevel4, "0"),
++        createH264Format(webrtc::H264Profile::kProfileHigh, webrtc::H264Level::kLevel3_1, "1"),
++        createH264Format(webrtc::H264Profile::kProfileHigh, webrtc::H264Level::kLevel3_1, "0"),
++        createH264Format(webrtc::H264Profile::kProfileHigh, webrtc::H264Level::kLevel4, "1"),
++        createH264Format(webrtc::H264Profile::kProfileHigh, webrtc::H264Level::kLevel4, "0"),
++        createH264Format(webrtc::H264Profile::kProfilePredictiveHigh444, webrtc::H264Level::kLevel3_1, "1"),
++        createH264Format(webrtc::H264Profile::kProfilePredictiveHigh444, webrtc::H264Level::kLevel3_1, "0"),
++        createH264Format(webrtc::H264Profile::kProfilePredictiveHigh444, webrtc::H264Level::kLevel4, "1"),
++        createH264Format(webrtc::H264Profile::kProfilePredictiveHigh444, webrtc::H264Level::kLevel4, "0"),
+     };
+ }
+ 
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoEncoderFactory.cpp b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoEncoderFactory.cpp
+index 7cbbff3d1bac..4362d64fe6e8 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoEncoderFactory.cpp
++++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/GStreamerVideoEncoderFactory.cpp
+@@ -407,11 +407,30 @@ struct NoopEncoder : public webrtc::VideoEncoder
+     }
+     void AddCodecIfSupported(std::vector<webrtc::SdpVideoFormat>* supportedFormats)
+     {
+-        auto h264Format = webrtc::SdpVideoFormat(cricket::kH264CodecName,
+-            { { cricket::kH264FmtpProfileLevelId, cricket::kH264ProfileLevelConstrainedBaseline },
+-                { cricket::kH264FmtpLevelAsymmetryAllowed, "1" },
+-                { cricket::kH264FmtpPacketizationMode, "1" } });
+-        supportedFormats->push_back(h264Format);
++        const char* profileLevelIds[] = {
++            cricket::kH264ProfileLevelConstrainedBaselineL3,
++            cricket::kH264ProfileLevelConstrainedBaselineL4,
++            cricket::kH264ProfileLevelBaselineL3,
++            cricket::kH264ProfileLevelBaselineL4,
++            cricket::kH264ProfileLevelMainL3,
++            cricket::kH264ProfileLevelMainL4,
++            cricket::kH264ProfileLevelHighL3,
++            cricket::kH264ProfileLevelHighL4,
++            cricket::kH264ProfileLevelConstrainedHighL3,
++            cricket::kH264ProfileLevelConstrainedHighL4,
++            cricket::kH264ProfileLevelPredictiveHigh444L3,
++            cricket::kH264ProfileLevelPredictiveHigh444L4,
++        };
++
++        for (const char* profileLevelId : profileLevelIds) {
++            supportedFormats->push_back(webrtc::SdpVideoFormat(
++                cricket::kH264CodecName,
++                {
++                    { cricket::kH264FmtpProfileLevelId, profileLevelId },
++                    { cricket::kH264FmtpLevelAsymmetryAllowed, "1" },
++                    { cricket::kH264FmtpPacketizationMode, "1" }
++                }));
++        }
+     }
+ };
+ 
+-- 
+2.44.4
+
