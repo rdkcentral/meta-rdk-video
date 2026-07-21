@@ -13,8 +13,8 @@ SRC_URI = "git://github.com/vinodtel/entservices-powermanager;${CMF_GITHUB_SRC_U
           "
 
 # Release version - 1.4.7
-SRCREV = "8e3e84f5dce7ed248f344151b0bd07e2bdc1fa32"
-SRCREV:vdevice_x86-64-mw = "8e3e84f5dce7ed248f344151b0bd07e2bdc1fa32"
+SRCREV = "084d7c294c885e1f465d762bbd7c4253b503fdc3"
+SRCREV:vdevice_x86-64-mw = "084d7c294c885e1f465d762bbd7c4253b503fdc3"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -25,11 +25,13 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 EXTRA_OECMAKE += " -DBUILD_ENABLE_THERMAL_PROTECTION=ON "
 EXTRA_OECMAKE += " -DAIDL_DEEPSLEEP_INCLUDE_DIR=${STAGING_INCDIR}"
+EXTRA_OECMAKE += " -DAIDL_BOOT_INCLUDE_DIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
     -DENABLE_POWERMANAGER_AIDL=ON \
     -DPOWERMANAGER_AIDL_STAGING_INCLUDE_DIR=${STAGING_INCDIR} \
     -DPOWERMANAGER_AIDL_HELPER_ARCHIVE=${B}/libdeepsleep_aidl_helpers.a \
     -DAIDL_DEEPSLEEP_INCLUDE_DIR=${WORKDIR}/aidl-headers \
+    -DAIDL_BOOT_INCLUDE_DIR=${WORKDIR}/aidl-headers \
 "
 
 DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native"
@@ -144,11 +146,20 @@ do_configure:prepend:vdevice_x86-64-mw() {
 
     BOOT_CUR_DIR=$(dirname "$(dirname "$(dirname "$(dirname "${BOOT_CPP_DIR}")")")")
     BOOT_HDR_DIR="${BOOT_CUR_DIR}/h"
+    BOOT_HELPER_DIR="${WORKDIR}/aidl-headers/com/rdk/hal/boot"
     if [ ! -d "${BOOT_HDR_DIR}/com" ]; then
         bbfatal "Unable to locate generated AIDL headers for boot-vendor under ${BOOT_HDR_DIR}"
     fi
 
+    install -d "${BOOT_HELPER_DIR}"
     cp -r "${BOOT_HDR_DIR}/com" "${WORKDIR}/aidl-headers/"
+
+    for f in BootReason Capabilities IBoot PowerSource ResetType; do
+        if [ ! -f "${BOOT_CPP_DIR}/boot/${f}.cpp" ]; then
+            bbfatal "Missing generated AIDL source ${BOOT_CPP_DIR}/boot/${f}.cpp"
+        fi
+        cp "${BOOT_CPP_DIR}/boot/${f}.cpp" "${BOOT_HELPER_DIR}/"
+    done
 }
 
 do_compile:prepend:vdevice_x86-64-mw() {
@@ -207,4 +218,3 @@ FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WP
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so dev-deps"
 INSANE_SKIP:${PN}-dbg += "libdir"
-
