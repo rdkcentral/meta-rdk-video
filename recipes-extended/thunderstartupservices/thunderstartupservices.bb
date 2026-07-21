@@ -10,11 +10,12 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "f7b322f8198cde30d2e15be87621c9c6d5ebda59"
+SRCREV = "f1316132f522f1b678713dc0e0c5c6c90e180036"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
     file://resource_monitor_runq_latency.sh \
-"
+    file://perf.sh
+   "
 S = "${WORKDIR}/git/systemd/system"
 
 THUNDER_STARTUP_SERVICES:append = "\
@@ -69,6 +70,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-telemetrymetrics.service \
     wpeframework-devicediagnostics.service \
     wpeframework-runq-boottrace.service \
+    wpeframework-perf.service
     "
 
 CONTROL_FILES = "\
@@ -141,6 +143,8 @@ do_install:append() {
     # Install resource_monitor_runq_latency.sh used by runq-boottrace.service
     install -d ${D}${bindir}
     install -m 0755 ${WORKDIR}/resource_monitor_runq_latency.sh ${D}${bindir}/resource_monitor_runq_latency.sh
+    install -m 0755 ${WORKDIR}/perf.sh ${D}${bindir}/perf.sh ${D}${bindir}/perf.sh
+
 }
 
-FILES:${PN} += "${systemd_system_unitdir} ${sysconfdir}/systemd/system ${bindir}/resource_monitor_runq_latency.sh"
+FILES:${PN} += "${systemd_system_unitdir} ${sysconfdir}/systemd/system ${bindir}/resource_monitor_runq_latency.sh ${bindir}/perf.sh"
