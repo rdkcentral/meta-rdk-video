@@ -14,7 +14,7 @@ SRCREV = "f1316132f522f1b678713dc0e0c5c6c90e180036"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
     file://resource_monitor_runq_latency.sh \
-    file://perf.sh
+    file://perf.sh \
    "
 S = "${WORKDIR}/git/systemd/system"
 
@@ -69,8 +69,6 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-preinstallmanager.service \
     wpeframework-telemetrymetrics.service \
     wpeframework-devicediagnostics.service \
-    wpeframework-runq-boottrace.service \
-    wpeframework-perf.service
     "
 
 CONTROL_FILES = "\
