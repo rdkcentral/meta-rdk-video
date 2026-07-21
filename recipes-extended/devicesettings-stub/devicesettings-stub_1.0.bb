@@ -1,9 +1,7 @@
 SUMMARY = "No-op stub for libds (devicesettings client library)"
 DESCRIPTION = "Provides libds.so with all device:: C++ symbols as no-op stubs. \
 Replaces the real devicesettings package for non-Thunder clients when dsMgr is \
-disabled. No IARM bus calls, no dsMgr daemon, no HAL dependency at runtime. \
-RPROVIDES devicesettings so runtime RDEPENDS are satisfied; PROVIDES is omitted \
-to avoid a build-time conflict with devicesettings_git.bb."
+disabled. No IARM bus calls, no dsMgr daemon, no HAL dependency at runtime."
 
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/Apache-2.0;md5=89aea4e17d99a7cacdbeed46a0096b10"
@@ -12,23 +10,14 @@ PV = "1.0"
 PR = "r0"
 
 # -------------------------------------------------------------------------
-# RPROVIDES so that the installed package satisfies any RDEPENDS on
-# 'devicesettings' at the package-manager level (runtime only).
-#
-# PROVIDES is intentionally NOT set: adding it would make BitBake see two
-# build-time providers for 'devicesettings' (this stub + devicesettings_git.bb)
-# and fail with "Multiple .bb files are due to be built which each provide".
-# Client recipes that DEPENDS="devicesettings" still pull in the real
-# devicesettings headers for compilation — which is correct.
-#
-# RREPLACES/RCONFLICTS prevent the package manager installing both at once.
+# PROVIDES / RPROVIDES so that this package satisfies 'devicesettings'
+# dependencies in client recipes without changing each client recipe.
 #
 # To rollback: replace 'devicesettings-stub' with 'devicesettings' in
 # IMAGE_INSTALL or any override that selects this package.
 # -------------------------------------------------------------------------
+PROVIDES += "devicesettings"
 RPROVIDES:${PN} += "devicesettings"
-RREPLACES:${PN} += "devicesettings"
-RCONFLICTS:${PN} += "devicesettings"
 
 # Stub sources live in the recipe's files/ directory
 S = "${WORKDIR}"
