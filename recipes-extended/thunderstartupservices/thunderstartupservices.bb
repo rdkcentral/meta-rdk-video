@@ -141,7 +141,7 @@ do_install:append() {
     # Install resource_monitor_runq_latency.sh used by runq-boottrace.service
     install -d ${D}${bindir}
     install -m 0755 ${WORKDIR}/resource_monitor_runq_latency.sh ${D}${bindir}/resource_monitor_runq_latency.sh
-    install -m 0755 ${WORKDIR}/perf.sh ${D}${bindir}/perf.sh ${D}${bindir}/perf.sh
+    install -m 0755 ${WORKDIR}/perf.sh ${D}${bindir}/perf.sh
 
 }
 
