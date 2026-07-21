@@ -2,19 +2,30 @@
 # perf.sh - Perf tracing script for WPEFramework
 # This script is executed after wpeframework.service starts.
 
-echo "perf.sh: Starting perf tracing for WPEFramework..."
+LOGFILE="/opt/logs/perf.sh.log"
+exec >> "$LOGFILE" 2>&1
 
+echo "$(date): perf.sh: Starting perf tracing for WPEFramework..."
+
+tid=""
 for p in $(pgrep -x WPEFramework); do
   for t in /proc/$p/task/*; do
     if grep -q 'Monitor::IResou' "$t/comm" 2>/dev/null; then
       tid=$(basename "$t")
-      echo "pid=$p tid=$tid $(ps -L -p $p -o tid,cls,rtprio,ni,pri,comm | awk -v id=$tid '$1==id')"
+      echo "$(date): Found target thread: pid=$p tid=$tid $(ps -L -p $p -o tid,cls,rtprio,ni,pri,comm | awk -v id=$tid '$1==id')"
+      break 2
     fi
   done
 done
 
+if [ -z "$tid" ]; then
+  echo "$(date): perf.sh: ERROR - No matching WPEFramework thread found. Exiting."
+  exit 1
+fi
+
 export LD_LIBRARY_PATH=/opt/perf/packages-split/lib32-perf/usr/lib
 
-/opt/perf/packages-split/lib32-perf/usr/bin/perf record -g -t $tid -F 999 -o /opt/logs/perf.data -- sleep 200
+echo "$(date): perf.sh: Running perf record on tid=$tid ..."
+/opt/perf/packages-split/lib32-perf/usr/bin/perf record -g -t "$tid" -F 999 -o /opt/logs/perf.data -- sleep 200
 
-echo "perf.sh: Done."
+echo "$(date): perf.sh: Done."
