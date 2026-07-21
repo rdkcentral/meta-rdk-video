@@ -1,0 +1,136 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DS_COMRPC migration <ds_comrpc@migration>
+Date: Sun, 20 Jul 2026 00:00:00 +0000
+Subject: [PATCH] DS_COMRPC: disable libds calls in ctrlm-main
+
+dsMgr daemon is disabled on XiOne-UK. The 5 ctrlm_dsmgr_* wrapper
+functions in ctrlm_utils.cpp return no-op success values. Audio ducking
+and FrontPanel LED control via libds are silently skipped.
+---
+--- a/src/ctrlm_utils.cpp
++++ b/src/ctrlm_utils.cpp
+@@ -38,12 +38,14 @@
+ #include "videoOutputPort.hpp"
+ #include "videoOutputPortType.hpp"
+ #include "videoOutputPortConfig.hpp"
++#ifndef DISABLE_DEVICESETTINGS
+ #include "audioOutputPort.hpp"
+ #include "frontPanelIndicator.hpp"
+ #include "manager.hpp"
+ #include "dsMgr.h"
+ #include "dsRpc.h"
+ #include "dsDisplay.h"
++#endif /* DISABLE_DEVICESETTINGS */
+ #include <regex>
+ // end dsMgr includes
+ 
+@@ -1570,6 +1572,7 @@
+ }
+ 
+ bool ctrlm_dsmgr_init() {
++#ifndef DISABLE_DEVICESETTINGS
+    if(device::Manager::IsInitialized) {
+       XLOGD_INFO("DSMgr already initialized");
+       return true;
+@@ -1583,9 +1586,15 @@
+       return false;
+    }
+    return true;
++#else
++   /* DS_COMRPC migration: dsMgr disabled - no-op */
++   XLOGD_INFO("ctrlm_dsmgr_init: dsMgr disabled (DS_COMRPC migration)");
++   return true;
++#endif
+ }
+ 
+ bool ctrlm_dsmgr_deinit() {
++#ifndef DISABLE_DEVICESETTINGS
+    try {
+       if(device::Manager::IsInitialized) {
+          device::Manager::DeInitialize();
+@@ -1596,9 +1605,14 @@
+       return false;
+    }
+    return true;
++#else
++   /* DS_COMRPC migration: dsMgr disabled - no-op */
++   return true;
++#endif
+ }
+ 
+ bool ctrlm_dsmgr_mute_audio(bool mute) {
++#ifndef DISABLE_DEVICESETTINGS
+   try {
+      dsAudioDuckingAction_t action = mute ? dsAUDIO_DUCKINGACTION_START : dsAUDIO_DUCKINGACTION_STOP;
+      device::Host::getInstance().getAudioOutputPort("SPEAKER0").setAudioDucking(action, dsAUDIO_DUCKINGTYPE_ABSOLUTE, mute ? 0 : 100);
+@@ -1609,9 +1623,15 @@
+     return false;
+   }
+   return true;
++#else
++  /* DS_COMRPC migration: dsMgr disabled - audio ducking is a no-op */
++  XLOGD_INFO("ctrlm_dsmgr_mute_audio: dsMgr disabled, skipping (%s)", mute?"mute":"unmute");
++  return true;
++#endif
+ }
+ 
+ bool ctrlm_dsmgr_duck_audio(bool enable, bool relative, double vol) {
++#ifndef DISABLE_DEVICESETTINGS
+   if(vol < 0 || vol > 1) {
+       XLOGD_ERROR("Invalid volume");
+       return false;
+@@ -1635,9 +1655,15 @@
+     return false;
+   }
+   return true;
++#else
++  /* DS_COMRPC migration: dsMgr disabled - audio ducking is a no-op */
++  XLOGD_INFO("ctrlm_dsmgr_duck_audio: dsMgr disabled, skipping");
++  return true;
++#endif /* DISABLE_DEVICESETTINGS */
+ }
+ 
+ bool ctrlm_dsmgr_LED(bool on) {
++#ifndef DISABLE_DEVICESETTINGS
+   try {
+     device::FrontPanelIndicator &led =  device::FrontPanelIndicator::getInstance("Power");
+     if (on) {
+@@ -1651,6 +1677,11 @@
+     return false;
+   }
+   return true;
++#else
++  /* DS_COMRPC migration: dsMgr disabled - FrontPanel LED is a no-op */
++  XLOGD_INFO("ctrlm_dsmgr_LED: dsMgr disabled, skipping (%s)", on?"on":"off");
++  return true;
++#endif /* DISABLE_DEVICESETTINGS */
+ }
+ 
+ bool ctrlm_is_voice_assistant(ctrlm_rcu_controller_type_t controller_type) {
+--- a/src/ctrlm_main.cpp
++++ b/src/ctrlm_main.cpp
+@@ -74,9 +74,11 @@
+ #include "rf4ce/ctrlm_rf4ce_network.h"
+ #include "ctrlm_device_update.h"
+ #include "ctrlm_vendor_network_factory.h"
++#ifndef DISABLE_DEVICESETTINGS
+ #include "dsMgr.h"
+ #include "dsRpc.h"
+ #include "dsDisplay.h"
++#endif /* DISABLE_DEVICESETTINGS */
+ #include <systemd/sd-daemon.h>
+ #include <systemd/sd-bus.h>
+ #include "xr_voice_sdk.h"
+--- a/src/ctrlm_main_iarm.cpp
++++ b/src/ctrlm_main_iarm.cpp
+@@ -34,8 +34,10 @@
+ #include "ctrlm_network.h"
+ #include "ctrlm_tr181.h"
+ #include "ctrlm_utils.h"
++#ifndef DISABLE_DEVICESETTINGS
+ #include "dsMgr.h"
+ #include "dsRpc.h"
++#endif /* DISABLE_DEVICESETTINGS */
+ 
+ static IARM_Result_t ctrlm_main_iarm_call_status_get(void *arg);
+ static IARM_Result_t ctrlm_main_iarm_call_network_status_get(void *arg);

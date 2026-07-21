@@ -1,12 +1,6 @@
 
 MFR:qemuall = ""
 
-# DS_COMRPC migration: replace real devicesettings runtime with no-op stub.
-# devicesettings-stub RPROVIDES "devicesettings", satisfying all remaining RDEPENDS.
-# Rollback: remove the two lines below.
-RDEPENDS:packagegroup-rdk-media-common:remove = "devicesettings"
-RDEPENDS:packagegroup-rdk-media-common:append = " devicesettings-stub"
-
 RDEPENDS:packagegroup-rdk-media-common += "\
    essos-examples \
    ${@bb.utils.contains("DISTRO_FEATURES", "rdkshell", "rdkshell", "", d)} \

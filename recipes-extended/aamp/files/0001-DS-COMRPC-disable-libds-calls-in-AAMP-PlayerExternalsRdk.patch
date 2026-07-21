@@ -1,0 +1,56 @@
+]633;E;echo "From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001";60fe63a3-e597-4a23-a996-bab02d2903f7]633;CFrom 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DS_COMRPC migration <ds_comrpc@migration>
+Date: Sun, 20 Jul 2026 00:00:00 +0000
+Subject: [PATCH] DS_COMRPC: disable libds calls in AAMP PlayerExternalsRdk
+
+dsMgr daemon is disabled on XiOne-UK. SetHDMIStatus() now returns safe
+boot defaults: HDCP 2.x authenticated, 1080p. Real state comes from Thunder.
+---
+--- a/middleware/externals/rdk/PlayerExternalsRdkInterface.h	2026-07-20 17:00:24.001594963 +0000
++++ middleware/externals/rdk/PlayerExternalsRdkInterface.h	2026-07-20 17:00:53.037721299 +0000
+@@ -24,6 +24,7 @@
+ 
+ #ifndef PLAYER_IARM_RDK_INTERFACE_H
+ #define PLAYER_IARM_RDK_INTERFACE_H
++#ifndef DISABLE_DEVICESETTINGS
+ #include "manager.hpp"
+ #include "host.hpp"
+ #include "videoResolution.hpp"
+@@ -33,6 +34,7 @@
+ #include "dsDisplay.h"
+ #include "audioOutputPort.hpp"
+ #include "dsAudio.h"
++#endif /* DISABLE_DEVICESETTINGS */
+ 
+ #include <memory>
+ #include "PlayerExternalsInterfaceBase.h"
+--- a/middleware/externals/rdk/PlayerExternalsRdkInterface.cpp	2026-07-20 17:00:24.005594981 +0000
++++ middleware/externals/rdk/PlayerExternalsRdkInterface.cpp	2026-07-20 17:03:25.018253176 +0000
+@@ -231,6 +231,7 @@
+ 
+ 
+ 
++#ifndef DISABLE_DEVICESETTINGS
+     try {
+         //Get the HDMI port
+ 	device::Manager::Initialize();
+@@ -297,6 +298,19 @@
+     catch (...) {
+         MW_LOG_WARN("DeviceSettings exception caught\n");
+     }
++#else
++    /* DS_COMRPC migration: dsMgr disabled - safe boot defaults.
++     * Real HDCP state fetched at runtime via Thunder entservices-devicesettings.
++     * Resolution updated via Thunder DisplayInfo events.                       */
++    isConnected          = true;               /* XiOne-UK: HDMI always connected */
++    isHDCPEnabled        = true;
++    isHDCPCompliant      = true;               /* assume authenticated at boot   */
++    hdcpProtocol         = dsHDCP_VERSION_2X;  /* XiOne-UK supports HDCP 2.x     */
++    hdcpReceiverProtocol = dsHDCP_VERSION_2X;
++    hdcpCurrentProtocol  = dsHDCP_VERSION_2X;
++    SetResolution(1920, 1080);                 /* default 1080p; updated by events */
++    MW_LOG_WARN("SetHDMIStatus: dsMgr disabled - using defaults (HDCP 2.x, 1080p)\n");
++#endif /* DISABLE_DEVICESETTINGS */
+ 
+     m_isHDCPEnabled = isHDCPEnabled;
+ 
