@@ -4,15 +4,15 @@ Date: Fri, 19 Jun 2026 08:46:12 +0000
 Subject: [PATCH] remove_logs_cleanup
 
 ---
- Source/ocdm/open_cdm.cpp      | 12 +----
- Source/ocdm/open_cdm_impl.cpp | 12 -----
- Source/ocdm/open_cdm_impl.h   | 92 -----------------------------------
+ client/open_cdm.cpp      | 12 +----
+ client/open_cdm_impl.cpp | 12 -----
+ client/open_cdm_impl.h   | 92 -----------------------------------
  3 files changed, 1 insertion(+), 115 deletions(-)
 
-diff --git a/Source/ocdm/open_cdm.cpp b/Source/ocdm/open_cdm.cpp
+diff --git a/client/open_cdm.cpp b/client/open_cdm.cpp
 index 88ae457..a800116 100644
---- a/Source/ocdm/open_cdm.cpp
-+++ b/Source/ocdm/open_cdm.cpp
+--- a/client/open_cdm.cpp
++++ b/client/open_cdm.cpp
 @@ -322,16 +322,13 @@ opencdm_construct_session(struct OpenCDMSystem* system,
      OpenCDMSessionCallbacks* callbacks, void* userData,
      struct OpenCDMSession** session)
@@ -59,10 +59,10 @@ index 88ae457..a800116 100644
      return (result);
  }
  
-diff --git a/Source/ocdm/open_cdm_impl.cpp b/Source/ocdm/open_cdm_impl.cpp
+diff --git a/client/open_cdm_impl.cpp b/client/open_cdm_impl.cpp
 index b45c39f..c57f073 100644
---- a/Source/ocdm/open_cdm_impl.cpp
-+++ b/Source/ocdm/open_cdm_impl.cpp
+--- a/client/open_cdm_impl.cpp
++++ b/client/open_cdm_impl.cpp
 @@ -81,42 +81,30 @@ static SessionPrivate SessionPvt;
                              OpenCDMSessionCallbacks* callbacks, void* userData,
                              struct OpenCDMSession** session)
@@ -106,10 +106,10 @@ index b45c39f..c57f073 100644
      return result;
  }
  
-diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
+diff --git a/client/open_cdm_impl.h b/client/open_cdm_impl.h
 index d3b86af..3b7bb40 100644
---- a/Source/ocdm/open_cdm_impl.h
-+++ b/Source/ocdm/open_cdm_impl.h
+--- a/client/open_cdm_impl.h
++++ b/client/open_cdm_impl.h
 @@ -32,38 +32,6 @@ using namespace WPEFramework;
  extern Core::CriticalSection _systemLock;
  

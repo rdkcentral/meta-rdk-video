@@ -1,7 +1,7 @@
-diff --git a/Source/ocdm/open_cdm.cpp b/Source/ocdm/open_cdm.cpp
+diff --git a/client/open_cdm.cpp b/client/open_cdm.cpp
 index 06acdea..f3db352 100644
---- a/Source/ocdm/open_cdm.cpp
-+++ b/Source/ocdm/open_cdm.cpp
+--- a/client/open_cdm.cpp
++++ b/client/open_cdm.cpp
 @@ -318,13 +318,16 @@ opencdm_construct_session(struct OpenCDMSystem* system,
      OpenCDMSessionCallbacks* callbacks, void* userData,
      struct OpenCDMSession** session)
@@ -68,10 +68,10 @@ index 06acdea..f3db352 100644
  /**
   * \brief Get metrics associated with a DRM session.
   *
-diff --git a/Source/ocdm/open_cdm.h b/Source/ocdm/open_cdm.h
+diff --git a/client/open_cdm.h b/client/open_cdm.h
 index ef8c03c..e3fc83f 100644
---- a/Source/ocdm/open_cdm.h
-+++ b/Source/ocdm/open_cdm.h
+--- a/client/open_cdm.h
++++ b/client/open_cdm.h
 @@ -150,6 +150,12 @@ typedef struct {
      SubSampleInfo*     subSample;       // SubSample mapping - Repeating pair of Clear bytes and Encrypted Bytes representing each subsample.
  } SampleInfo;
@@ -107,10 +107,10 @@ index ef8c03c..e3fc83f 100644
  /**
   * @brief Close the cached open connection if it exists.
   *
-diff --git a/Source/ocdm/open_cdm_ext.cpp b/Source/ocdm/open_cdm_ext.cpp
+diff --git a/client/open_cdm_ext.cpp b/client/open_cdm_ext.cpp
 index 07026cd..f5cda27 100644
---- a/Source/ocdm/open_cdm_ext.cpp
-+++ b/Source/ocdm/open_cdm_ext.cpp
+--- a/client/open_cdm_ext.cpp
++++ b/client/open_cdm_ext.cpp
 @@ -463,3 +463,117 @@ OpenCDMError opencdm_system_ext_get_properties(struct PlayLevels* system, const
       return result;
      
@@ -229,10 +229,10 @@ index 07026cd..f5cda27 100644
 +    }
 +    return result;
 +}
-diff --git a/Source/ocdm/open_cdm_ext.h b/Source/ocdm/open_cdm_ext.h
+diff --git a/client/open_cdm_ext.h b/client/open_cdm_ext.h
 index 24a85e4..8ca4a84 100644
---- a/Source/ocdm/open_cdm_ext.h
-+++ b/Source/ocdm/open_cdm_ext.h
+--- a/client/open_cdm_ext.h
++++ b/client/open_cdm_ext.h
 @@ -234,6 +234,14 @@ struct PlayLevels {
   */
  EXTERNAL OpenCDMError opencdm_system_ext_get_properties(struct PlayLevels* system, const char* propertiesJSONText);
@@ -248,10 +248,10 @@ index 24a85e4..8ca4a84 100644
  
  #ifdef __cplusplus
  } // extern "C"
-diff --git a/Source/ocdm/open_cdm_impl.cpp b/Source/ocdm/open_cdm_impl.cpp
+diff --git a/client/open_cdm_impl.cpp b/client/open_cdm_impl.cpp
 index c57f073..b45c39f 100644
---- a/Source/ocdm/open_cdm_impl.cpp
-+++ b/Source/ocdm/open_cdm_impl.cpp
+--- a/client/open_cdm_impl.cpp
++++ b/client/open_cdm_impl.cpp
 @@ -81,30 +81,42 @@ static SessionPrivate SessionPvt;
                              OpenCDMSessionCallbacks* callbacks, void* userData,
                              struct OpenCDMSession** session)

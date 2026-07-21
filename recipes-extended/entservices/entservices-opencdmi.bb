@@ -13,6 +13,10 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
+           file://0001-DTM-4265-ocdm-fairplay-plugin-framework-support-66.patch \
+           file://0001-DTM-4265-ocdm-fairplay-clientlibraries-support.patch \
+           file://open_cdm_impl.patch \
+           file://0001-remove_logs_cleanup.patch \
           "
           
 # Release version - 2.0.2

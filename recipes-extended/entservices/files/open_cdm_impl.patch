@@ -1,7 +1,7 @@
-diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
+diff --git a/client/open_cdm_impl.h b/client/open_cdm_impl.h
 index fb9ce2a..d3b86af 100644
---- a/Source/ocdm/open_cdm_impl.h
-+++ b/Source/ocdm/open_cdm_impl.h
+--- a/client/open_cdm_impl.h
++++ b/client/open_cdm_impl.h
 @@ -31,6 +31,40 @@ using namespace WPEFramework;
  
  extern Core::CriticalSection _systemLock;
