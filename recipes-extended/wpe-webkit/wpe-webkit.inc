@@ -67,7 +67,8 @@ FULL_OPTIMIZATION:remove = "-Os"
 FULL_OPTIMIZATION:remove = "-O2"
 FULL_OPTIMIZATION:remove = "-O3"
 
-WPE_WEBKIT_OPTIMIZATION ?= "-O2"
+WPE_WEBKIT_OPTIMIZATION ?= "-Os"
+WPE_WEBKIT_LTO = ""
 
 # Prevent a compile-time crash
 SELECTED_OPTIMIZATION:remove = "-pipe"
