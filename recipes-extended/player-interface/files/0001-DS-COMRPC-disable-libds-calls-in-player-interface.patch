@@ -48,28 +48,18 @@ Rollback: revert by removing DISABLE_DEVICESETTINGS from bbappend CXXFLAGS.
  
  #include <memory>
  #include "PlayerExternalsInterfaceBase.h"
---- a/externals/rdk/PlayerExternalsRdkInterface.cpp	2026-07-20 16:20:21.931108159 +0000
-+++ b/externals/rdk/PlayerExternalsRdkInterface.cpp	2026-07-21 13:15:39.917193748 +0000
-@@ -228,6 +228,8 @@
+--- a/externals/rdk/PlayerExternalsRdkInterface.cpp
++++ b/externals/rdk/PlayerExternalsRdkInterface.cpp
+@@ -226,5 +226,13 @@
+  * @brief Set the HDCP status using data from DeviceSettings
   */
  void PlayerExternalsRdkInterface::SetHDMIStatus()
  {
-+#ifndef DISABLE_DEVICESETTINGS
-+
-     bool                    isConnected              = false;
-     bool                    isHDCPCompliant          = false;
-     bool                    isHDCPEnabled            = true;
-@@ -330,6 +332,13 @@
- 
- 
-     return;
-+#else
-+    /* DeviceSettings removed: report HDCP 2.x compliant with 1080p display.
++#ifdef DISABLE_DEVICESETTINGS
++    /* DS disabled (DS_COMRPC migration): report HDCP 2.x compliant with 1080p.
 +     * entservices-devicesettings (Thunder COM-RPC) handles real DS queries. */
 +    m_isHDCPEnabled       = true;
 +    m_hdcpCurrentProtocol = dsHDCP_VERSION_2X;
 +    SetResolution(1920, 1080);
-+#endif /* DISABLE_DEVICESETTINGS */
- }
- 
- void PlayerExternalsRdkInterface::setHdcpProtocol(dsHdcpProtocolVersion_t t_protocol)
++    return;
++#endif
