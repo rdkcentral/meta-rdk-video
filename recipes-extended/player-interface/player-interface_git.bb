@@ -3,11 +3,10 @@ DESCRIPTION = "This component provides the Player Firebolt Interface library for
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV = "0.2.0-r1"
+PV = "0.2.0"
 PR = "r0"
 
-SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "f66c6faecc85695f70ce4df8d122600eee669bc8"
+SRCREV = "819802890ccec0004447167c04515694ba9f09d5"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "main"
 
@@ -40,6 +39,10 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_dis
 EXTRA_OECMAKE += " -DCMAKE_WPEFRAMEWORK_REQUIRED=1"
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'sec_manager', ' -DCMAKE_USE_SECMANAGER=1 ', '', d)}"
+
+# Flag for Migrate libds to thunder API
+EXTRA_OECMAKE += " -DCMAKE_DS_EVENT_SUPPORTED=1 "
+EXTRA_OECMAKE += " -DCMAKE_DS_THUNDER_PLUGIN=ON"
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', ' -DCMAKE_RDK_SVP=1 ', '', d)}"
 

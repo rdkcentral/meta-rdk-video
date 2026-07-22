@@ -1,25 +1,16 @@
 # DS_COMRPC migration: disable libds calls in player-interface.
-# PlayerExternalsRdkInterface.h/.cpp use device:: (libds C++ API) for HDCP
-# status. With DISABLE_DEVICESETTINGS=1 the device:: calls are stubbed to return
-# safe HDCP 2.x defaults, and -lds/-ldshalcli are not linked.
-# CMAKE_IARM_MGR=1 is retained so PlayerExternalsRdkInterface/DeviceFirebolt
-# files are still compiled — only the DS-specific code paths are guarded.
+#
+# The new COM-RPC refactored source (SRCREV 819802890...) already has upstream
+# support for the Thunder DS path via CMAKE_DS_THUNDER_PLUGIN:
+#   - externals/CMakeLists.txt: if(CMAKE_DS_THUNDER_PLUGIN) → no -lds/-ldshalcli
+#   - PlayerExternalsRdkInterface.h: #ifndef USE_DS_THUNDER_PLUGIN → DS C++ headers excluded
+#   - PlayerExternalsRdkInterface.cpp: SetHDMIStatus() #ifdef USE_DS_THUNDER_PLUGIN → Thunder path
+#   - PlayerThunderAccess.cpp provides the Thunder COM-RPC DS access layer
+#
+# No source patches needed. Just set CMAKE_DS_THUNDER_PLUGIN=ON.
 # Rollback: delete this file.
-FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
-# Patches generated from xione-uk source — restrict to xione-uk only.
-# sharp-a60 uses a different player-interface source revision (0.2.0-r1) and
-# the SetHDMIStatus() context differs; applying these patches there would fail.
-SRC_URI:append:xione-uk = " file://0001-DS-COMRPC-disable-libds-calls-in-player-interface.patch"
-SRC_URI:append:xione-uk = " file://0002-DS-COMRPC-exclude-DeviceIARMInterface-when-DS-disabled.patch"
 
-# Disable device:: (libds) calls; patch stubs SetHDMIStatus() with HDCP 2.x defaults
-CXXFLAGS:append:xione-uk = " -DDISABLE_DEVICESETTINGS=1 "
-# Pass as cmake variable too — patches use if(NOT DISABLE_DEVICESETTINGS) in CMakeLists.txt
-# Without this, the cmake variable is undefined → NOT undefined = TRUE → -lds still added
-EXTRA_OECMAKE:append:xione-uk = " -DDISABLE_DEVICESETTINGS=ON"
-# DS include paths are intentionally kept: DeviceIARMInterface.cpp uses dsMgr.h
-# (from /rdk/ds-rpc/) for IARM event constants without calling device:: methods.
-# The DS C++ includes (manager.hpp, host.hpp) in PlayerExternalsRdkInterface.h
-# are guarded by #ifndef DISABLE_DEVICESETTINGS in the source patch.
+# Enable Thunder DS path — removes -lds/-ldshalcli, activates USE_DS_THUNDER_PLUGIN guards
+EXTRA_OECMAKE:append = " -DCMAKE_DS_THUNDER_PLUGIN=ON"
 
 RDEPENDS:${PN}:remove = "devicesettings"
