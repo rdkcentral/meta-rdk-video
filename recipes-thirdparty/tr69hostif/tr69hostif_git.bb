@@ -114,6 +114,9 @@ RDEPENDS:${PN}:append  = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth','
 
 PACKAGECONFIG[emmc] = "--enable-emmc,--disable-emmc"
 
+PACKAGECONFIG:append = " thunder"
+PACKAGECONFIG[thunder] = "--enable-thunder,,"
+
 INCLUDE_DIRS += "\
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds-hal \
