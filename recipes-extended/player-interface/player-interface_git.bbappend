@@ -6,14 +6,17 @@
 # files are still compiled — only the DS-specific code paths are guarded.
 # Rollback: delete this file.
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
-SRC_URI:append = " file://0001-DS-COMRPC-disable-libds-calls-in-player-interface.patch"
-SRC_URI:append = " file://0002-DS-COMRPC-exclude-DeviceIARMInterface-when-DS-disabled.patch"
+# Patches generated from xione-uk source — restrict to xione-uk only.
+# sharp-a60 uses a different player-interface source revision (0.2.0-r1) and
+# the SetHDMIStatus() context differs; applying these patches there would fail.
+SRC_URI:append:xione-uk = " file://0001-DS-COMRPC-disable-libds-calls-in-player-interface.patch"
+SRC_URI:append:xione-uk = " file://0002-DS-COMRPC-exclude-DeviceIARMInterface-when-DS-disabled.patch"
 
 # Disable device:: (libds) calls; patch stubs SetHDMIStatus() with HDCP 2.x defaults
-CXXFLAGS:append = " -DDISABLE_DEVICESETTINGS=1 "
+CXXFLAGS:append:xione-uk = " -DDISABLE_DEVICESETTINGS=1 "
 # Pass as cmake variable too — patches use if(NOT DISABLE_DEVICESETTINGS) in CMakeLists.txt
 # Without this, the cmake variable is undefined → NOT undefined = TRUE → -lds still added
-EXTRA_OECMAKE:append = " -DDISABLE_DEVICESETTINGS=ON"
+EXTRA_OECMAKE:append:xione-uk = " -DDISABLE_DEVICESETTINGS=ON"
 # DS include paths are intentionally kept: DeviceIARMInterface.cpp uses dsMgr.h
 # (from /rdk/ds-rpc/) for IARM event constants without calling device:: methods.
 # The DS C++ includes (manager.hpp, host.hpp) in PlayerExternalsRdkInterface.h

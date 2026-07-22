@@ -24,28 +24,16 @@ branch in Initialize() so it uses Firebolt when DS is disabled.
      list(APPEND LIB_EXT_DEPENDS -lIARMBus)
 --- a/externals/rdk/PlayerExternalsRdkInterface.cpp
 +++ b/externals/rdk/PlayerExternalsRdkInterface.cpp
-@@ -114,6 +114,7 @@
-     //remove-start
-         m_initialized = PlayerExternalsRdkInterface::InitState::FIREBOLT;
-     }
-+#ifndef DISABLE_DEVICESETTINGS
-     else
-     {
-         MW_PRE_LOGGER_LOG("Using IARM \n");
-@@ -121,6 +122,16 @@
-         DeviceIARMInterface::Initialize();
-         m_initialized = PlayerExternalsRdkInterface::InitState::IARM;
-     }
-+#else
-+    else
-+    {
-+        /* DS disabled: DeviceIARMInterface not compiled; always use Firebolt */
-+        MW_PRE_LOGGER_LOG("DS disabled: forcing Firebolt (DeviceIARMInterface skipped) \n");
-+        m_pDeviceInterfaceBase = DeviceFireboltInterface::GetInstance();
-+        DeviceFireboltInterface::Initialize();
-+        m_initialized = PlayerExternalsRdkInterface::InitState::FIREBOLT;
-+    }
-+#endif /* DISABLE_DEVICESETTINGS */
-     //remove-end
- 
-     MW_PRE_LOGGER_LOG("Done getting interface \n");
+@@ -63,5 +63,13 @@
+ void PlayerExternalsRdkInterface::Initialize()
+ {
++#ifdef DISABLE_DEVICESETTINGS
++    /* DS disabled: DeviceIARMInterface not compiled; always use Firebolt path.
++     * entservices-devicesettings (Thunder COM-RPC) provides real DS state. */
++    m_pDeviceInterfaceBase = DeviceFireboltInterface::GetInstance();
++    DeviceFireboltInterface::Initialize();
++    m_initialized = PlayerExternalsRdkInterface::InitState::FIREBOLT;
++    return;
++#endif
++
+     MW_PRE_LOGGER_LOG("Initializing started \n");
