@@ -67,7 +67,7 @@ PACKAGECONFIG[bluetooth]        = "-DBLUETOOTH_SUPPORT=ON,-DBLUETOOTH_SUPPORT=OF
 
 PACKAGECONFIG[processcontainers]          = "-DPROCESSCONTAINERS=ON,-DPROCESSCONTAINERS=OFF,"
 PACKAGECONFIG[processcontainers_dobby]    = "-DPROCESSCONTAINERS_DOBBY=ON,,dobby"
-PACKAGECONFIG[distributed_tracing]    = "-DDISTRIBUTED_TRACING=ON,,oteltracing"
+PACKAGECONFIG[distributed_tracing]    = "-DDISTRIBUTED_TRACING=ON,,"
 
 # FIXME
 # The WPEFramework also needs limited Plugin info in order to determine what to put in the "resumes" configuration
