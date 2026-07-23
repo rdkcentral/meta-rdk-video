@@ -1,0 +1,12 @@
+[Unit]
+Description=binder servicemanager
+
+[Service]
+Environment="LD_LIBRARY_PATH=/usr/lib/mw"
+ExecStart=/usr/bin/mw/servicemanagerrdk
+ExecStop=/bin/kill $MAINPID
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target
+
