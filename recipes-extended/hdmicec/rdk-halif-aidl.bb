@@ -26,7 +26,7 @@ SRC_URI = " \
 PV = "0.15.0"
 
 # SRCREV must be a git revision; using the tag ref is a common pattern.
-SRCREV = "0.15.0"
+SRCREV = "30e87b4cb50f7c4f8851f53b4dfaa90d13152dcc"
 
 S = "${WORKDIR}/git"
 
