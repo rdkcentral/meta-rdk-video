@@ -17,7 +17,7 @@ LIC_FILES_CHKSUM = " \
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI = " \
-    git://git@github.code.rdkcentral.com/rdkcentral/rdk-halif-aidl.git;nobranch=1;protocol=ssh \
+    ${CMF_GITHUB_ROOT}/rdk-halif-aidl;${CMF_GITHUB_SRC_URI_SUFFIX} \
     file://Makefile \
 "
 
