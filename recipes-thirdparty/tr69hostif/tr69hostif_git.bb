@@ -4,7 +4,7 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=76ae13a6bce633447ea2284294f073c2"
 
-SRCREV = "d37fd214418a22a58f8bf78fcc63ce63240fa927"
+SRCREV = "1244e5485b74c5258f81ec7de88811ec5a672f41"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
 PV = "1.4.8"
@@ -13,10 +13,10 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 S = "${WORKDIR}/git"
 
 DEPENDS = "iarmbus iarmmgrs e2fsprogs libsoup libsyswrapper yajl \
-           devicesettings procps glib-2.0 \
+           procps glib-2.0 \
            cjson telemetry libtinyxml2\
 	  "
-DEPENDS:append = " rdk-logger libparodus parodus virtual/vendor-devicesettings-hal ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
+DEPENDS:append = " rdk-logger libparodus parodus ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
 
 DEPENDS += " python-lxml-native"
 DEPENDS:append = " python3-lxml-native"
@@ -89,7 +89,7 @@ DEPENDS += " rbus "
 LDFLAGS:append = " -lrbus "
 CXXFLAGS:append = " -I${includedir}/rbus "
 
-RDEPENDS:${PN} += "devicesettings bash libsoup"
+RDEPENDS:${PN} += "bash libsoup"
 RDEPENDS:${PN} += "${PN}-conf"
 
 RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
@@ -118,10 +118,6 @@ PACKAGECONFIG:append = " thunder"
 PACKAGECONFIG[thunder] = "--enable-thunder,,"
 
 INCLUDE_DIRS += "\
-	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds \
-	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds-hal \
-    -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/halif/ds-hal \
-	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds-rpc \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmbus \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/tr69Bus \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/mfr \
