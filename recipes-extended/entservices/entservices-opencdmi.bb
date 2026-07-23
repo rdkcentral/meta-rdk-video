@@ -71,9 +71,8 @@ PACKAGECONFIG ?= " breakpadsupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
 "
 
-# enable widevine and Playready4 opencdmi libs
 # enable widevine and Playready4 and fairplay opencdmi libs
-OPENCDM_DRMS ??= " ${@bb.utils.contains_any('DISTRO_FEATURES' , ['widevine_v16' , 'widevine_v18'], 'opencdmi_wv', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['playready4' , 'playready4_6'], 'opencdmi_pr4', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['fairplay'], 'opencdmi_fps', '', d)}"
+OPENCDM_DRMS ??= " ${@bb.utils.contains_any('DISTRO_FEATURES' , ['widevine_v14' , 'widevine_v16' , 'widevine_v18'], 'opencdmi_wv', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['playready4' , 'playready4_6'], 'opencdmi_pr4', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['fairplay'], 'opencdmi_fps', '', d)}"
 PACKAGECONFIG:append = " ${OPENCDM_DRMS}"
 
 inherit features_check
