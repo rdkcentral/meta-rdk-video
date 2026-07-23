@@ -24,8 +24,6 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 EXTRA_OECMAKE += " -DBUILD_ENABLE_THERMAL_PROTECTION=ON "
-EXTRA_OECMAKE += " -DAIDL_DEEPSLEEP_INCLUDE_DIR=${STAGING_INCDIR}"
-EXTRA_OECMAKE += " -DAIDL_BOOT_INCLUDE_DIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
     -DENABLE_POWERMANAGER_AIDL=ON \
     -DPOWERMANAGER_AIDL_STAGING_INCLUDE_DIR=${STAGING_INCDIR} \
@@ -35,7 +33,6 @@ EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
 "
 
 DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native"
-DEPENDS += " rdk-halif-aidl libbinder"
 DEPENDS:remove:vdevice_x86-64-mw = "rdk-halif-aidl"
 DEPENDS:append:vdevice_x86-64-mw = " deepsleep-vendor libbinder"
 
@@ -45,9 +42,6 @@ DEPENDS:append:vdevice_x86-64-mw = " deepsleep-vendor libbinder"
 # available under TMPDIR/work without extending this recipe's sysroot from it.
 do_configure:vdevice_x86-64-mw[depends] += " boot-vendor:do_populate_sysroot"
 
-# Feed CMake the HAL and generated AIDL include roots through the recipe-level
-# toolchain flags. These are consumed when cmake generates the build system.
-CXXFLAGS += " -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android -Wno-error=unknown-pragmas -Wno-error=format"
 CXXFLAGS:append:vdevice_x86-64-mw = " -I${WORKDIR}/aidl-headers -I${STAGING_INCDIR}/rdk/halif/power-manager -I${STAGING_INCDIR}/rdk/halif/deepsleep-manager -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android -Wno-error=unknown-pragmas -Wno-error=format"
 RDEPENDS:${PN} += "wpeframework"
 
