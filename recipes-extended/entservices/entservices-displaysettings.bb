@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_S
            file://rdkservices.ini \
           "
 # Release version - 1.6.0
-SRCREV = "f1cc0b6f097c15076692d273f47dbf039a420fe6"
+SRCREV = "c0a0e34ea1fa3c7e9adba64b6089bf3ad979de87"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -46,7 +46,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[displaysettings]      = "-DPLUGIN_DISPLAYSETTINGS=ON,-DPLUGIN_DISPLAYSETTINGS=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus rfc devicesettings entservices-helpers"
-
+EXTRA_OECMAKE += " -DDS_COMRPC=ON"
 # ----------------------------------------------------------------------------
 
 EXTRA_OECMAKE += " \
