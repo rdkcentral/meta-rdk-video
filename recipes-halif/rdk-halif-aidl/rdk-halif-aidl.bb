@@ -39,7 +39,7 @@ PROVIDES = "rdk-halif-aidl"
 # Also, building libhal_aidl.so links against binder/libs from the target sysroot.
 # Dependency names can vary by layer; these are consistent with existing workspace guidance.
 #DEPENDS += "linux-binder-idl linux-binder-idl-native"
-DEPENDS += " libbinder libbinder-native"
+DEPENDS += " libbinderrdk libbinderrdk-native"
 
 # Path to native aidl compiler. Override in your distro/layer if your provider uses a different path.
 AIDL_BIN ?= "${STAGING_BINDIR_NATIVE}/aidl"
