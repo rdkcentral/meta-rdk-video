@@ -33,3 +33,8 @@ FILES:${PN} = "${bindir}/QueryPowerState \
                /QueryPowerState"
 
 INSANE_SKIP:${PN} += "useless-rpaths"
+
+# DS_COMRPC: disable dsMgr/devicesettings - apply source patch
+FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
+SRC_URI:append = " file://0001-DS-COMRPC-disable-dsMgr-in-IARM-event-sender.patch"
+CFLAGS:append = " -DDISABLE_DEVICESETTINGS"

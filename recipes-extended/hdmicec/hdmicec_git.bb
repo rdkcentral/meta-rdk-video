@@ -14,11 +14,10 @@ SRCREV_hdmicec:vdevice_x86-64-mw = "57df60fdf8866460613735af1d2e39caa3939242"
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
 
-DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
-DEPENDS:remove:vdevice_x86-64-mw = "devicesettings devicesettings-hal-headers iarmmgrs-hal-headers"
+DEPENDS = "glib-2.0 dbus iarmbus hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
+DEPENDS:remove:vdevice_x86-64-mw = "iarmmgrs-hal-headers"
 
-RDEPENDS:${PN} = " devicesettings telemetry"
-RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
+RDEPENDS:${PN} = " telemetry"
 
 DEPENDS += "safec-common-wrapper"
 DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinder"
@@ -55,10 +54,6 @@ CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAF
 
 CFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
 CXXFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
-
-INCLUDE_DIRS = " \
-    -I=${includedir}/rdk/halif/ds-hal \
-    "
 
 
 do_compile:prepend:vdevice_x86-64-mw() {

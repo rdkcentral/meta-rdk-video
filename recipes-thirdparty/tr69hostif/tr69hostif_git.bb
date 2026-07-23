@@ -13,10 +13,10 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 S = "${WORKDIR}/git"
 
 DEPENDS = "iarmbus iarmmgrs e2fsprogs libsoup libsyswrapper yajl \
-           devicesettings procps glib-2.0 \
-           cjson telemetry libtinyxml2\
+           procps glib-2.0 \
+           cjson telemetry libtinyxml2 \
 	  "
-DEPENDS:append = " rdk-logger libparodus parodus virtual/vendor-devicesettings-hal ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
+DEPENDS:append = " rdk-logger libparodus parodus ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
 
 DEPENDS += " python-lxml-native"
 DEPENDS:append = " python3-lxml-native"
@@ -89,7 +89,7 @@ DEPENDS += " rbus "
 LDFLAGS:append = " -lrbus "
 CXXFLAGS:append = " -I${includedir}/rbus "
 
-RDEPENDS:${PN} += "devicesettings bash libsoup"
+RDEPENDS:${PN} += "bash libsoup"
 RDEPENDS:${PN} += "${PN}-conf"
 
 RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
@@ -119,10 +119,6 @@ PACKAGECONFIG:append = " thunder"
 PACKAGECONFIG[thunder] = "--enable-thunder,,"
 
 INCLUDE_DIRS += "\
-	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds \
-	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds-hal \
-    -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/halif/ds-hal \
-	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds-rpc \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmbus \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/tr69Bus \
 	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/mfr \
@@ -228,3 +224,7 @@ FILES:${PN}-conf = "${sysconfdir}/rfcdefaults/tr69hostif.ini"
 # Breakpad processname and logfile mapping
 BREAKPAD_LOGMAPPER_PROCLIST = "tr69hostif"
 BREAKPAD_LOGMAPPER_LOGLIST = "tr69hostif.log"
+
+# DS_COMRPC: guard DS C++ API includes when thunder is enabled
+FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
+SRC_URI:append = " file://0001-DS-COMRPC-guard-DS-includes-USE_THUNDER_CLIENT.patch"
