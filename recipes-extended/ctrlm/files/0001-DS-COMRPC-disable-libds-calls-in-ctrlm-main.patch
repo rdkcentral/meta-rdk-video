@@ -9,21 +9,26 @@ and FrontPanel LED control via libds are silently skipped.
 ---
 --- a/src/ctrlm_utils.cpp
 +++ b/src/ctrlm_utils.cpp
-@@ -38,12 +38,14 @@
- #include "videoOutputPort.hpp"
- #include "videoOutputPortType.hpp"
- #include "videoOutputPortConfig.hpp"
+@@ -33,6 +33,7 @@
+ #include <uuid/uuid.h>
+ 
+ // dsMgr includes
 +#ifndef DISABLE_DEVICESETTINGS
- #include "audioOutputPort.hpp"
- #include "frontPanelIndicator.hpp"
- #include "manager.hpp"
- #include "dsMgr.h"
+ #include "host.hpp"
+ #include "exception.hpp"
+ #include "videoOutputPort.hpp"
+@@ -45,6 +46,11 @@
  #include "dsRpc.h"
  #include "dsDisplay.h"
-+#endif /* DISABLE_DEVICESETTINGS */
  #include <regex>
++#endif /* DISABLE_DEVICESETTINGS */
++#ifdef DISABLE_DEVICESETTINGS
++/* DS headers normally pull in 'using namespace std;' — provide it here */
++using namespace std;
++#endif
  // end dsMgr includes
  
+ #define BLOCK_SIZE
 @@ -1570,6 +1572,7 @@
  }
  
@@ -226,3 +231,26 @@ and FrontPanel LED control via libds are silently skipped.
 +   return(true);
 +#endif /* DISABLE_DEVICESETTINGS */
  }
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -150,10 +150,8 @@
+       IARMBus
+-      ds
+       nopoll
+       ssl
+       crypto
+       systemd
+-      dshalcli
+       rfcapi
+       secure_wrapper
+       evdev
+@@ -162,6 +160,11 @@
+       ${CMAKE_DL_LIBS}
+       )
+ 
++# DS_COMRPC migration: link DS libraries only when not using Thunder FR DS path
++if(NOT CTRLM_USE_THUNDER_FR_DS)
++   target_link_libraries(controlMgr ds dshalcli)
++endif()
++
+ install(TARGETS controlMgr RUNTIME DESTINATION bin)

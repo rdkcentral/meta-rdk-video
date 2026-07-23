@@ -1,0 +1,182 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DS_COMRPC migration <ds_comrpc@migration>
+Date: Tue, 22 Jul 2026 00:00:00 +0000
+Subject: [PATCH] DS_COMRPC: guard all DS C++ API includes behind USE_THUNDER_CLIENT
+
+Guard DS C++ API headers with #ifndef USE_THUNDER_CLIENT in all STBService
+headers and handler sources. With --enable-thunder, *_Thunder.cpp variants
+compile instead and do not need the DS C++ API headers.
+---
+--- a/src/hostif/handlers/src/hostIf_DeviceClient_ReqHandler.cpp
++++ b/src/hostif/handlers/src/hostIf_DeviceClient_ReqHandler.cpp
+@@ -34,8 +34,10 @@
+ #include "hostIf_main.h"
+ #include "hostIf_DeviceClient_ReqHandler.h"
+ #include "hostIf_utils.h"
++#ifndef USE_THUNDER_CLIENT
+ #include "host.hpp"
+ #include "dsError.h"
++#endif /* USE_THUNDER_CLIENT */
+ #include "libIBus.h"
+ #include "Device_DeviceInfo.h"
+ #include "Device_DeviceInfo_Processor.h"
+--- a/src/hostif/handlers/src/hostIf_rbus_Dml_Provider.cpp
++++ b/src/hostif/handlers/src/hostIf_rbus_Dml_Provider.cpp
+@@ -49,8 +49,10 @@
+ #include "hostIf_msgHandler.h"
+ #include "waldb.h"
+ //#include "rbus.h"
++#ifndef USE_THUNDER_CLIENT
+ #include "exception.hpp"
+ #include "illegalArgumentException.hpp"
++#endif /* USE_THUNDER_CLIENT */
+ 
+ 
+ #define MAX_NUM_PARAMETERS 2048
+--- a/src/hostif/profiles/STBService/Components_AudioOutput.h
++++ b/src/hostif/profiles/STBService/Components_AudioOutput.h
+@@ -85,6 +85,7 @@
+ #define DEVSET_COMP_AUDIOOUTPUT_HPP__
+ 
+ #include <iostream>
++#ifndef USE_THUNDER_CLIENT
+ #include "host.hpp"
+ #include "videoDevice.hpp"
+ #include "videoDFC.hpp"
+@@ -92,6 +93,7 @@
+ #include "dsUtl.h"
+ #include "dsError.h"
+ #include "list.hpp"
++#endif /* USE_THUNDER_CLIENT */
+ #include <exception>
+ #include <string.h>
+ #include <stdlib.h>
+@@ -99,7 +101,9 @@
+ #include "hostIf_tr69ReqHandler.h"
+ #include "hostIf_updateHandler.h"
+ #include "hostIf_main.h"
++#ifndef USE_THUNDER_CLIENT
+ #include "audioOutputPort.hpp"
++#endif /* USE_THUNDER_CLIENT */
+ 
+ #ifndef PARAM_LEN
+ #define PARAM_LEN TR69HOSTIFMGR_MAX_PARAM_LEN
+--- a/src/hostif/profiles/STBService/Components_HDMI.h
++++ b/src/hostif/profiles/STBService/Components_HDMI.h
+@@ -53,6 +53,7 @@
+ #ifndef DEVSET_COMP_HDMI_HPP_
+ #define DEVSET_COMP_HDMI_HPP_
+ 
++#ifndef USE_THUNDER_CLIENT
+ #include "host.hpp"
+ #include "videoResolution.hpp"
+ #include "dsTypes.h"
+@@ -63,6 +64,7 @@
+ #include "dsUtl.h"
+ #include "dsError.h"
+ #include "list.hpp"
++#endif /* USE_THUNDER_CLIENT */
+ #include <exception>
+ #include <string.h>
+ #include "stdlib.h"
+@@ -71,7 +73,9 @@
+ #include "hostIf_utils.h"
+ 
+ #include "Components_DisplayDevice.h"
++#ifndef USE_THUNDER_CLIENT
+ #include "videoOutputPort.hpp"
++#endif /* USE_THUNDER_CLIENT */
+ 
+ #define HDMI_RESOLUTION_MODE_AUTO       "Auto"
+ #define HDMI_RESOLUTION_MODE_MANUAL     "Manual"
+--- a/src/hostif/profiles/STBService/Components_DisplayDevice.h
++++ b/src/hostif/profiles/STBService/Components_DisplayDevice.h
+@@ -58,6 +58,7 @@
+ #ifndef DEVSET_COMP_DISPLAYDEVICE_HPP_
+ #define DEVSET_COMP_DISPLAYDEVICE_HPP_
+ 
++#ifndef USE_THUNDER_CLIENT
+ #include "host.hpp"
+ #include "dsTypes.h"
+ #include "videoOutputPortType.hpp"
+@@ -67,13 +68,16 @@
+ #include "dsUtl.h"
+ #include "dsError.h"
+ #include "list.hpp"
++#endif /* USE_THUNDER_CLIENT */
+ #include <exception>
+ #include <string.h>
+ #include "stdlib.h"
+ #include "hostIf_tr69ReqHandler.h"
+ #include "hostIf_updateHandler.h"
+ #include "hostIf_utils.h"
++#ifndef USE_THUNDER_CLIENT
+ #include "videoOutputPort.hpp"
++#endif /* USE_THUNDER_CLIENT */
+ 
+ #ifndef PARAM_LEN
+ #define PARAM_LEN TR69HOSTIFMGR_MAX_PARAM_LEN
+--- a/src/hostif/profiles/STBService/Components_VideoDecoder.h
++++ b/src/hostif/profiles/STBService/Components_VideoDecoder.h
+@@ -50,6 +50,7 @@
+ #ifndef DEVSET_COMP_VIDEODECODER_HPP_
+ #define DEVSET_COMP_VIDEODECODER_HPP_
+ 
++#ifndef USE_THUNDER_CLIENT
+ #include "host.hpp"
+ #include "videoResolution.hpp"
+ #include "dsTypes.h"
+@@ -60,6 +61,7 @@
+ #include "dsUtl.h"
+ #include "dsError.h"
+ #include "list.hpp"
++#endif /* USE_THUNDER_CLIENT */
+ #include <exception>
+ #include <string.h>
+ #include "stdlib.h"
+--- a/src/hostif/profiles/STBService/Components_VideoOutput.h
++++ b/src/hostif/profiles/STBService/Components_VideoOutput.h
+@@ -63,6 +63,7 @@
+ #ifndef DEVSET_COMP_VIDEOOUTPUT_HPP_
+ #define DEVSET_COMP_VIDEOOUTPUT_HPP_
+ 
++#ifndef USE_THUNDER_CLIENT
+ #include "host.hpp"
+ #include "videoResolution.hpp"
+ #include "dsTypes.h"
+@@ -73,6 +74,7 @@
+ #include "dsUtl.h"
+ #include "dsError.h"
+ #include "list.hpp"
++#endif /* USE_THUNDER_CLIENT */
+ #include <exception>
+ #include <string.h>
+ #include "stdlib.h"
+--- a/src/hostif/profiles/STBService/Components_SPDIF.h
++++ b/src/hostif/profiles/STBService/Components_SPDIF.h
+@@ -51,6 +51,7 @@
+ #define DEVSET_COMP_SPDIF_HPP__
+ 
+ #include <iostream>
++#ifndef USE_THUNDER_CLIENT
+ #include "host.hpp"
+ #include "videoDevice.hpp"
+ #include "videoDFC.hpp"
+@@ -58,6 +59,7 @@
+ #include "dsUtl.h"
+ #include "dsError.h"
+ #include "list.hpp"
++#endif /* USE_THUNDER_CLIENT */
+ #include <exception>
+ #include <string.h>
+ #include <stdlib.h>
+@@ -65,7 +67,9 @@
+ #include "hostIf_tr69ReqHandler.h"
+ #include "hostIf_updateHandler.h"
+ #include "hostIf_main.h"
++#ifndef USE_THUNDER_CLIENT
+ #include "audioOutputPort.hpp"
++#endif /* USE_THUNDER_CLIENT */
+ 
+ #ifndef PARAM_LEN
+ #define PARAM_LEN TR69HOSTIFMGR_MAX_PARAM_LEN

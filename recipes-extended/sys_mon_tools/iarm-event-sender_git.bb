@@ -7,32 +7,34 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.0.8"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+PV = "1.0.9"
 PR = "r0"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-SRCREV = "a309758f5721a10ff8cdfa3ef8b957f7614a2d29"
-SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRCREV = "5c9f725d124b0d49ee71b1f5669ea7e10f37d4f4"
+SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarm_query_powerstate"
 S = "${WORKDIR}/git"
 
 CFLAGS:append = " -DYOCTO_BUILD"
 DEPENDS = "iarmbus iarmmgrs dbus glib-2.0 wpeframework-clientlibraries"
 RDEPENDS:${PN} += "iarmmgrs wpeframework-clientlibraries"
-DEPENDS += " ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d), '', d)}"
-
-
-CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'ctrlm', '-DCTRLM_ENABLED', '', d)}"
-CFLAGS += "-DPLATFORM_SUPPORTS_RDMMGR"
-CFLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', '-DHAS_WIFI_SUPPORT', d), '', d)}"
-CFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_maintenance_manager', '-DHAS_MAINTENANCE_MANAGER', '', d)}"
 
 inherit autotools pkgconfig coverity
 
 do_install() {
         install -d ${D}${bindir}
-        install -m 0755 ${B}/IARM_event_sender ${D}${bindir}
+        install -m 0755 ${B}/QueryPowerState ${D}${bindir}/
+        # Create a symbolic link in / as the current automation team testing scripts
+        # expect binaries to be present in root
+        ln -sf ${bindir}/QueryPowerState ${D}/QueryPowerState
 }
 
-FILES:${PN} += "${bindir}/IARM_event_sender"
+FILES:${PN} = "${bindir}/QueryPowerState \
+               /QueryPowerState"
+
 INSANE_SKIP:${PN} += "useless-rpaths"
 
+# DS_COMRPC: disable dsMgr/devicesettings - apply source patch
+FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
+SRC_URI:append = " file://0001-DS-COMRPC-disable-dsMgr-in-IARM-event-sender.patch"
+CFLAGS:append = " -DDISABLE_DEVICESETTINGS"
