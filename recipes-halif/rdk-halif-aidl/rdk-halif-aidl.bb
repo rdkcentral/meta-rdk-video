@@ -22,7 +22,7 @@ SRC_URI = " \
 "
 
 # Recipe version (also used to select the git tag below).
-PV = "0.15.0"
+PV = "30e87b4cb50f7c4f8851f53b4dfaa90d13152dcc"
 
 # SRCREV must be a git revision; using the tag ref is a common pattern.
 SRCREV = "0.15.0"
