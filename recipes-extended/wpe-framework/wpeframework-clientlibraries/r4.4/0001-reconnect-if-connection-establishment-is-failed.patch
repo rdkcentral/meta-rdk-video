@@ -1,0 +1,29 @@
+From b37ca57ecef2a53bff24495a1bc278586f6f4469 Mon Sep 17 00:00:00 2001
+From: kkanag314 <krishnapriya_kanagaraj@comcast.com>
+Date: Fri, 12 Jul 2024 12:08:59 +0000
+Subject: [PATCH] reconnect if connectione stablishment is failed
+
+---
+ Source/ocdm/open_cdm_impl.h | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
+index ea4d8fe..b2cb979 100644
+--- a/Source/ocdm/open_cdm_impl.h
++++ b/Source/ocdm/open_cdm_impl.h
+@@ -152,7 +152,14 @@ public:
+ 
+     virtual Exchange::OCDM_RESULT Metadata(const string& keySystem, string& metadata) const override
+     {
+-        return(_remote->Metadata(keySystem, metadata));
++        if (_remote == nullptr) {
++            Reconnect();
++        }
++        if (_remote == nullptr) {
++            return Exchange::OCDM_RESULT::OCDM_S_FALSE;
++        } else {
++            return(_remote->Metadata(keySystem, metadata));
++        }
+     }
+ 
+     virtual Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& length, uint8_t buffer[]) const override {

@@ -1,0 +1,120 @@
+From 56bd82a95464fb904205615e1aa0e9995479fd7e Mon Sep 17 00:00:00 2001
+From: kkanag314 <krishnapriya_kanagaraj@comcast.com>
+Date: Wed, 23 Oct 2024 20:18:38 +0000
+Subject: [PATCH] rdk adapter
+
+---
+ Source/ocdm/adapter/rdk/open_cdm_adapter.cpp | 47 +++++++++++---------
+ 1 file changed, 26 insertions(+), 21 deletions(-)
+
+diff --git a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
+index 47d9caf..d42bb80 100644
+--- a/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
++++ b/Source/ocdm/adapter/rdk/open_cdm_adapter.cpp
+@@ -156,11 +156,12 @@ OpenCDMError opencdm_gstreamer_session_decrypt(struct OpenCDMSession* session, G
+ 
+             if(totalEncrypted > 0)
+             {
+-                totalEncrypted += svp_token_size(); //make sure enough data for metadata
+ 
+-                uint8_t* encryptedData = reinterpret_cast<uint8_t*> (g_malloc(totalEncrypted));
+-                uint8_t* encryptedDataIter = encryptedData;
++                uint8_t* svpData;
++                gsize dataBlockSize = gst_svp_allocate_data_block(session->SessionPrivateData(), (void**) &svpData, totalEncrypted, totalEncrypted);
+ 
++                uint8_t* encryptedDataIter = reinterpret_cast<uint8_t *>(gst_svp_header_get_start_of_data(session->SessionPrivateData(), svpData));
++                
+                 uint32_t index = 0;
+                 for (unsigned int position = 0; position < subSampleCount; position++) {
+ 
+@@ -174,16 +175,16 @@ OpenCDMError opencdm_gstreamer_session_decrypt(struct OpenCDMSession* session, G
+                 gst_byte_reader_set_pos(reader, 0);
+ 
+                 GstPerf* ocdm_perf = new GstPerf("opencdm_session_decrypt_subsample");
+-                result = opencdm_session_decrypt(session, encryptedData, totalEncrypted, encScheme, pattern, mappedIV, mappedIVSize,
++                result = opencdm_session_decrypt(session, svpData, dataBlockSize, encScheme, pattern, mappedIV, mappedIVSize,
+                                                  mappedKeyID, mappedKeyIDSize, initWithLast15);
+                 delete ocdm_perf;
+ 
+                 if(result == ERROR_NONE) {
+                     GstPerf* svpTransform_perf1 = new GstPerf("opencdm_svp_transform_subsample");
+-                    gst_buffer_append_svp_transform(session->SessionPrivateData(), buffer, subSample, subSampleCount, encryptedData);
++                    gst_buffer_append_svp_transform(session->SessionPrivateData(), buffer, subSample, subSampleCount, svpData);
+                     delete svpTransform_perf1;
+                 }
+-                g_free(encryptedData);
++                gst_svp_free_data_block(session->SessionPrivateData(), svpData);
+             } else {
+                 // no encrypted data, skip decryption...
+                 // But still need to transform buffer for SVP support
+@@ -194,25 +195,26 @@ OpenCDMError opencdm_gstreamer_session_decrypt(struct OpenCDMSession* session, G
+             gst_buffer_unmap(subSample, &sampleMap);
+         } else {
+             uint8_t* encryptedData = NULL;
+-            uint8_t* fEncryptedData = NULL;
+-            uint32_t totalEncrypted = 0;
++            uint8_t* svpData = NULL;
++
++            uint32_t dataBlockSize = gst_svp_allocate_data_block(session->SessionPrivateData(), (void**) &svpData, mappedDataSize, mappedDataSize);
++
++            // Adjust data start after header
++            encryptedData = reinterpret_cast<uint8_t *>(gst_svp_header_get_start_of_data(session->SessionPrivateData(), svpData));
+ 
+-            totalEncrypted = mappedDataSize + svp_token_size(); //make sure it is enough for metadata
+-            encryptedData = (uint8_t*) g_malloc(totalEncrypted);
+-            fEncryptedData = encryptedData;
+             memcpy(encryptedData, mappedData, mappedDataSize);
+ 
+             GstPerf* ocdm_perf = new GstPerf("opencdm_session_decrypt_no_subsample");
+-            result = opencdm_session_decrypt(session, encryptedData, totalEncrypted, encScheme, pattern, mappedIV, mappedIVSize, 
++            result = opencdm_session_decrypt(session, svpData, dataBlockSize, encScheme, pattern, mappedIV, mappedIVSize,
+                                              mappedKeyID, mappedKeyIDSize, initWithLast15);
+             delete ocdm_perf;
+ 
+             if(result == ERROR_NONE){
+                 GstPerf* svpTransform_perf2 = new GstPerf("opencdm_svp_transform_no_subsample");
+-                gst_buffer_append_svp_transform(session->SessionPrivateData(), buffer, NULL, mappedDataSize, encryptedData);
++                gst_buffer_append_svp_transform(session->SessionPrivateData(), buffer, NULL, mappedDataSize, svpData);
+                 delete svpTransform_perf2;
+             }
+-            g_free(fEncryptedData);
++            gst_svp_free_data_block(session->SessionPrivateData(), svpData);
+         }
+ 
+         if (keyID != nullptr) {
+@@ -429,25 +431,28 @@ OpenCDMError opencdm_gstreamer_session_decrypt_buffer(struct OpenCDMSession* ses
+             sampleInfo.keyIdLength = mappedKeyIDSize;
+ 
+             if(total_encrypted_bytes > 0) {
+-               uint32_t totalEncrypted = mappedDataSize + svp_token_size(); //make sure it is enough for metadata
+-               uint8_t* encryptedData = nullptr;
+-               encryptedData = (uint8_t*) g_malloc(totalEncrypted);
++               uint8_t* svpData;
++               uint32_t dataBlockSize = gst_svp_allocate_data_block(session->SessionPrivateData(), (void**) &svpData, mappedDataSize, mappedDataSize);
++
++               void * encryptedData = reinterpret_cast<uint8_t *>(gst_svp_header_get_start_of_data(session->SessionPrivateData(), svpData));
++
+                memcpy(encryptedData, mappedData, mappedDataSize);
+ 
+                GstPerf* ocdm_perf = new GstPerf("opencdm_session_decrypt_v2");
+                result = opencdm_session_decrypt_v2(session,
+-                                                encryptedData,
+-                                                totalEncrypted,
++                                                svpData,
++                                                dataBlockSize,
+                                                 &sampleInfo,
+                                                 &streamProperties);
++
+                delete ocdm_perf;
+ 
+                if(result == ERROR_NONE) {
+                   GstPerf* svpTransform_perf3 = new GstPerf("opencdm_svp_transform_subsample");
+-                  gst_buffer_append_svp_transform(session->SessionPrivateData(), buffer, subSample, subSampleCount, encryptedData, mappedDataSize);
++                  gst_buffer_append_svp_transform(session->SessionPrivateData(), buffer, subSample, subSampleCount, svpData, mappedDataSize);
+                   delete svpTransform_perf3;
+                }
+-               g_free(encryptedData);
++               gst_svp_free_data_block(session->SessionPrivateData(), svpData);
+            } else {
+                // no encrypted data, skip decryption...
+                // But still need to transform buffer for SVP support

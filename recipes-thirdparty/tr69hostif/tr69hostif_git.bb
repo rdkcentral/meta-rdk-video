@@ -4,10 +4,10 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=76ae13a6bce633447ea2284294f073c2"
 
-SRCREV = "4fddb66f265737171d275ba8973ac0470140ba9b"
+SRCREV = "f6ccc493d26ec35f1c201546dfc4319aa8ec3048"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
-PV = "1.4.8"
+PV = "1.4.7"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 S = "${WORKDIR}/git"
@@ -107,6 +107,7 @@ PACKAGECONFIG[wifi] = "--enable-wifi,,,"
 PACKAGECONFIG[xre] = "--enable-xre,,"
 PACKAGECONFIG[moca] = "--enable-moca,,virtual/mocadriver"
 PACKAGECONFIG[moca2] = "--enable-moca2,,virtual/mocadriver"
+PACKAGECONFIG[rf4ce] = "--enable-rf4ce,,"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth','bluetooth', '',d)}"
 PACKAGECONFIG[bluetooth] = "--enable-bt,,bluetooth-mgr,bluetooth-mgr"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetooth-mgr', '',d)}"
@@ -141,6 +142,10 @@ inherit autotools systemd pkgconfig
 do_configure:prepend() {
         sed -i -e "s%lproc-3.2.8%lprocps%"  ${S}/src/hostif/profiles/DeviceInfo/Makefile.am
         sed -i -e "s%lproc-3.2.8%lprocps%"  ${S}/src/hostif/handlers/Makefile.am
+}
+
+do_install:append:client() {
+       rm -rf ${D}${sysconfdir}/tr181_snmpOID.conf
 }
 
 PACKAGECONFIG += "${@bb.utils.contains('DISTRO_FEATURES', 'emmc_storage', 'emmc', '', d)}"

@@ -3,7 +3,7 @@ SUMMARY = "This recipe provides the sceneset component for RDK "
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-PV = "0.6.0"
+PV = "0.5.0"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -15,13 +15,7 @@ EXTRA_OECMAKE += "-DSCENESET_DEFAULT_APPNAME='${SCENESET_DEFAULT_APPNAME}' \
                  -DFACTORY_APP_PATH='${FACTORY_APPS_PATH}' \
                  -DAPP_PREINSTALL_DIRECTORY='${APP_PREINSTALL_DIRECTORY}'"
 
-DEPENDS += "wpeframework entservices-apis ralf-utils telemetry"
-
-# Sceneset T2 telemetry support
-CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
-TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
-EXTRA_OECMAKE += " -DSCENESET_TELEMETRY_METRICS_SUPPORT=ON"
-
+DEPENDS += "wpeframework entservices-apis ralf-utils"
 RDEPENDS:${PN} += " ralf-utils"
 
 #RDK logging support
