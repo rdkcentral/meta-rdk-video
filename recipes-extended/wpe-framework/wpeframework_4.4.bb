@@ -44,7 +44,7 @@ EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
 LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
 
 PACKAGECONFIG ?= " \
-    debug \
+    release \
     virtualinput \
     websocket \
     "
@@ -118,6 +118,7 @@ EXTRA_OECMAKE += " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
     -DAUTHORIZEDEXTENSIONS='MessagingControl;PluginInitializerService;Systemd' \
     -DDISABLEPLUGINAUTOACTIVATION=true \
+    -DTHUNDER_DEBUG_BUILD=ON \
 "
 
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
