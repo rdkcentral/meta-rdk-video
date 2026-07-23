@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
 PV = "4.0.6"
 PR = "r0"
-SRCREV_entservices-apis = "46074257db8ef85f4d1ec68ca019d426772870d7"
+SRCREV_entservices-apis = "34336a56368d4b13f04c128f3bad6cff081d109a"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -20,6 +20,9 @@ SRC_URI += "file://RDKEMW-1007.patch"
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
 # ----------------------------------------------------------------------------
+
+DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
+EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
 EXTRA_OECMAKE += " \
     -DBUILD_SHARED_LIBS=ON \
