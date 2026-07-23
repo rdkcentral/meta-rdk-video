@@ -51,6 +51,7 @@ HAL_AIDL_MODULES ?= " \
     hdmicec \
     deepsleep \
     indicator \
+    boot \
 "
 
 # Consolidated output for generated artifacts:
