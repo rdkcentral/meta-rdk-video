@@ -67,27 +67,6 @@ INCLUDE_DIRS = " \
     "
 
 
-do_compile:prepend() {
-        case ":${OVERRIDES}:" in
-                *:vdevice_x86-64-mw:*)
-                        return 0
-                        ;;
-        esac
-
-        AIDL_CPP_ARCHIVE="${TMPDIR}/sysroots-ipk-components/usr/lib/libhdmicec-vcurrent-cpp.a"
-        AIDL_HALIF_INCDIR="${TMPDIR}/sysroots-ipk-components/usr/include/halif/hdmicec/current/include"
-
-        if [ ! -f "${AIDL_CPP_ARCHIVE}" ]; then
-                bbfatal "AIDL archive not found: ${AIDL_CPP_ARCHIVE}"
-        fi
-
-        if [ ! -d "${AIDL_HALIF_INCDIR}" ]; then
-                bbfatal "AIDL halif include dir not found: ${AIDL_HALIF_INCDIR}"
-        fi
-}
-
-
-
 do_install:append() {
 #        install -d ${D}${includedir}/rdk/hdmicec
 #        install -d ${D}${includedir}/ccec/drivers
@@ -105,10 +84,16 @@ do_configure:append() {
                         ;;
         esac
 
-        AIDL_CPP_ARCHIVE="${TMPDIR}/sysroots-ipk-components/usr/lib/libhdmicec-vcurrent-cpp.a"
+        AIDL_SYSROOT_DIR="${TMPDIR}/sysroots-ipk-components/usr/lib"
+        AIDL_CPP_ARCHIVE="${AIDL_SYSROOT_DIR}/libhdmicec-vcurrent-cpp.a"
+        AIDL_COMMON_CPP_ARCHIVE="${AIDL_SYSROOT_DIR}/libcommon-vcurrent-cpp.a"
 
         if [ ! -f "${AIDL_CPP_ARCHIVE}" ]; then
                 bbfatal "AIDL archive not found: ${AIDL_CPP_ARCHIVE}"
+        fi
+
+        if [ ! -f "${AIDL_COMMON_CPP_ARCHIVE}" ]; then
+                bbfatal "AIDL archive not found: ${AIDL_COMMON_CPP_ARCHIVE}"
         fi
 
     # Patch the generated Makefile to:
@@ -116,7 +101,7 @@ do_configure:append() {
     #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
         #     runtime from the binder provider in the target image
     sed -i \
-                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = ${AIDL_CPP_ARCHIVE} \${top_builddir}/osal/src/libRCECOSHal.la|" \
+                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = ${AIDL_CPP_ARCHIVE} ${AIDL_COMMON_CPP_ARCHIVE} \${top_builddir}/osal/src/libRCECOSHal.la|" \
                                 "${B}/ccec/src/Makefile"
 
     sed -i \
