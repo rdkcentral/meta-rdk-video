@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "e8495255d91934645f5d40be94d76eb5750b38c0"
+SRCREV = "183304e1a77b011193839a3d6f08cef2cdd9d684"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -26,6 +26,7 @@ DEPENDS += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers_r
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
 DEPENDS += "iptables"
+DEPENDS += "yaml-cpp"
 
 CFLAGS  += " \
     -I=${includedir}/rdk/halif/power-manager \
