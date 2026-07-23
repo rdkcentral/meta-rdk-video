@@ -17,9 +17,9 @@ PR = "r46"
 PV = "4.4.6"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=development/otel_int2;name=thunder"
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=OTEL_TEL-lat;name=thunder"
 
-SRCREV_thunder = "7c10cc95a0e933e74800f3846ba29cfb600a5567"
+SRCREV_thunder = "c69b463c5cb92aafb102b8c186b4be1b36366c8a"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
@@ -48,6 +48,7 @@ PACKAGECONFIG ?= " \
     release \
     virtualinput \
     websocket \
+    distributed_tracing \
     "
 
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com', '', d)}"
