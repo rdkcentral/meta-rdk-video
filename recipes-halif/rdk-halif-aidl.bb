@@ -31,6 +31,8 @@ S = "${WORKDIR}/git"
 
 inherit cmake
 
+PROVIDES = "rdk-halif-aidl"
+
 # The generator runs the host 'aidl' compiler during CMake configure (via execute_process),
 # so we must depend on a *native* provider of the aidl tool.
 #
