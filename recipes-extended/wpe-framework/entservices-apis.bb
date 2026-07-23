@@ -16,6 +16,7 @@ DEPENDS = "wpeframework wpeframework-tools-native"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis \
            file://RDKEMW-1007.patch \
            file://0001-DTM-4265-DTM-4808-ocdm-fairplay-interfaces-support-a.patch \
+           file://0001-fixed-buffer-issue.patch \
            "
 
 S = "${WORKDIR}/git"

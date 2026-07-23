@@ -22,7 +22,6 @@ SRCREV_thunder = "2c0fcc5529e7da734be558ca6efa05d934dcce31"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
-            file://0001-Adding-LockFixedBuffer.patch \
            "
 
 S = "${WORKDIR}/git"

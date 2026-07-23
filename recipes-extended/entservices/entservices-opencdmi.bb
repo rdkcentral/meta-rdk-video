@@ -17,7 +17,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://0001-DTM-4265-ocdm-fairplay-clientlibraries-support.patch \
            file://open_cdm_impl.patch \
            file://0001-remove_logs_cleanup.patch \
-          "
+           file://0001-fixed-buffer-issue-COM-RPC-interfaces.patch \
+           "
           
 # Release version - 2.0.2
 SRCREV = "96df114e4b6006ef384697bca56104e52e228648"
@@ -31,7 +32,6 @@ EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 
 DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
 RDEPENDS:${PN} += "wpeframework"
-RDEPENDS:${PN}:append = " wpeframework-ocdm-fairplay"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
@@ -67,12 +67,11 @@ PACKAGECONFIG ?= " breakpadsupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'playready_nexus_svp',  'opencdmi_prnx_svp', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'widevine_nexus_svp',   'opencdmi_wv_svp', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'clearkey',             'opencdmi_ck', '', d)} \
-    ${@bb.utils.contains_any('MACHINE', 'es1-rtk es1-rtk-xumo xione-uk xione-foxtel xione-de xione-alpaca-de xfinity-stream-box xumo-stream-box wnc-xfinity-stream-box rdkstb-armv7a', '', bb.utils.contains('DISTRO_FEATURES', 'fairplay', 'opencdmi_fps', '', d), d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
 "
 
 # enable widevine and Playready4 opencdmi libs
-OPENCDM_DRMS ??= " ${@bb.utils.contains_any('DISTRO_FEATURES' , ['widevine_v16' , 'widevine_v18'], 'opencdmi_wv', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['playready4' , 'playready4_6'], 'opencdmi_pr4', '', d)} ${@bb.utils.contains_any('MACHINE', 'es1-rtk es1-rtk-xumo xione-uk xione-foxtel xione-de xione-alpaca-de xfinity-stream-box xumo-stream-box wnc-xfinity-stream-box rdkstb-armv7a', '', bb.utils.contains_any('DISTRO_FEATURES' , ['fairplay'], 'opencdmi_fps', '', d), d)}"
+OPENCDM_DRMS ??= " ${@bb.utils.contains_any('DISTRO_FEATURES' , ['widevine_v14' , 'widevine_v16' , 'widevine_v18'], 'opencdmi_wv', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['playready4' , 'playready4_6'], 'opencdmi_pr4', '', d)}"
 PACKAGECONFIG:append = " ${OPENCDM_DRMS}"
 
 inherit features_check
