@@ -1,6 +1,6 @@
 SUMMARY = "ENTServices maintenancemanager plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=8156ec4df1d16b2ecb4e72131ff8026c"
 
 PV = "1.15.1"
 PR = "r0"
