@@ -68,6 +68,10 @@ do_configure() {
     rm -rf ${AIDL_GEN_DIR}
     install -d ${AIDL_GEN_DIR}
 
+    # The native aidl tool links against middleware libraries staged under
+    # the native sysroot's mw libdir, so expose that path during configure.
+    export LD_LIBRARY_PATH="${RECIPE_SYSROOT_NATIVE}${libdir}/mw:${RECIPE_SYSROOT_NATIVE}${libdir}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+
     # rdk-halif-aidl runs the 'aidl' compiler at CMake configure time (CompileAidl.cmake uses execute_process).
     # Therefore, simply configuring each module is sufficient to generate sources/headers.
     for m in ${HAL_AIDL_MODULES}; do
