@@ -125,6 +125,9 @@ EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
 
 EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 
+SELECTED_OPTIMIZATION = "-O0 -g -pipe"
+CXXFLAGS:append = " -fno-omit-frame-pointer -fno-optimize-sibling-calls"
+CFLAGS:append   = " -fno-omit-frame-pointer -fno-optimize-sibling-calls"
 INHIBIT_PACKAGE_STRIP = "1"
 INHIBIT_SYSROOT_STRIP = "1"
 
