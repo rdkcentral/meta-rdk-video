@@ -50,7 +50,7 @@ CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-confi
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
-LDFLAGS:append:vdevice_x86-64-mw = " -L${STAGING_LIBDIR}/mw"
+LDFLAGS:append = " -L${STAGING_LIBDIR}/mw"
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
@@ -73,8 +73,20 @@ do_compile:prepend() {
 
         OBJ_DIR="${B}/aidl_stubs"
         mkdir -p "${OBJ_DIR}"
-        STUB_DIR="${STAGING_INCDIR}/com/rdk/hal/hdmicec"
-        HAL_DIR="${STAGING_INCDIR}/com/rdk/hal"
+        AIDL_CPP_DIR=$(find ${TMPDIR}/work \
+                -path "*/rdk-halif-aidl/*/build/current/cpp/com/rdk/hal" \
+                ! -path "*/package/*" \
+                ! -path "*/packages-split/*" \
+                ! -path "*/image/*" \
+                -type d 2>/dev/null | head -n1)
+
+        if [ -z "${AIDL_CPP_DIR}" ]; then
+                bbfatal "Unable to locate generated AIDL C++ sources"
+        fi
+
+        STUB_DIR="${AIDL_CPP_DIR}/hdmicec"
+        HAL_DIR="${AIDL_CPP_DIR}"
+        
         INCFLAGS="-I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/mw"
         for f in IHdmiCec IHdmiCecController IHdmiCecEventListener Property SendMessageStatus State; do
                 ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
