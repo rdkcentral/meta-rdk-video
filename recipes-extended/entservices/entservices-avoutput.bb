@@ -7,9 +7,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avoutput;${CMF_GITHUB_SRC_URI_SUFFIX} \
-	   file://0001-DS-COMRPC-guard-dsMgr-include-in-AVOutputBase.patch \
-	  "
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avoutput;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 # Release version - 2.1.3
 SRCREV = "cf2f0bbe000d57c139794d201c2ea989f4db1a90"
@@ -65,6 +63,23 @@ EXTRA_OECMAKE += " \
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
+
+# DS_COMRPC migration: comment out dsMgr.h in shared headers (DS_IARM/ still has it; DS_COMRPC/ path doesn't need it)
+do_configure:prepend() {
+    # DS_COMRPC migration: comment out DS C++ API headers not available without devicesettings
+    for f in ${S}/AVOutputBase.h ${S}/AVOutputSTB.h; do
+        [ -f "$f" ] || continue
+        sed -i 's|#include "dsMgr.h"|//#include "dsMgr.h" /* DS_COMRPC: removed with devicesettings */|g' "$f"
+        sed -i 's|#include "hdmiIn.hpp"|//#include "hdmiIn.hpp" /* DS_COMRPC: removed with devicesettings */|g' "$f"
+        sed -i 's|#include "host.hpp"|//#include "host.hpp" /* DS_COMRPC: removed with devicesettings */|g' "$f"
+        sed -i 's|#include "manager.hpp"|//#include "manager.hpp" /* DS_COMRPC: removed with devicesettings */|g' "$f"
+        sed -i 's|#include "audioOutputPort.hpp"|//#include "audioOutputPort.hpp" /* DS_COMRPC: removed with devicesettings */|g' "$f"
+        sed -i 's|#include "videoOutputPort.hpp"|//#include "videoOutputPort.hpp" /* DS_COMRPC: removed with devicesettings */|g' "$f"
+    done
+    # DS_COMRPC migration: remove -lds link from CMakeLists.txt (ds library removed)
+    # ds) closes the target_link_libraries() call — replace with just ) to keep cmake valid
+    sed -i 's/^[[:space:]]*ds)[[:space:]]*$/        )/' ${S}/CMakeLists.txt
+}
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
