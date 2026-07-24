@@ -40,10 +40,10 @@ PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
     hdmicecsink \
 "
-HDMICECSINK_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader entservices-helpers"
+HDMICECSINK_DEPS = "iarmbus iarmmgrs virtual/vendor-devicesettings-hal hdmicec hdmicecheader entservices-helpers"
 HDMICECSINK_DEPS:vdevice_x86-64-mw = "iarmbus hdmicec hdmicecheader vdevice-noop entservices-helpers"
 
-HDMICECSINK_RDEPS = "iarmbus devicesettings hdmicec entservices-helpers"
+HDMICECSINK_RDEPS = "iarmbus hdmicec entservices-helpers"
 HDMICECSINK_RDEPS:vdevice_x86-64-mw = "iarmbus hdmicec entservices-helpers"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
