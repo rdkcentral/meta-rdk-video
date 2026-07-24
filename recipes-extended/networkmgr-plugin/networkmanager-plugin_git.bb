@@ -19,7 +19,7 @@ S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/onroutechange"
 
-SRCREV = "fa3bf10d42e4dd7b60556d673788c890c4d4871f"
+SRCREV = "51fdfd22c28b298862602d40351483ce168bc52e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} entservices-cpc-apis "
@@ -43,6 +43,7 @@ EXTRA_OECMAKE += " \
                 -DENABLE_MIGRATION_MFRMGR_SUPPORT=ON \
                 -DUSE_CONNECTIVITY_CHECK_MGR=ON \
                 -DUSE_RDK_LOGGER=ON \
+		-DUSE_RFCAPI=ON \
                 "
 
 CXXFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal -I${STAGING_INCDIR}/WPEFramework/interfaces_cpc"

@@ -8,8 +8,8 @@ PV = "1.4.7"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "f6ccc493d26ec35f1c201546dfc4319aa8ec3048"
-SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
+SRCREV = "c35da2da5b52bbccdcf3a62d0e8dd7f98f13a370"
+SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/ccm_phase1;name=tr69hostif"
 
 DEPENDS += "safec-common-wrapper"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
