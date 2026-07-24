@@ -23,6 +23,8 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 
 DEPENDS += "wpeframework wpeframework-tools-native"
+# DS_COMRPC: iarmmgrs-hal include path needed for sysMgr.h when DS not in sysroot
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/iarmmgrs-hal -I${STAGING_INCDIR}/rdk/iarmbus"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "

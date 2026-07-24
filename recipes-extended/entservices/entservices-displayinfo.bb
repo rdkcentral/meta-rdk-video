@@ -10,6 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displayinfo;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
+           file://0001-DS-COMRPC-inline-edid-parser-constants-in-displayinfo.patch \
           "
 
 # Release version - 1.2.5

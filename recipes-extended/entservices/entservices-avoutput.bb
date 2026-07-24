@@ -7,7 +7,9 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avoutput;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avoutput;${CMF_GITHUB_SRC_URI_SUFFIX} \
+	   file://0001-DS-COMRPC-guard-dsMgr-include-in-AVOutputBase.patch \
+	  "
 
 # Release version - 2.1.3
 SRCREV = "cf2f0bbe000d57c139794d201c2ea989f4db1a90"
@@ -29,6 +31,8 @@ RDEPENDS:${PN} += "wpeframework"
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
+# DS_COMRPC: iarmbus include path for libIARM.h in AVOutputBase.h when DS removed
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/iarmbus"
 # ds-hal include path: needed by shared headers (AVOutputBase.h -> dsMgr.h -> dsTypes.h,
 # AVOutputSTB.h -> dsError.h). devicesettings-hal-headers provides the files; this -I
 # exposes them as bare includes. No libds.so or dsMgr runtime dependency.

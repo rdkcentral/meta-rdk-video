@@ -10,6 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsink;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
+	   file://0001-DS-COMRPC-skip-DS-cmake-vars-in-hdmicecsink.patch \
           "
 
 # Release version - 1.4.4

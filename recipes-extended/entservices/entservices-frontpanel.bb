@@ -22,6 +22,8 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
 RDEPENDS:${PN} += "wpeframework"
+# DS_COMRPC: iarmbus include path for libIARM.h when DS removed from sysroot
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/iarmbus"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
