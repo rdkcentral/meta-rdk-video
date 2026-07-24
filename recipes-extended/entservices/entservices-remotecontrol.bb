@@ -10,9 +10,9 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-remotecontrol;${CMF_GITHUB_SRC_URI_SUF
            file://rdkservices.ini \
           "
 
-PV = "1.0.4"
+PV = "1.0.6"
 PR = "r0"
-SRCREV = "a03383ff8967ab48237afdfdd0471fbcc83fbe81"
+SRCREV = "3a978a23c1f8a5eb9aadc3c22d071d3cdc1f0efd"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
