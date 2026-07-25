@@ -11,7 +11,7 @@ S = "${WORKDIR}/git"
 PV = "1.1.0"
 PR = "r0"
 
-SRCREV = "5ef1e5102434f1f325aa93abcebd4c519e0b3935"
+SRCREV = "da6e31d311c1c505e170d52dec7448d4e2418884"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdk-window-manager;${CMF_GITHUB_SRC_URI_SUFFIX}"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -26,6 +26,7 @@ do_install() {
     install -d ${D}/${libdir}
     install -d ${D}${libdir}/plugins/westeros
     install -d ${D}/${includedir}
+    install -d ${D}${datadir}/rdkwindowmanager-protocol
 
     install -m 755 ${B}/librdkwindowmanager.so ${D}/${libdir}/
 
@@ -57,6 +58,9 @@ do_install() {
         install -m 0755 ${B}/rdkwmtest ${D}/${bindir}/
     fi
 
+   if [ -f ${S}/extensions/firebolt_wm/protocol/firebolt_wm.xml ]; then
+      install -m 644 ${S}/extensions/firebolt_wm/protocol/firebolt_wm.xml ${D}${datadir}/rdkwindowmanager-protocol/
+   fi
     install -d ${D}${includedir}/rdkwindowmanager/include/
     install -m 644 ${S}/include/*.h ${D}${includedir}/rdkwindowmanager/include/
 }
@@ -76,4 +80,4 @@ FILES:${PN} += "${libdir}/plugins/westeros/libwstplugin_rdkwmfireboltwm.so"
 FILES:${PN} += "${bindir}/rdkwindowmanager"
 FILES:${PN} += "${bindir}/rdkwindowmanagertest"
 FILES:${PN} += "${bindir}/rdkwmtest"
-
+SYSROOT_DIRS:append = " ${datadir}/rdkwindowmanager-protocol"
