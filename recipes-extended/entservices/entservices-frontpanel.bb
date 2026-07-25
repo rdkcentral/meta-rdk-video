@@ -22,8 +22,8 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
 RDEPENDS:${PN} += "wpeframework"
-# DS_COMRPC: iarmbus include path for libIARM.h when DS removed from sysroot
-CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/iarmbus"
+# DS_COMRPC: iarmbus + iarmmgrs-hal include paths for libIARM.h/sysMgr.h when devicesettings absent
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
@@ -46,6 +46,7 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 # iarmbus/iarmmgrs retained for front-panel IARM event infrastructure
 # Rollback: restore the two removed packages to fields 3 and 4 below
 PACKAGECONFIG[frontpanel]           = "-DPLUGIN_FRONTPANEL=ON,,iarmbus iarmmgrs entservices-helpers,iarmbus entservices-helpers"
+
 EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
