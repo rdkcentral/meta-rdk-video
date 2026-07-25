@@ -49,17 +49,13 @@ EXTRA_OECMAKE += " \
     -DSECAPI_LIB=sec_api \
 "
 
-do_install:append() {
+# DS_COMRPC migration: PLUGIN_DEVICESETTINGS=OFF means cmake builds nothing and has
+# no 'install' target. Override do_install to avoid cmake --target install failure.
+do_install() {
     install -d ${D}${sysconfdir}/rfcdefaults
     if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
     then
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
-    fi
-
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
-        if [ -d "${D}/etc/WPEFramework/plugins" ]; then
-            find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
-        fi
     fi
 }
 
