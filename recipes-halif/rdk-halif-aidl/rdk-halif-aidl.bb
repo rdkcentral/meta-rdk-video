@@ -133,3 +133,5 @@ FILES:${PN}-dev += " \
     ${includedir}/hal/aidl \
     ${libdir}/libhal_aidl.so \
 "
+
+RM_WORK_EXCLUDE += "rdk-halif-aidl"
