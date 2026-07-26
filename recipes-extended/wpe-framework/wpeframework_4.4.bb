@@ -17,7 +17,7 @@ PR = "r46"
 PV = "4.4.6"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=OTEL_TEL-lat;name=thunder"
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=OTEL_TEL-lat-v2;name=thunder"
 
 SRCREV_thunder = "e8fc725e809140685af8998ee7fec7140a6d06fd"
 
