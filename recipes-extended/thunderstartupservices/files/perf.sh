@@ -28,6 +28,6 @@ fi
 export LD_LIBRARY_PATH=/opt/perf/packages-split/lib32-perf/usr/lib
 
 echo "$(date): perf.sh: Running perf record on tid=$tid -> perf${ts}.data ..."
-/opt/perf/packages-split/lib32-perf/usr/bin/perf record -o "/opt/logs/perf${ts}.data" -F 99 --tid "$tid" --call-graph fp -- sleep 200
+/opt/perf/packages-split/lib32-perf/usr/bin/perf record -o "/opt/logs/perf${ts}.data" -F 99 --tid "$tid" --call-graph dwarf,65528 -- sleep 200
 
 echo "$(date): perf.sh: Done. (exit=$?)"
