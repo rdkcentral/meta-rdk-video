@@ -20,8 +20,8 @@ RDEPENDS:${PN} = " devicesettings telemetry"
 RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
 
 DEPENDS += "safec-common-wrapper"
-DEPENDS:append = " rdk-halif-aidl libbinderrdk"
-DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinderrdk"
+DEPENDS:append = " rdk-halif-aidl-mw libbinderrdk"
+DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw libbinderrdk"
 
 ASNEEDED = ""
 ALLOW_EMPTY:${PN} = "1"
