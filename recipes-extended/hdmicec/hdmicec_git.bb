@@ -54,10 +54,25 @@ LDFLAGS:append = " -L${STAGING_LIBDIR}/mw"
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
-CFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/mw"
-CXXFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/mw"
-CFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/mw"
-CXXFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/mw"
+CFLAGS:append = " \
+    -I${STAGING_INCDIR}/mw \
+    -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
+"
+
+CXXFLAGS:append = " \
+    -I${STAGING_INCDIR}/mw \
+    -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
+"
+
+CFLAGS:append:vdevice_x86-64-mw = " \
+    -I${STAGING_INCDIR}/mw \
+    -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
+"
+
+CXXFLAGS:append:vdevice_x86-64-mw = " \
+    -I${STAGING_INCDIR}/mw \
+    -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
+"
 
 INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/ds-hal \
@@ -73,21 +88,17 @@ do_compile:prepend() {
 
         OBJ_DIR="${B}/aidl_stubs"
         mkdir -p "${OBJ_DIR}"
-        AIDL_CPP_DIR=$(find ${TMPDIR}/work \
-                -path "*/rdk-halif-aidl/*/build/current/cpp/com/rdk/hal" \
-                ! -path "*/package/*" \
-                ! -path "*/packages-split/*" \
-                ! -path "*/image/*" \
-                -type d 2>/dev/null | head -n1)
+        AIDL_CPP_DIR="${RECIPE_SYSROOT}${datadir}/mw/rdk-halif-aidl/cpp/com/rdk/hal"
 
-        if [ -z "${AIDL_CPP_DIR}" ]; then
-                bbfatal "Unable to locate generated AIDL C++ sources"
+        if [ ! -d "${AIDL_CPP_DIR}" ]; then
+                bbfatal "Generated AIDL C++ sources not found: ${AIDL_CPP_DIR}"
         fi
+
 
         STUB_DIR="${AIDL_CPP_DIR}/hdmicec"
         HAL_DIR="${AIDL_CPP_DIR}"
         
-        INCFLAGS="-I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/mw"
+        INCFLAGS="-I${STAGING_INCDIR}/mw -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec"
         for f in IHdmiCec IHdmiCecController IHdmiCecEventListener Property SendMessageStatus State; do
                 ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
                         -c "${STUB_DIR}/${f}.cpp" -o "${OBJ_DIR}/${f}.o"
