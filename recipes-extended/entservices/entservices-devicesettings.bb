@@ -38,12 +38,15 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
+    devicesettings \
 "
-# DS_COMRPC migration: devicesettings PACKAGECONFIG disabled - dsMgr removed from platform
+# DS_COMRPC migration: devicesettings PACKAGECONFIG re-enabled to build
+# libWPEFrameworkDeviceSettings.so (Thunder plugin) WITHOUT libds.so dependency.
+# The PACKAGECONFIG[devicesettings] DEPENDS no longer includes devicesettings package.
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[devicesettings]       = "-DPLUGIN_DEVICESETTINGS=ON,-DPLUGIN_DEVICESETTINGS=OFF,iarmbus iarmmgrs virtual/vendor-devicesettings-hal entservices-helpers,iarmbus entservices-helpers"
+PACKAGECONFIG[devicesettings]       = "-DPLUGIN_DEVICESETTINGS=ON,-DPLUGIN_DEVICESETTINGS=OFF,iarmbus iarmmgrs entservices-helpers,iarmbus entservices-helpers"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
@@ -51,9 +54,7 @@ EXTRA_OECMAKE += " \
     -DSECAPI_LIB=sec_api \
 "
 
-# DS_COMRPC migration: PLUGIN_DEVICESETTINGS=OFF means cmake builds nothing and has
-# no 'install' target. Override do_install to avoid cmake --target install failure.
-do_install() {
+do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
     if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
     then
