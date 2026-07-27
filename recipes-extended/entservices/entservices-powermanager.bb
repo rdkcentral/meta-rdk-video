@@ -3,6 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
 PV = "1.4.7"
+PV:vdevice_x86-64-mw = "1.4.7.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -14,7 +15,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFF
 
 # Release version - 1.4.7
 SRCREV = "924d72b6974967859ffa44d66eb9860a2aa08541"
-SRCREV:vdevice_x86-64-mw = "e37fdd43e01183e9e20d6d7968f9854bafeade37"
+SRCREV:vdevice_x86-64-mw = "47a795a416c8b9059135e399061695e489358482"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
