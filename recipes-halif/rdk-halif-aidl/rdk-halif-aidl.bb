@@ -26,6 +26,8 @@ S = "${WORKDIR}/git"
 
 inherit cmake
 
+PROVIDES += "rdk-halif-aidl-mw"
+
 DEPENDS += " \
     libbinderrdk \
     libbinderrdk-native \
