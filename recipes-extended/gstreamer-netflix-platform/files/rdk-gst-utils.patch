@@ -1,0 +1,77 @@
+diff --git a/Makefile b/Makefile
+index ccd65de..6fc5563 100644
+--- a/Makefile
++++ b/Makefile
+@@ -19,7 +19,7 @@
+ 
+ 
+ EXTRA_CXXFLAGS = -Wno-attributes -Wall -g -fpermissive -std=c++1y -fPIC
+-EXTRA_LDFLAGS = -lgstreamer-1.0 -lglib-2.0 -Wl,-rpath=../../,-rpath=./ -lrdkgstreamerutilsplatform
++EXTRA_LDFLAGS = -lds -ldshalcli -lds-cli -lIARMBus -lgstreamer-1.0 -lglib-2.0 -Wl,-rpath=../../,-rpath=./ -lrdkgstreamerutilsplatform
+ 
+ SOURCES = rdk_gstreamer_utils.cpp
+ 
+diff --git a/rdk_gstreamer_utils.cpp b/rdk_gstreamer_utils.cpp
+index 8df965f..f03aef1 100644
+--- a/rdk_gstreamer_utils.cpp
++++ b/rdk_gstreamer_utils.cpp
+@@ -24,8 +24,18 @@
+ #include <glib.h>
+ #include <string.h>
+ #include <dlfcn.h>
++#include "manager.hpp"
++#include "host.hpp"
++#include "dsTypes.h"
++#include "exception.hpp"
++#include "libIBus.h"
++#include <vector>
++#include <iostream>
++#include <string>
++
+ 
+ using namespace std;
++static bool initialised = false;
+ 
+ namespace rdk_gstreamer_utils {
+ 
+@@ -229,6 +239,40 @@ namespace rdk_gstreamer_utils {
+ 
+     void SetAudioServerParam(bool enabled)
+     {
++       bool check = false;
++       IARM_Result_t res;
++       std::vector<std::string> audioConfigList;
++      if (!initialised) {
++      res = IARM_Bus_Init("Netflix");
++       LOG_RGU("IARM_BUS Init: %d", res);
++       if (res == IARM_RESULT_SUCCESS || res == IARM_RESULT_INVALID_STATE /* already inited or connected */) {
++             res = IARM_Bus_Connect();
++            LOG_RGU("IARM_Bus_Connect: %d", res);
++       }
++
++       device::Manager::Initialize();
++        LOG_RGU("device::Manager::Initialize success");
++       initialised = true;
++      }
++      try {
++            LOG_RGU("Calling aPort.setContinuousAudioOutputMode\n");
++     //      device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort("HDMI_ARC0");
++     //      aPort.setContinuousAudioOutputMode(enabled);
++     //
++             device::Host::getInstance().setApplicationAudioConfig("CONTINUOUS_AUDIO_OUTPUT", enabled);
++            device::Host::getInstance().getApplicationAudioConfig("CONTINUOUS_AUDIO_OUTPUT", &check);
++             LOG_RGU("Calling aPort.getApplicationAudioConfig %d\n", check);
++            device::Host::getInstance().getApplicationAudioConfigList(audioConfigList);
++            for (std::vector<std::string>::iterator it = audioConfigList.begin(); it != audioConfigList.end(); it++) {
++                    LOG_RGU("Calling aPort.getApplicationAudioConfig %s\n", *it);
++            }
++
++        }
++        catch(const device::Exception& err) {
++                LOG_RGU("Exception calling setContinuous audio output mode\n");
++        }
++
++
+        SetAudioServerParam_soc(enabled);
+     }
+ 
