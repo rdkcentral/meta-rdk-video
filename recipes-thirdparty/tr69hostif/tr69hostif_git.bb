@@ -79,6 +79,9 @@ CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAF
 LDFLAGS:remove = "-lproc-3.2.8"
 LDFLAGS += "-lprocps"
 
+#To test till mfrutil returns the right value
+CXXFLAGS += " -DUSE_DEV_PROPERTIES_CONF "
+
 CXXFLAGS:append:rdktv = " -DUSE_NONSECURE_TR181_LOCALSTORE "
 CXXFLAGS:append:rdktv = " -DENABLE_VIDEO_TELEMETRY "
 CXXFLAGS += " -DFETCH_PRODUCTCLASS_FROM_MFRLIB "
