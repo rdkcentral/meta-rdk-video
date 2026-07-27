@@ -8,12 +8,12 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "git://github.com/rdkcentral/entservices-powermanager.git;protocol=https;branch=dbg/MessageControl \
            file://rdkservices.ini \
           "
 
 # Release version - 1.4.7
-SRCREV = "924d72b6974967859ffa44d66eb9860a2aa08541"
+SRCREV = "727862e9279509ae0d30e2663b6b3d82c24ef07b"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
