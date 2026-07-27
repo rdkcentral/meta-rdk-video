@@ -49,9 +49,6 @@ do_configure() {
     rm -rf ${AIDL_GEN_DIR}
     install -d ${AIDL_GEN_DIR}
 
-    #
-    # Native aidl links against libbinderrdk-native
-    #
     export LD_LIBRARY_PATH="${RECIPE_SYSROOT_NATIVE}${libdir}/mw:${RECIPE_SYSROOT_NATIVE}${libdir}:${LD_LIBRARY_PATH}"
 
     for m in ${HAL_AIDL_MODULES}; do
@@ -94,44 +91,65 @@ do_compile() {
 
 do_install() {
 
-    install -d ${D}${includedir}
+    #
+    # Install generated headers under /usr/include/mw
+    #
+    install -d ${D}${includedir}/mw
 
     if [ -d ${AIDL_GEN_DIR}/h ]; then
-        cp -apr ${AIDL_GEN_DIR}/h/* ${D}${includedir}
+        cp -apr ${AIDL_GEN_DIR}/h/* \
+            ${D}${includedir}/mw/
     fi
 
+    #
+    # Install generated cpp sources
+    #
+    if [ -d ${AIDL_GEN_DIR}/cpp ]; then
+        install -d ${D}${datadir}/mw/rdk-halif-aidl/cpp
+        cp -apr ${AIDL_GEN_DIR}/cpp/* \
+            ${D}${datadir}/mw/rdk-halif-aidl/cpp/
+    fi
+
+    #
+    # Install original AIDL files under /usr/include/mw
+    #
     for d in ${HAL_AIDL_MODULES} common; do
         if [ -d ${S}/${d}/${AIDL_SRC_VERSION} ]; then
             tar --no-same-owner -cpf - \
                 -C ${S}/${d}/${AIDL_SRC_VERSION} . \
             | tar --no-same-owner -xpf - \
-                -C ${D}${includedir}
+                -C ${D}${includedir}/mw
         fi
     done
 
-    find ${D}${includedir}/hal/aidl -name CMakeLists.txt -delete || true
+    #
+    # Remove unnecessary CMake files
+    #
+    find ${D}${includedir}/mw/hal/aidl -name CMakeLists.txt -delete || true
 
-    install -d ${D}${libdir}
+    #
+    # Install library into /usr/lib/mw
+    #
+    install -d ${D}${libdir}/mw
 
     install -m 0755 \
         ${B}/lib/libhal_aidl.so.${AIDL_LIB_VERSION} \
-        ${D}${libdir}/
+        ${D}${libdir}/mw/
 
     ln -sf libhal_aidl.so.${AIDL_LIB_VERSION} \
-        ${D}${libdir}/libhal_aidl.so.${AIDL_LIB_SONAME_MAJOR}
+        ${D}${libdir}/mw/libhal_aidl.so.${AIDL_LIB_SONAME_MAJOR}
 
     ln -sf libhal_aidl.so.${AIDL_LIB_SONAME_MAJOR} \
-        ${D}${libdir}/libhal_aidl.so
+        ${D}${libdir}/mw/libhal_aidl.so
 }
 
 FILES:${PN} += " \
-    ${libdir}/libhal_aidl.so.* \
+    ${libdir}/mw/libhal_aidl.so.* \
 "
 
 FILES:${PN}-dev += " \
-    ${includedir}/hal/h \
-    ${includedir}/hal/aidl \
-    ${libdir}/libhal_aidl.so \
+    ${includedir}/mw/hal/h \
+    ${includedir}/mw/hal/aidl \
+    ${libdir}/mw/libhal_aidl.so \
+    ${datadir}/mw/rdk-halif-aidl \
 "
-
-RM_WORK_EXCLUDE += "rdk-halif-aidl"
