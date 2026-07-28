@@ -58,9 +58,9 @@ CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
 CFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/halif/hdmicec/current/include -I${TMPDIR}/sysroots-ipk-components/usr/include/halif/hdmicec/current/include -I${TMPDIR}/sysroots-ipk-components/usr/include/halif/common/current/include -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
-CFLAGS:append = " -I${STAGING_INCDIR}/halif/ds-hal "
+CFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
 CXXFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/halif/hdmicec/current/include -I${TMPDIR}/sysroots-ipk-components/usr/include/halif/hdmicec/current/include -I${TMPDIR}/sysroots-ipk-components/usr/include/halif/common/current/include -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
-CXXFLAGS:append = " -I${STAGING_INCDIR}/halif/ds-hal "
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
 CFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
 CXXFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
 
