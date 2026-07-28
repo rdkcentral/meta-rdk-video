@@ -17,8 +17,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-mediaanddrm;${CMF_GITHUB_SRC_URI_SUFFI
            ${@bb.utils.contains('DISTRO_FEATURES', 'wpe_r4_4','file://0003-R4.4.1-SystemAudioPlayer-compilation-error.patch','',d)} \
           "
           
-# Release version - 1.9.2
-SRCREV = "9f773f3200ff1bc0ee9bde0497eebbed67c70993"
+# Release version - 1.9.3
+SRCREV = "ff01b5b894fb0b0a5eac9ffdffefc8084f74cfaa"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
