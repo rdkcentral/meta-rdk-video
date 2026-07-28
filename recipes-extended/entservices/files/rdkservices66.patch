@@ -1,5 +1,5 @@
 diff --git a/OpenCDMi/FrameworkRPC.cpp b/OpenCDMi/FrameworkRPC.cpp
-index bb4254b..d3f89eb 100644
+index bb4254b..e05c990 100644
 --- a/OpenCDMi/FrameworkRPC.cpp
 +++ b/OpenCDMi/FrameworkRPC.cpp
 @@ -70,6 +70,39 @@ namespace Plugin {
@@ -495,12 +495,12 @@ index bb4254b..d3f89eb 100644
 +                    return result;
 +            }
 +
-+           Exchange::OCDM_RESULT GetLibraryVersion(const std::string& keySystem, uint32_t version) const override
++           Exchange::OCDM_RESULT GetLibraryVersion(const std::string& keySystem, uint8_t* versionOut) const override
 +           {
 +                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
 +                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
 +                    if (system != nullptr) {
-+                        CDMi::CDMi_RESULT mediasystem_return = system->GetLibraryVersion(version);
++                        CDMi::CDMi_RESULT mediasystem_return = system->GetLibraryVersion(reinterpret_cast<uint32_t*>(versionOut));
 +                        if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
 +                        {
 +                            result = Exchange::OCDM_SUCCESS;
