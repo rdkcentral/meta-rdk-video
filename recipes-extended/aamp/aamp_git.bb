@@ -24,6 +24,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 AAMP_RELEASE_TAG_NAME ?= "5.9.1.0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/aamp;${CMF_GITHUB_SRC_URI_SUFFIX};name=aamp"
+SRC_URI += "file://0001-Fix-PersistentWatermarkClassObj-leak.patch"
 
 S = "${WORKDIR}/git"
 

@@ -1,0 +1,34 @@
+From 9b6a564f0880f7a612190e326dcf20f8fb3c9d45 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Tue, 28 Jul 2026 19:59:21 +0000
+Subject: [PATCH] Fix PersistentWatermarkClassObj leak
+
+---
+ jsbindings/PersistentWatermark/PersistentWatermark.cpp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/jsbindings/PersistentWatermark/PersistentWatermark.cpp b/jsbindings/PersistentWatermark/PersistentWatermark.cpp
+index 0640891a1..48782e5c9 100644
+--- a/jsbindings/PersistentWatermark/PersistentWatermark.cpp
++++ b/jsbindings/PersistentWatermark/PersistentWatermark.cpp
+@@ -260,7 +260,7 @@ static JSClassRef PersistentWatermark_object_ref() {
+ static JSObjectRef PersistentWatermark_JS_class_constructor(JSContextRef ctx, JSObjectRef constructor, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
+ {
+ 	LOG_TRACE("Enter");
+-	static JSObjectRef newObj = JSObjectMake(ctx, PersistentWatermark_object_ref(), NULL);
++	JSObjectRef newObj = JSObjectMake(ctx, PersistentWatermark_object_ref(), NULL);
+ 	LOG_TRACE("Exit");
+ 	return newObj;
+ }
+@@ -301,6 +301,8 @@ void PersistentWatermark_LoadJS(void* context)
+ 	JSObjectSetProperty(jsContext, globalObj, namestr, PersistentWatermarkClassObj, kJSPropertyAttributeReadOnly | kJSPropertyAttributeDontDelete, NULL);
+ 	JSClassRelease(PersistentWatermarkClass);
+ 	JSStringRelease(namestr);
++
++	JSValueUnprotect(jsContext, PersistentWatermarkClassObj);
+ 	LOG_WARN_EX("PersistentWatermark:done with registering persistent watermark class version %s", PERSISTENT_WATERMARK_VERSION);
+ 	LOG_TRACE("Exit");
+ };
+-- 
+2.34.1
+
