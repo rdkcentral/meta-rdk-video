@@ -11,12 +11,12 @@ SUMMARY = "Rialto"
 LICENSE  = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=327e572d11c37963726ba0b02d30cf2c"
 
-PV = "0.19.0-r2"
+PV = "0.19.0-r5"
 PR = "r0"
 
 require rialto_revision.inc
 
-SRCREV = "2ee63f3db888f08f99f324316a8cbce85df89a21"
+SRCREV = "60f0d1f30fbfc3f4bcccd08982187b4e8507cf50"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=release/v0.19.0"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
