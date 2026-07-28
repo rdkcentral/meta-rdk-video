@@ -7,15 +7,15 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=76ae13a6bce633447ea2284294f073c2"
 SRCREV = "9d06c14da6b0c266865b117114159eaf5bb3f009"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
-PV = "1.4.6"
+PV = "1.4.8"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 S = "${WORKDIR}/git"
 
 DEPENDS = "iarmbus iarmmgrs e2fsprogs libsoup libsyswrapper yajl \
            devicesettings procps glib-2.0 \
-           cjson telemetry libtinyxml2 dcmd\
-          "
+           cjson telemetry libtinyxml2\
+	  "
 DEPENDS:append = " rdk-logger libparodus parodus virtual/vendor-devicesettings-hal ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
 
 DEPENDS += " python-lxml-native"
@@ -30,7 +30,7 @@ DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " 
 # Add wpeframework-clientlibraries dependency
 DEPENDS += "wpeframework-clientlibraries"
 RDEPENDS:${PN}:append = " wpeframework-clientlibraries "
-LDFLAGS += "-lWPEFrameworkPowerController -luploadstblogs"
+LDFLAGS += "-lWPEFrameworkPowerController"
 
 # Add remotedebugger dependency
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'rrd', ' remotedebugger', " ", d)}"
@@ -107,7 +107,6 @@ PACKAGECONFIG[wifi] = "--enable-wifi,,,"
 PACKAGECONFIG[xre] = "--enable-xre,,"
 PACKAGECONFIG[moca] = "--enable-moca,,virtual/mocadriver"
 PACKAGECONFIG[moca2] = "--enable-moca2,,virtual/mocadriver"
-#PACKAGECONFIG[rf4ce] = "--enable-rf4ce,,"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth','bluetooth', '',d)}"
 PACKAGECONFIG[bluetooth] = "--enable-bt,,bluetooth-mgr,bluetooth-mgr"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetooth-mgr', '',d)}"
@@ -116,18 +115,18 @@ RDEPENDS:${PN}:append  = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth','
 PACKAGECONFIG[emmc] = "--enable-emmc,--disable-emmc"
 
 INCLUDE_DIRS += "\
-        -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds \
-        -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds-hal \
+	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds \
+	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds-hal \
     -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/halif/ds-hal \
-        -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds-rpc \
-        -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmbus \
-        -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/tr69Bus \
-        -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/mfr \
-        -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/power \
-        -I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs-hal \
-        -I${PKG_CONFIG_SYSROOT_DIR}/usr/include \
-        -I${PKG_CONFIG_SYSROOT_DIR}${includedir}/WPEFramework/powercontroller \
-        "
+	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/ds-rpc \
+	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmbus \
+	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/tr69Bus \
+	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/mfr \
+	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs/power \
+	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs-hal \
+	-I${PKG_CONFIG_SYSROOT_DIR}/usr/include \
+	-I${PKG_CONFIG_SYSROOT_DIR}${includedir}/WPEFramework/powercontroller \
+	"
 
 CPPFLAGS += "${INCLUDE_DIRS}"
 CPPFLAGS:append = " -DMEDIA_CLIENT "
@@ -144,32 +143,25 @@ do_configure:prepend() {
         sed -i -e "s%lproc-3.2.8%lprocps%"  ${S}/src/hostif/handlers/Makefile.am
 }
 
-do_install:append:client() {
-       rm -rf ${D}${sysconfdir}/tr181_snmpOID.conf
-}
-
 PACKAGECONFIG += "${@bb.utils.contains('DISTRO_FEATURES', 'emmc_storage', 'emmc', '', d)}"
 PACKAGECONFIG:remove = "${@bb.utils.contains('DISTRO_FEATURES','emmc_storage','sdcard','',d)} "
 
 
 do_install:append() {
-        install -d ${D}${includedir}/rdk/tr69hostif ${D}${systemd_unitdir}/system
-        install -d ${D}${sysconfdir}
-        if ${@bb.utils.contains('DISTRO_FEATURES', 'NEW_HTTP_SERVER_DISABLE', 'true', 'false', d)}; then
-                install -m 0644 ${S}/tr69hostif_no_new_http_server.service ${D}${systemd_unitdir}/system/tr69hostif.service
-        else
-                install -m 0644 ${S}/tr69hostif.service ${D}${systemd_unitdir}/system
-        fi
+	install -d ${D}${includedir}/rdk/tr69hostif ${D}${systemd_unitdir}/system
+	install -d ${D}${sysconfdir}
+	if ${@bb.utils.contains('DISTRO_FEATURES', 'NEW_HTTP_SERVER_DISABLE', 'true', 'false', d)}; then
+		install -m 0644 ${S}/tr69hostif_no_new_http_server.service ${D}${systemd_unitdir}/system/tr69hostif.service
+	else
+		install -m 0644 ${S}/tr69hostif.service ${D}${systemd_unitdir}/system
+	fi
     sed -i 's/@DSMGR_DEPENDENCY@/iarmbusd.service/' ${D}${systemd_unitdir}/system/tr69hostif.service
         install -m 0644 ${S}/partners_defaults.json ${D}${sysconfdir}
-        install -m 0644 ${S}/ip-iface-monitor.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/src/hostif/include/*.h ${D}${includedir}/rdk/tr69hostif
-        install -m 0644 ${S}/conf/mgrlist.conf ${D}${sysconfdir}
+	install -m 0644 ${S}/ip-iface-monitor.service ${D}${systemd_unitdir}/system
+	install -m 0644 ${S}/src/hostif/include/*.h ${D}${includedir}/rdk/tr69hostif
+	install -m 0644 ${S}/conf/mgrlist.conf ${D}${sysconfdir}
         install -d ${D}${base_libdir}/rdk
         install -m 0644 ${S}/src/hostif/parodusClient/parodus.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/src/hostif/parodusClient/parodus.path ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/src/hostif/parodusClient/parodus_v4.path ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/src/hostif/parodusClient/parodus_v6.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/src/hostif/parodusClient/parodus_bsp.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/src/hostif/parodusClient/conf/notify_webpa_cfg.json ${D}${sysconfdir}
         install -m 0644 ${S}/src/hostif/parodusClient/conf/webpa_cfg.json ${D}${sysconfdir}
@@ -183,7 +175,7 @@ do_install:append() {
         install -d ${D}${NONROOT_USER_DIR}
         chown ${NONROOT_USER}:non-root -R ${D}${NONROOT_USER_DIR}
 
-
+       
         install -d ${D}${sysconfdir}
         install -m 0644 ${S}/src/hostif/parodusClient/waldb/data-model/data-model-generic.xml ${D}${sysconfdir}/data-model-generic.xml
         install -m 0644 ${S}/src/hostif/parodusClient/waldb/data-model/data-model-tv.xml ${D}${sysconfdir}/data-model-tv.xml
@@ -205,15 +197,9 @@ FILES:${PN} += "${systemd_unitdir}/system/tr69hostif.service"
 
 SYSTEMD_SERVICE:${PN} += "ip-iface-monitor.service"
 FILES:${PN} += "${systemd_unitdir}/system/ip-iface-monitor.service"
-SYSTEMD_SERVICE:${PN} += "parodus.service"
-SYSTEMD_SERVICE:${PN} += "parodus.path"
-SYSTEMD_SERVICE:${PN} += "parodus_v4.path"
-SYSTEMD_SERVICE:${PN} += "parodus_v6.path"
+SYSTEMD_SERVICE:${PN} += "parodus.service" 
 SYSTEMD_SERVICE:${PN} += "parodus_bsp.path"
-FILES:${PN} += "${systemd_unitdir}/system/parodus.service"
-FILES:${PN} += "${systemd_unitdir}/system/parodus.path"
-FILES:${PN} += "${systemd_unitdir}/system/parodus_v4.path"
-FILES:${PN} += "${systemd_unitdir}/system/parodus_v6.path"
+FILES:${PN} += "${systemd_unitdir}/system/parodus.service" 
 FILES:${PN} += "${systemd_unitdir}/system/parodus_bsp.path"
 FILES:${PN} += "${base_libdir}/*"
 FILES:${PN} += "${sysconfdir}/*"
