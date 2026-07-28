@@ -91,13 +91,27 @@ do_install() {
     done
 
     # Adding final THUNDER_STARTUP_SERVICES into the Requires= line of the target
-    FINAL_SERVICES="$(echo "${THUNDER_STARTUP_SERVICES}" | tr '\n' ' ')"
+    #FINAL_SERVICES="$(echo "${THUNDER_STARTUP_SERVICES}" | tr '\n' ' ')"
+    # Deduplicate services to avoid 'invalid argument' systemd error on duplicate entries
+    FINAL_SERVICES="$(echo "${THUNDER_STARTUP_SERVICES}" | tr ' ' '\n' | awk 'NF && !seen[$0]++' | tr '\n' ' ')"
     TARGET_FILE="${D}${systemd_system_unitdir}/wpeframework-services.target"
 
     if grep -q "^Requires=" "$TARGET_FILE"; then
         # Append to existing Requires= line
         sed -i "/^Requires=/ s|$| ${FINAL_SERVICES}|" "$TARGET_FILE"
     fi
+}
+
+# DS_COMRPC migration: remove dsmgr.service from all Thunder plugin service dependencies.
+# dsMgr daemon is removed; services with Requires=dsmgr.service would stay inactive (dead).
+ROOTFS_POSTPROCESS_COMMAND:append = " thunderstartup_remove_dsmgr_deps; "
+thunderstartup_remove_dsmgr_deps() {
+    for f in ${IMAGE_ROOTFS}${systemd_system_unitdir}/wpeframework-*.service; do
+        [ -f "$f" ] || continue
+        sed -i 's/ dsmgr\.service\b//g' "$f"
+        sed -i 's/\bdsmgr\.service //g' "$f"
+        sed -i 's/\bdsmgr\.service\b//g' "$f"
+    done
 }
 
 do_install:append() {
