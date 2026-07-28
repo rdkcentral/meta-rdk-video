@@ -19,7 +19,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=topic/myotel2;name=thunder"
 
-SRCREV_thunder = "8bc936385f948c14be16fc9622ef12b99b2f33c2"
+SRCREV_thunder = "7323c67846ad6ad3622cded859aacbb5bb793695"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
