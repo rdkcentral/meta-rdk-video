@@ -11,14 +11,14 @@ SUMMARY = "Rialto-gstreamer"
 LICENSE = "LGPL-2.1-only"
 LIC_FILES_CHKSUM = "file://COPYING.LGPL;md5=23c2a5e0106b99d75238986559bb5fc6"
 
-PV = "0.17.0"
-PR = "r0"
+PV = "0.20.1"
+PR = "r1"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 require rialto_revision.inc
 
-SRCREV = "214538922ac739bc069568ed4b4f8391314d8deb"
-SRC_URI = "${CMF_GITHUB_ROOT}/rialto-gstreamer;protocol=${CMF_GIT_PROTOCOL};branch=${CMF_GITHUB_MASTER_BRANCH}"
+SRCREV = "7460e781e0be762648f26f45f4667ebec9c49590"
+SRC_URI = "${CMF_GITHUB_ROOT}/rialto-gstreamer;protocol=${CMF_GIT_PROTOCOL};branch=release/v0.20.1"
 
 DEPENDS = "openssl jsoncpp glib-2.0 gstreamer1.0 gstreamer1.0-plugins-base wpeframework-clientlibraries protobuf protobuf-native rialto rialto-ocdm"
 
