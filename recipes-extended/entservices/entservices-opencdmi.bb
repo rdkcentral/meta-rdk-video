@@ -13,6 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
+           file://open_cdm_imp_fps_ocdm.patch \
+           file://opencdmi-fps-plugin-frameworkrpc.patch \
           "
           
 # Release version - 2.0.2
