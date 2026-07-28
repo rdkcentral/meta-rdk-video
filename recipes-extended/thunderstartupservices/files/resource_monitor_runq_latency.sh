@@ -130,20 +130,22 @@ run_ftrace() {
 
     log "Using ftrace at $TRACEFS"
     # clean slate
-    echo 0                 > "$TRACEFS/tracing_on"        2>/dev/null
-    echo nop               > "$TRACEFS/current_tracer"    2>/dev/null
-    : > "$TRACEFS/trace"                                  2>/dev/null
-    : > "$TRACEFS/set_event"                              2>/dev/null
+    echo 0   > "$TRACEFS/tracing_on"     2>/dev/null
+    echo nop > "$TRACEFS/current_tracer" 2>/dev/null
+    : > "$TRACEFS/trace"                 2>/dev/null
+    : > "$TRACEFS/set_event"             2>/dev/null
 
-    # enable the scheduler events we need
-    echo 1 > "$TRACEFS/events/sched/sched_wakeup/enable"      2>/dev/null
-    echo 1 > "$TRACEFS/events/sched/sched_wakeup_new/enable"  2>/dev/null
-    echo 1 > "$TRACEFS/events/sched/sched_switch/enable"      2>/dev/null
-    # optional: exact kernel-computed run-queue wait (needs CONFIG_SCHEDSTATS)
-    if [ -e "$TRACEFS/events/sched/sched_stat_wait/enable" ]; then
-        echo 1 > "$TRACEFS/events/sched/sched_stat_wait/enable" 2>/dev/null
-        log "sched_stat_wait available (CONFIG_SCHEDSTATS on)."
-    fi
+    # Thunder is about to be restarted, so the Monitor::IResource thread will be
+    # re-created with a NEW tid. We therefore arm a name (comm) filter now and
+    # restrict to the WPEFramework daemon's tid(s) at parse time (see below).
+    enable_filtered sched_wakeup       "comm == \"$COMM\""
+    enable_filtered sched_wakeup_new   "comm == \"$COMM\""
+    enable_filtered sched_switch       "next_comm == \"$COMM\""
+    enable_filtered sched_stat_wait    "comm == \"$COMM\""
+    enable_filtered sched_stat_sleep   "comm == \"$COMM\""
+    enable_filtered sched_stat_blocked "comm == \"$COMM\""
+    enable_filtered sched_stat_iowait  "comm == \"$COMM\""
+    enable_filtered sched_stat_runtime "comm == \"$COMM\""
 
     echo 1 > "$TRACEFS/tracing_on"
 
@@ -158,7 +160,16 @@ run_ftrace() {
     : > "$TRACEFS/set_event" 2>/dev/null
     log "Raw trace saved: $RAW"
 
-    parse_ftrace "$RAW" "$COMM" | tee "$REPORT"
+    # Keep ONLY the WPEFramework daemon's Monitor::IResource tid(s), resolved now
+    # (after the restart, so the tid is the freshly-created one).
+    _daemon_tids=$(resolve_daemon_tids)
+    if [ -n "$_daemon_tids" ]; then
+        log "Restricting report to WPEFramework daemon tid(s): $_daemon_tids"
+    else
+        log "WARN: could not resolve WPEFramework daemon tid; reporting all '$COMM' threads."
+    fi
+
+    parse_ftrace "$RAW" "$COMM" "$_daemon_tids" | tee "$REPORT"
 }
 
 # Parse wakeup->switch pairs and (if present) sched_stat_wait for the thread.
@@ -386,10 +397,27 @@ run_perf() {
     wait "$PERF_PID"
 
     log "perf data: $PERFDATA"
+
+    # Restrict the report to the WPEFramework daemon's Monitor::IResource tid(s).
+    # perf sched latency prints each task as "comm:tid", so we match "$COMM:<tid>"
+    # for the daemon tid(s) only (resolved now, after the restart).
+    _daemon_tids=$(resolve_daemon_tids)
+    if [ -n "$_daemon_tids" ]; then
+        # build an alternation like: Monitor::IResou:4556|Monitor::IResou:4560
+        _pat=""
+        for _tid in $_daemon_tids; do
+            _pat="${_pat:+$_pat|}$COMM:$_tid"
+        done
+        log "Restricting report to WPEFramework daemon tid(s): $_daemon_tids"
+    else
+        _pat="$COMM"
+        log "WARN: could not resolve WPEFramework daemon tid; reporting all '$COMM' threads."
+    fi
+
     {
-        echo "=== perf sched latency (filtered: $COMM) ==="
+        echo "=== perf sched latency (filtered: ${_pat}) ==="
         perf sched latency -i "$PERFDATA" -s max 2>/dev/null | \
-            awk 'NR<=2 || $0 ~ /'"$COMM"'/'
+            awk 'NR<=2 || $0 ~ /'"$_pat"'/'
         echo ""
         echo "Columns: Task | Runtime ms | Switches | Avg delay ms | Max delay ms | Max delay at"
         echo "'Avg/Max delay' == run-queue (wakeup-to-run) latency."
@@ -418,15 +446,33 @@ enable_filtered() {
     echo 1        > "$TRACEFS/events/sched/$_ev/enable" 2>/dev/null
 }
 
-# Resolve the TID of Monitor::IResou across ALL WPEFramework processes
-# (main daemon + WPEProcess plugin hosts, since Monitor plugin may run OOP).
+# Resolve the Monitor::IResou tid(s) of the WPEFramework *daemon only*.
+# Picks the lowest-PID WPEFramework process (the main daemon, since WPEProcess
+# plugin hosts have a different comm and are excluded by pgrep -x) and returns
+# every matching thread tid inside it (normally exactly one). This is the single
+# source of truth used by every mode so that only the daemon's thread is kept.
+resolve_daemon_tids() {
+    _dpid=$(pgrep -x "$WPE_PROC" 2>/dev/null | sort -n | head -n1)
+    [ -z "$_dpid" ] && return 1
+    _tids=""
+    for _t in /proc/"$_dpid"/task/*; do
+        if grep -q "$COMM" "$_t/comm" 2>/dev/null; then
+            _tids="$_tids $(basename "$_t")"
+        fi
+    done
+    _tids=$(echo "$_tids" | sed 's/^ *//')
+    [ -n "$_tids" ] && { echo "$_tids"; return 0; }
+    return 1
+}
+
+# Resolve a single Monitor::IResou tid of the WPEFramework daemon (first match).
 resolve_target_tid() {
-    for _p in $(pgrep -x "$WPE_PROC" 2>/dev/null); do
-        for _t in /proc/"$_p"/task/*; do
-            if grep -q "$COMM" "$_t/comm" 2>/dev/null; then
-                echo "$(basename "$_t")"; return 0
-            fi
-        done
+    _dpid=$(pgrep -x "$WPE_PROC" 2>/dev/null | sort -n | head -n1)
+    [ -z "$_dpid" ] && return 1
+    for _t in /proc/"$_dpid"/task/*; do
+        if grep -q "$COMM" "$_t/comm" 2>/dev/null; then
+            echo "$(basename "$_t")"; return 0
+        fi
     done
     return 1
 }
@@ -564,17 +610,16 @@ show_boot() {
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
     cp "$TRACEFS/trace" "$RAW" 2>/dev/null
 
-    # Determine which TIDs belong to ANY WPEFramework process (daemon + WPEProcess hosts)
-    _valid_tids=""
-    for _p in $(pgrep -x "$WPE_PROC" 2>/dev/null); do
-        for _t in /proc/"$_p"/task/*; do
-            if grep -q "$COMM" "$_t/comm" 2>/dev/null; then
-                _tid=$(basename "$_t")
-                _valid_tids="$_valid_tids $_tid"
-                log "  Found: pid=$_p tid=$_tid comm=$COMM"
-            fi
+    # Keep ONLY the WPEFramework daemon (lowest PID) Monitor::IResource tid(s).
+    _valid_tids=$(resolve_daemon_tids)
+    if [ -n "$_valid_tids" ]; then
+        _dpid=$(pgrep -x "$WPE_PROC" 2>/dev/null | sort -n | head -n1)
+        for _tid in $_valid_tids; do
+            log "  Using: pid=$_dpid tid=$_tid comm=$COMM (WPEFramework daemon only)"
         done
-    done
+    else
+        log "  WARN: no WPEFramework daemon '$COMM' thread found; report may be empty."
+    fi
 
     log "Boot trace dumped: $RAW"
     parse_ftrace "$RAW" "$COMM" "$_valid_tids" | tee "$REPORT"
@@ -619,10 +664,10 @@ lock_target_tid() {
         exit 1
     fi
 
-    # Auto-resolve: search ALL WPEFramework processes (daemon + WPEProcess hosts)
+    # Auto-resolve: WPEFramework daemon only (lowest PID; WPEProcess excluded by -x)
     TARGET_TID=""
     _owner_pid=""
-    for _p in $(pgrep -x "$WPE_PROC" 2>/dev/null); do
+    for _p in $(pgrep -x "$WPE_PROC" 2>/dev/null | sort -n); do
         for _t in /proc/"$_p"/task/*; do
             if grep -q "$COMM" "$_t/comm" 2>/dev/null; then
                 TARGET_TID=$(basename "$_t")
@@ -649,7 +694,7 @@ lock_target_tid() {
     log "  Process : $WPE_PROC  pid=$_owner_pid"
     log "  Thread  : $COMM  (full: Monitor::IResource)"
     log "  TID     : $TARGET_TID"
-    log "  Verified: /proc/$_mpid/task/$TARGET_TID/comm = '$_verify'"
+    log "  Verified: /proc/$_owner_pid/task/$TARGET_TID/comm = '$_verify'"
     export TARGET_TID
 }
 
