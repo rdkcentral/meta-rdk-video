@@ -411,7 +411,7 @@ index 70df2b3..a27d78b 100644
 +                                else
 +                                {
 +                                   printf("******** Non FPS Non FPS Non FPS Non FPS Session Implementatio******** \n");
-+                                   Core::Service<SessionImplementation>::Create<SessionImplementation>(this, keySystem, sessionInterface, callback, &keyIds);
++                                    newEntry = Core::Service<SessionImplementation>::Create<SessionImplementation>(this, keySystem, sessionInterface, callback, &keyIds);
 +                                }
  
                                   session = newEntry;
