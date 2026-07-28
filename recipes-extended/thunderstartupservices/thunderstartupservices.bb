@@ -10,7 +10,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "ad5a4034a52812caf88665bec28ddc7406fbc3e2"
+SRCREV = "90d9b8a4a959964900049eb689c7ff2a0f38a866"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -104,8 +104,8 @@ do_install() {
 
 # DS_COMRPC migration: remove dsmgr.service from all Thunder plugin service dependencies.
 # dsMgr daemon is removed; services with Requires=dsmgr.service would stay inactive (dead).
-ROOTFS_POSTPROCESS_COMMAND:append = " thunderstartup_remove_dsmgr_deps; "
-thunderstartup_remove_dsmgr_deps() {
+ROOTFS_POSTPROCESS_COMMAND:append = " thunderstartup_strip_dsmgr; "
+thunderstartup_strip_dsmgr() {
     for f in ${IMAGE_ROOTFS}${systemd_system_unitdir}/wpeframework-*.service; do
         [ -f "$f" ] || continue
         sed -i 's/ dsmgr\.service\b//g' "$f"
