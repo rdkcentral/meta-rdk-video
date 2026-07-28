@@ -1,25 +1,21 @@
-From 0472a1c51fbf0c362072b5a4545db6a9d30d9903 Mon Sep 17 00:00:00 2001
+From 51b633a843b1658ea7971d158c1a0c40464c08f6 Mon Sep 17 00:00:00 2001
 From: yuvaramachandran_gurusamy <yuvaramachandran_gurusamy@comcast.com>
-Date: Fri, 26 Sep 2025 15:11:11 +0000
+Date: Thu, 9 Apr 2026 09:40:44 +0000
 Subject: [PATCH] RDKEMW-7840: Exception handling and retry added in
  tenableHDCP and hdcp service
 
 Signed-off-by: yuvaramachandran_gurusamy <yuvaramachandran_gurusamy@comcast.com>
 ---
- conf/hdcp.service |  6 ++++--
- tenableHDCP.cpp   | 15 ++++++++++++---
- 2 files changed, 16 insertions(+), 5 deletions(-)
+ conf/hdcp.service |  4 +++-
+ tenableHDCP.cpp   | 20 ++++++++++++++------
+ 2 files changed, 17 insertions(+), 7 deletions(-)
 
 diff --git a/conf/hdcp.service b/conf/hdcp.service
-index 44c40d63..9316de74 100755
+index 44c40d63..cc7701ca 100755
 --- a/conf/hdcp.service
 +++ b/conf/hdcp.service
-@@ -18,10 +18,12 @@
- ##########################################################################
- [Unit]
- Description=HDCP Service
--After=dsmgr.service iarmbusd.service
-+After=dsmgr.service iarmbusd.service hdmiservice.service
+@@ -21,7 +21,9 @@ Description=HDCP Service
+ After=dsmgr.service iarmbusd.service
  
  [Service]
 -ExecStart=/bin/sh -c '/usr/bin/tenableHDCP true >& /var/log/hdcp.log '
@@ -30,7 +26,7 @@ index 44c40d63..9316de74 100755
  [Install]
  WantedBy=multi-user.target
 diff --git a/tenableHDCP.cpp b/tenableHDCP.cpp
-index 90de10c3..c9ff9d06 100644
+index ac1d9096..10d277bd 100644
 --- a/tenableHDCP.cpp
 +++ b/tenableHDCP.cpp
 @@ -36,14 +36,17 @@
@@ -52,7 +48,28 @@ index 90de10c3..c9ff9d06 100644
      device::Manager::Initialize();
  
  
-@@ -129,12 +132,18 @@ Patch to remove the mfr dependency for enabling hdcp. Devicesettings hal handle
+@@ -55,7 +58,7 @@ int main(int argc, char *argv[])
+     }
+ 
+     int keySize = 0;
+-    char *hdcpKey = 0;
++    char *hdcpKey = NULL;
+ 	int IsMfrDataRead = false;
+     IARM_Bus_MFRLib_GetSerializedData_Param_t param_, *param = &param_;
+    
+@@ -115,10 +118,9 @@ int main(int argc, char *argv[])
+ 			}
+ 		}while(false == IsMfrDataRead);	
+     }
+-
+     try {
+ 	    printf("Setting HDCP [%s]\n", enabled);
+-		if(0 == keySize){
++		if((0 == keySize)||(NULL == hdcpKey)){
+ 			printf("Ignoring request, invalid parameters \n");
+ 		}else{
+ 	        device::VideoOutputPortType::getInstance(device::VideoOutputPortType::kHDMI).enabledHDCP(protectContent, hdcpKey, keySize);
+@@ -126,12 +128,18 @@ int main(int argc, char *argv[])
          }
      }
      catch (...) {
@@ -74,5 +91,5 @@ index 90de10c3..c9ff9d06 100644
 +    return returnValue;
  }
 -- 
-2.25.1
+2.44.4
 

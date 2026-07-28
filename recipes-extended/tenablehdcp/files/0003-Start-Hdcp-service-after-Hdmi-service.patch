@@ -1,0 +1,26 @@
+##########################################
+From: Christine Tai <chrsitinetai@realtek.com>
+Date: Tue, 15 Feb 2022 09:16:03 +0100
+Subject: [PATCH] Start Hdcp service after Hdmi service
+Change-Id: Ia0d327e697cfc205a5b07feb7a510ff075da29a3
+Source: Sky
+Upstream-Status: Pending
+Signed-off-by: Christine Tai <chrsitinetai@realtek.com>
+
+#########################################
+diff --git a/conf/hdcp.service b/conf/hdcp.service
+index cc7701ca..9316de74 100755
+--- a/conf/hdcp.service
++++ b/conf/hdcp.service
+@@ -18,7 +18,7 @@
+ ##########################################################################
+ [Unit]
+ Description=HDCP Service
+-After=dsmgr.service iarmbusd.service
++After=dsmgr.service iarmbusd.service hdmiservice.service
+ 
+ [Service]
+ ExecStart=/bin/sh -c '/usr/bin/tenableHDCP true >> /opt/logs/hdcp.log 2>&1'
+-- 
+2.44.4
+
