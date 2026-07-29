@@ -4,7 +4,7 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=76ae13a6bce633447ea2284294f073c2"
 
-SRCREV = "4fddb66f265737171d275ba8973ac0470140ba9b"
+SRCREV = "e6b0d4bb97bb5383c7796f043b1fae6ceb92397a"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
 PV = "1.4.8"
@@ -82,9 +82,8 @@ LDFLAGS += "-lprocps"
 CXXFLAGS:append:rdktv = " -DUSE_NONSECURE_TR181_LOCALSTORE "
 CXXFLAGS:append:rdktv = " -DENABLE_VIDEO_TELEMETRY "
 CXXFLAGS += " -DFETCH_PRODUCTCLASS_FROM_MFRLIB "
-#CXXFLAGS += " -Wall -Werror -Wno-cpp"
-#To test till mfrutil returns the right value
-CXXFLAGS += " -DUSE_DEV_PROPERTIES_CONF "
+CXXFLAGS += " -Wall -Werror -Wno-cpp"
+
 
 DEPENDS += " rbus "
 
