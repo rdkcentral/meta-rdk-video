@@ -32,6 +32,7 @@ FILES:${PN} += "${includedir}/xr_mq.h \
                 ${includedir}/xraudio_sdf.h \
                 ${includedir}/xraudio_ovc.h \
                 ${includedir}/xraudio_ppr.h \
+                ${includedir}/xraudio_mfv.h \
                 ${includedir}/xraudio_common.h \
                 ${includedir}/xraudio_platform.h \
                 ${includedir}/xraudio_version.h \
