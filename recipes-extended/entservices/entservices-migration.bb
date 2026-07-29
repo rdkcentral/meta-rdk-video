@@ -23,8 +23,8 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_dis
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
-DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
-RDEPENDS:${PN} += "wpeframework"
+DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries entservices-helpers"
+RDEPENDS:${PN} += "wpeframework entservices-helpers"
 DEPENDS += "packager-headers"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
