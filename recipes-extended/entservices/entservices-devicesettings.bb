@@ -47,6 +47,9 @@ PACKAGECONFIG ?= " breakpadsupport \
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[devicesettings]       = "-DPLUGIN_DEVICESETTINGS=ON,-DPLUGIN_DEVICESETTINGS=OFF,iarmbus iarmmgrs virtual/vendor-devicesettings-hal devicesettings-hal-headers entservices-helpers,iarmbus entservices-helpers"
+# DS_COMRPC: libWPEFrameworkDeviceSettingsImp.so previously got libIARMBus transitively
+# through -lds. With libds removed, link explicitly so IARM_Bus_Init resolves in WPEProcess.
+TARGET_LDFLAGS:append = " -liarmbus"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
