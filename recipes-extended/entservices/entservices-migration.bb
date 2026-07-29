@@ -11,7 +11,6 @@ inherit cmake pkgconfig
 SRCREV = "beb46283c421e5eb1c4ebd0d573413ce7a83ff9c"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-migration;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
