@@ -1,5 +1,3 @@
-diff --git a/plugin/CMakeLists.txt b/plugin/CMakeLists.txt
-index 478b90c..0000000 100644
 --- a/plugin/CMakeLists.txt
 +++ b/plugin/CMakeLists.txt
 @@ -68,16 +68,9 @@
