@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
 PV = "4.0.6"
 PR = "r0"
-SRCREV_entservices-apis = "89c56de91a7b898cd0dfae8377682abf151a2104"
+SRCREV_entservices-apis = "50943cebcb73bb18726b40f67a8ea0ef05ed81ae"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
