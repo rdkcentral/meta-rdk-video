@@ -8,7 +8,10 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX} \
+	   file://0001-DS-COMRPC-link-iarmbus-in-FirmwareUpdate-when-DS-absent.patch \
            "
 
 # Release version - 1.2.5

@@ -10,6 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
+	   file://0001_DeviceSettings_Added_IARMBUS.patch \
           "
 
 # Release version - 1.0.0
