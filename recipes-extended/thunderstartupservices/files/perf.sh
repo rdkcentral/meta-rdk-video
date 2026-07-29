@@ -1,6 +1,6 @@
 #!/bin/sh
 # ---------------------------------------------------------------------------
-# perf_startup_capture.sh
+# perf.sh
 #
 # Capture a DWARF (libdw) perf profile of the WPEFramework ResourceMonitor
 # thread across Thunder STARTUP, WITHOUT manually restarting Thunder.
@@ -14,10 +14,10 @@
 # libdw-dwarf-unwind:[on]) and NOT-stripped WPE binaries (.debug_frame present).
 #
 # Modes:
-#   ./perf_startup_capture.sh watch          # run now; waits for next WPE start
+#   ./perf.sh watch          # run now; waits for next WPE start
 #                                            # (then YOU reboot / let it respawn)
-#   ./perf_startup_capture.sh install-boot   # arm at boot via systemd, then reboot
-#   ./perf_startup_capture.sh uninstall-boot # remove the boot unit
+#   ./perf.sh install-boot   # arm at boot via systemd, then reboot
+#   ./perf.sh uninstall-boot # remove the boot unit
 #
 # Tunables (env):
 #   DURATION=240   capture window seconds after WPE appears
@@ -34,7 +34,7 @@ DURATION="${DURATION:-240}"
 FREQ="${FREQ:-99}"
 STACKSZ="${STACKSZ:-65528}"
 OUTDIR="${OUTDIR:-/opt/logs}"
-SELF_INSTALL="${SELF_INSTALL:-/opt/perf_startup_capture.sh}"
+SELF_INSTALL="${SELF_INSTALL:-/opt/perf.sh}"
 BOOT_UNIT="perf-startup-capture.service"
 
 export LD_LIBRARY_PATH="${PERF_LIB}:${LD_LIBRARY_PATH:-}"
