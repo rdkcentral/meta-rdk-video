@@ -1,6 +1,6 @@
 SUMMARY = "ES1 JSON-RPC round-trip benchmark plugin (ThunderNanoServices)"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=5af0d167017273075d866c98a6159659"
 
 # --------------------------------------------------------------------------
 # Version — bump PR when recipe changes, bump PV + SRCREV when source changes
