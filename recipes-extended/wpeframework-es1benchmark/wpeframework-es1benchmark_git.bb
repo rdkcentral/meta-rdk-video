@@ -25,7 +25,7 @@ S = "${WORKDIR}/git"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 
-inherit cmake pkgconfig
+inherit cmake pkgconfig python3native
 
 DEPENDS = " \
     wpeframework \
