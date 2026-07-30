@@ -1,0 +1,110 @@
+From 26aa37a27d758254cbbe12ca0f3a9ef541f656e7 Mon Sep 17 00:00:00 2001
+From: sjulfk353 <shahin_julfkar@comcast.com>
+Date: Thu, 30 Jul 2026 12:55:25 +0000
+Subject: [PATCH] Renamed FireboltTrasnport lib to FireboltCppTransport
+
+---
+ CMakeLists.txt                            | 2 +-
+ cmake/FireboltCppTransportConfig.cmake.in | 3 +++
+ cmake/FireboltTransportConfig.cmake.in    | 3 ---
+ include/firebolt/gateway.h                | 2 +-
+ include/firebolt/helpers.h                | 4 ++--
+ include/firebolt/logger.h                 | 2 +-
+ test/CMakeLists.txt                       | 2 +-
+ 7 files changed, 9 insertions(+), 9 deletions(-)
+ create mode 100644 cmake/FireboltCppTransportConfig.cmake.in
+ delete mode 100644 cmake/FireboltTransportConfig.cmake.in
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b2c76f5..a2c5dd2 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 3.12)
+ 
+ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+ 
+-project(FireboltTransport)
++project(FireboltCppTransport)
+ 
+ include(version)
+ 
+diff --git a/cmake/FireboltCppTransportConfig.cmake.in b/cmake/FireboltCppTransportConfig.cmake.in
+new file mode 100644
+index 0000000..f88536f
+--- /dev/null
++++ b/cmake/FireboltCppTransportConfig.cmake.in
+@@ -0,0 +1,3 @@
++@PACKAGE_INIT@
++
++include("${CMAKE_CURRENT_LIST_DIR}/FireboltCppTransportTargets.cmake")
+diff --git a/cmake/FireboltTransportConfig.cmake.in b/cmake/FireboltTransportConfig.cmake.in
+deleted file mode 100644
+index b5f8db6..0000000
+--- a/cmake/FireboltTransportConfig.cmake.in
++++ /dev/null
+@@ -1,3 +0,0 @@
+-@PACKAGE_INIT@
+-
+-include("${CMAKE_CURRENT_LIST_DIR}/FireboltTransportTargets.cmake")
+\ No newline at end of file
+diff --git a/include/firebolt/gateway.h b/include/firebolt/gateway.h
+index d3a49d7..5fd0ef2 100644
+--- a/include/firebolt/gateway.h
++++ b/include/firebolt/gateway.h
+@@ -46,5 +46,5 @@ public:
+     virtual Firebolt::Error unsubscribe(const std::string& event, void* usercb) = 0;
+ };
+ 
+-FIREBOLTTRANSPORT_EXPORT IGateway& GetGatewayInstance();
++FIREBOLTCPPTRANSPORT_EXPORT IGateway& GetGatewayInstance();
+ } // namespace Firebolt::Transport
+diff --git a/include/firebolt/helpers.h b/include/firebolt/helpers.h
+index 956f80b..1e8823c 100644
+--- a/include/firebolt/helpers.h
++++ b/include/firebolt/helpers.h
+@@ -99,7 +99,7 @@ private:
+     virtual Result<nlohmann::json> getJson(const std::string& methodName, const nlohmann::json& parameters) = 0;
+ };
+ 
+-class FIREBOLTTRANSPORT_EXPORT SubscriptionManager
++class FIREBOLTCPPTRANSPORT_EXPORT SubscriptionManager
+ {
+ public:
+     SubscriptionManager(IHelper& helper, void* owner);
+@@ -123,6 +123,6 @@ private:
+     void* owner_;
+ };
+ 
+-FIREBOLTTRANSPORT_EXPORT IHelper& GetHelperInstance();
++FIREBOLTCPPTRANSPORT_EXPORT IHelper& GetHelperInstance();
+ 
+ } // namespace Firebolt::Helpers
+diff --git a/include/firebolt/logger.h b/include/firebolt/logger.h
+index 34b8cdf..d92586e 100644
+--- a/include/firebolt/logger.h
++++ b/include/firebolt/logger.h
+@@ -25,7 +25,7 @@
+ 
+ namespace Firebolt
+ {
+-class FIREBOLTTRANSPORT_EXPORT Logger
++class FIREBOLTCPPTRANSPORT_EXPORT Logger
+ {
+ private:
+     static constexpr uint16_t MaxBufSize = 1024;
+diff --git a/test/CMakeLists.txt b/test/CMakeLists.txt
+index 3177d93..68f51cf 100644
+--- a/test/CMakeLists.txt
++++ b/test/CMakeLists.txt
+@@ -38,7 +38,7 @@ target_link_options(${UNIT_TESTS_APP} PRIVATE --coverage)
+ 
+ target_link_libraries(${UNIT_TESTS_APP}
+     PRIVATE
+-        FireboltTransport
++        FireboltCppTransport
+         nlohmann_json::nlohmann_json
+         nlohmann_json_schema_validator::validator
+         GTest::gtest
+-- 
+2.44.4
+

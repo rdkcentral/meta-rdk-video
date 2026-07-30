@@ -12,6 +12,7 @@ PV = "1.1.8"
 PR = "r0"
 
 SRC_URI = "https://github.com/rdkcentral/firebolt-cpp-transport/releases/download/v${PV}/firebolt-cpp-transport-${PV}.tar.gz"
+SRC_URI += " file://0001-Renamed-FireboltTrasnport-lib-to-FireboltCppTranspor.patch"
 SRC_URI[sha256sum] = "0af04e3040cc87f92f05d0c35662792d95403b801e221aeb2e263af72a4c4966"
 S = "${WORKDIR}/firebolt-cpp-transport-${PV}"
 
