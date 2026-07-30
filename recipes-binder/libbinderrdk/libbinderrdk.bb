@@ -7,7 +7,6 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI = "${RDKCENTRAL_GITHUB_ROOT}/linux_binder_idl;${RDKCENTRAL_GITHUB_SRC_URI_SUFFIX}"
-SRC_URI += "file://servicemanagerrdk.service"
 
 PV ?= "1.1.1"
 PR = "r0"
@@ -36,7 +35,7 @@ EXTRA_OECMAKE += " \
     -DCMAKE_INSTALL_INCDIR=${MW_INCDIR} \
 "
 
-inherit cmake systemd
+inherit cmake
 
 #
 # Configure Android Binder sources
@@ -53,28 +52,7 @@ do_configure:prepend() {
     cd ${B}
 }
 
-#
-# Install middleware specific systemd service
-#
-do_install:append() {
-
-    install -d ${D}${systemd_unitdir}/system
-
-    install -m 0644 \
-        ${WORKDIR}/servicemanagerrdk.service \
-        ${D}${systemd_unitdir}/system/servicemanagerrdk.service
-}
-
-#
-# Systemd
-#
-SYSTEMD_SERVICE:${PN} = "servicemanagerrdk.service"
-
-#
-# Package contents
-#
 FILES:${PN} += " \
-    ${systemd_unitdir}/system/servicemanagerrdk.service \
     ${MW_LIBDIR} \
     ${MW_LIBDIR}/* \
     ${MW_BINDIR} \
