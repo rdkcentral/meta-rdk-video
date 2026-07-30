@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Playerinfo plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=1c020dfe1abb4e684874a44de1244c28"
 
-PV = "1.0.3"
+PV = "1.1.4"
 PR = "r1"
 
 S = "${WORKDIR}/git"
@@ -17,7 +17,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-playerinfo;${CMF_GITHUB_SRC_URI_SUFFIX
           "
           
 # Release version - 1.0.3
-SRCREV = "c167b0fc4c7e3e37bb15af450f571d254ce7d875"
+SRCREV = "a000d1e3dd5b264e32180d694e9f376a47b5e9bb"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
