@@ -1,0 +1,22 @@
+From 3a87893fcf60c63455f4b61432f1ad2e11faa4fd Mon Sep 17 00:00:00 2001
+From: Radenko Mihajlovic <Radenko_Mihajlovic@comcast.com>
+Date: Thu, 30 Jul 2026 10:12:42 +0000
+Subject: [PATCH] Change-TRACE-logging-level
+
+---
+ Source/core/Trace.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/core/Trace.h b/Source/core/Trace.h
+index f44feed0..6459cbf4 100644
+--- a/Source/core/Trace.h
++++ b/Source/core/Trace.h
+@@ -121,7 +121,7 @@ do {
+ #ifdef __DEBUG__
+ #define _TRACE_LEVEL 2
+ #else
+-#define _TRACE_LEVEL 0
++#define _TRACE_LEVEL 2
+ #endif
+ #endif
+ 
