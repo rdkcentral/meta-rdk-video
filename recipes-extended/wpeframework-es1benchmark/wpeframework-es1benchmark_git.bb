@@ -9,13 +9,13 @@ PV = "1.0.0"
 PR = "r0"
 
 # --------------------------------------------------------------------------
-# Source — ThunderNanoServices on GitHub
-# TODO: update SRCREV to the commit that includes the ES1Benchmark plugin
-#       once the code is merged / tagged in the ThunderNanoServices repo.
+# Source — ThunderNanoServices, branch dev/es1benchmark
+# Update SRCREV when new commits are added to the branch.
 # --------------------------------------------------------------------------
 SRC_URI = "git://github.com/rdkcentral/ThunderNanoServices.git;protocol=https;branch=dev/es1benchmark;name=thundernanoservices"
 
-SRCREV_thundernanoservices = "e7178ea91d03a42545b45cf5d8dbb8893f042566"
+# Pinned to the single commit that adds ES1Benchmark (branched from R4_4 @ 81776f5b)
+SRCREV = "e7178ea91d03a42545b45cf5d8dbb8893f042566"
 
 S = "${WORKDIR}/git"
 
@@ -91,9 +91,24 @@ EXTRA_OECMAKE += " \
 "
 
 # --------------------------------------------------------------------------
+# Activation — make autostart:true in the generated plugin JSON so WPEFramework
+# loads ES1Benchmark automatically on boot.
+# If the distro uses thunder_startup_services (a separate startup manager that
+# activates plugins), flip autostart to false to avoid double-activation.
+# --------------------------------------------------------------------------
+do_install:append() {
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
+        if [ -d "${D}${sysconfdir}/WPEFramework/plugins" ]; then
+            find ${D}${sysconfdir}/WPEFramework/plugins/ -name "ES1Benchmark.json" \
+                | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
+        fi
+    fi
+}
+
+# --------------------------------------------------------------------------
 # Installed files
 #   plugin .so  → /usr/lib/wpeframework/plugins/
-#   config JSON → /etc/WPEFramework/plugins/
+#   config JSON → /etc/WPEFramework/plugins/  (write_config() installs here)
 #   client bin  → /usr/bin/
 # --------------------------------------------------------------------------
 FILES_SOLIBSDEV = ""
@@ -101,6 +116,7 @@ FILES_SOLIBSDEV = ""
 FILES:${PN} += " \
     ${libdir}/wpeframework/plugins/libWPEFrameworkES1Benchmark.so \
     ${sysconfdir}/WPEFramework/plugins/ES1Benchmark.json \
+    ${datadir}/WPEFramework/plugins/ES1Benchmark.json \
     ${bindir}/ES1BenchmarkClient \
 "
 
