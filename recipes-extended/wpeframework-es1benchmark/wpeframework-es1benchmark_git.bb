@@ -12,7 +12,7 @@ PR = "r0"
 # Source — ThunderNanoServices, branch dev/es1benchmark
 # Update SRCREV when new commits are added to the branch.
 # --------------------------------------------------------------------------
-SRC_URI = "git://github.com/rdkcentral/ThunderNanoServices.git;protocol=https;branch=dev/es1benchmark;name=thundernanoservices"
+SRC_URI = "git://github.com/rdkcentral/ThunderNanoServices.git;protocol=https;branch=dev/es1benchmark"
 
 # Pinned to the single commit that adds ES1Benchmark (branched from R4_4 @ 81776f5b)
 SRCREV = "e7178ea91d03a42545b45cf5d8dbb8893f042566"
@@ -111,14 +111,17 @@ do_install:append() {
 #   config JSON → /etc/WPEFramework/plugins/  (write_config() installs here)
 #   client bin  → /usr/bin/
 # --------------------------------------------------------------------------
+#Restrict debian package renaming
+DEBIAN_NOAUTONAME:${PN} = "1"
+DEBIAN_NOAUTONAME:${PN}-dev = "1"
+DEBIAN_NOAUTONAME:${PN}-dbg = "1"
+
 FILES_SOLIBSDEV = ""
 
-FILES:${PN} += " \
-    ${libdir}/wpeframework/plugins/libWPEFrameworkES1Benchmark.so \
-    ${sysconfdir}/WPEFramework/plugins/ES1Benchmark.json \
-    ${datadir}/WPEFramework/plugins/ES1Benchmark.json \
-    ${bindir}/ES1BenchmarkClient \
-"
+FILES:${PN} += "${bindir}/* "
+FILES:${PN} += "${libdir}/* "
+FILES:${PN} += "${sysconfdir}/* "
+FILES:${PN} += "${datadir}/WPEFramework/* "
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
