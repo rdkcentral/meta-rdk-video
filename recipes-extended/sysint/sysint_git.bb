@@ -8,7 +8,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "6.0.3"
 PR = "r0"
 
-SRCREV = "3a5b3479e68ef87e82622106479a201577f67108"
+SRCREV = "13eaaddb608f134b9ba4e3ec1fb9e8d5481f8a6d"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
