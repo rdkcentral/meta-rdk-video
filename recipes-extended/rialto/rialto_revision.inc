@@ -8,12 +8,12 @@
 # Please contact DL-Rialto@sky.uk if you want to change this file or in case of problems
 
 
-RIALTO_SRCREV ?= "233d0f14f5dfa489616024ff81c4e1273587efaa"
+RIALTO_SRCREV ?= "3df35e93385715445ac56de91b8257c06eff5f1f"
 RIALTO_BRANCH ?= "MediaPipelineCapabilitiesNewConfig"
 RIALTO_VERSION ?= "v0.22.3"
 RIALTO_PR ?= "r0"
 
-RIALTO_GSTREAMER_SRCREV ?= "d048611d193711c65c6085261dd80dc664481187"
+RIALTO_GSTREAMER_SRCREV ?= "4a85a60d33b0f60a4651b18023dcd0b6886a291e"
 RIALTO_GSTREAMER_BRANCH ?= "MediaPipelineCapabilitiesNewConfig"
 RIALTO_GSTREAMER_VERSION ?= "v0.20.1"
 RIALTO_GSTREAMER_PR ?= "r0"
