@@ -14,7 +14,7 @@ S = "${WORKDIR}/git"
 
 DEPENDS = "iarmbus iarmmgrs e2fsprogs libsoup libsyswrapper yajl \
            devicesettings procps glib-2.0 \
-           cjson telemetry libtinyxml2\
+           cjson telemetry libtinyxml2 dcmd \
 	  "
 DEPENDS:append = " rdk-logger libparodus parodus virtual/vendor-devicesettings-hal ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
 
