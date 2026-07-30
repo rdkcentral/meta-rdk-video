@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
-# Release version - 1.6.2
-SRCREV = "e258a50672a40b1065972512848c10a0eca2cadb"
+# Release version - 1.6.3
+SRCREV = "ca9b4a7843c70092cd4981d96f4efcdf7a3182c8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
