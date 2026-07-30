@@ -17,4 +17,5 @@ RDEPENDS:packagegroup-benchmark-tdk = "\
   nbench-byte \
   sysbench \
   tinymembench \
+  wpeframework-es1benchmark \
   "
