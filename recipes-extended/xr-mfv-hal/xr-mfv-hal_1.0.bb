@@ -9,8 +9,8 @@ LIC_FILES_CHKSUM = "file://CMakeLists.txt;beginline=1;endline=18;md5=602a9300780
 PV = "1.0"
 PR = "r0"
 
-# TODO: pin to a real commit/tag once available.
-SRCREV = "f5384312b42e4cada151edf7c83399c3aaecc0e3"
+# TODO: pin to a tag once available; currently the mfv-lib integration branch tip.
+SRCREV = "53ff44b22d8dafdc2c5a421316681243578f1a7a"
 SRC_URI = "${RDKE_GITHUB_ROOT}/xr-ffv-hal-sky-llama;${RDKE_GITHUB_SRC_URI_SUFFIX};name=xr-mfv-hal"
 SRCREV_FORMAT = "xr-mfv-hal"
 
@@ -41,8 +41,8 @@ do_install() {
     install -m 0755 ${B}/lib/libxraudio_mfv.so ${D}${libdir}/libxraudio_mfv.so
 
     install -d ${D}/opt/mfv_plugin
-    install -m 0644 ${S}/MFV/lib/mfv_plugin_config.json ${D}/opt/mfv_plugin/mfv_plugin_config.json
-    install -m 0644 ${S}/opt/ffv_hal/comcast_kw_model_it250716.tflite ${D}/opt/mfv_plugin/comcast_kw_model_it250716.tflite
+    install -m 0644 ${S}/MFV/opt/mfv_plugin/mfv_plugin_config.json ${D}/opt/mfv_plugin/mfv_plugin_config.json
+    install -m 0644 ${S}/MFV/opt/mfv_plugin/comcast_kw_model_uk_26-06-18.tflite ${D}/opt/mfv_plugin/comcast_kw_model_uk_26-06-18.tflite
 }
 
 FILES:${PN} += "${libdir}/libxraudio_mfv.so /opt/mfv_plugin/*"
