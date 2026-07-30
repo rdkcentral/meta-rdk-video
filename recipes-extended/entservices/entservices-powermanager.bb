@@ -34,7 +34,6 @@ EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
 "
 
 DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native"
-DEPENDS:remove:vdevice_x86-64-mw = "rdk-halif-aidl"
 DEPENDS:append:vdevice_x86-64-mw = " deepsleep-vendor libbinder"
 
 # boot-vendor must finish its AIDL generation before configure, but adding it to
@@ -171,7 +170,6 @@ do_compile:prepend:vdevice_x86-64-mw() {
         bbfatal "Unable to locate generated AIDL C++ sources for deepsleep-vendor under ${TMPDIR}/work"
     fi
 
-    AIDL_CUR_DIR=$(dirname "$(dirname "$(dirname "$(dirname "${AIDL_CPP_DIR}")")")")
     AIDL_HDR_DIR="${WORKDIR}/aidl-headers"
     if [ ! -d "${AIDL_HDR_DIR}/com" ]; then
         bbfatal "Unable to locate staged AIDL headers for deepsleep-vendor under ${AIDL_HDR_DIR}"
