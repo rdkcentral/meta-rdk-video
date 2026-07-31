@@ -127,6 +127,7 @@ EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
+    sed -i '/^ExecStart=/i ExecStartPre=-/tmp/data/wpe_mount' ${D}${systemd_unitdir}/system/wpeframework.service
 
     # Propagate configured keymap via parent service environment to rdkwindowmanager plugin.
     if [ -n "${WINDOWMANAGER_RCU_KEYMAP_FILE}" ]; then
