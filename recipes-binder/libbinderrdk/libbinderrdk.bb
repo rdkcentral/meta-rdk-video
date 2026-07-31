@@ -37,6 +37,8 @@ EXTRA_OECMAKE += " \
 
 inherit cmake
 
+CXXFLAGS:append = " -DBINDER_IPC_32BIT"
+
 #
 # Configure Android Binder sources
 #
