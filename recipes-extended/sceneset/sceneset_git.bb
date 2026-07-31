@@ -3,7 +3,7 @@ SUMMARY = "This recipe provides the sceneset component for RDK "
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-PV = "0.6.0"
+PV = "0.7.0"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
