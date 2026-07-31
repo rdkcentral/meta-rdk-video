@@ -1,6 +1,6 @@
 SUMMARY = "ENTServices displayinfo plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=0545acf8134821be0c0b6cb6d4603200"
 
 PV = "1.2.7"
 PR = "r0"
