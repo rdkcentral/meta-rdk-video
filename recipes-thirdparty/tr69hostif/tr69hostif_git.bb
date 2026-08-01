@@ -4,9 +4,9 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=76ae13a6bce633447ea2284294f073c2"
 
-SRCREV = "4fddb66f265737171d275ba8973ac0470140ba9b"
+SRCREV = "2bd4accc07cbd4dfbc0da7547e5907407612fb36"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
+SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-22811;name=tr69hostif"
 PV = "1.4.8"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -102,8 +102,6 @@ EXTRA_OECONF:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', '--en
 EXTRA_OECONF:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'NEW_HTTP_SERVER_DISABLE', '--disable-new-http-server', '', d)}"
 
 PACKAGECONFIG ??= ""
-PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wifi','wifi', '',d)}"
-PACKAGECONFIG[wifi] = "--enable-wifi,,,"
 PACKAGECONFIG[xre] = "--enable-xre,,"
 PACKAGECONFIG[moca] = "--enable-moca,,virtual/mocadriver"
 PACKAGECONFIG[moca2] = "--enable-moca2,,virtual/mocadriver"
