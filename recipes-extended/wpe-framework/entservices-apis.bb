@@ -1,9 +1,9 @@
 SUMMARY = "entservices-apis"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
-PV = "4.0.6"
+PV = "4.1.0"
 PR = "r0"
-SRCREV_entservices-apis = "cae01a10afcc130cb82d8201bfc2d58968aba513"
+SRCREV_entservices-apis = "2c0e21b10ff6cc623c590f9a2d99d63b867f011e"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
