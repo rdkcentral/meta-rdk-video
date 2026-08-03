@@ -46,6 +46,7 @@ do_install() {
 }
 
 FILES:${PN} += "${libdir}/libxraudio_mfv.so /opt/mfv_plugin/*"
+RDEPENDS:${PN} += "xraudio-tensorflow-lite-lib xr-dsp-algorithms"
 
 # libxraudio_mfv.so is an unversioned plugin loaded at runtime. Treat it as a
 # runtime solib and stop the -dev package from claiming the bare .so, otherwise
