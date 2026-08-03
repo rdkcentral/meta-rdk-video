@@ -59,10 +59,14 @@ CFLAGS:append = " \
     -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
 "
 
+CFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
+
 CXXFLAGS:append = " \
     -I${STAGING_INCDIR}/mw \
     -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
 "
+
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
 
 CFLAGS:append:vdevice_x86-64-mw = " \
     -I${STAGING_INCDIR}/mw \
