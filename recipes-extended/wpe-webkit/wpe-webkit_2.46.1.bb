@@ -1,6 +1,5 @@
 inherit features_check
 REQUIRED_DISTRO_FEATURES = "enable_libsoup3"
-DEFAULT_PREFERENCE = "-1"
 
 PATCHTOOL = "git"
 
