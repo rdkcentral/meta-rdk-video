@@ -8,7 +8,11 @@ PV = "1.0.11"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
+<<<<<<< HEAD
 SRCREV_hdmicec = "57df60fdf8866460613735af1d2e39caa3939242"
+=======
+SRCREV_hdmicec = "718401cc481c0742f1f7bc9f0936ecb6f84a95f9"
+>>>>>>> origin/Polaris-Hal-AIDL-fix-v1
 SRCREV_hdmicec:vdevice_x86-64-mw = "57df60fdf8866460613735af1d2e39caa3939242"
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
@@ -20,11 +24,19 @@ RDEPENDS:${PN} = " devicesettings telemetry"
 RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
 
 DEPENDS += "safec-common-wrapper"
+<<<<<<< HEAD
 DEPENDS:append = " rdk-halif-aidl-mw libbinderrdk"
 DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw libbinderrdk"
+=======
+DEPENDS:append = " rdk-halif-aidl binderhelp"
+DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl binderhelp"
+>>>>>>> origin/Polaris-Hal-AIDL-fix-v1
 
 ASNEEDED = ""
 ALLOW_EMPTY:${PN} = "1"
+
+INSANE_SKIP:${PN} += "file-rdeps"
+INSANE_SKIP:${PN}:remove:vdevice_x86-64-mw = "file-rdeps"
 
 S = "${WORKDIR}/git"
 
@@ -54,6 +66,7 @@ LDFLAGS:append = " -L${STAGING_LIBDIR}/mw"
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
+<<<<<<< HEAD
 CFLAGS:append = " \
     -I${STAGING_INCDIR}/mw \
     -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
@@ -73,12 +86,21 @@ CXXFLAGS:append:vdevice_x86-64-mw = " \
     -I${STAGING_INCDIR}/mw \
     -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
 "
+=======
+CFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/halif/hdmicec/current/include -I${TMPDIR}/sysroots-ipk-components/usr/include/halif/hdmicec/current/include -I${TMPDIR}/sysroots-ipk-components/usr/include/halif/common/current/include -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+CFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
+CXXFLAGS:append = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/halif/hdmicec/current/include -I${TMPDIR}/sysroots-ipk-components/usr/include/halif/hdmicec/current/include -I${TMPDIR}/sysroots-ipk-components/usr/include/halif/common/current/include -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
+CFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+CXXFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+>>>>>>> origin/Polaris-Hal-AIDL-fix-v1
 
 INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/ds-hal \
     "
 
 
+<<<<<<< HEAD
 do_compile:prepend() {
         case ":${OVERRIDES}:" in
                 *:vdevice_x86-64-mw:*)
@@ -117,6 +139,8 @@ do_compile:prepend() {
 
 
 
+=======
+>>>>>>> origin/Polaris-Hal-AIDL-fix-v1
 do_install:append() {
 #        install -d ${D}${includedir}/rdk/hdmicec
 #        install -d ${D}${includedir}/ccec/drivers
@@ -134,16 +158,39 @@ do_configure:append() {
                         ;;
         esac
 
+<<<<<<< HEAD
+=======
+        AIDL_SYSROOT_DIR="${TMPDIR}/sysroots-ipk-components/usr/lib"
+        AIDL_CPP_ARCHIVE="${AIDL_SYSROOT_DIR}/libhdmicec-vcurrent-cpp.a"
+        AIDL_COMMON_CPP_ARCHIVE="${AIDL_SYSROOT_DIR}/libcommon-vcurrent-cpp.a"
+
+        if [ ! -f "${AIDL_CPP_ARCHIVE}" ]; then
+                bbfatal "AIDL archive not found: ${AIDL_CPP_ARCHIVE}"
+        fi
+
+        if [ ! -f "${AIDL_COMMON_CPP_ARCHIVE}" ]; then
+                bbfatal "AIDL archive not found: ${AIDL_COMMON_CPP_ARCHIVE}"
+        fi
+
+>>>>>>> origin/Polaris-Hal-AIDL-fix-v1
     # Patch the generated Makefile to:
     #  1. link the AIDL stubs archive into libRCEC.so so typeinfo symbols are defined
     #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
         #     runtime from the binder provider in the target image
     sed -i \
+<<<<<<< HEAD
                                 "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = ${B}/libhdmicec_aidl_stubs.a \${top_builddir}/osal/src/libRCECOSHal.la|" \
                                 "${B}/ccec/src/Makefile"
 
     sed -i \
                                 's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinderrdk -lutilsrdk -llogrdk -lbaserdk|' \
+=======
+                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = ${AIDL_CPP_ARCHIVE} ${AIDL_COMMON_CPP_ARCHIVE} \${top_builddir}/osal/src/libRCECOSHal.la|" \
+                                "${B}/ccec/src/Makefile"
+
+    sed -i \
+                                's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinder -lutils -llog -lbase|' \
+>>>>>>> origin/Polaris-Hal-AIDL-fix-v1
                                 "${B}/ccec/src/Makefile"
 }
 
@@ -157,7 +204,11 @@ do_configure:append:vdevice_x86-64-mw() {
                         ${B}/ccec/src/Makefile
 
                 sed -i \
+<<<<<<< HEAD
                         's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinderrdk -lutilsrdk -llogrdk -lbaserdk|' \
+=======
+                        's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinder -lutils -llog -lbase|' \
+>>>>>>> origin/Polaris-Hal-AIDL-fix-v1
                         ${B}/ccec/src/Makefile
 }
 
