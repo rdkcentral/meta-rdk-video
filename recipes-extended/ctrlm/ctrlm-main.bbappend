@@ -21,5 +21,13 @@ EXTRA_OECMAKE:append:xione-uk = " -DDISABLE_DEVICESETTINGS=1"
 # Apply source patch — scoped to xione-uk: patch was generated from xione-uk
 # source tree; sharp-a60 uses a different ctrlm-main source revision.
 SRC_URI:append:xione-uk = " file://0001-DS-COMRPC-disable-libds-calls-in-ctrlm-main.patch"
+
+# rdktv-us-armv8a: devicesettings (libds.so/libdshalcli.so) removed from image.
+# ctrlm-main v1.1.18 unconditionally #includes dsMgr.h/host.hpp even when
+# CTRLM_USE_THUNDER_FR_DS=ON; DISABLE_DEVICESETTINGS guards those includes.
+CXXFLAGS:append:rdktv-us-armv8a = " -DDISABLE_DEVICESETTINGS=1"
+EXTRA_OECMAKE:append:rdktv-us-armv8a = " -DDISABLE_DEVICESETTINGS=1"
+SRC_URI:append:rdktv-us-armv8a = " file://0001-DS-COMRPC-disable-libds-calls-in-ctrlm-main.patch"
+
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
