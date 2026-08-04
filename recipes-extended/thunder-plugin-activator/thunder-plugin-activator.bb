@@ -5,14 +5,14 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = "cmake-native wpeframework-tools-native wpeframework"
-RDEPENDS:${PN} = "wpeframework"
+RDEPENDS:${PN} = "wpeframework wpeframework-extensions"
 
 PV = "1.2.0"
-PR = "r1"
+PR = "r2"
 
-SRC_URI = "git://github.com/rdkcentral/ThunderPluginActivator;protocol=https;branch=main;name=thunderpluginactivator"
+SRC_URI = "git://github.com/rdkcentral/ThunderPluginActivator;protocol=https;branch=Thunder_44_PIS;name=thunderpluginactivator"
 
-SRCREV = "545eafe42509a9e441408268df1e02c9da590329"
+SRCREV = "0332a94cac3378fa3c23d3b106fa2fe642064753"
 
 S = "${WORKDIR}/git"
 
