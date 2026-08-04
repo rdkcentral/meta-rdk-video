@@ -2,7 +2,7 @@ SUMMARY = "ENTServices appmanagers plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "0.7.0.0.rc1"
+PV = "0.7.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -18,10 +18,11 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers', ' -DENABLE_RDKAPPMANAGERS_RUNTIMECONFIG=ON', '', d)}"
 
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_APPMANAGERS_DEBUG=OFF', '-DRDK_APPMANAGERS_DEBUG=ON', d)}"
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
-DEPENDS += "yaml-cpp"
+DEPENDS += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers', 'yaml-cpp', '', d)}"
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
 DEPENDS += "iptables"
