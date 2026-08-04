@@ -107,7 +107,6 @@ PACKAGECONFIG[wifi] = "--enable-wifi,,,"
 PACKAGECONFIG[xre] = "--enable-xre,,"
 PACKAGECONFIG[moca] = "--enable-moca,,virtual/mocadriver"
 PACKAGECONFIG[moca2] = "--enable-moca2,,virtual/mocadriver"
-PACKAGECONFIG[rf4ce] = "--enable-rf4ce,,"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth','bluetooth', '',d)}"
 PACKAGECONFIG[bluetooth] = "--enable-bt,,bluetooth-mgr,bluetooth-mgr"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetooth-mgr', '',d)}"
@@ -141,10 +140,6 @@ inherit autotools systemd pkgconfig
 do_configure:prepend() {
         sed -i -e "s%lproc-3.2.8%lprocps%"  ${S}/src/hostif/profiles/DeviceInfo/Makefile.am
         sed -i -e "s%lproc-3.2.8%lprocps%"  ${S}/src/hostif/handlers/Makefile.am
-}
-
-do_install:append:client() {
-       rm -rf ${D}${sysconfdir}/tr181_snmpOID.conf
 }
 
 PACKAGECONFIG += "${@bb.utils.contains('DISTRO_FEATURES', 'emmc_storage', 'emmc', '', d)}"
