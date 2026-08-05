@@ -8,7 +8,7 @@ PV = "1.0.11"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV_hdmicec = "718401cc481c0742f1f7bc9f0936ecb6f84a95f9"
+SRCREV_hdmicec = "70fd64b0bf6a9e3bb1541713cb4e7395e47d9e8e"
 SRCREV_hdmicec:vdevice_x86-64-mw = "57df60fdf8866460613735af1d2e39caa3939242"
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
