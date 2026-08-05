@@ -7,7 +7,7 @@ PV = "0.2.0-r1"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "0165183cafa567885f480a923b1833a29bbcc506"
+SRCREV_player-interface ?= "2472cc764e3038fc576cae45799c85ca6ebb3f51"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "main"
 
