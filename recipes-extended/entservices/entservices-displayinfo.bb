@@ -1,6 +1,6 @@
 SUMMARY = "ENTServices displayinfo plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=0545acf8134821be0c0b6cb6d4603200"
 
 PV = "1.2.7"
 PR = "r0"
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displayinfo;${CMF_GITHUB_SRC_URI_SUFFI
           "
 
 # Release version - 1.2.7
-SRCREV = "d8fa654df24a428f4cdf8801fab6b679ee697b34"
+SRCREV = "06b0cb939915f8f2e2e5b64f0a394b6deb1dadf9"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
