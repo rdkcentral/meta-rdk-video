@@ -48,6 +48,17 @@ CXXFLAGS:append = " -std=c++11 -fPIC -D_REENTRANT -rdynamic -Wall -Werror ${INCL
 LDFLAGS:append = " -lbsd -lpthread -lxr-voice-sdk-xlog"
 
 EXTRA_OECONF:append = " GIT_BRANCH=${RDK_GIT_BRANCH}"
+
+# The MFV plugin (xr-mfv-hal) links this library for the MFCC feature extractor
+# (MFCC_init and friends). MFCC/source/MFCC.c is only compiled when --enable-mfcc
+# is set, otherwise libxraudio-ffv-algorithms.so ships without those symbols and
+# dlopen of libxraudio_mfv.so fails with "undefined symbol: MFCC_init".
+EXTRA_OECONF:append = " --enable-mfcc"
+
+# The MFV EOS support (mfv_lib_eos.c) calls VADEOSHD_COMCAST_* from the VADEOS
+# component (NRHD/source/vadeoshd.c), which is only compiled with --enable-vadeos.
+# Without it, dlopen of libxraudio_mfv.so fails with an undefined VADEOSHD symbol.
+EXTRA_OECONF:append = " --enable-vadeos"
 EXTRA_OEMAKE:append = " XR_DSP_ALGORITHMS_PV=${VSDK_XRAUDIO_FFV_ALGORITHMS_PV}"
 EXTRA_OEMAKE:append = " XR_DSP_ALGORITHMS_PR=${VSDK_XRAUDIO_FFV_ALGORITHMS_PR}"
 

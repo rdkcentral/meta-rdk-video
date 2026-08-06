@@ -10,7 +10,7 @@ PV = "1.0"
 PR = "r0"
 
 # TODO: pin to a tag once available; currently the mfv-lib integration branch tip.
-SRCREV = "53ff44b22d8dafdc2c5a421316681243578f1a7a"
+SRCREV = "d63cb157f125c9e63314d83eded27f751a38567a"
 SRC_URI = "${RDKE_GITHUB_ROOT}/xr-ffv-hal-sky-llama;${RDKE_GITHUB_SRC_URI_SUFFIX};name=xr-mfv-hal"
 SRCREV_FORMAT = "xr-mfv-hal"
 
@@ -40,12 +40,20 @@ do_install() {
     install -d ${D}${libdir}
     install -m 0755 ${B}/lib/libxraudio_mfv.so ${D}${libdir}/libxraudio_mfv.so
 
-    install -d ${D}/opt/mfv_plugin
-    install -m 0644 ${S}/MFV/opt/mfv_plugin/mfv_plugin_config.json ${D}/opt/mfv_plugin/mfv_plugin_config.json
-    install -m 0644 ${S}/MFV/opt/mfv_plugin/comcast_kw_model_uk_26-06-18.tflite ${D}/opt/mfv_plugin/comcast_kw_model_uk_26-06-18.tflite
+    # Runtime assets live under /etc (part of the read-only rootfs). /opt is a
+    # separate data partition that is not populated from the image, which is why
+    # /opt/mfv_plugin never appeared on the target filesystem.
+    install -d ${D}${sysconfdir}/mfv_plugin
+    install -m 0644 ${S}/MFV/opt/mfv_plugin/mfv_plugin_config.json ${D}${sysconfdir}/mfv_plugin/mfv_plugin_config.json
+    install -m 0644 ${S}/MFV/opt/mfv_plugin/comcast_kw_model_uk_26-06-18.tflite ${D}${sysconfdir}/mfv_plugin/comcast_kw_model_uk_26-06-18.tflite
+
+    # Stage the plugin config into the sysroot as xraudio_mfv_config.json so
+    # xr-voice-sdk can fold it into the xraudio input.mfv object at build time.
+    install -d ${D}${includedir}
+    install -m 0644 ${S}/MFV/opt/mfv_plugin/mfv_plugin_config.json ${D}${includedir}/xraudio_mfv_config.json
 }
 
-FILES:${PN} += "${libdir}/libxraudio_mfv.so /opt/mfv_plugin/*"
+FILES:${PN} += "${libdir}/libxraudio_mfv.so ${sysconfdir}/mfv_plugin/*"
 RDEPENDS:${PN} += "xraudio-tensorflow-lite-lib xr-dsp-algorithms"
 
 # libxraudio_mfv.so is an unversioned plugin loaded at runtime. Treat it as a
