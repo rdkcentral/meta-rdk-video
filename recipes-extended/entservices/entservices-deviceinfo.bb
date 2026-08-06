@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceinfo;${CMF_GITHUB_SRC_URI_SUFFIX
            file://rdkservices.ini \
           "
 
-# Release version - 1.1.3
-SRCREV = "6b8919a4c97d73d01ba363fc7f004cfcf6af2fcc"
+# Andre Version
+SRCREV = "f5ee7442b0852ee2decc09ea6835e07b2f14c9a1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
