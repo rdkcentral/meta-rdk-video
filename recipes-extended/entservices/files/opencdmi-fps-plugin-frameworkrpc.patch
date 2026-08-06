@@ -1,48 +1,8 @@
 diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
-index 70df2b3..a27d78b 100644
+index 70df2b3..c2182d2 100644
 --- a/plugin/FrameworkRPC.cpp
 +++ b/plugin/FrameworkRPC.cpp
-@@ -70,6 +70,39 @@ namespace Plugin {
-         return tokens;
-     }
- 
-+  /*  static void  print_hexdumpkey(const void *data, size_t size) {
-+         const unsigned char *buf = (const unsigned char *)data;
-+         size_t i, j;
-+
-+    for (i = 0; i < size; i += 16) {
-+        // Print address offset
-+       // printf("%08lx  ", i);
-+
-+        // Print hexadecimal bytes
-+        for (j = 0; j < 16; j++) {
-+            if (i + j < size) {
-+                printf("%02x ", buf[i + j]);
-+            } else {
-+                printf("   "); // Pad if less than 16 bytes in last row
-+            }
-+            if (j == 7) { // Add extra space after 8 bytes for readability
-+                printf(" ");
-+            }
-+        }
-+
-+        // Print ASCII representation
-+        printf(" |");
-+        for (j = 0; j < 16; j++) {
-+            if (i + j < size) {
-+                printf("%c", isprint(buf[i + j]) ? buf[i + j] : '.');
-+            } else {
-+                printf(" ");
-+            }
-+        }
-+        printf("|\n");
-+    }
-+} */
-+
-     static void ParseContentType(const std::string& contentType, std::string& mimeType, std::vector<std::string>& codecsList) {
-         codecsList.clear();
-         if (contentType.empty() == false) {
-@@ -287,7 +320,7 @@ namespace Plugin {
+@@ -287,7 +287,7 @@ namespace Plugin {
                      DataExchange& operator=(const DataExchange&) = delete;
  
                  public:
@@ -51,7 +11,7 @@ index 70df2b3..a27d78b 100644
                          : Exchange::DataExchange(name, defaultSize)
                          , Core::Thread(Core::Thread::DefaultStackSize(), _T("DRMSessionThread"))
                          , _mediaKeys(mediaKeys)
-@@ -298,6 +331,7 @@ namespace Plugin {
+@@ -298,6 +298,7 @@ namespace Plugin {
                          Core::Thread::Run();
                          TRACE(Trace::Information, (_T("Constructing buffer server side: %p - %s"), this, name.c_str()));
                      }
@@ -59,7 +19,7 @@ index 70df2b3..a27d78b 100644
                      ~DataExchange()
                      {
                          TRACE(Trace::Information, (_T("Destructing buffer server side: %p - %s"), this, Exchange::DataExchange::Name().c_str()));
-@@ -316,16 +350,80 @@ namespace Plugin {
+@@ -316,16 +317,82 @@ namespace Plugin {
                          char name [16];
                          snprintf(name, sizeof(name), "OCDM_decrypt");
                          prctl(PR_SET_NAME, name, 0, 0, 0);
@@ -94,7 +54,7 @@ index 70df2b3..a27d78b 100644
 +
 +			    const CDMi::Cdmi_FPSSliceInfo  *sliceInfoArray = FPSSliceInfoArray();
 +
-+			    
++
 +                             if(contentType == 0x80000007)
 +                              {
 +                                    uint32_t svpmemoryhandle = FPSSvpOut();
@@ -110,7 +70,7 @@ index 70df2b3..a27d78b 100644
 +
 +                               }
 +
-+                            int cr = _mediaKeys->Decrypt(
++                             int cr = _mediaKeys->Decrypt(
 +                                        movieId,
 +                                        cryptorId,
 +                                        contentType,
@@ -120,11 +80,13 @@ index 70df2b3..a27d78b 100644
 +                                        sliceInfoArryCount,
 +                                        nullptr,
 +                                        decryptedmem);
-+                                     if ((cr == 0) && (contentType == 0xA))
-+                                     {
-+                                         SetBuffer(0, encryptedDataSize, (uint8_t *)decryptedmem);
++                                     if ((cr == 0) && (contentType == 0xA)) {
++                                         SetBuffer(0, encryptedDataSize, static_cast<uint8_t *>(decryptedmem));
 +                                         printf("*******Free the clear data******** \n");fflush(stdout);
++                                     }
++                                     if (contentType != 0x80000007) {
 +                                         free(decryptedmem);
++                                         decryptedmem = nullptr;
 +                                     }
 +                                    // Store the status we have for the other side.
 +                                    Status(static_cast<uint32_t>(cr));
@@ -150,7 +112,7 @@ index 70df2b3..a27d78b 100644
  
                                  CDMi::SampleInfo sampleInfo;
                                  sampleInfo.scheme = static_cast<CDMi::EncryptionScheme>(EncScheme());
-@@ -371,6 +469,7 @@ namespace Plugin {
+@@ -371,6 +438,7 @@ namespace Plugin {
                                  Consumed();
                              }
                          }
@@ -158,7 +120,7 @@ index 70df2b3..a27d78b 100644
  
                          return (Core::infinite);
                      }
-@@ -491,6 +590,27 @@ namespace Plugin {
+@@ -491,6 +559,27 @@ namespace Plugin {
                  #ifdef __WINDOWS__
                  #pragma warning(disable : 4355)
                  #endif
@@ -186,7 +148,7 @@ index 70df2b3..a27d78b 100644
                  SessionImplementation(
                      AccessorOCDM* parent,
                      const std::string keySystem,
-@@ -510,8 +630,10 @@ namespace Plugin {
+@@ -510,8 +599,10 @@ namespace Plugin {
                      ASSERT(parent != nullptr);
                      ASSERT(sessionData != nullptr);
                      ASSERT(_mediaKeySession != nullptr);
@@ -198,7 +160,7 @@ index 70df2b3..a27d78b 100644
                      TRACE(Trace::Information, ("Server::Session::Session(%s,%s) => %p", _keySystem.c_str(), _sessionId.c_str(), this));
                      TRACE(Trace::Information, (_T("Constructed the Session Server side: %p"), this));
                  }
-@@ -540,8 +662,10 @@ namespace Plugin {
+@@ -540,8 +631,10 @@ namespace Plugin {
                      ASSERT(_mediaKeySessionExt != nullptr);
  
                      TRACE(Trace::Information, (_T("Constructed the Session Server side: %p"), this));
@@ -211,7 +173,7 @@ index 70df2b3..a27d78b 100644
                      TRACE(Trace::Information, (_T("Constructed the Session Server side: %p"), this));
  
                  }
-@@ -606,22 +730,23 @@ namespace Plugin {
+@@ -606,22 +699,23 @@ namespace Plugin {
  
                  Exchange::OCDM_RESULT CreateSessionBuffer(std::string& bufferID) override {
  
@@ -237,7 +199,7 @@ index 70df2b3..a27d78b 100644
                              TRACE(Trace::Information, ("Server::Session::CreateSessionBuffer(%s,%s,%s) => %p", _keySystem.c_str(), _sessionId.c_str(), BufferId().c_str(), this));
                          } else {
                              _adminLock.Unlock();
-@@ -849,6 +974,152 @@ namespace Plugin {
+@@ -849,6 +943,159 @@ namespace Plugin {
                  return result;
              }
  
@@ -266,9 +228,15 @@ index 70df2b3..a27d78b 100644
 +            {
 +                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
 +
++                    //TODO: REMOVE unused parameters
++                    (void)Bsize;
++                    (void)l_bytes;
++                    (void)s_bytes;
++
 +                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
 +                    if (system != nullptr) {
 +
++                        // TODO: if versionListSize is a byte length (per the @length: annotation), this can read out of bounds.
 +			std::vector<uint32_t> versionlist32(versionListSize);
 +                        memcpy(versionlist32.data(), versionlist, versionListSize * sizeof(uint32_t));
 +                        const uint32_t* versionlist_converted = versionlist32.data();
@@ -300,6 +268,7 @@ index 70df2b3..a27d78b 100644
 +                        memcpy(versionlist32.data(), versionlist, versionListSize * sizeof(uint32_t));
 +                        const uint32_t* versionlist_converted = versionlist32.data();
 +
++                        // TODO: if movieIdOut_bytes is not equal to sizeof(uint64_t), this will write out of bounds.
 +                        CDMi::CDMi_RESULT mediasystem_return = system->CreateMovieSession(version, cert, certificatesize, versionlist_converted, versionListSize, reinterpret_cast<uint64_t*>(movieIdOut));
 +                        if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
 +                        {
@@ -390,7 +359,7 @@ index 70df2b3..a27d78b 100644
              Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& bufferSize, uint8_t buffer[]) const override {
                  Exchange::OCDM_RESULT result = Exchange::OCDM_KEYSYSTEM_NOT_SUPPORTED;
  
-@@ -921,10 +1192,23 @@ namespace Plugin {
+@@ -921,10 +1168,21 @@ namespace Plugin {
                       {
                           if (sessionInterface != nullptr)
                           {
@@ -405,12 +374,10 @@ index 70df2b3..a27d78b 100644
 +
 +                                if(strcmp(keySystem.c_str(),"com.apple.fps") == 0 )
 +                                {
-+                                   printf("********FPS FPS FPS Session Implementatio”******** \n");
 +                                   newEntry = Core::Service<SessionImplementation>::Create<SessionImplementation>(this, keySystem, sessionInterface,&keyIds);
 +                                }
 +                                else
 +                                {
-+                                   printf("******** Non FPS Non FPS Non FPS Non FPS Session Implementatio******** \n");
 +                                    newEntry = Core::Service<SessionImplementation>::Create<SessionImplementation>(this, keySystem, sessionInterface, callback, &keyIds);
 +                                }
  
@@ -433,13 +400,13 @@ index 18dfab3..3b75b14 100644
  if boolean("@PLUGIN_OPENCDMI_PLAYREADY@") or \
      boolean("@PLUGIN_OPENCDMI_PLAYREADY_NEXUS@") or \
 diff --git a/plugin/OCDM.config b/plugin/OCDM.config
-index 4e286ee3..42c38896 100644
+index 659ca69..c74ee70 100644
 --- a/plugin/OCDM.config
 +++ b/plugin/OCDM.config
-@@ -39,6 +39,15 @@ ans(keysystem)
- map_append(${configuration} systems ${keysystem})
+@@ -40,6 +40,15 @@ ans(keysystem)
+ map_append(${configuration} systems ___array___ ${keysystem})
  endif()
-
+ 
 +if(PLUGIN_OPENCDMI_FAIRPLAY)
 +map()
 +    kv(name "CFairPlay")

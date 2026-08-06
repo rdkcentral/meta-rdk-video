@@ -1,35 +1,16 @@
 diff --git a/client/open_cdm.cpp b/client/open_cdm.cpp
-index 0b218f8..a2b9582 100644
+index 0b218f8..b139cb8 100644
 --- a/client/open_cdm.cpp
 +++ b/client/open_cdm.cpp
-@@ -368,13 +368,16 @@ opencdm_construct_session(struct OpenCDMSystem* system,
-     OpenCDMSessionCallbacks* callbacks, void* userData,
-     struct OpenCDMSession** session)
- {
-+    //printf("*********opencdm_construct_session******** \n");
-+    //printf("*********opencdm_construct_session******** \n");
-     ASSERT(system != nullptr);
-     ASSERT(session != nullptr);
-     OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
+@@ -374,7 +374,6 @@ opencdm_construct_session(struct OpenCDMSystem* system,
  
      if ((system != nullptr) && (session != nullptr)) {
          TRACE_L1("Creating a Session for %s", system->keySystem().c_str());
 -
-+     //printf("******8creating session for %s \n",system->keySystem().c_str());
-+     //printf("********Calling OpenCDMSession::CreateSession********** \n");
          result = OpenCDMSession::CreateSession(system,
                                              licenseType,
                                              initDataType,
-@@ -383,6 +386,8 @@ opencdm_construct_session(struct OpenCDMSystem* system,
-                                             callbacks, userData,
-                                             session
-     );
-+       //printf("********returned OpenCDMSession::CreateSession********** \n");
-+       //printf("********returned OpenCDMSession::CreateSession********** \n");
-         TRACE_L1("Created a Session, result %p, %d", *session, result);
-     }
- 
-@@ -728,6 +733,38 @@ OpenCDMError opencdm_session_decrypt_v2(struct OpenCDMSession* session,
+@@ -728,6 +727,32 @@ OpenCDMError opencdm_session_decrypt_v2(struct OpenCDMSession* session,
      return (result);
  }
  
@@ -47,10 +28,6 @@ index 0b218f8..a2b9582 100644
 +    const uint8_t* iv,
 +    void *returnData)
 +{
-+
-+    //printf("********* In opencdm_session_decrypt_fps********** \n");
-+    //printf("********* In opencdm_session_decrypt_fps********** \n");
-+
 +    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
 +    ASSERT(session != nullptr);
 +
@@ -59,8 +36,6 @@ index 0b218f8..a2b9582 100644
 +            version, movieID, cryptorID, contentType, buffer, bufferSize, sliceInfoArray, sliceInfoArrayCount, iv, returnData)) : OpenCDMError::ERROR_NONE;
 +    }
 +
-+    //printf("**********returned from opencdm_session_decrypt_fps********** \n");
-+    //printf("**********returned from opencdm_session_decrypt_fps********** \n");
 +    return (result);
 +}
 +
@@ -238,7 +213,7 @@ index a730528..30c0c74 100644
 +    return result;
 +}
 diff --git a/client/open_cdm_ext.h b/client/open_cdm_ext.h
-index 24a85e4..086c810 100644
+index 24a85e4..60e6f99 100644
 --- a/client/open_cdm_ext.h
 +++ b/client/open_cdm_ext.h
 @@ -234,6 +234,14 @@ struct PlayLevels {
@@ -256,145 +231,11 @@ index 24a85e4..086c810 100644
  
  #ifdef __cplusplus
  } // extern "C"
-diff --git a/client/open_cdm_impl.cpp b/client/open_cdm_impl.cpp
-index c57f073..b45c39f 100644
---- a/client/open_cdm_impl.cpp
-+++ b/client/open_cdm_impl.cpp
-@@ -81,30 +81,42 @@ static SessionPrivate SessionPvt;
-                             OpenCDMSessionCallbacks* callbacks, void* userData,
-                             struct OpenCDMSession** session)
- {
-+    printf("******inside OpenCDMSession::CreateSession********* \n");
-+    printf("******inside OpenCDMSession::CreateSession********* \n");
-     OpenCDMError result(ERROR_INVALID_ACCESSOR);
- 
-     ASSERT(system != nullptr);
-     ASSERT(session != nullptr);
-     if ((system != nullptr) && (session != nullptr)) {
-+       printf("********calling new OpenCDMSession********* \n");
-+       printf("********calling new OpenCDMSession********* \n");
-         *session = new OpenCDMSession(system, std::string(initDataType),
-                             initData, initDataLength, CDMData,
-                             CDMDataLength, licenseType, callbacks, userData);
-+       printf("*********Created session ********* \n");
- 
-         result = (*session != nullptr ? OpenCDMError::ERROR_NONE
-                                       : OpenCDMError::ERROR_INVALID_SESSION);
- 
-         if(result == OpenCDMError::ERROR_NONE) {
-+           printf("********Inside private session construction ********* \n");
-+           printf("********Inside private session construction ********* \n");
-             OpenCDMError pvt_result(OpenCDMError::ERROR_METHOD_NOT_IMPLEMENTED);
-             pvt_result = SessionPvt.Construct(*session, (*session)->_pvtData);
-+           printf("*******After Pvt session *********** \n");
-+           printf("*******After Pvt session *********** \n");
-             if(pvt_result != OpenCDMError::ERROR_NONE && pvt_result != OpenCDMError::ERROR_METHOD_NOT_IMPLEMENTED)
-             {
-                 //Method is available but resulted in internal error. Not good for decryption.
-+               printf("*******something is wrong ******** \n");
-+               printf("*******something is wrong ******** \n");
-                 result = OpenCDMError::ERROR_INVALID_SESSION;
-                 (*session)->Release();
-                 *session = nullptr;
-             }
-         }
-     }
-+    printf("*******End of OpenCDMSession::CreateSession************ \n");
-     return result;
- }
- 
 diff --git a/client/open_cdm_impl.h b/client/open_cdm_impl.h
-index 9010689..b24710c 100644
+index 9010689..e861a71 100644
 --- a/client/open_cdm_impl.h
 +++ b/client/open_cdm_impl.h
-@@ -31,6 +31,40 @@ using namespace WPEFramework;
- 
- extern Core::CriticalSection _systemLock;
- 
-+
-+/*static void  print_hexdumpkey(const void *data, size_t size) {
-+    const unsigned char *buf = (const unsigned char *)data;
-+    size_t i, j;
-+
-+    for (i = 0; i < size; i += 16) {
-+        // Print address offset
-+       // printf("%08lx  ", i);
-+
-+        // Print hexadecimal bytes
-+        for (j = 0; j < 16; j++) {
-+            if (i + j < size) {
-+                printf("%02x ", buf[i + j]);
-+            } else {
-+                printf("   "); // Pad if less than 16 bytes in last row
-+            }
-+            if (j == 7) { // Add extra space after 8 bytes for readability
-+                printf(" ");
-+            }
-+        }
-+
-+        // Print ASCII representation
-+        printf(" |");
-+        for (j = 0; j < 16; j++) {
-+            if (i + j < size) {
-+                printf("%c", isprint(buf[i + j]) ? buf[i + j] : '.');
-+            } else {
-+                printf(" ");
-+            }
-+        }
-+        printf("|\n");
-+    }
-+}*/
-+
- struct OpenCDMSystem {
-     OpenCDMSystem(const char system[], const std::string& metadata) : _keySystem(system), _metadata(metadata) {}
-     ~OpenCDMSystem() = default;
-@@ -63,24 +97,31 @@ protected:
-         , _sessionKeys()
-     {
-         TRACE_L1("Trying to open an OCDM connection @ %s\n", domainName);
-+	printf("******Trying to open an OCDM connection @ %s******\n", domainName); fflush(stdout);
-         Reconnect(); // make sure ResourceMonitor singleton is created before OpenCDMAccessor so the destruction order is correct
-     }
- 
-     void Reconnect() const
-     {
-+	 printf("******In Reconnect*********** \n");fflush(stdout);
-         if (_client.IsValid() == false) {
-+	    printf("********Client is not valid ******** \n");fflush(stdout);
-             _client = Core::ProxyType<RPC::CommunicatorClient>::Create(Core::NodeId(_domain.c_str()), Core::ProxyType<Core::IIPCServer>(_engine));
-         }
- 
-         if ((_client.IsValid() == true) && (_client->IsOpen() == false)) {
-+	    printf("*******Client is valid********* \n");fflush(stdout);
-             if (_remote != nullptr) {
-+		 printf("*******Release the remote ******** \n");fflush(stdout);
-                 _remote->Release();
-             }
-+	    printf("**********Callign t create remoe OpenCDMImplementation********* \n");fflush(stdout);
-             _remote = _client->Open<Exchange::IAccessorOCDM>(_T("OpenCDMImplementation"));
- 
-             ASSERT(_remote != nullptr);
- 
-             if (_remote == nullptr) {
-+		printf("********Failed to open a channel to OCDM Implementation ******* \n");fflush(stdout);
-                 TRACE_L1("Failed to open a channel to OCDM implementation");
-                 if (_client.IsValid()) {
-                   _client.Release();
-@@ -154,16 +195,116 @@ public:
- 
-     virtual Exchange::OCDM_RESULT Metadata(const string& keySystem, string& metadata) const override
-     {
-+	printf("******In Metadata********** \n");fflush(stdout);
-         if (_remote == nullptr) {
-+	    printf("******Remote is NULL***** \n");fflush(stdout);
-             Reconnect();
-         }
-         if (_remote == nullptr) {
-+	    printf("**********Remote is still NULL******* \n");fflush(stdout);
-             return Exchange::OCDM_RESULT::OCDM_S_FALSE;
-         } else {
-+	    printf("*******calling Remote Metadata******** \n");fflush(stdout);
-             return(_remote->Metadata(keySystem, metadata));
+@@ -164,6 +164,102 @@ public:
          }
      }
  
@@ -497,24 +338,7 @@ index 9010689..b24710c 100644
      virtual Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& length, uint8_t buffer[]) const override {
          Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
   
-@@ -191,11 +332,16 @@ public:
-         Exchange::ISession::ICallback* callback, std::string& sessionId, 
-         Exchange::ISession*& session) override
-     {
-+       //printf("********inside CreateSession******** \n");
-+       //printf("*********the session = %p \n",session);
-         Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
- 
-         if (_remote != nullptr) {
-+          // printf("********calling remote CreateSession******** \n");
-+           //printf("********calling remote CreateSession******** \n");
-             result = _remote->CreateSession(keySystem, licenseType, initDataType, initData, initDataLength, CDMData,
-                         CDMDataLength, callback, sessionId, session);
-+           //printf("********_remote->CreateSession returned  with result =%d and session =%p \n *********",result,session);
-         }
-         return (result);
-     }
-@@ -470,6 +616,85 @@ private:
+@@ -470,6 +566,67 @@ private:
          }
  
      public:
@@ -531,68 +355,50 @@ index 9010689..b24710c 100644
 +               const uint8_t* iv,
 +               void *svpout)
 +	{
-+	    //printf("********inside of exchange Decrypt_fps******** \n");
++            //TODO: REMOVE unused parameters
++            (void)version;
++            (void)iv;
++
 +            int ret = 0;
 +
 +           _systemLock.Lock();
 +
 +            _busy = true;
-+	    //printf("********inside of exchange Decrypt_fps1******** \n");
 +            //TBD
 +            if (RequestProduce(Core::infinite) == Core::ERROR_NONE)
 +	    {
-+		//printf("********inside of exchange Decrypt_fps2******** \n");
-+               // printf("*****calling SetIv********* \n");
 +		//SetIV(static_cast<uint8_t>(ivDataLength), ivData);
-+		//printf("*****calling SetCryptorID********* \n");
 +		SetFPSCryptorId(cryptorID);
-+		//printf("*****calling SetMovieID********* \n");
 +		SetFPSMovieId(movieID);
-+		//printf("*****calling SetcontentType********* \n");
 +		SetFPSContentType(contentType);
-+		//printf("*****calling SetsliceInfoArray********* \n");
 +		SetFPSSliceInfoArray(sliceInfoArrayCount, reinterpret_cast<const CDMi::Cdmi_FPSSliceInfo *>(sliceInfoArray));
 +		if(contentType == 0x80000007) // SVP Video
 +		{
-+		   //printf("*****calling SetSVPBufferHandless 0x%x ********* \n",*(uint32_t *)svpout);
 +                   SetFPSSvpOut(*(uint32_t *)svpout);
 +		}
-+		//printf("*****calling Write********* \n");fflush(stdout);
 +                Write(encryptedDataLength, encryptedData);
 +                // This will trigger the OpenCDMIServer to decrypt this memory...
-+		//printf("*****calling Produced********* \n");fflush(stdout);
 +                Produced();
 +                // Now we should wait till it is decrypted, that happens if the
 +                // Producer, can run again.
-+		//printf("****After Produced******** \n");fflush(stdout);
 +                if (RequestProduce(Core::infinite) == Core::ERROR_NONE) {
-+		  // printf("****Calling Read ******** \n");fflush(stdout);
 +
 +                    // For nowe we just copy the clear data..
 +		    if(contentType == 0xA)
 +		    {
 +                    Read(encryptedDataLength, (uint8_t *)svpout);
-+		    //printf("********print the clear data in Client Side ******* \n");fflush(stdout);
-+                    //print_hexdumpkey(svpout,encryptedDataLength);
-+
-+
-+
-+		   }
-+		    //printf("*******get the status of last decrypt******* \n");
++		    }
 +
 +                    // Get the status of the last decrypt.
 +                    ret = Status();
 +
 +                    // And free the lock, for the next production Scenario..
-+		   // printf("*********calling consumed******** \n");
 +                    Consumed();
-+		   // printf("******after consumed******* \n");
 +                }
 +            }
 +            _busy = false;
 +
 +            _systemLock.Unlock();
-+           //printf("*********return from exchange Decrypt_fps******** \n");
 +            return (ret);
 +        }
 +
@@ -600,41 +406,7 @@ index 9010689..b24710c 100644
          uint32_t Decrypt(uint8_t* encryptedData, uint32_t encryptedDataLength,
              const ::SampleInfo* sampleInfo,
              uint32_t initWithLast15,
-@@ -584,22 +809,33 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
-         , _system(system)
-         , _pvtData(nullptr)
-     {
-+       //printf("**********OpenCDMSession constructor invoked ******* \n");
-+       //printf("**********OpenCDMSession constructor invoked ******* \n");
-         OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
-         std::string bufferId;
-         Exchange::ISession* realSession = nullptr;
- 
-         ASSERT(system != nullptr);
-+       //printf("*******calling Accessor CreateSession********** \n");
-         accessor->CreateSession(system->keySystem(), licenseType, initDataType, pbInitData,
-             cbInitData, pbCustomData, cbCustomData, &_sink,
-             _sessionId, realSession);
-+       //printf("********right after accessor->CreateSession********** \n");
-+       //printf("*****Do we have the valid realsession =%p****** \n",realSession);
-+       //printf("********right after accessor->CreateSession********** \n");
- 
-         if (realSession == nullptr) {
-+	  //  printf("*****Creating session failed****** \n");
-             TRACE_L1("Creating a Session failed. %d", __LINE__);
-         } else {
-+	    //printf("Add the session \n");
-             Session(realSession);
-             realSession->Release();
-             accessor->AddSession(this);
-+	    //printf("Done");
-         }
-+       //printf("*******End of constructon *********** \n");
-+       //printf("*******End of constructon *********** \n");
-     }
- 
-     virtual ~OpenCDMSession();
-@@ -738,6 +974,57 @@ public:
+@@ -738,6 +895,50 @@ public:
          return (result);
      }
  
@@ -651,22 +423,16 @@ index 9010689..b24710c 100644
 +    const uint8_t* iv,
 +    void *returnData)
 +    {
-+	//printf("********** inside of Mediakeysesson Decrypt_fps************ \n");
-+	//printf("********** inside of Mediakeysesson Decrypt_fps************ \n");
 +        uint32_t result = OpenCDMError::ERROR_INVALID_DECRYPT_BUFFER;
-+        //printf("*******The _session = %p********** \n",_session);
 +        // lazy create decryptbuffer
 +        if(_decryptSession == nullptr) {
-+	   // printf("********** Lazy Create decryptBuffer************ \n");
 +            DecryptSession(_session);
 +        }
 +
 +        // prevent unnecesary double atomic access
-+	//printf("********calling into exchange Decrypt_FPS******** \n");
 +        DataExchange* decryptSession = _decryptSession;
 +
 +        if (decryptSession != nullptr) {
-+	   //printf("******calling decryptSession->Decrypt_fps********* \n");
 +            result = decryptSession->Decrypt_fps(
 +                  version,
 +                  movieID,
@@ -682,7 +448,6 @@ index 9010689..b24710c 100644
 +            if(result)
 +            {
 +                TRACE_L1("Decrypt() failed with return code: %x", result);
-+		printf("***********End of Session Decrypt_fps ******** \n");
 +                result = OpenCDMError::ERROR_UNKNOWN;
 +            }
 +        }
@@ -692,33 +457,11 @@ index 9010689..b24710c 100644
      void* SessionPrivateData() const
      {
          return _pvtData;
-@@ -832,16 +1119,20 @@ protected:
-     }
-     void DecryptSession(Exchange::ISession* session)
-     {
-+	// printf("*******Inside of DecryptSession********* \n");
-         if (session == nullptr) {
-+          // printf("*********Delete _decryptSession******* \n");
-             delete _decryptSession;
-             _decryptSession = nullptr;
-         } else {
-+	  //printf("*****Lets create the DataExchange******* \n");
+@@ -839,7 +1040,6 @@ protected:
              std::string bufferid;
              ASSERT(_session != nullptr);
              uint32_t result = _session->CreateSessionBuffer(bufferid);
 -
-+           // printf("*******The createsession buffer result =%d bufferid = %s ****** \n",result,bufferid.c_str());
              if( result == 0 ) {
                  ASSERT (_decryptSession == nullptr);
-+             //   printf("********Creating DataExchange******** \n");
                  _decryptSession = new DataExchange(bufferid); 
-             }
-             else if ( result == 1 ) {
-@@ -852,6 +1143,7 @@ protected:
-             else {
-                 ASSERT (_decryptSession == nullptr);
-                 TRACE_L1("DecryptSession could not be created!");
-+		//printf("*****DecryptSession could not be created****** \n");
-             }
-         }
-     }
