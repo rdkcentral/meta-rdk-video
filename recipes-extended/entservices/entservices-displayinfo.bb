@@ -2,7 +2,7 @@ SUMMARY = "ENTServices displayinfo plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=0545acf8134821be0c0b6cb6d4603200"
 
-PV = "1.2.5"
+PV = "1.2.7"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displayinfo;${CMF_GITHUB_SRC_URI_SUFFI
            file://rdkservices.ini \
           "
 
-# Release version - 1.2.5
-SRCREV = "d8fa654df24a428f4cdf8801fab6b679ee697b34"
+# Release version - 1.2.7
+SRCREV = "06b0cb939915f8f2e2e5b64f0a394b6deb1dadf9"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
