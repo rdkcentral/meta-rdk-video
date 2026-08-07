@@ -46,11 +46,6 @@ do_install() {
     install -d ${D}${sysconfdir}/mfv_plugin
     install -m 0644 ${S}/MFV/opt/mfv_plugin/mfv_plugin_config.json ${D}${sysconfdir}/mfv_plugin/mfv_plugin_config.json
     install -m 0644 ${S}/MFV/opt/mfv_plugin/comcast_kw_model_uk_26-06-18.tflite ${D}${sysconfdir}/mfv_plugin/comcast_kw_model_uk_26-06-18.tflite
-
-    # Stage the plugin config into the sysroot as xraudio_mfv_config.json so
-    # xr-voice-sdk can fold it into the xraudio input.mfv object at build time.
-    install -d ${D}${includedir}
-    install -m 0644 ${S}/MFV/opt/mfv_plugin/mfv_plugin_config.json ${D}${includedir}/xraudio_mfv_config.json
 }
 
 FILES:${PN} += "${libdir}/libxraudio_mfv.so ${sysconfdir}/mfv_plugin/*"
