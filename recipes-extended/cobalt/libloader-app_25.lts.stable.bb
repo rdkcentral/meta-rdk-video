@@ -27,7 +27,7 @@ SRC_URI += "file://25/0005-Use-Yocto-host-toolchain.patch"
 SRC_URI += "file://25/0006-Use-certifi-to-tell-urllib-where-to-find-CA-file-397.patch"
 SRC_URI += "file://25/0007-Prevent-cobalt-unloading.patch"
 
-CR = "30"
+CR = "40"
 PR = "r${CR}"
 SRCREV_cobalt = "25.lts.${CR}"
 SRCREV_larboard = "${LARBOARD_SRCREV_DEV}"
@@ -67,7 +67,7 @@ PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_securi
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_asan', 'asan', '', d)}"
 PACKAGECONFIG:append = " wpecryptography rdkservices"
 
-PACKAGECONFIG[opencdm]       = "rdk_enable_ocdm=true,rdk_enable_ocdm=false,,"
+PACKAGECONFIG[opencdm]       = "rdk_enable_ocdm=true,rdk_enable_ocdm=false,entservices-opencdmi,entservices-opencdmi"
 PACKAGECONFIG[securityagent] = "rdk_enable_securityagent=true,rdk_enable_securityagent=false,,"
 PACKAGECONFIG[qa]            = ",,nodejs-native,"
 PACKAGECONFIG[asan]          = "use_asan=true,,gcc-sanitizers"
