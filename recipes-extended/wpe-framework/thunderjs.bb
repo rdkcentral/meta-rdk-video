@@ -9,9 +9,7 @@ SRCREV = "903f843ebbe9136609fbe348b1e39c306489c0b1"
 S = "${WORKDIR}/git"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-
-DEPENDS = "wpeframework"
+RDEPENDS:${PN} = "${THUNDER_NAMESPACE_LC}"
 
 do_configure[noexec] = "1"
 
