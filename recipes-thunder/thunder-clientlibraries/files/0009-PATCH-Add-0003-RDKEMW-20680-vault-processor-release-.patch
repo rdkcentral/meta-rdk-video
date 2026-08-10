@@ -1,0 +1,70 @@
+From 525feb068ab2dad6a0b5146c68ae68b7d436c262 Mon Sep 17 00:00:00 2001
+From: Thamim Razith <tabbas651@cable.comcast.com>
+Date: Fri, 7 Aug 2026 17:30:51 +0200
+Subject: [PATCH 09/10] [PATCH] Add
+ 0003-RDKEMW-20680-vault-processor-release-openssl-thunder-stubs.patch
+
+RDKEMW-20680: Provide a vault_processor_release() no-op for the OpenSSL
+and Thunder vault backends.
+
+Follow-up to RDKEMW-19048.  That change added vault_processor_release()
+only to the SecApi backend, because that is the one that holds an SA2
+SecProcessor handle across deep sleep.  But the shared CryptographyExtAccess
+plugin (entservices-cryptography) declares and calls the symbol
+unconditionally from onPowerModeChanged, regardless of which vault
+implementation the platform compiles.  The cryptography library links
+exactly one backend (CRYPTOGRAPHY_IMPLEMENTATION), so platforms that build
+OpenSSL (RDKM community: BCM/RTK/RPI) or the Thunder RPC vault fail to load
+the plugin:
+
+    symbol lookup error: libWPEFrameworkCryptographyExtAccess.so:
+    undefined symbol: vault_processor_release
+
+Neither the OpenSSL nor the Thunder backend holds a SecAPI SecProcessor
+handle across S3, so there is nothing to release - a no-op satisfies the
+ABI and lets the plugin load and deep sleep proceed.  The SecApi backend
+keeps its real handle-releasing implementation (0002-RDKEMW-19048-...patch).
+---
+ Source/cryptography/implementation/OpenSSL/Vault.cpp | 8 ++++++++
+ Source/cryptography/implementation/Thunder/Vault.cpp | 8 ++++++++
+ 2 files changed, 16 insertions(+)
+
+diff --git a/Source/cryptography/implementation/OpenSSL/Vault.cpp b/Source/cryptography/implementation/OpenSSL/Vault.cpp
+index 1f0ed56..f163723 100644
+--- a/Source/cryptography/implementation/OpenSSL/Vault.cpp
++++ b/Source/cryptography/implementation/OpenSSL/Vault.cpp
+@@ -534,6 +534,14 @@ uint16_t netflix_security_esn(const uint16_t max_length, uint8_t data[])
+     }
+ }
+ 
++void vault_processor_release(void)
++{
++    // OpenSSL vault holds no SecAPI SecProcessor handle across deep sleep;
++    // nothing to release. Provide the symbol so the shared
++    // CryptographyExtAccess plugin links on OpenSSL-vault platforms.
++    // See SecApi/Vault.cpp for the handle-releasing implementation.
++}
++
+ uint32_t netflix_security_encryption_key(void)
+ {
+     return (Implementation::Vault::NetflixInstance().Size(Implementation::Netflix::KPE_ID) != 0 ? Implementation::Netflix::KPE_ID : 0);
+diff --git a/Source/cryptography/implementation/Thunder/Vault.cpp b/Source/cryptography/implementation/Thunder/Vault.cpp
+index 78071e4..62536b3 100644
+--- a/Source/cryptography/implementation/Thunder/Vault.cpp
++++ b/Source/cryptography/implementation/Thunder/Vault.cpp
+@@ -259,4 +259,12 @@ uint32_t persistent_flush(struct VaultImplementation* vault)
+     return(Thunder::Core::ERROR_UNAVAILABLE);
+ }
+ 
++void vault_processor_release(void)
++{
++    // Thunder (RPC) vault holds no SecAPI SecProcessor handle across deep
++    // sleep; nothing to release. Provide the symbol so the shared
++    // CryptographyExtAccess plugin links on Thunder-vault platforms.
++    // See SecApi/Vault.cpp for the handle-releasing implementation.
++}
++
+ } // extern "C"
+-- 
+2.55.0
+
