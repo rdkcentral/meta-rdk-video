@@ -4,13 +4,13 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-PV = "1.3.9"
+PV = "1.4.0"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "a46ca7149fabe6e441903bea4ecf8bf937ca5efa"
+SRCREV = "b398b6101869c24c06df06319f1e3bd42cd07704"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -67,6 +67,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-preinstallmanager.service \
     wpeframework-telemetrymetrics.service \
     wpeframework-devicediagnostics.service \
+    wpeframework-tools.service \
     "
 
 CONTROL_FILES = "\
