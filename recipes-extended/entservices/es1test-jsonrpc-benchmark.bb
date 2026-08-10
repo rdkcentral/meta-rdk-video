@@ -1,6 +1,6 @@
 SUMMARY = "ES1 JSON-RPC round-trip benchmark plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=39d5ea182c31efbdcfcf9ead96f677e5"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
 PV = "1.0.0"
 PR = "r0"
