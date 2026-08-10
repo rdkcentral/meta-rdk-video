@@ -1,6 +1,6 @@
 SUMMARY = "ES1 JSON-RPC round-trip benchmark plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=5af0d167017273075d866c98a6159659"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=39d5ea182c31efbdcfcf9ead96f677e5"
 
 PV = "1.0.0"
 PR = "r0"
@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "git://github.com/workkavint-ship-it/ES1Test-JSONRPC-Benchmark;protocol=https;branch=main"
 
-SRCREV = "090a0aed44a9f6b996ec86b080f4545dedfc12b4"
+SRCREV = "c928f3af5a68c273fdb7debe1b8244029db633fb"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
