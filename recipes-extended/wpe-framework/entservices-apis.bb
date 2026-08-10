@@ -11,7 +11,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 inherit python3native cmake pkgconfig
 
 
-DEPENDS = "wpeframework wpeframework-tools-native"
+DEPENDS = "${THUNDER_NAMESPACE_LC} ${THUNDER_NAMESPACE_LC}-tools-native"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis"
 
@@ -35,14 +35,14 @@ EXTRA_OECMAKE += " \
 do_install:append() {
     if ${@bb.utils.contains("DISTRO_FEATURES", "opencdm", "true", "false", d)}
     then
-        install -m 0644 ${D}${includedir}/WPEFramework/interfaces/IDRM.h ${D}${includedir}/cdmi.h
+        install -m 0644 ${D}${includedir}/${THUNDER_NAMESPACE}/interfaces/IDRM.h ${D}${includedir}/cdmi.h
     fi
 }
 
 # ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/* ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
+FILES:${PN} += "${libdir}/* ${datadir}/${THUNDER_NAMESPACE}/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN}-dev += "${libdir}/cmake/*"
 FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/"
 FILES:${PN} += "${includedir}/cdmi.h"
