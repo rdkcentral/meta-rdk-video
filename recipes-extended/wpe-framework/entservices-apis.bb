@@ -5,6 +5,7 @@ PV = "4.1.0"
 PR = "r0"
 SRCREV_entservices-apis = "edbc2556c41fab2603bf593111cb029551c2b59f"
 
+
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit python3native cmake pkgconfig
