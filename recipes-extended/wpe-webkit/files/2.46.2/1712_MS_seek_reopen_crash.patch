@@ -1,0 +1,32 @@
+From 3daf0357f097ac578aba0d68aa98d1e648839382 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Fri, 7 Aug 2026 16:28:25 +0200
+Subject: [PATCH] [MSE] Crashfix on seeking MediaSource re-opening
+
+When a seek was pending at detach time, m_seekTargetPromise was correctly
+rejected and cleared but m_pendingSeekTarget was left set. On the next
+attach/append cycle, monitorSourceBuffers() would call completeSeek() with
+a live m_pendingSeekTarget but an empty m_seekTargetPromise, causing a
+crash dereferencing the empty optional.
+
+Fixes crash when HTMLMediaElement reuses the same MediaSource for a new
+source after a seek-then-detach sequence.
+---
+ Source/WebCore/Modules/mediasource/MediaSource.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Source/WebCore/Modules/mediasource/MediaSource.cpp b/Source/WebCore/Modules/mediasource/MediaSource.cpp
+index d8d8a4b10af9..76be64ef8bee 100644
+--- a/Source/WebCore/Modules/mediasource/MediaSource.cpp
++++ b/Source/WebCore/Modules/mediasource/MediaSource.cpp
+@@ -1201,6 +1201,7 @@ void MediaSource::detachFromElement()
+         m_seekTargetPromise->reject(PlatformMediaError::Cancelled);
+         m_seekTargetPromise.reset();
+     }
++    m_pendingSeekTarget.reset();
+ }
+ 
+ void MediaSource::sourceBufferDidChangeActiveState(SourceBuffer&, bool)
+-- 
+2.53.0
+
