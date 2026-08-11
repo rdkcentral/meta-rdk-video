@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Darko Lulic <Darko_Lulic@comcast.com>
+Date: Tue, 11 Aug 2026 09:50:19 +0000
+Subject: [PATCH] Fix readPIDFromPeer crash when child dies during launch
+
+When a child process (WPEWebProcess) dies before sending its PID (e.g.
+killed by SIGTERM during container teardown), recvmsg() returns 0 (EOF).
+Previously this fell through to g_error("Unexpected short read"), which
+called abort(), crashing the parent.
+
+Fix: check for ret==0 (EOF) in readPIDFromPeer and return 0. The caller
+detects the zero PID, emits a crash signal via didFinishLaunchingProcess,
+and removes the socket monitor. The g_error for genuine protocol errors
+(ret > 0 but no credentials) is unchanged.
+
+---
+ Source/WebKit/Platform/IPC/unix/ConnectionUnix.cpp              | 6 ++++++
+ Source/WebKit/UIProcess/Launcher/glib/ProcessLauncherGLib.cpp   | 7 ++++++-
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebKit/UIProcess/Launcher/glib/ProcessLauncherGLib.cpp b/Source/WebKit/UIProcess/Launcher/glib/ProcessLauncherGLib.cpp
+index 271987adce84..c2d3e4f5a6b7 100644
+--- a/Source/WebKit/UIProcess/Launcher/glib/ProcessLauncherGLib.cpp
++++ b/Source/WebKit/UIProcess/Launcher/glib/ProcessLauncherGLib.cpp
+@@ -258,8 +258,14 @@ void ProcessLauncher::launchProcess()
+         if (!(condition & G_IO_IN))
+             g_error("Failed to read pid from child process");
+ 
+         m_processID = IPC::readPIDFromPeer(g_socket_get_fd(pidSocket.get()));
+-        RELEASE_ASSERT(m_processID);
++        if (!m_processID) {
++            m_socketMonitor.stop();
++            close(m_pidServerSocket);
++            m_pidServerSocket = -1;
++            didFinishLaunchingProcess(0, IPC::Connection::Identifier { });
++            return G_SOURCE_REMOVE;
++        }
+ 
+         m_socketMonitor.stop();
+ 
+diff --git a/Source/WebKit/Platform/IPC/unix/ConnectionUnix.cpp b/Source/WebKit/Platform/IPC/unix/ConnectionUnix.cpp
+index 7a8b9c1d2e3f..b1c2d3e4f5a6 100644
+--- a/Source/WebKit/Platform/IPC/unix/ConnectionUnix.cpp
++++ b/Source/WebKit/Platform/IPC/unix/ConnectionUnix.cpp
+@@ -647,6 +647,11 @@ pid_t readPIDFromPeer(int socket)
+     if (ret == -1)
+         g_error("readPIDFromPeer: Failed to read pid from PID socket: %s", g_strerror(errno));
+ 
++    if (ret == 0) {
++        // Peer died before sending PID (e.g. SIGTERM during container teardown).
++        return 0;
++    }
++
+     if (message.msg_controllen <= 0)
+         g_error("readPIDFromPeer: Unexpected short read from PID socket");
+ 
