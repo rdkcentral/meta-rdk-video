@@ -68,6 +68,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-telemetrymetrics.service \
     wpeframework-devicediagnostics.service \
     wpeframework-tools.service \
+    wpeframework-devicesettings.service \
     "
 
 CONTROL_FILES = "\

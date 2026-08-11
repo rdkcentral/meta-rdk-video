@@ -66,7 +66,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains("BUILD_VARIANT", "debug", "-DPLUGIN_BUILD
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[playerinfo]           = "-DPLUGIN_PLAYERINFO=ON -DUSE_DEVICESETTINGS=1,-DPLUGIN_PLAYERINFO=OFF,iarmbus iarmmgrs entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal gstreamer1.0,iarmbus entservices-apis entservices-helpers devicesettings gstreamer1.0"
+PACKAGECONFIG[playerinfo]           = "-DPLUGIN_PLAYERINFO=ON -DUSE_DEVICESETTINGS=1,-DPLUGIN_PLAYERINFO=OFF,iarmbus iarmmgrs entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal gstreamer1.0 entservices-helpers,iarmbus entservices-apis entservices-helpers devicesettings gstreamer1.0 entservices-helpers"
 EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 # ----------------------------------------------------------------------------
 
