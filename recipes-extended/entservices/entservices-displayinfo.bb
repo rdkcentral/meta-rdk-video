@@ -53,7 +53,7 @@ PACKAGECONFIG:append = " displayinfo"
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[displayinfo]          = "-DPLUGIN_DISPLAYINFO=ON  -DUSE_DEVICESETTINGS=1,-DPLUGIN_DISPLAYINFO=OFF,iarmbus iarmmgrs drm entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal virtual/vendor-displayinfo-soc,iarmbus libdrm entservices-apis entservices-helpers devicesettings virtual/vendor-displayinfo-soc"
-
+EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 # ----------------------------------------------------------------------------
 
 EXTRA_OECMAKE += " \
