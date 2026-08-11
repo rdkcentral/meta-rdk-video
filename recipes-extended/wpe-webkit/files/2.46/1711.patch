@@ -1,15 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Darko Lulic <Darko_Lulic@comcast.com>
+Date: Tue, 11 Aug 2026 09:50:19 +0000
 Subject: [PATCH] Fix readPIDFromPeer crash when child dies during launch
 
-When a child process (WPEWebProcess) dies before sending its PID — e.g.
-killed by SIGTERM during container teardown — recvmsg() returns 0 (EOF).
-Previously this fell through to g_error("Unexpected short read") which
+When a child process (WPEWebProcess) dies before sending its PID (e.g.
+killed by SIGTERM during container teardown), recvmsg() returns 0 (EOF).
+Previously this fell through to g_error("Unexpected short read"), which
 called abort(), crashing the parent.
 
 Fix: check for ret==0 (EOF) in readPIDFromPeer and return 0. The caller
 detects the zero PID, emits a crash signal via didFinishLaunchingProcess,
 and removes the socket monitor. The g_error for genuine protocol errors
 (ret > 0 but no credentials) is unchanged.
+
+---
+ Source/WebKit/Platform/IPC/unix/ConnectionUnix.cpp              | 6 ++++++
+ Source/WebKit/UIProcess/Launcher/glib/ProcessLauncherGLib.cpp   | 7 ++++++-
+ 2 files changed, 12 insertions(+), 1 deletion(-)
 
 diff --git a/Source/WebKit/UIProcess/Launcher/glib/ProcessLauncherGLib.cpp b/Source/WebKit/UIProcess/Launcher/glib/ProcessLauncherGLib.cpp
 index 271987adce84..c2d3e4f5a6b7 100644
