@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DS_COMRPC Migration <ds_comrpc@migration>
+Date: Thu, 24 Jul 2026 00:00:00 +0000
+Subject: [PATCH] DS_COMRPC: inline edid-parser.hpp colorimetry constants in displayinfo
+
+---
+--- a/plugin/DeviceSettings/DS_COMRPC/DSPlatformImplementation.cpp
++++ b/plugin/DeviceSettings/DS_COMRPC/DSPlatformImplementation.cpp
+@@ -51,7 +51,21 @@
+ #include <interfaces/IConfiguration.h>
+ #include "DeviceSettingsInterface.h"               // DSHelper + config stores + VP/Audio/VideoDevice sub-interfaces
+ #include <interfaces/IDeviceSettingsDisplay.h>     // Exchange::IDeviceSettingsDisplay (GetDisplay, GetDisplayEdidBytes)
+-#include "edid-parser.hpp"                         // edid_parser::COLORIMETRY_INFO_* constants
++/* DS_COMRPC migration: edid-parser.hpp removed with devicesettings. Inline the needed colorimetry constants. */
++namespace edid_parser {
++enum colorimetry_info_t {
++    COLORIMETRY_INFO_NONE        = 0x000,
++    COLORIMETRY_INFO_XVYCC601    = 0x001,
++    COLORIMETRY_INFO_XVYCC709    = 0x002,
++    COLORIMETRY_INFO_SYCC601     = 0x004,
++    COLORIMETRY_INFO_ADOBEYCC601 = 0x008,
++    COLORIMETRY_INFO_ADOBERGB    = 0x010,
++    COLORIMETRY_INFO_BT2020CL    = 0x020,
++    COLORIMETRY_INFO_BT2020NCL   = 0x040,
++    COLORIMETRY_INFO_BT2020RGB   = 0x080,
++    COLORIMETRY_INFO_DCI_P3      = 0x100
++};
++}
+ 
+ #include "UtilsLogging.h"
+ 

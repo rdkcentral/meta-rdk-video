@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-framerate;${CMF_GITHUB_SRC_URI_SUFFIX}
           "
 
 # Release version - 1.2.3
-SRCREV = "215b40631439bf28603d04aecded77e64a4c2c92"
+SRCREV = "4ad2b46abffb4aa8874d204563a991ee9f2b5e65"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -47,8 +47,10 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[framerate]            = "-DPLUGIN_FRAMERATE=ON,-DPLUGIN_FRAMERATE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal procps entservices-helpers,iarmbus devicesettings procps entservices-helpers"
-
+# DS_COMRPC path: devicesettings + virtual/vendor-devicesettings-hal removed (not needed by COM-RPC client)
+# Rollback: restore the two removed packages to fields 3 and 4 below
+PACKAGECONFIG[framerate]            = "-DPLUGIN_FRAMERATE=ON,-DPLUGIN_FRAMERATE=OFF,iarmbus iarmmgrs procps entservices-helpers,iarmbus procps entservices-helpers"
+EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 # ----------------------------------------------------------------------------
 
 EXTRA_OECMAKE += " \

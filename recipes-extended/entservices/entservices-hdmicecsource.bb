@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
 PV = "1.2.6"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUF
            "
 
 # Release version - 1.2.6
-SRCREV = "a2b7a90fe7154d83bfe8a3f3c13a3b4da3e95a79"
+SRCREV = "48d25229b71df45952f24a1486c57815e195f0ab"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -40,16 +40,20 @@ PACKAGECONFIG ?= " breakpadsupport \
     hdmicecsource \
 "
 
-HDMICEC_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader entservices-helpers"
+# DS_COMRPC path: devicesettings + virtual/vendor-devicesettings-hal removed (not needed by COM-RPC client)
+# iarmbus/iarmmgrs/hdmicec/hdmicecheader retained for CEC event infrastructure
+# Rollback: restore 'devicesettings virtual/vendor-devicesettings-hal' to HDMICEC_DEPS
+#           and 'devicesettings' to HDMICEC_RDEPS
+HDMICEC_DEPS = "iarmbus iarmmgrs hdmicec hdmicecheader entservices-helpers"
 HDMICEC_DEPS:vdevice_x86-64-mw = "iarmbus hdmicec hdmicecheader vdevice-noop entservices-helpers"
 
-HDMICEC_RDEPS = "iarmbus devicesettings hdmicec entservices-helpers"
+HDMICEC_RDEPS = "iarmbus hdmicec entservices-helpers"
 HDMICEC_RDEPS:vdevice_x86-64-mw = "iarmbus hdmicec entservices-helpers"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[hdmicecsource]        = "-DPLUGIN_HDMICECSOURCE=ON,-DPLUGIN_HDMICECSOURCE=OFF,${HDMICEC_DEPS},${HDMICEC_RDEPS}"
-
+EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \

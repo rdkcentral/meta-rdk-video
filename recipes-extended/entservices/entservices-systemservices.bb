@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-systemservices;${CMF_GITHUB_SRC_URI_SU
           "
 
 # Release version - 1.6.0
-SRCREV = "${PV}"
+SRCREV = "a5fb2b23fb069fad035bfb3540ff8aadf5cb86eb"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -53,10 +53,13 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[systemservices]       = "-DPLUGIN_SYSTEMSERVICES=ON,-DPLUGIN_SYSTEMSERVICES=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal curl procps entservices-apis entservices-helpers,tzcode iarmbus rfc devicesettings curl procps entservices-apis entservices-helpers"
+# DS_COMRPC path: devicesettings + virtual/vendor-devicesettings-hal removed (not needed by COM-RPC client)
+# iarmbus/iarmmgrs retained for system-level IARM events (power, network, etc.)
+# Rollback: restore the two removed packages to fields 3 and 4 below
+PACKAGECONFIG[systemservices]       = "-DPLUGIN_SYSTEMSERVICES=ON,-DPLUGIN_SYSTEMSERVICES=OFF,iarmbus iarmmgrs rfc curl procps entservices-apis entservices-helpers,tzcode iarmbus rfc curl procps entservices-apis entservices-helpers"
 PACKAGECONFIG[systimemgrsupport]    = "-DBUILD_ENABLE_SYSTIMEMGR_SUPPORT=ON,,systimemgrinetrface,"
 # ----------------------------------------------------------------------------
-
+EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \

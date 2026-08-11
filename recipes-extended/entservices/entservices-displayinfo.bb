@@ -3,17 +3,18 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=0545acf8134821be0c0b6cb6d4603200"
 
 PV = "1.2.7"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displayinfo;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
+           file://0001-DS-COMRPC-inline-edid-parser-constants-in-displayinfo.patch \
           "
 
 # Release version - 1.2.7
-SRCREV = "06b0cb939915f8f2e2e5b64f0a394b6deb1dadf9"
+SRCREV = "e13b6527e7ed9d1a1c869a33c426e565936b27df"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -23,7 +24,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 
-
+EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 
 
 
@@ -52,8 +53,10 @@ PACKAGECONFIG ?= " breakpadsupport \
 PACKAGECONFIG:append = " displayinfo"
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[displayinfo]          = "-DPLUGIN_DISPLAYINFO=ON  -DUSE_DEVICESETTINGS=1,-DPLUGIN_DISPLAYINFO=OFF,iarmbus iarmmgrs drm entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal virtual/vendor-displayinfo-soc,iarmbus libdrm entservices-apis entservices-helpers devicesettings virtual/vendor-displayinfo-soc"
-
+# DS_COMRPC path: devicesettings + virtual/vendor-devicesettings-hal removed (not needed by COM-RPC client)
+# virtual/vendor-displayinfo-soc retained (DisplayInfo SOC abstraction, unrelated to DS HAL)
+# Rollback: restore devicesettings + virtual/vendor-devicesettings-hal to fields 3 and 4 below
+PACKAGECONFIG[displayinfo]          = "-DPLUGIN_DISPLAYINFO=ON  -DUSE_DEVICESETTINGS=1,-DPLUGIN_DISPLAYINFO=OFF,iarmbus iarmmgrs drm entservices-apis entservices-helpers virtual/vendor-displayinfo-soc,iarmbus libdrm entservices-apis entservices-helpers virtual/vendor-displayinfo-soc"
 # ----------------------------------------------------------------------------
 
 EXTRA_OECMAKE += " \

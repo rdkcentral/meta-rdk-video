@@ -1,0 +1,50 @@
+diff --git a/plugin/CMakeLists.txt b/plugin/CMakeLists.txt
+index 1f6a80a..1fa14e5 100644
+--- a/plugin/CMakeLists.txt
++++ b/plugin/CMakeLists.txt
+@@ -32,6 +32,7 @@ find_package(WPEFrameworkHelpers REQUIRED)
+ find_package(PkgConfig REQUIRED)
+ pkg_check_modules(GLIB2 REQUIRED glib-2.0)
+ find_library(PROCPS_LIBRARIES NAMES procps)
++find_library(OEMHAL_LIBRARIES NAMES ds-hal)
+ 
+ add_library(${MODULE_NAME} SHARED
+     Module.cpp
+@@ -82,9 +83,17 @@ include_directories(
+     ${CMAKE_CURRENT_LIST_DIR}
+ )
+ 
++# DS HAL headers (dsUtl.h, dsError.h, dsTypes.h etc.) — previously pulled in by
++# find_package(DS) via DS_INCLUDE_DIRS. Now resolved directly without the full DS package.
++find_path(DSHAL_INCLUDE_DIRS NAMES dsTypes.h PATH_SUFFIXES rdk/halif/ds-hal)
++if(NOT DSHAL_INCLUDE_DIRS)
++    message(FATAL_ERROR "DS HAL headers not found (dsTypes.h). Check sysroot.")
++endif()
++
+ # Add current directory to target include directories for proper header resolution
+ target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE
+     ${CMAKE_CURRENT_LIST_DIR}
++    ${DSHAL_INCLUDE_DIRS}
+     ${CMAKE_SOURCE_DIR}/../rdk-halif-device_settings/include
+     ${CMAKE_SOURCE_DIR}/../devicesettings/ds/include
+     ${GLIB2_INCLUDE_DIRS}
+@@ -122,16 +131,9 @@ if (MFR_FOUND)
+   target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${MFR_INCLUDE_DIRS})
+ endif()
+ 
+-find_package(DS)
+-if (DS_FOUND)
+-    find_package(IARMBus)
+-    add_definitions(-DDS_FOUND)
+-    target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${IARMBUS_INCLUDE_DIRS})
+-    target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${DS_INCLUDE_DIRS})
+-    target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${IARMBUS_LIBRARIES})
+-else (DS_FOUND)
+-    target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
+-endif(DS_FOUND)
++find_package(IARMBus REQUIRED)
++target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${IARMBUS_INCLUDE_DIRS})
++target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${IARMBUS_LIBRARIES})
+ 
+ target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${DSHALSRV_LIBRARIES})
+ target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${OEMHAL_LIBRARIES})

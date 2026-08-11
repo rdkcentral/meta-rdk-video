@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DS_COMRPC Migration <ds_comrpc@migration>
+Date: Tue, 22 Jul 2026 00:00:00 +0000
+Subject: [PATCH] DS_COMRPC: skip DS cmake vars when devicesettings not in sysroot
+
+entservices-userpreferences CMakeLists.txt unconditionally uses DS_INCLUDE_DIRS
+and DS_LIBRARIES even when find_package(DS) fails (sets them to NOTFOUND).
+The source UserPreferences.cpp makes no device:: calls; DS is cmake boilerplate.
+Add if(NOT DS_FOUND) guard to set vars to empty, preventing cmake failure.
+---
+--- a/plugin/CMakeLists.txt
++++ b/plugin/CMakeLists.txt
+@@ -22,6 +22,15 @@
+ 
+ find_package(${NAMESPACE}Plugins REQUIRED)
+ find_package(DS)
++# DS_COMRPC migration: clear NOTFOUND vars when devicesettings not in sysroot.
++# UserPreferences source makes no device:: calls; DS is cmake boilerplate only.
++if(NOT DS_FOUND)
++    set(DS_INCLUDE_DIRS "")
++    set(DS_LIBRARIES "")
++    set(DSHAL_INCLUDE_DIRS "")
++    set(DSHAL_LIBRARIES "")
++    set(DSRPC_INCLUDE_DIRS "")
++endif()
+ find_package(IARMBus)
+ find_package(GLIB REQUIRED)
+ 

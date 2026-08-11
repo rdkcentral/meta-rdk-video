@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-frontpanel;${CMF_GITHUB_SRC_URI_SUFFIX
           "
 
 # Release version - 1.1.3
-SRCREV = "040cda429951844a54856fc6be8094f89c968164"
+SRCREV = "1ae82652e7c565eaba3034acdbf0b5ca629aa13f"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -22,6 +22,8 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
 RDEPENDS:${PN} += "wpeframework"
+# DS_COMRPC: iarmbus + iarmmgrs-hal include paths for libIARM.h/sysMgr.h when devicesettings absent
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
@@ -40,8 +42,12 @@ PACKAGECONFIG ?= "telemetrysupport \
 "
 
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[frontpanel]           = "-DPLUGIN_FRONTPANEL=ON,,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus devicesettings entservices-helpers"
+# DS_COMRPC path: devicesettings + virtual/vendor-devicesettings-hal removed (not needed by COM-RPC client)
+# iarmbus/iarmmgrs retained for front-panel IARM event infrastructure
+# Rollback: restore the two removed packages to fields 3 and 4 below
+PACKAGECONFIG[frontpanel]           = "-DPLUGIN_FRONTPANEL=ON,,iarmbus iarmmgrs entservices-helpers,iarmbus entservices-helpers"
 
+EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \

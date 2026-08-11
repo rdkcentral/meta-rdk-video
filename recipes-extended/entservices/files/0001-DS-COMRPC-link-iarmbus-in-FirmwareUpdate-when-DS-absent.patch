@@ -1,0 +1,22 @@
+--- a/plugin/CMakeLists.txt
++++ b/plugin/CMakeLists.txt
+@@ -68,16 +68,9 @@
+    endif (TESTMOCKLIB_LIBRARIES)
+ endif (RDK_SERVICES_L2_TEST)
+ 
+-find_package(DS)
+-if (DS_FOUND)
+-	find_package(IARMBus)
+-    add_definitions(-DDS_FOUND)
+-    target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${IARMBUS_INCLUDE_DIRS})
+-    target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${DS_INCLUDE_DIRS})
+-    target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${IARMBUS_LIBRARIES} ${DS_LIBRARIES})
+-else (DS_FOUND)
+-    target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
+-endif(DS_FOUND)
++find_package(IARMBus REQUIRED)
++target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${IARMBUS_INCLUDE_DIRS})
++target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${IARMBUS_LIBRARIES})
+ 
+ 
+ target_link_libraries(${PLUGIN_IMPLEMENTATION}

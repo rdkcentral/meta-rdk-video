@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 PV = "1.6.3"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_S
            file://rdkservices.ini \
           "
 # Release version - 1.6.3
-SRCREV = "ca9b4a7843c70092cd4981d96f4efcdf7a3182c8"
+SRCREV = "5d479bdbcc27e1b28b7101d8f745f4649ad6ff53"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -47,10 +47,12 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[displaysettings]      = "-DPLUGIN_DISPLAYSETTINGS=ON,-DPLUGIN_DISPLAYSETTINGS=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus rfc devicesettings entservices-helpers"
+# DS_COMRPC path: devicesettings + virtual/vendor-devicesettings-hal removed (not needed by COM-RPC client)
+# Rollback: restore the two removed packages to fields 3 and 4 below
+PACKAGECONFIG[displaysettings]      = "-DPLUGIN_DISPLAYSETTINGS=ON,-DPLUGIN_DISPLAYSETTINGS=OFF,iarmbus iarmmgrs rfc entservices-helpers,iarmbus rfc entservices-helpers"
 
 # ----------------------------------------------------------------------------
-
+EXTRA_OECMAKE += " -DDS_COMRPC=ON"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \

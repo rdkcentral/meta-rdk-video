@@ -1,36 +1,29 @@
-SUMMARY = "ENTServices Userpreferences plugin"
+SUMMARY = "ENTServices devicesettings plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.1.1"
+PV = "1.0.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-userpreferences;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
 
-# Release version - 1.1.1
-SRCREV = "31b8421268a2f8cdc3393c80cee106ceed68ee69"
+# Release version - 1.0.0
+SRCREV = "0619cf5416091d292949f1e29d70d887f17b33a0"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
-
-DEPENDS += "wpeframework wpeframework-tools-native iarmmgrs"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
+# DS_COMRPC: iarmbus + iarmmgrs-hal + ds-hal include paths for libIARM.h/sysMgr.h/dsUtl.h when devicesettings absent
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal -I${STAGING_INCDIR}/rdk/halif/ds-hal"
 RDEPENDS:${PN} += "wpeframework"
-
-# DS_COMRPC migration: patch cmake to set DS vars to empty when devicesettings
-# is not in sysroot. Source makes no device:: calls; DS is cmake boilerplate.
-FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
-SRC_URI:append = " file://0001-DS-COMRPC-skip-DS-cmake-vars-in-userpreferences.patch"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
@@ -43,18 +36,17 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-
-# ----------------------------------------------------------------------------
-
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    userpreferences \
+    devicesettings \
 "
+# DS_COMRPC migration: devicesettings PACKAGECONFIG re-enabled to build
+# libWPEFrameworkDeviceSettings.so (Thunder plugin) WITHOUT libds.so dependency.
+# The PACKAGECONFIG[devicesettings] DEPENDS no longer includes devicesettings package.
+
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[userpreferences]      = "-DPLUGIN_USERPREFERENCES=ON,-DPLUGIN_USERPREFERENCES=OFF,glib-2.0,glib-2.0"
-
-# ----------------------------------------------------------------------------
+PACKAGECONFIG[devicesettings]       = "-DPLUGIN_DEVICESETTINGS=ON,-DPLUGIN_DEVICESETTINGS=OFF,iarmbus iarmmgrs virtual/vendor-devicesettings-hal devicesettings-hal-headers entservices-helpers,iarmbus entservices-helpers"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
@@ -62,26 +54,13 @@ EXTRA_OECMAKE += " \
     -DSECAPI_LIB=sec_api \
 "
 
-python () {
-    machine_name = d.getVar('MACHINE')
-    if 'raspberrypi4' in machine_name:
-        d.appendVar('EXTRA_OECMAKE', ' -DBUILD_RPI=ON')
-}
-
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
     if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
     then
       install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
     fi
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
-        if [ -d "${D}/etc/WPEFramework/plugins" ]; then
-            find ${D}/etc/WPEFramework/plugins/ -type f ! -name "PowerManager.json" | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
-        fi
-    fi
 }
-
-# ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
