@@ -1,29 +1,26 @@
-SUMMARY = "ENTServices framerate plugin"
+SUMMARY = "ENTServices devicesettings plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.2.3"
+PV = "1.0.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-framerate;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
 
-# Release version - 1.2.3
-SRCREV = "fee37a35b3a1c1dfa1971f9edf5eb68f1a7060d2"
+# Release version - 1.0.0
+SRCREV = "0619cf5416091d292949f1e29d70d887f17b33a0"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
-
-DEPENDS += "wpeframework wpeframework-tools-native"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
@@ -37,32 +34,20 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-# ----------------------------------------------------------------------------
-
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    framerate \
+    devicesettings \
 "
-
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[framerate]            = "-DPLUGIN_FRAMERATE=ON,-DPLUGIN_FRAMERATE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal procps entservices-helpers,iarmbus devicesettings procps entservices-helpers"
-
-# ----------------------------------------------------------------------------
+PACKAGECONFIG[devicesettings]       = "-DPLUGIN_DEVICESETTINGS=ON,-DPLUGIN_DEVICESETTINGS=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus devicesettings entservices-helpers"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
 "
-
-# Check if DisplayInfo backend is defined.
-python () {
-    machine_name = d.getVar('MACHINE')
-    if 'raspberrypi4' in machine_name:
-        d.appendVar('EXTRA_OECMAKE', ' -DBUILD_RPI=ON')
-}
 
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
@@ -77,8 +62,6 @@ do_install:append() {
         fi
     fi
 }
-
-# ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
