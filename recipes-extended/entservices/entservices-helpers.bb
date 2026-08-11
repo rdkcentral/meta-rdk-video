@@ -2,7 +2,7 @@ SUMMARY = "ENTServices helpers common shared library"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.0.2"
+PV = "1.0.5"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-helpers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-SRCREV = "5fd74207d873ccf78ecb0f3ed1f17774c0366419"
+SRCREV = "c0b9335c138bd23009bb20e95c3b1cda12b51512"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -23,18 +23,24 @@ RDEPENDS:${PN} += "wpeframework"
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/ds "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/ds-hal "
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/rdk/iarmbus"
+CXXFLAGS += "-DUSE_THUNDER_COMMUNICATION"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
-    -DUSE_THUNDER_COMMUNICATION=ON \
 "
 
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= "helpers"
 
-PACKAGECONFIG[helpers] = "-DPLUGIN_HELPERS=ON,-DPLUGIN_HELPERS=OFF,entservices-apis iarmbus devicesettings virtual/vendor-devicesettings-hal,entservices-apis devicesettings"
+HELPERS_DEPS = "entservices-apis iarmbus devicesettings virtual/vendor-devicesettings-hal"
+HELPERS_DEPS:vdevice_x86-64-mw = "entservices-apis iarmbus"
+
+HELPERS_RDEPS = "entservices-apis devicesettings"
+HELPERS_RDEPS:vdevice_x86-64-mw = "entservices-apis"
+
+PACKAGECONFIG[helpers] = "-DPLUGIN_HELPERS=ON,-DPLUGIN_HELPERS=OFF,${HELPERS_DEPS},${HELPERS_RDEPS}"
 
 # ----------------------------------------------------------------------------
 
