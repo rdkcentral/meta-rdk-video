@@ -8,7 +8,10 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX} \
+	   file://0001-DS-COMRPC-link-iarmbus-in-FirmwareUpdate-when-DS-absent.patch \
            "
 
 # Release version - 1.2.5
@@ -23,6 +26,8 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 
 DEPENDS += "wpeframework wpeframework-tools-native"
+# DS_COMRPC: iarmmgrs-hal include path needed for sysMgr.h when DS not in sysroot
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/iarmmgrs-hal -I${STAGING_INCDIR}/rdk/iarmbus"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "

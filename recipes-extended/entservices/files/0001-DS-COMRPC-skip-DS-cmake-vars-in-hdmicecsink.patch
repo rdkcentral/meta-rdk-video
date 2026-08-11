@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DS_COMRPC Migration <ds_comrpc@migration>
+Date: Thu, 24 Jul 2026 00:00:00 +0000
+Subject: [PATCH] DS_COMRPC: skip DS cmake vars in hdmicecsink when devicesettings absent
+
+---
+--- a/plugin/CMakeLists.txt
++++ b/plugin/CMakeLists.txt
+@@ -67,6 +67,14 @@
+ target_compile_definitions(${MODULE_NAME} PRIVATE MODULE_NAME=Plugin_${PLUGIN_NAME})
+ 
+ find_package(DS)
++# DS_COMRPC migration: clear NOTFOUND vars when devicesettings not in sysroot
++if(NOT DS_FOUND)
++    set(DS_INCLUDE_DIRS "")
++    set(DS_LIBRARIES "")
++    set(DSHAL_INCLUDE_DIRS "")
++    set(DSHAL_LIBRARIES "")
++    set(DSRPC_INCLUDE_DIRS "")
++endif()
+ find_package(IARMBus)
+ find_package(CEC)
+ find_package(Telemetry)

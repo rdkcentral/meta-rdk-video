@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DS_COMRPC Migration <ds_comrpc@migration>
+Date: Thu, 24 Jul 2026 00:00:00 +0000
+Subject: [PATCH] DS_COMRPC: guard dsMgr.h includes in avoutput shared headers
+
+---
+--- a/AVOutputSTB.h
++++ b/AVOutputSTB.h
+@@ -33,7 +33,9 @@
+ #include "UtilsLogging.h"
+ #include "UtilsJsonRpc.h"
+ #include "dsError.h"
++#if 0 /* DS_COMRPC migration: dsMgr.h not needed on DS_COMRPC path */
+ #include "dsMgr.h"
++#endif
+ #include "hdmiIn.hpp"
+ 
+ 
+--- a/AVOutputBase.h
++++ b/AVOutputBase.h
+@@ -26,7 +26,9 @@
+ #include "libIBus.h"
+ #include "iarmUtil.h"
+ #if 0 /* DS_COMRPC migration: dsMgr.h not needed on DS_COMRPC path */
++#if 0 /* DS_COMRPC migration: dsMgr.h not needed on DS_COMRPC path */
+ #include "dsMgr.h"
++#endif
+ #endif
+ #include <iostream>
+ 

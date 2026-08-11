@@ -1,0 +1,87 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DS_COMRPC migration <ds_comrpc@migration>
+Date: Tue, 22 Jul 2026 00:00:00 +0000
+Subject: [PATCH] DS_COMRPC: disable dsMgr/devicesettings in IARM_event_sender
+
+Guard all dsMgr-related code with #ifndef DISABLE_DEVICESETTINGS:
+- #include dsMgr.h
+- DSMgr handler function declarations
+- iarmEventTable (DSMgr event dispatch table)
+- DSMgr dispatch branch in main()
+- All DSMgr handler function implementations
+---
+--- a/iarm-event-sender/IARM_event_sender.c
++++ b/iarm-event-sender/IARM_event_sender.c
+@@ -39,7 +39,9 @@
+ #include "netsrvmgrIarm.h"
+ #endif
+ #include <stdbool.h>
++#ifndef DISABLE_DEVICESETTINGS
+ #include "dsMgr.h"
++#endif /* DISABLE_DEVICESETTINGS */
+ 
+ #define MAX_ARG_NO_TYPE        (6)
+ 
+@@ -91,6 +93,7 @@
+ static bool parseArg(const char *arg, ArgType type, ArgValue *out);
+ static void handleIARMEvents(int argc, char *argv[]);
+ 
++#ifndef DISABLE_DEVICESETTINGS
+ static void handleHdmiAllmEvent(ArgValue *args);
+ static void handleHdmiVrrEvent(ArgValue *args);
+ static void handleHdmiInSignalStatus(ArgValue *args);
+@@ -122,6 +125,7 @@
+ static void handleAudioMixingChanged(ArgValue *args);
+ static void handleEventZoomSetting(ArgValue *args);
+ static void handleEventHdcpStatus(ArgValue *args);
++#endif /* DISABLE_DEVICESETTINGS */
+ 
+ IARM_Result_t sendIARMEvent(GString* currentEventName, unsigned char eventStatus);
+ IARM_Result_t sendIARMEventPayload(GString* currentEventName, char *eventPayload);
+@@ -145,6 +149,7 @@
+     {"RedStateEvent",IARM_BUS_SYSMGR_SYSSTATE_RED_RECOV_UPDATE_STATE}
+ };
+ 
++#ifndef DISABLE_DEVICESETTINGS
+ /* Old code retained as is and plugged to fit the new dsmgr events. Table only used for DsMgr */
+ 
+ static IARM_EventEntry iarmEventTable[] = {
+@@ -181,6 +186,7 @@
+     { "DSMgr_EventHdcpStatus",               1, { ARG_STRING }, handleEventHdcpStatus },
+ };
+ static const int iarmEventTableSize = sizeof(iarmEventTable) / sizeof(iarmEventTable[0]);
++#endif /* DISABLE_DEVICESETTINGS */
+ 
+ 
+ 
+@@ -242,10 +248,13 @@
+         printUsage(argv[0]);
+         return 1;
+     }
++#ifndef DISABLE_DEVICESETTINGS
+     if (argc >= 2 && !strncmp(argv[1], "DSMgr_", 5)) {
+         handleIARMEvents(argc, argv);
+     }
+-    else if (argc == 3)
++    else
++#endif /* DISABLE_DEVICESETTINGS */
++    if (argc == 3)
+     {
+         unsigned char eventStatus;
+         g_string_assign(currentEventName,argv[1]);
+@@ -698,6 +707,7 @@
+ 
+ 
+ 
++#ifndef DISABLE_DEVICESETTINGS
+ static void handleCompositeInHotPlug(ArgValue *args)
+ {
+     int port = INT_ARG(0);
+@@ -1447,6 +1457,7 @@
+ }
+ 
+ 
++#endif /* DISABLE_DEVICESETTINGS */
+ static void printUsage(const char *prog)
+ {
+     g_message("Usage Applicable only for IARM Events:\n");

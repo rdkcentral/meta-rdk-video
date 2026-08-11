@@ -23,6 +23,8 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 
 DEPENDS += "wpeframework wpeframework-tools-native"
+# DS_COMRPC: iarmbus + iarmmgrs-hal include paths for libIARM.h/sysMgr.h when devicesettings absent
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
@@ -43,7 +45,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc entservices-apis entservices-helpers devicesettings"
+PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc entservices-apis entservices-helpers,iarmbus rfc entservices-apis entservices-helpers"
 
 # ----------------------------------------------------------------------------
 

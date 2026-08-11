@@ -5,12 +5,12 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 PV = "1.4.0"
-PR = "r0"
+PR = "r1"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "d1cadc41d88e88a2bb66b0f7018ca15e3e450dc7"
+SRCREV = "6eb5ad56f28874e6011d4208dfb1dcf2c95be42d"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -68,6 +68,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-telemetrymetrics.service \
     wpeframework-devicediagnostics.service \
     wpeframework-tools.service \
+    wpeframework-devicesettings.service \
     "
 
 CONTROL_FILES = "\
@@ -90,14 +91,30 @@ do_install() {
         ln -sf ${systemd_system_unitdir}/wpeframework.service ${D}${sysconfdir}/systemd/system/${x}.requires/wpeframework.service
     done
 
-    # Adding final THUNDER_STARTUP_SERVICES into the Requires= line of the target
-    FINAL_SERVICES="$(echo "${THUNDER_STARTUP_SERVICES}" | tr '\n' ' ')"
+    # Populate wpeframework-services.target with THUNDER_STARTUP_SERVICES.
+    # Remove any existing Requires= line(s) from upstream source to avoid duplicates.
+    # Use one Requires= per service instead of one long line to prevent systemd
+    # parser errors (Invalid argument) caused by exceeding the line length limit.
+    FINAL_SERVICES="$(echo "${THUNDER_STARTUP_SERVICES}" | tr ' ' '\n' | awk 'NF && !seen[$0]++')"
     TARGET_FILE="${D}${systemd_system_unitdir}/wpeframework-services.target"
 
-    if grep -q "^Requires=" "$TARGET_FILE"; then
-        # Append to existing Requires= line
-        sed -i "/^Requires=/ s|$| ${FINAL_SERVICES}|" "$TARGET_FILE"
-    fi
+    sed -i '/^Requires=/d' "$TARGET_FILE"
+    for svc in ${FINAL_SERVICES}; do
+        echo "Requires=${svc}" >> "$TARGET_FILE"
+    done
+}
+
+# DS_COMRPC migration: remove dsmgr.service from ALL systemd service dependencies.
+# dsMgr daemon is removed. Covers wpeframework-*.service, ermgr.service, hdmiservice.service,
+# sky-epg.service, and any other service that may reference dsmgr.service.
+ROOTFS_POSTPROCESS_COMMAND:append = " thunderstartup_strip_dsmgr; "
+thunderstartup_strip_dsmgr() {
+    for f in ${IMAGE_ROOTFS}${systemd_system_unitdir}/*.service; do
+        [ -f "$f" ] || continue
+        sed -i 's/ dsmgr\.service\b//g' "$f"
+        sed -i 's/\bdsmgr\.service //g' "$f"
+        sed -i 's/\bdsmgr\.service\b//g' "$f"
+    done
 }
 
 do_install:append() {

@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-helpers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-SRCREV = "c0b9335c138bd23009bb20e95c3b1cda12b51512"
+SRCREV = "305d50e8b733cd1de0dfb26622c087537d43729d"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -34,10 +34,10 @@ EXTRA_OECMAKE += " \
 
 PACKAGECONFIG ?= "helpers"
 
-HELPERS_DEPS = "entservices-apis iarmbus devicesettings virtual/vendor-devicesettings-hal"
+HELPERS_DEPS = "entservices-apis iarmbus"
 HELPERS_DEPS:vdevice_x86-64-mw = "entservices-apis iarmbus"
 
-HELPERS_RDEPS = "entservices-apis devicesettings"
+HELPERS_RDEPS = "entservices-apis"
 HELPERS_RDEPS:vdevice_x86-64-mw = "entservices-apis"
 
 PACKAGECONFIG[helpers] = "-DPLUGIN_HELPERS=ON,-DPLUGIN_HELPERS=OFF,${HELPERS_DEPS},${HELPERS_RDEPS}"

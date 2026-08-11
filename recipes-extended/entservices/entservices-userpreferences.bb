@@ -24,8 +24,13 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 
-DEPENDS += "wpeframework wpeframework-tools-native iarmmgrs devicesettings"
+DEPENDS += "wpeframework wpeframework-tools-native iarmmgrs"
 RDEPENDS:${PN} += "wpeframework"
+
+# DS_COMRPC migration: patch cmake to set DS vars to empty when devicesettings
+# is not in sysroot. Source makes no device:: calls; DS is cmake boilerplate.
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+SRC_URI:append = " file://0001-DS-COMRPC-skip-DS-cmake-vars-in-userpreferences.patch"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
