@@ -2,7 +2,7 @@ SUMMARY = "ENTServices AVOutput plugin"
 LICENSE = "CLOSED"
 
 PV = "2.1.3"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
