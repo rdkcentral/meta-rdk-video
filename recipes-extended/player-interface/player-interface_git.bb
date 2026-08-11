@@ -15,11 +15,9 @@ inherit pkgconfig
 inherit cmake
 
 DEPENDS += "iarmmgrs wpeframework ${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0 gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)} wpeframework-clientlibraries wpe-webkit virtual/vendor-gst-drm-plugins essos virtual/vendor-secapi2-adapter"
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', 'firebolt-aamp-sdk', 'iarmmgrs devicesettings', d)}"
 
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', '', 'devicesettings', d)}"
-
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', '-DUSE_FIREBOLT=ON -DCMAKE_IARM_MGR=ON', '-DCMAKE_IARM_MGR=ON', d)}"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', 'firebolt-aamp-sdk', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', '-DUSE_FIREBOLT=ON', '', d)}"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec_cc', 'subttxrend-app', '', d)}"
 RDEPENDS:${PN} += "devicesettings ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
