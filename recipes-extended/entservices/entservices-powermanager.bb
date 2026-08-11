@@ -9,7 +9,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "git://github.com/rdkcentral/entservices-powermanager.git;protocol=https;branch=topic/RDKEMW-22740 \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
 
