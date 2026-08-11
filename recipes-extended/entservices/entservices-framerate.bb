@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
 PV = "1.2.3"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-framerate;${CMF_GITHUB_SRC_URI_SUFFIX}
           "
 
 # Release version - 1.2.3
-SRCREV = "4ad2b46abffb4aa8874d204563a991ee9f2b5e65"
+SRCREV = "fee37a35b3a1c1dfa1971f9edf5eb68f1a7060d2"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
