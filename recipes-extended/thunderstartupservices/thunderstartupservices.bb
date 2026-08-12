@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 PV = "1.4.0"
-PR = "r0"
+PR = "r1"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
