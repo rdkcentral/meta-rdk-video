@@ -63,7 +63,7 @@ int main(void)
     printf("[PUB] rdk_otlp_init done\n");
 
     /* 2. Connect to IARM bus */
-    IARM_Bus_Init("iarm-otel-test-pub");
+    IARM_Bus_Init("iarm_otel_test_pub");
     IARM_Bus_Connect();
     printf("[PUB] IARM connected\n");
 
