@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bobra200 <bobra200@cable.comcast.com>
+Date: Thu, 30 Jul 2026 13:47:00 -0700
+Subject: [PATCH] RDKEMW-19470: rename soname to libFireboltCppTransport.so
+
+Rename the cmake project from FireboltTransport to FireboltCppTransport
+so the produced shared library becomes libFireboltCppTransport.so.
+
+This avoids a bitbake packaging clash with firebolt-native-transport
+which also produces libFireboltTransport.so.
+
+Pin BASE_NAME FireboltTransport in generate_export_header() so that all
+existing FIREBOLTTRANSPORT_EXPORT macros in the headers remain valid —
+only the soname and cmake package name change.
+
+Consumers of this library must use find_package(FireboltCppTransport)
+and link against FireboltCppTransport::FireboltCppTransport.
+---
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b2c76f5..a2c5dd2 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 3.12)
+ 
+ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+ 
+-project(FireboltTransport)
++project(FireboltCppTransport)
+ 
+ include(version)
+ 
+diff --git a/cmake/FireboltTransportConfig.cmake.in b/cmake/FireboltTransportConfig.cmake.in
+index b5f8db6..5529f74 100644
+--- a/cmake/FireboltTransportConfig.cmake.in
++++ b/cmake/FireboltTransportConfig.cmake.in
+@@ -1,3 +1,3 @@
+ @PACKAGE_INIT@
+ 
+-include("${CMAKE_CURRENT_LIST_DIR}/FireboltTransportTargets.cmake")
+\ No newline at end of file
++include("${CMAKE_CURRENT_LIST_DIR}/FireboltCppTransportTargets.cmake")
+\ No newline at end of file
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index f0045ea..48de93c 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -59,6 +59,7 @@ find_package(Boost CONFIG REQUIRED COMPONENTS system)
+ 
+ generate_export_header(
+     ${TARGET}
++    BASE_NAME FireboltTransport
+     EXPORT_FILE_NAME "firebolt/transport_export.h"
+ )
+ 
+@@ -115,7 +116,7 @@ write_basic_package_version_file(
+ )
+ 
+ configure_package_config_file(
+-    "${CMAKE_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in"
++    "${CMAKE_SOURCE_DIR}/cmake/FireboltTransportConfig.cmake.in"
+     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+ )
