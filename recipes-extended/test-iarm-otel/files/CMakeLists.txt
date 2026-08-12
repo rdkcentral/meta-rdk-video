@@ -4,26 +4,29 @@ project(test-iarm-otel VERSION 1.0.0 LANGUAGES C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# ── Paths ──────────────────────────────────────────────────────────────────
-# In Yocto these are set via EXTRA_OECMAKE; on a local build pass -D on the
-# cmake command line:
-#   cmake -S . -B build \
-#     -DIARM_INCLUDE_DIR=/path/to/iarmbus/core/include \
-#     -DOTEL_INSTRUMENTATION_DIR=/path/to/opentelemetry/rdk-distributed-tracer/instrumentation
-if(NOT DEFINED IARM_INCLUDE_DIR)
-    set(IARM_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../iarmbus/core/include")
-endif()
-if(NOT DEFINED OTEL_INSTRUMENTATION_DIR)
-    set(OTEL_INSTRUMENTATION_DIR
-        "${CMAKE_CURRENT_SOURCE_DIR}/../../opentelemetry/rdk-distributed-tracer/instrumentation")
-endif()
-# iarm_otel.h lives in the core/ dir (not include/)
-set(IARM_CORE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../iarmbus/core")
+# ── Locate IARM headers ────────────────────────────────────────────────────
+# libIBus.h may be installed at different subdirectory depths depending on
+# the iarmbus recipe (e.g. <sysroot>/usr/include/libIBus.h  or
+# <sysroot>/usr/include/rdk/iarmbus/libIBus.h).  Use find_path so CMake
+# searches the sysroot automatically.
+find_path(IARM_INCLUDE_DIR
+    NAMES libIBus.h
+    PATH_SUFFIXES rdk/iarmbus iarmbus rdk
+    REQUIRED
+)
+message(STATUS "IARM headers found at: ${IARM_INCLUDE_DIR}")
+
+# ── Locate OTel instrumentation header ────────────────────────────────────
+find_path(OTEL_INSTRUMENTATION_DIR
+    NAMES rdk_otlp_instrumentation.h
+    PATH_SUFFIXES rdk_otlp rdk/otlp otlp rdk
+    REQUIRED
+)
+message(STATUS "OTel instrumentation headers found at: ${OTEL_INSTRUMENTATION_DIR}")
 
 # ── Common include / link settings ─────────────────────────────────────────
 set(COMMON_INCLUDES
     ${IARM_INCLUDE_DIR}
-    ${IARM_CORE_DIR}
     ${OTEL_INSTRUMENTATION_DIR}
 )
 
