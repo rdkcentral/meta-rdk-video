@@ -2,8 +2,8 @@ SUMMARY = "WPEFramework extensions"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "4.4.6"
-PR = "r7"
+PV = "4.4.7"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig python3native
@@ -11,7 +11,7 @@ inherit cmake pkgconfig python3native
 BRANCH ?= "R4_4"
 SRCREV ?= "95e24b4b03c4aab1794200bc47b502436cd682fe"
 
-SRC_URI = "git://git@github.com/rdkcentral/ThunderExtensions.git;protocol=ssh;branch=${BRANCH}"
+SRC_URI = "git://github.com/rdkcentral/ThunderExtensions.git;protocol=https;branch=${BRANCH}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
