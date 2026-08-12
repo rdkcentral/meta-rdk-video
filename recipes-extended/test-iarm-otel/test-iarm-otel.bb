@@ -27,10 +27,7 @@ RDEPENDS:${PN} = " \
     rdk-otel-collector \
 "
 
-EXTRA_OECMAKE = " \
-    -DIARM_INCLUDE_DIR=${STAGING_INCDIR} \
-    -DOTEL_INSTRUMENTATION_DIR=${STAGING_INCDIR}/rdk_otlp \
-"
+EXTRA_OECMAKE = ""
 
 FILES:${PN} += " \
     ${bindir}/iarm_otel_test_pub \
