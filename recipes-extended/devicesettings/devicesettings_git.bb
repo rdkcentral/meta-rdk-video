@@ -5,9 +5,9 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 PV = "1.0.31.6"
-PR = "r0"
+PR = "r1"
 
-SRCREV_devicesettings = "b3832fb17c1c8f0f4f3c724b9471e1eace9dcce1"
+SRCREV_devicesettings = "157d5db81b93e9528615202f3e97826d54d7440e"
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
 
 # devicesettings is not a 'generic' component, as some of its source
