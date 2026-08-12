@@ -10,7 +10,7 @@ PV = "1.0"
 PR = "r0"
 
 # TODO: pin to a tag once available; currently the mfv-lib integration branch tip.
-SRCREV = "d63cb157f125c9e63314d83eded27f751a38567a"
+SRCREV = "5268d0cfcc4d146105c51e787067cf10d18dfbc4"
 SRC_URI = "${RDKE_GITHUB_ROOT}/xr-ffv-hal-sky-llama;${RDKE_GITHUB_SRC_URI_SUFFIX};name=xr-mfv-hal"
 SRCREV_FORMAT = "xr-mfv-hal"
 
@@ -22,7 +22,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 # (tensorflow/lite/c/c_api.h) and MFCC (MFCC.h) headers, which are expected to be provided by
 # separate recipes staged into the sysroot.
 # TODO: replace the placeholder tokens below with the real recipe/PROVIDES names.
-DEPENDS = "jansson xraudio-tensorflow-lite-lib xr-dsp-algorithms"
+DEPENDS = "jansson xraudio-tensorflow-lite-lib xr-dsp-algorithms xr-voice-sdk-xlog"
 
 inherit cmake pkgconfig
 
