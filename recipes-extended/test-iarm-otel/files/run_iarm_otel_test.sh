@@ -25,6 +25,7 @@
 #   1 — publisher or subscriber returned non-zero
 
 set -e
+set -o pipefail   # make pipe fail if any stage fails (catches pub crash via tee)
 
 OTLP_ENDPOINT="${OTLP_ENDPOINT:-http://localhost:4318}"
 IARM_DAEMON_BIN="${IARM_DAEMON_BIN:-iarmbusd}"
