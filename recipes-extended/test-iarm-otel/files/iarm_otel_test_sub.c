@@ -136,7 +136,7 @@ int main(void)
     printf("[SUB] rdk_otlp_init done\n");
 
     /* Connect to IARM */
-    IARM_Bus_Init("iarm-otel-test-sub");
+    IARM_Bus_Init("iarm_otel_test_sub");
     IARM_Bus_Connect();
     printf("[SUB] IARM connected\n");
 
