@@ -90,7 +90,7 @@ SRC_URI += "file://2.38.8/comcast-DELIA-68848-webrtc-improvements.patch"
 SRC_URI += "file://2.38.8/comcast-RDKEMW-8425-HDR-DV-MediaCapabilities.patch"
 SRC_URI += "file://2.38.8/comcast-RDKEMW-19501-adding-different-H264-profile-level.patch"
 #SRC_URI += "file://2.38/0001-debug-event-2.38.patch"
-SRC_URI += "file://2.38/0001-MSNOW-debug.patch"
+SRC_URI += "file://2.38/0001-MSNOW-WebKitMediaSourceGStreamer.patch"
 
 PACKAGECONFIG[wpeqtapi]          = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[westeros]          = "-DUSE_WPEWEBKIT_PLATFORM_WESTEROS=ON -DUSE_GSTREAMER_HOLEPUNCH=ON -DUSE_EXTERNAL_HOLEPUNCH=ON -DUSE_WESTEROS_SINK=ON,,westeros virtual/vendor-westeros-sink"
