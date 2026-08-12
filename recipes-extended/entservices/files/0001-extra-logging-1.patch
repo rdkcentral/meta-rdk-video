@@ -1,0 +1,195 @@
+From 1e4179c7603bd51b4b78b1a0079bcbcf3714e5ae Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Wed, 8 Jul 2026 18:53:10 +0300
+Subject: [PATCH] extra logging
+
+---
+ plugin/CloudStore.cpp               | 15 +++++++++++++++
+ plugin/CloudStore.h                 |  6 +++++-
+ plugin/CloudStoreImplementation.cpp |  2 ++
+ plugin/grpc/Store2.h                | 14 ++++++++++++++
+ 4 files changed, 36 insertions(+), 1 deletion(-)
+
+diff --git a/plugin/CloudStore.cpp b/plugin/CloudStore.cpp
+index b8fc2bb..310cfa2 100644
+--- a/plugin/CloudStore.cpp
++++ b/plugin/CloudStore.cpp
+@@ -68,6 +68,7 @@ namespace Plugin {
+ 
+ #ifdef WITH_RFC
+         RFC_ParamData_t rfcParam;
++        SYSLOG(Logging::Startup, (_T("%s getRFCParameter"), __FUNCTION__));
+         auto rfcStatus = getRFCParameter(nullptr, URI_RFC, &rfcParam);
+         if (rfcStatus == WDMP_SUCCESS) {
+             if (rfcParam.value[0]) {
+@@ -98,27 +99,37 @@ namespace Plugin {
+             security->Release();
+         }
+ 
++        SYSLOG(Logging::Startup,
++            (_T("%s token: %s"), __FUNCTION__, token.c_str()));
++
+         Core::SystemInfo::SetEnvironment(TOKEN_ENV, token);
+ 
+         _service->Register(&_notification);
+ 
++        SYSLOG(Logging::Startup, (_T("%s Root"), __FUNCTION__));
+         _store2 = _service->Root<Exchange::IStore2>(_connectionId, RPC::CommunicationTimeOut, _T("CloudStoreImplementation"));
+         if (_store2 != nullptr) {
+ 
++            SYSLOG(Logging::Startup, (_T("%s QueryInterface"), __FUNCTION__));
+             auto configConnection = _store2->QueryInterface<Exchange::IConfiguration>();
+             if (configConnection != nullptr) {
++                SYSLOG(Logging::Startup, (_T("%s Configure"), __FUNCTION__));
+                 configConnection->Configure(service);
++                SYSLOG(Logging::Startup, (_T("%s Release"), __FUNCTION__));
+                 configConnection->Release();
+             } else {
+                 result = _T("Failed to get IConfiguration");
+             }
+ 
+             Exchange::JStore2::Register(*this, _store2);
++            SYSLOG(Logging::Startup, (_T("%s Register"), __FUNCTION__));
+             _store2->Register(&_store2Sink);
+         } else {
+             result = _T("Couldn't create implementation instance");
+         }
+ 
++        SYSLOG(Logging::Startup, (_T("CloudStore initialised")));
++
+         return result;
+     }
+ 
+@@ -131,11 +142,15 @@ namespace Plugin {
+         _service->Unregister(&_notification);
+ 
+         if (_store2 != nullptr) {
++            SYSLOG(Logging::Shutdown, (_T("%s Unregister"), __FUNCTION__));
+             _store2->Unregister(&_store2Sink);
++            SYSLOG(Logging::Shutdown, (_T("%s Unregister end"), __FUNCTION__));
+             Exchange::JStore2::Unregister(*this);
+ 
+             auto connection = _service->RemoteConnection(_connectionId);
+             VARIABLE_IS_NOT_USED auto result = _store2->Release();
++            SYSLOG(Logging::Shutdown,
++                (_T("%s %" PRIu32), __FUNCTION__, result));
+             _store2 = nullptr;
+             ASSERT(result == Core::ERROR_DESTRUCTION_SUCCEEDED);
+             if (connection != nullptr) {
+diff --git a/plugin/CloudStore.h b/plugin/CloudStore.h
+index 9c4bceb..a20ed30 100644
+--- a/plugin/CloudStore.h
++++ b/plugin/CloudStore.h
+@@ -117,8 +117,12 @@ namespace Plugin {
+             , _store2Sink(*this)
+             , _notification(*this)
+         {
++            SYSLOG(Logging::Startup, (_T("%s"), __FUNCTION__));
++        }
++        ~CloudStore() override
++        {
++            SYSLOG(Logging::Shutdown, (_T("%s"), __FUNCTION__));
+         }
+-        ~CloudStore() override = default;
+ 
+         BEGIN_INTERFACE_MAP(CloudStore)
+         INTERFACE_ENTRY(PluginHost::IPlugin)
+diff --git a/plugin/CloudStoreImplementation.cpp b/plugin/CloudStoreImplementation.cpp
+index 2a357c5..8b46a26 100644
+--- a/plugin/CloudStoreImplementation.cpp
++++ b/plugin/CloudStoreImplementation.cpp
+@@ -28,10 +28,12 @@ namespace Plugin {
+     CloudStoreImplementation::CloudStoreImplementation()
+         : _accountStore2(Core::Service<Grpc::Store2>::Create<Exchange::IStore2>())
+     {
++        SYSLOG(Logging::Startup, (_T("%s"), __FUNCTION__));
+     }
+ 
+     CloudStoreImplementation::~CloudStoreImplementation()
+     {
++        SYSLOG(Logging::Shutdown, (_T("%s"), __FUNCTION__));
+         if (_accountStore2 != nullptr) {
+             _accountStore2->Release();
+             _accountStore2 = nullptr;
+diff --git a/plugin/grpc/Store2.h b/plugin/grpc/Store2.h
+index f67d797..666a758 100644
+--- a/plugin/grpc/Store2.h
++++ b/plugin/grpc/Store2.h
+@@ -81,11 +81,13 @@ namespace Plugin {
+                 , _service(nullptr)
+                 , _authorization((_uri.find("localhost") == string::npos) && (_uri.find("0.0.0.0") == string::npos))
+             {
++                SYSLOG(Logging::Startup, (_T("%s"), __FUNCTION__));
+                 Open();
+             }
+ 
+             ~Store2() override
+             {
++                SYSLOG(Logging::Shutdown, (_T("%s"), __FUNCTION__));
+                 if (_service != nullptr) {
+                     _service->Release();
+                     _service = nullptr;
+@@ -95,6 +97,7 @@ namespace Plugin {
+         private:
+             void Open()
+             {
++                SYSLOG(Logging::Startup, (_T("%s"), __FUNCTION__));
+                 grpc::ChannelArguments args;
+                 args.SetInt(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS, IDLE_TIMEOUT);
+                 std::shared_ptr<grpc::ChannelCredentials> creds;
+@@ -105,6 +108,7 @@ namespace Plugin {
+                 }
+                 _stub = ::distp::gateway::secure_storage::v1::SecureStorageService::NewStub(
+                     grpc::CreateCustomChannel(_uri, creds, args));
++                SYSLOG(Logging::Startup, (_T("%s end"), __FUNCTION__));
+             }
+ 
+         private:
+@@ -179,17 +183,23 @@ namespace Plugin {
+         public:
+             uint32_t Register(INotification* notification) override
+             {
++                SYSLOG(Logging::Startup,
++                    (_T("%s %p"), __FUNCTION__, (void*)notification));
+                 Core::SafeSyncType<Core::CriticalSection> lock(_clientLock);
+ 
+                 ASSERT(std::find(_clients.begin(), _clients.end(), notification) == _clients.end());
+ 
+                 notification->AddRef();
+                 _clients.push_back(notification);
++                SYSLOG(Logging::Startup,
++                    (_T("%s %p end"), __FUNCTION__, (void*)notification));
+ 
+                 return Core::ERROR_NONE;
+             }
+             uint32_t Unregister(INotification* notification) override
+             {
++                SYSLOG(Logging::Shutdown,
++                    (_T("%s %p"), __FUNCTION__, (void*)notification));
+                 Core::SafeSyncType<Core::CriticalSection> lock(_clientLock);
+ 
+                 std::list<INotification*>::iterator
+@@ -201,6 +211,8 @@ namespace Plugin {
+                     notification->Release();
+                     _clients.erase(index);
+                 }
++                SYSLOG(Logging::Shutdown,
++                    (_T("%s %p end"), __FUNCTION__, (void*)notification));
+ 
+                 return Core::ERROR_NONE;
+             }
+@@ -388,9 +400,11 @@ namespace Plugin {
+ 
+             virtual uint32_t Configure(PluginHost::IShell* service) override
+             {
++                SYSLOG(Logging::Startup, (_T("%s"), __FUNCTION__));
+                 ASSERT(service != nullptr);
+                 _service = service;
+                 _service->AddRef();
++                SYSLOG(Logging::Startup, (_T("%s end"), __FUNCTION__));
+ 
+                 return Core::ERROR_NONE;
+             }
+-- 
+2.43.0
+

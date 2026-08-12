@@ -1,0 +1,100 @@
+From 95aa69a5bdf50a6a4a882f1b80527a60674ea555 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Fri, 17 Jul 2026 19:11:14 +0300
+Subject: [PATCH] extra logging
+
+---
+ Source/WPEProcess/Process.cpp | 2 ++
+ Source/com/Communicator.cpp   | 2 ++
+ Source/com/Communicator.h     | 2 ++
+ Source/core/Library.cpp       | 1 +
+ Source/core/Process.h         | 1 +
+ 5 files changed, 8 insertions(+)
+
+diff --git a/Source/WPEProcess/Process.cpp b/Source/WPEProcess/Process.cpp
+index 2d4e524d..87d5ce6a 100644
+--- a/Source/WPEProcess/Process.cpp
++++ b/Source/WPEProcess/Process.cpp
+@@ -288,6 +288,7 @@ POP_WARNING()
+ 
+     static void* CheckInstance(const string& path, const TCHAR locator[], const TCHAR className[], const uint32_t ID, const uint32_t version)
+     {
++        TRACE_L1("%s %s %s", path.c_str(), locator, className);
+         void* result = nullptr;
+ 
+         if (path.empty() == false) {
+@@ -313,6 +314,7 @@ POP_WARNING()
+ 
+     static void* AcquireInterfaces(ConsoleOptions& options)
+     {
++        TRACE_L1("");
+         void* result = nullptr;
+ 
+         if ((options.Locator != nullptr) && (options.ClassName != nullptr)) {
+diff --git a/Source/com/Communicator.cpp b/Source/com/Communicator.cpp
+index fb62d7c7..9fd6c601 100644
+--- a/Source/com/Communicator.cpp
++++ b/Source/com/Communicator.cpp
+@@ -486,6 +486,7 @@ namespace RPC {
+ 
+     uint32_t CommunicatorClient::Open(const uint32_t waitTime, const uint32_t interfaceId, void* implementation, const uint32_t exchangeId)
+     {
++        TRACE_L1("");
+         ASSERT(BaseClass::IsOpen() == false);
+         _announceEvent.ResetEvent();
+ 
+@@ -508,6 +509,7 @@ namespace RPC {
+     }
+ 
+     void CommunicatorClient::StateChange() /* override */ {
++        TRACE_L1("");
+         BaseClass::StateChange();
+ 
+         if (BaseClass::Source().IsOpen()) {
+diff --git a/Source/com/Communicator.h b/Source/com/Communicator.h
+index 529fba82..df19b414 100644
+--- a/Source/com/Communicator.h
++++ b/Source/com/Communicator.h
+@@ -792,6 +792,7 @@ namespace RPC {
+         public:
+             uint32_t Launch() override
+             {
++                TRACE_L1("");
+                 uint32_t result = Core::ERROR_GENERAL;
+ 
+                 if (_container != nullptr) {
+@@ -990,6 +991,7 @@ namespace RPC {
+             }
+             inline void* Create(uint32_t& id, const Object& instance, const Config& config, const uint32_t waitTime)
+             {
++                TRACE_L1("");
+                 void* interfaceReturned = nullptr;
+ 
+                 id = 0;
+diff --git a/Source/core/Library.cpp b/Source/core/Library.cpp
+index eb294b7d..f44520f4 100644
+--- a/Source/core/Library.cpp
++++ b/Source/core/Library.cpp
+@@ -75,6 +75,7 @@ namespace Core {
+         : _refCountedHandle(nullptr)
+         , _error()
+     {
++        TRACE_L1("%s", fileName);
+ #ifdef __LINUX__
+         void* handle = dlopen(fileName, RTLD_LAZY);
+ #endif
+diff --git a/Source/core/Process.h b/Source/core/Process.h
+index c2a39fea..8d565b9f 100644
+--- a/Source/core/Process.h
++++ b/Source/core/Process.h
+@@ -362,6 +362,7 @@ namespace Core {
+ #endif
+         uint32_t Launch(const Process::Options& parameters, uint32_t* pid)
+         {
++            TRACE_L1("");
+             uint32_t error = Core::ERROR_NONE;
+ 
+             if (IsActive() == false) {
+-- 
+2.43.0
+

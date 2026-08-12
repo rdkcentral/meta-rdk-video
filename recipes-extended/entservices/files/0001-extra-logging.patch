@@ -1,0 +1,154 @@
+From fbe3de1abb90fe3b6bd183983ac1ea72798439d3 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Wed, 8 Jul 2026 18:10:10 +0300
+Subject: [PATCH] extra logging
+
+---
+ plugin/PersistentStore.cpp | 16 ++++++++++++----
+ plugin/PersistentStore.h   |  2 ++
+ plugin/sqlite/Store2.h     | 14 ++++++++++++++
+ 3 files changed, 28 insertions(+), 4 deletions(-)
+
+diff --git a/plugin/PersistentStore.cpp b/plugin/PersistentStore.cpp
+index fb9f5fa..594050f 100644
+--- a/plugin/PersistentStore.cpp
++++ b/plugin/PersistentStore.cpp
+@@ -119,19 +119,27 @@ namespace Plugin {
+         if (_store != nullptr) {
+             if (_store2 != nullptr) {
+                 _store2->Unregister(&_store2Sink);
+-                _store2->Release();
++                auto result = _store2->Release();
++                SYSLOG(Logging::Shutdown,
++                    (_T("%s %" PRIu32), __FUNCTION__, result));
+                 _store2 = nullptr;
+             }
+             if (_storeCache != nullptr) {
+-                _storeCache->Release();
++                auto result = _storeCache->Release();
++                SYSLOG(Logging::Shutdown,
++                    (_T("%s %" PRIu32), __FUNCTION__, result));
+                 _storeCache = nullptr;
+             }
+             if (_storeInspector != nullptr) {
+-                _storeInspector->Release();
++                auto result = _storeInspector->Release();
++                SYSLOG(Logging::Shutdown,
++                    (_T("%s %" PRIu32), __FUNCTION__, result));
+                 _storeInspector = nullptr;
+             }
+             if (_storeLimit != nullptr) {
+-                _storeLimit->Release();
++                auto result = _storeLimit->Release();
++                SYSLOG(Logging::Shutdown,
++                    (_T("%s %" PRIu32), __FUNCTION__, result));
+                 _storeLimit = nullptr;
+             }
+ 
+diff --git a/plugin/PersistentStore.h b/plugin/PersistentStore.h
+index f07008d..1d2e500 100644
+--- a/plugin/PersistentStore.h
++++ b/plugin/PersistentStore.h
+@@ -143,10 +143,12 @@ namespace Plugin {
+             , _store2Sink(*this)
+             , _notification(*this)
+         {
++            SYSLOG(Logging::Startup, (_T("%s"), __FUNCTION__));
+             RegisterAll();
+         }
+         ~PersistentStore() override
+         {
++            SYSLOG(Logging::Shutdown, (_T("%s"), __FUNCTION__));
+             UnregisterAll();
+         }
+ 
+diff --git a/plugin/sqlite/Store2.h b/plugin/sqlite/Store2.h
+index 44f6469..b7f4782 100644
+--- a/plugin/sqlite/Store2.h
++++ b/plugin/sqlite/Store2.h
+@@ -86,6 +86,7 @@ namespace Plugin {
+                 , _data(nullptr)
+                 , _corrupt(false)
+             {
++                SYSLOG(Logging::Startup, (_T("%s"), __FUNCTION__));
+                 TempDirectoryCheck();
+                 IntegrityCheck();
+                 Backup();
+@@ -93,12 +94,14 @@ namespace Plugin {
+             }
+             ~Store2() override
+             {
++                SYSLOG(Logging::Shutdown, (_T("%s"), __FUNCTION__));
+                 Close();
+             }
+ 
+         private:
+             void TempDirectoryCheck()
+             {
++                SYSLOG(Logging::Startup, (_T("%s"), __FUNCTION__));
+                 Core::File file(_path + "-journal");
+                 if (file.IsDirectory()) { // It's supposed to be a file
+                     TRACE(Trace::Error, (_T("file system corruption")));
+@@ -113,6 +116,7 @@ namespace Plugin {
+             }
+             void IntegrityCheck()
+             {
++                SYSLOG(Logging::Startup, (_T("%s"), __FUNCTION__));
+                 Core::File file(_path);
+                 if (file.Exists()) {
+                     sqlite3_open(file.Name().c_str(), &_data);
+@@ -130,6 +134,7 @@ namespace Plugin {
+             }
+             void Backup()
+             {
++                SYSLOG(Logging::Startup, (_T("%s"), __FUNCTION__));
+                 Core::File file(_path);
+                 Core::File fileB(_path + "-backup");
+                 if (_corrupt ? fileB.Exists() : file.Exists()) {
+@@ -155,6 +160,7 @@ namespace Plugin {
+             }
+             void Open()
+             {
++                SYSLOG(Logging::Startup, (_T("%s"), __FUNCTION__));
+                 Core::File file(_path);
+                 Core::Directory(file.PathName().c_str()).CreatePath();
+                 auto rc = sqlite3_open(_path.c_str(), &_data);
+@@ -217,6 +223,9 @@ namespace Plugin {
+                     " then raise (fail, 'limit') end; end;"
+                 };
+                 for (auto& sql : statements) {
++                    auto sqlShort = sql.substr(0, 20);
++                    SYSLOG(Logging::Startup,
++                        (_T("%s %s"), __FUNCTION__, sqlShort.c_str()));
+                     auto rc = sqlite3_exec(_data, sql.c_str(), nullptr, nullptr, nullptr);
+                     if (rc != SQLITE_OK) {
+                         OnError(__FUNCTION__, rc);
+@@ -225,6 +234,7 @@ namespace Plugin {
+             }
+             void Close()
+             {
++                SYSLOG(Logging::Shutdown, (_T("%s"), __FUNCTION__));
+                 auto rc = sqlite3_close_v2(_data);
+                 if (rc != SQLITE_OK) {
+                     OnError(__FUNCTION__, rc);
+@@ -256,6 +266,8 @@ namespace Plugin {
+         public:
+             uint32_t Register(INotification* notification) override
+             {
++                SYSLOG(Logging::Startup,
++                    (_T("%s %p"), __FUNCTION__, (void*)notification));
+                 Core::SafeSyncType<Core::CriticalSection> lock(_clientLock);
+ 
+                 ASSERT(std::find(_clients.begin(), _clients.end(), notification) == _clients.end());
+@@ -267,6 +279,8 @@ namespace Plugin {
+             }
+             uint32_t Unregister(INotification* notification) override
+             {
++                SYSLOG(Logging::Shutdown,
++                    (_T("%s %p"), __FUNCTION__, (void*)notification));
+                 Core::SafeSyncType<Core::CriticalSection> lock(_clientLock);
+ 
+                 std::list<INotification*>::iterator
+-- 
+2.43.0
+

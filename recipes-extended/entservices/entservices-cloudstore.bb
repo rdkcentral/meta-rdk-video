@@ -11,6 +11,7 @@ inherit cmake pkgconfig
 SRCREV = "9d1b7ef7edfa4334a348c60f174849cdc8667a5e"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-cloudstore;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
+           file://0001-extra-logging-1.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

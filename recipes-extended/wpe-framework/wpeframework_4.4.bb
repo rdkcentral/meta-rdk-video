@@ -22,6 +22,7 @@ SRCREV_thunder = "2c0fcc5529e7da734be558ca6efa05d934dcce31"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
+            file://r4.4/0001-extra-logging.patch \
            "
 
 S = "${WORKDIR}/git"
