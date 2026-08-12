@@ -17,12 +17,12 @@ PR = "r0"
 PV = "v3.5.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=main"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/onroutechange"
 
-SRCREV = "ba28f96c5a650546471b4573f91fdcb18b994723"
+SRCREV = "078c7b963d9186c384de819468ee56d1efaa96e0"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
+DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} entservices-cpc-apis "
 RDEPENDS:${PN} += " wpeframework rdk-logger curl iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
 
 inherit cmake pkgconfig python3native
@@ -42,10 +42,11 @@ EXTRA_OECMAKE += " \
                 -DENABLE_ROUTER_DISCOVERY_TOOL=ON \
                 -DENABLE_MIGRATION_MFRMGR_SUPPORT=ON \
                 -DUSE_RDK_LOGGER=ON \
+		-DUSE_CONNECTIVITYCHECKMGR=ON \
                 "
 
-CXXFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
-CFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
+CXXFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal -I${STAGING_INCDIR}/WPEFramework/interfaces_cpc"
+CFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal -I${STAGING_INCDIR}/WPEFramework/interfaces_cpc"
 
 do_install:append(){
     install -d ${D}${sysconfdir}/NetworkManager
