@@ -1,0 +1,123 @@
+diff -uNr entservices-apis/apis/Ids.h entservices-apis-change/apis/Ids.h
+--- entservices-apis/apis/Ids.h	2026-08-13 10:32:59.770602185 +0000
++++ entservices-apis-change/apis/Ids.h	2026-08-13 10:38:21.105214548 +0000
+@@ -363,6 +363,10 @@
+ 
+         ID_AUDIO_OUTPUT                             = ID_ENTOS_OFFSET + 0x560,
+         ID_AUDIO_OUTPUT_NOTIFICATION                = ID_AUDIO_OUTPUT + 1,
++        
++        ID_RESOURCEMONITOR                          = ID_ENTOS_OFFSET + 0x570,
++        ID_RESOURCEMONITOR_NOTIFICATION             = ID_RESOURCEMONITOR + 1,
++
+     }; // enum IDS
+ 
+ } // namespace Exchange
+diff -uNr entservices-apis/apis/ResourceMonitor/IResourceMonitor.h entservices-apis-change/apis/ResourceMonitor/IResourceMonitor.h
+--- entservices-apis/apis/ResourceMonitor/IResourceMonitor.h	1970-01-01 00:00:00.000000000 +0000
++++ entservices-apis-change/apis/ResourceMonitor/IResourceMonitor.h	2026-08-13 10:43:10.159564457 +0000
+@@ -0,0 +1,104 @@
++/*
++* If not stated otherwise in this file or this component's LICENSE file the
++* following copyright and licenses apply:
++*
++* Copyright 2026 RDK Management
++*
++* Licensed under the Apache License, Version 2.0 (the "License");
++* you may not use this file except in compliance with the License.
++* You may obtain a copy of the License at
++*
++* http://www.apache.org/licenses/LICENSE-2.0
++*
++* Unless required by applicable law or agreed to in writing, software
++* distributed under the License is distributed on an "AS IS" BASIS,
++* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++* See the License for the specific language governing permissions and
++* limitations under the License.
++*/
++
++#pragma once
++#include "Module.h"
++
++namespace WPEFramework {
++    namespace Exchange {
++        // @json 1.0.0
++        struct EXTERNAL IResourceMonitor : virtual public Core::IUnknown {
++            enum { ID = ID_RESOURCEMONITOR };
++
++            typedef string EventData;
++
++            enum class CaptureMode : uint8_t {
++                NONE = 0 /* @text: NONE */,
++                LIVE = 1 /* @text: LIVE */,
++                SUMMARY = 2 /* @text: SUMMARY */,
++                MIXED = 3 /* @text: MIXED */,
++            };
++
++            enum class MeasurementType : uint8_t {
++                NONE /* @text: NONE */,
++                ALL /* @text: ALL */,
++                ALLMEMORY /* @text: ALLMEMORY */,
++                ALLCPU /* @text: ALLCPU */,
++                MEMORYUSS /* @text: MEMORYUSS */,
++                MEMORYPSS /* @text: MEMORYPSS */,
++                MEMORYRSS /* @text: MEMORYRSS */,
++                MEMORYRAMFREE /* @text: MEMORYRAMFREE */,
++                MEMORYRAMTOTAL /* @text: MEMORYRAMTOTAL */,
++                MEMORYRAMAVAILABLE /* @text: MEMORYRAMAVAILABLE */,
++                CPULOADTOTAL /* @text: CPULOADTOTAL */,
++                CPULOADTOTALUSER /* @text: CPULOADTOTALUSER */,
++                CPULOADTOTALSYSTEM /* @text: CPULOADTOTALSYSTEM */,
++            };
++
++            // @event
++            struct EXTERNAL INotification : virtual public Core::IUnknown {
++                enum { ID = ID_RESOURCEMONITOR_NOTIFICATION };
++                ~INotification() override = default;
++
++                // @brief Notification with resource monitor data
++                // @text onresourcemonitordata
++                // @param data EventData, which contains serialized JSON Lines with data
++                // samples
++                virtual void OnResourceMonitorData(const EventData &events) = 0;
++            };
++
++            ~IResourceMonitor() override = default;
++
++            // @brief Manage notifications lifecycle
++            virtual void Register(IResourceMonitor::INotification *sink) = 0;
++            virtual void Unregister(IResourceMonitor::INotification *sink) = 0;
++
++            // @brief Configure plugin
++            /* @json:omit */
++            virtual uint32_t Configure(PluginHost::IShell *framework) = 0;
++
++            // @brief Begin capture session
++            // @param interval - in - uint32_t
++            // @text startcapture
++            // @param captureMode - in - CaptureMode
++            // @returns uint32_t
++            virtual uint32_t StartCapture(const uint32_t interval,
++                                        const CaptureMode captureMode) = 0;
++
++            // @brief End capture session
++            // @text stopcapture
++            // @returns uint32_t
++            virtual uint32_t StopCapture() = 0;
++
++            // @brief Get current resource usage
++            // @text getcurrentusage
++            // @param processPrefix - in - string
++            // @param measurementType - in - MeasurementType
++            // @returns uint32_t
++            virtual uint32_t GetCurrentUsage(const string &processPrefix,
++                                            const MeasurementType measurementType) = 0;
++
++            // @brief Add custom label to dataset
++            // @text addlabel
++            // @param annotation - in - string
++            // @returns uint32_t
++            virtual uint32_t AddLabel(const string &annotation) = 0;
++        };
++    } // namespace Exchange
++} // namespace WPEFramework
+Binary files entservices-apis/.git/index and entservices-apis-change/.git/index differ
