@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 PV = "1.0.35"
 PR = "r0"
 
-SRCREV_devicesettings = "552cb7931e8bcb9cc9e20cc8a736001eaaddd41e"
+SRCREV_devicesettings = "783814f5449684e3ffeb5b4841ef12ed1a5b6ea9"
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
 
 # devicesettings is not a 'generic' component, as some of its source
@@ -119,7 +119,7 @@ INSANE_SKIP:${PN} = "ldflags"
 
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
-CFLAGS += "-DHAS_FLASH_PERSISTENT -DHAS_THERMAL_API -DdsFPD_BRIGHTNESS_DEFAULT=100 "
+CFLAGS += "-DHAS_FLASH_PERSISTENT -DHAS_THERMAL_API "
 #enabling HDCP callback in rpc server
 CFLAGS += " -DHAS_HDCP_CALLBACK"
 CFLAGS += "${@bb.utils.contains("DISTRO_FEATURES", "uhd_enabled", "-DHAS_4K_SUPPORT ", "", d)}"
