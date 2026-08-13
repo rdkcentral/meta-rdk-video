@@ -1,28 +1,24 @@
 /*
  * iarm_otel_test_sub.c — IARM OTel POC: Subscriber / RPC Handler
  *
- * This process:
- *   1. Optionally calls rdk_otlp_init() so that child spans are exported from
- *      this process to the same OTLP collector.
- *   2. Registers an IARM event handler for OTEL_TEST_OWNER / event 0.
- *   3. Registers an IARM RPC handler for OTEL_TEST_OWNER / GetTestState.
- *   4. Waits for 30 s (or until signalled) then exits cleanly.
+ * Handles the following scenarios exercised by iarm_otel_test_pub:
  *
- * Transport-only model:
- *   • libIARMBus propagates traceparent and exposes it via
- *     IARM_Bus_GetCurrentIncomingTraceparent().
- *   • Handler code decides whether to create child spans.
+ * SC1 — New sender → New receiver, EVENT path
+ *   Three dedicated event handlers, each creating a child span and simulating
+ *   realistic processing delays (different per event type) so that Jaeger shows
+ *   a visually meaningful timeline:
+ *     ScanComplete  (TEST_EVENT_SCAN  = 0)  ~200 ms
+ *     ParseConfig   (TEST_EVENT_PARSE = 1)  ~150 ms
+ *     ApplySettings (TEST_EVENT_APPLY = 2)  ~100 ms
  *
- * Verification:
- *   After both processes exit, open the OTLP collector UI (or scrape
- *   /opt/logs/rdk_otel_tracer.log on both processes) and confirm:
- *     • 3 spans share one trace_id
- *     • span "IARM.OTEL_TEST_OWNER.event0" is a child of "pub-root-span"
- *     • span "IARM.OTEL_TEST_OWNER.GetTestState" is a child of "pub-root-span"
+ * SC2 — New sender → New receiver, RPC path
+ *   GetTestState handler creates a child span and simulates ~120 ms of
+ *   state-query work.
  *
- * Direct-linking failure indicator:
- *   If isTracingEnabled() causes a crash or deadlock in processes that never
- *   called rdk_otlp_init(), switch to the dlsym approach.
+ * SC3 — Untraced / legacy sender → New receiver
+ *   When IARM_Bus_GetCurrentIncomingTraceparent() returns NULL (sender had no
+ *   active span), the handler skips tracing entirely and processes the event
+ *   normally.  No crash, no orphan span.
  */
 
 #include "libIBus.h"
@@ -140,22 +136,30 @@ int main(void)
     IARM_Bus_Connect();
     printf("[SUB] IARM connected\n");
 
-    /* Register event handler */
-    IARM_Bus_RegisterEventHandler(TEST_OWNER,
-                                  (IARM_EventId_t)TEST_EVENT_ID,
-                                  _on_test_event);
-    printf("[SUB] Registered event handler for %s / event %d\n",
-           TEST_OWNER, TEST_EVENT_ID);
+    /* Register handlers for all 3 event types */
+    IARM_Bus_RegisterEventHandler(TEST_OWNER, (IARM_EventId_t)TEST_EVENT_SCAN,
+                                  _on_event_scan);
+    printf("[SUB] Registered SCAN  handler (event %d) — simulates ~200 ms\n",
+           TEST_EVENT_SCAN);
+    IARM_Bus_RegisterEventHandler(TEST_OWNER, (IARM_EventId_t)TEST_EVENT_PARSE,
+                                  _on_event_parse);
+    printf("[SUB] Registered PARSE handler (event %d) — simulates ~150 ms\n",
+           TEST_EVENT_PARSE);
+    IARM_Bus_RegisterEventHandler(TEST_OWNER, (IARM_EventId_t)TEST_EVENT_APPLY,
+                                  _on_event_apply);
+    printf("[SUB] Registered APPLY handler (event %d) — simulates ~100 ms\n",
+           TEST_EVENT_APPLY);
 
     /* Register RPC handler */
     IARM_Bus_RegisterCall(TEST_METHOD, _on_get_test_state);
-    printf("[SUB] Registered RPC handler for %s\n", TEST_METHOD);
+    printf("[SUB] Registered RPC   handler (%s) — simulates ~120 ms\n",
+           TEST_METHOD);
 
-    printf("[SUB] Waiting for events/RPC calls (30 s or SIGTERM) ...\n");
+    printf("[SUB] Ready. Waiting for events/RPC calls (60 s or SIGTERM) ...\n");
 
-    /* Wait loop — 30 s hard limit so the process doesn't hang in CI */
+    /* Wait loop — 60 s hard limit */
     int waited = 0;
-    while (!g_stop && waited < 30) {
+    while (!g_stop && waited < 60) {
         sleep(1);
         waited++;
     }
