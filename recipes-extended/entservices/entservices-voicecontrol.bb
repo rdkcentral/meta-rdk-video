@@ -10,7 +10,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-voicecontrol;${CMF_GITHUB_SRC_URI_SUFF
            file://rdkservices.ini \
           "
 
-PV = "1.0.2"
+PV = "1.0.3"
 PR = "r0"
 SRCREV = "6e8a9eb7fd8b132dc77d7c07632e5745125de8ea"
 
