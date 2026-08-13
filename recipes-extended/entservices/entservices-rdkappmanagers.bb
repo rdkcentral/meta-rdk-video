@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "4464380072de9084160fe491069c741909747c71"
+SRCREV = "f00a48e643d7b90a5c291f72939615c98422ab62"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -59,7 +59,7 @@ PACKAGECONFIG ?= " telemetrysupport \
     telemetrymetrics \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'rialto_in_dac', 'rialtodac', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'rialtosupport', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_ralf', ' ralfsupport', '', d)} \
 "
 
@@ -73,7 +73,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE',
 
 PACKAGECONFIG[ocicontainer]         = "-DPLUGIN_OCICONTAINER=ON, -DPLUGIN_OCICONTAINER=OFF, dobby entservices-apis systemd, dobby entservices-apis systemd"
 PACKAGECONFIG[ocicontainersec]      = "                        ,                          ,   omi,   omi"
-PACKAGECONFIG[rialtodac]            = "-DRIALTO_IN_DAC_FEATURE=ON,-DRIALTO_IN_DAC_FEATURE=OFF,rialto,rialto-servermanager-lib"
+PACKAGECONFIG[rialtosupport]        = "-DRIALTO_SUPPORT=ON,-DRIALTO_SUPPORT=OFF,rialto,rialto-servermanager-lib"
 PACKAGECONFIG[rdknativescript]      = "-DPLUGIN_NATIVEJS=ON -DPLUGIN_NATIVEJS_CLIENTIDENTIFIER='${NATIVEJS_CLIENTIDENTIFIER}',-DPLUGIN_NATIVEJS=OFF,rdknativescript,libuv"
 PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
