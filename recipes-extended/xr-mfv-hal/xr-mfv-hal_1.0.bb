@@ -10,7 +10,7 @@ PV = "1.0"
 PR = "r0"
 
 # TODO: pin to a tag once available; currently the mfv-lib integration branch tip.
-SRCREV = "5268d0cfcc4d146105c51e787067cf10d18dfbc4"
+SRCREV = "8fa2d10876a1663374979b2ca62f14fbaa0778e0"
 SRC_URI = "${RDKE_GITHUB_ROOT}/xr-ffv-hal-sky-llama;${RDKE_GITHUB_SRC_URI_SUFFIX};name=xr-mfv-hal"
 SRCREV_FORMAT = "xr-mfv-hal"
 
