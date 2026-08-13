@@ -16,9 +16,9 @@ PR = "r46"
 PV = "4.4.6"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder"
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=development/Perf;name=thunder"
 
-SRCREV_thunder = "2c0fcc5529e7da734be558ca6efa05d934dcce31"
+SRCREV_thunder = "6e055ea987ba230c93e4e84f5eb2977d8a18fe66"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
@@ -118,11 +118,18 @@ EXTRA_OECMAKE += " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
     -DAUTHORIZEDEXTENSIONS='MessagingControl;PluginInitializerService;Systemd' \
     -DDISABLEPLUGINAUTOACTIVATION=true \
+    -DTHUNDER_DEBUG_BUILD=ON \
 "
 
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
 
 EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
+
+SELECTED_OPTIMIZATION = "-O0 -g -pipe"
+CXXFLAGS:append = " -fno-omit-frame-pointer -fno-optimize-sibling-calls"
+CFLAGS:append   = " -fno-omit-frame-pointer -fno-optimize-sibling-calls"
+INHIBIT_PACKAGE_STRIP = "1"
+INHIBIT_SYSROOT_STRIP = "1"
 
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
