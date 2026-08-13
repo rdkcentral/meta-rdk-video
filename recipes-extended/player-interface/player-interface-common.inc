@@ -2,7 +2,12 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin'
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', '', ' -DCMAKE_USE_GST_0.10=1', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', ' -DCMAKE_SYSTEMD_JOURNAL=1', '', d)}"
 EXTRA_OECMAKE += " -DCMAKE_PLAYER_RFC_REQUIRED=1"
+EXTRA_OECMAKE += " -DCMAKE_IARM_MGR=1"
+EXTRA_OECMAKE += " -DCMAKE_USE_SECCLIENT=1"
+# Remove WPEFramework and SecManager flags if both RDKE_REGION_US and RDKE_PLATFORM_STB are in DISTRO_FEATURES
+EXTRA_OECMAKE:remove += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_US', bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', '-DCMAKE_WPEFRAMEWORK_REQUIRED=1 -DCMAKE_USE_SECMANAGER=1', '', d), '', d)}"
 
+PACKAGECONFIG:append = " opencdm_adapter"
 PACKAGECONFIG[opencdm]   = "-DCMAKE_USE_OPENCDM=1,-DCMAKE_USE_OPENCDM=0,wpeframework"
 PACKAGECONFIG[playready] = "-DCMAKE_USE_PLAYREADY=1,-DCMAKE_USE_PLAYREADY=0,wpeframework"
 PACKAGECONFIG[widevine]  = "-DCMAKE_USE_WIDEVINE=1,-DCMAKE_USE_WIDEVINE=0,wpeframework"
