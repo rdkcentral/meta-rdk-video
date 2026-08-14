@@ -31,9 +31,11 @@
 #include <stdlib.h>
 
 /* ── Shared test constants (must match iarm_otel_test_pub.c) ─────────────── */
-#define TEST_OWNER      "OTEL_TEST_OWNER"
-#define TEST_EVENT_ID   0
-#define TEST_METHOD     "GetTestState"
+#define TEST_OWNER         "OTEL_TEST_OWNER"
+#define TEST_EVENT_SCAN    0
+#define TEST_EVENT_PARSE   1
+#define TEST_EVENT_APPLY   2
+#define TEST_METHOD        "GetTestState"
 
 typedef struct {
     int  value;
@@ -49,64 +51,122 @@ typedef struct {
 static volatile int g_stop = 0;
 static void _sig_handler(int sig) { (void)sig; g_stop = 1; }
 
-/* ── Event handler — handler-controlled span lifecycle ───────────────────── */
-static void _on_test_event(const char *owner, IARM_EventId_t eventId,
-                           void *data, size_t len)
+/* ── Helper: start child span from incoming traceparent, or skip if none ─── */
+static int span_start(const char *incoming_tp, const char *span_name)
 {
-    int span_started = 0;
-    const char *incoming_tp = IARM_Bus_GetCurrentIncomingTraceparent();
-    if (incoming_tp) {
-        char span_name[96];
-        snprintf(span_name, sizeof(span_name), "IARM.%s.event%d",
-                 owner, (int)eventId);
-        rdk_otlp_start_child_from_traceparent(incoming_tp, span_name);
-        span_started = 1;
+    if (!incoming_tp) {
+        printf("[SUB]   SC3: no incoming traceparent - untraced/legacy sender. "
+               "Skipping tracing, processing normally.\n");
+        return 0;
     }
-
-    TestEventData_t *ev = (TestEventData_t *)data;
-    printf("[SUB] Event received: owner=%s id=%d value=%d label=\"%s\"\n",
-           owner, (int)eventId, ev->value, ev->label);
-
-    /* Demonstrate that child span is active inside handler. */
-    const char *tp = rdk_otlp_get_current_traceparent();
-    printf("[SUB]   current traceparent inside handler: %s\n",
-           tp ? tp : "(none)");
-    printf("[SUB]   incoming parent traceparent: %s\n",
-           incoming_tp ? incoming_tp : "(none)");
-
-    if (span_started) {
-        rdk_otlp_finish_child_span();
-    }
+    printf("[SUB]   incoming traceparent: %s\n", incoming_tp);
+    rdk_otlp_start_child_from_traceparent(incoming_tp, span_name);
+    printf("[SUB]   child span started: %s\n", span_name);
+    return 1;
 }
 
-/* ── RPC handler — handler-controlled span lifecycle ─────────────────────── */
+/* ── SC1a handler: SCAN event — simulates 200 ms of processing ─────────── */
+static void _on_event_scan(const char *owner, IARM_EventId_t eventId,
+                           void *data, size_t len)
+{
+    (void)eventId;
+    (void)len;
+    TestEventData_t *ev = (TestEventData_t *)data;
+    printf("[SUB] SCAN event: owner=%s value=%d label=\"%s\"\n",
+           owner, ev->value, ev->label);
+
+    int started = span_start(IARM_Bus_GetCurrentIncomingTraceparent(),
+                             "IARM.OTEL_TEST_OWNER.ScanComplete");
+
+    /* Simulate scan-result processing: validate, store, notify */
+    printf("[SUB]   [scan] validating result ... "); fflush(stdout);
+    usleep(80000);   /* 80 ms */
+    printf("ok\n");
+    printf("[SUB]   [scan] writing to state cache ... "); fflush(stdout);
+    usleep(70000);   /* 70 ms */
+    printf("ok\n");
+    printf("[SUB]   [scan] notifying dependents ... "); fflush(stdout);
+    usleep(50000);   /* 50 ms */
+    printf("ok  (total ~200 ms)\n");
+
+    if (started) rdk_otlp_finish_child_span();
+}
+
+/* ── SC1b handler: PARSE event — simulates 150 ms of processing ────────── */
+static void _on_event_parse(const char *owner, IARM_EventId_t eventId,
+                            void *data, size_t len)
+{
+    (void)eventId;
+    (void)len;
+    TestEventData_t *ev = (TestEventData_t *)data;
+    printf("[SUB] PARSE event: owner=%s value=%d label=\"%s\"\n",
+           owner, ev->value, ev->label);
+
+    int started = span_start(IARM_Bus_GetCurrentIncomingTraceparent(),
+                             "IARM.OTEL_TEST_OWNER.ParseConfig");
+
+    /* Simulate config parse: read, validate schema, build internal model */
+    printf("[SUB]   [parse] reading config blob ... "); fflush(stdout);
+    usleep(60000);   /* 60 ms */
+    printf("ok\n");
+    printf("[SUB]   [parse] validating schema ... "); fflush(stdout);
+    usleep(50000);   /* 50 ms */
+    printf("ok\n");
+    printf("[SUB]   [parse] building model ... "); fflush(stdout);
+    usleep(40000);   /* 40 ms */
+    printf("ok  (total ~150 ms)\n");
+
+    if (started) rdk_otlp_finish_child_span();
+}
+
+/* ── SC1c handler: APPLY event — simulates 100 ms of processing ────────── */
+static void _on_event_apply(const char *owner, IARM_EventId_t eventId,
+                            void *data, size_t len)
+{
+    (void)eventId;
+    (void)len;
+    TestEventData_t *ev = (TestEventData_t *)data;
+    printf("[SUB] APPLY event: owner=%s value=%d label=\"%s\"\n",
+           owner, ev->value, ev->label);
+
+    int started = span_start(IARM_Bus_GetCurrentIncomingTraceparent(),
+                             "IARM.OTEL_TEST_OWNER.ApplySettings");
+
+    /* Simulate settings apply: backup, write, verify */
+    printf("[SUB]   [apply] backing up current settings ... "); fflush(stdout);
+    usleep(40000);   /* 40 ms */
+    printf("ok\n");
+    printf("[SUB]   [apply] writing new settings ... "); fflush(stdout);
+    usleep(35000);   /* 35 ms */
+    printf("ok\n");
+    printf("[SUB]   [apply] verifying write ... "); fflush(stdout);
+    usleep(25000);   /* 25 ms */
+    printf("ok  (total ~100 ms)\n");
+
+    if (started) rdk_otlp_finish_child_span();
+}
+
+/* ── SC2 handler: GetTestState RPC — simulates 120 ms of processing ────── */
 static IARM_Result_t _on_get_test_state(void *arg)
 {
-    int span_started = 0;
-    const char *incoming_tp = IARM_Bus_GetCurrentIncomingTraceparent();
-    if (incoming_tp) {
-        rdk_otlp_start_child_from_traceparent(incoming_tp,
-                                              "IARM.OTEL_TEST_OWNER.GetTestState");
-        span_started = 1;
-    }
-
     TestRpcArg_t *rpc = (TestRpcArg_t *)arg;
-    printf("[SUB] RPC called: request_token=%d\n", rpc->request_token);
+    printf("[SUB] RPC GetTestState: request_token=%d\n", rpc->request_token);
 
-    /* Same chain-check as above */
-    const char *tp = rdk_otlp_get_current_traceparent();
-    printf("[SUB]   current traceparent inside RPC handler: %s\n",
-           tp ? tp : "(none)");
-    printf("[SUB]   incoming parent traceparent: %s\n",
-           incoming_tp ? incoming_tp : "(none)");
+    int started = span_start(IARM_Bus_GetCurrentIncomingTraceparent(),
+                             "IARM.OTEL_TEST_OWNER.GetTestState");
 
-    /* Fill response — caller receives this via IARM_Bus_Call's result copy */
+    /* Simulate state query: lookup, format, return */
+    printf("[SUB]   [rpc] querying device state ... "); fflush(stdout);
+    usleep(70000);   /* 70 ms */
+    printf("ok\n");
+    printf("[SUB]   [rpc] formatting response ... "); fflush(stdout);
+    usleep(50000);   /* 50 ms */
+    printf("ok  (total ~120 ms)\n");
+
     snprintf(rpc->response_msg, sizeof(rpc->response_msg),
-             "ok-token-%d", rpc->request_token);
+             "state-ok-token-%d", rpc->request_token);
 
-    if (span_started) {
-        rdk_otlp_finish_child_span();
-    }
+    if (started) rdk_otlp_finish_child_span();
     return IARM_RESULT_SUCCESS;
 }
 
