@@ -7,17 +7,17 @@ PV = "0.2.0-r1"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "f6712e15e22b3faf4c0e5c0defb81ef2a9bd7d0f"
+SRCREV_player-interface ?= "cbde0848c2721bf14e0217e5e1d9da62d8e41b23"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "main"
+PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-19159_Firebolt"
 
 inherit pkgconfig
 inherit cmake
 
-DEPENDS += "iarmmgrs wpeframework ${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0 gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)} wpeframework-clientlibraries wpe-webkit virtual/vendor-gst-drm-plugins essos virtual/vendor-secapi2-adapter"
-
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', 'firebolt-aamp-sdk', '', d)}"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', 'firebolt-aamp-sdk', 'iarmmgrs', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', '-DUSE_FIREBOLT=ON', '', d)}"
+
+DEPENDS += "wpeframework ${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0 gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)} wpeframework-clientlibraries wpe-webkit virtual/vendor-gst-drm-plugins essos virtual/vendor-secapi2-adapter"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec_cc', 'subttxrend-app', '', d)}"
 RDEPENDS:${PN} += "devicesettings ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
