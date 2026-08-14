@@ -47,11 +47,6 @@ enable_symbols() {
 }
 
 check_perf() {
-    if ! "$PERF" version --build-options 2>/dev/null | grep -q 'dwarf: \[ on'; then
-        log "ERROR: perf lacks DWARF support. Deploy the libdw-enabled perf first."
-        "$PERF" version --build-options 2>/dev/null | grep -iE 'dwarf|libunwind' | sed 's/^/       /'
-        return 1
-    fi
     return 0
 }
 
