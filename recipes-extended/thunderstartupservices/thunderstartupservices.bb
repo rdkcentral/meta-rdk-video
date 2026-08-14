@@ -10,7 +10,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "d1cadc41d88e88a2bb66b0f7018ca15e3e450dc7"
+SRCREV = "e271b2e9549079af6e49da0a96b08f43f3422144"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -38,6 +38,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-sharedstorage.service \
     wpeframework-system.service \
     wpeframework-systemaudioplayer.service \
+    wpeframework-audiooutput.service \
     wpeframework-systemmode.service \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',' wpeframework-rdkshell.service', '', d)} \
     wpeframework-remotecontrol.service \
