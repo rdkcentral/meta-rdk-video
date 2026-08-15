@@ -4,6 +4,9 @@ LICENSE = "CLOSED"
 PV = "2.1.3"
 PR = "r0"
 
+# avoutput subsumes the former audiooutput package
+RPROVIDES:${PN} += "entservices-audiooutput"
+
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
