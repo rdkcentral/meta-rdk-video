@@ -14,7 +14,7 @@ PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-19159_Firebolt"
 inherit pkgconfig
 inherit cmake
 
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', 'firebolt-aamp-sdk', bb.utils.contains('DISTRO_FEATURES', 'sec_manager', 'firebolt-aamp-sdk', '', d), d)}"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', 'firebolt-aamp-sdk', '', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', '-DUSE_FIREBOLT=ON', '', d)}"
 
 DEPENDS += "wpeframework ${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0 gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)} wpeframework-clientlibraries wpe-webkit virtual/vendor-gst-drm-plugins essos virtual/vendor-secapi2-adapter"
