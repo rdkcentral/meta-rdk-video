@@ -7,9 +7,9 @@ PV = "0.2.0-r1"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "138cd45c62e102c150395b186b0889c3f3c29443"
+SRCREV_player-interface ?= "eeb02fe99e28f01f993108047831b3c8ef2fafaf"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-19159_Firebolt"
+PLAYERINTERFACE_BRANCH ?= "firebolt_changes"
 
 inherit pkgconfig
 inherit cmake
