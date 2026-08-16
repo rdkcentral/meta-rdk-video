@@ -20,7 +20,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', '-DUSE
 DEPENDS += "wpeframework ${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0 gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)} wpeframework-clientlibraries wpe-webkit virtual/vendor-gst-drm-plugins essos virtual/vendor-secapi2-adapter"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec_cc', 'subttxrend-app', '', d)}"
-RDEPENDS:${PN} += "devicesettings ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', '', 'devicesettings', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 
 NO_RECOMMENDATIONS = "1"
@@ -55,6 +55,7 @@ FILES:${PN}-dbg += "${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
 CXXFLAGS += "-I${STAGING_DIR_TARGET}${includedir}/WPEFramework/ "
+CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', ' -I${STAGING_DIR_TARGET}${includedir}/firebolt/ ', '', d)}"
 
 LDFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', '', ' -lWPEFrameworkSecurityUtil ', d)}"
 
