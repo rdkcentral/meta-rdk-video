@@ -2,7 +2,7 @@ SUMMARY = "ENTServices audiooutput plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=99ba59ffd1c3a94266cf01095316d8e0"
 
-PV = "1.0.0"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
