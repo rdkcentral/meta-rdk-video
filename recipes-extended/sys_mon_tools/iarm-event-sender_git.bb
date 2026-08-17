@@ -11,7 +11,7 @@ PV = "1.0.8"
 PR = "r0"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-SRCREV = "cebba185e2ea700f05a8f4eb6f0d95f6c4d8f00d"
+SRCREV = "6193b2a40eb5db10f92fa50bd8d461891e91a8ff"
 SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git"
 
