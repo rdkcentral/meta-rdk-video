@@ -41,6 +41,7 @@ COMM="${COMM:-Monitor::IResou}"          # truncated (<=15 char) thread name
 METHOD="${METHOD:-ftrace}"               # ftrace | perf
 DURATION="${DURATION:-30}"               # seconds to trace during start-up
 OUTDIR="${OUTDIR:-/opt/logs}"
+DEBUG_LOG="${DEBUG_LOG:-/tmp/resource_monitor_runq_latency.debug.log}"
 NO_RESTART="${NO_RESTART:-0}"            # 1 = do not touch Thunder, trace only
 THUNDER_SVC="${THUNDER_SVC:-wpeframework}"  # systemd/service name if present
 WPE_PROC="${WPE_PROC:-WPEFramework}"     # process that owns the ResourceMonitor thread
@@ -62,10 +63,30 @@ resolve_tracefs() {
 }
 TRACEFS="$(resolve_tracefs || echo /sys/kernel/debug/tracing)"
 
-mkdir -p "$OUTDIR"
+debug() {
+    printf '[runq-debug] %s\n' "$*" >> "$DEBUG_LOG" 2>/dev/null || \
+        printf '[runq-debug] %s\n' "$*" >&2
+}
+
+debug "Script started: $0"
+debug "Arguments: $*"
+debug "UID=$(id -u 2>/dev/null || echo unknown) PID=$$"
+debug "OUTDIR=$OUTDIR DEBUG_LOG=$DEBUG_LOG METHOD=$METHOD DURATION=$DURATION"
+debug "TRACEFS=$TRACEFS COMM=$COMM WPE_PROC=$WPE_PROC TARGET_TID=${TARGET_TID:-unset}"
+debug "PATH=$PATH"
+
+if ! mkdir -p "$OUTDIR" 2>/dev/null; then
+    debug "ERROR: cannot create OUTDIR=$OUTDIR"
+    exit 1
+fi
+if [ ! -d "$OUTDIR" ] || [ ! -w "$OUTDIR" ]; then
+    debug "ERROR: OUTDIR is missing or not writable: $OUTDIR"
+    exit 1
+fi
 STAMP=$(date +%Y%m%d_%H%M%S)
 RAW="$OUTDIR/runq_${METHOD}_${STAMP}.txt"
 REPORT="$OUTDIR/runq_latency_${STAMP}.txt"
+debug "RAW=$RAW REPORT=$REPORT"
 
 log() { echo "[runq] $*"; }
 
@@ -123,10 +144,18 @@ restart_thunder() {
 # ftrace back-end
 # ===========================================================================
 run_ftrace() {
+    debug "run_ftrace: entering with TRACEFS=$TRACEFS"
     if [ ! -d "$TRACEFS" ]; then
         log "ERROR: tracefs not found at $TRACEFS (need CONFIG_FTRACE)."
+        debug "ERROR: tracefs directory does not exist: $TRACEFS"
         exit 1
     fi
+
+    for _trace_file in tracing_on current_tracer trace set_event; do
+        if [ ! -e "$TRACEFS/$_trace_file" ]; then
+            debug "WARN: missing tracefs file: $TRACEFS/$_trace_file"
+        fi
+    done
 
     log "Using ftrace at $TRACEFS"
     # clean slate
@@ -147,7 +176,11 @@ run_ftrace() {
     enable_filtered sched_stat_iowait  "comm == \"$COMM\""
     enable_filtered sched_stat_runtime "comm == \"$COMM\""
 
-    echo 1 > "$TRACEFS/tracing_on"
+    if ! echo 1 > "$TRACEFS/tracing_on" 2>/dev/null; then
+        debug "ERROR: failed to enable tracing: $TRACEFS/tracing_on"
+        exit 1
+    fi
+    debug "ftrace enabled; restarting Thunder"
 
     restart_thunder
 
@@ -155,7 +188,11 @@ run_ftrace() {
     sleep "$DURATION"
 
     echo 0 > "$TRACEFS/tracing_on"
-    cp "$TRACEFS/trace" "$RAW"
+    if ! cp "$TRACEFS/trace" "$RAW" 2>/dev/null; then
+        debug "ERROR: failed to copy $TRACEFS/trace to $RAW"
+        exit 1
+    fi
+    debug "Raw trace copied: $RAW bytes=$(wc -c < "$RAW" 2>/dev/null || echo unknown)"
     # disable events again
     : > "$TRACEFS/set_event" 2>/dev/null
     log "Raw trace saved: $RAW"
@@ -169,7 +206,16 @@ run_ftrace() {
         log "WARN: could not resolve WPEFramework daemon tid; reporting all '$COMM' threads."
     fi
 
-    parse_ftrace "$RAW" "$COMM" "$_daemon_tids" | tee "$REPORT"
+    if ! parse_ftrace "$RAW" "$COMM" "$_daemon_tids" > "$REPORT" 2>>"$DEBUG_LOG"; then
+        debug "ERROR: parse_ftrace failed for $RAW"
+        exit 1
+    fi
+    if [ ! -s "$REPORT" ]; then
+        debug "WARN: report was created but is empty: $REPORT"
+    else
+        debug "Report saved: $REPORT bytes=$(wc -c < "$REPORT" 2>/dev/null || echo unknown)"
+        cat "$REPORT"
+    fi
 }
 
 # Parse wakeup->switch pairs and (if present) sched_stat_wait for the thread.
@@ -381,8 +427,10 @@ parse_ftrace() {
 # perf back-end
 # ===========================================================================
 run_perf() {
+    debug "run_perf: entering; OUTDIR=$OUTDIR"
     if ! command -v perf >/dev/null 2>&1; then
         log "ERROR: perf not found. Use METHOD=ftrace instead."
+        debug "ERROR: perf command not found"
         exit 1
     fi
     PERFDATA="$OUTDIR/sched_${STAMP}.data"
@@ -395,6 +443,7 @@ run_perf() {
     sleep 1
     restart_thunder
     wait "$PERF_PID"
+    debug "perf record finished with exit=$? data=$PERFDATA bytes=$(wc -c < "$PERFDATA" 2>/dev/null || echo unknown)"
 
     log "perf data: $PERFDATA"
 
@@ -517,23 +566,38 @@ arm_filtered_trace() {
 
 # Runs at boot from the systemd unit.
 arm_boot() {
+    debug "arm_boot: starting"
     arm_filtered_trace || exit 1
-    echo "armed $(date)" > "$OUTDIR/runq_boot_armed.txt" 2>/dev/null
+    if ! echo "armed $(date)" > "$OUTDIR/runq_boot_armed.txt" 2>/dev/null; then
+        debug "ERROR: failed to write boot marker: $OUTDIR/runq_boot_armed.txt"
+        exit 1
+    fi
+    debug "Boot marker saved: $OUTDIR/runq_boot_armed.txt"
 }
 
 # Measure ONLY the running WPEFramework Monitor::IResource thread (no restart).
 run_live() {
     # TARGET_TID already set by lock_target_tid before this is called
+    debug "run_live: entering with TARGET_TID=$TARGET_TID"
     _mpid=$(pgrep -x "$WPE_PROC" 2>/dev/null | sort -n | head -n1)
     log "Target: $WPE_PROC pid=$_mpid  tid=$TARGET_TID  comm=$COMM"
     arm_filtered_trace || exit 1
     log "Tracing this thread for ${DURATION}s ..."
     sleep "$DURATION"
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
-    cp "$TRACEFS/trace" "$RAW" 2>/dev/null
+    if ! cp "$TRACEFS/trace" "$RAW" 2>/dev/null; then
+        debug "ERROR: failed to copy $TRACEFS/trace to $RAW"
+        exit 1
+    fi
+    debug "Live raw trace copied: $RAW bytes=$(wc -c < "$RAW" 2>/dev/null || echo unknown)"
     : > "$TRACEFS/set_event" 2>/dev/null
     log "Raw trace saved: $RAW"
-    parse_ftrace "$RAW" "$COMM" | tee "$REPORT"
+    if ! parse_ftrace "$RAW" "$COMM" > "$REPORT" 2>>"$DEBUG_LOG"; then
+        debug "ERROR: live parse_ftrace failed for $RAW"
+        exit 1
+    fi
+    cat "$REPORT"
+    debug "Live report saved: $REPORT bytes=$(wc -c < "$REPORT" 2>/dev/null || echo unknown)"
     log "Report: $REPORT"
 }
 
@@ -606,9 +670,14 @@ EOF
 }
 
 show_boot() {
+    debug "show_boot: stopping trace and collecting boot data"
     if [ ! -d "$TRACEFS" ]; then log "tracefs not found."; exit 1; fi
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
-    cp "$TRACEFS/trace" "$RAW" 2>/dev/null
+    if ! cp "$TRACEFS/trace" "$RAW" 2>/dev/null; then
+        debug "ERROR: failed to copy boot trace from $TRACEFS/trace to $RAW"
+        exit 1
+    fi
+    debug "Boot raw trace copied: $RAW bytes=$(wc -c < "$RAW" 2>/dev/null || echo unknown)"
 
     # Keep ONLY the WPEFramework daemon (lowest PID) Monitor::IResource tid(s).
     _valid_tids=$(resolve_daemon_tids)
@@ -622,7 +691,12 @@ show_boot() {
     fi
 
     log "Boot trace dumped: $RAW"
-    parse_ftrace "$RAW" "$COMM" "$_valid_tids" | tee "$REPORT"
+    if ! parse_ftrace "$RAW" "$COMM" "$_valid_tids" > "$REPORT" 2>>"$DEBUG_LOG"; then
+        debug "ERROR: boot parse_ftrace failed for $RAW"
+        exit 1
+    fi
+    cat "$REPORT"
+    debug "Boot report saved: $REPORT bytes=$(wc -c < "$REPORT" 2>/dev/null || echo unknown)"
     log "Report: $REPORT"
     log "Re-arm for another reboot is automatic (unit still enabled)."
     log "Remove with:  sh $0 uninstall-boot"
