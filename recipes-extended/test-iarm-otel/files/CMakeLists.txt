@@ -49,8 +49,19 @@ add_executable(iarm_otel_test_sub iarm_otel_test_sub.c)
 target_include_directories(iarm_otel_test_sub PRIVATE ${COMMON_INCLUDES})
 target_link_libraries(iarm_otel_test_sub PRIVATE ${COMMON_LIBS})
 
+# ── Compatibility matrix binaries (pending scenarios) ─────────────────────
+add_executable(iarm_otel_test2_pub iarm_otel_test2_pub.c)
+target_include_directories(iarm_otel_test2_pub PRIVATE ${COMMON_INCLUDES})
+target_link_libraries(iarm_otel_test2_pub PRIVATE ${COMMON_LIBS})
+
+add_executable(iarm_otel_test2_sub iarm_otel_test2_sub.c)
+target_include_directories(iarm_otel_test2_sub PRIVATE ${COMMON_INCLUDES})
+target_link_libraries(iarm_otel_test2_sub PRIVATE ${COMMON_LIBS})
+
 # ── Install ─────────────────────────────────────────────────────────────────
 install(TARGETS iarm_otel_test_pub iarm_otel_test_sub
+        iarm_otel_test2_pub iarm_otel_test2_sub
         DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(PROGRAMS run_iarm_otel_test.sh
+         run_iarm_otel_test2.sh
         DESTINATION ${CMAKE_INSTALL_BINDIR})
