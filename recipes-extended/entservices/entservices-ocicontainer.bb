@@ -2,13 +2,13 @@ SUMMARY = "ENTServices OCIContainer plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.0.9"
+PV = "1.0.10"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "908ad4743e2f113d0373f2871c588b8d4d2d43d0"
+SRCREV = "d2e4264b8540e0a66e147e5dbca925e6ed219119"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-ocicontainer;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
