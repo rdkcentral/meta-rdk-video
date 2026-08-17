@@ -2,10 +2,10 @@ SUMMARY = "ENTServices AppGateway plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "1.2.0.0"
+PV = "1.5.0.0"
 PR = "r0"
-# Release version - 1.2.0.0
-SRCREV = "e4adcce75dd3a04de9105bf62027f41ebc6e511b"
+# Release version - 1.5.0.0
+SRCREV = "497604563b0625c5afaf049465df4ecb889d5403"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -22,12 +22,14 @@ TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
-PACKAGECONFIG ?= "appgateway appnotifications appgatewaycommon telemetrysupport"
+PACKAGECONFIG ?= "appgateway appnotifications appgatewaycommon telemetrysupport appactions"
 
 PACKAGECONFIG[appgateway]       = "-DPLUGIN_APPGATEWAY=ON,-DPLUGIN_APPGATEWAY=OFF"
 PACKAGECONFIG[appnotifications] = "-DPLUGIN_APPNOTIFICATIONS=ON,-DPLUGIN_APPNOTIFICATIONS=OFF"
 PACKAGECONFIG[appgatewaycommon] = "-DPLUGIN_APPGATEWAYCOMMON=ON,-DPLUGIN_APPGATEWAYCOMMON=OFF,networkmanager-plugin"
 PACKAGECONFIG[telemetrysupport] = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
+PACKAGECONFIG[appactions]       = "-DPLUGIN_APPACTIONS=ON,-DPLUGIN_APPACTIONS=OFF"
+
 
 do_install:append() {
     install -d ${D}${sysconfdir}

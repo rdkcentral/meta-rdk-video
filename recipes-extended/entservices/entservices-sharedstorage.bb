@@ -2,7 +2,7 @@ SUMMARY = "ENTServices SharedStorage plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
-PV = "1.0.4"
+PV = "1.0.8"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -11,7 +11,6 @@ inherit cmake pkgconfig
 SRCREV = "${PV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-sharedstorage;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -48,7 +47,7 @@ inherit features_check
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
 
 # ----------------------------------------------------------------------------
-PACKAGECONFIG[sharedstorage]        = "-DPLUGIN_SHAREDSTORAGE=ON,-DPLUGIN_SHAREDSTORAGE=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[sharedstorage]        = "-DPLUGIN_SHAREDSTORAGE=ON,-DPLUGIN_SHAREDSTORAGE=OFF,entservices-apis entservices-helpers,entservices-apis entservices-helpers"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 # ----------------------------------------------------------------------------
 

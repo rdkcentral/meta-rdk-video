@@ -2,26 +2,25 @@ SUMMARY = "ENTServices ledcontrol plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.0.1"
+PV = "1.0.5"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-ledcontrol;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.1
-SRCREV = "e4d538e81c125d20b927a04975436b7ee89d295d"
+# Release version - 1.0.5
+SRCREV = "4ff3c2ce8776d4203496f677fdfb23b9de383e19"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis libbinder rdk-halif-aidl"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
@@ -32,6 +31,8 @@ CXXFLAGS += " -DRFC_ENABLED "
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
+CFLAGS:append = " -I${STAGING_INCDIR} -I${STAGING_INCDIR}/binder"
+CXXFLAGS:append = " -I${STAGING_INCDIR} -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/wpeframework/helpers"
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 
@@ -41,8 +42,7 @@ PACKAGECONFIG ?= " breakpadsupport \
    "
 
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[ledcontrol]           = "-DPLUGIN_LEDCONTROL=ON,,iarmbus iarmmgrs devicesettings entservices-apis virtual/vendor-devicesettings-hal,iarmbus devicesettings entservices-apis"
-
+PACKAGECONFIG[ledcontrol]           = "-DPLUGIN_LEDCONTROL=ON, entservices-apis entservices-helpers , entservices-apis entservices-helpers"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \

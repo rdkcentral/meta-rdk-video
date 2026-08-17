@@ -5,13 +5,13 @@
 ##
 LICENSE = "Apache-2.0 & MIT & BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://../LICENSE;md5=626bbc2ac7625da5b97fcb8a24bd88b3"
-PV = "1.8.0"
+PV = "1.10.0"
 PR = "r0"
 DEPENDS = "glib-2.0 subttxrend-common subttxrend-protocol"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "bdde7218711aa900afd151e63b0fd06ecc0df5c0"
+SRCREV = "f73f3d90f19939aa3962d329b70d04672abcdaae"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-socksrc"
 

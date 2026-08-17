@@ -10,9 +10,9 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-voicecontrol;${CMF_GITHUB_SRC_URI_SUFF
            file://rdkservices.ini \
           "
 
-PV = "1.0.1"
+PV = "1.0.4"
 PR = "r0"
-SRCREV = "283f6a6cb78b8402f4396ba496e93580d0b5f00b"
+SRCREV = "${PV}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"

@@ -2,16 +2,15 @@ SUMMARY = "ENTServices PersistentStore plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.0.3"
+PV = "1.0.7"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "8a6ac256d7782a8903f9f5b2db50b8d48195a029"
+SRCREV = "7b07b1221c6eb3ce881de3fca922b4b6f3500e33"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-persistentstore;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -48,7 +47,7 @@ inherit features_check
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
 # ----------------------------------------------------------------------------
 
-PACKAGECONFIG[persistent_store]     = "-DPLUGIN_PERSISTENTSTORE=ON,-DPLUGIN_PERSISTENTSTORE=OFF,sqlite3 entservices-apis iarmbus iarmmgrs protobuf,entservices-apis iarmbus"
+PACKAGECONFIG[persistent_store]     = "-DPLUGIN_PERSISTENTSTORE=ON,-DPLUGIN_PERSISTENTSTORE=OFF,sqlite3 entservices-apis iarmbus iarmmgrs protobuf,entservices-apis  iarmbus"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 
 # ----------------------------------------------------------------------------

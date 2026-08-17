@@ -4,13 +4,13 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-PV = "1.3.6"
+PV = "1.5.0"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "141484c59d2706fcc554a5da6e26e3fab6ec9ea7"
+SRCREV = "7d9e31fecb0e94c0a8d94277adf22d49d779ab0c"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -38,6 +38,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-sharedstorage.service \
     wpeframework-system.service \
     wpeframework-systemaudioplayer.service \
+    wpeframework-audiooutput.service \
     wpeframework-systemmode.service \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',' wpeframework-rdkshell.service', '', d)} \
     wpeframework-remotecontrol.service \
@@ -62,10 +63,12 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-appgateway.service \
     wpeframework-appnotifications.service \
     wpeframework-appgatewaycommon.service \
+    wpeframework-appactions.service \
     wpeframework-downloadmanager.service \
     wpeframework-preinstallmanager.service \
     wpeframework-telemetrymetrics.service \
     wpeframework-devicediagnostics.service \
+    wpeframework-tools.service \
     "
 
 CONTROL_FILES = "\

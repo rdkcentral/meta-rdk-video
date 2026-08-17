@@ -2,18 +2,17 @@ SUMMARY = "ENTServices firmware update plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.2.2"
+PV = "1.2.5"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
-          "
+           "
 
-# Release version - 1.2.2
-SRCREV = "9e7c159d37f0bad1a213d81622b5a8091399f054"
+# Release version - 1.2.5
+SRCREV = "495fb11e2ff437daa20df3376f2d5e89799bc7aa"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -43,7 +42,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 PACKAGECONFIG ?= " firmwareupdate \
     "
 
-PACKAGECONFIG[firmwareupdate]          = "-DPLUGIN_FIRMWAREUPDATE=ON,-DPLUGIN_FIRMWAREUPDATE=OFF,iarmmgrs wpeframework-clientlibraries,iarmbus"
+PACKAGECONFIG[firmwareupdate]          = "-DPLUGIN_FIRMWAREUPDATE=ON,-DPLUGIN_FIRMWAREUPDATE=OFF,entservices-helpers iarmmgrs wpeframework-clientlibraries,iarmbus entservices-helpers"
 
 # ----------------------------------------------------------------------------
 

@@ -1,34 +1,36 @@
 inherit features_check
 REQUIRED_DISTRO_FEATURES = "enable_libsoup3"
-DEFAULT_PREFERENCE = "-1"
 
 PATCHTOOL = "git"
 
 require wpe-webkit.inc
 
-# Advance PR with every change in the recipe
-PR  = "r37"
+# Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
+WPE_RECIPE_REVISION = "2"
 
-DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
-DEPENDS:append = " libtasn1 unifdef-native libsoup libepoxy libgcrypt fontconfig"
+PR = "r${WPE_RECIPE_REVISION}"
+# Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
+WPE_MICRO_VERSION_SUFFIX = "${@'%02d%02d' % (int((d.getVar('PV').split('.') + ['0'])[2]), int(d.getVar('WPE_RECIPE_REVISION')))}"
+DEPENDS:append = " libtasn1 unifdef-native libsoup fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-# Tip of the branch on Apr 16, 2026
-SRCREV = "b47e5443baf9c01c2cc55da6bccafe2b960d2dff"
+# Tip of the branch on Jul 2, 2026
+SRCREV = "7f68518dd488e3550e2722d7f014e2a80e2a39eb"
 
-BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.46"
+BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=https;branch=wpe-2.46"
 SRC_URI = "${BASE_URI}"
 
 # Drop after PR is accepted
 SRC_URI += "file://2.46/1629.patch"
-
-SRC_URI += "file://2.46/1641_AC4_USAC.patch"
-SRC_URI += "file://2.46/1648_Revert-Media-Avoid-play-call-during-seek-flow-before.patch"
+SRC_URI += "file://2.46.2/1712_MS_seek_reopen_crash.patch"
+SRC_URI += "file://2.46/1711.patch"
 
 # Drop after westeros change is approved and released
 SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
 
 # Comcast specific changes
+SRC_URI += "file://2.46.2/comcast-RDK-60535-Increase-minor-version-of-WPE-lib.patch"
+
 SRC_URI += "file://2.46/comcast-RDKTV-380-disable-privileges-loss.patch"
 SRC_URI += "file://2.46/comcast-WKIT-553-add-video-ave-mimetype-for-holepunc.patch"
 SRC_URI += "file://2.46/comcast-AMLOGIC-628-always-initialze-volume.patch"
@@ -49,7 +51,7 @@ SRC_URI += "file://2.46/comcast-RDK-40634-Only-support-decoders-with-hw-support-
 SRC_URI += "file://2.46/comcast-RDK-57915-Include-HW-secure-decrypt-WidevineL1.patch"
 SRC_URI += "file://2.46/comcast-RDK-58053-MSE-skip-seek-to-duration-if-player-not-loaded.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-Fix-init-data-filtering.patch"
-SRC_URI += "file://2.46/comcast-RDK-57915-log-HTML5-video-playback.patch"
+SRC_URI += "file://2.46.1/comcast-RDK-57915-log-HTML5-video-playback.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-EME-generate-MEDIA_ERR_ENCRYPTED.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-Track-encrypted-playback.patch"
 SRC_URI += "file://2.46/comcast-WebRTC-keep-render-time-interpolation.patch"
@@ -76,7 +78,7 @@ PACKAGECONFIG[lcms]                  = "-DUSE_LCMS=ON,-DUSE_LCMS=OFF, "
 PACKAGECONFIG[logs]                  = "-DENABLE_LOGS=ON,,"
 PACKAGECONFIG[malloc_heap_breakdown] = "-DENABLE_MALLOC_HEAP_BREAKDOWN=ON,-DENABLE_MALLOC_HEAP_BREAKDOWN=OFF,malloc-zone, malloc-zone"
 PACKAGECONFIG[mathml]                = "-DENABLE_MATHML=ON,-DENABLE_MATHML=OFF,"
-PACKAGECONFIG[mediarecoder]          = "-DENABLE_MEDIA_RECORDER=ON,-DENABLE_MEDIA_RECORDER=OFF,"
+PACKAGECONFIG[mediarecorder]         = "-DENABLE_MEDIA_RECORDER=ON,-DENABLE_MEDIA_RECORDER=OFF,"
 PACKAGECONFIG[mediastream]           = "-DENABLE_MEDIA_STREAM=ON -DENABLE_WEB_RTC=ON,-DENABLE_MEDIA_STREAM=OFF -DENABLE_WEB_RTC=OFF,libevent libopus libvpx alsa-lib,libevent"
 PACKAGECONFIG[native_audio]          = "-DUSE_GSTREAMER_NATIVE_AUDIO=ON, -DUSE_GSTREAMER_NATIVE_AUDIO=OFF,"
 PACKAGECONFIG[native_video]          = "-DUSE_GSTREAMER_NATIVE_VIDEO=ON, -DUSE_GSTREAMER_NATIVE_VIDEO=OFF,"
@@ -89,7 +91,8 @@ PACKAGECONFIG[video]                 = "-DENABLE_VIDEO=ON,-DENABLE_VIDEO=OFF,gst
 PACKAGECONFIG[webassembly]           = "-DENABLE_WEBASSEMBLY=ON,-DENABLE_WEBASSEMBLY=OFF, "
 PACKAGECONFIG[webdriver]             = "-DENABLE_WEBDRIVER=ON,-DENABLE_WEBDRIVER=OFF,"
 PACKAGECONFIG[woff2]                 = "-DUSE_WOFF2=ON,-DUSE_WOFF2=OFF,woff2"
-PACKAGECONFIG[wpeframework_opencdm]  = "-DENABLE_THUNDER=ON,-DENABLE_THUNDER=OFF,wpeframework-clientlibraries,"
+PACKAGECONFIG[wpeframework_opencdm]  = "-DENABLE_THUNDER=ON,,entservices-opencdmi virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins,"
+PACKAGECONFIG[rialto_opencdm]        = "-DENABLE_THUNDER=ON,,rialto-ocdm,rialto-ocdm"
 PACKAGECONFIG[wpeplatform]           = "-DENABLE_WPE_PLATFORM=ON,-DENABLE_WPE_PLATFORM=OFF -DUSE_LIBDRM=OFF -DUSE_GBM=OFF,libdrm,"
 PACKAGECONFIG[wpeqtapi]              = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[cairo]                 = "-DUSE_CAIRO=ON -DUSE_SKIA=OFF,-DUSE_CAIRO=OFF,cairo"
@@ -110,9 +113,12 @@ PACKAGECONFIG:append = " ${@bb.utils.contains('BROWSER_MEMORYPROFILE', 'fhd', 'f
 PACKAGECONFIG:append:aarch64 = " webassembly"
 PACKAGECONFIG:append:toolchain-clang = " uselld"
 
+EXTRA_OECMAKE += "${@bb.utils.contains_any('PACKAGECONFIG', 'wpeframework_opencdm rialto_opencdm', '', '-DENABLE_THUNDER=OFF', d)}"
+
 EXTRA_OECMAKE += " \
   -DPYTHON_EXECUTABLE=${STAGING_BINDIR_NATIVE}/python3-native/python3 \
   -DGL_TEXTURE_MAX_SIZE=2000 \
+  -DWPE_VERSION_MICRO_SUFFIX=${WPE_MICRO_VERSION_SUFFIX} \
 "
 
 FILES:${PN} += " ${libdir}/wpe-webkit-*/injected-bundle/libWPEInjectedBundle.so"
@@ -133,3 +139,9 @@ def wk_use_ccache(bb,d):
        return "NO"
     return "YES"
 export WK_USE_CCACHE="${@wk_use_ccache(bb, d)}"
+
+python () {
+    suffix = d.getVar('WPE_MICRO_VERSION_SUFFIX')
+    if not suffix.isdigit() or len(suffix) != 4:
+        bb.fatal('WPE_MICRO_VERSION_SUFFIX must be exactly 4 digits, got "%s"' % suffix)
+}

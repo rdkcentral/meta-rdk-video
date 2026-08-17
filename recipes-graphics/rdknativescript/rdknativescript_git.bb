@@ -4,7 +4,7 @@ HOMEPAGE = ""
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${THISDIR}/files/Apache-2.0;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-DEPENDS = "westeros essos rapidjson rtcore libuv gstreamer1.0 uwebsockets javascriptcore websocketpp cjson boost"
+DEPENDS = "westeros essos rapidjson rtcore libuv gstreamer1.0 uwebsockets javascriptcore websocketpp cjson boost libsoup"
 DEPENDS:append = " virtual/egl"
 RDEPENDS:${PN}:append = " essos gstreamer1.0 uwebsockets"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'generate_jsruntime_widget', 'dobby', '', d)}"
@@ -13,13 +13,13 @@ inherit cmake pkgconfig perlnative ${@bb.utils.contains("DISTRO_FEATURES", "kirk
 
 S = "${WORKDIR}/git"
 
-PV = "2.0.4"
+PV = "2.0.6"
 PR = "r0"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};"
 
-#Release 2.0.4
-SRCREV = "47ecb4b1aab79825037823dc30eeb0221787c265"
+#Release 2.0.6
+SRCREV = "5005767231116ff18cb6dbd7b985f8466f330a0a"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -29,6 +29,7 @@ EXTRA_OECMAKE += " -DJSRUNTIME_ENGINE_NAME=jsc"
 EXTRA_OECMAKE += " -DBUILD_JSRUNTIME_DESKTOP=OFF"
 EXTRA_OECMAKE += " -DENABLE_JSRUNTIME_ESSOS=ON"
 EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS=ON"
+EXTRA_OECMAKE += " -DREMOTE_INSPECTOR_ENABLE=ON"
 EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS_STATIC=OFF"
 EXTRA_OECMAKE += " -DENABLE_AAMP_JSBINDINGS_DYNAMIC=ON"
 EXTRA_OECMAKE += " -DENABLE_JSRUNTIME_PLAYER=ON"
@@ -48,35 +49,35 @@ do_install() {
    install -d ${D}/home/root
 
    if [ "${BUILD_CLIENT}" = "1" ]; then
-      cp -a ${B}/JSRuntimeClient ${D}/home/root/JSRuntimeClient
+      install -m 0755 ${B}/JSRuntimeClient ${D}/home/root/JSRuntimeClient
    fi
 
-   cp -a ${B}/JSRuntimeJSC ${D}/home/root/JSRuntimeJSC
-   cp -a ${B}/JSRuntimeContainer ${D}/home/root/JSRuntimeContainer
-   
-   cp -a ${S}/utils/xhr.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/punycode.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/http.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/https.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/ws.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/utils.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/buffer.js ${D}/home/root/modules/.
-   cp -a ${S}/utils/process.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/event.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/wsenhanced.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/linkedjsdom.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/linkedjsdomwrapper.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/node-fetch.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/url.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
-   cp -a ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
-   cp -a ${S}/src/jsc/modules/minified_linkedjsdom.js ${D}/home/root/modules/. 
+   install -m 0755 ${B}/JSRuntimeJSC ${D}/home/root/JSRuntimeJSC
+   install -m 0755 ${B}/JSRuntimeContainer ${D}/home/root/JSRuntimeContainer
+   install -m 0644 ${S}/utils/xhr.js ${D}/home/root/modules/.
+   install -m 0644 ${S}/utils/punycode.js ${D}/home/root/modules/.
+   install -m 0644 ${S}/utils/http.js ${D}/home/root/modules/.
+   install -m 0644 ${S}/utils/https.js ${D}/home/root/modules/.
+   install -m 0644 ${S}/utils/ws.js ${D}/home/root/modules/.
+   install -m 0644 ${S}/utils/utils.js ${D}/home/root/modules/.
+   install -m 0644 ${S}/utils/buffer.js ${D}/home/root/modules/.
+   install -m 0644 ${S}/utils/process.js ${D}/home/root/modules/.
+   install -m 0644 ${S}/utils/nativejsinspector.html ${D}/home/root/modules/nativevjsinspector.html
+   install -m 0755 ${S}/src/jsc/modules/event.js ${D}/home/root/modules/.
+   install -m 0644 ${S}/src/jsc/modules/wsenhanced.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/linkedjsdom.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/linkedjsdomwrapper.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/node-fetch.js ${D}/home/root/modules/.
+   install -m 0644 ${S}/src/jsc/modules/url.js ${D}/home/root/modules/.
+   install -m 0755 ${S}/src/jsc/modules/windowwrapper.js ${D}/home/root/modules/.
+   cp -R ${S}/src/jsc/modules/lib ${D}/home/root/modules/.
+   install -m 0644 ${S}/src/jsc/modules/video.js ${D}/home/root/modules/. 
+   install -m 0644 ${S}/src/jsc/modules/minified_linkedjsdom.js ${D}/home/root/modules/. 
 
    install -d ${D}/${libdir}
-   cp -a ${B}/libJSRuntimeJSC.so ${D}/${libdir}
-   cp -a ${B}/libJSRuntimeContainer.so ${D}/${libdir}
-   cp -a ${B}/libjsclib.so ${D}/${libdir}
+   install -m 0755 ${B}/libJSRuntimeJSC.so ${D}/${libdir}
+   install -m 0755 ${B}/libJSRuntimeContainer.so ${D}/${libdir}
+   install -m 0755 ${B}/libjsclib.so ${D}/${libdir}
 
 
    install -d ${D}/${libdir}
@@ -85,8 +86,7 @@ do_install() {
    mkdir -p ${D}${includedir}/jsruntime/modules
 
    install -m 0644 ${S}/include/*.h ${D}${includedir}/jsruntime
-   cp -a ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
-
+   cp -R  ${D}/home/root/modules/* ${D}${includedir}/jsruntime/modules/
    install -d ${D}${datadir}/rdknativescript
    echo "${PV}" > ${D}${datadir}/rdknativescript/version.txt
 }

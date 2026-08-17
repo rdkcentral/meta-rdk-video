@@ -35,13 +35,13 @@ EXTRA_OECMAKE += " \
     -DENABLE_API_TESTS=OFF \
 "
 
-# don't build debug
+# build with debug info so Yocto can split symbols into -dbg
 FULL_OPTIMIZATION:remove = "-g"
-FULL_OPTIMIZATION:append = " -g1"
+FULL_OPTIMIZATION:append = " -g"
 FULL_OPTIMIZATION:remove = "-Os"
 FULL_OPTIMIZATION:remove = "-O2"
 FULL_OPTIMIZATION:remove = "-O3"
-#
+#   
 WPE_WEBKIT_OPTIMIZATION ?= "-O2"
 #
 ## Prevent a compile-time crash
@@ -49,7 +49,7 @@ SELECTED_OPTIMIZATION:remove = "-pipe"
 SELECTED_OPTIMIZATION:append = " ${WPE_WEBKIT_OPTIMIZATION}"
 #
 SELECTED_OPTIMIZATION:remove = "-g"
-SELECTED_OPTIMIZATION:append = " -g1 "
+SELECTED_OPTIMIZATION:append = " -g "
 
 #Optimize for size
 SELECTED_OPTIMIZATION:append = " -Os"
@@ -61,13 +61,19 @@ TUNE_CCARGS:remove = "-fno-omit-frame-pointer -fno-optimize-sibling-calls"
 TUNE_CCARGS:append = " -fno-delete-null-pointer-checks"
 
 COMPATIBLE_MACHINE:mipsel = "(.*)"
-LDFLAGS:append = " -Wl,--no-keep-memory,--strip-all"
+LDFLAGS:append = " -Wl,--no-keep-memory"
 
 do_install() {
    install -d ${D}/${libdir}
    install -d ${D}/${libdir}/javascriptcore
    rm -f ${B}/lib/libJavaScriptCore.so*.ltrans*
-   cp -a ${B}/lib/libJavaScriptCore.so* ${D}/${libdir}/javascriptcore/.
+   for f in ${B}/lib/libJavaScriptCore.so*; do
+       if [ -L "$f" ]; then
+           cp -d "$f" ${D}/${libdir}/javascriptcore/.
+       else
+           install -m 0755 "$f" ${D}/${libdir}/javascriptcore/.
+       fi
+   done
 
    install -d ${D}${includedir}
    mkdir -p ${D}${includedir}/JavaScriptCore
@@ -81,12 +87,11 @@ do_install() {
 }
 
 FILES:${PN} += " ${libdir}/javascriptcore/libJavaScriptCore.so*"
+FILES:${PN}-dbg += " ${libdir}/javascriptcore/.debug/*"
 FILES_SOLIBSDEV = ""
 INSANE_SKIP:${PN} += "dev-so staticdev"
 INSANE_SKIP:${PN}:append:morty = " ldflags"
-INSANE_SKIP:${PN} += "already-stripped"
 INSANE_SKIP:${PN}:append:morty = " ldflags"
 DEBIAN_NOAUTONAME:${PN} = "1"
 BBCLASSEXTEND = "native"
-INHIBIT_PACKAGE_STRIP = "1"
-INHIBIT_SYSROOT_STRIP = "1"
+

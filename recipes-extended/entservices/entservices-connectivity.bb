@@ -2,18 +2,17 @@ SUMMARY = "ENTServices Connectivity plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV = "1.7.1"
+PV = "1.7.6"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.7.1
-SRCREV = "08241789e61008be7835ac89d0808f84fd45a1c2"
+# Release version - 1.7.6
+SRCREV = "${PV}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -48,7 +47,7 @@ PACKAGECONFIG:remove = "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FE
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[bluetoothcontrol]     = "-DPLUGIN_BLUETOOTH=ON -DPLUGIN_BLUETOOTH_AUTOSTART=true,-DPLUGIN_BLUETOOTH=OFF,iarmbus iarmmgrs bluetooth-mgr,bluez5 iarmbus bluetooth-mgr"
+PACKAGECONFIG[bluetoothcontrol]     = "-DPLUGIN_BLUETOOTH=ON -DPLUGIN_BLUETOOTH_AUTOSTART=true,-DPLUGIN_BLUETOOTH=OFF,entservices-helpers iarmbus iarmmgrs bluetooth-mgr,bluez5 iarmbus bluetooth-mgr entservices-helpers"
 PACKAGECONFIG[network]              = "-DPLUGIN_NETWORK=ON,-DPLUGIN_NETWORK=OFF,iarmbus iarmmgrs rfc,iarmbus rfc netsrvmgr"
 PACKAGECONFIG[wifimanager]          = "-DPLUGIN_WIFIMANAGER=ON,-DPLUGIN_WIFIMANAGER=OFF,netsrvmgr iarmbus iarmmgrs,iarmbus wpa-supplicant"
 

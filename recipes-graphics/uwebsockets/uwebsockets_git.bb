@@ -24,7 +24,7 @@ do_compile() {
 
 do_install() {
    install -d ${D}/${libdir}
-   cp -a ${B}/libuWS.so ${D}/${libdir}
+   install -m 0755 ${B}/libuWS.so ${D}/${libdir}
 
    install -d ${D}${includedir}
    mkdir -p ${D}${includedir}/uwebsockets

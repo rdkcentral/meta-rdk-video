@@ -6,11 +6,12 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=d7a8c87b0741f248c5139ca80a783231"
 
 S = "${WORKDIR}/git"
 
-PV = "1.0.2"
-PR = "r0"
+PV = "1.0.4"
+PR = "r1"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "48461dc2b8a21975cc598c4956a9fd5c621482a8"
+SRCREV = "0e4a80d4cc62604413dc0150b8b6ccc80b12525a"
+
 SRC_URI = "${CMF_GITHUB_ROOT}/xdialserver;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
@@ -22,15 +23,16 @@ EXTRA_OEMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disa
 
 #libsoup3 not compatible with gdial
 #DEPENDS:append =  " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', ' libsoup ', ' libsoup-2.4 ', d)}"
-DEPENDS:append = " libsoup-2.4"
-DEPENDS:append = " gssdp"
+#DEPENDS:append = " libsoup-2.4"
+DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', ' libsoup-3.0 ', ' libsoup-2.4 ', d)}"
+DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'enable_libsoup3', ' gssdp16 ', ' gssdp ', d)}"
 DEPENDS:append = " cmake-native"
 EXTRANATIVEPATH += "cmake-native"
 
 CFLAGS += "-fcommon"
 
 
-DEPENDS += "gssdp openssl c-ares curl util-linux glib-2.0 cmake-native wpeframework wpeframework-clientlibraries entservices-apis iarmmgrs"
+DEPENDS += "openssl c-ares curl util-linux glib-2.0 cmake-native wpeframework wpeframework-clientlibraries entservices-apis iarmmgrs"
 
 inherit logrotate_config pkgconfig
 

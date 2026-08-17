@@ -2,13 +2,13 @@ SUMMARY = "ENTServices appmanagers plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "0.5.0.0"
+PV = "0.7.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "70c6c6d9e722eafc15889d0a48c9261c58ed8017"
+SRCREV = "d5c2986369443f85b759ec8026b874707ffb70cd"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -18,11 +18,11 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers', ' -DENABLE_RDKAPPMANAGERS_RUNTIMECONFIG=ON', '', d)}"
 
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_APPMANAGERS_DEBUG=OFF', '-DRDK_APPMANAGERS_DEBUG=ON', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers_runtimeconfig', ' -DENABLE_RDKAPPMANAGERS_RUNTIMECONFIG=ON', '', d)}"
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
-DEPENDS += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers_runtimeconfig', 'yaml-cpp', '', d)}"
+DEPENDS += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers', 'yaml-cpp', '', d)}"
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
 DEPENDS += "iptables"

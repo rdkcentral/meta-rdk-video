@@ -2,19 +2,18 @@ SUMMARY = "ENTServices systemmode plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
-PV = "1.1.0"
+PV = "1.2.5"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-systemmode;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://rdkservices.ini \
           "
 
-# Release version - 1.1.0
-SRCREV = "717bab3fc6641b190ee158ecb0a28af531bb54c1"
+# Release version - 1.2.5
+SRCREV = "b04f47b7f5eee2247f7d5ddfd871238e60396b27"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -47,7 +46,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 PACKAGECONFIG:append = " systemmode"
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[systemmode] = "-DPLUGIN_SYSTEMMODE=ON,-DPLUGIN_SYSTEMMODE=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[systemmode] = "-DPLUGIN_SYSTEMMODE=ON,-DPLUGIN_SYSTEMMODE=OFF,entservices-apis entservices-helpers,entservices-apis entservices-helpers"
 
 # ----------------------------------------------------------------------------
 
