@@ -15,7 +15,7 @@ CMF_GITHUB_BRANCH = "branch=${AAMP_BRANCH}"
 
 DEPENDS += "curl libdash libxml2 cjson readline ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 
-RDEPENDS:${PN} += "devicesettings ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
+RDEPENDS:${PN} += " ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
 
 inherit pkgconfig
 inherit cmake
@@ -33,7 +33,6 @@ S = "${WORKDIR}/git"
 require aamp-common.inc
 require aamp-artifacts-version.inc
 
-EXTRA_OECMAKE += " -DCMAKE_DS_EVENT_SUPPORTED=1 "
 EXTRA_OECMAKE += " -DCMAKE_WPEWEBKIT_WATERMARK_JSBINDINGS=1 "
 
 #Ethan log is implemented by Dobby hence enabling it.
