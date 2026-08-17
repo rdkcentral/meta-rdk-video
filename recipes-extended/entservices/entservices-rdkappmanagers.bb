@@ -1,6 +1,6 @@
 SUMMARY = "ENTServices appmanagers plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=e78363a23fa72036998d7f40b889d209"
 
 PV = "1.0.0.0.rc2"
 PR = "r0"
