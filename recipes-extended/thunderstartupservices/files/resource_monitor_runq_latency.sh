@@ -434,7 +434,7 @@ run_perf() {
 # every matching event for the entire boot with no overflow. After the box is
 # up you run `show-boot` to stop tracing, dump and compute the latency.
 # ===========================================================================
-SELF_INSTALL="${SELF_INSTALL:-/opt/resource_monitor_runq_latency.sh}"
+SELF_INSTALL="${SELF_INSTALL:-/usr/bin/resource_monitor_runq_latency.sh}"
 BOOT_UNIT=runq-boottrace.service
 BOOT_UNIT_PATH="/etc/systemd/system/${BOOT_UNIT}"
 
