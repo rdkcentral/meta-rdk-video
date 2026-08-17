@@ -7,7 +7,7 @@
 #
 # Please contact DL-Rialto@sky.uk if you want to change this file or in case of problems
 
-RIALTO_SRCREV ?= "f606e0852a074c7a4dc86dabcb7bfdf7682dba37"
+RIALTO_SRCREV ?= "b4a99fe2507976579b4ebc5cc0f21086ed255aaa"
 RIALTO_BRANCH ?= "MediaCapabilitiesRialtoServerManager"
 RIALTO_VERSION ?= "v0.22.3"
 RIALTO_PR ?= "r0"
