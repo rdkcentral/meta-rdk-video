@@ -7,13 +7,13 @@
 #
 # Please contact DL-Rialto@sky.uk if you want to change this file or in case of problems
 
-RIALTO_SRCREV ?= "2ae2b838fbfd7f6753a051793ae27d8231b4f83d"
-RIALTO_BRANCH ?= "${CMF_GITHUB_MASTER_BRANCH}"
+RIALTO_SRCREV ?= "f606e0852a074c7a4dc86dabcb7bfdf7682dba37"
+RIALTO_BRANCH ?= "MediaCapabilitiesRialtoServerManager"
 RIALTO_VERSION ?= "v0.22.3"
 RIALTO_PR ?= "r0"
 
-RIALTO_GSTREAMER_SRCREV ?= "459651b3d33b40f4f6161a9789786d653cd762f5"
-RIALTO_GSTREAMER_BRANCH ?= "${CMF_GITHUB_MASTER_BRANCH}"
+RIALTO_GSTREAMER_SRCREV ?= "9fde9510b07534cfeaed7e96e7bcda100e829df1"
+RIALTO_GSTREAMER_BRANCH ?= "MediaPipelineCapabilitiesNewConfig"
 RIALTO_GSTREAMER_VERSION ?= "v0.20.1"
 RIALTO_GSTREAMER_PR ?= "r0"
 
