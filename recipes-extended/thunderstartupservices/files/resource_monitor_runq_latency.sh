@@ -86,7 +86,10 @@ fi
 STAMP=$(date +%Y%m%d_%H%M%S)
 RAW="$OUTDIR/runq_${METHOD}_${STAMP}.txt"
 REPORT="$OUTDIR/runq_latency_${STAMP}.txt"
+BOOT_RAW="$OUTDIR/runq_boot_ftrace.txt"
+BOOT_REPORT="$OUTDIR/runq_boot_latency.txt"
 debug "RAW=$RAW REPORT=$REPORT"
+debug "BOOT_RAW=$BOOT_RAW BOOT_REPORT=$BOOT_REPORT"
 
 log() { echo "[runq] $*"; }
 
@@ -573,6 +576,19 @@ arm_boot() {
         exit 1
     fi
     debug "Boot marker saved: $OUTDIR/runq_boot_armed.txt"
+    if ! {
+        echo "armed=$(date)"
+        echo "tracefs=$TRACEFS"
+        echo "comm=$COMM"
+        echo "raw=$BOOT_RAW"
+        echo "report=$BOOT_REPORT"
+        echo "next_action=sh $SELF_INSTALL show-boot"
+    } > "$OUTDIR/runq_boot_state.txt" 2>/dev/null; then
+        debug "ERROR: failed to write boot state: $OUTDIR/runq_boot_state.txt"
+        exit 1
+    fi
+    debug "Boot trace remains armed; no RAW/REPORT is created until show-boot runs"
+    debug "Boot state saved: $OUTDIR/runq_boot_state.txt"
 }
 
 # Measure ONLY the running WPEFramework Monitor::IResource thread (no restart).
@@ -672,7 +688,14 @@ EOF
 show_boot() {
     debug "show_boot: stopping trace and collecting boot data"
     if [ ! -d "$TRACEFS" ]; then log "tracefs not found."; exit 1; fi
+    if [ ! -f "$OUTDIR/runq_boot_armed.txt" ]; then
+        debug "WARN: boot marker not found: $OUTDIR/runq_boot_armed.txt"
+        log "WARNING: no boot marker found; was arm-boot run before reboot?"
+    fi
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
+    RAW="$BOOT_RAW"
+    REPORT="$BOOT_REPORT"
+    debug "show_boot: using RAW=$RAW REPORT=$REPORT"
     if ! cp "$TRACEFS/trace" "$RAW" 2>/dev/null; then
         debug "ERROR: failed to copy boot trace from $TRACEFS/trace to $RAW"
         exit 1
