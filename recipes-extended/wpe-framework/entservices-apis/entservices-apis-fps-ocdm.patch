@@ -141,7 +141,7 @@ index dec0647..3d95f5f 100644
  }
  }
 diff --git a/apis/OpenCDMi/IOCDM.h b/apis/OpenCDMi/IOCDM.h
-index 6c3ec99..5add71f 100644
+index 6c3ec99..ce5648e 100644
 --- a/apis/OpenCDMi/IOCDM.h
 +++ b/apis/OpenCDMi/IOCDM.h
 @@ -191,6 +191,20 @@ struct IAccessorOCDM : virtual public Core::IUnknown {
@@ -159,7 +159,7 @@ index 6c3ec99..5add71f 100644
 +    virtual OCDM_RESULT InitLibrary(const string& keySystem) const = 0;
 +    virtual OCDM_RESULT ProcessLicense(const string& keySystem, uint32_t version, uint8_t* session /* @in @length:session_bytes */, uint32_t session_bytes, const uint8_t* licenseData /* @in @length:licenseDataSize */, uint32_t licenseDataSize, uint8_t *cryptoId /* @inout @length:cryptoId_bytes */, uint32_t cryptoId_bytes) const = 0;
 +    virtual OCDM_RESULT DestroyCryptor(const string& keySystem, uint32_t version, uint64_t cryptoId) const = 0;
-+    virtual OCDM_RESULT GetLibraryVersion(const string& keySystem, uint8_t* versionOut /* @out @length:4 */) const = 0;
++    virtual OCDM_RESULT GetLibraryVersion(const string& keySystem, uint8_t* versionOut /* @out @length:versionOutSize */, uint32_t versionOutSize) const = 0;
 +
 +
      // Provides keysystem-specific metricdata
