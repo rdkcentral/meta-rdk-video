@@ -6,7 +6,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
-WPE_RECIPE_REVISION = "3"
+WPE_RECIPE_REVISION = "4"
 
 PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
@@ -24,6 +24,7 @@ SRC_URI = "${BASE_URI}"
 SRC_URI += "file://2.46/1629.patch"
 SRC_URI += "file://2.46.2/1712_MS_seek_reopen_crash.patch"
 SRC_URI += "file://2.46/1711.patch"
+SRC_URI += "file://2.46.2/1718.patch"
 SRC_URI += "file://2.46.2/1720_webkitwebsrc_queue_size.patch"
 
 # Drop after westeros change is approved and released
