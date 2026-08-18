@@ -34,7 +34,7 @@ DURATION="${DURATION:-240}"
 FREQ="${FREQ:-99}"
 STACKSZ="${STACKSZ:-65528}"
 OUTDIR="${OUTDIR:-/opt/logs}"
-SELF_INSTALL="${SELF_INSTALL:-/opt/perf.sh}"
+SELF_INSTALL="${SELF_INSTALL:-/usr/bin/perf.sh}"
 BOOT_UNIT="perf-startup-capture.service"
 
 export LD_LIBRARY_PATH="${PERF_LIB}:${LD_LIBRARY_PATH:-}"
