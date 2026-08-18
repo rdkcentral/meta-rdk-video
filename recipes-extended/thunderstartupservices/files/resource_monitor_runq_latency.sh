@@ -41,6 +41,7 @@ COMM="${COMM:-Monitor::IResou}"          # truncated (<=15 char) thread name
 METHOD="${METHOD:-ftrace}"               # ftrace | perf
 DURATION="${DURATION:-30}"               # seconds to trace during start-up
 OUTDIR="${OUTDIR:-/opt/logs}"
+DEBUG_LOG="${DEBUG_LOG:-/tmp/resource_monitor_runq_latency.debug.log}"
 NO_RESTART="${NO_RESTART:-0}"            # 1 = do not touch Thunder, trace only
 THUNDER_SVC="${THUNDER_SVC:-wpeframework}"  # systemd/service name if present
 WPE_PROC="${WPE_PROC:-WPEFramework}"     # process that owns the ResourceMonitor thread
@@ -62,10 +63,35 @@ resolve_tracefs() {
 }
 TRACEFS="$(resolve_tracefs || echo /sys/kernel/debug/tracing)"
 
-mkdir -p "$OUTDIR"
+debug() {
+    printf '[runq-debug] %s\n' "$*" >> "$DEBUG_LOG" 2>/dev/null || \
+        printf '[runq-debug] %s\n' "$*" >&2
+}
+
+debug "Script started: $0"
+debug "Arguments: $*"
+debug "UID=$(id -u 2>/dev/null || echo unknown) PID=$$"
+debug "OUTDIR=$OUTDIR DEBUG_LOG=$DEBUG_LOG METHOD=$METHOD DURATION=$DURATION"
+debug "TRACEFS=$TRACEFS COMM=$COMM WPE_PROC=$WPE_PROC TARGET_TID=${TARGET_TID:-unset}"
+debug "PATH=$PATH"
+
+if ! mkdir -p "$OUTDIR" 2>/dev/null; then
+    debug "ERROR: cannot create OUTDIR=$OUTDIR"
+    exit 1
+fi
+if [ ! -d "$OUTDIR" ] || [ ! -w "$OUTDIR" ]; then
+    debug "ERROR: OUTDIR is missing or not writable: $OUTDIR"
+    exit 1
+fi
 STAMP=$(date +%Y%m%d_%H%M%S)
 RAW="$OUTDIR/runq_${METHOD}_${STAMP}.txt"
 REPORT="$OUTDIR/runq_latency_${STAMP}.txt"
+BOOT_RAW="$OUTDIR/runq_boot_ftrace.txt"
+BOOT_REPORT="$OUTDIR/runq_boot_latency.txt"
+debug "RAW=$RAW REPORT=$REPORT"
+debug "BOOT_RAW=$BOOT_RAW BOOT_REPORT=$BOOT_REPORT"
+PRESSURE_PID=""
+PRESSURE_LOG=""
 
 log() { echo "[runq] $*"; }
 
@@ -91,42 +117,126 @@ detect_systemd_unit() {
     return 1
 }
 
-restart_thunder() {
-    if [ "$NO_RESTART" = "1" ]; then
-        log "NO_RESTART=1: arm tracer, then (re)start Thunder yourself."
+
+# ---------------------------------------------------------------------------
+# Thread-pressure sampler: records runnable+total thread counts every ~100ms
+# using /proc/uptime (kernel-monotonic clock, same reference as ftrace).
+# Each line: uptime_s  runnable  total  percpu_rq_sum
+# ---------------------------------------------------------------------------
+start_thread_pressure_sampler() {
+    PRESSURE_LOG="$OUTDIR/thread_pressure_${STAMP}.log"
+    (
+        while true; do
+            read -r _up _ < /proc/uptime 2>/dev/null || _up="0"
+            read -r _ _ _ _lf _ < /proc/loadavg 2>/dev/null || _lf="0/0"
+            _run=${_lf%/*}
+            _tot=${_lf#*/}
+            # Sum per-CPU run-queue depths; more precise than loadavg running field
+            _rq=$(awk -F: '/nr_running/{s+=$NF+0}END{printf "%d",s}' \
+                  /proc/sched_debug 2>/dev/null || echo "?")
+            printf '%s %s %s %s\n' "$_up" "$_run" "$_tot" "$_rq"
+            sleep 0.1 2>/dev/null || usleep 100000 2>/dev/null || sleep 1
+        done
+    ) >> "$PRESSURE_LOG" &
+    PRESSURE_PID=$!
+    debug "Pressure sampler started: pid=$PRESSURE_PID log=$PRESSURE_LOG"
+    log "Thread pressure sampler: $PRESSURE_LOG"
+}
+
+stop_thread_pressure_sampler() {
+    [ -n "$PRESSURE_PID" ] && kill "$PRESSURE_PID" 2>/dev/null
+    wait "$PRESSURE_PID" 2>/dev/null
+    PRESSURE_PID=""
+    debug "Pressure sampler stopped ($(wc -l < "$PRESSURE_LOG" 2>/dev/null || echo 0) samples)"
+}
+
+# Append thread-pressure summary and spike-correlation table to the report.
+# Correlates each spike (>5ms) with the nearest pressure sample by uptime timestamp.
+report_thread_pressure() {
+    _plog="$1"; _rfile="$2"
+    echo ""
+    echo "======================================================"
+    echo "  Thread pressure during trace window"
+    echo "======================================================"
+    if [ ! -s "$_plog" ]; then
+        echo "  No pressure samples captured (log: $_plog)"
+        echo "======================================================"
         return
     fi
-    _init=$(cat /proc/1/comm 2>/dev/null)
-    log "Restarting Thunder (init=${_init:-unknown}) to capture start-up..."
+    awk '
+    BEGIN { min_r=999999; max_r=0; min_t=999999; max_t=0; n=0; sum_r=0; sum_t=0; first=-1 }
+    NF>=3 {
+        ts=$1+0; r=$2+0; t=$3+0
+        n++; sum_r+=r; sum_t+=t
+        if (first<0) first=ts
+        last=ts
+        if (r>max_r) { max_r=r; max_r_ts=ts }
+        if (r<min_r) min_r=r
+        if (t>max_t) max_t=t
+        if (t<min_t) min_t=t
+    }
+    END {
+        if (n==0) { print "  No samples."; exit }
+        w=last-first
+        printf "  Samples    : %d  (%.1f s window,  ~%.0f ms avg interval)\n", n, w, w*1000.0/(n>1?n-1:1)
+        printf "  Runnable   : min=%-4d  avg=%-5.1f  max=%d  (at t=%.2f s)\n", min_r, sum_r/n, max_r, max_r_ts
+        printf "  Total thds : min=%-4d  avg=%-5.1f  max=%d\n", min_t, sum_t/n, max_t
+    }' "$_plog"
+    printf "  Pressure log: %s\n" "$_plog"
 
-    # 1) systemd
-    if _unit=$(detect_systemd_unit); then
-        log "systemd unit: ${_unit}.service"
-        systemctl restart "$_unit" && return
-    fi
-
-    # 2) sysvinit / BusyBox init
-    for _c in $THUNDER_CANDIDATES; do
-        if [ -x /etc/init.d/"$_c" ]; then
-            log "init.d script: /etc/init.d/$_c"
-            /etc/init.d/"$_c" restart && return
-        fi
-    done
-
-    # 3) supervised process (RDK self-heal / minidump respawner):
-    #    SIGTERM the daemon and let the supervisor bring it back.
-    log "No service manager matched; SIGTERM WPEFramework and rely on supervisor respawn."
-    pkill -TERM -x WPEFramework 2>/dev/null || pkill -TERM -f WPEFramework 2>/dev/null
+    [ -f "$_rfile" ] || { echo "======================================================"; return; }
+    awk -v plog="$_plog" '
+    BEGIN {
+        while ((getline line < plog) > 0) {
+            n=split(line,a); if (n<3) continue
+            np++; pts[np]=a[1]+0; prun[np]=a[2]+0; ptot[np]=a[3]+0
+            prq[np]=(n>=4)?a[4]:"N/A"
+        }
+        close(plog); ns=0
+    }
+    /wakeup->run.*latency=/ {
+        match($0,/latency=([0-9.]+)/,la); lat=la[1]+0
+        if (lat<5000) next
+        match($0,/ts=([0-9.]+)/,ta); spike_t=ta[1]+0
+        if (spike_t==0) next
+        best=1; bd=9e18
+        for (i=1;i<=np;i++) { d=pts[i]-spike_t; if(d<0) d=-d; if(d<bd){bd=d;best=i} }
+        ns++
+        lats[ns]=lat; runs[ns]=np?prun[best]:"N/A"
+        tots[ns]=np?ptot[best]:"N/A"; rqs[ns]=np?prq[best]:"N/A"; dts[ns]=bd*1000
+    }
+    END {
+        print ""
+        if (ns==0) {
+            print "  No spikes >5ms with ts= field found (re-run script to regenerate report)."
+            exit
+        }
+        print "--- Spikes >5ms correlated with thread pressure ---"
+        printf "  %-11s  %-8s  %-7s  %-10s  %s\n", "Latency","Runnable","Total","percpu_rq","Sample offset"
+        printf "  %-11s  %-8s  %-7s  %-10s  %s\n", "-----------","--------","-------","----------","-------------"
+        for (i=1;i<=ns;i++)
+            printf "  %-11s  %-8s  %-7s  %-10s  %.0f ms\n", \
+                   sprintf("%.1f ms",lats[i]/1000.0), runs[i], tots[i], rqs[i], dts[i]
+    }' "$_rfile"
+    echo "======================================================"
 }
 
 # ===========================================================================
 # ftrace back-end
 # ===========================================================================
 run_ftrace() {
+    debug "run_ftrace: entering with TRACEFS=$TRACEFS"
     if [ ! -d "$TRACEFS" ]; then
         log "ERROR: tracefs not found at $TRACEFS (need CONFIG_FTRACE)."
+        debug "ERROR: tracefs directory does not exist: $TRACEFS"
         exit 1
     fi
+
+    for _trace_file in tracing_on current_tracer trace set_event; do
+        if [ ! -e "$TRACEFS/$_trace_file" ]; then
+            debug "WARN: missing tracefs file: $TRACEFS/$_trace_file"
+        fi
+    done
 
     log "Using ftrace at $TRACEFS"
     # clean slate
@@ -147,15 +257,25 @@ run_ftrace() {
     enable_filtered sched_stat_iowait  "comm == \"$COMM\""
     enable_filtered sched_stat_runtime "comm == \"$COMM\""
 
-    echo 1 > "$TRACEFS/tracing_on"
+    if ! echo 1 > "$TRACEFS/tracing_on" 2>/dev/null; then
+        debug "ERROR: failed to enable tracing: $TRACEFS/tracing_on"
+        exit 1
+    fi
+    debug "ftrace enabled; restarting Thunder"
 
-    restart_thunder
+    #restart_thunder
 
     log "Tracing for ${DURATION}s ..."
+    start_thread_pressure_sampler
     sleep "$DURATION"
+    stop_thread_pressure_sampler
 
     echo 0 > "$TRACEFS/tracing_on"
-    cp "$TRACEFS/trace" "$RAW"
+    if ! cp "$TRACEFS/trace" "$RAW" 2>/dev/null; then
+        debug "ERROR: failed to copy $TRACEFS/trace to $RAW"
+        exit 1
+    fi
+    debug "Raw trace copied: $RAW bytes=$(wc -c < "$RAW" 2>/dev/null || echo unknown)"
     # disable events again
     : > "$TRACEFS/set_event" 2>/dev/null
     log "Raw trace saved: $RAW"
@@ -169,7 +289,17 @@ run_ftrace() {
         log "WARN: could not resolve WPEFramework daemon tid; reporting all '$COMM' threads."
     fi
 
-    parse_ftrace "$RAW" "$COMM" "$_daemon_tids" | tee "$REPORT"
+    if ! parse_ftrace "$RAW" "$COMM" "$_daemon_tids" > "$REPORT" 2>>"$DEBUG_LOG"; then
+        debug "ERROR: parse_ftrace failed for $RAW"
+        exit 1
+    fi
+    if [ ! -s "$REPORT" ]; then
+        debug "WARN: report was created but is empty: $REPORT"
+    else
+        debug "Report saved: $REPORT bytes=$(wc -c < "$REPORT" 2>/dev/null || echo unknown)"
+        cat "$REPORT"
+        report_thread_pressure "$PRESSURE_LOG" "$REPORT" | tee -a "$REPORT"
+    fi
 }
 
 # Parse wakeup->switch pairs and (if present) sched_stat_wait for the thread.
@@ -235,7 +365,7 @@ parse_ftrace() {
                     if (n==1){ first=d; first_tid=npid; first_ts=t }
                     if (d>max){max=d; maxpid=npid}
                     if (min==0 || d<min) min=d
-                    print "  wakeup->run  tid="npid"  latency="sprintf("%.1f",d)" us"
+                    print "  wakeup->run  tid="npid"  latency="sprintf("%.1f",d)" us  ts="sprintf("%.6f",t)
                 }
             } else if (nname==want && tid_ok(npid)==0) {
                 filtered_tids[npid]=1
@@ -381,8 +511,10 @@ parse_ftrace() {
 # perf back-end
 # ===========================================================================
 run_perf() {
+    debug "run_perf: entering; OUTDIR=$OUTDIR"
     if ! command -v perf >/dev/null 2>&1; then
         log "ERROR: perf not found. Use METHOD=ftrace instead."
+        debug "ERROR: perf command not found"
         exit 1
     fi
     PERFDATA="$OUTDIR/sched_${STAMP}.data"
@@ -393,8 +525,9 @@ run_perf() {
     perf sched record -o "$PERFDATA" -- sleep "$DURATION" &
     PERF_PID=$!
     sleep 1
-    restart_thunder
+    #restart_thunder
     wait "$PERF_PID"
+    debug "perf record finished with exit=$? data=$PERFDATA bytes=$(wc -c < "$PERFDATA" 2>/dev/null || echo unknown)"
 
     log "perf data: $PERFDATA"
 
@@ -434,7 +567,7 @@ run_perf() {
 # every matching event for the entire boot with no overflow. After the box is
 # up you run `show-boot` to stop tracing, dump and compute the latency.
 # ===========================================================================
-SELF_INSTALL="${SELF_INSTALL:-/opt/resource_monitor_runq_latency.sh}"
+SELF_INSTALL="${SELF_INSTALL:-/usr/bin/resource_monitor_runq_latency.sh}"
 BOOT_UNIT=runq-boottrace.service
 BOOT_UNIT_PATH="/etc/systemd/system/${BOOT_UNIT}"
 
@@ -517,23 +650,54 @@ arm_filtered_trace() {
 
 # Runs at boot from the systemd unit.
 arm_boot() {
+    debug "arm_boot: starting"
     arm_filtered_trace || exit 1
-    echo "armed $(date)" > "$OUTDIR/runq_boot_armed.txt" 2>/dev/null
+    if ! echo "armed $(date)" > "$OUTDIR/runq_boot_armed.txt" 2>/dev/null; then
+        debug "ERROR: failed to write boot marker: $OUTDIR/runq_boot_armed.txt"
+        exit 1
+    fi
+    debug "Boot marker saved: $OUTDIR/runq_boot_armed.txt"
+    if ! {
+        echo "armed=$(date)"
+        echo "tracefs=$TRACEFS"
+        echo "comm=$COMM"
+        echo "raw=$BOOT_RAW"
+        echo "report=$BOOT_REPORT"
+        echo "next_action=sh $SELF_INSTALL show-boot"
+    } > "$OUTDIR/runq_boot_state.txt" 2>/dev/null; then
+        debug "ERROR: failed to write boot state: $OUTDIR/runq_boot_state.txt"
+        exit 1
+    fi
+    debug "Boot trace remains armed; no RAW/REPORT is created until show-boot runs"
+    debug "Boot state saved: $OUTDIR/runq_boot_state.txt"
 }
 
 # Measure ONLY the running WPEFramework Monitor::IResource thread (no restart).
 run_live() {
     # TARGET_TID already set by lock_target_tid before this is called
+    debug "run_live: entering with TARGET_TID=$TARGET_TID"
     _mpid=$(pgrep -x "$WPE_PROC" 2>/dev/null | sort -n | head -n1)
     log "Target: $WPE_PROC pid=$_mpid  tid=$TARGET_TID  comm=$COMM"
     arm_filtered_trace || exit 1
     log "Tracing this thread for ${DURATION}s ..."
+    start_thread_pressure_sampler
     sleep "$DURATION"
+    stop_thread_pressure_sampler
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
-    cp "$TRACEFS/trace" "$RAW" 2>/dev/null
+    if ! cp "$TRACEFS/trace" "$RAW" 2>/dev/null; then
+        debug "ERROR: failed to copy $TRACEFS/trace to $RAW"
+        exit 1
+    fi
+    debug "Live raw trace copied: $RAW bytes=$(wc -c < "$RAW" 2>/dev/null || echo unknown)"
     : > "$TRACEFS/set_event" 2>/dev/null
     log "Raw trace saved: $RAW"
-    parse_ftrace "$RAW" "$COMM" | tee "$REPORT"
+    if ! parse_ftrace "$RAW" "$COMM" > "$REPORT" 2>>"$DEBUG_LOG"; then
+        debug "ERROR: live parse_ftrace failed for $RAW"
+        exit 1
+    fi
+    cat "$REPORT"
+    report_thread_pressure "$PRESSURE_LOG" "$REPORT" | tee -a "$REPORT"
+    debug "Live report saved: $REPORT bytes=$(wc -c < "$REPORT" 2>/dev/null || echo unknown)"
     log "Report: $REPORT"
 }
 
@@ -606,9 +770,21 @@ EOF
 }
 
 show_boot() {
+    debug "show_boot: stopping trace and collecting boot data"
     if [ ! -d "$TRACEFS" ]; then log "tracefs not found."; exit 1; fi
+    if [ ! -f "$OUTDIR/runq_boot_armed.txt" ]; then
+        debug "WARN: boot marker not found: $OUTDIR/runq_boot_armed.txt"
+        log "WARNING: no boot marker found; was arm-boot run before reboot?"
+    fi
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
-    cp "$TRACEFS/trace" "$RAW" 2>/dev/null
+    RAW="$BOOT_RAW"
+    REPORT="$BOOT_REPORT"
+    debug "show_boot: using RAW=$RAW REPORT=$REPORT"
+    if ! cp "$TRACEFS/trace" "$RAW" 2>/dev/null; then
+        debug "ERROR: failed to copy boot trace from $TRACEFS/trace to $RAW"
+        exit 1
+    fi
+    debug "Boot raw trace copied: $RAW bytes=$(wc -c < "$RAW" 2>/dev/null || echo unknown)"
 
     # Keep ONLY the WPEFramework daemon (lowest PID) Monitor::IResource tid(s).
     _valid_tids=$(resolve_daemon_tids)
@@ -622,7 +798,12 @@ show_boot() {
     fi
 
     log "Boot trace dumped: $RAW"
-    parse_ftrace "$RAW" "$COMM" "$_valid_tids" | tee "$REPORT"
+    if ! parse_ftrace "$RAW" "$COMM" "$_valid_tids" > "$REPORT" 2>>"$DEBUG_LOG"; then
+        debug "ERROR: boot parse_ftrace failed for $RAW"
+        exit 1
+    fi
+    cat "$REPORT"
+    debug "Boot report saved: $REPORT bytes=$(wc -c < "$REPORT" 2>/dev/null || echo unknown)"
     log "Report: $REPORT"
     log "Re-arm for another reboot is automatic (unit still enabled)."
     log "Remove with:  sh $0 uninstall-boot"
