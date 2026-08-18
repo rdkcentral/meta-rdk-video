@@ -2,7 +2,7 @@ SUMMARY = "ENTServices opencdmi plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7a65e8e9836ac44d082594220a9a3883"
 
-PV = "2.0.3"
+PV = "2.0.5"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -17,8 +17,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://opencdmi-fps-plugin-frameworkrpc.patch \
           "
           
-# Release version - 2.0.2
-SRCREV = "65439f007efc79b703f5f99e661ffbb7cad8c6a6"
+# Release version - 2.0.5
+SRCREV = "74c11386348a4a1fb6fc18ab2bfb51bf1e72b18e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
