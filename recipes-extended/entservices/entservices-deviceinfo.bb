@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceinfo;${CMF_GITHUB_SRC_URI_SUFFIX
           "
 
 # Andre Version
-SRCREV = "6aa9a70bf3920ce9cf7875442731b817451e6848"
+SRCREV = "29626e869a1dca5703b60f0db403bd85df621afd"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
