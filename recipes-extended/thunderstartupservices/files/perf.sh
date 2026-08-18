@@ -63,33 +63,24 @@ do_capture() {
     FULL="$OUTDIR/startup_${STAMP}.full.txt"
     MON="$OUTDIR/startup_${STAMP}.monitor.txt"
 
-    log "Waiting for the $COMM thread to exist in a $WPE_PROC daemon..."
+    log "Waiting for the $WPE_PROC process to appear..."
     _pid=""
-    _tid=""
     _tries=0
-    while [ -z "$_tid" ]; do
-        # find the WPEFramework pid that actually OWNS the Monitor::IResou thread,
-        # and capture the THREAD's tid directly. (the startup launcher re-execs;
-        # the thread only lives in the real, stable daemon, so this skips the
-        # short-lived pid that would make perf detach after a few samples.)
+    while [ -z "$_pid" ]; do
         for _p in $(pgrep -x "$WPE_PROC" 2>/dev/null | sort -n); do
-            for _t in /proc/"$_p"/task/*; do
-                if grep -q "$COMM" "$_t/comm" 2>/dev/null; then
-                    _pid="$_p"; _tid=$(basename "$_t"); break 2
-                fi
-            done
+            _pid="$_p"
+            break
         done
-        [ -n "$_tid" ] && break
+        [ -n "$_pid" ] && break
         _tries=$((_tries + 1))
-        [ "$_tries" -gt 600000 ] && { log "ERROR: timed out waiting for $COMM thread"; exit 1; }
+        [ "$_tries" -gt 600000 ] && { log "ERROR: timed out waiting for $WPE_PROC pid"; exit 1; }
         usleep 5000 2>/dev/null || sleep 1
     done
-    log "Attached to $COMM tid=$_tid (pid=$_pid); recording ${DURATION}s (dwarf,${STACKSZ})."
+    log "Attached to $WPE_PROC pid=$_pid; recording ${DURATION}s (dwarf,${STACKSZ})."
 
-    # --tid focuses the whole sampling budget on the monitor thread -> more
-    # samples of it (deeper/denser flamegraph) and a much smaller perf.data
-    # than recording the entire process.
-    "$PERF" record -o "$DATA" -F "$FREQ" --tid "$_tid" \
+    # Sample the whole WPEFramework process; the decode step below filters to the
+    # Monitor::IResou thread so we still keep the startup path focused.
+    "$PERF" record -o "$DATA" -F "$FREQ" --pid "$_pid" \
             --call-graph dwarf,"$STACKSZ" -- sleep "$DURATION"
 
     log "Decoding on target..."
