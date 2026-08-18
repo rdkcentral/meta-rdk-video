@@ -89,12 +89,27 @@ int main(int argc, char **argv)
     IARM_Bus_RegisterEvent(1);
 
     if (strcmp(scenario, "new_to_legacy") == 0) {
+        /*
+         * New sender -> Legacy receiver.
+         *
+         * EVENT path: patched libIARMBus appends a traceparent suffix when a
+         * root span is active.  The legacy receiver reads only data[0..len-1]
+         * and ignores the suffix bytes silently — no crash, correct payload.
+         *
+         * RPC path: we deliberately use IARM_Bus_Call (NOT CallWithTracing)
+         * because IARM_Bus_CallWithTracing wraps the arg in an RPCA envelope.
+         * A legacy handler that doesn't know the envelope would see corrupted
+         * fields and may crash.  The correct contract is: CallWithTracing is
+         * used only when both sender AND receiver have the patched library.
+         * This test proves plain RPC still works across the boundary.
+         */
         rdk_otlp_init("iarm-otel-poc-pub2-new", "1.0.0");
         rdk_otlp_start_distributed_trace("OTEL_TEST2_NEW_TO_LEGACY", "pub2");
 
         send_event("new_to_legacy_event", 101);
         sleep(1);
-        send_rpc_traced(101);
+        /* Use legacy call — not CallWithTracing — against legacy receiver. */
+        send_rpc_legacy(101);
 
         rdk_otlp_finish_distributed_trace();
         rdk_otlp_force_flush();
