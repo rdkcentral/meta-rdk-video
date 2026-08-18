@@ -29,6 +29,9 @@ inherit pkgconfig cmake coverity features_check
 
 EXTRA_OECMAKE += " ${@bb.utils.contains("IMAGE_FEATURES", "prod", "-DRIALTO_BUILD_TYPE=Release", "-DRIALTO_BUILD_TYPE=Debug", d)} "
 
+DEPENDS:append = " telemetry"
+EXTRA_OECMAKE += " -DENABLE_TELEMETRY2_0=ON "
+
 PACKAGES =+ "${PN}-client ${PN}-server ${PN}-servermanager-lib ${PN}-servermanager ${PN}-client-dev ${PN}-server-dev ${PN}-servermanager-lib-dev ${PN}-servermanager-dev "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
