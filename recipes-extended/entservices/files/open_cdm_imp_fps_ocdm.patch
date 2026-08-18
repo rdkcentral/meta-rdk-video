@@ -83,7 +83,7 @@ index c860ab0..cb4a398 100644
   * @brief Close the cached open connection if it exists.
   *
 diff --git a/client/open_cdm_ext.cpp b/client/open_cdm_ext.cpp
-index a730528..aa03950 100644
+index a730528..5541c3e 100644
 --- a/client/open_cdm_ext.cpp
 +++ b/client/open_cdm_ext.cpp
 @@ -46,6 +46,7 @@ static domainKeysystemMap domainMap =  {
@@ -213,7 +213,7 @@ index a730528..aa03950 100644
 +    return result;
 +}
 +
-+OpenCDMError opencdm_get_library_version(struct OpenCDMSystem* system, uint8_t* versionOut)
++OpenCDMError opencdm_get_library_version(struct OpenCDMSystem* system, uint8_t* versionOut, uint32_t versionOutSize)
 +{
 +    ASSERT(system != nullptr);
 +    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
@@ -224,12 +224,12 @@ index a730528..aa03950 100644
 +            return ERROR_INVALID_ACCESSOR;
 +
 +        std::string keySystem = system->keySystem();
-+        result = (OpenCDMError)accessor->GetLibraryVersion(keySystem, versionOut);
++        result = (OpenCDMError)accessor->GetLibraryVersion(keySystem, versionOut, versionOutSize);
 +    }
 +    return result;
 +}
 diff --git a/client/open_cdm_ext.h b/client/open_cdm_ext.h
-index 24a85e4..c5d0a8d 100644
+index 24a85e4..6c59ef4 100644
 --- a/client/open_cdm_ext.h
 +++ b/client/open_cdm_ext.h
 @@ -234,6 +234,15 @@ struct PlayLevels {
@@ -244,12 +244,12 @@ index 24a85e4..c5d0a8d 100644
 +EXTERNAL OpenCDMError opencdm_init_library(struct OpenCDMSystem* system);
 +EXTERNAL OpenCDMError opencdm_process_license(struct OpenCDMSystem* system, uint32_t version, uint8_t* session, uint32_t sessionsize_bytes,  const uint8_t* licenseData, uint32_t licenseDataSize, uint8_t* cryptoId, uint32_t crytorId_bytes);
 +EXTERNAL OpenCDMError opencdm_destroy_cryptor(struct OpenCDMSystem* system, uint32_t version, uint64_t cryptoId);
-+EXTERNAL OpenCDMError opencdm_get_library_version(struct OpenCDMSystem* system, uint8_t *versionOut);
++EXTERNAL OpenCDMError opencdm_get_library_version(struct OpenCDMSystem* system, uint8_t *versionOut, uint32_t versionOutSize);
  
  #ifdef __cplusplus
  } // extern "C"
 diff --git a/client/open_cdm_impl.h b/client/open_cdm_impl.h
-index 4d6905a..a7d01e2 100644
+index 4d6905a..a8df98c 100644
 --- a/client/open_cdm_impl.h
 +++ b/client/open_cdm_impl.h
 @@ -164,6 +164,116 @@ public:
@@ -352,7 +352,7 @@ index 4d6905a..a7d01e2 100644
 +        }
 +    }
 +
-+    virtual Exchange::OCDM_RESULT GetLibraryVersion(const std::string& keySystem, uint8_t* versionOut) const override
++    virtual Exchange::OCDM_RESULT GetLibraryVersion(const std::string& keySystem, uint8_t* versionOut, uint32_t versionOutSize) const override
 +    {
 +        Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
 +        if (_remote == nullptr) {
@@ -361,7 +361,7 @@ index 4d6905a..a7d01e2 100644
 +        if (_remote == nullptr) {
 +            return Exchange::OCDM_RESULT::OCDM_S_FALSE;
 +        } else {
-+            result = _remote->GetLibraryVersion(keySystem, versionOut);
++            result = _remote->GetLibraryVersion(keySystem, versionOut, versionOutSize);
 +            return result;
 +        }
 +    }
