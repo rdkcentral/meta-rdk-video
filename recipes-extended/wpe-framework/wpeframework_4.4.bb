@@ -10,15 +10,14 @@ DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
 
 # Need gst-svp-ext which is an abstracting lib for metadata
-DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
 PR = "r46"
 PV = "4.4.6"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=development/Perf;name=thunder"
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;name=thunder"
 
-SRCREV_thunder = "2ef6238e8836ece993ef29b287147893894b7268"
+SRCREV_thunder = "fafbe0b112ed43a580378eaa08f694cf549ed674"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
@@ -114,6 +113,7 @@ EXTRA_OECMAKE += " \
     -DHIDE_NON_EXTERNAL_SYMBOLS=OFF \
     -DEXIT_REASONS=${WPEFRAMEWORK_EXIT_REASONS} \
     -DMESSAGING=ON \
+    -DFLUSH_LOGS=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
     -DAUTHORIZEDEXTENSIONS='MessagingControl;PluginInitializerService;Systemd' \
@@ -172,10 +172,6 @@ INSANE_SKIP:${PN} += "dev-so"
 INSANE_SKIP:${PN}-dbg += "dev-so"
 
 # ----------------------------------------------------------------------------
-
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
-# Should be able to remove this when generic rdk_svp flag
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'sage_svp', 'gst-svp-ext', '', d)}"
 
 inherit breakpad-logmapper syslog-ng-config-gen logrotate_config
 
