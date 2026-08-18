@@ -1,0 +1,167 @@
+diff --git a/apis/OpenCDMi/IContentDecryption.h b/apis/OpenCDMi/IContentDecryption.h
+index dec0647..3d95f5f 100644
+--- a/apis/OpenCDMi/IContentDecryption.h
++++ b/apis/OpenCDMi/IContentDecryption.h
+@@ -73,6 +73,14 @@ namespace Exchange {
+             uint16_t StreamHeight;
+             uint16_t StreamWidth;
+             uint8_t  StreamType;
++	    uint32_t fps_version;
++	    uint64_t fps_movieID;
++	    uint64_t fps_cryptorID;
++	    uint32_t fps_contentType;
++	    CDMi::Cdmi_FPSSliceInfo fps_sliceInfo[4]; // Lets out an arbitary size for now.
++	    uint32_t fps_sliceInfoArrayCount;
++	    uint32_t fps_svpmemoryHandle;
++
+         };
+ 
+     public:
+@@ -112,6 +120,24 @@ namespace Exchange {
+             admin->StreamHeight = 0;
+             admin->StreamWidth = 0;
+             admin->StreamType = 0;
++	    admin->fps_version = 0;
++	    admin->fps_movieID = 0;
++	    admin->fps_cryptorID = 0;
++	    admin->fps_contentType = 0;
++	    admin->fps_sliceInfo[0].offset = 0;
++            admin->fps_sliceInfo[0].size   = 0;
++
++            admin->fps_sliceInfo[1].offset = 0;
++            admin->fps_sliceInfo[1].size   = 0;
++
++	    admin->fps_sliceInfo[2].offset = 0;
++            admin->fps_sliceInfo[2].size   = 0;
++
++	    admin->fps_sliceInfo[3].offset = 0;
++            admin->fps_sliceInfo[3].size   = 0;
++
++	    admin->fps_sliceInfoArrayCount = 0;
++	    admin->fps_svpmemoryHandle = 0;
+         }
+         void Status(uint32_t status)
+         {
+@@ -238,6 +264,97 @@ namespace Exchange {
+             VERIFY(length <= 16);
+             return (length > 0 ? &admin->KeyId[1] : nullptr);
+         }
++
++        // FPS specific
++        void SetFPSVersion(const uint32_t version)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_version = version;
++        }
++
++        uint32_t FPSVersion() const
++        {
++            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
++            return (admin->fps_version);
++        }
++
++        void SetFPSMovieId(const uint64_t movieId)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_movieID = movieId;
++        }
++
++        uint64_t FPSMovieId() const
++        {
++            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
++            return (admin->fps_movieID);
++        }
++
++        void SetFPSCryptorId(const uint64_t cryptorId)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_cryptorID = cryptorId;
++        }
++
++        uint64_t FPSCryptorId() const
++        {
++            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
++            return (admin->fps_cryptorID);
++        }
++
++        void SetFPSContentType(const uint32_t contentType)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_contentType = contentType;
++        }
++
++        uint32_t FPSContentType() const
++        {
++            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
++            return (admin->fps_contentType);
++        }
++
++       void SetFPSSliceInfoArray(const uint32_t sliceinfocount, const CDMi::Cdmi_FPSSliceInfo sliceInfo[])
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_sliceInfoArrayCount = sliceinfocount;
++            for (uint8_t index = 0; index < sliceinfocount; index++)
++            {
++                admin->fps_sliceInfo[index].offset = sliceInfo[index].offset;
++                admin->fps_sliceInfo[index].size = sliceInfo[index].size;
++            }
++        }
++
++        const CDMi::Cdmi_FPSSliceInfo *FPSSliceInfoArray() const
++        {
++            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
++            return (&(admin->fps_sliceInfo[0]));
++        }
++
++        void SetFPSSliceInfoArrayCount(const uint32_t sliceInfoArrayCount)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_sliceInfoArrayCount = sliceInfoArrayCount;
++        }
++
++        uint32_t FPSSliceInfoArrayCoun() const
++        {
++            const Administration *admin = reinterpret_cast<const Administration *>(AdministrationBuffer());
++            return (admin->fps_sliceInfoArrayCount);
++        }
++
++        void SetFPSSvpOut(uint32_t svpmemoryhandle)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            admin->fps_svpmemoryHandle = svpmemoryhandle;
++        }
++
++	uint32_t FPSSvpOut(void)
++        {
++            Administration *admin = reinterpret_cast<Administration *>(AdministrationBuffer());
++            return (admin->fps_svpmemoryHandle);
++        }
++
+     };
+ }
+ }
+diff --git a/apis/OpenCDMi/IOCDM.h b/apis/OpenCDMi/IOCDM.h
+index 6c3ec99..7bfce82 100644
+--- a/apis/OpenCDMi/IOCDM.h
++++ b/apis/OpenCDMi/IOCDM.h
+@@ -191,6 +191,20 @@ struct IAccessorOCDM : virtual public Core::IUnknown {
+     // Provides keysystem-specific metadata
+     virtual OCDM_RESULT Metadata(const std::string& keySystem, std::string& metadata /* @out */) const = 0;
+ 
++    // fairplay
++
++    virtual OCDM_RESULT CreateMovieSession(const string& keySystem, uint32_t version, const uint8_t* cert /* @in @length:certificateLength */, uint32_t certificateLength, const uint8_t* versionlist /* @in @length:versionListSize */, uint32_t versionListSize, uint8_t* movieIdOut /* @out @length:movieIdSize */, uint32_t movieIdSize) const = 0;
++    virtual OCDM_RESULT DestroyMovieSession(const string& keySystem, uint32_t version, uint64_t movieId) const = 0;
++    virtual OCDM_RESULT GenerateChallengeWithVersionList(const string& keySystem, uint32_t version, uint64_t movieId, const uint8_t* assetidData /* @in @length:assetidSize */, uint32_t assetidSize,  const uint8_t* versionlist /* @in @length:versionListSize */, uint32_t versionListSize,
++         const uint8_t* streamerChallengeData /* @in @length:streamerChallengeSize */, uint32_t streamerChallengeSize,
++         uint64_t cryptorId, uint8_t* licenseChallengeBuffer /* @out @length:licenseChallengeMaxSize */, uint32_t licenseChallengeMaxSize, uint8_t *licenseSize /* @out @length:license_bytes */, uint32_t license_bytes, uint8_t *session /* @out @length:session_bytes */, uint32_t session_bytes) const = 0;
++    virtual OCDM_RESULT DestroyServerExchange(const string& keySystem, uint32_t version, uint8_t* session /* @in @length:session_bytes */, uint32_t session_bytes) const = 0;
++    virtual OCDM_RESULT InitLibrary(const string& keySystem) const = 0;
++    virtual OCDM_RESULT ProcessLicense(const string& keySystem, uint32_t version, uint8_t* session /* @in @length:session_bytes */, uint32_t session_bytes, const uint8_t* licenseData /* @in @length:licenseDataSize */, uint32_t licenseDataSize, uint8_t *cryptoId /* @inout @length:cryptoId_bytes */, uint32_t cryptoId_bytes) const = 0;
++    virtual OCDM_RESULT DestroyCryptor(const string& keySystem, uint32_t version, uint64_t cryptoId) const = 0;
++
++
++
+     // Provides keysystem-specific metricdata
+     virtual OCDM_RESULT Metricdata(
+         const std::string& keySystem,
