@@ -195,15 +195,20 @@ report_thread_pressure() {
         close(plog); ns=0
     }
     /wakeup->run.*latency=/ {
-        match($0,/latency=([0-9.]+)/,la); lat=la[1]+0
+        # busybox awk has no three-arg match(); extract with sub() instead
+        tmp=$0; sub(/.*latency=/,"",tmp); sub(/ .*/,"",tmp); lat=tmp+0
         if (lat<5000) next
-        match($0,/ts=([0-9.]+)/,ta); spike_t=ta[1]+0
+        if (index($0,"ts=")==0) next
+        tmp=$0; sub(/.*ts=/,"",tmp); sub(/ .*/,"",tmp); spike_t=tmp+0
         if (spike_t==0) next
         best=1; bd=9e18
         for (i=1;i<=np;i++) { d=pts[i]-spike_t; if(d<0) d=-d; if(d<bd){bd=d;best=i} }
         ns++
         lats[ns]=lat; runs[ns]=np?prun[best]:"N/A"
-        tots[ns]=np?ptot[best]:"N/A"; rqs[ns]=np?prq[best]:"N/A"; dts[ns]=bd*1000
+        tots[ns]=np?ptot[best]:"N/A"
+        # show percpu_rq only when sched_debug was available
+        rqs[ns]=(np && prq[best]!="?" && prq[best]!="N/A")?prq[best]:"-"
+        dts[ns]=bd*1000
     }
     END {
         print ""
@@ -212,11 +217,11 @@ report_thread_pressure() {
             exit
         }
         print "--- Spikes >5ms correlated with thread pressure ---"
-        printf "  %-11s  %-8s  %-7s  %-10s  %s\n", "Latency","Runnable","Total","percpu_rq","Sample offset"
-        printf "  %-11s  %-8s  %-7s  %-10s  %s\n", "-----------","--------","-------","----------","-------------"
+        printf "  %-11s  %-8s  %-7s  %s\n", "Latency","Runnable","Total","Sample offset"
+        printf "  %-11s  %-8s  %-7s  %s\n", "-----------","--------","-------","-------------"
         for (i=1;i<=ns;i++)
-            printf "  %-11s  %-8s  %-7s  %-10s  %.0f ms\n", \
-                   sprintf("%.1f ms",lats[i]/1000.0), runs[i], tots[i], rqs[i], dts[i]
+            printf "  %-11s  %-8s  %-7s  %.0f ms\n", \
+                   sprintf("%.1f ms",lats[i]/1000.0), runs[i], tots[i], dts[i]
     }' "$_rfile"
     echo "======================================================"
 }
@@ -261,9 +266,7 @@ run_ftrace() {
         debug "ERROR: failed to enable tracing: $TRACEFS/tracing_on"
         exit 1
     fi
-    debug "ftrace enabled; restarting Thunder"
-
-    #restart_thunder
+    debug "ftrace armed"
 
     log "Tracing for ${DURATION}s ..."
     start_thread_pressure_sampler
@@ -280,8 +283,14 @@ run_ftrace() {
     : > "$TRACEFS/set_event" 2>/dev/null
     log "Raw trace saved: $RAW"
 
-    # Keep ONLY the WPEFramework daemon's Monitor::IResource tid(s), resolved now
-    # (after the restart, so the tid is the freshly-created one).
+    # Wait up to 30 extra seconds for WPEFramework to be up before TID resolution,
+    # so the report is correctly filtered even when Thunder starts after this service.
+    _wt=0
+    while ! pgrep -x "$WPE_PROC" >/dev/null 2>&1 && [ "$_wt" -lt 30 ]; do
+        debug "Waiting for $WPE_PROC... ($((30-_wt))s remaining)"
+        sleep 1; _wt=$((_wt+1))
+    done
+
     _daemon_tids=$(resolve_daemon_tids)
     if [ -n "$_daemon_tids" ]; then
         log "Restricting report to WPEFramework daemon tid(s): $_daemon_tids"
@@ -652,7 +661,6 @@ arm_filtered_trace() {
 arm_boot() {
     debug "arm_boot: starting"
     arm_filtered_trace || exit 1
-    start_thread_pressure_sampler
     if ! echo "armed $(date)" > "$OUTDIR/runq_boot_armed.txt" 2>/dev/null; then
         debug "ERROR: failed to write boot marker: $OUTDIR/runq_boot_armed.txt"
         exit 1
@@ -777,7 +785,6 @@ show_boot() {
         debug "WARN: boot marker not found: $OUTDIR/runq_boot_armed.txt"
         log "WARNING: no boot marker found; was arm-boot run before reboot?"
     fi
-    stop_thread_pressure_sampler
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
     RAW="$BOOT_RAW"
     REPORT="$BOOT_REPORT"
@@ -805,6 +812,9 @@ show_boot() {
         exit 1
     fi
     cat "$REPORT"
+    # Include boot-time thread pressure if the sibling sampler service was running
+    _boot_plog="$OUTDIR/thread_pressure_boot.log"
+    report_thread_pressure "$_boot_plog" "$REPORT" | tee -a "$REPORT"
     debug "Boot report saved: $REPORT bytes=$(wc -c < "$REPORT" 2>/dev/null || echo unknown)"
     log "Report: $REPORT"
     log "Re-arm for another reboot is automatic (unit still enabled)."
@@ -889,9 +899,33 @@ main() {
         arm-boot)       arm_boot ;;
         show-boot)      show_boot ;;
         uninstall-boot) uninstall_boot ;;
+        sample-pressure)
+            # Runs as a long-lived service; systemd stops it when show-boot is called.
+            _plog="${OUTDIR}/thread_pressure_boot.log"
+            debug "sample-pressure: writing to $_plog"
+            while true; do
+                read -r _up _ < /proc/uptime 2>/dev/null || _up="0"
+                read -r _ _ _ _lf _ < /proc/loadavg 2>/dev/null || _lf="0/0"
+                _run=${_lf%/*}; _tot=${_lf#*/}
+                printf '%s %s %s ?\n' "$_up" "$_run" "$_tot"
+                sleep 0.1 2>/dev/null || usleep 100000 2>/dev/null || sleep 1
+            done >> "$_plog"
+            ;;
         live)
             lock_target_tid
             run_live ;;
+        capture)
+            # Unified entry point for systemd ExecStart: arms ftrace + pressure
+            # sampler, waits DURATION, stops both, then produces the correlated report.
+            # Does not require Thunder to be running at start time.
+            log "COMM='$COMM'  METHOD=$METHOD  DURATION=${DURATION}s  OUTDIR=$OUTDIR"
+            case "$METHOD" in
+                ftrace) run_ftrace ;;
+                perf)   run_perf ;;
+                *) log "Unknown METHOD='$METHOD' (use ftrace|perf)"; exit 2 ;;
+            esac
+            log "Report: $REPORT"
+            ;;
         run)
             lock_target_tid
             log "COMM='$COMM'  TID=$TARGET_TID  METHOD=$METHOD  DURATION=${DURATION}s"
