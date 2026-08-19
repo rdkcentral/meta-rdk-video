@@ -1,0 +1,135 @@
+diff -uNr entservices-apis-develop/apis/AVMonitor/IAVMonitor.h entservices-apis-develop-AV/apis/AVMonitor/IAVMonitor.h
+--- entservices-apis-develop/apis/AVMonitor/IAVMonitor.h	1970-01-01 05:30:00.000000000 +0530
++++ entservices-apis-develop-AV/apis/AVMonitor/IAVMonitor.h	2026-08-19 15:05:25.512592000 +0530
+@@ -0,0 +1,118 @@
++/*
++ * If not stated otherwise in this file or this component's LICENSE file the
++ * following copyright and licenses apply:
++ *
++ * Copyright 2024 RDK Management
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++
++#pragma once
++#include "Module.h"
++
++
++namespace WPEFramework {
++namespace Exchange {
++
++    /* @json */
++    struct EXTERNAL IAVMonitor : virtual public Core::IUnknown {
++        enum { ID = ID_AVMONITOR };
++
++        struct EventInfo
++        {
++            enum GstStateChange : int
++            {
++                GST_STATE_UNKNOWN = 0                       /* @text: UNKNOWN */,
++                GST_STATE_CHANGE_NULL_TO_READY = 10         /* @text: GST_STATE_CHANGE_NULL_TO_READY */,
++                GST_STATE_CHANGE_READY_TO_PAUSED = 19       /* @text: GST_STATE_CHANGE_READY_TO_PAUSED */,
++                GST_STATE_CHANGE_PAUSED_TO_PLAYING = 28     /* @text: GST_STATE_CHANGE_PAUSED_TO_PLAYING */,
++                GST_STATE_CHANGE_PLAYING_TO_PAUSED = 35     /* @text: GST_STATE_CHANGE_PLAYING_TO_PAUSED */,
++                GST_STATE_CHANGE_PAUSED_TO_READY = 26       /* @text: GST_STATE_CHANGE_PAUSED_TO_READY */,
++                GST_STATE_CHANGE_READY_TO_NULL = 17         /* @text: GST_STATE_CHANGE_READY_TO_NULL */,
++                GST_STATE_CHANGE_NULL_TO_NULL = 9           /* @text: GST_STATE_CHANGE_NULL_TO_NULL */,
++                GST_STATE_CHANGE_READY_TO_READY = 18        /* @text: GST_STATE_CHANGE_READY_TO_READY */,
++                GST_STATE_CHANGE_PAUSED_TO_PAUSED = 27      /* @text: GST_STATE_CHANGE_PAUSED_TO_PAUSED */,
++                GST_STATE_CHANGE_PLAYING_TO_PLAYING = 36    /* @text: GST_STATE_CHANGE_PLAYING_TO_PLAYING */,
++            };
++            enum EventType : uint8_t
++            {
++                UNKNOWN = 0                 /* @text: UNKNOWN */,
++                CAPTURE_START = 0x01        /* @text: CAPTURE_START */,
++                STATE_CHANGE = 0x02         /* @text: STATE_CHANGE */,
++                RESOLUTION_CHANGE = 0x03    /* @text: RESOLUTION_CHANGE */,
++                SINK_STATS = 0x04           /* @text: SINK_STATS */,
++                Z_ORDER_CHANGE = 0x05       /* @text: Z_ORDER_CHANGE */,
++                EOS = 0x06                  /* @text: EOS */,
++                CAPS = 0x07                 /* @text: CAPS */,
++                CAPTURE_STOP = 0x08         /* @text: CAPTURE_STOP */,
++            };
++
++            uint64_t timeStamp;
++            uint64_t id;
++            EventType type;
++            GstStateChange stateChange;
++            int16_t windowWidth;
++            int16_t windowHeight;
++            int8_t visible;
++            int8_t zorder;
++            int64_t startPTS;
++            int64_t firstPTS;
++            int64_t currentPTS;
++            int64_t position;
++            int64_t frameRenderCount;
++            int64_t frameDropCount;
++            int8_t fps;
++            int8_t fpsMean;
++            string gstCaps;
++        };
++
++        // @event
++        struct EXTERNAL INotification : virtual public Core::IUnknown {
++            enum { ID = ID_AVMONITOR_NOTIFICATION };
++            ~INotification() override = default;
++
++            // @brief Notifies that new events have been retrieved
++            // @text onnewevent
++            virtual void OnNewEvent(const EventInfo& event) = 0;
++
++            // @brief Notification with all events send after stop capture
++            // @text onsummary
++            virtual void OnSummary(const string& events) = 0;
++        };
++
++        ~IAVMonitor() override = default;
++
++        virtual uint32_t Register(IAVMonitor::INotification* sink) = 0;
++        virtual uint32_t Unregister(IAVMonitor::INotification* sink) = 0;
++
++        enum CaptureMode: int {
++            NONE = 0        /* @text: NONE */,
++            LIVE = 1        /* @text: LIVE */,
++            SUMMARY = 2     /* @text: SUMMARY */,
++            MIXED = 3       /* @text: MIXED */,
++        };
++        // @brief Begin capture session
++        // @text startcapture
++        virtual uint32_t StartCapture(const uint32_t interval, const CaptureMode captureMode) = 0;
++
++        // @brief End capture session
++        // @text stopcapture
++        virtual uint32_t StopCapture() = 0;
++
++        /* @json:omit */
++        virtual uint32_t RegisterEvent(const EventInfo& event /* @in */) = 0;
++
++    };
++}
++}
+diff -uNr entservices-apis-develop/apis/Ids.h entservices-apis-develop-AV/apis/Ids.h
+--- entservices-apis-develop/apis/Ids.h	2026-08-18 08:32:48.000000000 +0530
++++ entservices-apis-develop-AV/apis/Ids.h	2026-08-19 15:21:26.058319100 +0530
+@@ -364,6 +364,9 @@
+ 
+         ID_AUDIO_OUTPUT                             = ID_ENTOS_OFFSET + 0x560,
+         ID_AUDIO_OUTPUT_NOTIFICATION                = ID_AUDIO_OUTPUT + 1,
++
++	ID_AVMONITOR                                = ID_ENTOS_OFFSET + 0x570,
++        ID_AVMONITOR_NOTIFICATION                   = ID_AVMONITOR + 1,
+     }; // enum IDS
+ 
+ } // namespace Exchange

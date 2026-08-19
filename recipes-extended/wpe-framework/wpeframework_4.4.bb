@@ -19,6 +19,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder \
            file://wpeframework-init \
            file://wpeframework.service.in \
+           file://0001-Rise-websocket-fragment-size-improving-performance-4.4.patch \
            "
 
 SRCREV_thunder = "2c0fcc5529e7da734be558ca6efa05d934dcce31"

@@ -1,0 +1,36 @@
+From 0244863abd69693af62f2fdf6102238fc981a241 Mon Sep 17 00:00:00 2001
+From: Artur Gebicz <a.gebicz@metrological.com>
+Date: Thu, 5 Sep 2024 09:34:11 +0200
+Subject: [PATCH] Rise websocket fragment size improving performance
+
+This fix changes the plugins/Channel.cpp max send size to increase
+websockets performance. When the framework is delivering notification
+via the websockets, it can happen that payload must be slitted into
+multiple fragments. The plugin/Channel.cpp max send size is responsible
+of setting the maximum fragment size. In case of bigger payloads,
+smaller buffer size leads to a increased number of payload appends
+while assembling final message. In case of some platforms this lead to
+anomalous CPU usage, throttling whole device performance. Such a example
+is capturing a screenshot which stores multiple megabytes of data in the
+message payload. During the send of the notification, the device
+becomes not responsible and even more extends the time needed to receive
+assembled data.
+---
+ Source/plugins/Channel.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/plugins/Channel.cpp b/Source/plugins/Channel.cpp
+index fe5f50ea..608999f5 100644
+--- a/Source/plugins/Channel.cpp
++++ b/Source/plugins/Channel.cpp
+@@ -26,7 +26,7 @@ namespace PluginHost {
+
+ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
+     Channel::Channel(const SOCKET& connector, const Core::NodeId& remoteId)
+-        : BaseClass(true, false, 5, _requestAllocator, false, connector, remoteId, 1024, -1)
++        : BaseClass(true, false, 5, _requestAllocator, false, connector, remoteId, 8192, 8192)
+         , _ID(0)
+         , _nameOffset(~0)
+         , _state(WEB)
+--
+2.43.2
