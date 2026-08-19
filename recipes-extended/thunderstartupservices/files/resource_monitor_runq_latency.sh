@@ -652,6 +652,7 @@ arm_filtered_trace() {
 arm_boot() {
     debug "arm_boot: starting"
     arm_filtered_trace || exit 1
+    start_thread_pressure_sampler
     if ! echo "armed $(date)" > "$OUTDIR/runq_boot_armed.txt" 2>/dev/null; then
         debug "ERROR: failed to write boot marker: $OUTDIR/runq_boot_armed.txt"
         exit 1
@@ -776,6 +777,7 @@ show_boot() {
         debug "WARN: boot marker not found: $OUTDIR/runq_boot_armed.txt"
         log "WARNING: no boot marker found; was arm-boot run before reboot?"
     fi
+    stop_thread_pressure_sampler
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
     RAW="$BOOT_RAW"
     REPORT="$BOOT_REPORT"
