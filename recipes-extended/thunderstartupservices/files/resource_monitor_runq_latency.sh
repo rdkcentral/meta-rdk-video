@@ -688,6 +688,7 @@ run_live() {
     _mpid=$(pgrep -x "$WPE_PROC" 2>/dev/null | sort -n | head -n1)
     log "Target: $WPE_PROC pid=$_mpid  tid=$TARGET_TID  comm=$COMM"
     arm_filtered_trace || exit 1
+    start_thread_pressure_sampler
     log "Tracing this thread for ${DURATION}s ..."
     start_thread_pressure_sampler
     sleep "$DURATION"
@@ -785,6 +786,7 @@ show_boot() {
         debug "WARN: boot marker not found: $OUTDIR/runq_boot_armed.txt"
         log "WARNING: no boot marker found; was arm-boot run before reboot?"
     fi
+    stop_thread_pressure_sampler
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
     RAW="$BOOT_RAW"
     REPORT="$BOOT_REPORT"
