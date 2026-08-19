@@ -32,7 +32,7 @@ CXXFLAGS += " -DRFC_ENABLED "
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
-CXXFLAGS += " -DRDK_DSHAL_NAME=\\\"libds-hal.so\\\" "
+CXXFLAGS += "-DRDK_DSHAL_NAME="\""libds-hal.so.0\""""
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
