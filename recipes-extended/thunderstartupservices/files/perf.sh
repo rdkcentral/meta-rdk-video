@@ -20,17 +20,17 @@
 #   ./perf.sh uninstall-boot # remove the boot unit
 #
 # Tunables (env):
-#   DURATION=120   capture window seconds after WPE appears
+#   DURATION=240   capture window seconds after WPE appears
 #   FREQ=99       sampling frequency Hz
 #   STACKSZ=65528 dwarf user-stack bytes (max)
 # ---------------------------------------------------------------------------
 set -u
 
-PERF="${PERF:-/opt/perf/usr/bin/perf}"
-PERF_LIB="${PERF_LIB:-/opt/perf/usr/lib}"
+PERF="${PERF:-/opt/perf/packages-split/lib32-perf/usr/bin/perf}"
+PERF_LIB="${PERF_LIB:-/opt/perf/packages-split/lib32-perf/usr/lib}"
 COMM="${COMM:-Monitor::IResou}"
 WPE_PROC="${WPE_PROC:-WPEFramework}"
-DURATION="${DURATION:-120}"
+DURATION="${DURATION:-240}"
 FREQ="${FREQ:-99}"
 STACKSZ="${STACKSZ:-65528}"
 OUTDIR="${OUTDIR:-/opt/logs}"
@@ -97,4 +97,3 @@ do_capture() {
 # Capture-only. Boot arming is handled by the separate unit file
 # perf-startup-capture.service (install it with systemctl).
 do_capture
-
