@@ -2,7 +2,7 @@ SUMMARY = "ENTServices hdmicecsource plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.2.6"
+PV = "1.2.7"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUFFIX} \
            "
 
-# Release version - 1.2.6
-SRCREV = "a2b7a90fe7154d83bfe8a3f3c13a3b4da3e95a79"
+# Release version - 1.2.7
+SRCREV = "5019c41f47128822dffc4c24297b3af848fcde7b"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
