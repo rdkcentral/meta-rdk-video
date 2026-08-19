@@ -71,6 +71,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-devicediagnostics.service \
     wpeframework-runq-boottrace.service \
     wpeframework-perf.service \
+    wpeframework-runq-pressure.service \
     "
 
 CONTROL_FILES = "\
