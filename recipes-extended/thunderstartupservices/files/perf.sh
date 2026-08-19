@@ -26,8 +26,8 @@
 # ---------------------------------------------------------------------------
 set -u
 
-PERF="${PERF:-/opt/perf/packages-split/lib32-perf/usr/bin/perf}"
-PERF_LIB="${PERF_LIB:-/opt/perf/packages-split/lib32-perf/usr/lib}"
+PERF="${PERF:-/opt/perf/usr/bin/perf}"
+PERF_LIB="${PERF_LIB:-/opt/perf/usr/lib}"
 COMM="${COMM:-Monitor::IResou}"
 WPE_PROC="${WPE_PROC:-WPEFramework}"
 DURATION="${DURATION:-240}"
