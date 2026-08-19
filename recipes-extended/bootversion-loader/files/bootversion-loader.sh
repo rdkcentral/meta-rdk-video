@@ -23,6 +23,7 @@ file_version="/version.txt"
 file_bootversion="/opt/.bootversion"
 file_bootType="/tmp/bootType"
 file_MigrationStatus="/opt/secure/persistent/MigrationStatus"
+file_MigrationStatus_tmp="${file_MigrationStatus}.tmp"
 file_updateStatus="/opt/.updateStatus"
 file_bootversion_bak="/opt/.bootversion.bak"
 migrationDSFile="/opt/secure/migration/migration_data_store.json"
@@ -200,8 +201,16 @@ esac
 
 #comparing slot1 and slot2 FW Class
 if [ "$v_FW_Class" != "$s1_FW_Class" ]; then
-	# migration fw is run for first time, migration not completed
-	writeToFile "NOT_STARTED" "$file_MigrationStatus" "truncate"
+	# atomic handle for writing Migration status, to ensure proper write in case of power failure
+	echo "NOT_STARTED" > "$file_MigrationStatus_tmp"
+    if [ $? -eq 0 ]; then
+        mv -f "$file_MigrationStatus_tmp" "$file_MigrationStatus"
+        if [ $? -ne 0 ]; then
+            boottypeLog "Error moving $file_MigrationStatus_tmp to $file_MigrationStatus"
+        else
+            boottypeLog "MigrationStatus set to NOT_STARTED since FW_Class is not same"
+        fi
+    fi
 	writeToFile "BOOT_TYPE=BOOT_MIGRATION" "$file_bootType" "truncate"
 	boottypeLog "BOOT_MIGRATION is set since FW_Class is not same"
 else
