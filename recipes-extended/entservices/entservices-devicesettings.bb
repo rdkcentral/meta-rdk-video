@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicesettings;${CMF_GITHUB_SRC_URI_SU
           "
 
 # Release version - 1.0.0
-SRCREV = "06cb183be8d60e35d7a74c3005c7d50228535e89"
+SRCREV = "2e36b226f5b0d9f6ee029ae0dc82a88707e410fe"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -32,7 +32,7 @@ CXXFLAGS += " -DRFC_ENABLED "
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
-CXXFLAGS += "-DRDK_DSHAL_NAME="\""libds-hal.so.0\""""
+#CXXFLAGS += "-DRDK_DSHAL_NAME="\""libds-hal.so.0\""""
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
