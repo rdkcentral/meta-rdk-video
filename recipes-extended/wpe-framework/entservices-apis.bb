@@ -3,7 +3,6 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
 PV = "3.8.1.1"
 PR = "r0"
-SRCREV_entservices-apis = "fddc29bdc1fa770dd1d5585d8780fca91f47f86b"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -16,6 +15,9 @@ DEPENDS = "wpeframework wpeframework-tools-native"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis"
 
 SRC_URI += "file://RDKEMW-1007.patch"
+
+# Tag 3.8.1.1
+SRCREV_entservices-apis = "7aab8b5f5764d34f71c96a671a8a8a29d0adad26"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
