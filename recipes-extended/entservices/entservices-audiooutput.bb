@@ -1,19 +1,18 @@
-SUMMARY = "ENTServices systemmode plugin"
+SUMMARY = "ENTServices audiooutput plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=99ba59ffd1c3a94266cf01095316d8e0"
 
-PV = "1.2.5"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-systemmode;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-audiooutput;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
-
-# Release version - 1.2.5
-SRCREV = "b04f47b7f5eee2247f7d5ddfd871238e60396b27"
+# Release version - 1.0.0
+SRCREV = "${PV}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -22,8 +21,6 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
-
 DEPENDS += "wpeframework wpeframework-tools-native"
 RDEPENDS:${PN} += "wpeframework"
 
@@ -42,11 +39,11 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
+    audiooutput \
 "
-PACKAGECONFIG:append = " systemmode"
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[systemmode] = "-DPLUGIN_SYSTEMMODE=ON,-DPLUGIN_SYSTEMMODE=OFF,entservices-apis entservices-helpers,entservices-apis entservices-helpers"
+PACKAGECONFIG[audiooutput]      = "-DPLUGIN_AUDIOOUTPUT=ON,-DPLUGIN_AUDIOOUTPUT=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus rfc devicesettings entservices-helpers"
 
 # ----------------------------------------------------------------------------
 
@@ -56,7 +53,6 @@ EXTRA_OECMAKE += " \
     -DSECAPI_LIB=sec_api \
 "
 
-# Check if DisplayInfo backend is defined.
 python () {
     machine_name = d.getVar('MACHINE')
     if 'raspberrypi4' in machine_name:
@@ -76,6 +72,7 @@ do_install:append() {
         fi
     fi
 }
+
 
 # ----------------------------------------------------------------------------
 

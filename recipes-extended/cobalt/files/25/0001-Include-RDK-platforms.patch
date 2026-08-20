@@ -4,11 +4,8 @@ Date: Wed, 23 Nov 2022 12:54:37 -0500
 Subject: [PATCH] Include RDK platforms
 
 ---
- starboard/build/platforms.py | 3 +++
- 1 file changed, 3 insertions(+)
-
 diff --git a/starboard/build/platforms.py b/starboard/build/platforms.py
-index 3d01892d753..56e65c1bab4 100644
+index d949ee37071..efecd923a55 100644
 --- a/starboard/build/platforms.py
 +++ b/starboard/build/platforms.py
 @@ -24,6 +24,8 @@ except ImportError:
@@ -20,6 +17,14 @@ index 3d01892d753..56e65c1bab4 100644
      'stub': 'starboard/stub',
      'linux-x64x11': 'starboard/linux/x64x11',
      'linux-x64x11-egl': 'starboard/linux/x64x11/egl',
+@@ -36,7 +38,6 @@ PLATFORMS = {
+     'android-x86': 'starboard/android/x86',
+     'raspi-2': 'starboard/raspi/2',
+     'raspi-2-skia': 'starboard/raspi/2/skia',
+-    'rdk-arm': 'starboard/contrib/rdk/src/third_party/starboard/rdk/arm',
+     'evergreen-x64': 'starboard/evergreen/x64',
+     'evergreen-arm-hardfp': 'starboard/evergreen/arm/hardfp',
+     'evergreen-arm-softfp': 'starboard/evergreen/arm/softfp',
 -- 
 2.25.1
 
