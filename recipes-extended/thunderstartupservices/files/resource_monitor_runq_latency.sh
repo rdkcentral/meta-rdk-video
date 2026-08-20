@@ -932,9 +932,15 @@ show_boot() {
         exit 1
     fi
     cat "$REPORT"
-    # Include boot-time thread pressure if the sibling sampler service was running
-    _boot_plog="$OUTDIR/thread_pressure_boot.log"
-    report_thread_pressure "$_boot_plog" "$REPORT" | tee -a "$REPORT"
+    # Include boot-time thread pressure if the sibling sampler service was running.
+    # Match any file whose name starts with the fixed boot-pressure prefix and then
+    # has a variable suffix (timestamp or other runtime metadata).
+    _boot_plog=$(ls -1t "$OUTDIR"/thread_pressure_boot* 2>/dev/null | head -n 1)
+    if [ -n "$_boot_plog" ] && [ -f "$_boot_plog" ]; then
+        report_thread_pressure "$_boot_plog" "$REPORT" | tee -a "$REPORT"
+    else
+        debug "No boot thread pressure log matching thread_pressure_boot* found in $OUTDIR"
+    fi
     _boot_rtlog="$OUTDIR/rt_threads_boot.log"
     report_rt_threads "$_boot_rtlog" "$REPORT" | tee -a "$REPORT"
     debug "Boot report saved: $REPORT bytes=$(wc -c < "$REPORT" 2>/dev/null || echo unknown)"
