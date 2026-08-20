@@ -4,13 +4,13 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-PV = "1.4.0"
+PV = "1.5.1"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "afb3e79b8170e0d41ed362c85d7ca6550b971b63"
+SRCREV = "ae7a08e0e37aa8d5cf04e913b147796254359e5c"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -38,6 +38,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-sharedstorage.service \
     wpeframework-system.service \
     wpeframework-systemaudioplayer.service \
+    wpeframework-audiooutput.service \
     wpeframework-systemmode.service \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkshell',' wpeframework-rdkshell.service', '', d)} \
     wpeframework-remotecontrol.service \
