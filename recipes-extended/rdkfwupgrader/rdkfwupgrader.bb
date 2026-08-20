@@ -36,7 +36,9 @@ SRCREV_FORMAT = "rdkfw"
 
 S = "${WORKDIR}/git"
 
-inherit autotools pkgconfig coverity systemd
+inherit autotools pkgconfig coverity systemd fdo-profiling
+
+FDO_PROFILE_MODE = "generate"
 
 SYSTEMD_SERVICE:${PN}:remove = " rdkfwupgrader.service rdkfwupgrader.path"
 
