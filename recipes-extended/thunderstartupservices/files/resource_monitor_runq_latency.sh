@@ -150,6 +150,104 @@ stop_thread_pressure_sampler() {
     debug "Pressure sampler stopped ($(wc -l < "$PRESSURE_LOG" 2>/dev/null || echo 0) samples)"
 }
 
+RT_SAMPLER_PID=""
+RT_LOG=""
+
+# ---------------------------------------------------------------------------
+# RT thread sampler: captures SCHED_FIFO/RR threads every 1s using /proc/uptime
+# timestamps so spikes can be correlated with which RT threads were active.
+# Each sample block: "=== <uptime_s> ===" header + ps output for RT threads.
+# ---------------------------------------------------------------------------
+start_rt_thread_sampler() {
+    RT_LOG="$OUTDIR/rt_threads_${STAMP}.log"
+    (
+        while true; do
+            read -r _up _ < /proc/uptime 2>/dev/null || _up="0"
+            printf '=== %s ===\n' "$_up"
+            ps -eLo pid,tid,cls,rtprio,comm 2>/dev/null | \
+                awk '$3 != "-" && $3 != "CLS" && $3 != "TS" && $1 != "PID"'
+            sleep 1 2>/dev/null || sleep 1
+        done
+    ) >> "$RT_LOG" &
+    RT_SAMPLER_PID=$!
+    debug "RT thread sampler started: pid=$RT_SAMPLER_PID log=$RT_LOG"
+    log "RT thread sampler: $RT_LOG"
+}
+
+stop_rt_thread_sampler() {
+    [ -n "$RT_SAMPLER_PID" ] && kill "$RT_SAMPLER_PID" 2>/dev/null
+    wait "$RT_SAMPLER_PID" 2>/dev/null
+    RT_SAMPLER_PID=""
+    debug "RT sampler stopped ($(wc -l < "$RT_LOG" 2>/dev/null || echo 0) lines)"
+}
+
+# Append RT thread report: RM's own policy, threads above it, and
+# which RT threads were active during high-latency spikes.
+report_rt_threads() {
+    _rtlog="$1"; _rfile="$2"
+    echo ""
+    echo "======================================================"
+    echo "  Real-time thread environment during trace window"
+    echo "======================================================"
+    if [ ! -s "$_rtlog" ]; then
+        echo "  No RT thread samples captured (log: $_rtlog)"
+        echo "======================================================"
+        return
+    fi
+    # Summary: unique RT threads seen, and RM's own priority
+    awk '
+    /^=== / { next }
+    NF>=5 {
+        comm=$5; cls=$3; pri=$4+0
+        key=comm":"cls":"pri
+        if (!(key in seen)) { seen[key]=1; n++ }
+        if (comm ~ /Monitor/ && (cls=="FF"||cls=="RR")) {
+            rm_cls=cls; rm_pri=pri
+        }
+    }
+    END {
+        if (rm_cls) {
+            printf "  Monitor::IResource policy : %s  priority %d\n", rm_cls, rm_pri
+            printf "  Threads that CAN preempt RM (same policy, higher priority):\n"
+            printed=0
+        } else {
+            print "  Monitor::IResource not seen as RT thread (may be SCHED_OTHER)"
+            printed=1
+        }
+    }
+    ' "$_rtlog"
+    # Show threads that can preempt RM
+    awk '
+    /^=== / { next }
+    NF>=5 {
+        comm=$5; cls=$3; pri=$4+0
+        key=comm":"cls":"pri
+        if (!(key in seen)) {
+            seen[key]=1
+            # track RM priority
+            if (comm ~ /Monitor/ && (cls=="FF"||cls=="RR")) rm_pri=pri
+            else data[key]=sprintf("  %-7s  %3d  %s", cls, pri, comm)
+        }
+    }
+    END {
+        if (rm_pri+0==0) rm_pri=5  # default assumption
+        found=0
+        for (k in data) {
+            n=split(k,a,":")
+            if ((a[2]=="FF"||a[2]=="RR") && a[3]+0 > rm_pri) {
+                print data[k]; found++
+            }
+        }
+        if (!found) print "  (none — RM is already at the highest RT priority in this snapshot)"
+        print ""
+        print "  All unique RT threads observed:"
+        for (k in data) print data[k]
+    }
+    ' "$_rtlog"
+    printf "  RT log: %s\n" "$_rtlog"
+    echo "======================================================"
+}
+
 # Append thread-pressure summary and spike-correlation table to the report.
 # Correlates each spike (>5ms) with the nearest pressure sample by uptime timestamp.
 report_thread_pressure() {
@@ -250,17 +348,33 @@ run_ftrace() {
     : > "$TRACEFS/trace"                 2>/dev/null
     : > "$TRACEFS/set_event"             2>/dev/null
 
-    # Thunder is about to be restarted, so the Monitor::IResource thread will be
-    # re-created with a NEW tid. We therefore arm a name (comm) filter now and
-    # restrict to the WPEFramework daemon's tid(s) at parse time (see below).
-    enable_filtered sched_wakeup       "comm == \"$COMM\""
-    enable_filtered sched_wakeup_new   "comm == \"$COMM\""
-    enable_filtered sched_switch       "next_comm == \"$COMM\""
-    enable_filtered sched_stat_wait    "comm == \"$COMM\""
-    enable_filtered sched_stat_sleep   "comm == \"$COMM\""
-    enable_filtered sched_stat_blocked "comm == \"$COMM\""
-    enable_filtered sched_stat_iowait  "comm == \"$COMM\""
-    enable_filtered sched_stat_runtime "comm == \"$COMM\""
+    if [ -n "${TARGET_TID:-}" ]; then
+        # TID known: pin filter to exactly this thread, excluding every other
+        # process that links WPEFrameworkCore and creates its own ResourceMonitor.
+        enable_filtered sched_wakeup       "pid == $TARGET_TID"
+        enable_filtered sched_wakeup_new   "pid == $TARGET_TID"
+        enable_filtered sched_switch       "next_pid == $TARGET_TID"
+        enable_filtered sched_stat_wait    "pid == $TARGET_TID"
+        enable_filtered sched_stat_sleep   "pid == $TARGET_TID"
+        enable_filtered sched_stat_blocked "pid == $TARGET_TID"
+        enable_filtered sched_stat_iowait  "pid == $TARGET_TID"
+        enable_filtered sched_stat_runtime "pid == $TARGET_TID"
+        log "ftrace armed: TID-exact filter (tid=$TARGET_TID comm=$COMM)"
+    else
+        # Boot/capture mode: WPEFramework RM thread not yet created.
+        # Comm filter captures all Monitor::IResou threads across every process
+        # linking WPEFrameworkCore (WPEProcess plugin hosts, AAMP, Fog, etc.).
+        # parse_ftrace post-filters to the WPEFramework daemon's TID via /proc.
+        enable_filtered sched_wakeup       "comm == \"$COMM\""
+        enable_filtered sched_wakeup_new   "comm == \"$COMM\""
+        enable_filtered sched_switch       "next_comm == \"$COMM\""
+        enable_filtered sched_stat_wait    "comm == \"$COMM\""
+        enable_filtered sched_stat_sleep   "comm == \"$COMM\""
+        enable_filtered sched_stat_blocked "comm == \"$COMM\""
+        enable_filtered sched_stat_iowait  "comm == \"$COMM\""
+        enable_filtered sched_stat_runtime "comm == \"$COMM\""
+        log "ftrace armed: comm filter (TID unknown — WPEFramework RM not yet created)"
+    fi
 
     if ! echo 1 > "$TRACEFS/tracing_on" 2>/dev/null; then
         debug "ERROR: failed to enable tracing: $TRACEFS/tracing_on"
@@ -270,8 +384,10 @@ run_ftrace() {
 
     log "Tracing for ${DURATION}s ..."
     start_thread_pressure_sampler
+    start_rt_thread_sampler
     sleep "$DURATION"
     stop_thread_pressure_sampler
+    stop_rt_thread_sampler
 
     echo 0 > "$TRACEFS/tracing_on"
     if ! cp "$TRACEFS/trace" "$RAW" 2>/dev/null; then
@@ -308,6 +424,7 @@ run_ftrace() {
         debug "Report saved: $REPORT bytes=$(wc -c < "$REPORT" 2>/dev/null || echo unknown)"
         cat "$REPORT"
         report_thread_pressure "$PRESSURE_LOG" "$REPORT" | tee -a "$REPORT"
+        report_rt_threads "$RT_LOG" "$REPORT" | tee -a "$REPORT"
     fi
 }
 
@@ -688,11 +805,12 @@ run_live() {
     _mpid=$(pgrep -x "$WPE_PROC" 2>/dev/null | sort -n | head -n1)
     log "Target: $WPE_PROC pid=$_mpid  tid=$TARGET_TID  comm=$COMM"
     arm_filtered_trace || exit 1
-    start_thread_pressure_sampler
     log "Tracing this thread for ${DURATION}s ..."
     start_thread_pressure_sampler
+    start_rt_thread_sampler
     sleep "$DURATION"
     stop_thread_pressure_sampler
+    stop_rt_thread_sampler
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
     if ! cp "$TRACEFS/trace" "$RAW" 2>/dev/null; then
         debug "ERROR: failed to copy $TRACEFS/trace to $RAW"
@@ -707,6 +825,7 @@ run_live() {
     fi
     cat "$REPORT"
     report_thread_pressure "$PRESSURE_LOG" "$REPORT" | tee -a "$REPORT"
+    report_rt_threads "$RT_LOG" "$REPORT" | tee -a "$REPORT"
     debug "Live report saved: $REPORT bytes=$(wc -c < "$REPORT" 2>/dev/null || echo unknown)"
     log "Report: $REPORT"
 }
@@ -786,7 +905,6 @@ show_boot() {
         debug "WARN: boot marker not found: $OUTDIR/runq_boot_armed.txt"
         log "WARNING: no boot marker found; was arm-boot run before reboot?"
     fi
-    stop_thread_pressure_sampler
     echo 0 > "$TRACEFS/tracing_on" 2>/dev/null
     RAW="$BOOT_RAW"
     REPORT="$BOOT_REPORT"
@@ -817,6 +935,8 @@ show_boot() {
     # Include boot-time thread pressure if the sibling sampler service was running
     _boot_plog="$OUTDIR/thread_pressure_boot.log"
     report_thread_pressure "$_boot_plog" "$REPORT" | tee -a "$REPORT"
+    _boot_rtlog="$OUTDIR/rt_threads_boot.log"
+    report_rt_threads "$_boot_rtlog" "$REPORT" | tee -a "$REPORT"
     debug "Boot report saved: $REPORT bytes=$(wc -c < "$REPORT" 2>/dev/null || echo unknown)"
     log "Report: $REPORT"
     log "Re-arm for another reboot is automatic (unit still enabled)."
@@ -904,7 +1024,19 @@ main() {
         sample-pressure)
             # Runs as a long-lived service; systemd stops it when show-boot is called.
             _plog="${OUTDIR}/thread_pressure_boot.log"
-            debug "sample-pressure: writing to $_plog"
+            _rtlog="${OUTDIR}/rt_threads_boot.log"
+            debug "sample-pressure: writing to $_plog and $_rtlog"
+            # RT thread snapshot every 1s in a background subshell
+            (
+                while true; do
+                    read -r _up _ < /proc/uptime 2>/dev/null || _up="0"
+                    printf '=== %s ===\n' "$_up"
+                    ps -eLo pid,tid,cls,rtprio,comm 2>/dev/null | \
+                        awk '$3!="-" && $3!="CLS" && $3!="TS" && $1!="PID"'
+                    sleep 1 2>/dev/null || sleep 1
+                done
+            ) >> "$_rtlog" &
+            # Pressure sampler runs in the foreground (keeps the service alive)
             while true; do
                 read -r _up _ < /proc/uptime 2>/dev/null || _up="0"
                 read -r _ _ _ _lf _ < /proc/loadavg 2>/dev/null || _lf="0/0"
