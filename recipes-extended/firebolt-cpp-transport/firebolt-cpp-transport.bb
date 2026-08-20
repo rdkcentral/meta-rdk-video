@@ -2,7 +2,7 @@ SUMMARY = "C++ Firebolt: Transport layer"
 DESCRIPTION = "Recipe for building Transport layer for C++ Firebolt Clients"
 
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=724ed260f33bc706a8fbafbbb35a316b"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=191617b85035499c1997d42dbdef03c0"
 
 inherit cmake
 
