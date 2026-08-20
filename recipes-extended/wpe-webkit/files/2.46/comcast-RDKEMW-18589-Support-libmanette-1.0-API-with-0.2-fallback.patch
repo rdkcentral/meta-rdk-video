@@ -1,0 +1,256 @@
+From e38347ccd1ab45a27efe6049986cc42cfb135517 Mon Sep 17 00:00:00 2001
+From: Petar Tijanic <petartijanic01@gmail.com>
+Date: Sat, 25 Jul 2026 19:52:05 +0000
+Subject: [PATCH 3/3] RDKEMW-18589: Support libmanette 1.0 API with 0.2
+ fallback
+
+---
+ .../gamepad/manette/ManetteGamepad.cpp        | 125 +++++++++++++++++-
+ .../platform/gamepad/manette/ManetteGamepad.h |   1 +
+ .../manette/ManetteGamepadProvider.cpp        |  15 +++
+ 3 files changed, 139 insertions(+), 2 deletions(-)
+
+diff --git a/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp b/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp
+index f0609b393df6..49d99ec988fc 100644
+--- a/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp
++++ b/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp
+@@ -40,6 +40,24 @@
+ 
+ namespace WebCore {
+ 
++#if MANETTE_CHECK_VERSION(1, 0, 0)
++static ManetteGamepad::StandardGamepadAxis toStandardGamepadAxis(ManetteAxis axis)
++{
++    switch (axis) {
++    case MANETTE_AXIS_LEFT_X:
++        return ManetteGamepad::StandardGamepadAxis::LeftStickX;
++    case MANETTE_AXIS_LEFT_Y:
++        return ManetteGamepad::StandardGamepadAxis::LeftStickY;
++    case MANETTE_AXIS_RIGHT_X:
++        return ManetteGamepad::StandardGamepadAxis::RightStickX;
++    case MANETTE_AXIS_RIGHT_Y:
++        return ManetteGamepad::StandardGamepadAxis::RightStickY;
++    default:
++        break;
++    }
++    return ManetteGamepad::StandardGamepadAxis::Unknown;
++}
++#else
+ static ManetteGamepad::StandardGamepadAxis toStandardGamepadAxis(uint16_t axis)
+ {
+     switch (axis) {
+@@ -56,7 +74,23 @@ static ManetteGamepad::StandardGamepadAxis toStandardGamepadAxis(uint16_t axis)
+     }
+     return ManetteGamepad::StandardGamepadAxis::Unknown;
+ }
++#endif
++
++#if MANETTE_CHECK_VERSION(1, 0, 0)
++static void onAbsoluteAxisChanged(ManetteDevice* device, ManetteAxis axis, double value, ManetteGamepad* gamepad)
++{
++    if (axis == MANETTE_AXIS_LEFT_TRIGGER) {
++        gamepad->analogButtonChanged(device, ManetteGamepad::StandardGamepadButton::LeftTrigger, value);
++        return;
++    }
++    if (axis == MANETTE_AXIS_RIGHT_TRIGGER) {
++        gamepad->analogButtonChanged(device, ManetteGamepad::StandardGamepadButton::RightTrigger, value);
++        return;
++    }
+ 
++    gamepad->absoluteAxisChanged(device, toStandardGamepadAxis(axis), value);
++}
++#else
+ static void onAbsoluteAxisEvent(ManetteDevice* device, ManetteEvent* event, ManetteGamepad* gamepad)
+ {
+     uint16_t axis;
+@@ -66,7 +100,48 @@ static void onAbsoluteAxisEvent(ManetteDevice* device, ManetteEvent* event, Mane
+ 
+     gamepad->absoluteAxisChanged(device, toStandardGamepadAxis(axis), value);
+ }
++#endif
+ 
++#if MANETTE_CHECK_VERSION(1, 0, 0)
++static ManetteGamepad::StandardGamepadButton toStandardGamepadButton(ManetteButton button)
++{
++    switch (button) {
++    case MANETTE_BUTTON_SOUTH:
++        return ManetteGamepad::StandardGamepadButton::A;
++    case MANETTE_BUTTON_EAST:
++        return ManetteGamepad::StandardGamepadButton::B;
++    case MANETTE_BUTTON_WEST:
++        return ManetteGamepad::StandardGamepadButton::X;
++    case MANETTE_BUTTON_NORTH:
++        return ManetteGamepad::StandardGamepadButton::Y;
++    case MANETTE_BUTTON_LEFT_SHOULDER:
++        return ManetteGamepad::StandardGamepadButton::LeftShoulder;
++    case MANETTE_BUTTON_RIGHT_SHOULDER:
++        return ManetteGamepad::StandardGamepadButton::RightShoulder;
++    case MANETTE_BUTTON_SELECT:
++        return ManetteGamepad::StandardGamepadButton::Select;
++    case MANETTE_BUTTON_START:
++        return ManetteGamepad::StandardGamepadButton::Start;
++    case MANETTE_BUTTON_LEFT_STICK:
++        return ManetteGamepad::StandardGamepadButton::LeftStick;
++    case MANETTE_BUTTON_RIGHT_STICK:
++        return ManetteGamepad::StandardGamepadButton::RightStick;
++    case MANETTE_BUTTON_DPAD_UP:
++        return ManetteGamepad::StandardGamepadButton::DPadUp;
++    case MANETTE_BUTTON_DPAD_DOWN:
++        return ManetteGamepad::StandardGamepadButton::DPadDown;
++    case MANETTE_BUTTON_DPAD_LEFT:
++        return ManetteGamepad::StandardGamepadButton::DPadLeft;
++    case MANETTE_BUTTON_DPAD_RIGHT:
++        return ManetteGamepad::StandardGamepadButton::DPadRight;
++    case MANETTE_BUTTON_MODE:
++        return ManetteGamepad::StandardGamepadButton::Mode;
++    default:
++        break;
++    }
++    return ManetteGamepad::StandardGamepadButton::Unknown;
++}
++#else
+ static ManetteGamepad::StandardGamepadButton toStandardGamepadButton(uint16_t manetteButton)
+ {
+     switch (manetteButton) {
+@@ -109,14 +184,34 @@ static ManetteGamepad::StandardGamepadButton toStandardGamepadButton(uint16_t ma
+     }
+     return ManetteGamepad::StandardGamepadButton::Unknown;
+ }
++#endif
+ 
++#if MANETTE_CHECK_VERSION(1, 0, 0)
++static void onButtonPressed(ManetteDevice* device, ManetteButton button, ManetteGamepad* gamepad)
++{
++    gamepad->buttonPressedOrReleased(device, toStandardGamepadButton(button), true);
++}
++
++static void onButtonReleased(ManetteDevice* device, ManetteButton button, ManetteGamepad* gamepad)
++{
++    gamepad->buttonPressedOrReleased(device, toStandardGamepadButton(button), false);
++}
++#else
+ static void onButtonPressEvent(ManetteDevice* device, ManetteEvent* event, ManetteGamepad* gamepad)
+ {
+     uint16_t button;
+     if (!manette_event_get_button(event, &button))
+         return;
+ 
+-    gamepad->buttonPressedOrReleased(device, toStandardGamepadButton(button), true);
++    auto mapped = toStandardGamepadButton(button);
++    if (mapped == ManetteGamepad::StandardGamepadButton::LeftTrigger || mapped == ManetteGamepad::StandardGamepadButton::RightTrigger) {
++        gdouble value = 0.0;
++        manette_event_get_button_value(event, &value);
++        gamepad->analogButtonChanged(device, mapped, value);
++        return;
++    }
++
++    gamepad->buttonPressedOrReleased(device, mapped, true);
+ }
+ 
+ static void onButtonReleaseEvent(ManetteDevice* device, ManetteEvent* event, ManetteGamepad* gamepad)
+@@ -125,8 +220,17 @@ static void onButtonReleaseEvent(ManetteDevice* device, ManetteEvent* event, Man
+     if (!manette_event_get_button(event, &button))
+         return;
+ 
+-    gamepad->buttonPressedOrReleased(device, toStandardGamepadButton(button), false);
++    auto mapped = toStandardGamepadButton(button);
++    if (mapped == ManetteGamepad::StandardGamepadButton::LeftTrigger || mapped == ManetteGamepad::StandardGamepadButton::RightTrigger) {
++        gdouble value = 0.0;
++        manette_event_get_button_value(event, &value);
++        gamepad->analogButtonChanged(device, mapped, value);
++        return;
++    }
++
++    gamepad->buttonPressedOrReleased(device, mapped, false);
+ }
++#endif
+ 
+ ManetteGamepad::ManetteGamepad(ManetteDevice* device, unsigned index)
+     : PlatformGamepad(index)
+@@ -152,9 +256,15 @@ ManetteGamepad::ManetteGamepad(ManetteDevice* device, unsigned index)
+     if (manette_device_has_rumble(m_device.get()))
+         m_supportedEffectTypes.add(GamepadHapticEffectType::DualRumble);
+ 
++#if MANETTE_CHECK_VERSION(1, 0, 0)
++    g_signal_connect(device, "button-pressed", G_CALLBACK(onButtonPressed), this);
++    g_signal_connect(device, "button-released", G_CALLBACK(onButtonReleased), this);
++    g_signal_connect(device, "absolute-axis-changed", G_CALLBACK(onAbsoluteAxisChanged), this);
++#else
+     g_signal_connect(device, "button-press-event", G_CALLBACK(onButtonPressEvent), this);
+     g_signal_connect(device, "button-release-event", G_CALLBACK(onButtonReleaseEvent), this);
+     g_signal_connect(device, "absolute-axis-event", G_CALLBACK(onAbsoluteAxisEvent), this);
++#endif
+ }
+ 
+ ManetteGamepad::~ManetteGamepad()
+@@ -184,6 +294,17 @@ void ManetteGamepad::absoluteAxisChanged(ManetteDevice*, StandardGamepadAxis axi
+     ManetteGamepadProvider::singleton().gamepadHadInput(*this, ManetteGamepadProvider::ShouldMakeGamepadsVisible::Yes);
+ }
+ 
++void ManetteGamepad::analogButtonChanged(ManetteDevice*, StandardGamepadButton button, double value)
++{
++    if (button == StandardGamepadButton::Unknown)
++        return;
++
++    m_lastUpdateTime = MonotonicTime::now();
++    m_buttonValues[static_cast<int>(button)].setValue(clampTo(value, 0.0, 1.0));
++
++    ManetteGamepadProvider::singleton().gamepadHadInput(*this, ManetteGamepadProvider::ShouldMakeGamepadsVisible::Yes);
++}
++
+ void ManetteGamepad::playEffect(GamepadHapticEffectType type, const GamepadEffectParameters& parameters, CompletionHandler<void(bool)>&& completionHandler)
+ {
+     if (!m_supportedEffectTypes.contains(type))
+diff --git a/Source/WebCore/platform/gamepad/manette/ManetteGamepad.h b/Source/WebCore/platform/gamepad/manette/ManetteGamepad.h
+index 3588f7712a3f..d917c368f868 100644
+--- a/Source/WebCore/platform/gamepad/manette/ManetteGamepad.h
++++ b/Source/WebCore/platform/gamepad/manette/ManetteGamepad.h
+@@ -74,6 +74,7 @@ public:
+ 
+     void absoluteAxisChanged(ManetteDevice*, StandardGamepadAxis, double value);
+     void buttonPressedOrReleased(ManetteDevice*, StandardGamepadButton, bool pressed);
++    void analogButtonChanged(ManetteDevice*, StandardGamepadButton, double value);
+     void playEffect(GamepadHapticEffectType, const GamepadEffectParameters&, CompletionHandler<void(bool)>&&) final;
+     void stopEffects(CompletionHandler<void()>&&) final;
+ 
+diff --git a/Source/WebCore/platform/gamepad/manette/ManetteGamepadProvider.cpp b/Source/WebCore/platform/gamepad/manette/ManetteGamepadProvider.cpp
+index b41a983269a4..e7e10e9345fb 100644
+--- a/Source/WebCore/platform/gamepad/manette/ManetteGamepadProvider.cpp
++++ b/Source/WebCore/platform/gamepad/manette/ManetteGamepadProvider.cpp
+@@ -29,7 +29,14 @@
+ 
+ #if ENABLE(GAMEPAD) && OS(LINUX)
+ 
++// Fallback for libmanette < 0.2.10 which lacks MANETTE_CHECK_VERSION
++#ifndef MANETTE_CHECK_VERSION
++#define MANETTE_CHECK_VERSION(major,minor,micro) 0
++#endif
++
++#if !MANETTE_CHECK_VERSION(1, 0, 0)
+ #include "GUniquePtrManette.h"
++#endif
+ #include "GamepadProviderClient.h"
+ #include "Logging.h"
+ #include "ManetteGamepad.h"
+@@ -90,10 +97,18 @@ void ManetteGamepadProvider::startMonitoringGamepads(GamepadProviderClient& clie
+     m_initialGamepadsConnectedTimer.startOneShot(connectionDelayInterval);
+ 
+     RunLoop::current().dispatch([this] {
++#if MANETTE_CHECK_VERSION(1, 0, 0)
++        gsize numDevices = 0;
++        ManetteDevice** devices = manette_monitor_list_devices(m_monitor.get(), &numDevices);
++        for (gsize i = 0; i < numDevices; i++)
++            deviceConnected(devices[i]);
++        g_free(devices);
++#else
+         ManetteDevice* device;
+         GUniquePtr<ManetteMonitorIter> iter(manette_monitor_iterate(m_monitor.get()));
+         while (manette_monitor_iter_next(iter.get(), &device))
+             deviceConnected(device);
++#endif
+     });
+ }
+ 
+-- 
+2.34.1
+
