@@ -10,7 +10,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "3687974e61645a21ed2abdd4b1e7ed4f76a1c1e3"
+SRCREV = "ea82abfeb601af200a1039f5e77ed83176d8d578"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -63,6 +63,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-appnotifications.service \
     wpeframework-appgatewaycommon.service \
     wpeframework-appactions.service \
+    wpeframework-audiooutput.service \
     wpeframework-downloadmanager.service \
     wpeframework-preinstallmanager.service \
     wpeframework-telemetrymetrics.service \
