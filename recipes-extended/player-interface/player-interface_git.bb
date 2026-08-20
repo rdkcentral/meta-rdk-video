@@ -7,7 +7,7 @@ PV = "0.3.1"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "d708ec6546183a226704ad6532c1b9fef862c081"
+SRCREV_player-interface ?= "2243e0693d7fbd07b53dfc1f6b88d5766df68757"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "firebolt_changes"
 
