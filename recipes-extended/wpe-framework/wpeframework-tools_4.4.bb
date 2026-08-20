@@ -5,11 +5,13 @@ HOMEPAGE = "https://github.com/rdkcentral/ThunderTools"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=c3349dc67b2f8c28fc99b300eb39e3cc"
 
 TOOLCHAIN = "gcc"
-PR = "r4"
+PR = "r5"
 PV = "4.4.6"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/ThunderTools.git;protocol=https;branch=R4_4-RDK"
+SRC_URI = "git://github.com/rdkcentral/ThunderTools.git;protocol=https;branch=R4_4-RDK \
+           file://0001-R4.4-Fix-StubGenerator-optional-vector-param-drop.patch \
+          "
 
 SRCREV = "d5dd83c7c19c49c7f25c558c126500bd2d64f7a4"
 

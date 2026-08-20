@@ -1,0 +1,53 @@
+Date: Thu Aug 20 12:23:51 2026
+From: Michael Smith
+Subject: R4.4 Fix StubGenerator.py dropping optional std::vector<T> parameter data
+Source: COMCAST
+Upstream-Status: Pending
+Signed-off-by: Michael Smith <michael_smith2@comcast.com>
+
+ProxyStubGenerator/StubGenerator.py generates broken COM-RPC stub
+deserialization code for any interface method parameter typed
+Core::OptionalType<std::vector<T>>. The generated reader loop pushes
+each deserialized element into "<name>.Value()" instead of the local
+"<name>Object__" builder variable, then unconditionally overwrites
+"<name>" with the still-empty "<name>Object__" right after the loop.
+The parameter ends up with IsSet() == true but an empty vector,
+regardless of what the caller actually sent.
+
+Confirmed against a live device build of entservices-voicecontrol's
+IVoiceControl::SetVoiceInit, which has three parameters of this shape
+(roles, capabilities, vrexFields): the caller sent a populated roles
+array, but VoiceControlImplementation::SetVoiceInit received it as an
+empty (but "set") vector, which was later rejected by the voice
+server ("must not be empty invalidField=elements[1].roles"). The
+sibling is_compound branch (used for e.g. VoiceInitIdentity) already
+builds member reads against the local "<name>Object__" object and was
+unaffected; the is_dynamic_array branch just needs the same fix.
+
+Verified by regenerating the ProxyStubs for IVoiceControl.h with this
+patch applied: the generated code now correctly calls
+"_rolesObject__.reserve(...)" / "_rolesObject__.push_back(...)"
+against the local builder variable, matching the already-correct
+compound-optional pattern.
+
+diff --git a/ProxyStubGenerator/StubGenerator.py b/ProxyStubGenerator/StubGenerator.py
+index 6b5b73b..f6a7dde 100755
+--- a/ProxyStubGenerator/StubGenerator.py
++++ b/ProxyStubGenerator/StubGenerator.py
+@@ -1566,14 +1566,14 @@ def GenerateStubs2(output_file, source_file, project_dir, tree, ns, scan_only=Fa
+                     length = EmitParam(interface, p.length, Normalize("%sSize" % obj_name))
+                     ReadParameter(length)
+                     CheckRange(p, ("%s" % length.as_rvalue))
+-                    emit.Line("%s.reserve(%s);" % (p.as_rvalue, length.as_rvalue))
++                    emit.Line("%s.reserve(%s);" % (obj_name, length.as_rvalue))
+ 
+                     index = chr(ord('i') + p.name.count('Item'))
+                     element = EmitParam(interface, p.element, Normalize(obj_name + "Item"), parent=p)
+                     emit.Line("for (%s %s = 0; %s < %s; %s++) {" % (p.length.type_name, index, index, length.as_rvalue, index))
+                     emit.IndentInc()
+                     ReadParameter(element)
+-                    emit.Line("%s.push_back(std::move(%s));" % (p.as_rvalue, element.as_rvalue))
++                    emit.Line("%s.push_back(std::move(%s));" % (obj_name, element.as_rvalue))
+                     emit.IndentDec()
+                     emit.Line("}")
+ 
