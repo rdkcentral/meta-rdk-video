@@ -11,7 +11,7 @@ S = "${WORKDIR}/git"
 PV = "1.3.1"
 PR = "r0"
 
-SRCREV = "0f2a90f748ac2e2dda135b01de177792dba14b84"
+SRCREV = "2e69acb227af3e3217aa2cc4e8bebf89d6958bc1"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdk-window-manager;${CMF_GITHUB_SRC_URI_SUFFIX}"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
