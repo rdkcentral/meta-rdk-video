@@ -10,7 +10,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "1b705b5fc8c8df399e26ff49daf4fbc6feab50e7"
+SRCREV = "ee166d8fef7bd0bbd0dfec829be152a33763f497"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
     file://resource_monitor_runq_latency.sh \
