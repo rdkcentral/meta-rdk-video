@@ -127,8 +127,8 @@ EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
-    install -d ${D}/etc
-    install -m 0644 ${WORKDIR}/new_env ${D}/etc/new_env
+    install -d ${D}/opt
+    install -m 0644 ${WORKDIR}/new_env ${D}/opt/new_env
 
     # Propagate configured keymap via parent service environment to rdkwindowmanager plugin.
     if [ -n "${WINDOWMANAGER_RCU_KEYMAP_FILE}" ]; then
@@ -158,7 +158,7 @@ FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/*.so ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN} += "${includedir}/cdmi.h"
 FILES:${PN} += "${systemd_unitdir}/system/wpeframework.service.d/network_manager_migration.conf"
-FILES:${PN} += "/etc/new_env"
+FILES:${PN} += "/opt/new_env"
 FILES:${PN}-dev += "${libdir}/cmake/*"
 FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/"
 
