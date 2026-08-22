@@ -13,12 +13,18 @@ HOMEPAGE = "https://github.com/FireboltConnectApps/ThunderClientLibraryAVMonitor
 SECTION = "rdk"
 LICENSE = "CLOSED"
 
+PN = "wpeframework-clientlibraries-avm"
+
+FILESEXTRAPATHS:prepend := "${THISDIR}/wpeframework-clientlibraries:"
+
 inherit cmake pkgconfig
 
 TOOLCHAIN = "gcc"
 
 DEPENDS = "wpeframework entservices-apis wpeframework-tools-native"
 RDEPENDS:${PN}:append += " wpeframework"
+
+
 
 SRC_URI = "file://r4.4/ThunderClientLibraryAVMonitor-main.zip"
 S = "${WORKDIR}/ThunderClientLibraryAVMonitor-main"
