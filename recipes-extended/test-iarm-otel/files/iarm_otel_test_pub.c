@@ -15,8 +15,9 @@
  *       [SC2]  iarm-otel-poc-sub  IARM.OTEL_TEST_OWNER.GetTestState  ~120 ms
  *
  * SC2 — New sender → New receiver, RPC path
- *   IARM_Bus_CallWithTracing() wraps arg in IARM_RPC_Envelope_t.  Sub creates
- *   a child span covering handler execution.
+ *   IARM_Bus_Call() transparently wraps the arg in an IARM_RPC_Envelope_t when a
+ *   valid current traceparent is active. Sub creates a child span covering
+ *   handler execution.
  *
  * SC3 — Untraced / legacy sender → New receiver, EVENT path
  *   Event broadcast AFTER root span is finished (no active traceparent).
@@ -121,16 +122,16 @@ int main(void)
     sleep(1);   /* wait for sub's ~100 ms handler + margin */
 
     /* ═══════════════════════════════════════════════════════════════════════
-     * SC2 — RPC path via IARM_Bus_CallWithTracing
+     * SC2 — RPC path via IARM_Bus_Call() with transparent trace propagation.
      * Sub handler simulates 120 ms of state-query work.
      * Note: owner name MUST match the IARM_Bus_Init member name of the target
      * process, not an arbitrary owner string.
      * ════════════════════════════════════════════════════════════════════ */
-    printf("\n[PUB] ── SC2: CallWithTracing GetTestState ──\n");
+    printf("\n[PUB] ── SC2: IARM_Bus_Call() GetTestState (transparent tracing) ──\n");
     TestRpcArg_t rpcArg = { .request_token = 42, .response_msg = "" };
-    rc = IARM_Bus_CallWithTracing("iarm_otel_test_sub", TEST_METHOD,
-                                  &rpcArg, sizeof(rpcArg));
-    printf("[PUB] CallWithTracing returned %d (0=OK)\n", rc);
+    rc = IARM_Bus_Call("iarm_otel_test_sub", TEST_METHOD,
+                       &rpcArg, sizeof(rpcArg));
+    printf("[PUB] IARM_Bus_Call() returned %d (0=OK)\n", rc);
     printf("[PUB] RPC response: \"%s\"\n", rpcArg.response_msg);
     log_tp("after RPC call");
     sleep(1);
