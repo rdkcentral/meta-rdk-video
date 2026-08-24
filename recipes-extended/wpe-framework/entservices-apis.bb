@@ -45,7 +45,7 @@ do_install:append() {
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/* ${datadir}/${THUNDER_NAMESPACE}/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN}-dev += "${libdir}/cmake/*"
-FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/"
+FILES:${PN}-dbg += "${libdir}/${THUNDER_NAMESPACE_LC}/proxystubs/.debug/"
 FILES:${PN} += "${includedir}/cdmi.h"
 
 INSANE_SKIP:${PN} += "dev-so"
