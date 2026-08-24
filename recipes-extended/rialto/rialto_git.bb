@@ -9,7 +9,7 @@
 
 SUMMARY = "Rialto"
 LICENSE  = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=327e572d11c37963726ba0b02d30cf2c"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=b6b699fb031347ebb47f0f8fb4a1093b"
 
 require rialto_revision.inc
 
