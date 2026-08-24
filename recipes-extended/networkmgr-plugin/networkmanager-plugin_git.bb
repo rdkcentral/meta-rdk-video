@@ -42,7 +42,6 @@ EXTRA_OECMAKE += " \
                 -DENABLE_ROUTER_DISCOVERY_TOOL=ON \
                 -DENABLE_MIGRATION_MFRMGR_SUPPORT=ON \
                 -DUSE_RDK_LOGGER=ON \
-                -DUSE_CONNECTIVITYCHECKMGR=ON \
                 "
 
 CXXFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
