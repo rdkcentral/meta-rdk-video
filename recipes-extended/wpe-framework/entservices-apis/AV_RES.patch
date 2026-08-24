@@ -128,8 +128,8 @@ diff -uNr entservices-apis-develop/apis/Ids.h entservices-apis-develop-AV/apis/I
          ID_AUDIO_OUTPUT                             = ID_ENTOS_OFFSET + 0x560,
          ID_AUDIO_OUTPUT_NOTIFICATION                = ID_AUDIO_OUTPUT + 1,
 +
-+	ID_RESOURCEMONITOR                          = ID_ENTOS_OFFSET + 0x570,
-+        ID_RESOURCEMONITOR_NOTIFICATION             = ID_RESOURCEMONITOR + 1,
++	ID_RESOURCEMONITOR                               = ID_ENTOS_OFFSET + 0x570,
++        ID_RESOURCEMONITOR_NOTIFICATION             = ID_RESOURCEMONITOR + 1,
 +
 +	ID_AVMONITOR                                = ID_ENTOS_OFFSET + 0x580,
 +        ID_AVMONITOR_NOTIFICATION                   = ID_AVMONITOR + 1,
