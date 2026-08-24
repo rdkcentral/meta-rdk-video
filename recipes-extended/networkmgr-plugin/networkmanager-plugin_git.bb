@@ -14,7 +14,7 @@ NETWORKMANAGER_STUN_PORT ?= "19302"
 NETWORKMANAGER_LOGLEVEL ?= "3"
 
 PR = "r0"
-PV = "v3.5.0"
+PV = "v3.6.0"
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/onroutechange"
@@ -30,7 +30,6 @@ inherit cmake pkgconfig python3native
 # Specify any options you want to pass to cmake using EXTRA_OECMAKE:
 EXTRA_OECMAKE += " \
                 -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
-                -DPLUGIN_NETWORKMANAGER_CONN_ENDPOINT_1="${NETWORKMANAGER_CONN_ENDPOINT_1}" \
                 -DPLUGIN_NETWORKMANAGER_STUN_ENDPOINT="${NETWORKMANAGER_STUN_ENDPOINT}" \
                 -DPLUGIN_NETWORKMANAGER_STUN_PORT="${NETWORKMANAGER_STUN_PORT}" \
                 -DPLUGIN_NETWORKMANAGER_LOGLEVEL="${NETWORKMANAGER_LOGLEVEL}" \
