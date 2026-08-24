@@ -17,9 +17,9 @@ PR = "r0"
 PV = "v3.6.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=feature/RDKEMW-22842"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=feature/wifiStateMutex"
 
-SRCREV = "25e6bfdc70d8f95897f53e7afaeb032bef652359"
+SRCREV = "1a6488fa7293cde1946dea6afc21a15e7eccfc7c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
