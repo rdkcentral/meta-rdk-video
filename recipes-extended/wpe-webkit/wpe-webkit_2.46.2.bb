@@ -1,13 +1,12 @@
 inherit features_check
 REQUIRED_DISTRO_FEATURES = "enable_libsoup3"
-DEFAULT_PREFERENCE = "-1"
 
 PATCHTOOL = "git"
 
 require wpe-webkit.inc
 
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
-WPE_RECIPE_REVISION = "0"
+WPE_RECIPE_REVISION = "3"
 
 PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
@@ -23,6 +22,9 @@ SRC_URI = "${BASE_URI}"
 
 # Drop after PR is accepted
 SRC_URI += "file://2.46/1629.patch"
+SRC_URI += "file://2.46.2/1712_MS_seek_reopen_crash.patch"
+SRC_URI += "file://2.46/1711.patch"
+SRC_URI += "file://2.46.2/1718.patch"
 
 # Drop after westeros change is approved and released
 SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
