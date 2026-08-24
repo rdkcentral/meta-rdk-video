@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUF
            "
 
 # Release version - 1.2.7
-SRCREV = "5019c41f47128822dffc4c24297b3af848fcde7b"
+SRCREV = "3b62a20b9dc8dc43b0ecb07388347ccf048c7189"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
