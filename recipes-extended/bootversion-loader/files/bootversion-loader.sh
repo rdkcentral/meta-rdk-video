@@ -228,5 +228,25 @@ else
      fi
 fi
 
+#For Flex platforms set the activation status to activated if not already set in case of BOOT_MIGRATION
+if [ "$file_platform" == "flex" ]; then
+	current_bootType=$(<"$file_bootType")
+	current_bootType=${current_bootType:10}
+	file_activation_status="/opt/www/authservice/as.dat"
+	activation_status=$(<"$file_activation_status")
+	if [ "$current_bootType" == "BOOT_MIGRATION" ]; then
+		if [ "$activation_status" == "activation-ready" ]
+			writeToFile "activated" "$file_activation_status" "truncate"
+			boottypeLog "Activation status updated to activated"
+		else
+			boottypeLog "Activation status is: $activation_status"
+		fi
+	else
+		boottypeLog "Since current_bootType is $current_bootType not setting activation status"
+	fi
+else
+	boottypeLog "Since $file_platform is not for stb's; not setting activation status"
+fi
+
 writeToFile "COMPLETED" "$file_updateStatus" "truncate"
 boottypeLog "Update completed."
