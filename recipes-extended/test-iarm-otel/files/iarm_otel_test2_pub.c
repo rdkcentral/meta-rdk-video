@@ -67,9 +67,9 @@ static void send_rpc_traced(int token)
     memset(&arg, 0, sizeof(arg));
     arg.request_token = token;
 
-    rc = IARM_Bus_CallWithTracing(TEST2_SUB_MEMBER, TEST2_METHOD,
-                                  &arg, sizeof(arg));
-    printf("[PUB2] CallWithTracing rc=%d response=\"%s\"\n", rc, arg.response_msg);
+    rc = IARM_Bus_Call(TEST2_SUB_MEMBER, TEST2_METHOD,
+                       &arg, sizeof(arg));
+    printf("[PUB2] IARM_Bus_Call() transparent trace rc=%d response=\"%s\"\n", rc, arg.response_msg);
 }
 
 int main(int argc, char **argv)
@@ -93,15 +93,14 @@ int main(int argc, char **argv)
          * New sender -> Legacy receiver.
          *
          * EVENT path: patched libIARMBus appends a traceparent suffix when a
-         * root span is active.  The legacy receiver reads only data[0..len-1]
+         * root span is active. The legacy receiver reads only data[0..len-1]
          * and ignores the suffix bytes silently — no crash, correct payload.
          *
-         * RPC path: we deliberately use IARM_Bus_Call (NOT CallWithTracing)
-         * because IARM_Bus_CallWithTracing wraps the arg in an RPCA envelope.
-         * A legacy handler that doesn't know the envelope would see corrupted
-         * fields and may crash.  The correct contract is: CallWithTracing is
-         * used only when both sender AND receiver have the patched library.
-         * This test proves plain RPC still works across the boundary.
+         * RPC path: transparent IARM_Bus_Call() wrapping only happens when a
+         * valid traceparent is active. In a closed patched Yocto image all peers
+         * use the same libIARMBus, so the payload is unwrapped again before the
+         * handler sees it. This test still proves that a plain RPC call is the
+         * correct compatibility path when the receiver is not instrumented.
          */
         rdk_otlp_init("iarm-otel-poc-pub2-new", "1.0.0");
         rdk_otlp_start_distributed_trace("OTEL_TEST2_NEW_TO_LEGACY", "pub2");
