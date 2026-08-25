@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 PV = "1.0.39"
 PR = "r0"
 
-SRCREV_devicesettings = "a81b4dd8ba7e2777074870511566f93e3adeadf8"
+SRCREV_devicesettings = "a6551659a56e2305f12c0a00c9b347fc75ee401c"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
 
