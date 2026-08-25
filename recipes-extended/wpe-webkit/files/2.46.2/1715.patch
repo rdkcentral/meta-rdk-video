@@ -1,7 +1,7 @@
 From 148b670844f5de2f8d353e97034c11773abae31f Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
 Date: Tue, 25 Aug 2026 11:53:30 +0000
-Subject: [PATCH] Querying robustness level from CDM instead of hardcoding the
+Subject: [PATCH] Query robustness levels from CDM instead of hardcoding
 
 ---
  Source/WebCore/platform/GStreamer.cmake       |  6 +++

@@ -10,7 +10,7 @@ and decoding while supported, was not being indicated to
 upper layers as such.
 
 Original report:
-It has been reported that EME media key is npot returning expected values:
+It has been reported that EME media key is not returning expected values:
 
 Test any webapp and set location.href to https://qtools.skyq.sky.com/htmltestapps/mediakeysupport/index.html - snippets below:
 
