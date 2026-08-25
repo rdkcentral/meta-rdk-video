@@ -8,10 +8,10 @@ DEPENDS = "westeros wayland essos virtual/egl rapidjson jpeg libpng curl"
 DEPENDS:append = "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '', 'libsoup-2.4 boost libsyswrapper', d)}"
 
 S = "${WORKDIR}/git"
-PV = "1.3.1"
+PV = "1.3.2"
 PR = "r0"
 
-SRCREV = "0f2a90f748ac2e2dda135b01de177792dba14b84"
+SRCREV = "0ac8aeb73f4298e6355b07737aa3d54435941ae4"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdk-window-manager;${CMF_GITHUB_SRC_URI_SUFFIX}"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
