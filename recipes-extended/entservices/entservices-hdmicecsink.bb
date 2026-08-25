@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsink;${CMF_GITHUB_SRC_URI_SUFFI
            file://rdkservices.ini \
           "
 
-# Release version - 1.4.4
-SRCREV = "bb4a0ea9466af8b0ec6d2e31c944b2b5e9ab0ee7"
+# Release version - 1.4.6
+SRCREV = "51d33b55dba293b434a0e9f1d0f9cb7767b0dd8f"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
