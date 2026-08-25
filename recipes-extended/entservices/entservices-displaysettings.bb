@@ -2,7 +2,7 @@ SUMMARY = "ENTServices displaysettings plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.6.3"
+PV = "1.6.4"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
-# Release version - 1.6.3
-SRCREV = "ca9b4a7843c70092cd4981d96f4efcdf7a3182c8"
+# Release version - 1.6.4
+SRCREV = "5adb422d958181c46b914a7e52d50a1ac13c1461"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
