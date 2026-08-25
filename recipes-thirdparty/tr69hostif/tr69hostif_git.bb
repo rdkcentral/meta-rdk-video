@@ -102,7 +102,6 @@ EXTRA_OECONF:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', '--en
 EXTRA_OECONF:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'NEW_HTTP_SERVER_DISABLE', '--disable-new-http-server', '', d)}"
 
 PACKAGECONFIG ??= ""
-PACKAGECONFIG[xre] = "--enable-xre,,"
 PACKAGECONFIG[moca] = "--enable-moca,,virtual/mocadriver"
 PACKAGECONFIG[moca2] = "--enable-moca2,,virtual/mocadriver"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth','bluetooth', '',d)}"
