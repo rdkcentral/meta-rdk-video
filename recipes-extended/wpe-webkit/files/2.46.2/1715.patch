@@ -1,0 +1,81 @@
+From 148b670844f5de2f8d353e97034c11773abae31f Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Tue, 25 Aug 2026 11:53:30 +0000
+Subject: [PATCH] Querying robustness level from CDM instead of hardcoding the
+
+---
+ Source/WebCore/platform/GStreamer.cmake       |  6 +++
+ .../graphics/gstreamer/eme/CDMThunder.cpp     | 40 ++++++++++++++++++-
+ 2 files changed, 45 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/GStreamer.cmake b/Source/WebCore/platform/GStreamer.cmake
+index 55f7c973771b..3dee88d29031 100644
+--- a/Source/WebCore/platform/GStreamer.cmake
++++ b/Source/WebCore/platform/GStreamer.cmake
+@@ -175,6 +175,12 @@ if (ENABLE_ENCRYPTED_MEDIA AND ENABLE_THUNDER)
+     # Globally add thunder libraries, required for the check_cxx_symbol_exists call.
+     set(CMAKE_REQUIRED_LIBRARIES ${THUNDER_LIBRARIES})
+ 
++    check_cxx_symbol_exists(opencdm_system_supported_robustness ${THUNDER_INCLUDE_DIR}/open_cdm.h HAS_OCDM_SUPPORTED_ROBUSTNESS)
++    if (HAS_OCDM_SUPPORTED_ROBUSTNESS)
++      list(APPEND WebCore_PRIVATE_DEFINITIONS THUNDER_HAS_OCDM_SUPPORTED_ROBUSTNESS=1)
++    else ()
++      list(APPEND WebCore_PRIVATE_DEFINITIONS THUNDER_HAS_OCDM_SUPPORTED_ROBUSTNESS=0)
++    endif ()
+     check_cxx_symbol_exists(opencdm_gstreamer_session_decrypt_buffer ${THUNDER_INCLUDE_DIR}/open_cdm_adapter.h HAS_OCDM_DECRYPT_BUFFER)
+     if (HAS_OCDM_DECRYPT_BUFFER)
+       list(APPEND WebCore_PRIVATE_DEFINITIONS THUNDER_HAS_OCDM_DECRYPT_BUFFER=1)
+diff --git a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
+index dbe0195d802f..5524c78953b6 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/eme/CDMThunder.cpp
+@@ -171,7 +171,45 @@ bool CDMPrivateThunder::supportsConfiguration(const CDMKeySystemConfiguration& c
+ 
+ Vector<AtomString> CDMPrivateThunder::supportedRobustnesses() const
+ {
+-    return { emptyAtom(), "SW_SECURE_DECODE"_s, "SW_SECURE_CRYPTO"_s };
++    static const Vector<AtomString> defaultRobustnesses { emptyAtom(), "SW_SECURE_DECODE"_s, "SW_SECURE_CRYPTO"_s };
++
++#if THUNDER_HAS_OCDM_SUPPORTED_ROBUSTNESS
++    if (!m_thunderSystem) {
++        GST_WARNING("CDMPrivateThunder: No active OpenCDM system. Falling back to default WebKit robustness levels.");
++        return defaultRobustnesses;
++    }
++
++    Vector<AtomString> robustnesses { emptyAtom() };
++    char** buffers = nullptr;
++    uint16_t count = 0;
++
++    auto error = opencdm_system_supported_robustness(m_thunderSystem.get(), &buffers, &count);
++
++    if (buffers) {
++        if (count) {
++            robustnesses.reserveCapacity(robustnesses.size() + count);
++            // There's basically no good way to avoid unsafe-buffer-usage-in-container when interacting with a legacy
++            // char** buffer that doesn't depend on us. A modern opencdm API should use a std::vector or std::array,
++            // but it's not in our hands. Using an unsafe span is the less bad way. It's unsafe because the compiler
++            // can't ensure that buffers actually have a length of count, but we do know it's true.
++            for (char* buffer : unsafeMakeSpan(buffers, count)) {
++                if (buffer) {
++                    if (error == ERROR_NONE)
++                        robustnesses.append(AtomString::fromLatin1(buffer));
++                    free(buffer);
++                }
++            }
++        }
++        free(buffers);
++    }
++
++    if (error == ERROR_NONE && robustnesses.size() > 1)
++        return robustnesses;
++
++    GST_WARNING("Failed to get robustness levels from OCDM. Falling back to default WebKit robustness levels.");
++#endif
++
++    return defaultRobustnesses;
+ }
+ 
+ CDMRequirement CDMPrivateThunder::distinctiveIdentifiersRequirement(const CDMKeySystemConfiguration&, const CDMRestrictions&) const
+-- 
+2.44.4
+
