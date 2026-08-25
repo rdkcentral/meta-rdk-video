@@ -2,7 +2,7 @@ SUMMARY = "ENTServices deviceinfo plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=34aa8e5c0a5ec9c81c534b40fb21b5b6"
 
-PV = "1.1.4"
+PV = "1.1.6"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceinfo;${CMF_GITHUB_SRC_URI_SUFFIX
            file://rdkservices.ini \
           "
 
-# Release version - 1.1.4
-SRCREV = "6c5793406aaea7adfa11c1d02864ea80ce5f6117"
+# Release version - 1.1.6
+SRCREV = "68f4df9898c7ced2e742904196139487d8a8c7f2"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
