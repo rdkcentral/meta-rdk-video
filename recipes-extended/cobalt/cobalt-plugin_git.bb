@@ -13,7 +13,7 @@ PR = "r0"
 
 SRC_URI = "${LARBOARD_SRC_URI};protocol=${CMF_GIT_PROTOCOL};branch=develop"
 
-SRCREV = "${LARBOARD_SRCREV_DEV}"
+SRCREV = "${LARBOARD_SRCREV_25}"
 
 S = "${WORKDIR}/git/plugin"
 
