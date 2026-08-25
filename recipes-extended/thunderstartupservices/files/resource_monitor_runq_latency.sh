@@ -39,7 +39,7 @@ set -u
 # ---- tunables --------------------------------------------------------------
 COMM="${COMM:-Monitor::IResou}"          # truncated (<=15 char) thread name
 METHOD="${METHOD:-ftrace}"               # ftrace | perf
-DURATION="${DURATION:-30}"               # seconds to trace during start-up
+DURATION="${DURATION:-90}"               # seconds to trace during start-up
 OUTDIR="${OUTDIR:-/opt/logs}"
 DEBUG_LOG="${DEBUG_LOG:-/tmp/resource_monitor_runq_latency.debug.log}"
 NO_RESTART="${NO_RESTART:-0}"            # 1 = do not touch Thunder, trace only
@@ -124,7 +124,7 @@ detect_systemd_unit() {
 # Each line: uptime_s  runnable  total  percpu_rq_sum
 # ---------------------------------------------------------------------------
 start_thread_pressure_sampler() {
-    PRESSURE_LOG="$OUTDIR/thread_pressure_${STAMP}.log"
+    PRESSURE_LOG="${PRESSURE_LOG:-$OUTDIR/thread_pressure_${STAMP}.log}"
     (
         while true; do
             read -r _up _ < /proc/uptime 2>/dev/null || _up="0"
@@ -159,7 +159,7 @@ RT_LOG=""
 # Each sample block: "=== <uptime_s> ===" header + ps output for RT threads.
 # ---------------------------------------------------------------------------
 start_rt_thread_sampler() {
-    RT_LOG="$OUTDIR/rt_threads_${STAMP}.log"
+    RT_LOG="${RT_LOG:-$OUTDIR/rt_threads_${STAMP}.log}"
     (
         while true; do
             read -r _up _ < /proc/uptime 2>/dev/null || _up="0"
@@ -174,6 +174,38 @@ start_rt_thread_sampler() {
     log "RT thread sampler: $RT_LOG"
 }
 
+# Record the first pressure snapshot after the WPEFramework ResourceMonitor
+# thread becomes visible. This is the closest userspace measurement to its
+# creation event; the thread's kernel creation timestamp remains in ftrace.
+start_resource_monitor_creation_watcher() {
+    CREATION_LOG="$OUTDIR/resource_monitor_creation_boot.log"
+    : > "$CREATION_LOG"
+    (
+        while true; do
+            _creation_tids=$(resolve_daemon_tids 2>/dev/null)
+            if [ -n "$_creation_tids" ]; then
+                read -r _creation_up _ < /proc/uptime 2>/dev/null || _creation_up="0"
+                read -r _ _ _ _creation_load _ < /proc/loadavg 2>/dev/null || _creation_load="0/0"
+                _creation_run=${_creation_load%/*}
+                _creation_total=${_creation_load#*/}
+                _creation_rq=$(awk -F: '/nr_running/{s+=$NF+0}END{printf "%d",s}' \
+                    /proc/sched_debug 2>/dev/null || echo "?")
+                printf 'RESOURCE_MONITOR_FIRST_OBSERVED uptime=%s tids="%s" runnable=%s total=%s rq=%s\n' \
+                    "$_creation_up" "$_creation_tids" "$_creation_run" \
+                    "$_creation_total" "$_creation_rq" >> "$CREATION_LOG"
+                PRESSURE_LOG="$OUTDIR/thread_pressure_boot.log"
+                RT_LOG="$OUTDIR/rt_threads_boot.log"
+                start_thread_pressure_sampler
+                start_rt_thread_sampler
+                break
+            fi
+            sleep 0.1 2>/dev/null || usleep 100000 2>/dev/null || sleep 1
+        done
+    ) &
+    CREATION_PID=$!
+    debug "ResourceMonitor creation watcher started: pid=$CREATION_PID log=$CREATION_LOG"
+}
+
 stop_rt_thread_sampler() {
     [ -n "$RT_SAMPLER_PID" ] && kill "$RT_SAMPLER_PID" 2>/dev/null
     wait "$RT_SAMPLER_PID" 2>/dev/null
@@ -185,6 +217,7 @@ stop_rt_thread_sampler() {
 # which RT threads were active during high-latency spikes.
 report_rt_threads() {
     _rtlog="$1"; _rfile="$2"
+    _rm_tids=$(resolve_daemon_tids 2>/dev/null || true)
     echo ""
     echo "======================================================"
     echo "  Real-time thread environment during trace window"
@@ -194,14 +227,25 @@ report_rt_threads() {
         echo "======================================================"
         return
     fi
+    if [ -z "$_rm_tids" ]; then
+        echo "  No Monitor::IResource thread found in the WPEFramework daemon"
+        echo "  (RT samples are intentionally excluded without daemon TID confirmation)"
+        echo "======================================================"
+        return
+    fi
     # Summary: unique RT threads seen, and RM's own priority
-    awk '
+    awk -v rm_tids="$_rm_tids" '
+    BEGIN {
+        n_tids=split(rm_tids, tids)
+        for (i=1; i<=n_tids; i++) valid[tids[i]+0]=1
+    }
     /^=== / { next }
     NF>=5 {
-        comm=$5; cls=$3; pri=$4+0
+        tid=$2+0; comm=$5; cls=$3; pri=$4+0
+        if (!(tid in valid)) next
         key=comm":"cls":"pri
         if (!(key in seen)) { seen[key]=1; n++ }
-        if (comm ~ /Monitor/ && (cls=="FF"||cls=="RR")) {
+        if (comm == "Monitor::IResou" && (cls=="FF"||cls=="RR")) {
             rm_cls=cls; rm_pri=pri
         }
     }
@@ -217,15 +261,20 @@ report_rt_threads() {
     }
     ' "$_rtlog"
     # Show threads that can preempt RM
-    awk '
+    awk -v rm_tids="$_rm_tids" '
+    BEGIN {
+        n_tids=split(rm_tids, tids)
+        for (i=1; i<=n_tids; i++) valid[tids[i]+0]=1
+    }
     /^=== / { next }
     NF>=5 {
-        comm=$5; cls=$3; pri=$4+0
+        tid=$2+0; comm=$5; cls=$3; pri=$4+0
+        if (!(tid in valid)) next
         key=comm":"cls":"pri
         if (!(key in seen)) {
             seen[key]=1
             # track RM priority
-            if (comm ~ /Monitor/ && (cls=="FF"||cls=="RR")) rm_pri=pri
+            if (comm == "Monitor::IResou" && (cls=="FF"||cls=="RR")) rm_pri=pri
             else data[key]=sprintf("  %-7s  %3d  %s", cls, pri, comm)
         }
     }
@@ -383,11 +432,7 @@ run_ftrace() {
     debug "ftrace armed"
 
     log "Tracing for ${DURATION}s ..."
-    start_thread_pressure_sampler
-    start_rt_thread_sampler
     sleep "$DURATION"
-    stop_thread_pressure_sampler
-    stop_rt_thread_sampler
 
     echo 0 > "$TRACEFS/tracing_on"
     if ! cp "$TRACEFS/trace" "$RAW" 2>/dev/null; then
@@ -423,8 +468,6 @@ run_ftrace() {
     else
         debug "Report saved: $REPORT bytes=$(wc -c < "$REPORT" 2>/dev/null || echo unknown)"
         cat "$REPORT"
-        report_thread_pressure "$PRESSURE_LOG" "$REPORT" | tee -a "$REPORT"
-        report_rt_threads "$RT_LOG" "$REPORT" | tee -a "$REPORT"
     fi
 }
 
@@ -695,6 +738,7 @@ run_perf() {
 # ===========================================================================
 SELF_INSTALL="${SELF_INSTALL:-/opt/resource_monitor_runq_latency.sh}"
 BOOT_UNIT=runq-boottrace.service
+PRESSURE_UNIT=wpeframework-runq-pressure.service
 BOOT_UNIT_PATH="/etc/systemd/system/${BOOT_UNIT}"
 
 # Enable a single sched event with an ftrace filter, tolerant of old kernels.
@@ -711,7 +755,15 @@ enable_filtered() {
 # every matching thread tid inside it (normally exactly one). This is the single
 # source of truth used by every mode so that only the daemon's thread is kept.
 resolve_daemon_tids() {
-    _dpid=$(pgrep -x "$WPE_PROC" 2>/dev/null | sort -n | head -n1)
+    _dpid=""
+    for _proc_dir in /proc/[0-9]*; do
+        _proc_name=$(cat "$_proc_dir/comm" 2>/dev/null) || continue
+        [ "$_proc_name" = "$WPE_PROC" ] || continue
+        _candidate_pid=${_proc_dir##*/}
+        if [ -z "$_dpid" ] || [ "$_candidate_pid" -lt "$_dpid" ] 2>/dev/null; then
+            _dpid="$_candidate_pid"
+        fi
+    done
     [ -z "$_dpid" ] && return 1
     _tids=""
     for _t in /proc/"$_dpid"/task/*; do
@@ -901,6 +953,15 @@ EOF
 show_boot() {
     debug "show_boot: stopping trace and collecting boot data"
     if [ ! -d "$TRACEFS" ]; then log "tracefs not found."; exit 1; fi
+    if command -v systemctl >/dev/null 2>&1; then
+        if ! systemctl stop "$PRESSURE_UNIT" >/dev/null 2>&1; then
+            debug "WARN: could not stop $PRESSURE_UNIT"
+        else
+            debug "Stopped $PRESSURE_UNIT before collecting boot sampler logs"
+        fi
+    else
+        debug "WARN: systemctl not found; boot sampler may still be running"
+    fi
     if [ ! -f "$OUTDIR/runq_boot_armed.txt" ]; then
         debug "WARN: boot marker not found: $OUTDIR/runq_boot_armed.txt"
         log "WARNING: no boot marker found; was arm-boot run before reboot?"
@@ -941,8 +1002,22 @@ show_boot() {
     else
         debug "No boot thread pressure log matching thread_pressure_boot* found in $OUTDIR"
     fi
-    _boot_rtlog="$OUTDIR/rt_threads_boot.log"
-    report_rt_threads "$_boot_rtlog" "$REPORT" | tee -a "$REPORT"
+    _creation_log="$OUTDIR/resource_monitor_creation_boot.log"
+    if [ -s "$_creation_log" ]; then
+        echo "" | tee -a "$REPORT"
+        echo "======================================================" | tee -a "$REPORT"
+        echo "  Pressure at first observed ResourceMonitor creation" | tee -a "$REPORT"
+        cat "$_creation_log" | tee -a "$REPORT"
+        echo "======================================================" | tee -a "$REPORT"
+    else
+        debug "No ResourceMonitor creation snapshot found: $_creation_log"
+    fi
+    _boot_rtlog=$(ls -1t "$OUTDIR"/rt_threads_boot* 2>/dev/null | head -n 1)
+    if [ -n "$_boot_rtlog" ] && [ -f "$_boot_rtlog" ]; then
+        report_rt_threads "$_boot_rtlog" "$REPORT" | tee -a "$REPORT"
+    else
+        debug "No boot RT thread log matching rt_threads_boot* found in $OUTDIR"
+    fi
     debug "Boot report saved: $REPORT bytes=$(wc -c < "$REPORT" 2>/dev/null || echo unknown)"
     log "Report: $REPORT"
     log "Re-arm for another reboot is automatic (unit still enabled)."
@@ -1032,24 +1107,11 @@ main() {
             _plog="${OUTDIR}/thread_pressure_boot.log"
             _rtlog="${OUTDIR}/rt_threads_boot.log"
             debug "sample-pressure: writing to $_plog and $_rtlog"
-            # RT thread snapshot every 1s in a background subshell
-            (
-                while true; do
-                    read -r _up _ < /proc/uptime 2>/dev/null || _up="0"
-                    printf '=== %s ===\n' "$_up"
-                    ps -eLo pid,tid,cls,rtprio,comm 2>/dev/null | \
-                        awk '$3!="-" && $3!="CLS" && $3!="TS" && $1!="PID"'
-                    sleep 1 2>/dev/null || sleep 1
-                done
-            ) >> "$_rtlog" &
-            # Pressure sampler runs in the foreground (keeps the service alive)
+            start_resource_monitor_creation_watcher
+            # Keep the service alive until show-boot stops it via systemd.
             while true; do
-                read -r _up _ < /proc/uptime 2>/dev/null || _up="0"
-                read -r _ _ _ _lf _ < /proc/loadavg 2>/dev/null || _lf="0/0"
-                _run=${_lf%/*}; _tot=${_lf#*/}
-                printf '%s %s %s ?\n' "$_up" "$_run" "$_tot"
-                sleep 0.1 2>/dev/null || usleep 100000 2>/dev/null || sleep 1
-            done >> "$_plog"
+                sleep 3600
+            done
             ;;
         live)
             lock_target_tid
