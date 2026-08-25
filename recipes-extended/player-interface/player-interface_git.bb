@@ -7,7 +7,7 @@ PV = "0.3.1"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "aed2c335a4521558c37c8d4e6c4257ed962f7c96"
+SRCREV_player-interface ?= "b2e3a525e52522e7bb22d0a36d9cc9f5fea4013a"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "firebolt_changes"
 
@@ -22,7 +22,7 @@ EXTRA_OECMAKE += " -DCMAKE_IARM_MGR=0 "
 DEPENDS += "wpeframework ${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0 gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)} wpeframework-clientlibraries wpe-webkit virtual/vendor-gst-drm-plugins essos virtual/vendor-secapi2-adapter"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec_cc', 'subttxrend-app', '', d)}"
-#RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'use_firebolt', '', 'devicesettings', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 
 NO_RECOMMENDATIONS = "1"
