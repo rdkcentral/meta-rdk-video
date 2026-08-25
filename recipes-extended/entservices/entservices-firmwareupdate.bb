@@ -11,8 +11,8 @@ inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX} \
            "
 
-# Release version - 1.2.5
-SRCREV = "bdc83b792c023318287d65abe81de2c115b9e640"
+# Release version - 1.2.6
+SRCREV = "ddb4903974478bd5435d90773a200de47c1786c6"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
