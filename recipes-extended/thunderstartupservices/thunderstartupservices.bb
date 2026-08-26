@@ -10,7 +10,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "ae7a08e0e37aa8d5cf04e913b147796254359e5c"
+SRCREV = "e43a14be2836b11d45261c2570b1d427c40f79f5"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -72,6 +72,15 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-es1benchmark.service \
     "
 
+# Neither es1bench.service nor es1bench-coldstart.service goes through
+# THUNDER_STARTUP_SERVICES above: everything in that list gets echoed
+# straight into wpeframework-services.target's Requires= line further down,
+# which makes it auto-start on every boot - fine for real plugin activators,
+# wrong for a benchmark tool that should stay on-demand (es1bench.service)
+# or run once before Thunder without ever being "required" by it
+# (es1bench-coldstart.service). Both are installed and enabled separately
+# in do_install()/do_install:append() instead.
+
 CONTROL_FILES = "\
     wpeframework-services.path \
     wpeframework-services.target \
@@ -91,6 +100,22 @@ do_install() {
         install -d ${D}${sysconfdir}/systemd/system/${x}.requires
         ln -sf ${systemd_system_unitdir}/wpeframework.service ${D}${sysconfdir}/systemd/system/${x}.requires/wpeframework.service
     done
+
+    # es1bench units: installed separately (see the comment by
+    # THUNDER_STARTUP_SERVICES above), both gated behind the 'es1bench'
+    # DISTRO_FEATURE so a normal production image doesn't get them at all.
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'true', 'false', d)} == 'true'; then
+        # On-demand: installed but NOT enabled/wanted by anything, so it
+        # only ever runs via an explicit `systemctl start es1bench.service`.
+        install -m 0644 ${S}/es1bench.service ${D}${systemd_system_unitdir}
+
+        # Cold-start: runs before wpeframework.service, so it must not get
+        # the wpeframework.service Requires= symlink the loop above gives
+        # everything else - enabled directly via multi-user.target instead.
+        install -m 0644 ${S}/es1bench-coldstart.service ${D}${systemd_system_unitdir}
+        install -d ${D}${sysconfdir}/systemd/system/multi-user.target.wants
+        ln -sf ${systemd_system_unitdir}/es1bench-coldstart.service ${D}${sysconfdir}/systemd/system/multi-user.target.wants/es1bench-coldstart.service
+    fi
 
     # Adding final THUNDER_STARTUP_SERVICES into the Requires= line of the target
     FINAL_SERVICES="$(echo "${THUNDER_STARTUP_SERVICES}" | tr '\n' ' ')"

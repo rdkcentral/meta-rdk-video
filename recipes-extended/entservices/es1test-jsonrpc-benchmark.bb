@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "git://github.com/workkavint-ship-it/ES1Test-JSONRPC-Benchmark;protocol=https;branch=main"
 
-SRCREV = "c11c4e5e1c52995cc3a192510093b3a7614c7365"
+SRCREV = "5dbec7cc33b19fc6d462a45e11e7e57a8c64537b"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -26,6 +26,7 @@ EXTRA_OECMAKE += " \
     -DBUILD_SHARED_LIBS=ON \
     -DPLUGIN_ES1BENCHMARK=ON \
     -DPLUGIN_ES1BENCHMARK_AUTOSTART=true \
+    -DPLUGIN_ES1BENCHMARK_CLIENT=ON \
 "
 
 do_install:append() {
@@ -34,10 +35,16 @@ do_install:append() {
             find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
         fi
     fi
+
+    # es1client's own config, editable in place on the device without a rebuild.
+    install -d ${D}/opt
+    install -m 0644 ${S}/client/es1.config.default ${D}/opt/es1.config
+
+    install -d ${D}${localstatedir}/log/es1bench
 }
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/*"
+FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/* ${bindir}/es1client /opt/es1.config ${localstatedir}/log/es1bench"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
