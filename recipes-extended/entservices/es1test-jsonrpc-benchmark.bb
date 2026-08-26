@@ -45,11 +45,15 @@ do_install:append() {
     install -m 0644 ${S}/client/es1.config.default ${D}/opt/es1.config
     install -m 0644 ${S}/client/es1-coldstart.config.default ${D}/opt/es1-coldstart.config
 
-    install -d ${D}${localstatedir}/log/es1bench
+    # NOT ${localstatedir}/log - that resolves under /var/volatile on this
+    # BSP, which do_package_qa's empty-dirs check requires to stay empty in
+    # the built image (it's populated at boot, not baked in). /opt is fine
+    # here, same as the config files above.
+    install -d ${D}/opt/es1bench/log
 }
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/* ${bindir}/es1client /opt/es1.config /opt/es1-coldstart.config ${localstatedir}/log/es1bench"
+FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/* ${bindir}/es1client /opt/es1.config /opt/es1-coldstart.config /opt/es1bench/log"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
