@@ -3,14 +3,20 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 SECTION = "base"
-DEPENDS = "sqlite3 curl rdkversion jansson glib-2.0 systemd iarmbus iarmmgrs util-linux devicesettings nopoll rfc libarchive safec-common-wrapper gperf-native xr-voice-sdk libsyswrapper xr-voice-sdk-headers"
+DEPENDS = "sqlite3 curl rdkversion jansson glib-2.0 systemd util-linux devicesettings nopoll rfc libarchive safec-common-wrapper gperf-native xr-voice-sdk libsyswrapper xr-voice-sdk-headers"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
-RDEPENDS:${PN}:append = " devicesettings iarmbus"
+RDEPENDS:${PN}:append = " devicesettings"
 
 PROVIDES = "ctrlm"
 RPROVIDES:${PN} = "ctrlm"
 
+BUILD_LIBRARY = "true"
+IARMBUS_ENABLED = "true"
+
+DEPENDS:append = "${@bb.utils.contains('IARMBUS_ENABLED', 'true', ' iarmbus iarmmgrs', '', d)}"
+RDEPENDS:${PN}:append = "${@bb.utils.contains('IARMBUS_ENABLED', 'true', ' iarmbus', '', d)}"
+EXTRA_OECMAKE:append = "${@bb.utils.contains('IARMBUS_ENABLED', 'true', ' -DIARMBUS_ENABLED=ON', ' -DIARMBUS_ENABLED=OFF', d)}"
 
 inherit cmake pkgconfig ${@bb.utils.contains("DISTRO_FEATURES", "kirkstone", "python3native", "pythonnative", d)} syslog-ng-config-gen logrotate_config
 
@@ -38,7 +44,7 @@ LOGROTATE_ROTATION_MEM_ctrlm_log="3"
 LOGROTATE_SIZE_ctrlm_log="20971520"
 LOGROTATE_ROTATION_ctrlm_log="25"
 
-SRC_URI:append = " file://ctrlm-main.service"
+SRC_URI:append = "${@bb.utils.contains('BUILD_LIBRARY', 'true', '', ' file://ctrlm-main.service', d)}"
 SRC_URI:append = " file://ctrlm-server.service"
 
 VERSION_TEST_TONES = "20220616"
@@ -49,11 +55,11 @@ SRC_URI[test_tones.sha256sum] = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'tru
 S = "${WORKDIR}/git"
 
 FILES:${PN} += "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', '${datadir}/tone_1khz.wav', '', d)}"
-FILES:${PN} += "${systemd_unitdir}/system/ctrlm-main.service "
+FILES:${PN} += "${@bb.utils.contains('BUILD_LIBRARY', 'true', '', '${systemd_unitdir}/system/ctrlm-main.service ', d)}"
 FILES:${PN} += "${systemd_unitdir}/system/ctrlm-server.service "
 
 SYSTEMD_PACKAGES += " ctrlm-main"
-SYSTEMD_SERVICE:ctrlm-main  = "ctrlm-main.service ctrlm-server.service"
+SYSTEMD_SERVICE:ctrlm-main  = "${@bb.utils.contains('BUILD_LIBRARY', 'true', '', 'ctrlm-main.service', d)} ctrlm-server.service"
 
 ENABLE_GPERFTOOLS_HEAPCHECK_WP_DISTRO = "1"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('DISTRO_FEATURES_RDK', 'comcast-gperftools-heapcheck-wp', ' -DFDC_ENABLED=ON', '', d)}"
@@ -76,6 +82,8 @@ EXTRA_OECMAKE:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' -DUS
 
 #EXTRA_OECMAKE:append = " -DMEM_DEBUG=ON"
 
+# Build Library
+EXTRA_OECMAKE:append = "${@bb.utils.contains('BUILD_LIBRARY', 'true', ' -DBUILD_LIBRARY=ON', ' -DBUILD_LIBRARY=OFF', d)}"
 
 # Thunder Dependency
 THUNDER             ??= "true"
@@ -137,7 +145,7 @@ EXTRA_OECMAKE:append = "${@ ' -DXRSR_SDT=ON' if (d.getVar('SUPPORT_VOICE_DEST_AL
 EXTRA_OECMAKE:append = "${@ ' -DXRSR_HTTP=ON' if (d.getVar('SUPPORT_VOICE_DEST_HTTP', expand=False) == "true") else ''}"
 DEPENDS:append   = "${@ ' virtual-mic' if (d.getVar('SUPPORT_VOICE_DEST_ALSA',   expand=False) == "true") else ''}"
 
-BUILD_FACTORY_TEST ??= "true"
+BUILD_FACTORY_TEST ??= "${@bb.utils.contains('BUILD_LIBRARY', 'true', 'false', 'true', d)}"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('BUILD_FACTORY_TEST', 'true', ' -DBUILD_FACTORY_TEST=ON', ' -DBUILD_FACTORY_TEST=OFF', d)}"
 
 BUILD_CTRLM_SERVER ??= "true"
@@ -159,18 +167,26 @@ EXTRA_OECMAKE:append  = " -DCTRLM_UTILS_JSON_COMBINE=${CTRLM_UTILS_JSON_COMBINE}
 
 EXTRA_OECMAKE:append = " -DCMAKE_SYSROOT=${RECIPE_SYSROOT} -DCMAKE_PROJECT_VERSION=${PV}"
 
+SOLIBS                   = ".so"
+FILES_SOLIBSDEV          = ""
+FILES:${PN}             += "${@bb.utils.contains('BUILD_LIBRARY', 'true', '/usr/lib/libcontrolMgr.so*', '', d)}"
+INSANE_SKIP:${PN}:append = "${@bb.utils.contains('BUILD_LIBRARY', 'true', ' dev-so', '', d)}"
+
 addtask ctrlm_config after do_configure before do_compile
 do_ctrlm_config() {
 }
 
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
     install -m 0644 ${WORKDIR}/ctrlm-server.service ${D}${systemd_unitdir}/system/
 
-    if [ "${BLE_ENABLED}" = "true" ]; then
-       install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
-       install -m 0644 ${WORKDIR}/2_bluetooth.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
+    if [ "${BUILD_LIBRARY}" != "true" ]; then
+       install -m 0644 ${WORKDIR}/ctrlm-main.service ${D}${systemd_unitdir}/system/
+
+       if [ "${BLE_ENABLED}" = "true" ]; then
+          install -d ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
+          install -m 0644 ${WORKDIR}/2_bluetooth.conf ${D}${systemd_unitdir}/system/ctrlm-main.service.d/
+       fi
     fi
 }
 
