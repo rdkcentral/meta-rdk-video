@@ -2,9 +2,6 @@ SUMMARY = "ENTServices maintenancemanager plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=8156ec4df1d16b2ecb4e72131ff8026c"
 
-PV = "1.15.4"
-PR = "r0"
-
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
@@ -13,6 +10,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-maintenancemanager;${CMF_GITHUB_SRC_UR
           "
 
 # Release version - 1.16.0
+PV = "1.16.0"
+PR = "r0"
 SRCREV = "d07176aa349bce937cc59c603220f9ba0af0ec3a"
 
 
