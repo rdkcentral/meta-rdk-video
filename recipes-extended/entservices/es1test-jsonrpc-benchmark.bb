@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "git://github.com/workkavint-ship-it/ES1Test-JSONRPC-Benchmark;protocol=https;branch=main"
 
-SRCREV = "5dbec7cc33b19fc6d462a45e11e7e57a8c64537b"
+SRCREV = "e08be487d18df1a45b3172931eed9601f8160051"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -37,14 +37,19 @@ do_install:append() {
     fi
 
     # es1client's own config, editable in place on the device without a rebuild.
+    # Two separate files: es1bench.service (on-demand, after Thunder) uses
+    # /opt/es1.config (mode=warm); es1bench-coldstart.service (before Thunder)
+    # uses /opt/es1-coldstart.config (mode=coldstart) - they can't share one
+    # file since each unit needs a different mode.
     install -d ${D}/opt
     install -m 0644 ${S}/client/es1.config.default ${D}/opt/es1.config
+    install -m 0644 ${S}/client/es1-coldstart.config.default ${D}/opt/es1-coldstart.config
 
     install -d ${D}${localstatedir}/log/es1bench
 }
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/* ${bindir}/es1client /opt/es1.config ${localstatedir}/log/es1bench"
+FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/* ${bindir}/es1client /opt/es1.config /opt/es1-coldstart.config ${localstatedir}/log/es1bench"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
