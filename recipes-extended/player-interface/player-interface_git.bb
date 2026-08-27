@@ -11,10 +11,10 @@ SRCREV = "e3a0627b7aab9b2f36ee8b4e7192cf1555b01e7d"
 PLAYERINTERFACE_BRANCH ?= "main"
 
 
-+# Pass version/tag/rev info into CMake so they get baked into the library at build time
-+EXTRA_OECMAKE += " -DPI_VERSION=${PV}"
-+EXTRA_OECMAKE += " -DPI_GIT_REVISION=${SRCREV}"
-+EXTRA_OECMAKE += " -DPI_GIT_BRANCH=${PLAYERINTERFACE_BRANCH}"
+# Pass version/tag/rev info into CMake so they get baked into the library at build time
+EXTRA_OECMAKE += " -DPI_VERSION=${PV}"
+EXTRA_OECMAKE += " -DPI_GIT_REVISION=${SRCREV}"
+EXTRA_OECMAKE += " -DPI_GIT_BRANCH=${PLAYERINTERFACE_BRANCH}"
 inherit pkgconfig
 inherit cmake
 
