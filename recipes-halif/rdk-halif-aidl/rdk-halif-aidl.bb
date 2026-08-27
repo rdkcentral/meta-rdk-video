@@ -1,157 +1,325 @@
-SUMMARY = "HAL interface definitions for RDK-E (AIDL) + generated C++ headers + libhal_aidl.so"
-DESCRIPTION = "Fetches rdk-halif-aidl AIDL definitions, generates C++ sources/headers using the native aidl compiler, and builds libhal_aidl.so using an integrated Makefile."
+#* ******************************************************************************
+#*  If not stated otherwise in this file or this component's LICENSE
+#*  file the following copyright and licenses apply:
+#*
+#*  Copyright 2026 RDK Management
+#*
+#*  Licensed under the Apache License, Version 2.0 (the License);
+#*  you may not use this file except in compliance with the License.
+#*  You may obtain a copy of the License at
+#*
+#*  http://www.apache.org/licenses/LICENSE-2.0
+#*
+#*  Unless required by applicable law or agreed to in writing, software
+#*  distributed under the License is distributed on an AS IS BASIS,
+#*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#*  See the License for the specific language governing permissions and
+#*  limitations under the License.
+#*
+#* ******************************************************************************
 
+# rdk-halif-aidl - build a chosen set of RDK HAL AIDL interface libraries from
+# their committed, pre-generated C++, and split the output into one package per
+# component (rdk-halif-aidl-<comp>). No AIDL / codegen toolchain required.
+#
+# Named -aidl throughout (layer, recipe, packages, install paths) so it is never
+# confused with the legacy C HAL (rdk-halif-*), which it coexists with during
+# migration.
+#
+#
+# WHAT IT READS - the source tree (${S}; one SRC_URI, one SRCREV)
+# -----------------------------------------------------------------------------
+#   rdk-halif-aidl/
+#   |-- versions_released.yaml          the released cohort: {comp: ver}
+#   |-- <comp>/<ver>/                   a committed snapshot. Several versions of
+#   |   |                               the SAME component coexist here, e.g.
+#   |   |                               avclock/{0.1.0.0,0.2.0.0,0.2.0.1}
+#   |   |-- CMakeLists.txt              builds lib<comp>-v<ver>-cpp.so
+#   |   |-- include/com/rdk/hal/...     generated headers (the AIDL namespace)
+#   |   |-- src/...                     generated C++
+#   |   `-- interface.yaml              imports: [<dep>@<ver>]
+#   `-- tests/yocto/
+#       |-- meta-rdk-halif-aidl/        this layer (+ halif_plan/gen_recipes)
+#       |-- meta-vendor/, meta-mw/      example role layers + consumer examples
+#       `-- ci/                         our offline tests - NOT consumption
+#
+#   HALIF_VERSIONS_FILE selects WHICH version of each component is built; every
+#   snapshot is present in the checkout regardless of what is selected.
+#
+#
+# WHAT IT BUILDS - private, inside ${B}
+# -----------------------------------------------------------------------------
+#   ${B}/plan.txt                       topological build order (halif_plan.py)
+#   ${B}/obj/<comp>/<ver>/              one CMake build dir per comp AND version.
+#                                       Versioned because ${B} persists across
+#                                       rebuilds: reusing obj/<comp> after
+#                                       HALIF_VERSIONS_FILE changes trips CMake's
+#                                       "source does not match the cache" error.
+#   ${B}/staged/lib/rdk-halif-aidl/     built siblings, so components later in
+#   ${B}/staged/include/rdk-halif-aidl/ the plan can link/include them
+#
+#
+# WHAT IT SHIPS - two surfaces: STAGING (build time) and TARGET (runtime)
+# -----------------------------------------------------------------------------
+# Both surfaces are ROOTED AT THE ROLE MOUNT (/vendor/rdk-halif-aidl or
+# /mw/rdk-halif-aidl). This is deliberate: vendor and middleware carry DIFFERENT
+# versions of the same components, so their staging trees must not share a path
+# any more than their target mounts do. HALIF_MOUNT_POINT selects the mount, and
+# that one mount is what both stages and installs.
+#
+#   STAGING - what a consumer COMPILES AND LINKS AGAINST.
+#   The role mount is copied into the consumer's recipe-sysroot by
+#   SYSROOT_DIRS + DEPENDS = "rdk-halif-aidl". Build-time only; never on the device.
+#
+#     ${STAGING_DIR_HOST}/                     <- the consumer's recipe-sysroot
+#     `-- vendor/rdk-halif-aidl/               <- ${STAGING_DIR_HOST}${HALIF_LIBDIR}
+#         |-- libcommon-v0.2.0.0-cpp.so            (the .so, for linking)
+#         |-- libhdmicec-v0.1.0.0-cpp.so
+#         `-- include/                             (headers, staging-only)
+#             |-- common/0.2.0.0/include/com/rdk/hal/...
+#             `-- hdmicec/0.1.0.0/include/com/rdk/hal/hdmicec/IHdmiCec.h
+#
+#     A mw build stages the same shape under /mw/rdk-halif-aidl instead - a
+#     distinct subtree, so vendor's and mw's versions never collide in a sysroot.
+#
+#   TARGET - what actually lands on the DEVICE ROOTFS.
+#   Pulled in by RDEPENDS / IMAGE_INSTALL of the per-component packages. The rootfs
+#   mounts a partition PER LAYER, so this is not an FHS /usr/lib layout - it is the
+#   SAME role mount as staging, carrying libraries only:
+#
+#     /vendor/rdk-halif-aidl/                  <- HALIF_MOUNT_POINT = "/vendor"
+#     |-- libcommon-v0.2.0.0-cpp.so            <- pkg rdk-halif-aidl-common
+#     `-- libhdmicec-v0.1.0.0-cpp.so           <- pkg rdk-halif-aidl-hdmicec
+#
+#     /mw/rdk-halif-aidl/                      <- HALIF_MOUNT_POINT = "/mw"
+#     `-- ...                                  its own libraries, middleware mount
+#
+#     Flat: no per-module or per-version subdirectory, because the version is in
+#     the filename (and the SONAME), so versions coexist in one directory.
+#
+#     The include/ subdir is staging-only: it goes into rdk-halif-aidl-<comp>-dev,
+#     which is not installed into a normal image. The rootfs carries libraries only.
+#
+#   Package -> files:
+#     rdk-halif-aidl-<comp>       ${HALIF_LIBDIR}/lib<comp>-v*-cpp.so
+#     rdk-halif-aidl-<comp>-dev   ${HALIF_LIBDIR}/include/<comp>/
+#
+#   Why the version sits where it does: it is in the .so NAME (and its SONAME),
+#   so libraries for several versions sit side by side in one flat directory.
+#   Headers have no version in their filename (BnPropertyValue.h is identical in
+#   every version), so for them the version has to live in the PATH.
+#
+#
+# WHAT A CONSUMER DOES
+# -----------------------------------------------------------------------------
+#   DEPENDS        = "rdk-halif-aidl linux-binder"  # stages the HAL + the Binder SDK
+#   RDEPENDS:${PN} = "rdk-halif-aidl-hdmicec rdk-halif-aidl-common"
+#
+#   # the HAL is under the mount it was built for (vendor here); the Binder SDK is
+#   # staged by linux-binder at include/binder_sdk + lib/binder (non-standard subdirs).
+#   # The generated Bn/Bp headers #include <binder/*.h>, so the SDK include is required.
+#   CXXFLAGS += "-I${STAGING_DIR_HOST}/vendor/rdk-halif-aidl/include/hdmicec/0.1.0.0/include \
+#                -I${STAGING_INCDIR}/binder_sdk"
+#   LDFLAGS  += "-L${STAGING_DIR_HOST}/vendor/rdk-halif-aidl -lhdmicec-v0.1.0.0-cpp \
+#                -L${STAGING_LIBDIR}/binder -lbinder -lutils"
+#
+#   #include <com/rdk/hal/hdmicec/IHdmiCec.h>
+#
+#   Worked examples: meta-vendor/ and meta-mw/ recipes-example/.
+#
+#
+# A build configuration controls this with variables (see the meta-vendor /
+# meta-mw example includes):
+#   HALIF_COMPONENTS        components to build   (default: all, from the .inc)
+#   HALIF_VERSIONS_FILE     versions manifest     (default: versions_released.yaml)
+#   HALIF_MOUNT_POINT       /vendor | /mw         the partition MOUNT POINT the
+#                                                 libraries install to - not a label
+#   HALIF_LIBDIR            mount + module dir     (default: ${HALIF_MOUNT_POINT}/rdk-halif-aidl)
+#                          (staged + installed)
+#   HALIF_INCDIR            header staging dir    (default: ${HALIF_LIBDIR}/include;
+#                                                 under the mount, staging-only,
+#                                                 never reaches the target)
+#
+# The offline contract tests tests/yocto/ci/*.sh exercise the same build loop
+# without BitBake. This is reference material - adapt SRCREV and the toolchain to
+# your project.
+
+SUMMARY = "RDK HAL AIDL interface libraries"
 HOMEPAGE = "https://github.com/rdkcentral/rdk-halif-aidl"
-
 LICENSE = "Apache-2.0"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-LIC_FILES_CHKSUM = " \
-    file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327 \
-    file://NOTICE;md5=72a4c03c01acaed8abfdc37f08efad93 \
-"
-
-FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
-
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-
-SRC_URI = " \
-    ${CMF_GITHUB_ROOT}/rdk-halif-aidl;${CMF_GITHUB_SRC_URI_SUFFIX} \
-    file://Makefile \
-"
-
-PV = "0.13.0"
-SRCREV = "047e0ffa0347fe4eadd18043b407366abb8f65ee"
-
+#SRC_URI = "git://github.com/rdkcentral/rdk-halif-aidl.git;protocol=https;branch=main"
+SRC_URI = "git://git@github.code.rdkcentral.com/rdkcentral/rdk-halif-aidl.git;nobranch=1;protocol=ssh" 
+SRCREV = "0.22.0"
 S = "${WORKDIR}/git"
+B = "${WORKDIR}/build"
+
+# The Binder SDK (libbinder/libutils + headers) is provided by the linux-binder
+# recipe and staged into the recipe sysroot.
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+DEPENDS = "libbinderrdk"
+PROVIDES += "rdk-halif-aidl-mw"
+
+# Default component set (every released component). A build configuration may
+# subset HALIF_COMPONENTS and set HALIF_VERSIONS_FILE in its own include.
+require ${THISDIR}/halif-components.inc
+
+# The mount point is a real partition, not a label: the rootfs mounts a partition
+# per layer, so the vendor layer and the middleware layer are different mounts and
+# their libraries land in different places. HALIF_MOUNT_POINT IS that partition
+# mount, and setting it picks the destination:
+#     /vendor -> /vendor/rdk-halif-aidl/lib<comp>-v<ver>-cpp.so
+#     /mw     -> /mw/rdk-halif-aidl/lib<comp>-v<ver>-cpp.so
+# A platform whose mounts differ sets HALIF_MOUNT_POINT (or overrides HALIF_LIBDIR
+# outright). rdk-halif-aidl is the module dir the interface libraries live in under
+# the mount.
+HALIF_MOUNT_POINT ??= "mw"
+HALIF_LIBDIR ??= "/usr/lib/${HALIF_MOUNT_POINT}/rdk-halif-aidl"
+
+# Headers never reach the target - they are packaged into rdk-halif-aidl-<comp>-dev
+# and consumed from the build sysroot only. They still live UNDER the mount point
+# (in an include/ subdir), NOT at the shared ${includedir}: vendor and mw carry
+# DIFFERENT versions of the same component, so a shared staging path would make
+# them collide. Rooting each mount's staging at itself keeps them apart.
+HALIF_INCDIR ??= "/usr/include/${HALIF_MOUNT_POINT}"
+
+# Stage the whole mount into a consumer's recipe-sysroot (the OE defaults only
+# stage ${includedir}/${libdir}, which no longer hold our files). Because the path
+# carries the mount, vendor stages to .../vendor/rdk-halif-aidl and mw to
+# .../mw/rdk-halif-aidl - distinct subtrees, so their differing library versions
+# never share a staging location. A consumer links -L${STAGING_DIR_HOST}${HALIF_LIBDIR}.
+SYSROOT_DIRS += "/"
+
+# Versions manifest (components: {comp: ver}), consumed directly. Defaults to the
+# source's own versions_released.yaml - the released cohort - so a plain build
+# produces the released versions. A configuration may point this at another
+# manifest; components it does not pin build their latest snapshot. Set it empty
+# to build every component at latest.
+HALIF_VERSIONS_FILE ??= "${S}/versions_released.yaml"
+HALIF_PKG_PREFIX ??= "${PN}"
 
 inherit cmake
 
-PROVIDES += "rdk-halif-aidl-mw"
-
-DEPENDS += " \
-    libbinderrdk \
-    libbinderrdk-native \
-"
-
-AIDL_BIN ?= "${STAGING_BINDIR_NATIVE}/aidl"
-
-AIDL_SRC_VERSION ?= "current"
-
-HAL_AIDL_MODULES ?= " \
-    hdmicec \
-"
-
-AIDL_GEN_DIR = "${B}/current"
-
-AIDL_LIB_SONAME_MAJOR ?= "1"
-AIDL_LIB_VERSION ?= "1.0.0"
-
-do_configure() {
-
-    rm -rf ${AIDL_GEN_DIR}
-    install -d ${AIDL_GEN_DIR}
-
-    export LD_LIBRARY_PATH="${RECIPE_SYSROOT_NATIVE}${libdir}/mw:${RECIPE_SYSROOT_NATIVE}${libdir}:${LD_LIBRARY_PATH}"
-
-    for m in ${HAL_AIDL_MODULES}; do
-        cmake \
-            -S ${S} \
-            -B ${B}/cmake_${m} \
-            -DAIDL_BIN=${AIDL_BIN} \
-            -DAIDL_TARGET=${m} \
-            -DAIDL_SRC_VERSION=${AIDL_SRC_VERSION} \
-            -DAIDL_GEN_DIR=${AIDL_GEN_DIR}
-    done
-}
+# One CMake project per component, so skip the single-project configure and drive
+# cmake per component in do_compile (reusing the cmake class' cross toolchain).
+do_configure[noexec] = "1"
 
 do_compile() {
+    cmake_do_generate_toolchain_file
 
-    install -d ${B}/aidl_lib
-    install -d ${B}/lib
+    # An explicitly empty HALIF_COMPONENTS is a misconfiguration: halif_plan.py
+    # with no arguments would plan EVERY component, but the intent here is to build
+    # a chosen set - so fail fast rather than silently build everything.
+    if [ -z "${HALIF_COMPONENTS}" ]; then
+        bbfatal "HALIF_COMPONENTS is empty - set the components to build (default: all, from halif-components.inc)"
+    fi
 
-    install -m 0644 \
-        ${WORKDIR}/Makefile \
-        ${B}/aidl_lib/Makefile
+    # Resolve the topological build order: the named components PLUS their
+    # dependency closure (a subset build pulls in what it links - hdmicec pulls
+    # common - so common is never named), each dependency at its exact linked
+    # version. Different versions of one component coexist. Packaging (below) reads
+    # this same plan. The planner ships with this layer and is fetched with the source.
+    versions=""
+    [ -n "${HALIF_VERSIONS_FILE}" ] && versions="--versions ${HALIF_VERSIONS_FILE}"
 
-    oe_runmake -C ${B}/aidl_lib \
-        CXX="${CXX}" \
-        AIDL_GEN_DIR="${AIDL_GEN_DIR}" \
-        AIDL_LIB_PATH="${B}/lib/libhal_aidl.so.${AIDL_LIB_VERSION}" \
-        AIDL_LIB_INC_FLAGS=" \
-            -I${AIDL_GEN_DIR}/h \
-            -I${RECIPE_SYSROOT}${includedir}/mw \
-        " \
-        AIDL_LIB_CFLAGS="${CPPFLAGS} ${CXXFLAGS} -std=c++17 -fPIC -Wall -Wextra" \
-        AIDL_LIB_LDFLAGS="${LDFLAGS} \
-            -L${RECIPE_SYSROOT}${libdir}/mw \
-            -L${RECIPE_SYSROOT}${libdir} \
-            -Wl,-rpath-link=${RECIPE_SYSROOT}${libdir}/mw \
-            -Wl,-rpath-link=${RECIPE_SYSROOT}${libdir} \
-            -Wl,-soname,libhal_aidl.so.${AIDL_LIB_SONAME_MAJOR}" \
-        AIDL_LIB_LD_LIBS="-lbinderrdk -lutilsrdk"
+    bbnote "HALIF_VERSIONS_FILE=${HALIF_VERSIONS_FILE}"
+    bbnote "HALIF_COMPONENTS=${HALIF_COMPONENTS}"
+    bbnote "versions=${versions}"
+
+    "${S}/tests/yocto/meta-rdk-halif-aidl/halif_plan.py" \
+    ${versions} \
+    ${HALIF_COMPONENTS} \
+    > "${B}/plan.txt" \
+    || bbfatal "halif_plan.py failed to resolve a build order"
+
+    # Sibling libs/headers built earlier in the plan are staged here so later
+    # components link them; the Binder SDK comes from the recipe sysroot. Start
+    # clean so a changed HALIF_VERSIONS_FILE can't leave stale per-version libs.
+    rm -rf "${B}/staged"
+    install -d "${B}/staged/lib/rdk-halif-aidl" "${B}/staged/include/rdk-halif-aidl"
+
+    while read comp ver; do
+        bbnote "rdk-halif-aidl: building ${comp}@${ver}"
+        # Build dir keyed by component AND version, so an incremental rebuild
+        # after HALIF_VERSIONS_FILE changes cannot hit a stale CMake cache.
+        cmake -S "${S}/${comp}/${ver}" -B "${B}/obj/${comp}/${ver}" \
+            -G "${OECMAKE_GENERATOR}" \
+            -DCMAKE_TOOLCHAIN_FILE="${WORKDIR}/toolchain.cmake" \
+            -DBINDER_SDK_DIR="${STAGING_DIR_HOST}${prefix}/mw" \
+            -DBINDER_SDK_INCLUDE_DIR="${STAGING_DIR_HOST}${includedir}/mw" \
+            -DHALIF_LIB_DIR="${B}/staged/lib/rdk-halif-aidl" \
+            -DHALIF_INCLUDE_DIR="${B}/staged/include/rdk-halif-aidl"
+        cmake --build "${B}/obj/${comp}/${ver}" -- ${PARALLEL_MAKE}
+        install -m 0755 \
+            "${B}/obj/${comp}/${ver}/lib${comp}-v${ver}-cpp.so" \
+            "${B}/staged/lib/rdk-halif-aidl/"
+        install -d "${B}/staged/include/rdk-halif-aidl/${comp}/${ver}"
+        cp -R "${S}/${comp}/${ver}/include" "${B}/staged/include/rdk-halif-aidl/${comp}/${ver}/"
+    done < "${B}/plan.txt"
 }
+
 
 do_install() {
-
-    #
-    # Install generated headers under /usr/include/mw
-    #
-    install -d ${D}${includedir}/mw
-
-    if [ -d ${AIDL_GEN_DIR}/h ]; then
-        cp -apr ${AIDL_GEN_DIR}/h/* \
-            ${D}${includedir}/mw/
-    fi
-
-    #
-    # Install generated cpp sources
-    #
-    if [ -d ${AIDL_GEN_DIR}/cpp ]; then
-        install -d ${D}${datadir}/mw/rdk-halif-aidl/cpp
-        cp -apr ${AIDL_GEN_DIR}/cpp/* \
-            ${D}${datadir}/mw/rdk-halif-aidl/cpp/
-    fi
-
-    #
-    # Install original AIDL files under /usr/include/mw
-    #
-    for d in ${HAL_AIDL_MODULES} common; do
-        if [ -d ${S}/${d}/${AIDL_SRC_VERSION} ]; then
-            tar --no-same-owner -cpf - \
-                -C ${S}/${d}/${AIDL_SRC_VERSION} . \
-            | tar --no-same-owner -xpf - \
-                -C ${D}${includedir}/mw
-        fi
-    done
-
-    #
-    # Remove unnecessary CMake files
-    #
-    find ${D}${includedir}/mw/hal/aidl -name CMakeLists.txt -delete || true
-
-    #
-    # Install library into /usr/lib/mw
-    #
-    install -d ${D}${libdir}/mw
-
-    install -m 0755 \
-        ${B}/lib/libhal_aidl.so.${AIDL_LIB_VERSION} \
-        ${D}${libdir}/mw/
-
-    ln -sf libhal_aidl.so.${AIDL_LIB_VERSION} \
-        ${D}${libdir}/mw/libhal_aidl.so.${AIDL_LIB_SONAME_MAJOR}
-
-    ln -sf libhal_aidl.so.${AIDL_LIB_SONAME_MAJOR} \
-        ${D}${libdir}/mw/libhal_aidl.so
+    install -d "${D}${HALIF_LIBDIR}" "${D}${HALIF_INCDIR}"
+    cp -a "${B}/staged/lib/rdk-halif-aidl/." "${D}${HALIF_LIBDIR}/"
+    cp -a "${B}/staged/include/rdk-halif-aidl/." "${D}${HALIF_INCDIR}/"
+    # do_compile runs without pseudo, so the staged tree is owned by the build
+    # user; cp -a preserves that uid. Rootfs files must be root-owned - reset it
+    # here (under pseudo) so do_package does not choke on an unknown uid and the
+    # device gets root:root libraries.
+    chown -R root:root "${D}${HALIF_LIBDIR}" "${D}${HALIF_INCDIR}"
 }
 
-FILES:${PN} += " \
-    ${libdir}/mw/libhal_aidl.so.* \
-"
+# Package layout: one package per component - rdk-halif-aidl-<comp> (its versioned
+# .so libraries) and rdk-halif-aidl-<comp>-dev (its headers) - plus a single
+# rdk-halif-aidl-dbg for all debug symbols. The -aidl in the name keeps these
+# distinct from the legacy C HAL's rdk-halif-* packages on the same rootfs.
+#
+# The component set is the build's dependency CLOSURE, which is only known after
+# the source is fetched (a subset build pulls in the deps it links). So the split
+# is driven at do_package time from the plan do_compile wrote - NOT from
+# HALIF_COMPONENTS at parse time, when neither the source nor the closure exists,
+# and an auto-resolved dependency would be installed but belong to no package.
+# PACKAGES_DYNAMIC lets images/other recipes depend on these before parse knows them.
+#
+# ONE debug package: overriding PACKAGES drops bitbake's own ${PN}-dbg, whose
+# .debug files would then belong to no package and fail "installed but not shipped".
+# OE assigns EVERY .debug file to the FIRST -dbg package in PACKAGES order, so a
+# single ${PN}-dbg, listed first, is the split.
+PACKAGES = "${PN}-dbg"
+PACKAGES_DYNAMIC = "^rdk-halif-aidl-.*"
+SUMMARY:${PN}-dbg = "RDK HAL AIDL debug symbols"
+FILES:${PN}-dbg = "${HALIF_LIBDIR}/.debug"
 
-FILES:${PN}-dev += " \
-    ${includedir}/mw/hal/h \
-    ${includedir}/mw/hal/aidl \
-    ${libdir}/mw/libhal_aidl.so \
-    ${datadir}/mw/rdk-halif-aidl \
-"
+python populate_packages:prepend () {
+    import os
+    libdir = d.getVar('HALIF_LIBDIR')
+    incdir = d.getVar('HALIF_INCDIR')
+
+    # The component set = the plan do_compile resolved (the dependency closure).
+    # A component may appear at several versions; ONE package per component holds
+    # all its versioned .so, because the version is in the .so name - so multiple
+    # versions coexist in one directory and one package.
+    plan = os.path.join(d.getVar('B'), 'plan.txt')
+    comps = []
+    with open(plan) as fh:
+        for line in fh:
+            parts = line.split()
+            if parts and parts[0] not in comps:
+                comps.append(parts[0])
+
+    pkgs = d.getVar('PACKAGES').split()            # ['<PN>-dbg']
+    for c in comps:
+        main = d.getVar('HALIF_PKG_PREFIX') + '-' + c
+        dev = main + '-dev'
+        # -dev before the library package: bitbake assigns each file to the FIRST
+        # package whose FILES matches it.
+        pkgs += [dev, main]
+        d.setVar('SUMMARY:' + main, 'RDK HAL AIDL interface library: %s' % c)
+        d.setVar('SUMMARY:' + dev, 'RDK HAL AIDL interface headers: %s' % c)
+        d.setVar('FILES:' + dev, '%s/%s' % (incdir, c))
+        d.setVar('FILES:' + main, '%s/lib%s-v*-cpp.so' % (libdir, c))
+        d.setVar('INSANE_SKIP:' + main, 'dev-so')
+    d.setVar('PACKAGES', ' '.join(pkgs))
+}
