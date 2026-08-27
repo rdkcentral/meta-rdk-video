@@ -9,6 +9,7 @@ PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'es1test-jsonrpc-benchmark', '', d)}"
 
 SRCREV = "45ef324bdbbd877077cbdd32e58fc78acdd436ce"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
@@ -69,7 +70,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-telemetrymetrics.service \
     wpeframework-devicediagnostics.service \
     wpeframework-tools.service \
-    wpeframework-es1benchmark.service \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'wpeframework-es1benchmark.service', '', d)} \
     "
 
 # Neither es1bench.service nor es1bench-coldstart.service goes through
