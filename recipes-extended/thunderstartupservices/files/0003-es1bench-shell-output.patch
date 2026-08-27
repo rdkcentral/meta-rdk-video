@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ES1 benchmark integration <noreply@example.com>
+Date: Thu, 27 Aug 2026 00:00:00 +0000
+Subject: [PATCH] es1bench: use shell output redirection for older systemd
+
+The target systemd version does not support the append: output specifier.
+Use POSIX shell redirection so both benchmark units write their JSONL output
+on older systemd versions.
+
+Upstream-Status: Pending
+
+---
+ es1bench-coldstart.service | 3 +--
+ es1bench.service           | 3 +--
+ 2 files changed, 2 insertions(+), 4 deletions(-)
+
+diff -uprN a/es1bench-coldstart.service b/es1bench-coldstart.service
+--- a/es1bench-coldstart.service	2026-08-27 00:00:00.000000000 +0000
++++ b/es1bench-coldstart.service	2026-08-27 00:00:00.000000000 +0000
+@@ -5,5 +5,4 @@ Before=wpeframework.service
+ [Service]
+ Type=simple
+-ExecStart=/usr/bin/es1client /opt/es1-coldstart.config
+-StandardOutput=append:/opt/es1bench/log/coldstart.jsonl
++ExecStart=/bin/sh -c '/usr/bin/es1client /opt/es1-coldstart.config >> /opt/es1bench/log/coldstart.jsonl'
+ StandardError=journal
+diff -uprN a/es1bench.service b/es1bench.service
+--- a/es1bench.service	2026-08-27 00:00:00.000000000 +0000
++++ b/es1bench.service	2026-08-27 00:00:00.000000000 +0000
+@@ -7,5 +7,4 @@ ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
+-ExecStart=/usr/bin/es1client /opt/es1.config
+-StandardOutput=append:/opt/es1bench/log/results.jsonl
++ExecStart=/bin/sh -c '/usr/bin/es1client /opt/es1.config >> /opt/es1bench/log/results.jsonl'
+ StandardError=journal

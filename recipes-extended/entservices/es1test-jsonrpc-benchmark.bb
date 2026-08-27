@@ -50,10 +50,11 @@ do_install:append() {
     # the built image (it's populated at boot, not baked in). /opt is fine
     # here, same as the config files above.
     install -d ${D}/opt/es1bench/log
+    install -m 0644 /dev/null ${D}/opt/es1bench/log/.keep
 }
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/* ${bindir}/es1client /opt/es1.config /opt/es1-coldstart.config /opt/es1bench/log"
+FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/* ${bindir}/es1client /opt/es1.config /opt/es1-coldstart.config /opt/es1bench/log /opt/es1bench/log/.keep"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
