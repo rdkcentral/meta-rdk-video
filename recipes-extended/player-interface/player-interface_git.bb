@@ -10,6 +10,11 @@ SRCREV = "433ecb7c869f7adabc066c1c7fc47905b2b8cc98"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "main"
 
+
++# Pass version/tag/rev info into CMake so they get baked into the library at build time
++EXTRA_OECMAKE += " -DPI_VERSION=${PV}"
++EXTRA_OECMAKE += " -DPI_GIT_REVISION=${SRCREV}"
++EXTRA_OECMAKE += " -DPI_GIT_BRANCH=${PLAYERINTERFACE_BRANCH}"
 inherit pkgconfig
 inherit cmake
 
