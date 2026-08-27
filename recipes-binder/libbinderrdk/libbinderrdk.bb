@@ -10,7 +10,7 @@ SRC_URI = "${RDKCENTRAL_GITHUB_ROOT}/linux_binder_idl;${RDKCENTRAL_GITHUB_SRC_UR
 
 PV ?= "1.1.1"
 PR = "r0"
-SRCREV ?= "4278b0c80d098b1853976f3ced5275d77e53c0aa"
+SRCREV ?= "1.0.0"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -25,15 +25,25 @@ RPROVIDES:${PN} += "libbinderrdk liblogrdk"
 #
 # Middleware installation locations
 #
-MW_LIBDIR = "${libdir}/mw"
+# libdir matches BINDER_SDK_DIR/lib/binder expected by consumer CMakeLists.txt
+MW_LIBDIR = "${prefix}/mw/lib/binder"
 MW_BINDIR = "${bindir}/mw"
-MW_INCDIR = "${includedir}/mw"
+MW_INCDIR = "${includedir}/mw/include"
 
 EXTRA_OECMAKE += " \
     -DCMAKE_INSTALL_LIBDIR=${MW_LIBDIR} \
     -DCMAKE_INSTALL_BINDIR=${MW_BINDIR} \
     -DCMAKE_INSTALL_INCDIR=${MW_INCDIR} \
 "
+
+EXTRA_OECMAKE:append = " \
+	-DBUILD_ENV_YOCTO=ON \
+	-DBUILD_ENV_HOST=OFF \
+	-DTARGET_LIB64_VERSION=ON \
+"
+
+# MW_LIBDIR is outside the default staged ${libdir}, so it must be staged explicitly
+SYSROOT_DIRS += "${prefix}/mw"
 
 inherit cmake
 
