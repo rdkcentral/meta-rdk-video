@@ -14,7 +14,6 @@ RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'es1test-
 SRCREV = "14d395b2c9f136d899e2c739bced4881c0197893"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'file://0003-es1bench-shell-output.patch', '', d)} \
 "
 S = "${WORKDIR}/git/systemd/system"
 
