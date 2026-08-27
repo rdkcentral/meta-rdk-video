@@ -17,9 +17,9 @@ PR = "r0"
 PV = "v3.6.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/onroutechange"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/check"
 
-SRCREV = "eedbd1d927f0442c0e36d10509e11f96589db7b2"
+SRCREV = "200116fd5ff930b3b7ae904b09b285051f12f507"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} entservices-cpc-apis "
