@@ -7,9 +7,9 @@ PV = "0.3.1"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "6c92e4d9be4c53006654c43a99b65350f88703dc"
+SRCREV_player-interface ?= "70c69888204669c0ca0e35e3ec351c55f9bb9f8f"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-19159_8.6"
+PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-19159_Vipa"
 
 inherit pkgconfig
 inherit cmake
