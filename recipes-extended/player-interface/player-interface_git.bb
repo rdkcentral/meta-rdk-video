@@ -3,10 +3,10 @@ DESCRIPTION = "This component provides the Player Firebolt Interface library for
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV = "0.2.0-r3"
+PV = "feature-versioning0.1.0"
 PR = "r0"
 
-SRCREV = "2fd217921b986c5b58feeaa6093cdbe1fd097066"
+SRCREV = "e3a0627b7aab9b2f36ee8b4e7192cf1555b01e7d"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "main"
 
