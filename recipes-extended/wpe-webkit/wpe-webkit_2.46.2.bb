@@ -6,7 +6,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
-WPE_RECIPE_REVISION = "4"
+WPE_RECIPE_REVISION = "6"
 
 PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
@@ -26,6 +26,8 @@ SRC_URI += "file://2.46.2/1712_MS_seek_reopen_crash.patch"
 SRC_URI += "file://2.46/1711.patch"
 SRC_URI += "file://2.46.2/1718.patch"
 SRC_URI += "file://2.46.2/1720_webkitwebsrc_queue_size.patch"
+SRC_URI += "file://2.46.2/1715.patch"
+SRC_URI += "file://2.46.2/1700.patch"
 
 # Drop after westeros change is approved and released
 SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
@@ -50,7 +52,7 @@ SRC_URI += "file://2.46/comcast-RDKTV-17281-RDKTV-17781-Workaround-for-AppleTV-r
 SRC_URI += "file://2.46/comcast-RDKTV-18852-Restrict-inspection-of-locally-hosted-pages.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-Analyze-higher-CPU-usage.patch"
 SRC_URI += "file://2.46/comcast-RDK-40634-Only-support-decoders-with-hw-support-for-webrtc.patch"
-SRC_URI += "file://2.46/comcast-RDK-57915-Include-HW-secure-decrypt-WidevineL1.patch"
+SRC_URI += "file://2.46.2/comcast-RDK-57915-Include-HW-secure-decrypt-WidevineL1.patch"
 SRC_URI += "file://2.46/comcast-RDK-58053-MSE-skip-seek-to-duration-if-player-not-loaded.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-Fix-init-data-filtering.patch"
 SRC_URI += "file://2.46.1/comcast-RDK-57915-log-HTML5-video-playback.patch"
