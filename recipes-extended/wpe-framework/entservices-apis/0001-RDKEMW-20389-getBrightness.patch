@@ -1,0 +1,30 @@
+From dd6a5a60e254b68fe853c4c4666417640c0ff648 Mon Sep 17 00:00:00 2001
+From: VenkataNagaAnilkumar_Chitta <VenkataNagaAnilkumar_Chitta@comcast.com>
+Date: Fri, 28 Aug 2026 10:19:48 +0000
+Subject: [PATCH] RDKEMW-20389 - getBrightness api is returning junk value
+
+Reason for change: api is returning junk value
+Test Procedure: Steps mentioned the ticket.
+Risks: Medium
+Priority: P2
+Signed-off-by: anil <VenkataNagaAnilkumar_Chitta@comcast.com>
+---
+ apis/FrontPanel/IFrontPanel.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/apis/FrontPanel/IFrontPanel.h b/apis/FrontPanel/IFrontPanel.h
+index 5c1fe3c..de985ef 100644
+--- a/apis/FrontPanel/IFrontPanel.h
++++ b/apis/FrontPanel/IFrontPanel.h
+@@ -47,7 +47,7 @@ namespace WPEFramework
+             // @param index: Index of the brightness level
+             // @param brightness: Brightness level
+             // @param success: Is the operation successful or not
+-            virtual Core::hresult GetBrightness(const string& index, uint32_t &brightness /* @out */, bool &success /* @out */) = 0;
++            virtual Core::hresult GetBrightness(const string& index, int32_t &brightness /* @out */, bool &success /* @out */) = 0;
+ 
+             // @brief Gets the front panel lights
+             // @text getFrontPanelLights
+-- 
+2.44.4
+
