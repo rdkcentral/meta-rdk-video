@@ -12,7 +12,7 @@ PLAYERINTERFACE_BRANCH ?= "main"
 
 
 # Pass version/tag/rev info into CMake so they get baked into the library at build time
-EXTRA_OECMAKE += " -DPI_VERSION=${PV}"
+EXTRA_OECMAKE += " -DPI_GIT_TAG=${PV}"
 EXTRA_OECMAKE += " -DPI_GIT_REVISION=${SRCREV}"
 EXTRA_OECMAKE += " -DPI_GIT_BRANCH=${PLAYERINTERFACE_BRANCH}"
 inherit pkgconfig
