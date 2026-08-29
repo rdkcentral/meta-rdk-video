@@ -219,6 +219,9 @@ do_install() {
         rm -rf ${D}${base_libdir}/rdk/htmlDiagPreSetup.sh
         rm -rf ${D}${base_libdir}/rdk/rfStatisticsCheck.sh
 
+        mv ${D}${base_libdir}/rdk/init-zram.sh ${D}${base_libdir}/rdk/init-zram_generic.sh
+        mv ${D}${sysconfdir}/common.properties ${D}${sysconfdir}/common-generic.properties
+
 	    # For NetworkManager
 	    install -d ${D}${sysconfdir}/NetworkManager
 	    install -d ${D}${sysconfdir}/NetworkManager/conf.d
