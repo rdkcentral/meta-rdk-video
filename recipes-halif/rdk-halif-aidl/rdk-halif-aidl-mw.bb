@@ -205,6 +205,45 @@ inherit cmake
 # cmake per component in do_compile (reusing the cmake class' cross toolchain).
 do_configure[noexec] = "1"
 
+do_configure:prepend() {
+    echo ""
+    echo "=================================================="
+    echo "        BINDER JENKINS DEBUG"
+    echo "=================================================="
+
+    echo "PN                  = ${PN}"
+    echo "BPN                 = ${BPN}"
+    echo "MLPREFIX            = ${MLPREFIX}"
+    echo "TARGET_ARCH         = ${TARGET_ARCH}"
+    echo "PACKAGE_ARCH        = ${PACKAGE_ARCH}"
+    echo "DEPENDS             = ${DEPENDS}"
+    echo "RECIPE_SYSROOT      = ${RECIPE_SYSROOT}"
+
+    echo ""
+    echo "--- Expected Binder directory ---"
+    ls -la ${RECIPE_SYSROOT}/usr/mw/lib/binder/ || true
+
+    echo ""
+    echo "--- Binder libraries in recipe sysroot ---"
+    find ${RECIPE_SYSROOT} \
+        \( -name "libbinder.so*" -o -name "libutils.so*" \) \
+        -print || true
+
+    echo ""
+    echo "--- All libbinder.so in WORKDIR ---"
+    find ${WORKDIR} -name "libbinder.so*" -print || true
+
+    echo ""
+    echo "--- All libutils.so in WORKDIR ---"
+    find ${WORKDIR} -name "libutils.so*" -print || true
+
+    echo ""
+    echo "=================================================="
+    echo "        END BINDER JENKINS DEBUG"
+    echo "=================================================="
+    echo ""
+}
+
 do_compile() {
     cmake_do_generate_toolchain_file
 
