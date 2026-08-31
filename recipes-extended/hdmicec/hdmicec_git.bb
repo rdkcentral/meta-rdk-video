@@ -1,83 +1,184 @@
-SUMMARY = "ENTServices hdmicecsource plugin"
-LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
+SUMMARY = "This recipe compiles and installs hdmicec component."
+SECTION = "console/utils"
 
-PV = "1.2.4"
+LICENSE = "Apache-2.0"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
+
+PV = "1.0.11"
 PR = "r0"
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
+SRCREV_hdmicec = "70fd64b0bf6a9e3bb1541713cb4e7395e47d9e8e"
+SRCREV_hdmicec:vdevice_x86-64-mw = "57df60fdf8866460613735af1d2e39caa3939242"
+SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
+SRCREV_FORMAT = "hdmicec"
+
+DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
+DEPENDS:remove:vdevice_x86-64-mw = "devicesettings devicesettings-hal-headers iarmmgrs-hal-headers"
+
+RDEPENDS:${PN} = " devicesettings telemetry"
+RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
+
+DEPENDS += "safec-common-wrapper"
+DEPENDS:append = " rdk-halif-aidl-mw libbinderrdk"
+DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw libbinderrdk"
+
+ASNEEDED = ""
+ALLOW_EMPTY:${PN} = "1"
 
 S = "${WORKDIR}/git"
-inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           "
+DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 
-# Release version - 1.2.4
-SRCREV = "d8cb8d593e5ba7f19b7e187efc3f2be81988d354"
+inherit systemd autotools pkgconfig coverity breakpad-logmapper syslog-ng-config-gen logrotate_config
+#SYSLOG-NG_FILTER = "cec"
+#SYSLOG-NG_SERVICE_cec = "cecdaemon.service cecdevmgr.service"
+#SYSLOG-NG_DESTINATION_cec = "cec_log.txt"
+#SYSLOG-NG_LOGRATE_cec = "medium"
 
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-TOOLCHAIN = "gcc"
-DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
-EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
+LOGROTATE_NAME="cec"
+LOGROTATE_LOGNAME_cec="cec_log.txt"
+#HDD_ENABLE
+LOGROTATE_SIZE_cec="5242880"
+LOGROTATE_ROTATION_cec="1"
+#HDD_DISABLE
+LOGROTATE_SIZE_MEM_cec="128000"
+LOGROTATE_ROTATION_MEM_cec="1"
 
-DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
-DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
-RDEPENDS:${PN} += "wpeframework"
+CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 
-TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
+CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 
-CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
-CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
-CXXFLAGS += " -DRFC_ENABLED "
-# enable filtering for undefined interfaces and link local ip address notifications
-CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
-CXXFLAGS += " -Wall -Werror "
-CXXFLAGS:remove_morty = " -Wall -Werror "
-SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
+LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
+LDFLAGS:append = " -L${STAGING_LIBDIR}/mw"
+CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
+CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
-PACKAGECONFIG ?= " breakpadsupport \
-    telemetrysupport \
-    hdmicecsource \
+CFLAGS:append = " \
+    -I${STAGING_INCDIR}/mw \
+    -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
 "
 
-HDMICEC_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader entservices-helpers"
-HDMICEC_DEPS:vdevice_x86-64-mw = "iarmbus hdmicec hdmicecheader vdevice-noop entservices-helpers"
+CFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
 
-HDMICEC_RDEPS = "iarmbus devicesettings hdmicec entservices-helpers"
-HDMICEC_RDEPS:vdevice_x86-64-mw = "iarmbus hdmicec entservices-helpers"
-
-PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
-PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[hdmicecsource]        = "-DPLUGIN_HDMICECSOURCE=ON,-DPLUGIN_HDMICECSOURCE=OFF,${HDMICEC_DEPS},${HDMICEC_RDEPS}"
-
-EXTRA_OECMAKE += " \
-    -DBUILD_REFERENCE=${SRCREV} \
-    -DBUILD_SHARED_LIBS=ON \
-    -DSECAPI_LIB=sec_api \
+CXXFLAGS:append = " \
+    -I${STAGING_INCDIR}/mw \
+    -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
 "
 
-# Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
-python () {
-    dri_device_name = d.getVar('DRI_DEVICE_NAME')
-    if dri_device_name:
-        d.appendVar('OECMAKE_CXX_FLAGS', ' -DDEFAULT_DEVICE=\'\\"{}\\"\' '.format(dri_device_name))
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
+
+CFLAGS:append:vdevice_x86-64-mw = " \
+    -I${STAGING_INCDIR}/mw \
+    -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
+"
+
+CXXFLAGS:append:vdevice_x86-64-mw = " \
+    -I${STAGING_INCDIR}/mw \
+    -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
+"
+
+INCLUDE_DIRS = " \
+    -I=${includedir}/rdk/halif/ds-hal \
+    "
+
+
+do_compile:prepend() {
+        case ":${OVERRIDES}:" in
+                *:vdevice_x86-64-mw:*)
+                        return 0
+                        ;;
+        esac
+
+        OBJ_DIR="${B}/aidl_stubs"
+        mkdir -p "${OBJ_DIR}"
+        AIDL_CPP_DIR="${RECIPE_SYSROOT}${datadir}/mw/rdk-halif-aidl/cpp/com/rdk/hal"
+
+        if [ ! -d "${AIDL_CPP_DIR}" ]; then
+                bbfatal "Generated AIDL C++ sources not found: ${AIDL_CPP_DIR}"
+        fi
+
+
+        STUB_DIR="${AIDL_CPP_DIR}/hdmicec"
+        HAL_DIR="${AIDL_CPP_DIR}"
+        
+        INCFLAGS="-I${STAGING_INCDIR}/mw -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec"
+        for f in IHdmiCec IHdmiCecController IHdmiCecEventListener Property SendMessageStatus State; do
+                ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
+                        -c "${STUB_DIR}/${f}.cpp" -o "${OBJ_DIR}/${f}.o"
+        done
+        ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
+                -c "${HAL_DIR}/PropertyValue.cpp" -o "${OBJ_DIR}/PropertyValue.o"
+        ${AR} rcs "${B}/libhdmicec_aidl_stubs.a" \
+                "${OBJ_DIR}/IHdmiCec.o" \
+                "${OBJ_DIR}/IHdmiCecController.o" \
+                "${OBJ_DIR}/IHdmiCecEventListener.o" \
+                "${OBJ_DIR}/Property.o" \
+                "${OBJ_DIR}/SendMessageStatus.o" \
+                "${OBJ_DIR}/State.o" \
+                "${OBJ_DIR}/PropertyValue.o"
 }
+
+
 
 do_install:append() {
-    install -d ${D}${sysconfdir}/rfcdefaults
-    if ${@bb.utils.contains_any("DISTRO_FEATURES", "rdkshell_ra second_form_factor", "true", "false", d)}
-    then
-      install -m 0644 ${WORKDIR}/rdkservices.ini ${D}${sysconfdir}/rfcdefaults/
-    fi
-
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'true', 'false', d)} == 'true'; then
-        if [ -d "${D}/etc/WPEFramework/plugins" ]; then
-            find ${D}/etc/WPEFramework/plugins/ -type f | xargs sed -i -r 's/"autostart"[[:space:]]*:[[:space:]]*true/"autostart":false/g'
-        fi
-    fi
+#        install -d ${D}${includedir}/rdk/hdmicec
+#        install -d ${D}${includedir}/ccec/drivers
+#        install -m 0644 ${S}/ccec/drivers/include/ccec/drivers/iarmbus/CecIARMBusMgr.h ${D}${includedir}/ccec/drivers
+#        install -d ${D}${systemd_unitdir}/system
+#        install -m 0644 ${S}/cecdaemon.service ${D}${systemd_unitdir}/system
+#        install -m 0644 ${S}/cecdevmgr.service ${D}${systemd_unitdir}/system
+#        install -d ${D}${base_libdir}/rdk
 }
 
-FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
-INSANE_SKIP:${PN} += "libdir staticdev dev-so dev-deps"
-INSANE_SKIP:${PN}-dbg += "libdir"
+do_configure:append() {
+        case ":${OVERRIDES}:" in
+                *:vdevice_x86-64-mw:*)
+                        return 0
+                        ;;
+        esac
+
+    # Patch the generated Makefile to:
+    #  1. link the AIDL stubs archive into libRCEC.so so typeinfo symbols are defined
+    #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
+        #     runtime from the binder provider in the target image
+    sed -i \
+                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = ${B}/libhdmicec_aidl_stubs.a \${top_builddir}/osal/src/libRCECOSHal.la|" \
+                                "${B}/ccec/src/Makefile"
+
+    sed -i \
+                                's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinderrdk -lutilsrdk -llogrdk -lbaserdk|' \
+                                "${B}/ccec/src/Makefile"
+}
+
+do_configure:append:vdevice_x86-64-mw() {
+                # Patch the generated Makefile to:
+                #  1. link the AIDL stubs archive into libRCEC.so so typeinfo symbols are defined
+                #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
+                #     runtime from libbinder.so (which rdk-halif-aidl installs)
+                sed -i \
+                        's|libRCEC_la_LIBADD = -lRCECOSHal|libRCEC_la_LIBADD = -lhal_aidl -lRCECOSHal|' \
+                        ${B}/ccec/src/Makefile
+
+                sed -i \
+                        's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinderrdk -lutilsrdk -llogrdk -lbaserdk|' \
+                        ${B}/ccec/src/Makefile
+}
+
+# entservices-hdmicecsource still looks for the legacy HAL soname.
+# On x86 we only build libRCEC/libRCECOSHal, so provide a compatibility symlink.
+do_install:append:vdevice_x86-64-mw() {
+        if [ -e "${D}${libdir}/libRCEC.so" ] && [ ! -e "${D}${libdir}/libRCECHal.so" ]; then
+                ln -sf libRCEC.so ${D}${libdir}/libRCECHal.so
+        fi
+}
+
+FILES:${PN}:append:vdevice_x86-64-mw = " ${libdir}/libRCECHal.so"
+
+#SYSTEMD_SERVICE:${PN} = "cecdaemon.service"
+#SYSTEMD_SERVICE:${PN} = "cecdevmgr.service"
+#FILES:${PN} += "${systemd_unitdir}/system/cecdaemon.service"
+#FILES:${PN} += "${systemd_unitdir}/system/cecdevmgr.service"
+# Breakpad processname and logfile mapping
+#BREAKPAD_LOGMAPPER_PROCLIST = "CecDaemonMain"
+#BREAKPAD_LOGMAPPER_LOGLIST = "cec_log.txt"
