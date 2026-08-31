@@ -3,7 +3,7 @@ DESCRIPTION = "This component provides the Player Firebolt Interface library for
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV = "0.2.0-r4_VIPA"
+PV = "0.2.0-r5_VIPA"
 PR = "r0"
 
 SRCREV = "6ff29c53d9d9a5bc70d9344b2679df09de48057c"
