@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_S
            file://rdkservices.ini \
           "
 # Release version - 1.6.3
-SRCREV = "5d479bdbcc27e1b28b7101d8f745f4649ad6ff53"
+SRCREV = "d829386771ae4eed427bb609370f62b6d3827ae7"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
