@@ -43,9 +43,6 @@ S = "${WORKDIR}/git"
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/systemd/sceneset.service ${D}${systemd_unitdir}/system/sceneset.service
-}
-
-do_install:append() {
     if ${@bb.utils.contains('DISTRO_FEATURES', 'appgateway_sceneset', 'true', 'false', d)}; then
         install -d ${D}${systemd_unitdir}/system/sceneset.service.d
         install -m 0644 ${WORKDIR}/10-appgateway-dependency.conf \
