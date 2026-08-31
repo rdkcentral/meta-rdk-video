@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Playerinfo plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=b8674f44703ede95bec14083251335db"
 
-PV = "1.1.4"
+PV = "1.1.4_Test"
 PR = "r1"
 
 S = "${WORKDIR}/git"
