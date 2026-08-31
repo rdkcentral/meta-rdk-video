@@ -8,9 +8,9 @@ TOOLCHAIN = "gcc"
 PR = "r5"
 PV = "4.4.6"
 S = "${WORKDIR}/git"
-SRC_URI = "git://github.com/rdkcentral/ThunderTools.git;protocol=https;branch=fix/R4_4_6-RDK-RDKEMW-24137-empty-vector"
+SRC_URI = "git://github.com/rdkcentral/ThunderTools.git;protocol=https;branch=R4_4_6-RDK"
 
-SRCREV = "dd602beb1b4c684b88231f24b005392fbb19cbea"
+SRCREV = "3db0177d6d9540d909f5f9b2ad335f982de5ee98"
 
 inherit cmake pkgconfig python3native
 
