@@ -42,6 +42,7 @@ EXTRA_OECMAKE:append = " \
 	-DTARGET_LIB64_VERSION=ON \
 "
 
+
 # MW_LIBDIR is outside the default staged ${libdir}, so it must be staged explicitly
 SYSROOT_DIRS += "${prefix}/mw"
 
