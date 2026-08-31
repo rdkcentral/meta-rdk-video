@@ -52,7 +52,7 @@ do_install:append() {
 
 FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
-FILES:${PN} += "${systemd_unitdir}/system/sceneset.service.d"
+FILES:${PN} += "${systemd_unitdir}/system/sceneset.service.d/*"
 
 SYSTEMD_SERVICE:${PN} = "sceneset.service"
 
