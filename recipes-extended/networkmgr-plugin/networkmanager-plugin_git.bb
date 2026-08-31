@@ -22,7 +22,7 @@ SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=
 SRCREV = "47829905af4aadafaf88db0b385f6acdb0ee79e5"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} entservices-cpc-apis "
+DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
 RDEPENDS:${PN} += " wpeframework rdk-logger curl iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
 
 inherit cmake pkgconfig python3native
@@ -42,11 +42,10 @@ EXTRA_OECMAKE += " \
                 -DENABLE_ROUTER_DISCOVERY_TOOL=ON \
                 -DENABLE_MIGRATION_MFRMGR_SUPPORT=ON \
                 -DUSE_RDK_LOGGER=ON \
-		-DUSE_CONNECTIVITYCHECKMGR=ON \
                 "
 
-CXXFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal -I${STAGING_INCDIR}/WPEFramework/interfaces_cpc"
-CFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal -I${STAGING_INCDIR}/WPEFramework/interfaces_cpc"
+CXXFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
+CFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
 
 do_install:append(){
     install -d ${D}${sysconfdir}/NetworkManager
