@@ -2,7 +2,7 @@ SUMMARY = "ENTServices displayinfo plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=0545acf8134821be0c0b6cb6d4603200"
 
-PV = "1.2.7"
+PV = "1.2.7_Test"
 PR = "r1"
 
 S = "${WORKDIR}/git"
