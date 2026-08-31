@@ -16,11 +16,11 @@ SRCREV_FORMAT = "hdmicec"
 DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
 DEPENDS:remove:vdevice_x86-64-mw = "devicesettings devicesettings-hal-headers iarmmgrs-hal-headers"
 
-RDEPENDS:${PN} = " devicesettings telemetry"
+RDEPENDS:${PN} = " devicesettings telemetry rdk-halif-aidl-mw-hdmicec rdk-halif-aidl-mw-common libbinderrdk"
 RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
 
 DEPENDS += "safec-common-wrapper"
-DEPENDS:append = " rdk-halif-aidl-mw libbinderrdk"
+DEPENDS:append = " rdk-halif-aidl-mw libbinderrdk "
 DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw libbinderrdk"
 
 ASNEEDED = ""
@@ -50,21 +50,18 @@ CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-confi
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
+LDFLAGS:append = " \
+    -L${STAGING_LIBDIR}/mw/rdk-halif-aidl \
+"
+
 LDFLAGS:append = " -L${STAGING_LIBDIR}/mw"
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
-CFLAGS:append = " \
-    -I${STAGING_INCDIR}/mw \
-    -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
-"
-
+CFLAGS:append = " -I${STAGING_INCDIR}/mw/hdmicec/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw -I${STAGING_INCDIR}/android"
 CFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
 
-CXXFLAGS:append = " \
-    -I${STAGING_INCDIR}/mw \
-    -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
-"
+CXXFLAGS:append = " -I${STAGING_INCDIR}/mw/hdmicec/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw -I${STAGING_INCDIR}/android"
 
 CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
 
@@ -81,45 +78,6 @@ CXXFLAGS:append:vdevice_x86-64-mw = " \
 INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/ds-hal \
     "
-
-
-do_compile:prepend() {
-        case ":${OVERRIDES}:" in
-                *:vdevice_x86-64-mw:*)
-                        return 0
-                        ;;
-        esac
-
-        OBJ_DIR="${B}/aidl_stubs"
-        mkdir -p "${OBJ_DIR}"
-        AIDL_CPP_DIR="${RECIPE_SYSROOT}${datadir}/mw/rdk-halif-aidl/cpp/com/rdk/hal"
-
-        if [ ! -d "${AIDL_CPP_DIR}" ]; then
-                bbfatal "Generated AIDL C++ sources not found: ${AIDL_CPP_DIR}"
-        fi
-
-
-        STUB_DIR="${AIDL_CPP_DIR}/hdmicec"
-        HAL_DIR="${AIDL_CPP_DIR}"
-        
-        INCFLAGS="-I${STAGING_INCDIR}/mw -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec"
-        for f in IHdmiCec IHdmiCecController IHdmiCecEventListener Property SendMessageStatus State; do
-                ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
-                        -c "${STUB_DIR}/${f}.cpp" -o "${OBJ_DIR}/${f}.o"
-        done
-        ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
-                -c "${HAL_DIR}/PropertyValue.cpp" -o "${OBJ_DIR}/PropertyValue.o"
-        ${AR} rcs "${B}/libhdmicec_aidl_stubs.a" \
-                "${OBJ_DIR}/IHdmiCec.o" \
-                "${OBJ_DIR}/IHdmiCecController.o" \
-                "${OBJ_DIR}/IHdmiCecEventListener.o" \
-                "${OBJ_DIR}/Property.o" \
-                "${OBJ_DIR}/SendMessageStatus.o" \
-                "${OBJ_DIR}/State.o" \
-                "${OBJ_DIR}/PropertyValue.o"
-}
-
-
 
 do_install:append() {
 #        install -d ${D}${includedir}/rdk/hdmicec
@@ -143,7 +101,7 @@ do_configure:append() {
     #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
         #     runtime from the binder provider in the target image
     sed -i \
-                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = ${B}/libhdmicec_aidl_stubs.a \${top_builddir}/osal/src/libRCECOSHal.la|" \
+                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = -lhdmicec-v0.1.0.0-cpp \${top_builddir}/osal/src/libRCECOSHal.la|" \
                                 "${B}/ccec/src/Makefile"
 
     sed -i \
