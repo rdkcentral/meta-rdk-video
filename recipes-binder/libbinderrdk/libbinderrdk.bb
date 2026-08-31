@@ -62,6 +62,25 @@ do_configure:prepend() {
 
     cd ${B}
 }
+do_install:append() {
+    bbwarn "========== LIBBINDERRDK INSTALL DEBUG =========="
+    bbwarn "D=${D}"
+    bbwarn "prefix=${prefix}"
+    bbwarn "includedir=${includedir}"
+    bbwarn "MW_INCDIR=${MW_INCDIR}"
+    bbwarn "MW_LIBDIR=${MW_LIBDIR}"
+
+    bbwarn "----- IServiceManager.h -----"
+    find ${D} -name "IServiceManager.h" -print || true
+
+    bbwarn "----- All binder headers -----"
+    find ${D} -path "*/binder/*.h" -print || true
+
+    bbwarn "----- All installed libraries -----"
+    find ${D} \( -name "libbinder.so*" -o -name "libutils.so*" \) -print || true
+
+    bbwarn "========== LIBBINDERRDK INSTALL DEBUG END =========="
+}
 
 FILES:${PN} += " \
     ${MW_LIBDIR} \
