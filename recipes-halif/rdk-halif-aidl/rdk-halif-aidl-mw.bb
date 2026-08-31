@@ -205,7 +205,7 @@ inherit cmake
 # cmake per component in do_compile (reusing the cmake class' cross toolchain).
 do_configure[noexec] = "1"
 
-do_configure:prepend() {
+do_compile:prepend() {
     echo ""
     echo "=================================================="
     echo "        BINDER JENKINS DEBUG"
