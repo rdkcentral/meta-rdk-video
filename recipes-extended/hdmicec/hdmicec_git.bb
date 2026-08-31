@@ -105,7 +105,7 @@ do_configure:append() {
                                 "${B}/ccec/src/Makefile"
 
     sed -i \
-                                's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinderrdk -lutilsrdk -llogrdk -lbaserdk|' \
+                                's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinder -lutils -llog -lbase|' \
                                 "${B}/ccec/src/Makefile"
 }
 
