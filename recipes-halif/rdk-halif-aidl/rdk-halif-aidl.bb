@@ -151,7 +151,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 #SRC_URI = "git://github.com/rdkcentral/rdk-halif-aidl.git;protocol=https;branch=main"
 SRC_URI = "git://git@github.code.rdkcentral.com/rdkcentral/rdk-halif-aidl.git;nobranch=1;protocol=ssh" 
-SRCREV = "0.22.0"
+SRCREV = "4a2ef3990089951fefe0739e171f1d0ce1549bc1"
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
 
