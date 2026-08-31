@@ -2,7 +2,7 @@ SUMMARY = "ENTServices hdmicecsource plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.2.6"
+PV = "1.2.6_Test"
 PR = "r1"
 
 S = "${WORKDIR}/git"
