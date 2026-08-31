@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=d7a8c87b0741f248c5139ca80a783231"
 
 S = "${WORKDIR}/git"
 
-PV = "1.0.3"
+PV = "1.0.4"
 PR = "r1"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
