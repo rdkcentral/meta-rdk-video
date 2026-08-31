@@ -107,6 +107,19 @@ do_configure:append() {
     sed -i \
                                 's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinder -lutils -llog -lbase|' \
                                 "${B}/ccec/src/Makefile"
+
+    bbwarn "========== HDMICEC BINDER DEBUG =========="
+
+    bbwarn "Checking IServiceManager.h in recipe sysroot:"
+    find ${RECIPE_SYSROOT} -name "IServiceManager.h" -print || true
+
+    bbwarn "Checking binder include directories:"
+    find ${RECIPE_SYSROOT} -type d -name "binder" -print || true
+
+    bbwarn "Checking Binder libraries:"
+    find ${RECIPE_SYSROOT} \( -name "libbinder.so*" -o -name "libutils.so*" \) -print || true
+
+    bbwarn "========== HDMICEC BINDER DEBUG END =========="
 }
 
 do_configure:append:vdevice_x86-64-mw() {
