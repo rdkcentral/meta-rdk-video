@@ -8,7 +8,7 @@ PR = "r0"
 
 SRCREV = "0a7be789b78890ec38446b3888dc474de278a87a"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "main"
+PLAYERINTERFACE_BRANCH ?= "0.2.0-8.6_VIPA"
 
 inherit pkgconfig
 inherit cmake
