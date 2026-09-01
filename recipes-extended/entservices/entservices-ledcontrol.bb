@@ -13,17 +13,18 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-ledcontrol;${CMF_GITHUB_SRC_URI_SUFFIX
           "
 
 # Release version - 1.0.5
-SRCREV = "4ff3c2ce8776d4203496f677fdfb23b9de383e19"
+SRCREV = "eb0d29a4ac0cea5b160f893a30914aa6df4fbb9b"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis libbinder rdk-halif-aidl"
-RDEPENDS:${PN} += "wpeframework"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis libbinderrdk rdk-halif-aidl-mw"
+RDEPENDS:${PN} += "wpeframework rdk-halif-aidl-mw-indicator rdk-halif-aidl-mw-common"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
+TARGET_LDFLAGS += " -L${STAGING_DIR_HOST}${prefix}/mw/lib/binder -L${STAGING_LIBDIR}/mw/rdk-halif-aidl "
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -DRFC_ENABLED "
@@ -31,8 +32,10 @@ CXXFLAGS += " -DRFC_ENABLED "
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
-CFLAGS:append = " -I${STAGING_INCDIR} -I${STAGING_INCDIR}/binder"
-CXXFLAGS:append = " -I${STAGING_INCDIR} -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/wpeframework/helpers"
+CFLAGS:append = " -I${STAGING_INCDIR}/mw/indicator/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include -I${STAGING_INCDIR}/mw/lib/binder"
+CXXFLAGS:append = " -I${STAGING_INCDIR}/mw/indicator/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include -I${STAGING_INCDIR}/wpeframework/helpers -I${STAGING_INCDIR}/mw/lib/binder"
+# Third-party Binder/AIDL headers trip -Wattributes/-Wwrite-strings on GCC; not ours to fix
+CXXFLAGS:append = " -Wno-attributes -Wno-write-strings"
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 
