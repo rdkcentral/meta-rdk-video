@@ -58,10 +58,10 @@ LDFLAGS:append = " -L${STAGING_LIBDIR}/mw"
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
-CFLAGS:append = " -I${STAGING_INCDIR}/mw/hdmicec/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw -I${STAGING_INCDIR}/android"
+CFLAGS:append = " -I${STAGING_INCDIR}/mw/hdmicec/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include -I${STAGING_INCDIR}/android"
 CFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
 
-CXXFLAGS:append = " -I${STAGING_INCDIR}/mw/hdmicec/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw -I${STAGING_INCDIR}/android"
+CXXFLAGS:append = " -I${STAGING_INCDIR}/mw/hdmicec/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include -I${STAGING_INCDIR}/android"
 
 CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
 
