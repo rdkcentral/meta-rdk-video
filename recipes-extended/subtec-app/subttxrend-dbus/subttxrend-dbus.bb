@@ -11,7 +11,7 @@ DEPENDS = "glib-2.0-native glib-2.0 jansson subttxrend-common"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "f73f3d90f19939aa3962d329b70d04672abcdaae"
+SRCREV = "0a2821d343d3266b1a80a72bb0de4e3915a3534c"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-dbus"
 
