@@ -51,7 +51,7 @@ CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-con
 
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
 LDFLAGS:append = " \
-    -L${STAGING_LIBDIR}/mw/rdk-halif-aidl \
+    -L${STAGING_DIR_HOST}${prefix}/mw/lib/binder -L${STAGING_LIBDIR}/mw/rdk-halif-aidl \
 "
 
 LDFLAGS:append = " -L${STAGING_LIBDIR}/mw"
