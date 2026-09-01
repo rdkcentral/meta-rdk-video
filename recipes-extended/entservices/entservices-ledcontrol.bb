@@ -34,7 +34,6 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 CFLAGS:append = " -I${STAGING_INCDIR}/mw/indicator/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include -I${STAGING_INCDIR}/mw/lib/binder"
 CXXFLAGS:append = " -I${STAGING_INCDIR}/mw/indicator/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include -I${STAGING_INCDIR}/wpeframework/helpers -I${STAGING_INCDIR}/mw/lib/binder"
-# Third-party Binder/AIDL headers trip -Wattributes/-Wwrite-strings on GCC; not ours to fix
 CXXFLAGS:append = " -Wno-attributes -Wno-write-strings"
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
