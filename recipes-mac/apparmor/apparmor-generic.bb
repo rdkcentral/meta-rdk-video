@@ -7,7 +7,7 @@ PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit pkgconfig autotools systemd
-SRCREV_rdk-apparmor-profiles = "b5f4d1bc063a4a5b4770da31d74e168343f4385c"
+SRCREV_rdk-apparmor-profiles = "1486b2e08e26b540bf7be71b1b6bcf1697c3d329"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdk-apparmor-profiles.git;${CMF_GITHUB_SRC_URI_SUFFIX};destsuffix=git/rdk-apparmor-profiles;name=rdk-apparmor-profiles"
 
 S = "${WORKDIR}/git"
