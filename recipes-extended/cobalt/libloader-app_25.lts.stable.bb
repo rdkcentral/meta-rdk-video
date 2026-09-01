@@ -74,6 +74,7 @@ PACKAGECONFIG[asan]          = "use_asan=true,,gcc-sanitizers"
 PACKAGECONFIG[gold]          = ""
 PACKAGECONFIG[firebolt]      = "rdk_enable_firebolt_api=true,,firebolt-cpp-client firebolt-cpp-transport"
 PACKAGECONFIG[fb_rpc_v1]     = "rdk_enable_firebolt_legacy_rpc_v1=true,,"
+PACKAGECONFIG[firebolt_lifecycle] = "rdk_enable_firebolt_lifecycle=true,,"
 PACKAGECONFIG[wpecryptography]     = ",rdk_enable_wpecryptography=false,"
 PACKAGECONFIG[rdkservices]   = ",rdk_enable_rdkservices_api=false,"
 

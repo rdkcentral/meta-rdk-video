@@ -5,10 +5,10 @@ LICENSE = "Apache-2.0 & BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=f36198fb804ffbe39b5b2c336ceef9f8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-PV = "5.1.0"
+PV = "6.0.3"
 PR = "r0"
 
-SRCREV = "38641ab953e27b5a0a903182f904c78aa1e19d37"
+SRCREV = "8b5bd9a4536be3aea8792e8a81a7f11afd7a705f"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
@@ -218,6 +218,10 @@ do_install() {
         # RDK-43338 - to clean-up sysint for RDKE OS - RF Status, HTML Diagnostics
         rm -rf ${D}${base_libdir}/rdk/htmlDiagPreSetup.sh
         rm -rf ${D}${base_libdir}/rdk/rfStatisticsCheck.sh
+
+        mv ${D}${base_libdir}/rdk/imageFlasher.sh ${D}${base_libdir}/rdk/imageFlasher_generic.sh
+        mv ${D}${base_libdir}/rdk/init-zram.sh ${D}${base_libdir}/rdk/init-zram_generic.sh
+        mv ${D}${sysconfdir}/common.properties ${D}${sysconfdir}/common-generic.properties
 
 	    # For NetworkManager
 	    install -d ${D}${sysconfdir}/NetworkManager
