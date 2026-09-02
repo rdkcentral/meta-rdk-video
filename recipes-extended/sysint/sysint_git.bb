@@ -49,10 +49,13 @@ SYSLOG-NG_LOGRATE_messages = "low"
 # Get kernel logs via journal
 SYSLOG-NG_PROGRAM_messages += " kernel"
 
-do_compile[noexec] = "1"
+do_compile() {
+    oe_runmake -C ${S} rdk-secure-debug-check
+}
+
 CLEANBROKEN = "1"
 
-DEPENDS += "crashupload"
+DEPENDS += "crashupload commonutilities"
 RDEPENDS:${PN} += "bash"
 RDEPENDS:${PN} += "busybox"
 
@@ -238,6 +241,9 @@ do_install() {
         rm ${D}${base_libdir}/rdk/NM_preDown.sh
         install -d ${D}${systemd_unitdir}/system/NetworkManager.service.d
         install -m 0755 ${S}/systemd_units/NetworkManager_ecfs.conf ${D}${systemd_unitdir}/system/NetworkManager.service.d
+
+		install -d ${D}${bindir}
+        install -m 0755 ${S}/rdk-secure-debug-check  ${D}${bindir}/rdk-secure-debug-check
 }
 
 do_install:append:rdkstb() {
