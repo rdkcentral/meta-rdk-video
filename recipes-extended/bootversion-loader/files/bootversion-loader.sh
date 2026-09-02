@@ -61,6 +61,45 @@ writeToFile() {
     return 0
 }
 
+update_dir_permission(){
+    drm_dir="/opt/drm"
+    if [ -d "$drm_dir" ]; then
+        boottypeLog "changed the permission of $drm_dir by +x"
+        chmod +x "$drm_dir"
+    else
+        boottypeLog "$drm_dir is not present"
+    fi
+}
+
+update_file_permission(){
+    files_req_permission=(
+        "/opt/drm/ffffffff00000001.key",
+        "/opt/drm/ffffffff00000001.sha",
+        "/opt/drm/ffffffff00000001.keyinfo",
+        "/opt/drm/ffffffff00000002.bin",
+        "/opt/drm/ffffffff00000002.sha",
+        "/opt/drm/ffffffff00000004.bin",
+        "/opt/drm/ffffffff00000004.sha",
+        "/opt/drm/ffffffff00000006.bin",
+        "/opt/drm/ffffffff00000006.sha",
+        "/opt/drm/ffffffff00000007.bin",
+        "/opt/drm/ffffffff00000008.bin",
+        "/opt/drm/ffffffff00000009.key",
+        "/opt/drm/ffffffff00000009.sha",
+        "/opt/drm/ffffffff00000009.keyinfo",
+        "/opt/drm/ffffffff0000000a.sha",
+        "/opt/drm/ffffffff0000000a.bin",
+    )
+    for file in "${file_req_permission[@]}"; do   
+         if [ -f "$file" ]; then
+            chmod +r "$file"
+            boottypeLog "changed the permission of $file by +r"
+        else
+            boottypeLog "$file is not present"
+        fi
+    done
+}
+
 # Function to update boot type status and exit with error
 update_boottype_status() {
     echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
@@ -74,6 +113,11 @@ PLATFORM_FILE="/etc/migration/boot_FSR.platform"
 if [ -f "$PLATFORM_FILE" ]; then
     file_platform="$(tr -d '\r' < "$PLATFORM_FILE" | tr -d ' \t\n')"
     boottypeLog "Running the bootversion-loader script for $file_platform devices"
+    if [ "$file_platform" == "flex" ]; then
+        boottypeLog "Updating directory & file permission for $file_platform devices"
+        update_dir_permission
+        update_file_permission
+    fi
 else
     boottypeLog "Exiting since this script is not intended for this platform"
     echo "BOOT_TYPE=BOOT_NORMAL" > $file_bootType
