@@ -4,7 +4,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
 PV = "4.1.4"
 PR = "r0"
 SRCREV_entservices-apis = "${PV}"
-SRCREV_entservices-apis:thunder_5 = "4dbeecfb96a0ef29ffec7a324b1699e9ed93fc09"
+SRCREV_entservices-apis:thunder_5 = "c45d2f61c104055aa36bebcd32daaebbdf00db43"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
