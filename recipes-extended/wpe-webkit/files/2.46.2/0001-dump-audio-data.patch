@@ -1,0 +1,30 @@
+From 3d61420ca9fcc8e36ba16d74641abdeef743c512 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Wed, 2 Sep 2026 18:16:29 +0000
+Subject: [PATCH] dump audio data
+
+---
+ .../libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h
+index 9ab53211c2b7..4ce9549f9678 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h
++++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h
+@@ -41,10 +41,13 @@ public:
+ 
+ private:
+     RealtimeIncomingAudioSourceLibWebRTC(rtc::scoped_refptr<webrtc::AudioTrackInterface>&&, String&&);
++    ~RealtimeIncomingAudioSourceLibWebRTC();
+ 
+     // webrtc::AudioTrackSinkInterface API
+     void OnData(const void* audioData, int bitsPerSample, int sampleRate, size_t numberOfChannels, size_t numberOfFrames) final;
+ 
++    guint64 m_dumpSize { 0 };
++    GRefPtr<GstElement> m_dumpPipeline;
+     uint64_t m_numberOfFrames { 0 };
+     MediaTime m_baseTime { MediaTime::invalidTime() };
+ };
+-- 
+2.44.4
+
