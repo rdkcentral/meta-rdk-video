@@ -47,12 +47,6 @@ EXTRA_OECMAKE += " \
 CXXFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
 CFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
 
-do_install:append(){
-    install -d ${D}${sysconfdir}/NetworkManager
-    install -d ${D}${sysconfdir}/NetworkManager/conf.d
-    install -m 0755 ${S}/conf/99-default-link-local ${D}${sysconfdir}/NetworkManager/conf.d/99-default-link-local.conf
-}
-
 # Configure Logging for the Router Discovery Tool
 inherit syslog-ng-config-gen logrotate_config
 SYSLOG-NG_FILTER = "routerDiscovery"
