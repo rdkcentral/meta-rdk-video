@@ -2,13 +2,13 @@ SUMMARY = "ENTServices CloudStore plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.0.7"
+PV = "1.0.8"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "9d1b7ef7edfa4334a348c60f174849cdc8667a5e"
+SRCREV = "b6ad8421457b2c81f25eec0e8b72fb54b5958f8c"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-cloudstore;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "

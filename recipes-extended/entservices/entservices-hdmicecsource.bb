@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUFFIX} \
            "
 
-# Release version - 1.2.7
-SRCREV = "5019c41f47128822dffc4c24297b3af848fcde7b"
+# Release version - 1.2.8
+SRCREV = "b3f719e07fef98d1579d8d5560b1f7627ec4632d"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
