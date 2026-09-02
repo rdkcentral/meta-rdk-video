@@ -7,9 +7,6 @@ LIC_FILES_CHKSUM = " \
     file://../larboard/LICENSE;md5=a1045f140d2e71b4e089875cd5d07e42 \
 "
 
-inherit features_check
-CONFLICT_DISTRO_FEATURES = "cobalt-24"
-
 require larboard_revision.inc
 require rdke-cobalt-buildfix.inc
 
