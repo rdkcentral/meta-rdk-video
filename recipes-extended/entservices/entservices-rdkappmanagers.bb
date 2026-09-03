@@ -66,6 +66,8 @@ PACKAGECONFIG ?= " telemetrysupport \
 inherit features_check
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
 
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'resource-monitor', ' -DAPP_MANAGER_RESOURCE_MONITOR=ON ', ' -DAPP_MANAGER_RESOURCE_MONITOR=OFF ', d)}"
+
 # Enable the RDKShell memcr feature support flags
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DPLUGIN_HIBERNATESUPPORT=ON -DPLUGIN_HIBERNATE_NATIVE_APPS_ON_SUSPENDED=ON','',d)}"
 
