@@ -1,0 +1,47 @@
+From 3eb289e5d0c88e2b58976a85d2bbb8a68787aa3a Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Thu, 3 Sep 2026 10:50:23 +0200
+Subject: [PATCH] [libwpe] Add "TV" key mapping for libwpe
+
+Lib WPE does not currently expose any value for LiveTV key on TV remote.
+Use custom value from recent xorgproto XF86XK_MediaSelectTV (0x10081179)
+to map KEY_TV (0x179) linux key code.
+---
+ .../platform/libwpe/PlatformKeyboardEventLibWPE.cpp        | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/Source/WebCore/platform/libwpe/PlatformKeyboardEventLibWPE.cpp b/Source/WebCore/platform/libwpe/PlatformKeyboardEventLibWPE.cpp
+index 0020f6c53722..1dc394c35ffb 100644
+--- a/Source/WebCore/platform/libwpe/PlatformKeyboardEventLibWPE.cpp
++++ b/Source/WebCore/platform/libwpe/PlatformKeyboardEventLibWPE.cpp
+@@ -36,6 +36,8 @@
+ 
+ namespace WebCore {
+ 
++static constexpr unsigned mediaSelectTVKeyCode = 0x10081179;
++
+ // FIXME: This is incomplete. We should change this to mirror
+ // more like what Firefox does, and generate these switch statements
+ // at build time.
+@@ -426,6 +428,9 @@ String PlatformKeyboardEvent::keyValueForWPEKeyCode(unsigned keyCode)
+         return "F19"_s;
+     case WPE_KEY_F20:
+         return "F20"_s;
++
++    case mediaSelectTVKeyCode:
++        return "TV"_s;
+     default:
+         break;
+     }
+@@ -762,6 +767,8 @@ String PlatformKeyboardEvent::keyCodeForHardwareKeyCode(unsigned keyCode)
+         return "Unknown"_s;
+     case 0x016B:
+         return "Clear"_s;
++    case 0x0181:
++        return "TV"_s;
+     default:
+         break;
+     }
+-- 
+2.53.0
+
