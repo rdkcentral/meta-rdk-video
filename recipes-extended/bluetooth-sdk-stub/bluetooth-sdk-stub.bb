@@ -7,7 +7,7 @@ PV = "1.0.0"
 PR = "r0"
 
 # Keep in sync with entservices-connectivity.bb - the stub lives in that repo.
-SRCREV = "25f09bd62b1f7905268efd7e4048ec8657bb4879"
+SRCREV = "de01451d90333dbdbc0799c21d9659edae2fc177"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 S = "${WORKDIR}/git"
