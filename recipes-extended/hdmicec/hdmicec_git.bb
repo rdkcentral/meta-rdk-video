@@ -80,7 +80,7 @@ do_configure:append:vdevice_x86-64-mw() {
     #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
                 #     runtime from libbinder.so
     sed -i \
-                                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = -lhdmicec-v0.1.0.0-cpp \${top_builddir}/osal/src/libRCECOSHal.la|" \
+                                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = -lhdmicec-cpp \${top_builddir}/osal/src/libRCECOSHal.la|" \
       ${B}/ccec/src/Makefile
 
     sed -i \

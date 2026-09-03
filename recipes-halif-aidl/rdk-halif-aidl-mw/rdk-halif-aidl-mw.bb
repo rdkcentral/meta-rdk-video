@@ -234,6 +234,8 @@ do_compile() {
         install -m 0755 \
             "${B}/obj/${comp}/${ver}/lib${comp}-v${ver}-cpp.so" \
             "${B}/staged/lib/rdk-halif-aidl/"
+        ln -sf "lib${comp}-v${ver}-cpp.so" \
+            "${B}/staged/lib/rdk-halif-aidl/lib${comp}-cpp.so"
         install -d "${B}/staged/include/rdk-halif-aidl/${comp}/${ver}"
         cp -R "${S}/${comp}/${ver}/include" "${B}/staged/include/rdk-halif-aidl/${comp}/${ver}/"
     done < "${B}/plan.txt"
@@ -244,6 +246,10 @@ do_install() {
     install -d "${D}${HALIF_LIBDIR}" "${D}${HALIF_INCDIR}"
     cp -a "${B}/staged/lib/rdk-halif-aidl/." "${D}${HALIF_LIBDIR}/"
     cp -a "${B}/staged/include/rdk-halif-aidl/." "${D}${HALIF_INCDIR}/"
+    while read comp ver; do
+        ln -sf "lib${comp}-v${ver}-cpp.so" \
+            "${D}${HALIF_LIBDIR}/lib${comp}-cpp.so"
+    done < "${B}/plan.txt"
     # do_compile runs without pseudo, so the staged tree is owned by the build
     # user; cp -a preserves that uid. Rootfs files must be root-owned - reset it
     # here (under pseudo) so do_package does not choke on an unknown uid and the
@@ -268,7 +274,7 @@ do_install() {
 # OE assigns EVERY .debug file to the FIRST -dbg package in PACKAGES order, so a
 # single ${PN}-dbg, listed first, is the split.
 PACKAGES = "${PN}-dbg"
-PACKAGES_DYNAMIC = "^rdk-halif-aidl-.*"
+PACKAGES_DYNAMIC = "^rdk-halif-aidl-mw-.*"
 SUMMARY:${PN}-dbg = "RDK HAL AIDL debug symbols"
 FILES:${PN}-dbg = "${HALIF_LIBDIR}/.debug"
 
@@ -298,7 +304,9 @@ python populate_packages:prepend () {
         pkgs += [dev, main]
         d.setVar('SUMMARY:' + main, 'RDK HAL AIDL interface library: %s' % c)
         d.setVar('SUMMARY:' + dev, 'RDK HAL AIDL interface headers: %s' % c)
-        d.setVar('FILES:' + dev, '%s/%s' % (incdir, c))
+        # The unversioned symlink is a link-time artefact only: the runtime
+        # DT_NEEDED carries the versioned SONAME, so it belongs in -dev.
+        d.setVar('FILES:' + dev, '%s/%s %s/lib%s-cpp.so' % (incdir, c, libdir, c))
         d.setVar('FILES:' + main, '%s/lib%s-v*-cpp.so' % (libdir, c))
         d.setVar('INSANE_SKIP:' + main, 'dev-so')
     d.setVar('PACKAGES', ' '.join(pkgs))
