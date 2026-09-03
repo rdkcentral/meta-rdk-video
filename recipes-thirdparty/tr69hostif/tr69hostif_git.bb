@@ -7,14 +7,14 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=76ae13a6bce633447ea2284294f073c2"
 SRCREV = "088afa94f8ab8af3959205a26bf537ae22a3d249"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
-PV = "1.5.4"
+PV = "1.5.5"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 S = "${WORKDIR}/git"
 
 DEPENDS = "iarmbus iarmmgrs e2fsprogs libsoup libsyswrapper yajl \
            procps glib-2.0 \
-           cjson telemetry libtinyxml2\
+           cjson telemetry libtinyxml2 dcmd \
 	  "
 DEPENDS:append = " rdk-logger libparodus parodus ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
 
