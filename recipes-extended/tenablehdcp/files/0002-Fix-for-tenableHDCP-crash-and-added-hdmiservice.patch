@@ -30,49 +30,147 @@ index 44c40d63..9316de74 100755
  [Install]
  WantedBy=multi-user.target
 diff --git a/tenableHDCP.cpp b/tenableHDCP.cpp
-index 90de10c3..c9ff9d06 100644
+index 90de10c3..f8a88d7e 100644
 --- a/tenableHDCP.cpp
 +++ b/tenableHDCP.cpp
-@@ -36,14 +36,17 @@
+@@ -26,26 +26,55 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <stdlib.h>
+-
++#include<sys/syscall.h>
+ 
+ #include "libIBus.h"
+ #include "mfrMgr.h"
+ 
+ #define HDCP14_PARAM_KEY_SIZE 288
+ 
++#define __FILENAME__ \
++        (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : \
++        (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__))
++
++#define LOGINFO(fmt, ...)                                                                                                                                                 \
++    do {                                                                                                                                                                  \
++        fprintf(stdout, "[%d] INFO  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fflush(stdout);                                                                                                                                                   \
++    } while (0)
++#define LOGWARN(fmt, ...)                                                                                                                                                 \
++    do {                                                                                                                                                                  \
++        fprintf(stdout, "[%d] WARN  [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fflush(stdout);                                                                                                                                                   \
++    } while (0)
++#define LOGERR(fmt, ...)                                                                                                                                                  \
++    do {                                                                                                                                                                  \
++        fprintf(stderr, "[%d] ERROR [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fflush(stderr);                                                                                                                                                   \
++    } while (0)
++#define LOGTRACE(fmt, ...)                                                                                                                                                  \
++    do {                                                                                                                                                                  \
++        fprintf(stderr, "[%d] TRACE [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
++        fflush(stderr);                                                                                                                                                   \
++    } while (0)
  
  int main(int argc, char *argv[])
  {
 +    int returnValue = 0;
      if (argc != 2) {
-         printf("Usage: %s : <true|false>\n", argv[0]);
+-        printf("Usage: %s : <true|false>\n", argv[0]);
 -        return 0;
++        LOGWARN("Usage: %s : <true|false>", argv[0]);
 +        return -1;
      }
- 
-     IARM_Bus_Init("enableHDCPclient");
-     IARM_Bus_Connect();
- 
+-
++    LOGTRACE("Entering...");
 +    try
 +    {
++    LOGTRACE("Initializing IARM");
+     IARM_Bus_Init("enableHDCPclient");
++    LOGTRACE("Connecting IARM");
+     IARM_Bus_Connect();
+-
++    LOGTRACE("Initializing device manager");
      device::Manager::Initialize();
+-
++    LOGTRACE("Device manager initialized");
  
+     char *enabled = argv[1];
+     int protectContent = false;
+@@ -73,17 +102,19 @@ Patch to remove the mfr dependency for enabling hdcp. Devicesettings hal handle
+ 			param->type = mfrSERIALIZED_TYPE_HDMIHDCP;
+ 			param->bufLen = MAX_SERIALIZED_BUF;
+ 			
++			LOGTRACE("Calling IARM_BUS_MFRLIB_API_GetSerializedData for IARM_BUS_MFR_SERIALIZED_TYPE_HDMIHDCP");
+ 			int ret = IARM_Bus_Call(IARM_BUS_MFRLIB_NAME,IARM_BUS_MFRLIB_API_GetSerializedData,
+ 				(void *)param, sizeof(IARM_Bus_MFRLib_GetSerializedData_Param_t));
  
-@@ -129,12 +132,18 @@ Patch to remove the mfr dependency for enabling hdcp. Devicesettings hal handle
+ 			if(ret != IARM_RESULT_SUCCESS)
+ 			{
+-				printf("Call failed for %s: error code:%d\n","IARM_BUS_MFR_SERIALIZED_TYPE_HDMIHDCP",ret);
++				LOGERR("Call failed for IARM_BUS_MFR_SERIALIZED_TYPE_HDMIHDCP: error code:%d",ret);
+ 				/**Sleep for 2 sec - wait for MFR data to be ready*/
+ 				sleep(2);
+ 			}
+ 			else
+ 			{
++				 LOGTRACE("Call succeed for IARM_BUS_MFR_SERIALIZED_TYPE_HDMIHDCP: [%d]", param->bufLen);
+ 				 keySize = param->bufLen;
+ 				 hdcpKey = param->buffer;
+ 
+@@ -99,13 +130,13 @@ Patch to remove the mfr dependency for enabling hdcp. Devicesettings hal handle
+ 					(hdcpKey[5] == 0) 
+ 					)
+ 				{
+-					printf("Invalid MFR Data !! Wait for MFR data to be ready..Retry after 10 sec\n");
++					LOGERR("Invalid MFR Data !! Wait for MFR data to be ready..Retry after 10 sec");
+ 					/**Sleep for 10 sec - wait for MFR data to be ready*/
+ 					sleep(10);
+ 				}
+ 				else
+ 				{
+-					printf("Call succeed for %s: [%d]\n","IARM_BUS_MFR_SERIALIZED_TYPE_HDMIHDCP\n", param->bufLen);
++					LOGINFO("Call succeed for IARM_BUS_MFR_SERIALIZED_TYPE_HDMIHDCP: [%d]", param->bufLen);
+ 					IsMfrDataRead = true;
+ 			  	}
+ 							
+@@ -120,21 +151,31 @@ Patch to remove the mfr dependency for enabling hdcp. Devicesettings hal handle
+     }
+ #endif
+     try {
+-	    printf("Setting HDCP [%s]\n", enabled);
++		LOGINFO("Setting HDCP [%s]", enabled);
+ 		if(0 == keySize){
+-			printf("Ignoring request, invalid parameters \n");
++			LOGERR("Ignoring request, invalid parameters");
+ 		}else{
++	        LOGTRACE("Enabling HDCP on HDMI port");
+ 	        device::VideoOutputPortType::getInstance(device::VideoOutputPortType::kHDMI).enabledHDCP(protectContent, hdcpKey, keySize);
+-	        printf("Setting  HDCP done\n");
++	        LOGINFO("Setting  HDCP done");
          }
      }
      catch (...) {
 -	    printf("Exception Caught during [%s]\r\n", argv[0]);
-+        printf("Exception Caught during enabledHDCP for [%s]\r\n", argv[0]);
++        LOGERR("Exception Caught during enabledHDCP for [%s]", argv[0]);
 +        returnValue = -1;
      }
- 
+-
++    LOGTRACE("Deinitializing device manager");
      device::Manager::DeInitialize();
-+    }
-+    catch (...) {
-+        printf("Exception Caught during initialize for [%s]\r\n", argv[0]);
-+        returnValue = -1;
-+    }
- 
+-
++    LOGTRACE("Device manager deinitialized");
      IARM_Bus_Disconnect();
++    LOGTRACE("IARM Bus disconnected");
      IARM_Bus_Term();
 -    return 0;
+-}
++    LOGTRACE("IARM Bus terminated");
++    }
++    catch (...) {
++        LOGERR("Exception Caught during initialize for [%s]", argv[0]);
++        returnValue = -1;
++    }
++    LOGTRACE("Exiting...");
 +    return returnValue;
- }
++}
 -- 
 2.25.1
-
