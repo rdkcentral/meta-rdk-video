@@ -2,8 +2,8 @@ SUMMARY = "ENTServices systemservices plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.6.4"
-PR = "r0"
+PV = "1.6.6_Test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-systemservices;${CMF_GITHUB_SRC_URI_SU
            file://rdkservices.ini \
           "
 
-# Release version - 1.6.4
-SRCREV = "${PV}"
+# Release version - 1.6.6
+SRCREV = "644d0d4ad5b3e10fdd4c39b75408a7465bfc7167"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
