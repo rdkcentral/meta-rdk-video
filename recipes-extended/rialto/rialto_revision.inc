@@ -7,7 +7,7 @@
 #
 # Please contact DL-Rialto@sky.uk if you want to change this file or in case of problems
 
-RIALTO_SRCREV ?= "e96de268faa5735910c70dcbcb01141de89df94b"
+RIALTO_SRCREV ?= "661a1b818e74ee828671ca8db3a1aeb4e66bbf31"
 RIALTO_BRANCH ?= "feature/RDKEMW-23564"
 RIALTO_VERSION ?= "v0.24.1"
 RIALTO_PR ?= "r0"
