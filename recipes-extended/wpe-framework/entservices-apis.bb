@@ -2,7 +2,7 @@ SUMMARY = "entservices-apis"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
 PV = "4.1.8_Test"
-PR = "r0"
+PR = "r1"
 SRCREV_entservices-apis = "c18493c7819e6235b0f81e73f6dedbb8fc9269ee"
 
 
