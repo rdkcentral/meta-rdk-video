@@ -26,6 +26,7 @@ SRC_URI += "file://25/0004-Build-fix-for-ARM64.patch"
 SRC_URI += "file://25/0005-Use-Yocto-host-toolchain.patch"
 SRC_URI += "file://25/0006-Use-certifi-to-tell-urllib-where-to-find-CA-file-397.patch"
 SRC_URI += "file://25/0007-Prevent-cobalt-unloading.patch"
+SRC_URI += "file://25/0008-Remove-rdk-arm-from-starboard-build-script.patch"
 
 CR = "40"
 PR = "r${CR}"
