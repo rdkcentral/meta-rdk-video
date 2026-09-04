@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Connectivity plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV = "de01451d90333dbdbc0799c21d9659edae2fc177"
+PV = "d9ba34d3d495e918974aa135d1180494b1ced941"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -47,7 +47,7 @@ PACKAGECONFIG:remove = "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FE
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[bluetoothcontrol]     = "-DPLUGIN_BLUETOOTH=ON -DPLUGIN_BLUETOOTH_AUTOSTART=true,-DPLUGIN_BLUETOOTH=OFF,entservices-helpers iarmbus iarmmgrs bluetooth-mgr bluetooth-sdk-stub,bluez5 iarmbus entservices-helpers bluetooth-sdk-stub"
+PACKAGECONFIG[bluetoothcontrol]     = "-DPLUGIN_BLUETOOTH=ON -DPLUGIN_BLUETOOTH_AUTOSTART=true,-DPLUGIN_BLUETOOTH=OFF,entservices-helpers iarmbus iarmmgrs bluetooth-mgr virtual/vendor-bluetooth-sdk,bluez5 iarmbus entservices-helpers virtual/vendor-bluetooth-sdk"
 PACKAGECONFIG[network]              = "-DPLUGIN_NETWORK=ON,-DPLUGIN_NETWORK=OFF,iarmbus iarmmgrs rfc,iarmbus rfc netsrvmgr"
 PACKAGECONFIG[wifimanager]          = "-DPLUGIN_WIFIMANAGER=ON,-DPLUGIN_WIFIMANAGER=OFF,netsrvmgr iarmbus iarmmgrs,iarmbus wpa-supplicant"
 

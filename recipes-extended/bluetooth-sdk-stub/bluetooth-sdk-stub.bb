@@ -6,8 +6,12 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 PV = "1.0.0"
 PR = "r0"
 
+# Vendor layers may ship a real SDK recipe that PROVIDES the same virtual.
+PROVIDES += "virtual/vendor-bluetooth-sdk"
+RPROVIDES:${PN} = "virtual/vendor-bluetooth-sdk"
+
 # Keep in sync with entservices-connectivity.bb - the stub lives in that repo.
-SRCREV = "de01451d90333dbdbc0799c21d9659edae2fc177"
+SRCREV = "d9ba34d3d495e918974aa135d1180494b1ced941"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 S = "${WORKDIR}/git"
