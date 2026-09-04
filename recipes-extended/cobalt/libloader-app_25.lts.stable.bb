@@ -26,6 +26,7 @@ SRC_URI += "file://25/0004-Build-fix-for-ARM64.patch"
 SRC_URI += "file://25/0005-Use-Yocto-host-toolchain.patch"
 SRC_URI += "file://25/0006-Use-certifi-to-tell-urllib-where-to-find-CA-file-397.patch"
 SRC_URI += "file://25/0007-Prevent-cobalt-unloading.patch"
+SRC_URI += "file://25/libloader-app-libs-versioning.patch"
 
 CR = "40"
 PR = "r${CR}"
@@ -42,6 +43,7 @@ DEPENDS += "virtual/libgles2 virtual/egl essos gstreamer1.0 gstreamer1.0-plugins
 DEPENDS += " wpeframework entservices-apis wpeframework-clientlibraries"
 DEPENDS += " ninja-native bison-native openssl-native gn-native ccache-native"
 DEPENDS += " python3-six-native python3-urllib3-native"
+DEPENDS += " patchelf-native"
 
 RDEPENDS:${PN} += "gstreamer1.0-plugins-base-app gstreamer1.0-plugins-base-playback"
 
@@ -145,6 +147,47 @@ do_install() {
     ( cd ${D}${bindir} && ln -sf elf_loader_sandbox_bin elf_loader_sandbox )
 
     install -m 0755 ${COBALT_OUT_DEV_DIR}/nplb_evergreen_compat_tests ${D}${bindir}
+
+    # Keep compatibility with vendor stacks exposing unversioned linker names.
+    #if [ -f ${D}${libdir}/libloader_app.so ]; then
+    #    if patchelf --print-needed ${D}${libdir}/libloader_app.so | grep -q "^libessos.so.0$"; then
+    #        patchelf --replace-needed libessos.so.0 libessos.so ${D}${libdir}/libloader_app.so
+    #    fi
+    #    if patchelf --print-needed ${D}${libdir}/libloader_app.so | grep -q "^libwesteros_simpleshell_client.so.0$"; then
+    #        patchelf --replace-needed libwesteros_simpleshell_client.so.0 libwesteros_simpleshell_client.so ${D}${libdir}/libloader_app.so
+    #    fi
+    #fi
+
+    #if [ -f ${D}${bindir}/loader_app_bin ]; then
+    #    if patchelf --print-needed ${D}${bindir}/loader_app_bin | grep -q "^libessos.so.0$"; then
+    #        patchelf --replace-needed libessos.so.0 libessos.so ${D}${bindir}/loader_app_bin
+    #    fi
+    #    if patchelf --print-needed ${D}${bindir}/loader_app_bin | grep -q "^libwesteros_simpleshell_client.so.0$"; then
+    #        patchelf --replace-needed libwesteros_simpleshell_client.so.0 libwesteros_simpleshell_client.so ${D}${bindir}/loader_app_bin
+    #    fi
+    #fi
+
+    # Keep compatibility with vendor stacks exposing unversioned linker names.
+    essos_runtime_soname="$(basename "$(readlink -f ${STAGING_LIBDIR}/libessos.so 2>/dev/null)")"
+    westeros_ss_runtime_soname="$(basename "$(readlink -f ${STAGING_LIBDIR}/libwesteros_simpleshell_client.so 2>/dev/null)")"
+
+    if [ -f ${D}${libdir}/libloader_app.so ]; then
+        if [ -n "${essos_runtime_soname}" ] && [ "${essos_runtime_soname}" != "libessos.so" ] && patchelf --print-needed ${D}${libdir}/libloader_app.so | grep -q "^libessos.so.0$"; then
+            patchelf --replace-needed libessos.so.0 ${essos_runtime_soname} ${D}${libdir}/libloader_app.so
+        fi
+        if [ -n "${westeros_ss_runtime_soname}" ] && [ "${westeros_ss_runtime_soname}" != "libwesteros_simpleshell_client.so" ] && patchelf --print-needed ${D}${libdir}/libloader_app.so | grep -q "^libwesteros_simpleshell_client.so.0$"; then
+            patchelf --replace-needed libwesteros_simpleshell_client.so.0 ${westeros_ss_runtime_soname} ${D}${libdir}/libloader_app.so
+        fi
+    fi
+
+    if [ -f ${D}${bindir}/loader_app_bin ]; then
+        if [ -n "${essos_runtime_soname}" ] && [ "${essos_runtime_soname}" != "libessos.so" ] && patchelf --print-needed ${D}${bindir}/loader_app_bin | grep -q "^libessos.so.0$"; then
+            patchelf --replace-needed libessos.so.0 ${essos_runtime_soname} ${D}${bindir}/loader_app_bin
+        fi
+        if [ -n "${westeros_ss_runtime_soname}" ] && [ "${westeros_ss_runtime_soname}" != "libwesteros_simpleshell_client.so" ] && patchelf --print-needed ${D}${bindir}/loader_app_bin | grep -q "^libwesteros_simpleshell_client.so.0$"; then
+            patchelf --replace-needed libwesteros_simpleshell_client.so.0 ${westeros_ss_runtime_soname} ${D}${bindir}/loader_app_bin
+        fi
+    fi
 }
 
 FILES:${PN}  = "${bindir}/crashpad_handler ${bindir}/loader_app ${bindir}/loader_app_bin"
