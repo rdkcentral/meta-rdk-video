@@ -2,8 +2,8 @@ SUMMARY = "ENTServices Playerinfo plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=b8674f44703ede95bec14083251335db"
 
-PV = "1.1.4"
-PR = "r0"
+PV = "1.1.4_Test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -16,8 +16,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-playerinfo;${CMF_GITHUB_SRC_URI_SUFFIX
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
           
-# Release version - 1.0.3
-SRCREV = "a000d1e3dd5b264e32180d694e9f376a47b5e9bb"
+# Release version - 1.0.4
+SRCREV = "a91c98bb8bb5d429be18e94932a8c2fc484863c9"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
