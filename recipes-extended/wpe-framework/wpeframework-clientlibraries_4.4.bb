@@ -4,7 +4,7 @@ HOMEPAGE = "https://github.com/rdkcentral/ThunderClientlibraries"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=847677038847363222ffb66cfa6406c2"
 
 PR = "r20"
-PV = "4.4.2"
+PV = "4.4.4"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit python3native cmake pkgconfig
@@ -23,6 +23,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0002-RDKEMW-19048-Release-and-reacquire-Vault-SecProcessor-for-deep-sleep.patch \
            file://r4.4/0003-RDKEMW-20680-vault-processor-release-openssl-thunder-stubs.patch \
            file://r4.4/0001-PowerManagerClient-library-implementation.patch \
+           file://001-debug-crash.patch \
            "
 
 # Oct 17, 2023
