@@ -1,0 +1,22 @@
+diff --git a/ds/frameRate.cpp b/ds/frameRate.cpp
+index c63c9d5..13ab12b 100644
+--- a/ds/frameRate.cpp
++++ b/ds/frameRate.cpp
+@@ -51,6 +51,8 @@ namespace {
+                         200,
+                         239.79,
+                         240,
++                        59,
++                        23,
+ 	};
+ 	const char * _names[] = {
+ 			"UnKnown", //unkown
+@@ -68,6 +70,8 @@ namespace {
+                         "200",
+                         "239.79",
+                         "240",
++                        "59",
++                        "23",
+ 	};
+ 
+ 	inline bool isValid(int id) {
