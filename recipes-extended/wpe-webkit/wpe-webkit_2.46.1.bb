@@ -44,7 +44,12 @@ SRC_URI += "file://2.46/comcast-RDKTV-6665-Remove-screen-saver-disabler.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-Support-for-external-sink-x-dvb.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-scan-decoder-elements-on-Broadcom.patch"
 SRC_URI += "file://2.46/comcast-RDKTV-17281-RDKTV-17781-Workaround-for-AppleTV-rendering.patch"
-SRC_URI += "file://2.46/comcast-RDKTV-18852-Restrict-inspection-of-locally-hosted-pages.patch"
+
+# Only apply on prod builds: this patch closes/refuses RemoteInspector connections for any
+# non-RemoteInspectionTarget (e.g. RemoteAutomationTarget), which breaks WPEWebDriver/Selenium
+# automation sessions. Dev/test builds need WebDriver to work, so exclude the patch there.
+SRC_URI += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', 'file://2.46/comcast-RDKTV-18852-Restrict-inspection-of-locally-hosted-pages.patch', '', d)}"
+
 SRC_URI += "file://2.46/comcast-RDK-57915-Analyze-higher-CPU-usage.patch"
 SRC_URI += "file://2.46/comcast-RDK-40634-Only-support-decoders-with-hw-support-for-webrtc.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-Include-HW-secure-decrypt-WidevineL1.patch"
