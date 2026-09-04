@@ -69,14 +69,34 @@ do_unpack_extra() {
 }
 addtask unpack_extra after do_patch before do_configure
 
+do_download_testdata() {
+    sha1_dir=${S}/starboard/shared/starboard/player/testdata
+    nplb_output_dir=${S}/out/${COBALT_PLATFORM}_devel/content/test/starboard/shared/starboard/player/testdata
+    dl_output_dir=${DL_DIR}/nplb-test-data
+
+    # download nplb test data to the download directory
+    ${PYTHON} ${S}/tools/download_from_gcs.py \
+        --bucket cobalt-static-storage-public \
+        --sha1 ${sha1_dir} \
+        --output ${dl_output_dir}
+
+    # copy only files that have corresponding .sha1 files from download directory to nplb download directory
+    mkdir -p ${nplb_output_dir}
+    for sha1_file in ${sha1_dir}/*.sha1; do
+        base_name=$(basename ${sha1_file} .sha1)
+        src_file=${dl_output_dir}/${base_name}
+        cp ${src_file} ${nplb_output_dir}
+    done
+}
+addtask download_testdata after do_prepare_recipe_sysroot before do_configure
+do_download_testdata[network] = "1"
+
 do_configure() {
     ${PYTHON} cobalt/build/gn.py -c devel  -p ${COBALT_PLATFORM} --overwrite_args
     echo "${GN_ARGS_EXTRA}" | tr ' ' '\n' >> out/${COBALT_PLATFORM}_devel/args.gn
 }
 
 do_compile[progress] = "percent"
-# To resolve jenkins build error (https://docs.yoctoproject.org/4.0.4/migration-guides/migration-4.0.html#fetching-changes)
-do_compile[network] = "1"
 
 do_compile() {
     export NINJA_STATUS='%p '
