@@ -1,17 +1,123 @@
-From 3d61420ca9fcc8e36ba16d74641abdeef743c512 Mon Sep 17 00:00:00 2001
+From db9e7b8c5e4ff3827df3f700054be570a2d91d95 Mon Sep 17 00:00:00 2001
 From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
-Date: Wed, 2 Sep 2026 18:16:29 +0000
+Date: Fri, 4 Sep 2026 09:55:28 +0000
 Subject: [PATCH] dump audio data
 
 ---
- .../libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h | 3 +++
- 1 file changed, 3 insertions(+)
+ .../RealtimeIncomingAudioSourceLibWebRTC.cpp  | 62 +++++++++++++++++--
+ .../RealtimeIncomingAudioSourceLibWebRTC.h    |  6 +-
+ 2 files changed, 63 insertions(+), 5 deletions(-)
 
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.cpp b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.cpp
+index 5f959c9b3a45..7450a4fe5fff 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.cpp
++++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.cpp
+@@ -34,6 +34,10 @@
+ #include "gstreamer/GStreamerAudioData.h"
+ #include "gstreamer/GStreamerAudioStreamDescription.h"
+ 
++#include <gst/app/gstappsrc.h>
++#include <wtf/StdLibExtras.h>
++#include <wtf/glib/GUniquePtr.h>
++
+ namespace WebCore {
+ 
+ Ref<RealtimeIncomingAudioSource> RealtimeIncomingAudioSource::create(rtc::scoped_refptr<webrtc::AudioTrackInterface>&& audioTrack, String&& audioTrackId)
+@@ -51,18 +55,62 @@ Ref<RealtimeIncomingAudioSourceLibWebRTC> RealtimeIncomingAudioSourceLibWebRTC::
+ RealtimeIncomingAudioSourceLibWebRTC::RealtimeIncomingAudioSourceLibWebRTC(rtc::scoped_refptr<webrtc::AudioTrackInterface>&& audioTrack, String&& audioTrackId)
+     : RealtimeIncomingAudioSource(WTFMove(audioTrack), WTFMove(audioTrackId))
+ {
++    if (!g_getenv("WEBKIT_WEBRTC_DEC_DUMP_AUDIO"))
++        return;
++
++    auto cleanUpDumpPipeline = [this] {
++        if (m_dumpPipeline)
++            gst_element_set_state(m_dumpPipeline.get(), GST_STATE_NULL);
++        m_dumpSrc = nullptr;
++        m_dumpPipeline = nullptr;
++    };
++
++    GUniqueOutPtr<GError> error;
++    m_dumpPipeline = adoptGRef(gst_parse_launch("appsrc name=in is-live=true format=time do-timestamp=false max-bytes=0 ! audioconvert ! wavenc ! filesink name=out sync=false", &error.outPtr()));
++    if (error || !m_dumpPipeline) {
++        cleanUpDumpPipeline();
++        return;
++    }
++
++    m_dumpSrc = adoptGRef(gst_bin_get_by_name(GST_BIN_CAST(m_dumpPipeline.get()), "in"));
++    auto dumpSink = adoptGRef(gst_bin_get_by_name(GST_BIN_CAST(m_dumpPipeline.get()), "out"));
++    if (!m_dumpSrc || !dumpSink) {
++        cleanUpDumpPipeline();
++        return;
++    }
++
++    GUniquePtr<char> outputPath(g_strdup_printf("/opt/webrtc_audio_%p.wav", this));
++    g_object_set(dumpSink.get(), "location", outputPath.get(), nullptr);
++
++    if (gst_element_set_state(m_dumpPipeline.get(), GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE)
++        cleanUpDumpPipeline();
+ }
+ 
+-void RealtimeIncomingAudioSourceLibWebRTC::OnData(const void* audioData, int, int sampleRate, size_t numberOfChannels, size_t numberOfFrames)
++RealtimeIncomingAudioSourceLibWebRTC::~RealtimeIncomingAudioSourceLibWebRTC()
++{
++    if (!m_dumpPipeline)
++        return;
++
++    if (m_dumpSrc)
++        gst_app_src_end_of_stream(GST_APP_SRC(m_dumpSrc.get()));
++
++    if (auto bus = adoptGRef(gst_pipeline_get_bus(GST_PIPELINE(m_dumpPipeline.get()))))
++        gst_bus_timed_pop_filtered(bus.get(), 2 * GST_SECOND, static_cast<GstMessageType>(GST_MESSAGE_EOS | GST_MESSAGE_ERROR));
++
++    gst_element_set_state(m_dumpPipeline.get(), GST_STATE_NULL);
++}
++
++void RealtimeIncomingAudioSourceLibWebRTC::OnData(const void* audioData, int bitsPerSample, int sampleRate, size_t numberOfChannels, size_t numberOfFrames)
+ {
+     GstAudioInfo info;
++    auto sampleSize = bitsPerSample > 0 ? bitsPerSample : LibWebRTCAudioFormat::sampleSize;
+     GstAudioFormat format = gst_audio_format_build_integer(
+         LibWebRTCAudioFormat::isSigned,
+         LibWebRTCAudioFormat::isBigEndian ? G_BIG_ENDIAN : G_LITTLE_ENDIAN,
+-        LibWebRTCAudioFormat::sampleSize,
+-        LibWebRTCAudioFormat::sampleSize);
++        sampleSize,
++        sampleSize);
+ 
+-    gst_audio_info_set_format(&info, format, sampleRate, numberOfChannels, NULL);
++    gst_audio_info_set_format(&info, format, sampleRate, numberOfChannels, nullptr);
+ 
+     auto bufferSize = GST_AUDIO_INFO_BPF(&info) * numberOfFrames;
+     auto buffer = adoptGRef(gst_buffer_new_memdup(const_cast<gpointer>(audioData), bufferSize));
+@@ -74,8 +122,14 @@ void RealtimeIncomingAudioSourceLibWebRTC::OnData(const void* audioData, int, in
+ 
+     MediaTime mediaTime = m_baseTime + MediaTime((m_numberOfFrames * G_USEC_PER_SEC) / sampleRate, G_USEC_PER_SEC);
+     GST_BUFFER_PTS(buffer.get()) = toGstUnsigned64Time(mediaTime);
++    GST_BUFFER_DURATION(buffer.get()) = gst_util_uint64_scale(numberOfFrames, GST_SECOND, sampleRate);
+ 
+     auto sample = adoptGRef(gst_sample_new(buffer.get(), caps.get(), nullptr, nullptr));
++    if (m_dumpSrc && m_dumpSize < 10 * WTF::MB) {
++        gst_app_src_push_sample(GST_APP_SRC(m_dumpSrc.get()), sample.get());
++        m_dumpSize += bufferSize;
++    }
++
+     GStreamerAudioData data(WTFMove(sample), info);
+     audioSamplesAvailable(mediaTime, data, GStreamerAudioStreamDescription(info), numberOfFrames);
+ 
 diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h
-index 9ab53211c2b7..4ce9549f9678 100644
+index 9ab53211c2b7..2b73b60d41be 100644
 --- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h
 +++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h
-@@ -41,10 +41,13 @@ public:
+@@ -29,6 +29,7 @@
+ 
+ #if USE(LIBWEBRTC) && USE(GSTREAMER)
+ 
++#include "GRefPtrGStreamer.h"
+ #include "RealtimeIncomingAudioSource.h"
+ 
+ #include <wtf/MediaTime.h>
+@@ -41,15 +42,18 @@ public:
  
  private:
      RealtimeIncomingAudioSourceLibWebRTC(rtc::scoped_refptr<webrtc::AudioTrackInterface>&&, String&&);
@@ -20,11 +126,17 @@ index 9ab53211c2b7..4ce9549f9678 100644
      // webrtc::AudioTrackSinkInterface API
      void OnData(const void* audioData, int bitsPerSample, int sampleRate, size_t numberOfChannels, size_t numberOfFrames) final;
  
-+    guint64 m_dumpSize { 0 };
-+    GRefPtr<GstElement> m_dumpPipeline;
      uint64_t m_numberOfFrames { 0 };
      MediaTime m_baseTime { MediaTime::invalidTime() };
++    guint64 m_dumpSize { 0 };
++    GRefPtr<GstElement> m_dumpPipeline;
++    GRefPtr<GstElement> m_dumpSrc;
  };
+ 
+ } // namespace WebCore
+ 
+ #endif // USE(LIBWEBRTC)
+-
 -- 
 2.44.4
 
