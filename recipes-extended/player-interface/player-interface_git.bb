@@ -7,7 +7,7 @@ PV = "0.3.1"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "de3d6cf75004de979a13618113697e1acb1b9b17"
+SRCREV_player-interface ?= "8efe91731cc434c88d492bc5d7725aeabea9ee8b"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "feature/federated_2608"
 
