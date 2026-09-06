@@ -9,7 +9,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;protocol=https;branch=topic/nm-test-change \
            file://rdkservices.ini \
           "
 
@@ -18,6 +18,8 @@ SRCREV = "d0e98b3eec72b635203149cb293e269dbca91bdf"
 SRCREV:vdevice_x86-64-mw = "c7519329de6b1af6ac9e8a64694ffc64bf8830c3"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
+SRCREV = "3df5be187bda4e9433dbb51cd61e92757bdfbd02"
 
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
