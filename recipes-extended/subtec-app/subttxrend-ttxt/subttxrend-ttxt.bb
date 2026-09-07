@@ -11,7 +11,7 @@ DEPENDS = "ttxdecoder subttxrend-common subttxrend-gfx libxkbcommon"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "173ea8f46401c76639eae8f074fb161be0006a92"
+SRCREV = "25e85c7c765881794aacac2342aaa6aa672b64a0"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-ttxt"
 
