@@ -32,14 +32,6 @@ index 39cec06763e0..913a80110222 100644
  
 +bool RemoteInspector::shouldInhibitLocalHostInspection(TargetID targetId)
 +{
-+    RemoteInspectionTarget *remoteInspectionTarget = nullptr;
-+    auto target = m_targetMap.get(targetId);
-+    if(target && is<RemoteInspectionTarget>(target)) {
-+        remoteInspectionTarget = downcast<RemoteInspectionTarget>(target);
-+    } else {
-+        return true;
-+    }
-+
 +    static auto isProductionBuild = []() -> bool {
 +        FILE* properties = fopen("/etc/device.properties", "r");
 +        if (properties) {
@@ -68,6 +60,14 @@ index 39cec06763e0..913a80110222 100644
 +    static bool productionBuildFlag = isProductionBuild();
 +    if (!productionBuildFlag)
 +        return false;
++
++    RemoteInspectionTarget *remoteInspectionTarget = nullptr;
++    auto target = m_targetMap.get(targetId);
++    if(target && is<RemoteInspectionTarget>(target)) {
++        remoteInspectionTarget = downcast<RemoteInspectionTarget>(target);
++    } else {
++        return true;
++    }
 +
 +    // find the localhost page
 +    if(remoteInspectionTarget->url().find("localhost:"_s) != notFound)
