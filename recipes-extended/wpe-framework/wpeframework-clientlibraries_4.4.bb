@@ -9,7 +9,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit python3native cmake pkgconfig
 
-SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https;branch=R4_4;name=wpeframework-clientlibraries \
+SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https;name=wpeframework-clientlibraries \
            file://r4.4/Library-version-Matched-With-Release-ClientLibs.patch \
            file://r4.4/0004-R4-Security-Agent-Library-NameChange.patch \
            file://r4.4/0004-Cipher-CipherNetflix-methods-return-type-changes.patch \
@@ -26,7 +26,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            "
 
 # Oct 17, 2023
-SRCREV_wpeframework-clientlibraries = "09a75a85e1263e0520f182dea6dc19c673e070a1"
+SRCREV_wpeframework-clientlibraries = "99f10703c1689bfb06b4156b498d3df20bf69c19"
 
 # ----------------------------------------------------------------------------
 
