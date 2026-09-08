@@ -12,7 +12,7 @@ DEPENDS:append = " virtual/egl "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "0a2821d343d3266b1a80a72bb0de4e3915a3534c"
+SRCREV = "90d966cb267ffc4b912840bac9bc8635a0517fb3"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-gfx"
 #
