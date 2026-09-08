@@ -40,6 +40,9 @@ PLUGIN_MONITOR_INSTANCES_LIST = ""
 # Monitor TextToSpeech
 PLUGIN_MONITOR_INSTANCES_LIST += "org.rdk.TextToSpeech,0,0,1,60,3"
 
+# Monitor DeviceSettings
+PLUGIN_MONITOR_INSTANCES_LIST += "org.rdk.DeviceSettings,0,0,1,60,3"
+
 EXTRA_OECMAKE += " \
     ${MONITOR_PLUGIN_ARGS} \
     -DBUILD_REFERENCE=${SRCREV} \

@@ -2,8 +2,8 @@ SUMMARY = "ENTServices displayinfo plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=0545acf8134821be0c0b6cb6d4603200"
 
-PV = "1.2.7"
-PR = "r0"
+PV = "1.2.8_Test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displayinfo;${CMF_GITHUB_SRC_URI_SUFFI
            file://rdkservices.ini \
           "
 
-# Release version - 1.2.7
-SRCREV = "06b0cb939915f8f2e2e5b64f0a394b6deb1dadf9"
+# Release version - 1.2.8
+SRCREV = "877b7b0479853807c58c6a13e07f272abf446108"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -55,7 +55,7 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[displayinfo]          = "-DPLUGIN_DISPLAYINFO=ON  -DUSE_DEVICESETTINGS=1,-DPLUGIN_DISPLAYINFO=OFF,iarmbus iarmmgrs drm entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal virtual/vendor-displayinfo-soc,iarmbus libdrm entservices-apis entservices-helpers devicesettings virtual/vendor-displayinfo-soc"
 
 # ----------------------------------------------------------------------------
-
+EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \

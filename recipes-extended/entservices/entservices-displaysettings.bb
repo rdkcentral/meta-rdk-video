@@ -2,8 +2,8 @@ SUMMARY = "ENTServices displaysettings plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.6.4"
-PR = "r0"
+PV = "1.8.0_Test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
-# Release version - 1.6.4
-SRCREV = "5adb422d958181c46b914a7e52d50a1ac13c1461"
+# Release version - 1.8.0
+SRCREV = "401cca07248708d2cbf323db77b701d8ecc4cd51"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -48,7 +48,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[displaysettings]      = "-DPLUGIN_DISPLAYSETTINGS=ON,-DPLUGIN_DISPLAYSETTINGS=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus rfc devicesettings entservices-helpers"
-
+EXTRA_OECMAKE += " -DDS_COMRPC=ON"
 # ----------------------------------------------------------------------------
 
 EXTRA_OECMAKE += " \
