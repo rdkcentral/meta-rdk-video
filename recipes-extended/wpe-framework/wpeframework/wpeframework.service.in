@@ -20,7 +20,7 @@ Environment="FORCE_SVP=TRUE"
 Environment="FORCE_SAP=TRUE"
 Environment="CDLFILE=$(cat /opt/cdl_flashed_file_name)"
 Environment="PREV_CDLFILE=$(cat /opt/previous_flashed_file_name)"
-ExecStartPre=/bin/sh -c 'mkdir -p /tmp/persistent && echo "/tmp/persistent/%e.%s.core" > /proc/sys/kernel/core_pattern'
+ExecStartPre=/bin/sh -c 'mkdir -p /tmp/persistent && echo "/tmp/persistent/%%e.%%s.core" > /proc/sys/kernel/core_pattern'
 ExecStartPre=/bin/sh -c 'if [[ ${CDLFILE} != *"${PREV_CDLFILE}"* ]]; then echo "Removing override.json/override_V2.json on bootup after CDL"; rm -rf /opt/persistent/rdkservices/PluginHost/override*.json; fi'
 ExecStartPre=-/usr/bin/rdkLogMileStone WPE_FRAMEWORK_START
 SyslogIdentifier=WPEFramework
