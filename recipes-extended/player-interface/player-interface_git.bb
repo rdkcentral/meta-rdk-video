@@ -9,7 +9,7 @@ PR = "r0"
 SRCREV_FORMAT = "player-interface"
 SRCREV_player-interface ?= "03084d0a063034cb23e08dd590c6bdc9c0819807"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "main"
+PLAYERINTERFACE_BRANCH ?= "feature/VPAAMP-959_PI"
 
 inherit pkgconfig
 inherit cmake
