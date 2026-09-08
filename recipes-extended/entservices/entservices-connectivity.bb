@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Connectivity plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV = "d9ba34d3d495e918974aa135d1180494b1ced941"
+PV = "9ef18cc200711a321f96676eaa1230050d4b1da6"
 PR = "r0"
 
 S = "${WORKDIR}/git"
