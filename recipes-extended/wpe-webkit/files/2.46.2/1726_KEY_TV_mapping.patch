@@ -1,0 +1,63 @@
+From fe3aedcf221715f0963ed0da4b79c6346d197c3e Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Thu, 3 Sep 2026 10:50:23 +0200
+Subject: [PATCH] Add KEY_TV key mapping for libwpe impl
+
+This is needed to handle LiveTV button on TV remote.
+Use "TV" key value as defined in W3C
+https://www.w3.org/TR/uievents-key/#keys-tv
+
+Leave code value Undefined since there is no well defined value
+for code prop.
+---
+ Source/WebCore/platform/PlatformKeyboardEvent.h              | 2 +-
+ .../WebCore/platform/libwpe/PlatformKeyboardEventLibWPE.cpp  | 5 ++++-
+ Source/WebKit/Shared/libwpe/WebEventFactory.cpp              | 2 +-
+ 3 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/Source/WebCore/platform/PlatformKeyboardEvent.h b/Source/WebCore/platform/PlatformKeyboardEvent.h
+index 4aa768e1c2a8..24ae16f24ec3 100644
+--- a/Source/WebCore/platform/PlatformKeyboardEvent.h
++++ b/Source/WebCore/platform/PlatformKeyboardEvent.h
+@@ -138,7 +138,7 @@ namespace WebCore {
+ #endif
+ 
+ #if USE(LIBWPE)
+-        static String keyValueForWPEKeyCode(unsigned);
++        static String keyValueForWPEKeyCode(unsigned, unsigned);
+         static String keyCodeForHardwareKeyCode(unsigned);
+         static String keyIdentifierForWPEKeyCode(unsigned);
+         static int windowsKeyCodeForWPEKeyCode(unsigned);
+diff --git a/Source/WebCore/platform/libwpe/PlatformKeyboardEventLibWPE.cpp b/Source/WebCore/platform/libwpe/PlatformKeyboardEventLibWPE.cpp
+index 0020f6c53722..ee55c569f530 100644
+--- a/Source/WebCore/platform/libwpe/PlatformKeyboardEventLibWPE.cpp
++++ b/Source/WebCore/platform/libwpe/PlatformKeyboardEventLibWPE.cpp
+@@ -40,8 +40,11 @@ namespace WebCore {
+ // more like what Firefox does, and generate these switch statements
+ // at build time.
+ // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
+-String PlatformKeyboardEvent::keyValueForWPEKeyCode(unsigned keyCode)
++String PlatformKeyboardEvent::keyValueForWPEKeyCode(unsigned keyCode, unsigned hwKeyCode)
+ {
++    if (keyCode == 0 && hwKeyCode == 0x181) // KEY_TV
++        return "TV"_s;
++
+     switch (keyCode) {
+     // Modifier keys.
+     case WPE_KEY_Alt_L:
+diff --git a/Source/WebKit/Shared/libwpe/WebEventFactory.cpp b/Source/WebKit/Shared/libwpe/WebEventFactory.cpp
+index e9c0c9bcc673..2ea74f2f5a56 100644
+--- a/Source/WebKit/Shared/libwpe/WebEventFactory.cpp
++++ b/Source/WebKit/Shared/libwpe/WebEventFactory.cpp
+@@ -117,7 +117,7 @@ WebKeyboardEvent WebEventFactory::createWebKeyboardEvent(struct wpe_input_keyboa
+ {
+     return WebKeyboardEvent({ event->pressed ? WebEventType::KeyDown : WebEventType::KeyUp, modifiersForKeyboardEvent(event), wallTimeForEventTime(event->time) },
+         text.isNull() ? WebCore::PlatformKeyboardEvent::singleCharacterString(event->key_code) : text,
+-        WebCore::PlatformKeyboardEvent::keyValueForWPEKeyCode(event->key_code),
++        WebCore::PlatformKeyboardEvent::keyValueForWPEKeyCode(event->key_code, event->hardware_key_code),
+         WebCore::PlatformKeyboardEvent::keyCodeForHardwareKeyCode(event->hardware_key_code),
+         WebCore::PlatformKeyboardEvent::keyIdentifierForWPEKeyCode(event->key_code),
+         WebCore::PlatformKeyboardEvent::windowsKeyCodeForWPEKeyCode(event->key_code),
+-- 
+2.53.0
+
