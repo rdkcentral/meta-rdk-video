@@ -19,7 +19,12 @@ S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=main"
 
-SRCREV = "a9ffe66a506d5e63c8e2a97675ccead4da4d76cf"
+# Bumped for the rdkservices-comcast SRCREV bump on this branch: SecManager.h's
+# NetworkManagerNotification overrides the 3-arg onInternetStatusChange(prev, curr, interface)
+# and 1-arg onWiFiStateChange(state). networkmanager main HEAD has since added a 4th
+# 'reason' param (ff3b475c, RDK-61724) and an 'ssid' param to onWiFiStateChange
+# (27b7fa0b, RDKEMW-22842); this is the last commit before those.
+SRCREV = "6954ba0d6abe6eae6df187efef9a6e453204a842"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
