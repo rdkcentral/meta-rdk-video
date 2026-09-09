@@ -1,0 +1,17 @@
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+index 7247efb4d717..6e30b0bc1f6f 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+@@ -624,6 +624,11 @@ static void webKitMediaSrcLoop(void* userData)
+         if (result == GST_FLOW_NOT_LINKED && stream->track->type() == TrackPrivateBaseGStreamer::TrackType::Video) {
+             // We allow multiple video tracks and all of them except one may be unlinked. Just drop the buffer.
+             GST_TRACE_OBJECT(pad, "Buffer not pushed because pad is not-linked, ignoring");
++        } else if (result == GST_FLOW_EOS) {
++            // EOS is a normal downstream shutdown signal, not a source/media error. Pausing the task lets the
++            // pipeline handle the end-of-stream while avoiding a false FormatError on the HTMLMediaElement.
++            GST_DEBUG_OBJECT(pad, "Buffer not pushed because downstream reached EOS, pausing source task.");
++            gst_pad_pause_task(pad);
+         } else if (result != GST_FLOW_OK && result != GST_FLOW_FLUSHING) {
+             gst_pad_pause_task(pad);
+             GST_ELEMENT_ERROR(stream->source, CORE, PAD, ("Failed to push buffer"), ("gst_pad_push() returned %s", gst_flow_get_name(result)));
+
