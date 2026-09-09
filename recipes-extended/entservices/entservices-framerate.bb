@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-framerate;${CMF_GITHUB_SRC_URI_SUFFIX}
           "
 
 # Release version - 1.2.3
-SRCREV = "e18f0c21ae65f73bb59a9218c9e9d9c07bb68314"
+SRCREV = "2c55d48f5fe2b39cf036de30859b3f12db4816a6"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
