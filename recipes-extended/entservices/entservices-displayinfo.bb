@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displayinfo;${CMF_GITHUB_SRC_URI_SUFFI
           "
 
 # Release version - 1.2.8
-SRCREV = "31bb3ea415db3fc032a10745bf700dac3cf33ed8"
+SRCREV = "c9b6c9cf412929bb3810c1c3d346d39926c86e56"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -22,11 +22,6 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
-
-
-
-
-
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
 
 DEPENDS += "wpeframework wpeframework-tools-native"
@@ -55,7 +50,6 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[displayinfo]          = "-DPLUGIN_DISPLAYINFO=ON  -DUSE_DEVICESETTINGS=1,-DPLUGIN_DISPLAYINFO=OFF,iarmbus iarmmgrs drm entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal virtual/vendor-displayinfo-soc,iarmbus libdrm entservices-apis entservices-helpers devicesettings virtual/vendor-displayinfo-soc"
 
 # ----------------------------------------------------------------------------
-EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
