@@ -90,7 +90,7 @@ update_file_permission(){
         "/opt/drm/ffffffff0000000a.sha",
         "/opt/drm/ffffffff0000000a.bin",
     )
-    for file in "${file_req_permission[@]}"; do   
+    for file in "${files_req_permission[@]}"; do   
          if [ -f "$file" ]; then
             chmod +r "$file"
             boottypeLog "changed the permission of $file by +r"
