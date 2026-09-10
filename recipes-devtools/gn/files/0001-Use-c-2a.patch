@@ -1,0 +1,25 @@
+From a290224674e6eeaa08a566236bde48f31c70b2d3 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Tue, 8 Sep 2026 20:20:40 +0000
+Subject: [PATCH] Use c++2a
+
+---
+ build/gen.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/build/gen.py b/build/gen.py
+index 5d0745997..b0fdabcae 100755
+--- a/build/gen.py
++++ b/build/gen.py
+@@ -502,7 +502,7 @@ def WriteGNNinja(path, platform, host, options, args_list):
+         '-Wextra-semi',
+         '-Wundef',
+ 
+-        '-std=c++20'
++        '-std=c++2a'
+     ])
+ 
+     if is_gcc(cxx):
+-- 
+2.44.4
+
