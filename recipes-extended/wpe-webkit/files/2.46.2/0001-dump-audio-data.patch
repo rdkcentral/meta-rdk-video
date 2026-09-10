@@ -27,8 +27,8 @@ index 5f959c9b3a45..7450a4fe5fff 100644
  RealtimeIncomingAudioSourceLibWebRTC::RealtimeIncomingAudioSourceLibWebRTC(rtc::scoped_refptr<webrtc::AudioTrackInterface>&& audioTrack, String&& audioTrackId)
      : RealtimeIncomingAudioSource(WTFMove(audioTrack), WTFMove(audioTrackId))
  {
-+    if (!g_getenv("WEBKIT_WEBRTC_DEC_DUMP_AUDIO"))
-+        return;
++   // if (!g_getenv("WEBKIT_WEBRTC_DEC_DUMP_AUDIO"))
++   //     return;
 +
 +    auto cleanUpDumpPipeline = [this] {
 +        if (m_dumpPipeline)
