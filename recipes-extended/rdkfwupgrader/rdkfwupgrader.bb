@@ -27,6 +27,7 @@ CXXFLAGS += " -Wall -Werror"
 
 EXTRA_OECONF = "--enable-rfcapi --enable-t2api"
 EXTRA_OECONF += "${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', '--enable-test-fwupgrader', '', d)}"
+EXTRA_OECONF += " --enable-iarmevent"
 
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
 
