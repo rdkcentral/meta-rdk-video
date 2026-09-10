@@ -8,7 +8,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/linux_binder_idl;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 PV ?= "1.0.0"
 PR ?= "r0"
-SRCREV ?= "1.0.0"
+#SRCREV_TAG = 1.0.0"
+SRCREV = "0f7a23b6b879f0a67d90c9b8b74ecba8dc0c5312"
 
 S = "${WORKDIR}/git"
 OECMAKE_SOURCEPATH = "${WORKDIR}/git/aidl-generator"
