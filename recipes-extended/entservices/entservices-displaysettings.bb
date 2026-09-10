@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 PV = "1.8.0_Test"
-PR = "r3"
+PR = "r4"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_S
            file://rdkservices.ini \
           "
 # Release version - 1.8.0
-SRCREV = "d2e5f8b76cf9117995688d08f32160bde69be967"
+SRCREV = "a1e3fd93a5e7b07133524e95de14d951190e79ef"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
