@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "a5c0b201941580205ecb2fd8ab3088cdd8beca39"
+SRCREV = "e04672a8edb070824ab596a6e2dc97ca4f8c903b"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -18,11 +18,11 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers', ' -DENABLE_RDKAPPMANAGERS_RUNTIMECONFIG=ON', '', d)}"
+EXTRA_OECMAKE += " -DENABLE_RDKAPPMANAGERS_RUNTIMECONFIG=ON"
 
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '-DRDK_APPMANAGERS_DEBUG=OFF', '-DRDK_APPMANAGERS_DEBUG=ON', d)}"
 DEPENDS += "wpeframework wpeframework-tools-native wpeframework-clientlibraries"
-DEPENDS += "${@bb.utils.contains_any('DISTRO_FEATURES', 'enable_rdkappmanagers', 'yaml-cpp', '', d)}"
+DEPENDS += "yaml-cpp"
 RDEPENDS:${PN} += "wpeframework"
 DEPENDS += "packager-headers"
 DEPENDS += "iptables"
@@ -49,6 +49,7 @@ PACKAGECONFIG ?= " telemetrysupport \
     ocicontainer \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_bolt_apps', '', 'rdknativescript', d)} \
     runtimemanager \
+    victimselector \
     packagemanager \
     lifecyclemanager \
     appstoragemanager \
@@ -66,6 +67,8 @@ PACKAGECONFIG ?= " telemetrysupport \
 inherit features_check
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'disable_security_agent', ' -DENABLE_SECURITY_AGENT=OFF ', '  ', d)}"
 
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'resource-monitor', ' -DAPP_MANAGER_RESOURCE_MONITOR=ON ', ' -DAPP_MANAGER_RESOURCE_MONITOR=OFF ', d)}"
+
 # Enable the RDKShell memcr feature support flags
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DPLUGIN_HIBERNATESUPPORT=ON -DPLUGIN_HIBERNATE_NATIVE_APPS_ON_SUSPENDED=ON','',d)}"
 
@@ -79,6 +82,7 @@ PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[telemetry]            = "-DPLUGIN_TELEMETRY=ON,,iarmbus iarmmgrs entservices-apis rfc rbus,iarmbus entservices-apis rfc rbus"
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON ${RUNTIMEMANAGER_PLUGIN_ARGS},-DPLUGIN_RUNTIME_MANAGER=OFF,entservices-apis iptables,entservices-apis iptables"
+PACKAGECONFIG[victimselector]       = "-DPLUGIN_VICTIM_SELECTOR=ON,-DPLUGIN_VICTIM_SELECTOR=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[packagemanager]       = "-DPLUGIN_PACKAGE_MANAGER=ON ${PACKAGEMANAGER_PLUGIN_ARGS} -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_PACKAGE_MANAGER=OFF -DLIB_PACKAGE=OFF,curl virtual/libpackage,curl virtual/libpackage"
 PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LIFECYCLE_MANAGER=OFF,websocketpp entservices-apis,entservices-apis"
 PACKAGECONFIG[appstoragemanager]    = "-DPLUGIN_APP_STORAGE_MANAGER=ON ${APPSTORAGEMANAGER_PLUGIN_ARGS},-DPLUGIN_APP_STORAGE_MANAGER=OFF,entservices-apis,entservices-apis"
