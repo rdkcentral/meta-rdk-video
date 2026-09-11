@@ -126,6 +126,7 @@ CFLAGS:append:client = " -DMEDIA_CLIENT"
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', '-DENABLE_MFR_WIFI', '', d)}"
 CFLAGS:append = " -DUSE_YAJL2"
 CFLAGS += " -DDSMGR_LOGGER_ENABLED"
+LDFLAGS += " -lrdkloggers"
 CFLAGS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', '-DENABLE_EU_RESOLUTION', \
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_IT', '-DENABLE_EU_RESOLUTION', \
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_DE', '-DENABLE_EU_RESOLUTION', \
