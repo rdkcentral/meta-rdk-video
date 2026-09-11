@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "9d1b7ef7edfa4334a348c60f174849cdc8667a5e"
+SRCREV = "0db7321c307d9edb5957ae6f6b48f179e6bf1c2c"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-cloudstore;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
