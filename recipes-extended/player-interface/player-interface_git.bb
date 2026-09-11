@@ -3,13 +3,13 @@ DESCRIPTION = "This component provides the Player Firebolt Interface library for
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV = "1.0.0_notvalid"
+PV = "1.0.1"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "4d78282210e1e112f6f8a4e9baeb905af5ae896a"
+SRCREV_player-interface ?= "0e6cd10305c1087bc38c3dee8a7a5ed73a8b6ce4"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "feature/federated_2608"
+PLAYERINTERFACE_BRANCH ?= "main"
 
 # Pass version/tag/rev info into CMake so they get baked into the library at build time
 EXTRA_OECMAKE += " -DPI_GIT_TAG=${PV}"
