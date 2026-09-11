@@ -3,21 +3,30 @@ DESCRIPTION = "This component provides the Player Firebolt Interface library for
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV = "0.3.1"
+PV = "1.0.1"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "7f054eec789e51f57fc7cac9f4c907907eb7db7f"
+SRCREV_player-interface ?= "0e6cd10305c1087bc38c3dee8a7a5ed73a8b6ce4"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "main"
+
+# Pass version/tag/rev info into CMake so they get baked into the library at build time
+EXTRA_OECMAKE += " -DPI_GIT_TAG=${PV}"
+EXTRA_OECMAKE += " -DPI_VERSION=${PV}"
+EXTRA_OECMAKE += " -DPI_GIT_REVISION=${SRCREV}"
+EXTRA_OECMAKE += " -DPI_GIT_BRANCH=${PLAYERINTERFACE_BRANCH}"
 
 inherit pkgconfig
 inherit cmake
 
-DEPENDS += "iarmmgrs wpeframework ${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0 gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)} wpeframework-clientlibraries wpe-webkit virtual/vendor-gst-drm-plugins essos virtual/vendor-secapi2-adapter"
+DEPENDS += "wpeframework ${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0 gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)} wpeframework-clientlibraries wpe-webkit virtual/vendor-gst-drm-plugins essos virtual/vendor-secapi2-adapter"
+
+EXTRA_OECMAKE += " -DCMAKE_USE_FIREBOLT=1 "
+EXTRA_OECMAKE += " -DCMAKE_IARM_MGR=0 "
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec_cc', 'subttxrend-app', '', d)}"
-RDEPENDS:${PN} += "devicesettings ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
 
 NO_RECOMMENDATIONS = "1"
