@@ -8,7 +8,7 @@ DEPENDS = "westeros wayland essos virtual/egl rapidjson jpeg libpng curl"
 DEPENDS:append = "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '', 'libsoup-2.4 boost libsyswrapper', d)}"
 
 S = "${WORKDIR}/git"
-PV = "1.4.0.rc1"
+PV = "1.4.0.rc2"
 PR = "r0"
 
 SRCREV = "d43ff7a95b0166aa2ceaafc4bac29eb911624f24"
