@@ -73,25 +73,25 @@ update_dir_permission(){
 
 update_file_permission(){
     files_req_permission=(
-        "/opt/drm/ffffffff00000001.key",
-        "/opt/drm/ffffffff00000001.sha",
-        "/opt/drm/ffffffff00000001.keyinfo",
-        "/opt/drm/ffffffff00000002.bin",
-        "/opt/drm/ffffffff00000002.sha",
-        "/opt/drm/ffffffff00000004.bin",
-        "/opt/drm/ffffffff00000004.sha",
-        "/opt/drm/ffffffff00000006.bin",
-        "/opt/drm/ffffffff00000006.sha",
-        "/opt/drm/ffffffff00000007.bin",
-        "/opt/drm/ffffffff00000008.bin",
-        "/opt/drm/ffffffff00000009.key",
-        "/opt/drm/ffffffff00000009.sha",
-        "/opt/drm/ffffffff00000009.keyinfo",
-        "/opt/drm/ffffffff0000000a.sha",
-        "/opt/drm/ffffffff0000000a.bin",
+        "/opt/drm/ffffffff00000001.key"
+        "/opt/drm/ffffffff00000001.sha"
+        "/opt/drm/ffffffff00000001.keyinfo"
+        "/opt/drm/ffffffff00000002.bin"
+        "/opt/drm/ffffffff00000002.sha"
+        "/opt/drm/ffffffff00000004.bin"
+        "/opt/drm/ffffffff00000004.sha"
+        "/opt/drm/ffffffff00000006.bin"
+        "/opt/drm/ffffffff00000006.sha"
+        "/opt/drm/ffffffff00000007.bin"
+        "/opt/drm/ffffffff00000008.bin"
+        "/opt/drm/ffffffff00000009.key"
+        "/opt/drm/ffffffff00000009.sha"
+        "/opt/drm/ffffffff00000009.keyinfo"
+        "/opt/drm/ffffffff0000000a.sha"
+        "/opt/drm/ffffffff0000000a.bin"
     )
     for file in "${files_req_permission[@]}"; do   
-         if [ -f "$file" ]; then
+         if [ -e "$file" ]; then
             chmod +r "$file"
             boottypeLog "changed the permission of $file by +r"
         else
