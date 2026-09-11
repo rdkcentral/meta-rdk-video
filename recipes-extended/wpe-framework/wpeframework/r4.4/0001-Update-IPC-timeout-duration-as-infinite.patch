@@ -1,0 +1,26 @@
+From 7a736a665eabaffdbfcdc3ad889fb90feae28801 Mon Sep 17 00:00:00 2001
+From: Yuvaramachandran Gurusamy <yuvaramachandran_gurusamy@comcast.com>
+Date: Fri, 11 Sep 2026 19:08:49 +0530
+Subject: [PATCH] Update IPC timeout duration as infinite
+
+Signed-off-by: Yuvaramachandran Gurusamy <yuvaramachandran_gurusamy@comcast.com>
+---
+ Source/com/Administrator.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/com/Administrator.h b/Source/com/Administrator.h
+index 5e9a488c..0135f124 100644
+--- a/Source/com/Administrator.h
++++ b/Source/com/Administrator.h
+@@ -36,7 +36,7 @@ namespace RPC {
+ #ifdef __DEBUG__
+     enum { CommunicationTimeOut = Core::infinite }; // Time in ms. Forever
+ #else
+-    enum { CommunicationTimeOut = 20000 }; // Time in ms. 20 Seconds
++    enum { CommunicationTimeOut = Core::infinite }; // Time in ms. Forever for testing
+ #endif
+     enum { CommunicationBufferSize = 8120 }; // 8K :-)
+ 
+-- 
+2.50.1 (Apple Git-155)
+
