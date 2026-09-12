@@ -34,7 +34,8 @@ SYSLOG-NG_DESTINATION_sceneset = "sceneset.log"
 SYSLOG-NG_LOGRATE_sceneset = "high"
 
 SRCREV = "0fe82bbbc5d613b05d4cef3fa0545f8c731aef07"
-SRC_URI = "${CMF_GITHUB_ROOT}/sceneset;${CMF_GITHUB_SRC_URI_SUFFIX};name=sceneset"
+SRC_URI = "${CMF_GITHUB_ROOT}/sceneset;${CMF_GITHUB_SRC_URI_SUFFIX};name=sceneset \
+           file://10-appgateway-dependency.conf"
 SRCREV_FORMAT = "sceneset"
 
 S = "${WORKDIR}/git"
@@ -42,9 +43,16 @@ S = "${WORKDIR}/git"
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/systemd/sceneset.service ${D}${systemd_unitdir}/system/sceneset.service
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'appgateway_sceneset', 'true', 'false', d)}; then
+        install -d ${D}${systemd_unitdir}/system/sceneset.service.d
+        install -m 0644 ${WORKDIR}/10-appgateway-dependency.conf \
+            ${D}${systemd_unitdir}/system/sceneset.service.d/10-appgateway-dependency.conf
+    fi
 }
 
 FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
+FILES:${PN} += "${systemd_unitdir}/system/sceneset.service.d/*"
 
 SYSTEMD_SERVICE:${PN} = "sceneset.service"
+
