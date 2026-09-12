@@ -21,7 +21,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${RIALT
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
 DEPENDS = "openssl jsoncpp protobuf protobuf-native"
-DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform"
+DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform yaml-cpp"
 # entservices-opencdmi provides opencdm/open_cdm.h and ocdm.pc; wpeframework-clientlibraries is still used for other Thunder components (see PACKAGECONFIG[server]).
 DEPENDS:append = " entservices-opencdmi"
 S = "${WORKDIR}/git"
@@ -41,7 +41,7 @@ PACKAGECONFIG[servermanager] = "-DENABLE_SERVER_MANAGER=ON,-DENABLE_SERVER_MANAG
 PACKAGECONFIG ??= "server servermanager"
 
 RDEPENDS:${PN} += "protobuf mongoose"
-RDEPENDS:${PN}-server += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
+RDEPENDS:${PN}-server += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils yaml-cpp"
 RDEPENDS:${PN}-servermanager += "${PN}-server"
 RDEPENDS:${PN}-servermanager-lib += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
 
