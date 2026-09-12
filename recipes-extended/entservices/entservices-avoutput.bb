@@ -1,6 +1,6 @@
 SUMMARY = "ENTServices AVOutput plugin"
-LICENSE = "CLOSED"
-
+LICENSE = "Apache-2.0"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 PV = "2.1.3"
 PR = "r0"
 
@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avoutput;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 # Release version - 2.1.3
-SRCREV = "2.1.3"
+SRCREV = "945bd18a3f7c950dd7c08452e6febf3869018f53"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
