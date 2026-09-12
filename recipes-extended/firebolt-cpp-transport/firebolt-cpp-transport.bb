@@ -8,11 +8,11 @@ inherit cmake
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-PV = "1.1.11"
+PV = "1.1.12.rc1"
 PR = "r0"
 
 SRC_URI = "https://github.com/rdkcentral/firebolt-cpp-transport/releases/download/v${PV}/firebolt-cpp-transport-${PV}.tar.gz"
-SRC_URI[sha256sum] = "fcd0f77f6cc7911baee93a91f262e2ee1f7217f3d3eab0ba5618dc2821ce7da4"
+SRC_URI[sha256sum] = "7b7ac773aa26cce9788bbea1220a4d8d24e3f800fcedcf9fe3162a4454600fe4"
 S = "${WORKDIR}/firebolt-cpp-transport-${PV}"
 
 DEPENDS = "nlohmann-json websocketpp boost"
