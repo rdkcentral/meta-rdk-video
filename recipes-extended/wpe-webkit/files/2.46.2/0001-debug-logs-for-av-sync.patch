@@ -1,0 +1,993 @@
+From 515205ffbbe1c3d58bd021cf11a9d64f3a2837a5 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Fri, 4 Sep 2026 18:49:33 +0000
+Subject: [PATCH] debug logs for av sync
+
+---
+ .../webrtc/audio/audio_receive_stream.cc      |  2 +
+ .../Source/webrtc/audio/channel_receive.cc    | 70 +++++++++++++---
+ .../modules/video_coding/timing/timing.cc     | 84 ++++++++++++++++---
+ .../modules/video_coding/timing/timing.h      |  1 +
+ .../webrtc/video/rtp_streams_synchronizer2.cc | 21 +++++
+ .../video/rtp_video_stream_receiver2.cc       |  9 +-
+ .../webrtc/video/stream_synchronization.cc    | 36 +++++++-
+ .../webrtc/video/video_receive_stream2.cc     | 48 +++++++++--
+ .../gstreamer/GStreamerMediaStreamSource.cpp  | 52 ++++++++++--
+ .../RealtimeIncomingSourceGStreamer.cpp       |  5 +-
+ .../libwebrtc/LibWebRTCAudioModule.cpp        | 26 ++++++
+ .../libwebrtc/LibWebRTCAudioModule.h          |  5 +-
+ .../RealtimeIncomingAudioSourceLibWebRTC.cpp  | 34 +++++++-
+ .../RealtimeIncomingAudioSourceLibWebRTC.h    |  4 +
+ .../RealtimeIncomingVideoSourceLibWebRTC.cpp  | 45 +++++++++-
+ .../RealtimeIncomingVideoSourceLibWebRTC.h    |  2 +
+ 16 files changed, 401 insertions(+), 43 deletions(-)
+
+diff --git a/Source/ThirdParty/libwebrtc/Source/webrtc/audio/audio_receive_stream.cc b/Source/ThirdParty/libwebrtc/Source/webrtc/audio/audio_receive_stream.cc
+index 0073930d9fcd..8aea0a0e2a26 100644
+--- a/Source/ThirdParty/libwebrtc/Source/webrtc/audio/audio_receive_stream.cc
++++ b/Source/ThirdParty/libwebrtc/Source/webrtc/audio/audio_receive_stream.cc
+@@ -416,6 +416,8 @@ absl::optional<Syncable::Info> AudioReceiveStreamImpl::GetInfo() const {
+   // TODO(bugs.webrtc.org/11993): This is called via RtpStreamsSynchronizer,
+   // expect to be called on the network thread.
+   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
++  RTC_LOG(LS_INFO) << "WebRTCAVSync audio-sync AudioReceiveStreamImpl::GetInfo ssrc="
++                   << remote_ssrc();
+   return channel_receive_->GetSyncInfo();
+ }
+ 
+diff --git a/Source/ThirdParty/libwebrtc/Source/webrtc/audio/channel_receive.cc b/Source/ThirdParty/libwebrtc/Source/webrtc/audio/channel_receive.cc
+index b2fa0bf3cc61..f9dd63165f78 100644
+--- a/Source/ThirdParty/libwebrtc/Source/webrtc/audio/channel_receive.cc
++++ b/Source/ThirdParty/libwebrtc/Source/webrtc/audio/channel_receive.cc
+@@ -973,8 +973,13 @@ AudioDecodingCallStats ChannelReceive::GetDecodingCallStatistics() const {
+ 
+ uint32_t ChannelReceive::GetDelayEstimate() const {
+   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+-  // Return the current jitter buffer delay + playout delay.
+-  return acm_receiver_.FilteredCurrentDelayMs() + playout_delay_ms_;
++  uint32_t jitter_buffer_delay = acm_receiver_.FilteredCurrentDelayMs();
++  uint32_t total_delay = jitter_buffer_delay + playout_delay_ms_;
++  RTC_LOG(LS_INFO) << "WebRTCAVSync audio-sync GetDelayEstimate jitter_buffer_delay_ms="
++                   << jitter_buffer_delay
++                   << " playout_delay_ms=" << playout_delay_ms_
++                   << " total_delay_ms=" << total_delay;
++  return total_delay;
+ }
+ 
+ bool ChannelReceive::SetMinimumPlayoutDelay(int delay_ms) {
+@@ -982,15 +987,20 @@ bool ChannelReceive::SetMinimumPlayoutDelay(int delay_ms) {
+   // We get here via RtpStreamsSynchronizer. Once that's done, many (all?) of
+   // these locks aren't needed.
+   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+-  // Limit to range accepted by both VoE and ACM, so we're at least getting as
+-  // close as possible, instead of failing.
++  int requested_delay_ms = delay_ms;
+   delay_ms = rtc::SafeClamp(delay_ms, kVoiceEngineMinMinPlayoutDelayMs,
+                             kVoiceEngineMaxMinPlayoutDelayMs);
+   if (acm_receiver_.SetMinimumDelay(delay_ms) != 0) {
++    RTC_LOG(LS_INFO) << "WebRTCAVSync audio-sync SetMinimumPlayoutDelay requested_delay_ms="
++                     << requested_delay_ms << " applied_delay_ms=" << delay_ms
++                     << " success=0";
+     RTC_DLOG(LS_ERROR)
+         << "SetMinimumPlayoutDelay() failed to set min playout delay";
+     return false;
+   }
++  RTC_LOG(LS_INFO) << "WebRTCAVSync audio-sync SetMinimumPlayoutDelay requested_delay_ms="
++                   << requested_delay_ms << " applied_delay_ms=" << delay_ms
++                   << " success=1";
+   return true;
+ }
+ 
+@@ -1024,11 +1034,18 @@ ChannelReceive::GetCurrentEstimatedPlayoutNtpTimestampMs(int64_t now_ms) const {
+ bool ChannelReceive::SetBaseMinimumPlayoutDelayMs(int delay_ms) {
+   event_log_->Log(
+       std::make_unique<RtcEventNetEqSetMinimumDelay>(remote_ssrc_, delay_ms));
+-  return acm_receiver_.SetBaseMinimumDelayMs(delay_ms);
++  bool result = acm_receiver_.SetBaseMinimumDelayMs(delay_ms);
++  RTC_LOG(LS_INFO)
++      << "WebRTCAVSync audio-sync SetBaseMinimumPlayoutDelayMs requested_delay_ms="
++      << delay_ms << " success=" << result;
++  return result;
+ }
+ 
+ int ChannelReceive::GetBaseMinimumPlayoutDelayMs() const {
+-  return acm_receiver_.GetBaseMinimumDelayMs();
++  int delay_ms = acm_receiver_.GetBaseMinimumDelayMs();
++  RTC_LOG(LS_INFO) << "WebRTCAVSync audio-sync GetBaseMinimumPlayoutDelayMs delay_ms="
++                   << delay_ms;
++  return delay_ms;
+ }
+ 
+ absl::optional<Syncable::Info> ChannelReceive::GetSyncInfo() const {
+@@ -1054,6 +1071,17 @@ absl::optional<Syncable::Info> ChannelReceive::GetSyncInfo() const {
+ 
+   int jitter_buffer_delay = acm_receiver_.FilteredCurrentDelayMs();
+   info.current_delay_ms = jitter_buffer_delay + playout_delay_ms_;
++  RTC_LOG(LS_INFO) << "WebRTCAVSync audio-sync GetSyncInfo capture_ntp_secs="
++                   << info.capture_time_ntp_secs
++                   << " capture_ntp_frac=" << info.capture_time_ntp_frac
++                   << " capture_source_clock="
++                   << info.capture_time_source_clock
++                   << " latest_received_capture_timestamp="
++                   << info.latest_received_capture_timestamp
++                   << " latest_receive_time_ms=" << info.latest_receive_time_ms
++                   << " jitter_buffer_delay_ms=" << jitter_buffer_delay
++                   << " playout_delay_ms=" << playout_delay_ms_
++                   << " current_delay_ms=" << info.current_delay_ms;
+ 
+   return info;
+ }
+@@ -1066,13 +1094,21 @@ void ChannelReceive::UpdatePlayoutTimestamp(bool rtcp, int64_t now_ms) {
+   jitter_buffer_playout_timestamp_ = acm_receiver_.GetPlayoutTimestamp();
+ 
+   if (!jitter_buffer_playout_timestamp_) {
+-    // This can happen if this channel has not received any RTP packets. In
+-    // this case, NetEq is not capable of computing a playout timestamp.
++    RTC_LOG(LS_INFO)
++        << "WebRTCAVSync audio-sync UpdatePlayoutTimestamp rtcp=" << rtcp
++        << " now_ms=" << now_ms
++        << " jitter_buffer_playout_timestamp=<unset>";
+     return;
+   }
+ 
+   uint16_t delay_ms = 0;
+   if (_audioDeviceModulePtr->PlayoutDelay(&delay_ms) == -1) {
++    RTC_LOG(LS_INFO)
++        << "WebRTCAVSync audio-sync UpdatePlayoutTimestamp rtcp=" << rtcp
++        << " now_ms=" << now_ms
++        << " jitter_buffer_playout_timestamp="
++        << *jitter_buffer_playout_timestamp_
++        << " adm_playout_delay_ms=<error>";
+     RTC_DLOG(LS_WARNING)
+         << "ChannelReceive::UpdatePlayoutTimestamp() failed to read"
+            " playout delay from the ADM";
+@@ -1081,8 +1117,6 @@ void ChannelReceive::UpdatePlayoutTimestamp(bool rtcp, int64_t now_ms) {
+ 
+   RTC_DCHECK(jitter_buffer_playout_timestamp_);
+   uint32_t playout_timestamp = *jitter_buffer_playout_timestamp_;
+-
+-  // Remove the playout delay.
+   playout_timestamp -= (delay_ms * (GetRtpTimestampRateHz() / 1000));
+ 
+   if (!rtcp && playout_timestamp != playout_timestamp_rtp_) {
+@@ -1090,6 +1124,22 @@ void ChannelReceive::UpdatePlayoutTimestamp(bool rtcp, int64_t now_ms) {
+     playout_timestamp_rtp_time_ms_ = now_ms;
+   }
+   playout_delay_ms_ = delay_ms;
++  RTC_LOG(LS_INFO) << "WebRTCAVSync audio-sync UpdatePlayoutTimestamp rtcp="
++                   << rtcp << " now_ms=" << now_ms
++                   << " jitter_buffer_playout_timestamp="
++                   << *jitter_buffer_playout_timestamp_
++                   << " playout_timestamp_rtp=" << playout_timestamp
++                   << " adm_playout_delay_ms=" << delay_ms
++                   << " playout_timestamp_rtp_time_ms="
++                   << (playout_timestamp_rtp_time_ms_
++                           ? *playout_timestamp_rtp_time_ms_
++                           : -1)
++                   << " cached_ntp_ms="
++                   << (playout_timestamp_ntp_ ? *playout_timestamp_ntp_ : -1)
++                   << " cached_ntp_time_ms="
++                   << (playout_timestamp_ntp_time_ms_
++                           ? *playout_timestamp_ntp_time_ms_
++                           : -1);
+ }
+ 
+ int ChannelReceive::GetRtpTimestampRateHz() const {
+diff --git a/Source/ThirdParty/libwebrtc/Source/webrtc/modules/video_coding/timing/timing.cc b/Source/ThirdParty/libwebrtc/Source/webrtc/modules/video_coding/timing/timing.cc
+index e52259deb946..f3ef999980a0 100644
+--- a/Source/ThirdParty/libwebrtc/Source/webrtc/modules/video_coding/timing/timing.cc
++++ b/Source/ThirdParty/libwebrtc/Source/webrtc/modules/video_coding/timing/timing.cc
+@@ -27,6 +27,10 @@ constexpr TimeDelta kZeroPlayoutDelayDefaultMinPacing = TimeDelta::Millis(8);
+ constexpr TimeDelta kLowLatencyStreamMaxPlayoutDelayThreshold =
+     TimeDelta::Millis(500);
+ 
++bool ShouldLogWebRTCAVSyncCadence(size_t count) {
++  return count <= 20 || !(count % 100);
++}
++
+ void CheckDelaysValid(TimeDelta min_delay, TimeDelta max_delay) {
+   if (min_delay > max_delay) {
+     RTC_LOG(LS_ERROR)
+@@ -87,47 +91,59 @@ TimeDelta VCMTiming::min_playout_delay() const {
+ void VCMTiming::set_min_playout_delay(TimeDelta min_playout_delay) {
+   MutexLock lock(&mutex_);
+   if (min_playout_delay_ != min_playout_delay) {
++    TimeDelta old_min_playout_delay = min_playout_delay_;
+     CheckDelaysValid(min_playout_delay, max_playout_delay_);
+     min_playout_delay_ = min_playout_delay;
++    RTC_LOG(LS_INFO) << "WebRTCAVSync timing set_min_playout_delay old="
++                     << old_min_playout_delay << " new=" << min_playout_delay_
++                     << " max=" << max_playout_delay_;
+   }
+ }
+ 
+ void VCMTiming::set_max_playout_delay(TimeDelta max_playout_delay) {
+   MutexLock lock(&mutex_);
+   if (max_playout_delay_ != max_playout_delay) {
++    TimeDelta old_max_playout_delay = max_playout_delay_;
+     CheckDelaysValid(min_playout_delay_, max_playout_delay);
+     max_playout_delay_ = max_playout_delay;
++    RTC_LOG(LS_INFO) << "WebRTCAVSync timing set_max_playout_delay old="
++                     << old_max_playout_delay << " new=" << max_playout_delay_
++                     << " min=" << min_playout_delay_;
+   }
+ }
+ 
+ void VCMTiming::SetJitterDelay(TimeDelta jitter_delay) {
+   MutexLock lock(&mutex_);
+   if (jitter_delay != jitter_delay_) {
++    TimeDelta old_jitter_delay = jitter_delay_;
++    TimeDelta old_current_delay = current_delay_;
+     jitter_delay_ = jitter_delay;
+-    // When in initial state, set current delay to minimum delay.
+     if (current_delay_.IsZero()) {
+       current_delay_ = jitter_delay_;
+     }
++    RTC_LOG(LS_INFO) << "WebRTCAVSync timing SetJitterDelay old_jitter_delay="
++                     << old_jitter_delay << " new_jitter_delay="
++                     << jitter_delay_ << " old_current_delay="
++                     << old_current_delay << " current_delay="
++                     << current_delay_;
+   }
+ }
+ 
+ void VCMTiming::UpdateCurrentDelay(uint32_t frame_timestamp) {
+   MutexLock lock(&mutex_);
+   TimeDelta target_delay = TargetDelayInternal();
++  TimeDelta previous_current_delay = current_delay_;
+ 
+   if (current_delay_.IsZero()) {
+-    // Not initialized, set current delay to target.
+     current_delay_ = target_delay;
++    RTC_LOG(LS_INFO) << "WebRTCAVSync timing UpdateCurrentDelay frame_timestamp="
++                     << frame_timestamp << " target_delay=" << target_delay
++                     << " previous_current_delay=" << previous_current_delay
++                     << " current_delay=" << current_delay_;
+   } else if (target_delay != current_delay_) {
+     TimeDelta delay_diff = target_delay - current_delay_;
+-    // Never change the delay with more than 100 ms every second. If we're
+-    // changing the delay in too large steps we will get noticeable freezes. By
+-    // limiting the change we can increase the delay in smaller steps, which
+-    // will be experienced as the video is played in slow motion. When lowering
+-    // the delay the video will be played at a faster pace.
+     TimeDelta max_change = TimeDelta::Zero();
+     if (frame_timestamp < 0x0000ffff && prev_frame_timestamp_ > 0xffff0000) {
+-      // wrap
+       max_change =
+           TimeDelta::Millis(kDelayMaxChangeMsPerS *
+                             (frame_timestamp + (static_cast<int64_t>(1) << 32) -
+@@ -140,14 +156,27 @@ void VCMTiming::UpdateCurrentDelay(uint32_t frame_timestamp) {
+     }
+ 
+     if (max_change <= TimeDelta::Zero()) {
+-      // Any changes less than 1 ms are truncated and will be postponed.
+-      // Negative change will be due to reordering and should be ignored.
++      RTC_LOG(LS_INFO) << "WebRTCAVSync timing UpdateCurrentDelay frame_timestamp="
++                       << frame_timestamp << " target_delay=" << target_delay
++                       << " previous_current_delay="
++                       << previous_current_delay << " current_delay="
++                       << current_delay_ << " max_change=" << max_change;
+       return;
+     }
+     delay_diff = std::max(delay_diff, -max_change);
+     delay_diff = std::min(delay_diff, max_change);
+ 
+     current_delay_ = current_delay_ + delay_diff;
++    RTC_LOG(LS_INFO) << "WebRTCAVSync timing UpdateCurrentDelay frame_timestamp="
++                     << frame_timestamp << " target_delay=" << target_delay
++                     << " previous_current_delay=" << previous_current_delay
++                     << " current_delay=" << current_delay_
++                     << " max_change=" << max_change;
++  } else {
++    RTC_LOG(LS_INFO) << "WebRTCAVSync timing UpdateCurrentDelay frame_timestamp="
++                     << frame_timestamp << " target_delay=" << target_delay
++                     << " previous_current_delay=" << previous_current_delay
++                     << " current_delay=" << current_delay_;
+   }
+   prev_frame_timestamp_ = frame_timestamp;
+ }
+@@ -158,9 +187,15 @@ void VCMTiming::UpdateCurrentDelay(Timestamp render_time,
+   TimeDelta target_delay = TargetDelayInternal();
+   TimeDelta delayed = (actual_decode_time - render_time) +
+                       EstimatedMaxDecodeTime() + render_delay_;
++  TimeDelta previous_current_delay = current_delay_;
+ 
+-  // Only consider `delayed` as negative by more than a few microseconds.
+   if (delayed.ms() < 0) {
++    RTC_LOG(LS_INFO) << "WebRTCAVSync timing UpdateCurrentDelay render_time="
++                     << render_time << " actual_decode_time="
++                     << actual_decode_time << " delayed=" << delayed
++                     << " target_delay=" << target_delay
++                     << " previous_current_delay=" << previous_current_delay
++                     << " current_delay=" << current_delay_;
+     return;
+   }
+   if (current_delay_ + delayed <= target_delay) {
+@@ -168,6 +203,12 @@ void VCMTiming::UpdateCurrentDelay(Timestamp render_time,
+   } else {
+     current_delay_ = target_delay;
+   }
++  RTC_LOG(LS_INFO) << "WebRTCAVSync timing UpdateCurrentDelay render_time="
++                   << render_time << " actual_decode_time="
++                   << actual_decode_time << " delayed=" << delayed
++                   << " target_delay=" << target_delay
++                   << " previous_current_delay=" << previous_current_delay
++                   << " current_delay=" << current_delay_;
+ }
+ 
+ void VCMTiming::StopDecodeTimer(TimeDelta decode_time, Timestamp now) {
+@@ -244,7 +285,10 @@ TimeDelta VCMTiming::MaxWaitingTime(Timestamp render_time,
+ 
+ TimeDelta VCMTiming::TargetVideoDelay() const {
+   MutexLock lock(&mutex_);
+-  return TargetDelayInternal();
++  TimeDelta target_delay = TargetDelayInternal();
++  RTC_LOG(LS_INFO) << "WebRTCAVSync timing TargetVideoDelay target_delay="
++                   << target_delay;
++  return target_delay;
+ }
+ 
+ TimeDelta VCMTiming::TargetDelayInternal() const {
+@@ -276,7 +320,7 @@ bool VCMTiming::UseLowLatencyRendering() const {
+ 
+ VCMTiming::VideoDelayTimings VCMTiming::GetTimings() const {
+   MutexLock lock(&mutex_);
+-  return VideoDelayTimings{
++  VideoDelayTimings timings{
+       .num_decoded_frames = num_decoded_frames_,
+       .minimum_delay = jitter_delay_,
+       .estimated_max_decode_time = EstimatedMaxDecodeTime(),
+@@ -285,6 +329,20 @@ VCMTiming::VideoDelayTimings VCMTiming::GetTimings() const {
+       .max_playout_delay = max_playout_delay_,
+       .target_delay = StatsTargetDelayInternal(),
+       .current_delay = current_delay_};
++  size_t log_count = ++get_timings_log_count_;
++  if (ShouldLogWebRTCAVSyncCadence(log_count)) {
++    RTC_LOG(LS_INFO) << "WebRTCAVSync timing GetTimings count=" << log_count
++                     << " minimum_delay=" << timings.minimum_delay
++                     << " jitter_delay=" << jitter_delay_
++                     << " estimated_max_decode_time="
++                     << timings.estimated_max_decode_time
++                     << " render_delay=" << timings.render_delay
++                     << " min_playout_delay=" << timings.min_playout_delay
++                     << " max_playout_delay=" << timings.max_playout_delay
++                     << " target_delay=" << timings.target_delay
++                     << " current_delay=" << timings.current_delay;
++  }
++  return timings;
+ }
+ 
+ void VCMTiming::SetTimingFrameInfo(const TimingFrameInfo& info) {
+diff --git a/Source/ThirdParty/libwebrtc/Source/webrtc/modules/video_coding/timing/timing.h b/Source/ThirdParty/libwebrtc/Source/webrtc/modules/video_coding/timing/timing.h
+index 9e7fb874c742..beb35e7a9700 100644
+--- a/Source/ThirdParty/libwebrtc/Source/webrtc/modules/video_coding/timing/timing.h
++++ b/Source/ThirdParty/libwebrtc/Source/webrtc/modules/video_coding/timing/timing.h
+@@ -158,6 +158,7 @@ class VCMTiming {
+   uint32_t prev_frame_timestamp_ RTC_GUARDED_BY(mutex_);
+   absl::optional<TimingFrameInfo> timing_frame_info_ RTC_GUARDED_BY(mutex_);
+   size_t num_decoded_frames_ RTC_GUARDED_BY(mutex_);
++  mutable size_t get_timings_log_count_ RTC_GUARDED_BY(mutex_) = 0;
+   absl::optional<int> max_composition_delay_in_frames_ RTC_GUARDED_BY(mutex_);
+   // Set by the field trial WebRTC-ZeroPlayoutDelay. The parameter min_pacing
+   // determines the minimum delay between frames scheduled for decoding that is
+diff --git a/Source/ThirdParty/libwebrtc/Source/webrtc/video/rtp_streams_synchronizer2.cc b/Source/ThirdParty/libwebrtc/Source/webrtc/video/rtp_streams_synchronizer2.cc
+index 0fbb3916cb30..8ba698859f58 100644
+--- a/Source/ThirdParty/libwebrtc/Source/webrtc/video/rtp_streams_synchronizer2.cc
++++ b/Source/ThirdParty/libwebrtc/Source/webrtc/video/rtp_streams_synchronizer2.cc
+@@ -154,10 +154,31 @@ void RtpStreamsSynchronizer::UpdateDelay() {
+                      << "target_delay_ms: " << target_video_delay_ms << "} ";
+   }
+ 
++  RTC_LOG(LS_INFO) << "WebRTCAVSync UpdateDelay now_ms=" << now_ms
++                   << " audio_cur_delay_ms=" << audio_info->current_delay_ms
++                   << " video_cur_delay_ms=" << video_info->current_delay_ms
++                   << " relative_delay_ms=" << relative_delay_ms
++                   << " audio_receive_ms="
++                   << audio_measurement_.latest_receive_time_ms
++                   << " video_receive_ms="
++                   << video_measurement_.latest_receive_time_ms
++                   << " audio_capture_ts="
++                   << audio_measurement_.latest_timestamp
++                   << " video_capture_ts="
++                   << video_measurement_.latest_timestamp
++                   << " target_audio_delay_ms=" << target_audio_delay_ms
++                   << " target_video_delay_ms=" << target_video_delay_ms;
++
+   if (!syncable_audio_->SetMinimumPlayoutDelay(target_audio_delay_ms)) {
++    RTC_LOG(LS_INFO) << "WebRTCAVSync UpdateDelay audio SetMinimumPlayoutDelay failed target_ms="
++                     << target_audio_delay_ms
++                     << " using ReduceAudioDelay fallback";
+     sync_->ReduceAudioDelay();
+   }
+   if (!syncable_video_->SetMinimumPlayoutDelay(target_video_delay_ms)) {
++    RTC_LOG(LS_INFO) << "WebRTCAVSync UpdateDelay video SetMinimumPlayoutDelay failed target_ms="
++                     << target_video_delay_ms
++                     << " using ReduceVideoDelay fallback";
+     sync_->ReduceVideoDelay();
+   }
+ }
+diff --git a/Source/ThirdParty/libwebrtc/Source/webrtc/video/rtp_video_stream_receiver2.cc b/Source/ThirdParty/libwebrtc/Source/webrtc/video/rtp_video_stream_receiver2.cc
+index 2af53f92d401..017bb29fcf01 100644
+--- a/Source/ThirdParty/libwebrtc/Source/webrtc/video/rtp_video_stream_receiver2.cc
++++ b/Source/ThirdParty/libwebrtc/Source/webrtc/video/rtp_video_stream_receiver2.cc
+@@ -396,8 +396,15 @@ absl::optional<Syncable::Info> RtpVideoStreamReceiver2::GetSyncInfo() const {
+   }
+   info.latest_received_capture_timestamp = *last_received_rtp_timestamp_;
+   info.latest_receive_time_ms = last_received_rtp_system_time_->ms();
++  RTC_LOG(LS_INFO) << "WebRTCAVSync video-sync GetSyncInfo capture_ntp_secs="
++                   << info.capture_time_ntp_secs
++                   << " capture_ntp_frac=" << info.capture_time_ntp_frac
++                   << " capture_source_clock="
++                   << info.capture_time_source_clock
++                   << " latest_received_capture_timestamp="
++                   << info.latest_received_capture_timestamp
++                   << " latest_receive_time_ms=" << info.latest_receive_time_ms;
+ 
+-  // Leaves info.current_delay_ms uninitialized.
+   return info;
+ }
+ 
+diff --git a/Source/ThirdParty/libwebrtc/Source/webrtc/video/stream_synchronization.cc b/Source/ThirdParty/libwebrtc/Source/webrtc/video/stream_synchronization.cc
+index d86cc792033f..74defa397f4e 100644
+--- a/Source/ThirdParty/libwebrtc/Source/webrtc/video/stream_synchronization.cc
++++ b/Source/ThirdParty/libwebrtc/Source/webrtc/video/stream_synchronization.cc
+@@ -10,8 +10,6 @@
+ 
+ #include "video/stream_synchronization.h"
+ 
+-#include <stdlib.h>
+-
+ #include <algorithm>
+ 
+ #include "rtc_base/logging.h"
+@@ -54,6 +52,17 @@ bool StreamSynchronization::ComputeRelativeDelay(
+       audio_measurement.latest_receive_time_ms -
+       (video_last_capture_time_ms - audio_last_capture_time_ms);
+ 
++  RTC_LOG(LS_INFO) << "WebRTCAVSync ComputeRelativeDelay audio_rtp_ts="
++                   << audio_measurement.latest_timestamp
++                   << " video_rtp_ts=" << video_measurement.latest_timestamp
++                   << " audio_capture_ms=" << audio_last_capture_time_ms
++                   << " video_capture_ms=" << video_last_capture_time_ms
++                   << " audio_receive_ms="
++                   << audio_measurement.latest_receive_time_ms
++                   << " video_receive_ms="
++                   << video_measurement.latest_receive_time_ms
++                   << " relative_delay_ms=" << *relative_delay_ms;
++
+   if (*relative_delay_ms > kMaxDeltaDelayMs ||
+       *relative_delay_ms < -kMaxDeltaDelayMs) {
+     return false;
+@@ -78,7 +87,15 @@ bool StreamSynchronization::ComputeDelays(int relative_delay_ms,
+ 
+   avg_diff_ms_ =
+       ((kFilterLength - 1) * avg_diff_ms_ + current_diff_ms) / kFilterLength;
++  int filtered_diff_ms = avg_diff_ms_;
+   if (abs(avg_diff_ms_) < kMinDeltaMs) {
++    RTC_LOG(LS_INFO) << "WebRTCAVSync ComputeDelays skipped current_video_delay_ms="
++                     << current_video_delay_ms
++                     << " current_audio_delay_ms=" << current_audio_delay_ms
++                     << " relative_delay_ms=" << relative_delay_ms
++                     << " current_diff_ms=" << current_diff_ms
++                     << " avg_diff_ms=" << filtered_diff_ms
++                     << " min_delta_ms=" << kMinDeltaMs;
+     // Don't adjust if the diff is within our margin.
+     return false;
+   }
+@@ -167,6 +184,21 @@ bool StreamSynchronization::ComputeDelays(int relative_delay_ms,
+ 
+   *total_video_delay_target_ms = new_video_delay_ms;
+   *total_audio_delay_target_ms = new_audio_delay_ms;
++
++  RTC_LOG(LS_INFO) << "WebRTCAVSync ComputeDelays adjust current_video_delay_ms="
++                   << current_video_delay_ms
++                   << " current_audio_delay_ms=" << current_audio_delay_ms
++                   << " relative_delay_ms=" << relative_delay_ms
++                   << " current_diff_ms=" << current_diff_ms
++                   << " avg_diff_ms=" << filtered_diff_ms
++                   << " diff_ms=" << diff_ms
++                   << " audio_extra_ms=" << audio_delay_.extra_ms
++                   << " video_extra_ms=" << video_delay_.extra_ms
++                   << " base_target_delay_ms=" << base_target_delay_ms_
++                   << " target_audio_delay_ms="
++                   << *total_audio_delay_target_ms
++                   << " target_video_delay_ms="
++                   << *total_video_delay_target_ms;
+   return true;
+ }
+ 
+diff --git a/Source/ThirdParty/libwebrtc/Source/webrtc/video/video_receive_stream2.cc b/Source/ThirdParty/libwebrtc/Source/webrtc/video/video_receive_stream2.cc
+index 92b4cb1500f5..e2378261ea0f 100644
+--- a/Source/ThirdParty/libwebrtc/Source/webrtc/video/video_receive_stream2.cc
++++ b/Source/ThirdParty/libwebrtc/Source/webrtc/video/video_receive_stream2.cc
+@@ -161,6 +161,10 @@ std::string OptionalDelayToLogString(const absl::optional<TimeDelta> opt) {
+   return opt.has_value() ? ToLogString(*opt) : "<unset>";
+ }
+ 
++std::string OptionalFrameCountToLogString(const absl::optional<int> opt) {
++  return opt.has_value() ? std::to_string(*opt) : "<unset>";
++}
++
+ }  // namespace
+ 
+ TimeDelta DetermineMaxWaitForFrame(TimeDelta rtp_history, bool is_keyframe) {
+@@ -610,10 +614,14 @@ bool VideoReceiveStream2::SetBaseMinimumPlayoutDelayMs(int delay_ms) {
+   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
+   TimeDelta delay = TimeDelta::Millis(delay_ms);
+   if (delay < kMinBaseMinimumDelay || delay > kMaxBaseMinimumDelay) {
++    RTC_LOG(LS_INFO) << "WebRTCAVSync video-delay SetBaseMinimumPlayoutDelayMs requested_delay_ms="
++                     << delay_ms << " accepted=0";
+     return false;
+   }
+ 
+   base_minimum_playout_delay_ = delay;
++  RTC_LOG(LS_INFO) << "WebRTCAVSync video-delay SetBaseMinimumPlayoutDelayMs requested_delay_ms="
++                   << delay_ms << " accepted=1";
+   UpdatePlayoutDelays();
+   return true;
+ }
+@@ -700,6 +708,10 @@ void VideoReceiveStream2::OnCompleteFrame(std::unique_ptr<EncodedFrame> frame) {
+           frame->EncodedImage().PlayoutDelay()) {
+     frame_minimum_playout_delay_ = playout_delay->min();
+     frame_maximum_playout_delay_ = playout_delay->max();
++    RTC_LOG(LS_INFO) << "WebRTCAVSync video-delay OnCompleteFrame frame_min_playout_delay="
++                     << frame_minimum_playout_delay_.value()
++                     << " frame_max_playout_delay="
++                     << frame_maximum_playout_delay_.value();
+     UpdatePlayoutDelays();
+   }
+ 
+@@ -735,6 +747,15 @@ absl::optional<Syncable::Info> VideoReceiveStream2::GetInfo() const {
+     return absl::nullopt;
+ 
+   info->current_delay_ms = timing_->TargetVideoDelay().ms();
++  RTC_LOG(LS_INFO) << "WebRTCAVSync video-delay GetInfo current_delay_ms="
++                   << info->current_delay_ms
++                   << " capture_ntp_secs=" << info->capture_time_ntp_secs
++                   << " capture_ntp_frac=" << info->capture_time_ntp_frac
++                   << " capture_source_clock="
++                   << info->capture_time_source_clock
++                   << " latest_received_capture_timestamp="
++                   << info->latest_received_capture_timestamp
++                   << " latest_receive_time_ms=" << info->latest_receive_time_ms;
+   return info;
+ }
+ 
+@@ -753,6 +774,8 @@ void VideoReceiveStream2::SetEstimatedPlayoutNtpTimestampMs(
+ bool VideoReceiveStream2::SetMinimumPlayoutDelay(int delay_ms) {
+   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
+   syncable_minimum_playout_delay_ = TimeDelta::Millis(delay_ms);
++  RTC_LOG(LS_INFO) << "WebRTCAVSync video-delay SetMinimumPlayoutDelay requested_delay_ms="
++                   << delay_ms;
+   UpdatePlayoutDelays();
+   return true;
+ }
+@@ -1013,9 +1036,8 @@ void VideoReceiveStream2::UpdatePlayoutDelays() const {
+       frame_minimum_playout_delay_, base_minimum_playout_delay_,
+       syncable_minimum_playout_delay_};
+ 
+-  // Since nullopt < anything, this will return the largest of the minumum
+-  // delays, or nullopt if all are nullopt.
+   absl::optional<TimeDelta> minimum_delay = std::max(min_delays);
++  absl::optional<int> max_composition_delay_in_frames;
+   if (minimum_delay) {
+     auto num_playout_delays_set =
+         absl::c_count_if(min_delays, [](auto opt) { return opt.has_value(); });
+@@ -1033,14 +1055,11 @@ void VideoReceiveStream2::UpdatePlayoutDelays() const {
+     timing_->set_min_playout_delay(*minimum_delay);
+     if (frame_minimum_playout_delay_ == TimeDelta::Zero() &&
+         frame_maximum_playout_delay_ > TimeDelta::Zero()) {
+-      // TODO(kron): Estimate frame rate from video stream.
+       constexpr Frequency kFrameRate = Frequency::Hertz(60);
+-      // Convert playout delay in ms to number of frames.
+-      int max_composition_delay_in_frames =
++      max_composition_delay_in_frames =
+           std::lrint(*frame_maximum_playout_delay_ * kFrameRate);
+-      // Subtract frames in buffer.
+       max_composition_delay_in_frames =
+-          std::max(max_composition_delay_in_frames - buffer_->Size(), 0);
++          std::max(*max_composition_delay_in_frames - buffer_->Size(), 0);
+       timing_->SetMaxCompositionDelayInFrames(max_composition_delay_in_frames);
+     }
+   }
+@@ -1048,6 +1067,21 @@ void VideoReceiveStream2::UpdatePlayoutDelays() const {
+   if (frame_maximum_playout_delay_) {
+     timing_->set_max_playout_delay(*frame_maximum_playout_delay_);
+   }
++
++  RTC_LOG(LS_INFO) << "WebRTCAVSync video-delay UpdatePlayoutDelays chosen_min_delay="
++                   << OptionalDelayToLogString(minimum_delay)
++                   << " frame_min_delay="
++                   << OptionalDelayToLogString(frame_minimum_playout_delay_)
++                   << " base_min_delay="
++                   << OptionalDelayToLogString(base_minimum_playout_delay_)
++                   << " sync_min_delay="
++                   << OptionalDelayToLogString(syncable_minimum_playout_delay_)
++                   << " frame_max_delay="
++                   << OptionalDelayToLogString(frame_maximum_playout_delay_)
++                   << " timing_min_delay=" << timing_->min_playout_delay()
++                   << " max_composition_delay_frames="
++                   << OptionalFrameCountToLogString(
++                          max_composition_delay_in_frames);
+ }
+ 
+ std::vector<webrtc::RtpSource> VideoReceiveStream2::GetSources() const {
+diff --git a/Source/WebCore/platform/mediastream/gstreamer/GStreamerMediaStreamSource.cpp b/Source/WebCore/platform/mediastream/gstreamer/GStreamerMediaStreamSource.cpp
+index e091aa9ace5c..818dc75a8432 100644
+--- a/Source/WebCore/platform/mediastream/gstreamer/GStreamerMediaStreamSource.cpp
++++ b/Source/WebCore/platform/mediastream/gstreamer/GStreamerMediaStreamSource.cpp
+@@ -57,6 +57,20 @@ static GstStaticPadTemplate audioSrcTemplate = GST_STATIC_PAD_TEMPLATE("audio_sr
+ GST_DEBUG_CATEGORY_STATIC(webkitMediaStreamSrcDebug);
+ #define GST_CAT_DEFAULT webkitMediaStreamSrcDebug
+ 
++namespace {
++
++bool shouldLogWebRTCSample(guint64 count)
++{
++    return count <= 30 || !(count % 100);
++}
++
++const char* webRTCAVSyncTrackType(bool isVideoTrack)
++{
++    return isVideoTrack ? "video" : "audio";
++}
++
++}
++
+ WARN_UNUSED_RETURN GRefPtr<GstTagList> mediaStreamTrackPrivateGetTags(const RefPtr<MediaStreamTrackPrivate>& track)
+ {
+     auto tagList = adoptGRef(gst_tag_list_new_empty());
+@@ -330,6 +344,7 @@ public:
+             return;
+ 
+         GST_DEBUG_OBJECT(m_src.get(), "Starting observation of track %s", m_track->id().ascii().data());
++        GST_INFO_OBJECT(m_src.get(), "WebRTCAVSync observe-start track=%s type=%s", m_track->id().ascii().data(), webRTCAVSyncTrackType(m_isVideoTrack));
+         m_track->addObserver(*this);
+         if (m_track->isAudio())
+             m_track->source().addAudioSampleObserver(*this);
+@@ -393,6 +408,16 @@ public:
+ 
+         bool drop = m_enoughData;
+         auto buffer = gst_sample_get_buffer(sample.get());
++        auto* caps = gst_sample_get_caps(sample.get());
++        auto currentRunningTime = gst_element_get_current_running_time(m_parent);
++        auto sampleIndex = m_pushedSampleCount + 1;
++        auto hadPendingDiscont = m_needsDiscont;
++        auto deltaUnit = GST_BUFFER_FLAG_IS_SET(buffer, GST_BUFFER_FLAG_DELTA_UNIT);
++
++        if (shouldLogWebRTCSample(sampleIndex)) {
++            GST_INFO_OBJECT(m_src.get(), "WebRTCAVSync push-pre sample=%" G_GUINT64_FORMAT " type=%s msg=%s pts=%" GST_TIME_FORMAT " dts=%" GST_TIME_FORMAT " dur=%" GST_TIME_FORMAT " run=%" GST_TIME_FORMAT " enough=%d discont=%d",
++                sampleIndex, webRTCAVSyncTrackType(m_isVideoTrack), logMessage.characters(), GST_TIME_ARGS(GST_BUFFER_PTS(buffer)), GST_TIME_ARGS(GST_BUFFER_DTS(buffer)), GST_TIME_ARGS(GST_BUFFER_DURATION(buffer)), GST_TIME_ARGS(currentRunningTime), m_enoughData, hadPendingDiscont);
++        }
+ 
+         if (!m_hasPushedInitialTags) {
+             auto pad = adoptGRef(gst_element_get_static_pad(m_src.get(), "src"));
+@@ -400,23 +425,33 @@ public:
+             m_hasPushedInitialTags = true;
+         }
+ 
+-        if (m_isVideoTrack && drop) {
+-            auto* caps = gst_sample_get_caps(sample.get());
+-            drop = doCapsHaveType(caps, "video") || GST_BUFFER_FLAG_IS_SET(buffer, GST_BUFFER_FLAG_DELTA_UNIT);
+-        }
++        if (m_isVideoTrack && drop)
++            drop = doCapsHaveType(caps, "video") || deltaUnit;
+ 
+         if (drop) {
+             m_needsDiscont = true;
++            ++m_droppedSampleCount;
++            GST_INFO_OBJECT(m_src.get(), "WebRTCAVSync drop sample=%" G_GUINT64_FORMAT " type=%s pts=%" GST_TIME_FORMAT " dur=%" GST_TIME_FORMAT " run=%" GST_TIME_FORMAT " delta=%d",
++                m_droppedSampleCount, webRTCAVSyncTrackType(m_isVideoTrack), GST_TIME_ARGS(GST_BUFFER_PTS(buffer)), GST_TIME_ARGS(GST_BUFFER_DURATION(buffer)), GST_TIME_ARGS(currentRunningTime), deltaUnit);
+             GST_TRACE_OBJECT(m_src.get(), "%s queue full already... not pushing", m_isVideoTrack ? "Video" : "Audio");
+             return;
+         }
+ 
+         if (m_needsDiscont) {
+             GST_BUFFER_FLAG_SET(buffer, GST_BUFFER_FLAG_DISCONT);
++            GST_INFO_OBJECT(m_src.get(), "WebRTCAVSync discont sample=%" G_GUINT64_FORMAT " type=%s pts=%" GST_TIME_FORMAT " dur=%" GST_TIME_FORMAT,
++                sampleIndex, webRTCAVSyncTrackType(m_isVideoTrack), GST_TIME_ARGS(GST_BUFFER_PTS(buffer)), GST_TIME_ARGS(GST_BUFFER_DURATION(buffer)));
+             m_needsDiscont = false;
+         }
+ 
+         gst_app_src_push_sample(GST_APP_SRC(m_src.get()), sample.get());
++        ++m_pushedSampleCount;
++
++        if (shouldLogWebRTCSample(m_pushedSampleCount)) {
++            auto currentRunningTimeAfterPush = gst_element_get_current_running_time(m_parent);
++            GST_INFO_OBJECT(m_src.get(), "WebRTCAVSync push-post sample=%" G_GUINT64_FORMAT " type=%s msg=%s pts=%" GST_TIME_FORMAT " dts=%" GST_TIME_FORMAT " dur=%" GST_TIME_FORMAT " run=%" GST_TIME_FORMAT " enough=%d discont=%d",
++                m_pushedSampleCount, webRTCAVSyncTrackType(m_isVideoTrack), logMessage.characters(), GST_TIME_ARGS(GST_BUFFER_PTS(buffer)), GST_TIME_ARGS(GST_BUFFER_DTS(buffer)), GST_TIME_ARGS(GST_BUFFER_DURATION(buffer)), GST_TIME_ARGS(currentRunningTimeAfterPush), m_enoughData, GST_BUFFER_FLAG_IS_SET(buffer, GST_BUFFER_FLAG_DISCONT));
++        }
+     }
+ 
+     void trackStarted(MediaStreamTrackPrivate&) final { };
+@@ -537,8 +572,12 @@ public:
+         if (!m_track)
+             return;
+ 
+-        if (receivedAudioSampleBeforeVideo())
++        if (receivedAudioSampleBeforeVideo()) {
++            ++m_audioSamplesBlockedBeforeFirstVideoCount;
++            if (shouldLogWebRTCSample(m_audioSamplesBlockedBeforeFirstVideoCount))
++                GST_INFO_OBJECT(m_src.get(), "WebRTCAVSync audio-blocked-before-video count=%" G_GUINT64_FORMAT " track=%s", m_audioSamplesBlockedBeforeFirstVideoCount, m_track->id().ascii().data());
+             return;
++        }
+ 
+         const auto& data = static_cast<const GStreamerAudioData&>(audioData);
+         if (m_track->enabled()) {
+@@ -703,6 +742,9 @@ private:
+     bool m_isIncomingVideoSource { false };
+     GRefPtr<GstStream> m_stream;
+     bool m_isVideoTrack { false };
++    uint64_t m_pushedSampleCount { 0 };
++    uint64_t m_droppedSampleCount { 0 };
++    uint64_t m_audioSamplesBlockedBeforeFirstVideoCount { 0 };
+ };
+ 
+ struct _WebKitMediaStreamSrcPrivate {
+diff --git a/Source/WebCore/platform/mediastream/gstreamer/RealtimeIncomingSourceGStreamer.cpp b/Source/WebCore/platform/mediastream/gstreamer/RealtimeIncomingSourceGStreamer.cpp
+index 6495ab8122b8..53bf0fe4745b 100644
+--- a/Source/WebCore/platform/mediastream/gstreamer/RealtimeIncomingSourceGStreamer.cpp
++++ b/Source/WebCore/platform/mediastream/gstreamer/RealtimeIncomingSourceGStreamer.cpp
+@@ -153,11 +153,14 @@ void RealtimeIncomingSourceGStreamer::handleDownstreamEvent(GstElement* sink, GR
+     case GST_EVENT_LATENCY: {
+         GstClockTime minLatency, maxLatency;
+         if (gst_base_sink_query_latency(GST_BASE_SINK(sink), nullptr, nullptr, &minLatency, &maxLatency)) {
++            GST_INFO_OBJECT(sink, "WebRTCAVSync latency-propagate sink=%s type=%s min=%" GST_TIME_FORMAT " max=%" GST_TIME_FORMAT,
++                GST_OBJECT_NAME(sink), G_OBJECT_TYPE_NAME(sink), GST_TIME_ARGS(minLatency), GST_TIME_ARGS(maxLatency));
+             forEachClient([&](auto* appsrc) {
+                 GST_DEBUG_OBJECT(sink, "Setting client latency to min %" GST_TIME_FORMAT " max %" GST_TIME_FORMAT, GST_TIME_ARGS(minLatency), GST_TIME_ARGS(maxLatency));
+                 g_object_set(appsrc, "min-latency", minLatency, "max-latency", maxLatency, nullptr);
+             });
+-        }
++        } else
++            GST_INFO_OBJECT(sink, "WebRTCAVSync latency-query-failed sink=%s type=%s", GST_OBJECT_NAME(sink), G_OBJECT_TYPE_NAME(sink));
+         return;
+     }
+     default:
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/LibWebRTCAudioModule.cpp b/Source/WebCore/platform/mediastream/libwebrtc/LibWebRTCAudioModule.cpp
+index bfe971469562..fe5961ea368e 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/LibWebRTCAudioModule.cpp
++++ b/Source/WebCore/platform/mediastream/libwebrtc/LibWebRTCAudioModule.cpp
+@@ -36,6 +36,15 @@
+ #include "IncomingAudioMediaStreamTrackRendererUnit.h"
+ #endif
+ 
++namespace {
++
++bool shouldLogWebRTCAVSyncCadence(uint64_t count)
++{
++    return count <= 30 || !(count % 100);
++}
++
++}
++
+ namespace WebCore {
+ 
+ LibWebRTCAudioModule::LibWebRTCAudioModule()
+@@ -73,6 +82,8 @@ int32_t LibWebRTCAudioModule::StartPlayout()
+     if (m_isPlaying)
+         return 0;
+ 
++    m_renderPullCount = 0;
++    m_playoutDelayQueryCount = 0;
+     m_isPlaying = true;
+     callOnMainThread([this, protectedThis = rtc::scoped_refptr<webrtc::AudioDeviceModule>(this)] {
+         m_logTimer->startRepeating(logTimerInterval);
+@@ -99,6 +110,16 @@ int32_t LibWebRTCAudioModule::StopPlayout()
+     return 0;
+ }
+ 
++int32_t LibWebRTCAudioModule::PlayoutDelay(uint16_t* delay) const
++{
++    *delay = 0;
++    auto queryCount = m_playoutDelayQueryCount.fetch_add(1) + 1;
++    if (shouldLogWebRTCAVSyncCadence(queryCount)) {
++        RELEASE_LOG(WebRTC, "WebRTCAVSync ADM PlayoutDelay count=%llu delay=%u", static_cast<unsigned long long>(queryCount), *delay);
++    }
++    return 0;
++}
++
+ void LibWebRTCAudioModule::logTimerFired()
+ {
+     RELEASE_LOG_IF(m_timeSpent, WebRTC, "LibWebRTCAudioModule::pollAudioData, polling took too much time: %d ms", m_timeSpent);
+@@ -150,6 +171,11 @@ void LibWebRTCAudioModule::pollFromSource()
+         int64_t ntpTime = -1;
+         char data[LibWebRTCAudioFormat::sampleByteSize * channels * LibWebRTCAudioFormat::chunkSampleCount];
+         m_audioTransport->PullRenderData(LibWebRTCAudioFormat::sampleByteSize * 8, LibWebRTCAudioFormat::sampleRate, channels, LibWebRTCAudioFormat::chunkSampleCount, data, &elapsedTime, &ntpTime);
++        auto pullCount = m_renderPullCount.fetch_add(1) + 1;
++        if (shouldLogWebRTCAVSyncCadence(pullCount)) {
++            RELEASE_LOG(WebRTC, "WebRTCAVSync audio-pull count=%llu elapsedTime=%lld ntpTime=%lld bitsPerSample=%u sampleRate=%u channels=%u frames=%u isPlaying=%d",
++                static_cast<unsigned long long>(pullCount), static_cast<long long>(elapsedTime), static_cast<long long>(ntpTime), LibWebRTCAudioFormat::sampleByteSize * 8, LibWebRTCAudioFormat::sampleRate, channels, LibWebRTCAudioFormat::chunkSampleCount, m_isPlaying);
++        }
+ #if PLATFORM(COCOA)
+         if (m_isRenderingIncomingAudio)
+             m_incomingAudioMediaStreamTrackRendererUnit->newAudioChunkPushed(m_currentAudioSampleCount);
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/LibWebRTCAudioModule.h b/Source/WebCore/platform/mediastream/libwebrtc/LibWebRTCAudioModule.h
+index e80a18a5f83f..0ddf58640187 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/LibWebRTCAudioModule.h
++++ b/Source/WebCore/platform/mediastream/libwebrtc/LibWebRTCAudioModule.h
+@@ -29,6 +29,7 @@
+ 
+ #include "LibWebRTCMacros.h"
+ #include "Timer.h"
++#include <atomic>
+ #include <wtf/MonotonicTime.h>
+ #include <wtf/WorkQueue.h>
+ 
+@@ -122,7 +123,7 @@ private:
+     int32_t StereoRecordingIsAvailable(bool* available) const final { *available = false; return 0;  }
+     int32_t SetStereoRecording(bool) final { return 0;  }
+     int32_t StereoRecording(bool*) const final { return shouldNotBeCalled(-1); }
+-    int32_t PlayoutDelay(uint16_t* delay) const final { *delay = 0; return 0; }
++    int32_t PlayoutDelay(uint16_t* delay) const final;
+     bool BuiltInAECIsAvailable() const final { return false; }
+     bool BuiltInAGCIsAvailable() const final { return false;  }
+     bool BuiltInNSIsAvailable() const final { return false;  }
+@@ -149,6 +150,8 @@ private:
+     MonotonicTime m_pollingTime;
+     std::unique_ptr<Timer> m_logTimer;
+     int m_timeSpent { 0 };
++    std::atomic<uint64_t> m_renderPullCount { 0 };
++    mutable std::atomic<uint64_t> m_playoutDelayQueryCount { 0 };
+ 
+ #if PLATFORM(COCOA)
+     uint64_t m_currentAudioSampleCount { 0 };
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.cpp b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.cpp
+index 5f959c9b3a45..8fa3dc66b190 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.cpp
++++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.cpp
+@@ -34,6 +34,15 @@
+ #include "gstreamer/GStreamerAudioData.h"
+ #include "gstreamer/GStreamerAudioStreamDescription.h"
+ 
++namespace {
++
++bool shouldLogWebRTCAudioSample(guint64 count)
++{
++    return count <= 30 || !(count % 100);
++}
++
++}
++
+ namespace WebCore {
+ 
+ Ref<RealtimeIncomingAudioSource> RealtimeIncomingAudioSource::create(rtc::scoped_refptr<webrtc::AudioTrackInterface>&& audioTrack, String&& audioTrackId)
+@@ -53,8 +62,12 @@ RealtimeIncomingAudioSourceLibWebRTC::RealtimeIncomingAudioSourceLibWebRTC(rtc::
+ {
+ }
+ 
+-void RealtimeIncomingAudioSourceLibWebRTC::OnData(const void* audioData, int, int sampleRate, size_t numberOfChannels, size_t numberOfFrames)
++void RealtimeIncomingAudioSourceLibWebRTC::OnData(const void* audioData, int bitsPerSample, int sampleRate, size_t numberOfChannels, size_t numberOfFrames)
+ {
++    auto callbackTimeUs = g_get_monotonic_time();
++    auto chunkIndex = ++m_receivedChunkCount;
++    auto totalFramesBefore = m_numberOfFrames;
++
+     GstAudioInfo info;
+     GstAudioFormat format = gst_audio_format_build_integer(
+         LibWebRTCAudioFormat::isSigned,
+@@ -69,11 +82,28 @@ void RealtimeIncomingAudioSourceLibWebRTC::OnData(const void* audioData, int, in
+     gst_buffer_add_audio_meta(buffer.get(), &info, numberOfFrames, nullptr);
+     auto caps = adoptGRef(gst_audio_info_to_caps(&info));
+ 
+-    if (m_baseTime == MediaTime::invalidTime())
++    if (m_baseTime == MediaTime::invalidTime()) {
+         m_baseTime = MediaTime::createWithSeconds(MonotonicTime::now().secondsSinceEpoch());
++        g_info("WebRTCAVSync audio base-time-init chunk=%" G_GUINT64_FORMAT " callback_us=%" G_GINT64_FORMAT " rate=%d channels=%" G_GSIZE_FORMAT " bits=%d",
++            chunkIndex, callbackTimeUs, sampleRate, static_cast<gsize>(numberOfChannels), bitsPerSample);
++    }
++
++    if (m_lastSampleRate && (m_lastSampleRate != sampleRate || m_lastNumberOfChannels != numberOfChannels || m_lastBitsPerSample != bitsPerSample)) {
++        g_info("WebRTCAVSync audio format-change chunk=%" G_GUINT64_FORMAT " callback_us=%" G_GINT64_FORMAT " rate=%d->%d channels=%" G_GSIZE_FORMAT "->%" G_GSIZE_FORMAT " bits=%d->%d",
++            chunkIndex, callbackTimeUs, m_lastSampleRate, sampleRate, static_cast<gsize>(m_lastNumberOfChannels), static_cast<gsize>(numberOfChannels), m_lastBitsPerSample, bitsPerSample);
++    }
++    m_lastSampleRate = sampleRate;
++    m_lastNumberOfChannels = numberOfChannels;
++    m_lastBitsPerSample = bitsPerSample;
+ 
+     MediaTime mediaTime = m_baseTime + MediaTime((m_numberOfFrames * G_USEC_PER_SEC) / sampleRate, G_USEC_PER_SEC);
+     GST_BUFFER_PTS(buffer.get()) = toGstUnsigned64Time(mediaTime);
++    GST_BUFFER_DURATION(buffer.get()) = gst_util_uint64_scale(numberOfFrames, GST_SECOND, sampleRate);
++
++    if (shouldLogWebRTCAudioSample(chunkIndex)) {
++        g_info("WebRTCAVSync audio sample chunk=%" G_GUINT64_FORMAT " callback_us=%" G_GINT64_FORMAT " bits=%d rate=%d channels=%" G_GSIZE_FORMAT " frames=%" G_GSIZE_FORMAT " total_frames_before=%" G_GUINT64_FORMAT " pts_us=%" G_GINT64_FORMAT "/%" GST_TIME_FORMAT " duration=%" GST_TIME_FORMAT,
++            chunkIndex, callbackTimeUs, bitsPerSample, sampleRate, static_cast<gsize>(numberOfChannels), static_cast<gsize>(numberOfFrames), totalFramesBefore, mediaTime.toMicroseconds(), GST_TIME_ARGS(GST_BUFFER_PTS(buffer.get())), GST_TIME_ARGS(GST_BUFFER_DURATION(buffer.get())));
++    }
+ 
+     auto sample = adoptGRef(gst_sample_new(buffer.get(), caps.get(), nullptr, nullptr));
+     GStreamerAudioData data(WTFMove(sample), info);
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h
+index 9ab53211c2b7..67b54840c96f 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h
++++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingAudioSourceLibWebRTC.h
+@@ -47,6 +47,10 @@ private:
+ 
+     uint64_t m_numberOfFrames { 0 };
+     MediaTime m_baseTime { MediaTime::invalidTime() };
++    uint64_t m_receivedChunkCount { 0 };
++    int m_lastSampleRate { 0 };
++    size_t m_lastNumberOfChannels { 0 };
++    int m_lastBitsPerSample { 0 };
+ };
+ 
+ } // namespace WebCore
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingVideoSourceLibWebRTC.cpp b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingVideoSourceLibWebRTC.cpp
+index 5aeea96f20c0..ca4840f3cd73 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingVideoSourceLibWebRTC.cpp
++++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingVideoSourceLibWebRTC.cpp
+@@ -34,6 +34,41 @@
+ #include "GStreamerVideoFrameLibWebRTC.h"
+ #include "VideoFrameGStreamer.h"
+ 
++namespace {
++
++bool shouldLogWebRTCVideoSample(guint64 count)
++{
++    return count <= 30 || !(count % 100);
++}
++
++const char* videoFrameBufferTypeName(webrtc::VideoFrameBuffer::Type type)
++{
++    switch (type) {
++    case webrtc::VideoFrameBuffer::Type::kNative:
++        return "native";
++    case webrtc::VideoFrameBuffer::Type::kI420:
++        return "i420";
++    case webrtc::VideoFrameBuffer::Type::kI420A:
++        return "i420a";
++    case webrtc::VideoFrameBuffer::Type::kI422:
++        return "i422";
++    case webrtc::VideoFrameBuffer::Type::kI444:
++        return "i444";
++    case webrtc::VideoFrameBuffer::Type::kI010:
++        return "i010";
++    case webrtc::VideoFrameBuffer::Type::kI210:
++        return "i210";
++    case webrtc::VideoFrameBuffer::Type::kI410:
++        return "i410";
++    case webrtc::VideoFrameBuffer::Type::kNV12:
++        return "nv12";
++    }
++
++    return "unknown";
++}
++
++}
++
+ namespace WebCore {
+ 
+ Ref<RealtimeIncomingVideoSource> RealtimeIncomingVideoSource::create(rtc::scoped_refptr<webrtc::VideoTrackInterface>&& videoTrack, String&& trackId)
+@@ -58,8 +93,16 @@ void RealtimeIncomingVideoSourceLibWebRTC::OnFrame(const webrtc::VideoFrame& fra
+     if (!isProducingData())
+         return;
+ 
++    auto callbackTimeUs = g_get_monotonic_time();
++    auto frameIndex = ++m_receivedFrameCount;
++    auto bufferType = frame.video_frame_buffer()->type();
++    if (shouldLogWebRTCVideoSample(frameIndex)) {
++        g_info("WebRTCAVSync video frame=%" G_GUINT64_FORMAT " callback_us=%" G_GINT64_FORMAT " timestamp_us=%" G_GINT64_FORMAT " rotation=%d width=%d height=%d buffer=%s",
++            frameIndex, callbackTimeUs, frame.timestamp_us(), static_cast<int>(frame.rotation()), frame.video_frame_buffer()->width(), frame.video_frame_buffer()->height(), videoFrameBufferTypeName(bufferType));
++    }
++
+     auto presentationTime = MediaTime(frame.timestamp_us(), G_USEC_PER_SEC);
+-    if (frame.video_frame_buffer()->type() == webrtc::VideoFrameBuffer::Type::kNative) {
++    if (bufferType == webrtc::VideoFrameBuffer::Type::kNative) {
+         auto* framebuffer = static_cast<GStreamerVideoFrameLibWebRTC*>(frame.video_frame_buffer().get());
+         videoFrameAvailable(VideoFrameGStreamer::createWrappedSample(framebuffer->getSample(), presentationTime, static_cast<VideoFrame::Rotation>(frame.rotation())), { });
+     } else {
+diff --git a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingVideoSourceLibWebRTC.h b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingVideoSourceLibWebRTC.h
+index 5bb881090734..f2b20c2e3c26 100644
+--- a/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingVideoSourceLibWebRTC.h
++++ b/Source/WebCore/platform/mediastream/libwebrtc/gstreamer/RealtimeIncomingVideoSourceLibWebRTC.h
+@@ -45,6 +45,8 @@ private:
+ 
+     // rtc::VideoSinkInterface
+     void OnFrame(const webrtc::VideoFrame&) final;
++
++    uint64_t m_receivedFrameCount { 0 };
+ };
+ 
+ } // namespace WebCore
+-- 
+2.44.4
+
