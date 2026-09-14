@@ -9,9 +9,10 @@ PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'es1test-jsonrpc-benchmark', '', d)}"
 
-SRCREV = "a46ca7149fabe6e441903bea4ecf8bf937ca5efa"
-SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
+SRCREV = "0201d019ca44d25fc3a61045aa236a549b1b7654"
+SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices;branch=es1Test/JSONRPCBenchmark_8 \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
 S = "${WORKDIR}/git/systemd/system"
@@ -67,6 +68,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-preinstallmanager.service \
     wpeframework-telemetrymetrics.service \
     wpeframework-devicediagnostics.service \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'wpeframework-es1benchmark.service', '', d)} \
     "
 
 CONTROL_FILES = "\
@@ -88,6 +90,13 @@ do_install() {
         install -d ${D}${sysconfdir}/systemd/system/${x}.requires
         ln -sf ${systemd_system_unitdir}/wpeframework.service ${D}${sysconfdir}/systemd/system/${x}.requires/wpeframework.service
     done
+
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'true', 'false', d)} == 'true'; then
+        install -m 0644 ${S}/es1bench.service ${D}${systemd_system_unitdir}
+        install -m 0644 ${S}/es1bench-coldstart.service ${D}${systemd_system_unitdir}
+        install -d ${D}${sysconfdir}/systemd/system/multi-user.target.wants
+        ln -sf ${systemd_system_unitdir}/es1bench-coldstart.service ${D}${sysconfdir}/systemd/system/multi-user.target.wants/es1bench-coldstart.service
+    fi
 
     # Adding final THUNDER_STARTUP_SERVICES into the Requires= line of the target
     FINAL_SERVICES="$(echo "${THUNDER_STARTUP_SERVICES}" | tr '\n' ' ')"
