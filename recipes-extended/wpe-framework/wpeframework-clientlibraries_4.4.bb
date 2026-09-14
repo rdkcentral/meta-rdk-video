@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 HOMEPAGE = "https://github.com/rdkcentral/ThunderClientlibraries"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=847677038847363222ffb66cfa6406c2"
 
-PR = "r20"
+PR = "r21"
 PV = "4.4.2"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -49,15 +49,11 @@ require recipes-extended/entservices/include/compositor.inc
 #include include/compositor.inc
 
 DEPENDS = " \
-    entservices-apis \
+    entservices-apis wpeframework rfc \
     wpeframework-tools-native \
     ${@bb.utils.contains('DISTRO_FEATURES', 'compositor', '${WPE_COMPOSITOR_DEP}', '', d)} \
     gstreamer1.0 \
 "
-
-RDEPENDS:${PN}:append:dunfell = "${@bb.utils.contains('DISTRO_FEATURES', 'sage_svp', ' gst-svp-ext', '', d)}"
-RDEPENDS:${PN}:append:dunfell = "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', ' gst-svp-ext', '', d)}"
-RDEPENDS:${PN}:append:dunfell = " wpeframework rdkperf"
 
 #Cryptography library
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_icrypto_openssl','openssl', 'virtual/vendor-secapi2-adapter', d)}"
