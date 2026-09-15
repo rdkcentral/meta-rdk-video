@@ -42,12 +42,15 @@ PACKAGECONFIG ?= " breakpadsupport \
     avinput \
 "
 
-AVINPUT_DEPS:vdevice_x86-64-mw = ""
+AVINPUT_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal entservices-helpers"
+AVINPUT_DEPS:vdevice_x86-64-mw = "iarmbus entservices-devicesettings entservices-helpers"
+
+AVINPUT_RDEPS = "iarmbus devicesettings entservices-helpers"
+AVINPUT_RDEPS:vdevice_x86-64-mw = "${AVINPUT_DEPS}"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[avinput]              = "-DPLUGIN_AVINPUT=ON,-DPLUGIN_AVINPUT=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus devicesettings entservices-helpers"
-PACKAGECONFIG[avinput]:vdevice_x86-64-mw = "-DPLUGIN_AVINPUT=ON,-DPLUGIN_AVINPUT=OFF,iarmbus entservices-devicesettings entservices-helpers"
+PACKAGECONFIG[avinput]              = "-DPLUGIN_AVINPUT=ON,-DPLUGIN_AVINPUT=OFF,${AVINPUT_DEPS},${AVINPUT_RDEPS}"
 EXTRA_OECMAKE += " -DDS_COMRPC=ON"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
