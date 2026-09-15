@@ -18,6 +18,8 @@ SRC_URI = " \
 
 S = "${WORKDIR}"
 
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
 inherit cmake
 
 # NOTE: points at the iarmbus2 tree (IARM_Bus_SetTraceparent/GetTraceparent),
