@@ -19,7 +19,7 @@ index 70df2b3..c2182d2 100644
                      ~DataExchange()
                      {
                          TRACE(Trace::Information, (_T("Destructing buffer server side: %p - %s"), this, Exchange::DataExchange::Name().c_str()));
-@@ -316,16 +317,82 @@ namespace Plugin {
+@@ -316,16 +317,89 @@ namespace Plugin {
                          char name [16];
                          snprintf(name, sizeof(name), "OCDM_decrypt");
                          prctl(PR_SET_NAME, name, 0, 0, 0);
@@ -55,9 +55,10 @@ index 70df2b3..c2182d2 100644
 +			    const CDMi::Cdmi_FPSSliceInfo  *sliceInfoArray = FPSSliceInfoArray();
 +
 +
++                             uint32_t svpmemoryhandle = 0;
 +                             if(contentType == 0x80000007)
 +                              {
-+                                    uint32_t svpmemoryhandle = FPSSvpOut();
++                                    svpmemoryhandle = FPSSvpOut();
 +                                    printf("*******the svpout = 0x%x***** \n",svpmemoryhandle);fflush(stdout);
 +                                    decryptedmem =(void *)&svpmemoryhandle;
 +
@@ -67,6 +68,12 @@ index 70df2b3..c2182d2 100644
 +                                     printf("*********FS Audio Handling*********** \n");fflush(stdout);
 +                                     //Allocate the memory
 +                                     decryptedmem = (void *)calloc(1, encryptedDataSize);
++                                     if (decryptedmem == nullptr) {
++                                         TRACE(Trace::Error, (_T("FPS audio decrypt: calloc failed for %u bytes"), encryptedDataSize));
++                                         Status(static_cast<uint32_t>(-1));
++                                         Consumed();
++                                         continue;
++                                     }
 +
 +                               }
 +
@@ -171,8 +178,8 @@ index 70df2b3..c2182d2 100644
 +			   _mediaKeySession->Run(&_sink);
 +		   }
                      TRACE(Trace::Information, (_T("Constructed the Session Server side: %p"), this));
- 
-                 }
+
+                }
 @@ -606,22 +699,23 @@ namespace Plugin {
  
                  Exchange::OCDM_RESULT CreateSessionBuffer(std::string& bufferID) override {
