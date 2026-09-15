@@ -2,17 +2,17 @@ SUMMARY = "C++ Firebolt: Transport layer"
 DESCRIPTION = "Recipe for building Transport layer for C++ Firebolt Clients"
 
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=191617b85035499c1997d42dbdef03c0"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=724ed260f33bc706a8fbafbbb35a316b"
 
 inherit cmake
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-PV = "1.1.10"
+PV = "1.1.12"
 PR = "r0"
 
 SRC_URI = "https://github.com/rdkcentral/firebolt-cpp-transport/releases/download/v${PV}/firebolt-cpp-transport-${PV}.tar.gz"
-SRC_URI[sha256sum] = "223e7b882ba54bcb42509d583ef6b4829a666adff0c177b6eecc1d6b117f4190"
+SRC_URI[sha256sum] = "928716bf9076a992beaede4110d5d81aa2b250bdb9830fbb1a406a7db2fc08c8"
 S = "${WORKDIR}/firebolt-cpp-transport-${PV}"
 
 DEPENDS = "nlohmann-json websocketpp boost"

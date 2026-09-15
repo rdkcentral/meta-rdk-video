@@ -1,0 +1,428 @@
+diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
+index 70df2b3..c2182d2 100644
+--- a/plugin/FrameworkRPC.cpp
++++ b/plugin/FrameworkRPC.cpp
+@@ -287,7 +287,7 @@ namespace Plugin {
+                     DataExchange& operator=(const DataExchange&) = delete;
+ 
+                 public:
+-                    DataExchange(CDMi::IMediaKeySession* mediaKeys, const string& name, const uint32_t defaultSize)
++                        DataExchange(CDMi::IMediaKeySession* mediaKeys, const string& name, const uint32_t defaultSize)
+                         : Exchange::DataExchange(name, defaultSize)
+                         , Core::Thread(Core::Thread::DefaultStackSize(), _T("DRMSessionThread"))
+                         , _mediaKeys(mediaKeys)
+@@ -298,6 +298,7 @@ namespace Plugin {
+                         Core::Thread::Run();
+                         TRACE(Trace::Information, (_T("Constructing buffer server side: %p - %s"), this, name.c_str()));
+                     }
++
+                     ~DataExchange()
+                     {
+                         TRACE(Trace::Information, (_T("Destructing buffer server side: %p - %s"), this, Exchange::DataExchange::Name().c_str()));
+@@ -316,16 +317,89 @@ namespace Plugin {
+                         char name [16];
+                         snprintf(name, sizeof(name), "OCDM_decrypt");
+                         prctl(PR_SET_NAME, name, 0, 0, 0);
+-
+-                        while (IsRunning() == true) {
+-
+-                            uint32_t clearContentSize = 0;
+-                            uint8_t* clearContent = nullptr;
+-
+-                            RequestConsume(Core::infinite);
+-
+-                            if (IsRunning() == true) {
+-                                uint8_t *payloadBuffer = Buffer();
++		if(strcmp(_mediaKeys->GetKeySystem(),"com.apple.fps") == 0 )
++		{
++		     //Prepare for the FPS decryption..
++		     // Retrieve all FPS params from Adminstrative buffer.
++		     //
++		     while (IsRunning() == true)
++		     {
++			void *decryptedmem = nullptr;
++			RequestConsume(Core::infinite);
++
++		        if (IsRunning() == true)
++                                {
++			    uint8_t *payloadBuffer = Buffer();
++			    uint64_t movieId = FPSMovieId();
++			    uint64_t cryptorId = FPSCryptorId();
++			    uint32_t contentType = FPSContentType();
++			    uint32_t sliceInfoArryCount = FPSSliceInfoArrayCoun();
++			    uint32_t encryptedDataSize = BytesWritten();
++
++			    const CDMi::Cdmi_FPSSliceInfo  *sliceInfoArray = FPSSliceInfoArray();
++
++
++                             uint32_t svpmemoryhandle = 0;
++                             if(contentType == 0x80000007)
++                              {
++                                    svpmemoryhandle = FPSSvpOut();
++                                    printf("*******the svpout = 0x%x***** \n",svpmemoryhandle);fflush(stdout);
++                                    decryptedmem =(void *)&svpmemoryhandle;
++
++                               }
++                               else
++                               {
++                                     printf("*********FS Audio Handling*********** \n");fflush(stdout);
++                                     //Allocate the memory
++                                     decryptedmem = (void *)calloc(1, encryptedDataSize);
++                                     if (decryptedmem == nullptr) {
++                                         TRACE(Trace::Error, (_T("FPS audio decrypt: calloc failed for %u bytes"), encryptedDataSize));
++                                         Status(static_cast<uint32_t>(-1));
++                                         Consumed();
++                                         continue;
++                                     }
++
++                               }
++
++                             int cr = _mediaKeys->Decrypt(
++                                        movieId,
++                                        cryptorId,
++                                        contentType,
++                                        payloadBuffer,
++                                        encryptedDataSize,
++                                        sliceInfoArray,
++                                        sliceInfoArryCount,
++                                        nullptr,
++                                        decryptedmem);
++                                     if ((cr == 0) && (contentType == 0xA)) {
++                                         SetBuffer(0, encryptedDataSize, static_cast<uint8_t *>(decryptedmem));
++                                         printf("*******Free the clear data******** \n");fflush(stdout);
++                                     }
++                                     if (contentType != 0x80000007) {
++                                         free(decryptedmem);
++                                         decryptedmem = nullptr;
++                                     }
++                                    // Store the status we have for the other side.
++                                    Status(static_cast<uint32_t>(cr));
++                                   // Whatever the result, we are done with the buffer..
++                                    Consumed();
++
++			}
++
++		     }
++		}
++	       else
++	       {
++
++                            while (IsRunning() == true) {
++
++                              uint32_t clearContentSize = 0;
++                              uint8_t* clearContent = nullptr;
++
++                              RequestConsume(Core::infinite);
++
++                                if (IsRunning() == true) {
++                                 uint8_t *payloadBuffer = Buffer();
+ 
+                                 CDMi::SampleInfo sampleInfo;
+                                 sampleInfo.scheme = static_cast<CDMi::EncryptionScheme>(EncScheme());
+@@ -371,6 +438,7 @@ namespace Plugin {
+                                 Consumed();
+                             }
+                         }
++		    }
+ 
+                         return (Core::infinite);
+                     }
+@@ -491,6 +559,27 @@ namespace Plugin {
+                 #ifdef __WINDOWS__
+                 #pragma warning(disable : 4355)
+                 #endif
++
++               SessionImplementation(
++                    AccessorOCDM* parent,
++                    const std::string keySystem,
++                    CDMi::IMediaKeySession* mediaKeySession,
++                    const CommonEncryptionData* sessionData)
++                    : _parent(*parent)
++                    , _refCount(1)
++                    , _keySystem(keySystem)
++                    , _mediaKeySession(mediaKeySession)
++                    , _sink(this)
++                    , _buffer(nullptr)
++                    , _cencData(*sessionData)
++                {
++                    ASSERT(parent != nullptr);
++                    ASSERT(_mediaKeySession != nullptr);
++                    ASSERT(sessionData != nullptr);
++                    TRACE(Trace::Information, ("Server::Session::Session(%s,%s) => %p", _keySystem.c_str(), _sessionId.c_str(), this));
++                    TRACE(Trace::Information, (_T("Constructed the Session Server side: %p"), this));
++                }
++
+                 SessionImplementation(
+                     AccessorOCDM* parent,
+                     const std::string keySystem,
+@@ -510,8 +599,10 @@ namespace Plugin {
+                     ASSERT(parent != nullptr);
+                     ASSERT(sessionData != nullptr);
+                     ASSERT(_mediaKeySession != nullptr);
+-                    if(_mediaKeySession != nullptr)
++                    if((_mediaKeySession != nullptr ) &&  (strcmp(keySystem.c_str(),"com.apple.fps") != 0))
++		    {
+                         _mediaKeySession->Run(&_sink);
++		    }
+                     TRACE(Trace::Information, ("Server::Session::Session(%s,%s) => %p", _keySystem.c_str(), _sessionId.c_str(), this));
+                     TRACE(Trace::Information, (_T("Constructed the Session Server side: %p"), this));
+                 }
+@@ -540,8 +631,10 @@ namespace Plugin {
+                     ASSERT(_mediaKeySessionExt != nullptr);
+ 
+                     TRACE(Trace::Information, (_T("Constructed the Session Server side: %p"), this));
+-                    if(_mediaKeySession != nullptr)
+-                        _mediaKeySession->Run(&_sink);
++                   if(_mediaKeySession != nullptr && (strcmp(_keySystem.c_str(),"com.apple.fps") != 0) )
++		   {
++			   _mediaKeySession->Run(&_sink);
++		   }
+                     TRACE(Trace::Information, (_T("Constructed the Session Server side: %p"), this));
+
+                }
+@@ -606,22 +699,23 @@ namespace Plugin {
+ 
+                 Exchange::OCDM_RESULT CreateSessionBuffer(std::string& bufferID) override {
+ 
++
+                     Exchange::OCDM_RESULT result = Exchange::OCDM_SUCCESS;
+                     _adminLock.Lock();
+                     if( _buffer == nullptr ) {
+ 
++
+                         if (_parent._administrator.AquireBuffer(bufferID) == true)
+                         {
++
+                             _buffer = new DataExchange(_mediaKeySession, bufferID, _parent.DefaultSize());
+                             _adminLock.Unlock();
+-
+                             ASSERT(_buffer != nullptr);
+ 
+                             if(_buffer->IsValid() == false){
+                                 TRACE(Trace::Fatal, ("Could not open session buffer %s", BufferId().c_str()));
+                             }
+ 
+-
+                             TRACE(Trace::Information, ("Server::Session::CreateSessionBuffer(%s,%s,%s) => %p", _keySystem.c_str(), _sessionId.c_str(), BufferId().c_str(), this));
+                         } else {
+                             _adminLock.Unlock();
+@@ -849,6 +943,159 @@ namespace Plugin {
+                 return result;
+             }
+ 
++            Exchange::OCDM_RESULT InitLibrary(const std::string& keySystem) const override
++            {
++                Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++
++                CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                if (system != nullptr)
++                {
++                    CDMi::CDMi_RESULT mediasystem_return = system->InitLibrary();
++                    if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                    {
++                        result = Exchange::OCDM_SUCCESS;
++                    }
++                    else
++                    {
++                        result = Exchange::OCDM_S_FALSE;
++                    }
++                }
++
++                return result;
++            }
++
++            Exchange::OCDM_RESULT GenerateChallengeWithVersionList(const std::string& keySystem, uint32_t version, uint64_t movieId, const uint8_t* assetidData, uint32_t assetidSize, const uint8_t* versionlist, uint32_t versionListSize, const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallenge, uint32_t Bsize,  uint8_t* licenseChallengeSize, uint32_t l_bytes, uint8_t* session, uint32_t s_bytes) const override
++            {
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++
++                    //TODO: REMOVE unused parameters
++                    (void)Bsize;
++                    (void)l_bytes;
++                    (void)s_bytes;
++
++                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                    if (system != nullptr) {
++
++                        // TODO: if versionListSize is a byte length (per the @length: annotation), this can read out of bounds.
++			std::vector<uint32_t> versionlist32(versionListSize);
++                        memcpy(versionlist32.data(), versionlist, versionListSize * sizeof(uint32_t));
++                        const uint32_t* versionlist_converted = versionlist32.data();
++
++                        CDMi::CDMi_RESULT mediasystem_return = system->GenerateChallengeWithVersionList(version, movieId, assetidData, assetidSize, versionlist_converted, versionListSize, streamerChallengeData, streamerChallengeSize, cryptorId, licenseChallenge, licenseChallengeSize, session);
++
++                        if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                        {
++                            result = Exchange::OCDM_SUCCESS;
++                        }
++                        else
++                        {
++                            result = Exchange::OCDM_S_FALSE;
++                        }
++                    }
++
++                    return result;
++            }
++
++   Exchange::OCDM_RESULT CreateMovieSession(const std::string& keySystem, uint32_t version, const uint8_t* cert, uint32_t certificatesize, const uint8_t* versionlist, uint32_t versionListSize, uint8_t *movieIdOut, uint32_t movieIdOut_bytes) const override
++                {
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++
++                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                    if (system != nullptr) {
++                        // if alignment is not guaranteed, we need to copy the data
++                        // Assume versionListSize is the number of uint32_t elements
++                        std::vector<uint32_t> versionlist32(versionListSize);
++                        memcpy(versionlist32.data(), versionlist, versionListSize * sizeof(uint32_t));
++                        const uint32_t* versionlist_converted = versionlist32.data();
++
++                        // TODO: if movieIdOut_bytes is not equal to sizeof(uint64_t), this will write out of bounds.
++                        CDMi::CDMi_RESULT mediasystem_return = system->CreateMovieSession(version, cert, certificatesize, versionlist_converted, versionListSize, reinterpret_cast<uint64_t*>(movieIdOut));
++                        if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                        {
++                            result = Exchange::OCDM_SUCCESS;
++                        }
++                        else
++                        {
++                            result = Exchange::OCDM_S_FALSE;
++                        }
++                    }
++
++                    return result;
++                }
++
++           Exchange::OCDM_RESULT DestroyMovieSession(const std::string& keySystem, uint32_t version, uint64_t movieId) const override
++           {
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                    if (system != nullptr) {
++                        CDMi::CDMi_RESULT mediasystem_return = system->DestroyMovieSession(version, movieId);
++                        if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                        {
++                            result = Exchange::OCDM_SUCCESS;
++                        }
++                        else
++                        {
++                            result = Exchange::OCDM_S_FALSE;
++                        }
++                    }
++
++                    return result;
++            }
++
++            Exchange::OCDM_RESULT DestroyServerExchange(const std::string& keySystem, uint32_t version, uint8_t* session, uint32_t s_bytes) const override
++            {
++                Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++                CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                if (system != nullptr) {
++                    CDMi::CDMi_RESULT mediasystem_return = system->DestroyServerExchange(version, session);
++                    if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                    {
++                        result = Exchange::OCDM_SUCCESS;
++                    } else {
++                        result = Exchange::OCDM_S_FALSE;
++                    }
++                }
++                return result;
++            }
++
++           Exchange::OCDM_RESULT ProcessLicense(const std::string& keySystem, uint32_t version, uint8_t *session, uint32_t s_bytes, const uint8_t *licenseData, uint32_t licenseDataSize, uint8_t *cryptoId, uint32_t c_bytes) const override
++           {
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                    if (system != nullptr) {
++                        CDMi::CDMi_RESULT mediasystem_return = system->ProcessLicense(version, session, licenseData, licenseDataSize, cryptoId);
++                        if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                        {
++                            result = Exchange::OCDM_SUCCESS;
++                        }
++                        else
++                        {
++                            result = Exchange::OCDM_S_FALSE;
++                        }
++                    }
++
++                    return result;
++            }
++
++           Exchange::OCDM_RESULT DestroyCryptor(const std::string& keySystem, uint32_t version, uint64_t cryptoId) const override
++           {
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                    if (system != nullptr) {
++                        CDMi::CDMi_RESULT mediasystem_return = system->DestroyCryptor(version, cryptoId);
++                        if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                        {
++                            result = Exchange::OCDM_SUCCESS;
++                        }
++                        else
++                        {
++                            result = Exchange::OCDM_S_FALSE;
++                        }
++                    }
++
++                    return result;
++            }
++
+             Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& bufferSize, uint8_t buffer[]) const override {
+                 Exchange::OCDM_RESULT result = Exchange::OCDM_KEYSYSTEM_NOT_SUPPORTED;
+ 
+@@ -921,10 +1168,21 @@ namespace Plugin {
+                      {
+                          if (sessionInterface != nullptr)
+                          {
+-                                 SessionImplementation *newEntry = 
++                                 /*SessionImplementation *newEntry =
+                                     Core::Service<SessionImplementation>::Create<SessionImplementation>(this,
+                                                  keySystem, sessionInterface,
+-                                                callback, &keyIds);
++                                                callback, &keyIds);*/
++                                //  SessionImplementation *newEntry = Core::Service<SessionImplementation>::Create<SessionImplementation>(this,keySystem, sessionInterface,&keyIds);
++                                SessionImplementation* newEntry = nullptr;
++
++                                if(strcmp(keySystem.c_str(),"com.apple.fps") == 0 )
++                                {
++                                   newEntry = Core::Service<SessionImplementation>::Create<SessionImplementation>(this, keySystem, sessionInterface,&keyIds);
++                                }
++                                else
++                                {
++                                    newEntry = Core::Service<SessionImplementation>::Create<SessionImplementation>(this, keySystem, sessionInterface, callback, &keyIds);
++                                }
+ 
+                                  session = newEntry;
+                                  sessionId = newEntry->SessionId();
+diff --git a/plugin/OCDM.conf.in b/plugin/OCDM.conf.in
+index 18dfab3..3b75b14 100644
+--- a/plugin/OCDM.conf.in
++++ b/plugin/OCDM.conf.in
+@@ -22,6 +22,11 @@ if boolean("@PLUGIN_OPENCDMI_CLEARKEY@"):
+     keysystem.add("designators", [ "org.chromium.externalclearkey", "org.w3.clearkey" ])
+     systems.append(keysystem)
+ 
++if boolean("@PLUGIN_OPENCDMI_FAIRPLAY@"):
++    keysystem = JSON()
++    keysystem.add("name", "CFairPlay")
++    keysystem.add("designators", [ "com.apple.fps"])
++    systems.append(keysystem)
+ 
+ if boolean("@PLUGIN_OPENCDMI_PLAYREADY@") or \
+     boolean("@PLUGIN_OPENCDMI_PLAYREADY_NEXUS@") or \
+diff --git a/plugin/OCDM.config b/plugin/OCDM.config
+index 659ca69..c74ee70 100644
+--- a/plugin/OCDM.config
++++ b/plugin/OCDM.config
+@@ -40,6 +40,15 @@ ans(keysystem)
+ map_append(${configuration} systems ___array___ ${keysystem})
+ endif()
+ 
++if(PLUGIN_OPENCDMI_FAIRPLAY)
++map()
++    kv(name "CFairPlay")
++    kv(designators "___array___;com.apple.fps")
++end()
++ans(keysystem)
++map_append(${configuration} systems ${keysystem})
++endif()
++
+ if(PLUGIN_OPENCDMI_PLAYREADY OR PLUGIN_OPENCDMI_PLAYREADY_NEXUS OR PLUGIN_OPENCDMI_PLAYREADY_NEXUS_SVP OR PLUGIN_OPENCDMI_PLAYREADY_VGDRM)
+ map()
+     kv(name "PlayReady")

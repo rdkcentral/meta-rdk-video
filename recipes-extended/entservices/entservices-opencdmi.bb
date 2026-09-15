@@ -2,7 +2,7 @@ SUMMARY = "ENTServices opencdmi plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7a65e8e9836ac44d082594220a9a3883"
 
-PV = "2.0.2"
+PV = "2.0.3"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -13,10 +13,12 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
+           file://open_cdm_imp_fps_ocdm.patch \
+           file://opencdmi-fps-plugin-frameworkrpc.patch \
           "
           
 # Release version - 2.0.2
-SRCREV = "96df114e4b6006ef384697bca56104e52e228648"
+SRCREV = "65439f007efc79b703f5f99e661ffbb7cad8c6a6"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -62,11 +64,12 @@ PACKAGECONFIG ?= " breakpadsupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'playready_nexus_svp',  'opencdmi_prnx_svp', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'widevine_nexus_svp',   'opencdmi_wv_svp', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'clearkey',             'opencdmi_ck', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'fairplay',             'opencdmi_fps', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'dlnasupport', ' dlna', '', d)} \
 "
 
 # enable widevine and Playready4 opencdmi libs
-OPENCDM_DRMS ??= " ${@bb.utils.contains_any('DISTRO_FEATURES' , ['widevine_v14' , 'widevine_v16' , 'widevine_v18'], 'opencdmi_wv', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['playready4' , 'playready4_6'], 'opencdmi_pr4', '', d)}"
+OPENCDM_DRMS ??= " ${@bb.utils.contains_any('DISTRO_FEATURES' , ['widevine_v14' , 'widevine_v16' , 'widevine_v18'], 'opencdmi_wv', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['playready4' , 'playready4_6'], 'opencdmi_pr4', '', d)} ${@bb.utils.contains_any('DISTRO_FEATURES' , ['fairplay'], 'opencdmi_fps', '', d)}"
 PACKAGECONFIG:append = " ${OPENCDM_DRMS}"
 
 inherit features_check
