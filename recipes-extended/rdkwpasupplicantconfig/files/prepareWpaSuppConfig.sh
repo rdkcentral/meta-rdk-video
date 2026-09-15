@@ -73,9 +73,9 @@ if [ -z "$COUNTRY_CODE" ]; then
 fi
 log "Setting WiFi Regulatory domain to $COUNTRY_CODE."
 # Generate wpa_supplicant.conf
-# 1. If file is not present create one and fill it with ctrl_interface & update_config values
-# 2. If file is present and ctrl_interface or update_config values are not present recreate files with proper values
-# 3. If file is present and values are proper do Nothing, Use the same
+# 1. If the file is not present, create one and fill it with the ctrl_interface/country values
+# 2. If the file is present and ctrl_interface is missing, recreate the file with proper values
+# 3. If the file is present and ctrl_interface is present, remove update_config; ensure country is set
 if [ -f $WPA_SUPP_CONF_FILE ]; then
     if ! systemctl is-active securemount.service; then
         log "TELEMETRY_WIFI_SECUREMOUNT_SERVICE_NOT_ACTIVE"
@@ -86,10 +86,11 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
     elif ! cmp "$WPA_SUPP_CONF_FILE" /opt/secure/wifi/wpa_supplicant.conf; then
         log "TELEMETRY_WIFI_WPA_SUPPLICANT_CONF_FILES_DIFFER $WPA_SUPP_CONF_FILE /opt/secure/wifi/wpa_supplicant.conf"
     fi
-    if [[ `grep "ctrl_interface=/var/run/wpa_supplicant" $WPA_SUPP_CONF_FILE` ]] && [[ `grep "update_config=1" $WPA_SUPP_CONF_FILE` ]]; then
+    if [[ `grep "ctrl_interface=/var/run/wpa_supplicant" $WPA_SUPP_CONF_FILE` ]]; then
         log "$WPA_SUPP_CONF_FILE file exists and configurations are present"
-        sed -i "/bssid=/d" $WPA_SUPP_CONF_FILE
+		sed -i "/bssid=/d" $WPA_SUPP_CONF_FILE
         sed -i "s/key_mgmt=OPEN/key_mgmt=NONE/g" $WPA_SUPP_CONF_FILE
+		sed -i "/update_config/d" $WPA_SUPP_CONF_FILE
         if grep "country=" "$WPA_SUPP_CONF_FILE"; then
             log "Country code is present , No need to change"
         else
@@ -98,8 +99,10 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
     else
         log "$WPA_SUPP_CONF_FILE file exists, Updating missing configurations..."
         echo "ctrl_interface=/var/run/wpa_supplicant" > $WPA_SUPP_CONF_FILE
-        echo "update_config=1" >> $WPA_SUPP_CONF_FILE
         echo "country=$COUNTRY_CODE" >> $WPA_SUPP_CONF_FILE
+		if grep -q "update_config" "$WPA_SUPP_CONF_FILE"; then
+            sed -i "/update_config/d" "$WPA_SUPP_CONF_FILE"
+        fi
     fi
     # Enable 802.11w on wpa_supplicant
     if [[ `grep "pmf=" $WPA_SUPP_CONF_FILE` ]]; then
@@ -131,7 +134,6 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
 else
     log "$WPA_SUPP_CONF_FILE file is missing. Creating file and updating configurations..."
     echo "ctrl_interface=/var/run/wpa_supplicant" > $WPA_SUPP_CONF_FILE
-    echo "update_config=1" >> $WPA_SUPP_CONF_FILE
     echo "country=$COUNTRY_CODE" >> $WPA_SUPP_CONF_FILE
     echo "pmf=$PMF_CONFIG" >> $WPA_SUPP_CONF_FILE
 	echo "wowlan_triggers=any" >> $WPA_SUPP_CONF_FILE

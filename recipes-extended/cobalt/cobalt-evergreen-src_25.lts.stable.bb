@@ -6,9 +6,6 @@ LIC_FILES_CHKSUM = " \
     file://LICENSE;md5=0fca02217a5d49a14dfe2d11837bb34d \
 "
 
-inherit features_check
-CONFLICT_DISTRO_FEATURES = "cobalt-24"
-
 TOOLCHAINS_DIR = "starboard-toolchains"
 CLANG_BUILD_REVISION = "17-init-8029-g27f27d15-3"
 CLANG_BUILD_SUBDIR = "${TOOLCHAINS_DIR}/x86_64-linux-gnu-clang-chromium-${CLANG_BUILD_REVISION}"
@@ -21,7 +18,7 @@ SRC_URI += "file://25/0006-Use-certifi-to-tell-urllib-where-to-find-CA-file-397.
 
 SRC_URI[clang.sha256sum] = "1ac590c011158940037ce9442d4bf12943dc14a7ddaab6094e75a8750b47b861"
 
-CR = "30"
+CR = "40"
 PR = "r${CR}"
 SRCREV_cobalt = "25.lts.${CR}"
 do_fetch[vardeps] += " SRCREV_FORMAT SRCREV_cobalt"

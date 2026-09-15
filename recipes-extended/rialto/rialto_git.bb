@@ -21,8 +21,9 @@ SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${RIALT
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
 DEPENDS = "openssl jsoncpp protobuf protobuf-native"
-DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform "
-
+DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform"
+# entservices-opencdmi provides opencdm/open_cdm.h and ocdm.pc; wpeframework-clientlibraries is still used for other Thunder components (see PACKAGECONFIG[server]).
+DEPENDS:append = " entservices-opencdmi"
 S = "${WORKDIR}/git"
 inherit pkgconfig cmake coverity features_check
 

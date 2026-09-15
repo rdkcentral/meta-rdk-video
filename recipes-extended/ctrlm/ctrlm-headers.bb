@@ -24,7 +24,6 @@ FILES:${PN} += "${includedir}/ctrlm_ipc.h \
                 ${includedir}/ctrlm_ipc_device_update.h \
                 ${includedir}/ctrlm_ipc_ble.h \
                 ${includedir}/ctrlm_hal.h \
-                ${includedir}/ctrlm_hal_ip.h \
                 ${includedir}/ctrlm_hal_ble.h \
                 ${includedir}/ctrlm_hal_rf4ce.h \
                "
@@ -41,7 +40,6 @@ do_install() {
     install -m 644 ${S}/include/ctrlm_ipc_device_update.h ${D}${includedir}
     install -m 644 ${S}/include/ctrlm_ipc_ble.h ${D}${includedir}
     install -m 644 ${S}/include/ctrlm_hal.h ${D}${includedir}
-    install -m 644 ${S}/include/ctrlm_hal_ip.h ${D}${includedir}
     install -m 644 ${S}/include/ctrlm_hal_ble.h ${D}${includedir}
     install -m 644 ${S}/include/ctrlm_hal_rf4ce.h ${D}${includedir}
 
@@ -132,6 +130,9 @@ do_install() {
     install -m 644 ${S}/src/ble/hal/utils/statemachine.h     ${D}${includedir}/ctrlm_private/utils
     install -m 644 ${S}/src/ble/hal/utils/futureaggregator.h ${D}${includedir}/ctrlm_private/utils
     install -m 644 ${S}/src/ble/hal/utils/fwimagefile.h      ${D}${includedir}/ctrlm_private/utils
+
+    # Server App
+    install -m 644 ${S}/src/server/ctrlm_server_app.h        ${D}${includedir}/ctrlm_private
 }
 
 ALLOW_EMPTY:${PN} = "1"

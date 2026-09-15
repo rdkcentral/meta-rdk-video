@@ -1,0 +1,467 @@
+diff --git a/client/open_cdm.cpp b/client/open_cdm.cpp
+index 0b218f8..b139cb8 100644
+--- a/client/open_cdm.cpp
++++ b/client/open_cdm.cpp
+@@ -374,7 +374,6 @@ opencdm_construct_session(struct OpenCDMSystem* system,
+ 
+     if ((system != nullptr) && (session != nullptr)) {
+         TRACE_L1("Creating a Session for %s", system->keySystem().c_str());
+-
+         result = OpenCDMSession::CreateSession(system,
+                                             licenseType,
+                                             initDataType,
+@@ -728,6 +727,32 @@ OpenCDMError opencdm_session_decrypt_v2(struct OpenCDMSession* session,
+     return (result);
+ }
+ 
++//FPS decrypt.
++
++ OpenCDMError opencdm_session_decrypt_fps(struct OpenCDMSession* session,
++    uint32_t version,
++    uint64_t movieID,
++    uint64_t cryptorID,
++    uint32_t contentType,
++    uint8_t *buffer,
++    uint32_t bufferSize,
++    const FPS_SliceInfo* sliceInfoArray,
++    uint32_t sliceInfoArrayCount,
++    const uint8_t* iv,
++    void *returnData)
++{
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_SESSION);
++    ASSERT(session != nullptr);
++
++    if (session != nullptr) {
++        result = bufferSize > 0 ? static_cast<OpenCDMError>(session->Decrypt_fps(
++            version, movieID, cryptorID, contentType, buffer, bufferSize, sliceInfoArray, sliceInfoArrayCount, iv, returnData)) : OpenCDMError::ERROR_NONE;
++    }
++
++    return (result);
++}
++
++
+ /**
+  * \brief Get metrics associated with a DRM session.
+  *
+diff --git a/client/open_cdm.h b/client/open_cdm.h
+index c860ab0..cb4a398 100644
+--- a/client/open_cdm.h
++++ b/client/open_cdm.h
+@@ -150,6 +150,12 @@ typedef struct {
+     SubSampleInfo*     subSample;       // SubSample mapping - Repeating pair of Clear bytes and Encrypted Bytes representing each subsample.
+ } SampleInfo;
+ 
++//FPS
++typedef struct {
++    uint32_t offset;
++    uint32_t size;
++} FPS_SliceInfo;
++
+ // Provides information about the current stream
+ typedef struct {
+     uint16_t height;
+@@ -650,6 +656,21 @@ EXTERNAL OpenCDMError opencdm_session_decrypt_v2(struct OpenCDMSession* session,
+     const SampleInfo* sampleInfo,
+     const MediaProperties* streamProperties);
+ 
++
++//FPS decrypt api
++
++EXTERNAL OpenCDMError opencdm_session_decrypt_fps(struct OpenCDMSession* session,
++    uint32_t version,
++    uint64_t movieID,
++    uint64_t cryptorID,
++    uint32_t contentType,
++    uint8_t *buffer,
++    uint32_t bufferSize,
++    const FPS_SliceInfo* sliceInfoArray,
++    uint32_t sliceInfoArrayCount,
++    const uint8_t* iv,
++    void *returnData);
++
+ /**
+  * @brief Close the cached open connection if it exists.
+  *
+diff --git a/client/open_cdm_ext.cpp b/client/open_cdm_ext.cpp
+index a730528..30c0c74 100644
+--- a/client/open_cdm_ext.cpp
++++ b/client/open_cdm_ext.cpp
+@@ -46,6 +46,7 @@ static domainKeysystemMap domainMap =  {
+         abort();                                                      \
+     }
+ 
++
+ OpenCDMError opencdm_parse_keysystem(std::string& keySystemDomain)
+ {
+     OpenCDMError result = ERROR_NONE;
+@@ -501,3 +502,117 @@ OpenCDMError opencdm_system_ext_get_properties(struct PlayLevels* system, const
+      return result;
+     
+ }
++
++// Fairplay
++OpenCDMError opencdm_create_moviesession(struct OpenCDMSystem* system, uint32_t version, const uint8_t* cert, uint32_t certificatesize, const uint8_t* versionlist, uint32_t versionListSize, uint8_t* movieIdOut, uint32_t movieId_bytes)
++{
++	ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->CreateMovieSession(keySystem, version, cert, certificatesize, versionlist, versionListSize, movieIdOut, movieId_bytes);
++    }
++    return result;
++}
++
++OpenCDMError opencdm_destroy_moviesession(struct OpenCDMSystem* system, uint32_t version, uint64_t movieId)
++{
++	ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->DestroyMovieSession(keySystem, version, movieId);
++    }
++    return result;
++}
++
++
++OpenCDMError opencdm_generate_challenge_with_version_list(struct OpenCDMSystem* system, uint32_t version, uint64_t movieId, const uint8_t* assetidData, uint32_t assetidSize, const uint8_t* versionlist, uint32_t versionListSize, const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallengeBuffer, uint32_t maxbufferSize,  uint8_t* licenseSize, uint32_t licensesize_bytes, uint8_t* session, uint32_t sessionSize_bytes)
++{
++    ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->GenerateChallengeWithVersionList(keySystem, version, movieId, assetidData, assetidSize, versionlist, versionListSize, streamerChallengeData, streamerChallengeSize, cryptorId, licenseChallengeBuffer, maxbufferSize, licenseSize, licensesize_bytes, session, sessionSize_bytes);
++    }
++    return result;
++}
++
++OpenCDMError opencdm_destroy_server_exchange(struct OpenCDMSystem* system, uint32_t version, uint8_t* session, uint32_t sessionsize_bytes)
++{
++	ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->DestroyServerExchange(keySystem, version, session, sessionsize_bytes);
++    }
++    return result;
++}
++
++OpenCDMError opencdm_init_library(struct OpenCDMSystem* system)
++{
++    ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->InitLibrary(keySystem);
++    }
++    return result;
++}
++
++OpenCDMError opencdm_process_license(struct OpenCDMSystem* system, uint32_t version, uint8_t* session, uint32_t sessionsize_bytes, const uint8_t* licenseData, uint32_t licenseDataSize, uint8_t* cryptoId, uint32_t cryptoId_size)
++{
++    ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->ProcessLicense(keySystem, version, session, sessionsize_bytes, licenseData, licenseDataSize, cryptoId, cryptoId_size);
++    }
++    return result;
++}
++
++OpenCDMError opencdm_destroy_cryptor(struct OpenCDMSystem* system, uint32_t version, uint64_t cryptoId)
++{
++    ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->DestroyCryptor(keySystem, version, cryptoId);
++    }
++    return result;
++}
+diff --git a/client/open_cdm_ext.h b/client/open_cdm_ext.h
+index 24a85e4..60e6f99 100644
+--- a/client/open_cdm_ext.h
++++ b/client/open_cdm_ext.h
+@@ -234,6 +234,14 @@ struct PlayLevels {
+  */
+ EXTERNAL OpenCDMError opencdm_system_ext_get_properties(struct PlayLevels* system, const char* propertiesJSONText);
+ 
++// Fairplay
++EXTERNAL OpenCDMError opencdm_create_moviesession(struct OpenCDMSystem* system, uint32_t version, const uint8_t * cert, uint32_t certificatesize, const uint8_t* versionlist, uint32_t versionListSize, uint8_t *movieIdOut,uint32_t movieId_bytes);
++EXTERNAL OpenCDMError opencdm_destroy_moviesession(struct OpenCDMSystem* system, uint32_t version, uint64_t movieId);
++EXTERNAL OpenCDMError opencdm_generate_challenge_with_version_list(struct OpenCDMSystem* system, uint32_t version, uint64_t movieId, const uint8_t* assetidData,uint32_t assetidSize, const uint8_t* versionlist, uint32_t versionListSize, const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallengeBuffer, uint32_t maxbufferSize,  uint8_t* licenseSize, uint32_t licensesize_bytes, uint8_t* session, uint32_t sessionSize_bytes);
++EXTERNAL OpenCDMError opencdm_destroy_server_exchange(struct OpenCDMSystem* system, uint32_t version, uint8_t* session, uint32_t sessionsize_bytes);
++EXTERNAL OpenCDMError opencdm_init_library(struct OpenCDMSystem* system);
++EXTERNAL OpenCDMError opencdm_process_license(struct OpenCDMSystem* system, uint32_t version, uint8_t* session, uint32_t sessionsize_bytes,  const uint8_t* licenseData, uint32_t licenseDataSize, uint8_t* cryptoId, uint32_t crytorId_bytes);
++EXTERNAL OpenCDMError opencdm_destroy_cryptor(struct OpenCDMSystem* system, uint32_t version, uint64_t cryptoId);
+ 
+ #ifdef __cplusplus
+ } // extern "C"
+diff --git a/client/open_cdm_impl.h b/client/open_cdm_impl.h
+index 9010689..e861a71 100644
+--- a/client/open_cdm_impl.h
++++ b/client/open_cdm_impl.h
+@@ -164,6 +164,102 @@ public:
+         }
+     }
+ 
++    virtual Exchange::OCDM_RESULT CreateMovieSession(const string& keySystem, uint32_t version, const uint8_t* cert, uint32_t certificatesize, const uint8_t* versionlist, uint32_t versionListSize, uint8_t* movieIdOut, uint32_t movieIdSize) const override
++    {
++        Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++        if (_remote == nullptr) {
++            Reconnect();
++        }
++        if (_remote == nullptr) {
++            return Exchange::OCDM_RESULT::OCDM_S_FALSE;
++        } else {
++            result = _remote->CreateMovieSession(keySystem, version, cert, certificatesize, versionlist, versionListSize, movieIdOut, movieIdSize);
++            return result;
++        }
++    }
++
++    virtual Exchange::OCDM_RESULT DestroyMovieSession(const string& keySystem, uint32_t version, uint64_t movieId) const override
++    {
++        Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++        if (_remote == nullptr) {
++            Reconnect();
++        }
++        if (_remote == nullptr) {
++            return Exchange::OCDM_RESULT::OCDM_S_FALSE;
++        } else {
++            result = _remote->DestroyMovieSession(keySystem, version, movieId);
++            return result;
++        }
++    }
++
++    virtual Exchange::OCDM_RESULT GenerateChallengeWithVersionList(const string& keySystem, uint32_t version, uint64_t movieId, const uint8_t* assetidData, uint32_t assetidSize, const uint8_t* versionlist, uint32_t versionListSize, const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallengeBuffer, uint32_t licenseChallengeMaxSize, uint8_t* licenseSize, uint32_t license_bytes, uint8_t* session, uint32_t s_bytes) const override{
++        Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++        if (_remote == nullptr) {
++            Reconnect();
++        }
++        if (_remote == nullptr) {
++            return Exchange::OCDM_RESULT::OCDM_S_FALSE;
++        } else {
++            result = _remote->GenerateChallengeWithVersionList(keySystem, version, movieId, assetidData, assetidSize, versionlist, versionListSize, streamerChallengeData, streamerChallengeSize, cryptorId, licenseChallengeBuffer, licenseChallengeMaxSize, licenseSize, license_bytes, session, s_bytes);
++
++            return result;
++        }
++    }
++
++    virtual Exchange::OCDM_RESULT DestroyServerExchange(const string& keySystem, uint32_t version, uint8_t* session, uint32_t sessionSize) const override
++    {
++        Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++        if (_remote == nullptr) {
++            Reconnect();
++        }
++        if (_remote == nullptr) {
++            return Exchange::OCDM_RESULT::OCDM_S_FALSE;
++        } else {
++            result = _remote->DestroyServerExchange(keySystem, version, session, sessionSize);
++            return result;
++        }
++    }
++
++    virtual Exchange::OCDM_RESULT InitLibrary(const string& keySystem) const override {
++        Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++        if (_remote == nullptr) {
++            Reconnect();
++        }
++        if (_remote == nullptr) {
++            return Exchange::OCDM_RESULT::OCDM_S_FALSE;
++        } else {
++            result = _remote->InitLibrary(keySystem);
++            return result;
++        }
++    }
++
++    virtual Exchange::OCDM_RESULT ProcessLicense(const string& keySystem, uint32_t version, uint8_t* session, uint32_t sessionSize, const uint8_t* licenseData, uint32_t licenseDataSize, uint8_t* cryptoId, uint32_t cryptoIdSize) const override{
++        Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++        if (_remote == nullptr) {
++            Reconnect();
++        }
++        if (_remote == nullptr) {
++            return Exchange::OCDM_RESULT::OCDM_S_FALSE;
++        } else {
++            result = _remote->ProcessLicense(keySystem, version, session, sessionSize, licenseData, licenseDataSize, cryptoId, cryptoIdSize);
++            return result;
++        }
++    }
++
++    virtual Exchange::OCDM_RESULT DestroyCryptor(const std::string& keySystem, uint32_t version, uint64_t cryptoId) const override
++    {
++        Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++        if (_remote == nullptr) {
++            Reconnect();
++        }
++        if (_remote == nullptr) {
++            return Exchange::OCDM_RESULT::OCDM_S_FALSE;
++        } else {
++            result = _remote->DestroyCryptor(keySystem, version, cryptoId);
++            return result;
++        }
++    }
++
+     virtual Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& length, uint8_t buffer[]) const override {
+         Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
+  
+@@ -470,6 +566,67 @@ private:
+         }
+ 
+     public:
++         //FPS
++	uint32_t Decrypt_fps(
++               uint32_t version,
++               uint64_t movieID,
++               uint64_t cryptorID,
++               uint32_t contentType,
++               uint8_t *encryptedData,
++               uint32_t encryptedDataLength,
++               const FPS_SliceInfo* sliceInfoArray,
++               uint32_t sliceInfoArrayCount,
++               const uint8_t* iv,
++               void *svpout)
++	{
++            //TODO: REMOVE unused parameters
++            (void)version;
++            (void)iv;
++
++            int ret = 0;
++
++           _systemLock.Lock();
++
++            _busy = true;
++            //TBD
++            if (RequestProduce(Core::infinite) == Core::ERROR_NONE)
++	    {
++		//SetIV(static_cast<uint8_t>(ivDataLength), ivData);
++		SetFPSCryptorId(cryptorID);
++		SetFPSMovieId(movieID);
++		SetFPSContentType(contentType);
++		SetFPSSliceInfoArray(sliceInfoArrayCount, reinterpret_cast<const CDMi::Cdmi_FPSSliceInfo *>(sliceInfoArray));
++		if(contentType == 0x80000007) // SVP Video
++		{
++                   SetFPSSvpOut(*(uint32_t *)svpout);
++		}
++                Write(encryptedDataLength, encryptedData);
++                // This will trigger the OpenCDMIServer to decrypt this memory...
++                Produced();
++                // Now we should wait till it is decrypted, that happens if the
++                // Producer, can run again.
++                if (RequestProduce(Core::infinite) == Core::ERROR_NONE) {
++
++                    // For nowe we just copy the clear data..
++		    if(contentType == 0xA)
++		    {
++                    Read(encryptedDataLength, (uint8_t *)svpout);
++		    }
++
++                    // Get the status of the last decrypt.
++                    ret = Status();
++
++                    // And free the lock, for the next production Scenario..
++                    Consumed();
++                }
++            }
++            _busy = false;
++
++            _systemLock.Unlock();
++            return (ret);
++        }
++
++
+         uint32_t Decrypt(uint8_t* encryptedData, uint32_t encryptedDataLength,
+             const ::SampleInfo* sampleInfo,
+             uint32_t initWithLast15,
+@@ -738,6 +895,50 @@ public:
+         return (result);
+     }
+ 
++//FPS decrypt
++   uint32_t Decrypt_fps(
++    uint32_t version,
++    uint64_t movieID,
++    uint64_t cryptorID,
++    uint32_t contentType,
++    uint8_t *buffer,
++    uint32_t bufferSize,
++    const FPS_SliceInfo* sliceInfoArray,
++    uint32_t sliceInfoArrayCount,
++    const uint8_t* iv,
++    void *returnData)
++    {
++        uint32_t result = OpenCDMError::ERROR_INVALID_DECRYPT_BUFFER;
++        // lazy create decryptbuffer
++        if(_decryptSession == nullptr) {
++            DecryptSession(_session);
++        }
++
++        // prevent unnecesary double atomic access
++        DataExchange* decryptSession = _decryptSession;
++
++        if (decryptSession != nullptr) {
++            result = decryptSession->Decrypt_fps(
++                  version,
++                  movieID,
++                  cryptorID,
++                  contentType,
++                  buffer,
++                  bufferSize,
++                  sliceInfoArray,
++                  sliceInfoArrayCount,
++                 iv,
++                returnData
++		);
++            if(result)
++            {
++                TRACE_L1("Decrypt() failed with return code: %x", result);
++                result = OpenCDMError::ERROR_UNKNOWN;
++            }
++        }
++        return (result);
++    }
++
+     void* SessionPrivateData() const
+     {
+         return _pvtData;
+@@ -839,7 +1040,6 @@ protected:
+             std::string bufferid;
+             ASSERT(_session != nullptr);
+             uint32_t result = _session->CreateSessionBuffer(bufferid);
+-
+             if( result == 0 ) {
+                 ASSERT (_decryptSession == nullptr);
+                 _decryptSession = new DataExchange(bufferid); 

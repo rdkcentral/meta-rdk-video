@@ -3,11 +3,11 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV = "3.6.0"
+PV = "3.9.1"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "f6208c3886f0b34ecedb14957917490c804d3ef7"
+SRCREV_aamp ?= "c94d0ce6ac8c85dd9776e8e57cd4a97584187193"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "develop"
@@ -19,9 +19,7 @@ RDEPENDS:${PN} += "devicesettings ${@bb.utils.contains('DISTRO_FEATURES', 'build
 
 inherit pkgconfig
 inherit cmake
-require ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', '', 'aamp-middleware.inc', d)}
 
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', ' -DCMAKE_EXTERNAL_PLAYER_INTERFACE_DEPENDENCIES=1', ' -DCMAKE_EXTERNAL_PLAYER_INTERFACE_DEPENDENCIES=0', d)}"
 NO_RECOMMENDATIONS = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
