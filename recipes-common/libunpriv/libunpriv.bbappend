@@ -1,3 +1,4 @@
+#test change 
 DEPENDS += "wdmp-c cimplog rfc"
 RDEPENDS:${PN} += " rfc"
 LDFLAGS += "-lwdmp-c -lcimplog -lrfcapi"
