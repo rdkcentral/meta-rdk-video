@@ -11,7 +11,7 @@ PROVIDES += "virtual/vendor-bluetooth-sdk"
 RPROVIDES:${PN} = "virtual/vendor-bluetooth-sdk"
 
 # Keep in sync with entservices-connectivity.bb - the stub lives in that repo.
-SRCREV = "c4003d61a8b140d4b2b63f1b7ef27377c88c62b8"
+SRCREV = "70d3a28d42966098958710ee19eff0cf97eb10de"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 S = "${WORKDIR}/git"
