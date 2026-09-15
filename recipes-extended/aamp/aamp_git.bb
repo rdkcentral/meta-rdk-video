@@ -34,6 +34,8 @@ require aamp-artifacts-version.inc
 EXTRA_OECMAKE += " -DCMAKE_DS_EVENT_SUPPORTED=1 "
 EXTRA_OECMAKE += " -DCMAKE_WPEWEBKIT_WATERMARK_JSBINDINGS=1 "
 
+EXTRA_OECMAKE += " -DCMAKE_TELEMETRY_2_0_REQUIRED=1 "
+DEPENDS += " telemetry"
 #Ethan log is implemented by Dobby hence enabling it.
 PACKAGES = "${PN} ${PN}-dev ${PN}-dbg"
 
