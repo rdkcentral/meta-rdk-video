@@ -18,10 +18,12 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
+EXTRA_OECMAKE:append:vdevice_x86-64-mw = " -DIARMBUS_INCLUDE_DIRS:PATH=${RECIPE_SYSROOT}${includedir}/rdk/iarmbus -DIARMRECEIVER_INCLUDE_DIRS:PATH="
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
 DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
+DEPENDS:append:vdevice_x86-64-mw = " boost"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
@@ -40,9 +42,15 @@ PACKAGECONFIG ?= " breakpadsupport \
     avinput \
 "
 
+AVINPUT_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal entservices-helpers"
+AVINPUT_DEPS:vdevice_x86-64-mw = "iarmbus entservices-devicesettings entservices-helpers"
+
+AVINPUT_RDEPS = "iarmbus devicesettings entservices-helpers"
+AVINPUT_RDEPS:vdevice_x86-64-mw = "iarmbus entservices-devicesettings entservices-helpers"
+
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[avinput]              = "-DPLUGIN_AVINPUT=ON,-DPLUGIN_AVINPUT=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus devicesettings entservices-helpers"
+PACKAGECONFIG[avinput]              = "-DPLUGIN_AVINPUT=ON,-DPLUGIN_AVINPUT=OFF,${AVINPUT_DEPS},${AVINPUT_RDEPS}"
 EXTRA_OECMAKE += " -DDS_COMRPC=ON"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
