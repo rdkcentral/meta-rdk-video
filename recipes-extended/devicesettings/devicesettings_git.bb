@@ -33,7 +33,7 @@ inherit coverity
 
 CFLAGS += "-DSAFEC_DUMMY_API"
 CXXFLAGS += "-DSAFEC_DUMMY_API "
-
+SRC_URI += "file://0001-add-frame-rates-59-and-23.patch"
 #
 # ds-hal header should preceed ds/include 
 # to achieve desired HAL override
