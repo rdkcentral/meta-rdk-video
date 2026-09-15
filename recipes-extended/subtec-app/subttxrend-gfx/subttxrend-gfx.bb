@@ -12,7 +12,7 @@ DEPENDS:append = " virtual/egl "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "d4c56fca96f91bb3e4286b1d84139294285d7f8b"
+SRCREV = "ba6dbfa19ef7951244b6f78105c24b0b03f42598"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-gfx"
 #
@@ -25,9 +25,12 @@ inherit pkgconfig cmake coverity
 RDEPENDS:subttxrend-gfx += "wayland cpc-fonts "
 
 EXTRA_OECMAKE += "-DWITH_OPENGL=1"
+EXTRA_OECMAKE += "-DWITH_WESTEROS=1"
 EXTRA_OECMAKE:append = " -DBUILD_RDK_REFERENCE=1"
 
 CXXFLAGS:append:kirkstone = " -fpermissive"
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'upstream_wayland_egl', ' -DUSE_UPSTREAM_WAYLAND', '', d)}"
+
+DEPENDS += " westeros-simpleshell"
 
 INSANE_SKIP:subttxrend-gfx := "file-rdeps"
