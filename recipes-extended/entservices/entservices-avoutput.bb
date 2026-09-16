@@ -7,7 +7,10 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avoutput;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI += "file://0001-Update-AVOutput-API-version-to-2.0.0.patch"
 
 # Release version - 2.1.3
 SRCREV = "caa4ad1b110dff6ab37bd61674ba1f7070d69a6d"
