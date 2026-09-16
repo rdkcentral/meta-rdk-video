@@ -4,9 +4,10 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=76ae13a6bce633447ea2284294f073c2"
 
-SRCREV = "6c0cc2c59e69efc583c31a56b002c26a55ca0d21"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
+SRCREV = "6b439b225108395bf560ead4d5c331adbafed334"
+
+SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};branch=develop;name=tr69hostif"
 PV = "1.5.5"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -18,11 +19,15 @@ DEPENDS = "iarmbus iarmmgrs e2fsprogs libsoup libsyswrapper yajl \
 	  "
 DEPENDS:append = " rdk-logger libparodus parodus ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
 
+DEPENDS += " opentelemetry-cpp "
+
 DEPENDS += " python-lxml-native"
 DEPENDS:append = " python3-lxml-native"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetooth-mgr', '',d)}"
 RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetooth-mgr', '',d)}"
+
+RDEPENDS:${PN}:append = " rdk-otel-collector "
 
 DEPENDS += "safec-common-wrapper"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
