@@ -1,0 +1,205 @@
+diff --git a/media/server/gstplayer/include/tasks/generic/Stop.h b/media/server/gstplayer/include/tasks/generic/Stop.h
+index 48dff4baf..24bb6e181 100644
+--- a/media/server/gstplayer/include/tasks/generic/Stop.h
++++ b/media/server/gstplayer/include/tasks/generic/Stop.h
+@@ -21,6 +21,7 @@
+ #define FIREBOLT_RIALTO_SERVER_TASKS_GENERIC_STOP_H_
+ 
+ #include "GenericPlayerContext.h"
++#include "IGlibWrapper.h"
+ #include "IGstGenericPlayerPrivate.h"
+ #include "IPlayerTask.h"
+ 
+@@ -29,13 +30,16 @@ namespace firebolt::rialto::server::tasks::generic
+ class Stop : public IPlayerTask
+ {
+ public:
+-    Stop(GenericPlayerContext &context, IGstGenericPlayerPrivate &player);
++    //Stop(GenericPlayerContext &context, IGstGenericPlayerPrivate &player);
++    Stop(GenericPlayerContext &context, IGstGenericPlayerPrivate &player,
++         const std::shared_ptr<firebolt::rialto::wrappers::IGlibWrapper> &glibWrapper);
+     ~Stop() override;
+     void execute() const override;
+ 
+ private:
+     GenericPlayerContext &m_context;
+     IGstGenericPlayerPrivate &m_player;
++    std::shared_ptr<firebolt::rialto::wrappers::IGlibWrapper> m_glibWrapper;
+ };
+ } // namespace firebolt::rialto::server::tasks::generic
+ 
+diff --git a/media/server/gstplayer/include/tasks/webAudio/Stop.h b/media/server/gstplayer/include/tasks/webAudio/Stop.h
+index a0309f29e..a160c824e 100644
+--- a/media/server/gstplayer/include/tasks/webAudio/Stop.h
++++ b/media/server/gstplayer/include/tasks/webAudio/Stop.h
+@@ -20,6 +20,7 @@
+ #ifndef FIREBOLT_RIALTO_SERVER_TASKS_WEBAUDIO_STOP_H_
+ #define FIREBOLT_RIALTO_SERVER_TASKS_WEBAUDIO_STOP_H_
+ 
++#include "IGlibWrapper.h"
+ #include "IGstWebAudioPlayerPrivate.h"
+ #include "IPlayerTask.h"
+ 
+@@ -28,12 +29,14 @@ namespace firebolt::rialto::server::tasks::webaudio
+ class Stop : public IPlayerTask
+ {
+ public:
+-    explicit Stop(IGstWebAudioPlayerPrivate &player);
++    //explicit Stop(IGstWebAudioPlayerPrivate &player);
++    Stop(IGstWebAudioPlayerPrivate &player, const std::shared_ptr<firebolt::rialto::wrappers::IGlibWrapper> &glibWrapper);
+     ~Stop() override;
+     void execute() const override;
+ 
+ private:
+     IGstWebAudioPlayerPrivate &m_player;
++    std::shared_ptr<firebolt::rialto::wrappers::IGlibWrapper> m_glibWrapper;
+ };
+ } // namespace firebolt::rialto::server::tasks::webaudio
+ 
+diff --git a/media/server/gstplayer/source/tasks/generic/GenericPlayerTaskFactory.cpp b/media/server/gstplayer/source/tasks/generic/GenericPlayerTaskFactory.cpp
+index 9c4d02115..bd1f10e38 100644
+--- a/media/server/gstplayer/source/tasks/generic/GenericPlayerTaskFactory.cpp
++++ b/media/server/gstplayer/source/tasks/generic/GenericPlayerTaskFactory.cpp
+@@ -261,7 +261,7 @@ std::unique_ptr<IPlayerTask> GenericPlayerTaskFactory::createShutdown(IGstGeneri
+ std::unique_ptr<IPlayerTask> GenericPlayerTaskFactory::createStop(GenericPlayerContext &context,
+                                                                   IGstGenericPlayerPrivate &player) const
+ {
+-    return std::make_unique<tasks::generic::Stop>(context, player);
++    return std::make_unique<tasks::generic::Stop>(context, player, m_glibWrapper);
+ }
+ 
+ std::unique_ptr<IPlayerTask> GenericPlayerTaskFactory::createUnderflow(GenericPlayerContext &context,
+diff --git a/media/server/gstplayer/source/tasks/generic/Stop.cpp b/media/server/gstplayer/source/tasks/generic/Stop.cpp
+index 3f82478b5..85f68fa26 100644
+--- a/media/server/gstplayer/source/tasks/generic/Stop.cpp
++++ b/media/server/gstplayer/source/tasks/generic/Stop.cpp
+@@ -24,7 +24,10 @@
+ 
+ namespace firebolt::rialto::server::tasks::generic
+ {
+-Stop::Stop(GenericPlayerContext &context, IGstGenericPlayerPrivate &player) : m_context{context}, m_player{player}
++//Stop::Stop(GenericPlayerContext &context, IGstGenericPlayerPrivate &player) : m_context{context}, m_player{player}
++Stop::Stop(GenericPlayerContext &context, IGstGenericPlayerPrivate &player,
++           const std::shared_ptr<firebolt::rialto::wrappers::IGlibWrapper> &glibWrapper)
++    : m_context{context}, m_player{player}, m_glibWrapper{glibWrapper}
+ {
+     RIALTO_SERVER_LOG_DEBUG("Constructing Stop");
+ }
+@@ -44,5 +47,6 @@ void Stop::execute() const
+         streamInfo.second.isDataNeeded = false;
+     }
+     RIALTO_SERVER_LOG_MIL("State change to NULL requested");
++    m_glibWrapper->gThreadPoolStopUnusedThreads(); // Reclaim idle GLib thread pool threads immediately
+ }
+ } // namespace firebolt::rialto::server::tasks::generic
+diff --git a/media/server/gstplayer/source/tasks/webAudio/Stop.cpp b/media/server/gstplayer/source/tasks/webAudio/Stop.cpp
+index 56d01b7ae..c02c54e5a 100644
+--- a/media/server/gstplayer/source/tasks/webAudio/Stop.cpp
++++ b/media/server/gstplayer/source/tasks/webAudio/Stop.cpp
+@@ -24,7 +24,9 @@
+ 
+ namespace firebolt::rialto::server::tasks::webaudio
+ {
+-Stop::Stop(IGstWebAudioPlayerPrivate &player) : m_player{player}
++//Stop::Stop(IGstWebAudioPlayerPrivate &player) : m_player{player}
++Stop::Stop(IGstWebAudioPlayerPrivate &player, const std::shared_ptr<firebolt::rialto::wrappers::IGlibWrapper> &glibWrapper)
++    : m_player{player}, m_glibWrapper{glibWrapper}
+ {
+     RIALTO_SERVER_LOG_DEBUG("Constructing Stop");
+ }
+@@ -39,5 +41,6 @@ void Stop::execute() const
+     RIALTO_SERVER_LOG_DEBUG("Executing Stop");
+     m_player.changePipelineState(GST_STATE_NULL);
+     RIALTO_SERVER_LOG_MIL("State change to NULL requested for webaudio pipeline");
++    m_glibWrapper->gThreadPoolStopUnusedThreads(); // Reclaim idle GLib thread pool threads immediately
+ }
+ } // namespace firebolt::rialto::server::tasks::webaudio
+diff --git a/media/server/gstplayer/source/tasks/webAudio/WebAudioPlayerTaskFactory.cpp b/media/server/gstplayer/source/tasks/webAudio/WebAudioPlayerTaskFactory.cpp
+index 2e1c392a4..d4bf0f77b 100644
+--- a/media/server/gstplayer/source/tasks/webAudio/WebAudioPlayerTaskFactory.cpp
++++ b/media/server/gstplayer/source/tasks/webAudio/WebAudioPlayerTaskFactory.cpp
+@@ -44,7 +44,7 @@ std::unique_ptr<IPlayerTask> WebAudioPlayerTaskFactory::createShutdown(IGstWebAu
+ 
+ std::unique_ptr<IPlayerTask> WebAudioPlayerTaskFactory::createStop(IGstWebAudioPlayerPrivate &player) const
+ {
+-    return std::make_unique<tasks::webaudio::Stop>(player);
++    return std::make_unique<tasks::webaudio::Stop>(player, m_glibWrapper);
+ }
+ 
+ std::unique_ptr<IPlayerTask> WebAudioPlayerTaskFactory::createPlay(IGstWebAudioPlayerPrivate &player) const
+diff --git a/tests/common/externalLibraryMocks/GlibWrapperMock.h b/tests/common/externalLibraryMocks/GlibWrapperMock.h
+index 965c8da5c..8cd31ee8e 100644
+--- a/tests/common/externalLibraryMocks/GlibWrapperMock.h
++++ b/tests/common/externalLibraryMocks/GlibWrapperMock.h
+@@ -138,6 +138,7 @@ public:
+     MOCK_METHOD(void, gValueUnset, (GValue * value), (const, override));
+     MOCK_METHOD(GError *, gErrorNewLiteral, (GQuark domain, gint code, const gchar *message), (const, override));
+     MOCK_METHOD(GValue *, gValueInit, (GValue * value, GType type), (const, override));
++    MOCK_METHOD(void, gThreadPoolStopUnusedThreads, (), (const, override));
+ };
+ } // namespace firebolt::rialto::wrappers
+ 
+diff --git a/tests/unittests/media/server/gstplayer/genericPlayer/common/GenericTasksTestsBase.cpp b/tests/unittests/media/server/gstplayer/genericPlayer/common/GenericTasksTestsBase.cpp
+index 8688ac5af..aec5e55bf 100644
+--- a/tests/unittests/media/server/gstplayer/genericPlayer/common/GenericTasksTestsBase.cpp
++++ b/tests/unittests/media/server/gstplayer/genericPlayer/common/GenericTasksTestsBase.cpp
+@@ -2352,11 +2352,12 @@ void GenericTasksTestsBase::shouldStopGstPlayer()
+     audioStreamIt->second.isDataNeeded = true;
+     EXPECT_CALL(testContext->m_gstPlayer, stopPositionReportingAndCheckAudioUnderflowTimer());
+     EXPECT_CALL(testContext->m_gstPlayer, changePipelineState(GST_STATE_NULL)).WillOnce(Return(GST_STATE_CHANGE_SUCCESS));
++    EXPECT_CALL(*testContext->m_glibWrapper, gThreadPoolStopUnusedThreads());
+ }
+ 
+ void GenericTasksTestsBase::triggerStop()
+ {
+-    firebolt::rialto::server::tasks::generic::Stop task{testContext->m_context, testContext->m_gstPlayer};
++    firebolt::rialto::server::tasks::generic::Stop task{testContext->m_context, testContext->m_gstPlayer, testContext->m_glibWrapper};
+     task.execute();
+ }
+ 
+diff --git a/tests/unittests/media/server/gstplayer/webAudioPlayer/common/WebAudioTasksTestsBase.cpp b/tests/unittests/media/server/gstplayer/webAudioPlayer/common/WebAudioTasksTestsBase.cpp
+index c4f3cd1f4..a56b1bd23 100644
+--- a/tests/unittests/media/server/gstplayer/webAudioPlayer/common/WebAudioTasksTestsBase.cpp
++++ b/tests/unittests/media/server/gstplayer/webAudioPlayer/common/WebAudioTasksTestsBase.cpp
+@@ -140,11 +140,12 @@ void WebAudioTasksTestsBase::triggerShutdown()
+ void WebAudioTasksTestsBase::shouldChangePlayerStateNull()
+ {
+     EXPECT_CALL(testContext->m_gstPlayer, changePipelineState(GST_STATE_NULL));
++    EXPECT_CALL(*testContext->m_glibWrapper, gThreadPoolStopUnusedThreads());
+ }
+ 
+ void WebAudioTasksTestsBase::triggerStop()
+ {
+-    firebolt::rialto::server::tasks::webaudio::Stop task{testContext->m_gstPlayer};
++    firebolt::rialto::server::tasks::webaudio::Stop task{testContext->m_gstPlayer, testContext->m_glibWrapper};
+     task.execute();
+ }
+ 
+diff --git a/wrappers/include/GlibWrapper.h b/wrappers/include/GlibWrapper.h
+index 2e4f86c3f..c1ddc54ee 100644
+--- a/wrappers/include/GlibWrapper.h
++++ b/wrappers/include/GlibWrapper.h
+@@ -137,6 +137,7 @@ public:
+     }
+ 
+     GValue *gValueInit(GValue *value, GType type) const override { return g_value_init(value, type); }
++    void gThreadPoolStopUnusedThreads() const override { g_thread_pool_stop_unused_threads(); }
+ };
+ 
+ }; // namespace firebolt::rialto::wrappers
+diff --git a/wrappers/interface/IGlibWrapper.h b/wrappers/interface/IGlibWrapper.h
+index 2c3ef1fcb..1025166a8 100644
+--- a/wrappers/interface/IGlibWrapper.h
++++ b/wrappers/interface/IGlibWrapper.h
+@@ -323,6 +323,11 @@ public:
+      * @retval The GValue structure that has been passed in.
+      */
+     virtual GValue *gValueInit(GValue *value, GType type) const = 0;
++
++    /**
++     * @brief Stops and destroys any threads in the GLib thread pool common pool that are currently idle.
++     */
++    virtual void gThreadPoolStopUnusedThreads() const = 0;
+ };
+ 
+ }; // namespace firebolt::rialto::wrappers
