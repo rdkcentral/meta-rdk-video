@@ -12,7 +12,7 @@ PV = "1.0.6"
 PR = "r0"
 
 # Release version - 1.0.6
-SRCREV_iarmbus = "882f9f9b20e6d4ea2417447e372ca34c34eafc87"
+SRCREV_iarmbus = "73a237f8375cef62976d0902f1fadea30c4c1ad8"
 SRCREV_FORMAT = "iarmbus"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmbus;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmbus"
 
@@ -21,9 +21,13 @@ S = "${WORKDIR}/git"
 CFLAGS += "-DENABLE_SD_NOTIFY"
 LDFLAGS += "-lsystemd"
 
-DEPENDS="libxml2 dbus glib-2.0"
+DEPENDS="libxml2 dbus glib-2.0 opentelemetry-cpp"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd', '', d)}"
+RDEPENDS:${PN}:append = " rdk-otel-collector"
+
+Comment below line to disable OpenTelemetry support 
+EXTRA_OECONF += "--enable-otel-tp"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
