@@ -83,6 +83,7 @@ EXTRA_OECONF += " \
     HALIF_PREFIX=${STAGING_INCDIR}/mw \
     HALIF_LIB_DIR=${STAGING_LIBDIR}/mw/rdk-halif-aidl \
     BINDER_SDK_DIR=${STAGING_DIR_HOST}${prefix}/mw/lib/binder \
+    BINDER_SDK_INCLUDE_DIR=${includedir}/mw \
 "
 
 do_install:append() {
