@@ -21,7 +21,10 @@ RDEPENDS:${PN} = " devicesettings telemetry"
 RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
 RDEPENDS:${PN}:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw-hdmicec rdk-halif-aidl-mw-common libbinderrdk"
 
+RDEPENDS:${PN}:append = " rdk-halif-aidl-mw-hdmicec rdk-halif-aidl-mw-common libbinderrdk"
+
 DEPENDS += "safec-common-wrapper"
+DEPENDS += " rdk-halif-aidl-mw libbinderrdk"
 DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw libbinderrdk"
 
 ASNEEDED = ""
@@ -63,6 +66,12 @@ CXXFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/mw/hdmicec/0.1.0.0/inc
 INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/ds-hal \
     "
+
+EXTRA_OECONF += "\
+	HALIF_PREFIX = "${STAGING_INCDIR}/mw \
+	HALIF_LIB_DIR = "${STAGING_LIBDIR}/mw/rdk-halif-aidl \
+	BINDER_SDK_DIR = "${STAGING_DIR_HOST}${prefix}/mw/lib/binder \
+"
 
 do_install:append() {
 #        install -d ${D}${includedir}/rdk/hdmicec
