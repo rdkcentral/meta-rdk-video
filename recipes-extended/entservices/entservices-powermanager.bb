@@ -36,7 +36,8 @@ EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
     -DUTILS_LIBRARY=${STAGING_DIR_HOST}${prefix}/mw/lib/binder/libutils.so \
 "
 
-DEPENDS += "power-manager-headers deepsleep-manager-headers wpeframework wpeframework-tools-native"
+DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native"
+DEPENDS:append:vdevice_x86-64-mw = " deepsleep-manager-headers"
 
 CXXFLAGS:append:vdevice_x86-64-mw = " \
     -I${STAGING_INCDIR}/mw/deepsleep/0.1.0.0/include \
