@@ -21,12 +21,10 @@ S = "${WORKDIR}/git"
 CFLAGS += "-DENABLE_SD_NOTIFY"
 LDFLAGS += "-lsystemd"
 
-DEPENDS="libxml2 dbus glib-2.0 opentelemetry-cpp"
+DEPENDS="libxml2 dbus glib-2.0"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd', '', d)}"
-RDEPENDS:${PN}:append = " rdk-otel-collector"
 
-Comment below line to disable OpenTelemetry support 
 EXTRA_OECONF += "--enable-otel-tp"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
