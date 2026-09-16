@@ -120,6 +120,7 @@ do_install() {
     install -d "${D}${HALIF_LIBDIR}" "${D}${HALIF_INCDIR}"
     cp -a "${B}/staged/lib/rdk-halif-aidl/." "${D}${HALIF_LIBDIR}/"
     cp -a "${B}/staged/include/rdk-halif-aidl/." "${D}${HALIF_INCDIR}/"
+    install -D -m 0644 "${S}/common/current/halcompat.h" "${D}${HALIF_INCDIR}/common/current/halcompat.h"
     while read comp ver; do
         ln -sf "lib${comp}-v${ver}-cpp.so" \
             "${D}${HALIF_LIBDIR}/lib${comp}-cpp.so"
