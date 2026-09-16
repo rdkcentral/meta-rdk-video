@@ -67,10 +67,10 @@ INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/ds-hal \
     "
 
-EXTRA_OECONF += "\
-	HALIF_PREFIX = "${STAGING_INCDIR}/mw \
-	HALIF_LIB_DIR = "${STAGING_LIBDIR}/mw/rdk-halif-aidl \
-	BINDER_SDK_DIR = "${STAGING_DIR_HOST}${prefix}/mw/lib/binder \
+EXTRA_OECONF += " \
+    HALIF_PREFIX=${STAGING_INCDIR}/mw \
+    HALIF_LIB_DIR=${STAGING_LIBDIR}/mw/rdk-halif-aidl \
+    BINDER_SDK_DIR=${STAGING_DIR_HOST}${prefix}/mw/lib/binder \
 "
 
 do_install:append() {
