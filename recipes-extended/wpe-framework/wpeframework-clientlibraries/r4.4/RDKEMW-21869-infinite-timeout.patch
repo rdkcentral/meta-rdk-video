@@ -10,4 +10,3 @@ index f896f1a9..0135f124 100644
 +    enum { CommunicationTimeOut = Core::infinite }; // Time in ms. Forever for testing
  #endif
      enum { CommunicationBufferSize = 8120 }; // 8K :-)
-
