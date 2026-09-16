@@ -10,12 +10,11 @@ SRCREV_FORMAT = "aamp"
 
 inherit pkgconfig
 
-DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline"
+DEPENDS += "curl libdash libxml2 cjson wpeframework readline"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', 'gstreamer1.0  gstreamer1.0-plugins-base', 'gstreamer gst-plugins-base', d)}"
 RDEPENDS_${PN} +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 DEPENDS += " wpe-webkit"
 DEPENDS += " wpeframework-clientlibraries"
-RDEPENDS:${PN} += "devicesettings"
 DEPENDS:append = " virtual/vendor-gst-drm-plugins essos "
 NO_RECOMMENDATIONS = "1"
 
@@ -40,6 +39,8 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', '-DCMAKE_GST_SUBTEC_ENABLED=1 ', '', d)}"
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON ', '', d)}"
+EXTRA_OECMAKE += " -DCMAKE_USE_FIREBOLT=1 "
+EXTRA_OECMAKE += " -DCMAKE_IARM_MGR=0 "
 
 EXTRA_OECMAKE += "  -DCMAKE_WPEFRAMEWORK_REQUIRED=1 "
 
