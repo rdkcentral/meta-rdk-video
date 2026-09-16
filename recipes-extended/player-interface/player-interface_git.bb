@@ -9,7 +9,7 @@ PR = "r0"
 SRCREV_FORMAT = "player-interface"
 SRCREV_player-interface ?= "3e9b3f11c0e18fd849070f13b2e85a6fbd7c4d13"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "feature/statechange"
+PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-21923-timeout"
 
 inherit pkgconfig
 inherit cmake
