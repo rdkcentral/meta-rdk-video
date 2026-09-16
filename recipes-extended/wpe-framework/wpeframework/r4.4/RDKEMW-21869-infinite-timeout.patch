@@ -10,4 +10,3 @@ index 99417a28..c48c8812 100644
 +    enum { CommunicationTimeOut = Core::infinite }; // Time in ms.
  #endif
      enum { CommunicationBufferSize = 8120 }; // 8K :-)
-
