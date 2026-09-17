@@ -19,7 +19,7 @@ S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/pxCore;branch=rtcore"
 SRCREV = "c6ba0955009509fcc48b48d57eb6ce80543440cf"
-
+EXTRA_OECMAKE:append = " -DRTCORE_REUSE_CURL_HANDLES=OFF"
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations -Wno-maybe-uninitialized -Wno-address"
 
 TARGET_CFLAGS += " -fno-delete-null-pointer-checks -fpermissive -Os "
