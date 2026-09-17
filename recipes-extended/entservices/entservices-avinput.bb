@@ -46,7 +46,7 @@ AVINPUT_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-ha
 AVINPUT_DEPS:vdevice_x86-64-mw = "iarmbus entservices-devicesettings entservices-helpers"
 
 AVINPUT_RDEPS = "iarmbus devicesettings entservices-helpers"
-AVINPUT_RDEPS:vdevice_x86-64-mw = "iarmbus entservices-devicesettings entservices-helpers"
+AVINPUT_RDEPS:vdevice_x86-64-mw = "${AVINPUT_DEPS}"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"

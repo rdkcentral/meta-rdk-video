@@ -6,7 +6,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
-WPE_RECIPE_REVISION = "6"
+WPE_RECIPE_REVISION = "8"
 
 PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
@@ -28,6 +28,7 @@ SRC_URI += "file://2.46.2/1718.patch"
 SRC_URI += "file://2.46.2/1720_webkitwebsrc_queue_size.patch"
 SRC_URI += "file://2.46.2/1715.patch"
 SRC_URI += "file://2.46.2/1700.patch"
+SRC_URI += "file://2.46.2/1726_KEY_TV_mapping.patch"
 
 # Drop after westeros change is approved and released
 SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
@@ -49,7 +50,7 @@ SRC_URI += "file://2.46/comcast-RDKTV-6665-Remove-screen-saver-disabler.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-Support-for-external-sink-x-dvb.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-scan-decoder-elements-on-Broadcom.patch"
 SRC_URI += "file://2.46/comcast-RDKTV-17281-RDKTV-17781-Workaround-for-AppleTV-rendering.patch"
-SRC_URI += "file://2.46/comcast-RDKTV-18852-Restrict-inspection-of-locally-hosted-pages.patch"
+SRC_URI += "file://2.46.2/comcast-RDKTV-18852-Restrict-inspection-of-locally-hosted-pages.patch"
 SRC_URI += "file://2.46/comcast-RDK-57915-Analyze-higher-CPU-usage.patch"
 SRC_URI += "file://2.46/comcast-RDK-40634-Only-support-decoders-with-hw-support-for-webrtc.patch"
 SRC_URI += "file://2.46.2/comcast-RDK-57915-Include-HW-secure-decrypt-WidevineL1.patch"
