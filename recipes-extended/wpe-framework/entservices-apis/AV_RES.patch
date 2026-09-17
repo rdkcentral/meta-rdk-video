@@ -120,22 +120,24 @@ diff -uNr entservices-apis-develop/apis/AVMonitor/IAVMonitor.h entservices-apis-
 +    };
 +}
 +}
-diff -uNr entservices-apis-develop/apis/Ids.h entservices-apis-develop-AV/apis/Ids.h
---- entservices-apis-develop/apis/Ids.h	2026-08-18 08:32:48.000000000 +0530
-+++ entservices-apis-develop-AV/apis/Ids.h	2026-08-24 11:24:02.551969000 +0530
-@@ -364,6 +364,12 @@
- 
-         ID_AUDIO_OUTPUT                             = ID_ENTOS_OFFSET + 0x560,
-         ID_AUDIO_OUTPUT_NOTIFICATION                = ID_AUDIO_OUTPUT + 1,
+diff --git a/apis/Ids.h b/apis/Ids.h
+index xxxxxxx..yyyyyyy 100644
+--- a/apis/Ids.h
++++ b/apis/Ids.h
+@@
+         ID_DEVICESETTINGS_VIDEOPORT                         = ID_ENTOS_OFFSET + 0x5F0,
+         ID_DEVICESETTINGS_VIDEOPORT_NOTIFICATION            = ID_DEVICESETTINGS_VIDEOPORT + 1,
+         ID_DEVICESETTINGS_VIDEOPORT_RESOLUTION_ITERATOR     = ID_DEVICESETTINGS_VIDEOPORT + 2,
+
++        ID_RESOURCEMONITOR                                  = ID_ENTOS_OFFSET + 0x600,
++        ID_RESOURCEMONITOR_NOTIFICATION                     = ID_RESOURCEMONITOR + 1,
 +
-+	ID_RESOURCEMONITOR                               = ID_ENTOS_OFFSET + 0x570,
-+        ID_RESOURCEMONITOR_NOTIFICATION             = ID_RESOURCEMONITOR + 1,
++        ID_AVMONITOR                                        = ID_ENTOS_OFFSET + 0x610,
++        ID_AVMONITOR_NOTIFICATION                           = ID_AVMONITOR + 1,
 +
-+	ID_AVMONITOR                                = ID_ENTOS_OFFSET + 0x580,
-+        ID_AVMONITOR_NOTIFICATION                   = ID_AVMONITOR + 1,
      }; // enum IDS
- 
  } // namespace Exchange
+ } // namespace WPEFramework
 diff -uNr entservices-apis-develop/apis/ResourceMonitor/IResourceMonitor.h entservices-apis-develop-AV/apis/ResourceMonitor/IResourceMonitor.h
 --- entservices-apis-develop/apis/ResourceMonitor/IResourceMonitor.h	1970-01-01 05:30:00.000000000 +0530
 +++ entservices-apis-develop-AV/apis/ResourceMonitor/IResourceMonitor.h	2026-08-24 11:17:05.017333300 +0530
