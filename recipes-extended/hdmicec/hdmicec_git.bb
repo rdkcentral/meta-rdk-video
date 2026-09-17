@@ -8,7 +8,7 @@ PV = "1.0.11"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV_hdmicec = "934467dad9e6b3cad54bf4dfe5cda26cb65390f1"
+SRCREV_hdmicec = "1d8c002ad0bac9164c61775c513fe27859d1139a"
 SRCREV_hdmicec:vdevice_x86-64-mw = "57df60fdf8866460613735af1d2e39caa3939242"
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
@@ -82,7 +82,7 @@ INCLUDE_DIRS = " \
 EXTRA_OECONF += " \
     HALIF_PREFIX=${STAGING_INCDIR}/mw \
     HALIF_LIB_DIR=${STAGING_LIBDIR}/mw/rdk-halif-aidl \
-    BINDER_SDK_DIR=${STAGING_DIR_HOST}${prefix}/mw/ \
+    BINDER_SDK_DIR=${STAGING_DIR_HOST}${prefix}/mw \
     BINDER_SDK_INCLUDE_DIR=${STAGING_INCDIR}/mw/include \
 "
 
