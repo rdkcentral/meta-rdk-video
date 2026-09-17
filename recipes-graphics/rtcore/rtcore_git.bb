@@ -17,10 +17,10 @@ PR = "r2"
 
 S = "${WORKDIR}/git"
 
-SRC_URI = "https://github.com/gurpreet319/pxCore;branch=test/http"
+SRC_URI = "https://github.com/gurpreet319/pxCore;branch=test/http;"
 #SRCREV = "c6ba0955009509fcc48b48d57eb6ce80543440cf"
 SRCREV = "7abe4ced66747d111224e5c56461171e9884d74d"
-SRC_URI[sha256sum] = "e93aaa79facd5523529f4fe891d77bc554b8a5eb38bea22310f3614a093a7af5"
+SRC_URI[sha256sum] = "227309fab665daa73b9fe8cbaca1f7d4340698358e713d2b9f7ebde88401aac0"
 #EXTRA_OECMAKE:append = " -DRTCORE_REUSE_CURL_HANDLES=OFF"
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations -Wno-maybe-uninitialized -Wno-address"
 
