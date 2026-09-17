@@ -22,6 +22,9 @@ TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
 
+RDKAPPMANAGERS_PATH ?= ""
+EXTRA_OECMAKE += " -DRDKAPPMANAGERS_PATH=${RDKAPPMANAGERS_PATH}"
+
 PACKAGECONFIG ?= "appgateway appnotifications appgatewaycommon telemetrysupport appactions"
 
 PACKAGECONFIG[appgateway]       = "-DPLUGIN_APPGATEWAY=ON,-DPLUGIN_APPGATEWAY=OFF"

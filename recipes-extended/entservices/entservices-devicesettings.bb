@@ -16,6 +16,7 @@ SRC_URI = "git://github.com/vinodtel/entservices-devicesettings;${CMF_GITHUB_SRC
 SRCREV = "6e284b14e3f5fef185b5da69fcae9070243e0c90"
 SRCREV:vdevice_x86-64-mw = "51408e68f2b86409bc768a21289fa96e1ba134ce"
 
+
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
