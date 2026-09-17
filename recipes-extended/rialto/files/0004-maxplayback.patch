@@ -1,17 +1,3 @@
-From 2703ce5b237eeded5a1527ea7b54e63d806de17a Mon Sep 17 00:00:00 2001
-From: trupthi1403 <thrupthibp14@gmail.com>
-Date: Thu, 17 Sep 2026 09:22:00 +0530
-Subject: [PATCH] RDKEMW-24887: Reduce maxPlaybacks from 2 to 1
-
-Reason for change: Added changes to make maxPlaybacks configurable
-Test procedure: As mentioned in ticket
----
- common/public/include/SessionServerCommon.in  |  2 ++
- .../common/source/SessionServerApp.cpp        | 20 +++++++++++++------
- .../common/source/SessionServerApp.h          |  2 ++
- .../common/SessionServerAppTestsFixture.cpp   |  2 +-
- 4 files changed, 19 insertions(+), 7 deletions(-)
-
 diff --git a/common/public/include/SessionServerCommon.in b/common/public/include/SessionServerCommon.in
 index 1658a93b..98695223 100644
 --- a/common/public/include/SessionServerCommon.in
@@ -26,7 +12,7 @@ index 1658a93b..98695223 100644
  
  /**
 diff --git a/serverManager/common/source/SessionServerApp.cpp b/serverManager/common/source/SessionServerApp.cpp
-index 75b6388d..851bb811 100644
+index 75b6388d..e18aa539 100644
 --- a/serverManager/common/source/SessionServerApp.cpp
 +++ b/serverManager/common/source/SessionServerApp.cpp
 @@ -37,8 +37,8 @@
@@ -35,7 +21,7 @@ index 75b6388d..851bb811 100644
  {
 -constexpr int kMaxPlaybackSessions{2};
 -constexpr int kMaxWebAudioPlayers{1};
-+constexpr int kDefaultMaxPlaybackSessions{1};
++constexpr int kDefaultMaxPlaybackSessions{2};
 +constexpr int kDefaultMaxWebAudioPlayers{1};
  const std::string kSessionManagementSocketDefaultDir{"/tmp/"};
  const std::string kSessionManagementSocketDefaultName{"rialto-"};
@@ -50,30 +36,33 @@ index 75b6388d..851bb811 100644
        m_expectedState{firebolt::rialto::common::SessionServerState::UNINITIALIZED}, m_namedSocket{std::move(namedSocket)}
  {
      RIALTO_SERVER_MANAGER_LOG_INFO("Creating preloaded SessionServerApp with serverId: %d", m_kServerId);
-@@ -115,7 +116,11 @@ SessionServerApp::SessionServerApp(const std::string &appName,
+@@ -115,7 +116,12 @@ SessionServerApp::SessionServerApp(const std::string &appName,
        m_timerFactory{timerFactory}, m_sessionServerAppManager{sessionServerAppManager}, m_pid{-1}, m_isPreloaded{false},
        m_kSessionServerPath{sessionServerPath}, m_kSessionServerStartupTimeout{sessionServerStartupTimeout},
        m_kSessionManagementSocketPermissions{socketPermissions}, m_kSessionManagementSocketOwner{socketOwner},
 -      m_kSessionManagementSocketGroup{socketGroup}, m_childInitialized{false}, m_expectedState{initialState},
 +            m_kSessionManagementSocketGroup{socketGroup}, m_childInitialized{false},
-+    m_maxPlaybackSessions{appConfig.maxPlaybacks == 2 ? 2 : kDefaultMaxPlaybackSessions},
++    m_maxPlaybackSessions{appConfig.maxPlaybacks == 1 || appConfig.maxPlaybacks == 2 ? appConfig.maxPlaybacks
++                                                            : kDefaultMaxPlaybackSessions},
 +            m_maxWebAudioPlayers{appConfig.maxWebAudioPlayers > 0 ? appConfig.maxWebAudioPlayers
 +                                                                   : kDefaultMaxWebAudioPlayers},
 +            m_expectedState{initialState},
        m_namedSocket{std::move(namedSocket)}
  {
      RIALTO_SERVER_MANAGER_LOG_INFO("Creating SessionServerApp for app: %s with appId: %d", appName.c_str(), m_kServerId);
-@@ -195,6 +200,9 @@ bool SessionServerApp::configure(const std::string &appName,
+@@ -195,6 +201,11 @@ bool SessionServerApp::configure(const std::string &appName,
      m_initialState = initialState;
      m_sessionManagementSocketName = getSessionManagementSocketPath(appConfig);
      m_clientDisplayName = appConfig.clientDisplayName;
-+    m_maxPlaybackSessions = (appConfig.maxPlaybacks == 2) ? 2 : kDefaultMaxPlaybackSessions;
++    m_maxPlaybackSessions = (appConfig.maxPlaybacks == 1 || appConfig.maxPlaybacks == 2)
++                                ? appConfig.maxPlaybacks
++                                : kDefaultMaxPlaybackSessions;
 +    m_maxWebAudioPlayers =
 +        (appConfig.maxWebAudioPlayers > 0) ? appConfig.maxWebAudioPlayers : kDefaultMaxWebAudioPlayers;
      m_isPreloaded = false;
      m_expectedState = initialState;
      if (m_namedSocket)
-@@ -261,12 +269,12 @@ int SessionServerApp::getAppManagementSocketName() const
+@@ -261,12 +272,12 @@ int SessionServerApp::getAppManagementSocketName() const
  
  int SessionServerApp::getMaxPlaybackSessions() const
  {
@@ -101,19 +90,3 @@ index c67449ad..bc267c5a 100644
      firebolt::rialto::common::SessionServerState m_expectedState;
      std::unique_ptr<firebolt::rialto::ipc::INamedSocket> m_namedSocket;
  };
-diff --git a/tests/unittests/serverManager/unittests/common/SessionServerAppTestsFixture.cpp b/tests/unittests/serverManager/unittests/common/SessionServerAppTestsFixture.cpp
-index 0d5a1c65..531478bb 100644
---- a/tests/unittests/serverManager/unittests/common/SessionServerAppTestsFixture.cpp
-+++ b/tests/unittests/serverManager/unittests/common/SessionServerAppTestsFixture.cpp
-@@ -36,7 +36,7 @@ const std::string kSocketOwner{};
- const std::string kSocketGroup{};
- const std::string kAppName{"YouTube"};
- constexpr auto kInitialState{firebolt::rialto::common::SessionServerState::ACTIVE};
--constexpr int kMaxPlaybackSessions{2};
-+constexpr int kMaxPlaybackSessions{1};
- constexpr int kMaxWebAudioPlayers{1};
- const std::array<int, 2> kSocketPair{1, 2};
- const int kDuplicatedSocket{3};
--- 
-2.51.0.windows.2
-
