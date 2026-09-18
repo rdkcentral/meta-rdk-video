@@ -10,6 +10,7 @@ PR = "r0"
 
 SRCREV = "34ebc7a2c59c07fdb9cefab08ed35adbb68eb7c2"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
+SRC_URI += "file://RDKTV-37440.patch"
 S = "${WORKDIR}/git"
 
 inherit systemd syslog-ng-config-gen logrotate_config
