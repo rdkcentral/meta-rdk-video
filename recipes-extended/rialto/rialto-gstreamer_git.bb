@@ -30,6 +30,6 @@ FILES:${PN} += "${libdir}/gstreamer-1.0/libgstrialtosinks.so"
 REQUIRED_DISTRO_FEATURES = "enable_rialto"
 
 #Needed for Kirkstone packagegroup error
-DEBIAN_NOAUTONAME_${PN} = "1"
-DEBIAN_NOAUTONAME_${PN}-dev = "1"
-DEBIAN_NOAUTONAME_${PN}-dbg = "1"
+#DEBIAN_NOAUTONAME_${PN} = "1"
+#DEBIAN_NOAUTONAME_${PN}-dev = "1"
+#DEBIAN_NOAUTONAME_${PN}-dbg = "1"
