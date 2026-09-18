@@ -5,14 +5,14 @@
 ##
 LICENSE = "Apache-2.0 & MIT & BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://../LICENSE;md5=626bbc2ac7625da5b97fcb8a24bd88b3"
-PV = "1.10.0"
+PV = "1.11.0"
 PR = "r0"
 DEPENDS = "glib-2.0 subttxrend-common wayland wayland-protocols wayland-native freetype fontconfig libxkbcommon harfbuzz libpng"
 DEPENDS:append = " virtual/egl "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "f73f3d90f19939aa3962d329b70d04672abcdaae"
+SRCREV = "3c7f21403c10641e294e6f57309b7536260f37ee"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-gfx"
 #
