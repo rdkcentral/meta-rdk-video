@@ -2,8 +2,8 @@ SUMMARY = "ENTServices deviceinfo plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=34aa8e5c0a5ec9c81c534b40fb21b5b6"
 
-PV = "1.0+git${SRCPV}"
-PR = "r0"
+PV = "1.1.7_Test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceinfo;${CMF_GITHUB_SRC_URI_SUFFIX
           "
 
 # Release tag - 1.1.7
-SRCREV = "1.1.7"
+SRCREV = "638cdd50e4f71d9c9e5d5aa0fd55c4bdb8f0f904"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -53,7 +53,7 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[deviceinfo]           = "-DPLUGIN_DEVICEINFO=ON,-DPLUGIN_DEVICEINFO=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-apis entservices-helpers,iarmbus rfc devicesettings entservices-apis entservices-helpers"
 
 # ----------------------------------------------------------------------------
-
+EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \

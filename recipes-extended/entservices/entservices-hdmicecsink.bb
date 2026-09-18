@@ -2,8 +2,8 @@ SUMMARY = "ENTServices hdmicecsink plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.4.7"
-PR = "r0"
+PV = "1.4.6_Test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsink;${CMF_GITHUB_SRC_URI_SUFFI
            file://rdkservices.ini \
           "
 
-# Release version - 1.4.7
-SRCREV = "920933745dc432b614d07bb83baef5db591bccea"
+# Release version - 1.4.6
+SRCREV = "3b0f012d2f79928515a55a3c0058833c194c8255"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -49,7 +49,6 @@ HDMICECSINK_RDEPS:vdevice_x86-64-mw = "iarmbus hdmicec entservices-helpers"
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[hdmicecsink]          = "-DPLUGIN_HDMICECSINK=ON,-DPLUGIN_HDMICECSINK=OFF,${HDMICECSINK_DEPS},${HDMICECSINK_RDEPS}"
-
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
