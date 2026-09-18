@@ -7,8 +7,9 @@ inherit python3native native
 
 DEPENDS = "ninja-native"
 
-SRC_URI = "git://gn.googlesource.com/gn.git;protocol=https;branch=main"
-SRCREV = "39a87c0b36310bdf06b692c098f199a0d97fc810"
+SRC_URI  = "git://gn.googlesource.com/gn.git;protocol=https;branch=main"
+SRC_URI += "file://0001-Use-c-2a.patch"
+SRCREV = "487f8353f15456474437df32bb186187b0940b45"
 
 S = "${WORKDIR}/git"
 
