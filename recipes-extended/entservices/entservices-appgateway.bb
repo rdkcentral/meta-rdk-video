@@ -2,10 +2,10 @@ SUMMARY = "ENTServices AppGateway plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "1.5.0.0"
+PV = "1.6.0.0"
 PR = "r0"
-# Release version - 1.5.0.0
-SRCREV = "497604563b0625c5afaf049465df4ecb889d5403"
+# Release version - 1.6.0.0
+SRCREV = "07fd62c9015cd31409f9caa55a9cdc18b0a824cb"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -21,6 +21,9 @@ RDEPENDS:${PN} += "wpeframework entservices-apis"
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
+
+RDKAPPMANAGERS_PATH ?= ""
+EXTRA_OECMAKE += " -DRDKAPPMANAGERS_PATH=${RDKAPPMANAGERS_PATH}"
 
 PACKAGECONFIG ?= "appgateway appnotifications appgatewaycommon telemetrysupport appactions"
 
