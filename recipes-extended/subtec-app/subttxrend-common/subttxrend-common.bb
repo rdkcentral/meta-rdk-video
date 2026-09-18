@@ -5,13 +5,13 @@
 ##
 LICENSE = "Apache-2.0 & MIT & BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://../LICENSE;md5=626bbc2ac7625da5b97fcb8a24bd88b3"
-PV = "1.12.0"
+PV = "1.13.0"
 PR = "r0"
 DEPENDS = "rdk-logger"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "9f12692ccca00f024109c46cbd1cc525df040c16"
+SRCREV = "a7a5992c2fe3e9df46ae6b365af9baadf37e4437"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-common"
 
