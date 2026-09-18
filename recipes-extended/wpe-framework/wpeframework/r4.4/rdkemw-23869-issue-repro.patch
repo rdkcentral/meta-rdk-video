@@ -1,0 +1,19 @@
+diff --git a/Source/WPEFramework/PluginServer.h b/Source/WPEFramework/PluginServer.h
+index b6a9d460..f39d7897 100644
+--- a/Source/WPEFramework/PluginServer.h
++++ b/Source/WPEFramework/PluginServer.h
+@@ -3146,6 +3146,14 @@ POP_WARNING()
+             void Activated(const string& callsign, PluginHost::IShell* entry)
+             {
+                 _notificationLock.Lock();
++
++                 // Diagnostic-only: hold the notification lock once to reproduce Register contention.
++                static bool reproLockHeld = false;
++                if (!reproLockHeld && Core::File(_T("/opt/rca_hold_notification_lock")).Exists()) {
++                    reproLockHeld = true;
++                    SYSLOG(Logging::Startup, (_T("[RCA_REPRO] holding notification lock during activation: %s"), callsign.c_str()));
++                    sleep(30);
++                }
+
+                 Notifiers::iterator index(_notifiers.begin());
+
