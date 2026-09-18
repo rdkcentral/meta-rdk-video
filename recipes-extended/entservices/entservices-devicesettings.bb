@@ -2,8 +2,8 @@ SUMMARY = "ENTServices devicesettings plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.0.1_Test"
-PR = "r1"
+PV = "1.0.0"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicesettings;${CMF_GITHUB_SRC_URI_SU
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.1
-SRCREV = "6e284b14e3f5fef185b5da69fcae9070243e0c90"
+# Release version - 1.0.0
+SRCREV = "66032d32aed342f36b8cb1ab405b566cddf9c998"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
