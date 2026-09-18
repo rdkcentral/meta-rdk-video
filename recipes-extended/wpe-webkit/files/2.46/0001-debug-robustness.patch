@@ -1,0 +1,36 @@
+From affac891b085cdc21d1f6b590cb8ebb7ae6b301c Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Wed, 20 May 2026 05:44:22 +0000
+Subject: [PATCH] debug robustness
+
+---
+ Source/WebCore/platform/encryptedmedia/CDMPrivate.cpp | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/Source/WebCore/platform/encryptedmedia/CDMPrivate.cpp b/Source/WebCore/platform/encryptedmedia/CDMPrivate.cpp
+index 0777cebd06a2..14a5e0b4b084 100644
+--- a/Source/WebCore/platform/encryptedmedia/CDMPrivate.cpp
++++ b/Source/WebCore/platform/encryptedmedia/CDMPrivate.cpp
+@@ -375,13 +375,17 @@ std::optional<Vector<CDMMediaCapability>> CDMPrivate::getSupportedCapabilitiesFo
+     // 2. Let supported media capabilities be an empty sequence of CDMMediaCapability dictionaries.
+     Vector<CDMMediaCapability> supportedMediaCapabilities { };
+ 
++    printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+     // 3. For each requested media capability in requested media capabilities:
+     for (auto& requestedCapability : requestedCapabilities) {
++	printf("%d %s KKP1\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
+         // 3.1. Let content type be requested media capability's contentType member.
+         // 3.2. Let robustness be requested media capability's robustness member.
+         String robustness = requestedCapability.robustness;
+-
+-        // 3.3. If content type is the empty string, return null.
++        Vector<AtomString> security_robustness = supportedRobustnesses();
++        printf("%d %s KKP2\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
++        
++	// 3.3. If content type is the empty string, return null.
+         if (requestedCapability.contentType.isEmpty())
+             return std::nullopt;
+ 
+-- 
+2.44.4
+
