@@ -1,0 +1,28 @@
+From b9c25e0249cc58babba8e5f18814d18ac3f40a60 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Tue, 5 May 2026 11:16:33 +0200
+Subject: [PATCH] comcast - RDK-60535 - Increase minor version of WPE lib
+
+---
+ Source/cmake/OptionsWPE.cmake | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+index 93e358f791ee..8d45333c16a3 100644
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -194,9 +194,9 @@ endif ()
+ find_package(GLIB ${GLIB_MINIMUM_VERSION} REQUIRED COMPONENTS gio gio-unix gobject gthread gmodule)
+ 
+ if (WPE_API_VERSION VERSION_EQUAL "1.1")
+-    CALCULATE_LIBRARY_VERSIONS_FROM_LIBTOOL_TRIPLE(WEBKIT 8 11 8)
++    CALCULATE_LIBRARY_VERSIONS_FROM_LIBTOOL_TRIPLE(WEBKIT 8 13 8)
+ else ()
+-    CALCULATE_LIBRARY_VERSIONS_FROM_LIBTOOL_TRIPLE(WEBKIT 5 11 4)
++    CALCULATE_LIBRARY_VERSIONS_FROM_LIBTOOL_TRIPLE(WEBKIT 5 13 4)
+ endif ()
+ 
+ if (ENABLE_WPE_PLATFORM)
+-- 
+2.51.0
+
