@@ -1,0 +1,8 @@
+precondition = ["Platform"]
+
+callsign = "ResourceMonitor"
+autostart = "@PLUGIN_RESOURCEMONITOR_AUTOSTART@"
+
+configuration = JSON()
+configuration.add("resultfilelocation", "@PLUGIN_RESOURCEMONITOR_RESULT_FILE_LOCATION@")
+configuration.add("processprefixes", ["WPE"])

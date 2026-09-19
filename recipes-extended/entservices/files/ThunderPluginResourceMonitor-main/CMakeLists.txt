@@ -1,0 +1,37 @@
+project(ResourceMonitor)
+
+cmake_minimum_required(VERSION 3.3)
+
+find_package(WPEFramework)
+
+project_version(1.0.0)
+
+set(MODULE_NAME ${NAMESPACE}${PROJECT_NAME})
+set(PLUGIN_RESOURCEMONITOR_AUTOSTART "false" CACHE STRING "Automatically start the plugin")
+set(PLUGIN_RESOURCEMONITOR_RESULT_FILE_LOCATION "" CACHE STRING "Override for result storage path")
+
+message("Setup ${MODULE_NAME} v${PROJECT_VERSION}")
+
+find_package(${NAMESPACE}Plugins REQUIRED)
+find_package(${NAMESPACE}Definitions REQUIRED)
+find_package(CompileSettingsDebug CONFIG REQUIRED)
+
+add_library(${MODULE_NAME} SHARED
+    ResourceMonitor.cpp
+    ResourceMonitorImplementation.cpp
+    Module.cpp)
+
+set_target_properties(${MODULE_NAME} PROPERTIES
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED YES)
+
+target_link_libraries(${MODULE_NAME}
+    PRIVATE
+        CompileSettingsDebug::CompileSettingsDebug
+        ${NAMESPACE}Plugins::${NAMESPACE}Plugins
+        ${NAMESPACE}Definitions::${NAMESPACE}Definitions)
+
+install(TARGETS ${MODULE_NAME}
+    DESTINATION lib/${STORAGE_DIRECTORY}/plugins)
+
+write_config()
