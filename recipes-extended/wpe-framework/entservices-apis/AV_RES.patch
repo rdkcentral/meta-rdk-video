@@ -1,27 +1,23 @@
-diff -uNr entservices-apis-develop/apis/AVMonitor/IAVMonitor.h entservices-apis-develop-AV/apis/AVMonitor/IAVMonitor.h
---- entservices-apis-develop/apis/AVMonitor/IAVMonitor.h	1970-01-01 05:30:00.000000000 +0530
-+++ entservices-apis-develop-AV/apis/AVMonitor/IAVMonitor.h	2026-08-19 15:05:25.512592000 +0530
-@@ -0,0 +1,118 @@
-+/*
-+ * If not stated otherwise in this file or this component's LICENSE file the
-+ * following copyright and licenses apply:
-+ *
-+ * Copyright 2024 RDK Management
-+ *
-+ * Licensed under the Apache License, Version 2.0 (the "License");
-+ * you may not use this file except in compliance with the License.
-+ * You may obtain a copy of the License at
-+ *
-+ * http://www.apache.org/licenses/LICENSE-2.0
-+ *
-+ * Unless required by applicable law or agreed to in writing, software
-+ * distributed under the License is distributed on an "AS IS" BASIS,
-+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-+ * See the License for the specific language governing permissions and
-+ * limitations under the License.
-+ */
-+
-+
+From f8218181e6f27aecc532db470e8ef85f073c5bfe Mon Sep 17 00:00:00 2001
+From: nganes961 <nambirajan_ganesan@comcast.com>
+Date: Sat, 19 Sep 2026 05:06:58 +0000
+Subject: [PATCH] AV_RES
+
+Signed-off-by: nganes961 <nambirajan_ganesan@comcast.com>
+---
+ apis/AVMonitor/IAVMonitor.h             | 98 +++++++++++++++++++++++++
+ apis/Ids.h                              |  7 ++
+ apis/ResourceMonitor/IResourceMonitor.h | 85 +++++++++++++++++++++
+ 3 files changed, 190 insertions(+)
+ create mode 100644 apis/AVMonitor/IAVMonitor.h
+ create mode 100644 apis/ResourceMonitor/IResourceMonitor.h
+
+diff --git a/apis/AVMonitor/IAVMonitor.h b/apis/AVMonitor/IAVMonitor.h
+new file mode 100644
+index 00000000..61ad83dd
+--- /dev/null
++++ b/apis/AVMonitor/IAVMonitor.h
+@@ -0,0 +1,98 @@
 +#pragma once
 +#include "Module.h"
 +
@@ -121,45 +117,29 @@ diff -uNr entservices-apis-develop/apis/AVMonitor/IAVMonitor.h entservices-apis-
 +}
 +}
 diff --git a/apis/Ids.h b/apis/Ids.h
-index 0ee297a5..aa6c19f4 100755
+index 0ee297a5..e725b82c 100755
 --- a/apis/Ids.h
 +++ b/apis/Ids.h
-@@ -400,6 +400,12 @@ namespace Exchange {
+@@ -400,6 +400,13 @@ namespace Exchange {
          ID_DEVICESETTINGS_VIDEOPORT                         = ID_ENTOS_OFFSET + 0x5F0,
          ID_DEVICESETTINGS_VIDEOPORT_NOTIFICATION            = ID_DEVICESETTINGS_VIDEOPORT + 1,
          ID_DEVICESETTINGS_VIDEOPORT_RESOLUTION_ITERATOR     = ID_DEVICESETTINGS_VIDEOPORT + 2,
 +
-+        ID_RESOURCEMONITOR                          = ID_ENTOS_OFFSET + 0x600,
++        ID_RESOURCEMONITOR                          = ID_ENTOS_OFFSET + 0x700,
 +        ID_RESOURCEMONITOR_NOTIFICATION             = ID_RESOURCEMONITOR + 1,
 +
-+        ID_AVMONITOR                                = ID_ENTOS_OFFSET + 0x610,
++        ID_AVMONITOR                                = ID_ENTOS_OFFSET + 0x710,
 +        ID_AVMONITOR_NOTIFICATION                   = ID_AVMONITOR + 1,
++
      }; // enum IDS
  
  } // namespace Exchange
-diff -uNr entservices-apis-develop/apis/ResourceMonitor/IResourceMonitor.h entservices-apis-develop-AV/apis/ResourceMonitor/IResourceMonitor.h
---- entservices-apis-develop/apis/ResourceMonitor/IResourceMonitor.h	1970-01-01 05:30:00.000000000 +0530
-+++ entservices-apis-develop-AV/apis/ResourceMonitor/IResourceMonitor.h	2026-08-24 11:17:05.017333300 +0530
-@@ -0,0 +1,104 @@
-+/*
-+* If not stated otherwise in this file or this component's LICENSE file the
-+* following copyright and licenses apply:
-+*
-+* Copyright 2026 RDK Management
-+*
-+* Licensed under the Apache License, Version 2.0 (the "License");
-+* you may not use this file except in compliance with the License.
-+* You may obtain a copy of the License at
-+*
-+* http://www.apache.org/licenses/LICENSE-2.0
-+*
-+* Unless required by applicable law or agreed to in writing, software
-+* distributed under the License is distributed on an "AS IS" BASIS,
-+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-+* See the License for the specific language governing permissions and
-+* limitations under the License.
-+*/
-+
+diff --git a/apis/ResourceMonitor/IResourceMonitor.h b/apis/ResourceMonitor/IResourceMonitor.h
+new file mode 100644
+index 00000000..cc8f25d2
+--- /dev/null
++++ b/apis/ResourceMonitor/IResourceMonitor.h
+@@ -0,0 +1,85 @@
 +#pragma once
 +#include "Module.h"
 +
@@ -245,3 +225,5 @@ diff -uNr entservices-apis-develop/apis/ResourceMonitor/IResourceMonitor.h entse
 +        };
 +    } // namespace Exchange
 +} // namespace WPEFramework
+--
+2.44.4
