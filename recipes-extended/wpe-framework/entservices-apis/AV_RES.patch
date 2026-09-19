@@ -1,0 +1,229 @@
+From 01b11c0937b851aa02b59ebdf5011f050920486d Mon Sep 17 00:00:00 2001
+From: nganes961 <nambirajan_ganesan@comcast.com>
+Date: Sat, 19 Sep 2026 18:12:25 +0000
+Subject: [PATCH] AV_RES
+
+Signed-off-by: nganes961 <nambirajan_ganesan@comcast.com>
+---
+ apis/AVMonitor/IAVMonitor.h                 | 98 +++++++++++++++++++++
+ apis/FCResourceMonitor/IFCResourceMonitor.h | 85 ++++++++++++++++++
+ apis/Ids.h                                  |  6 ++
+ 3 files changed, 189 insertions(+)
+ create mode 100644 apis/AVMonitor/IAVMonitor.h
+ create mode 100644 apis/FCResourceMonitor/IFCResourceMonitor.h
+
+diff --git a/apis/AVMonitor/IAVMonitor.h b/apis/AVMonitor/IAVMonitor.h
+new file mode 100644
+index 00000000..61ad83dd
+--- /dev/null
++++ b/apis/AVMonitor/IAVMonitor.h
+@@ -0,0 +1,98 @@
++#pragma once
++#include "Module.h"
++
++
++namespace WPEFramework {
++namespace Exchange {
++
++    /* @json */
++    struct EXTERNAL IAVMonitor : virtual public Core::IUnknown {
++        enum { ID = ID_AVMONITOR };
++
++        struct EventInfo
++        {
++            enum GstStateChange : int
++            {
++                GST_STATE_UNKNOWN = 0                       /* @text: UNKNOWN */,
++                GST_STATE_CHANGE_NULL_TO_READY = 10         /* @text: GST_STATE_CHANGE_NULL_TO_READY */,
++                GST_STATE_CHANGE_READY_TO_PAUSED = 19       /* @text: GST_STATE_CHANGE_READY_TO_PAUSED */,
++                GST_STATE_CHANGE_PAUSED_TO_PLAYING = 28     /* @text: GST_STATE_CHANGE_PAUSED_TO_PLAYING */,
++                GST_STATE_CHANGE_PLAYING_TO_PAUSED = 35     /* @text: GST_STATE_CHANGE_PLAYING_TO_PAUSED */,
++                GST_STATE_CHANGE_PAUSED_TO_READY = 26       /* @text: GST_STATE_CHANGE_PAUSED_TO_READY */,
++                GST_STATE_CHANGE_READY_TO_NULL = 17         /* @text: GST_STATE_CHANGE_READY_TO_NULL */,
++                GST_STATE_CHANGE_NULL_TO_NULL = 9           /* @text: GST_STATE_CHANGE_NULL_TO_NULL */,
++                GST_STATE_CHANGE_READY_TO_READY = 18        /* @text: GST_STATE_CHANGE_READY_TO_READY */,
++                GST_STATE_CHANGE_PAUSED_TO_PAUSED = 27      /* @text: GST_STATE_CHANGE_PAUSED_TO_PAUSED */,
++                GST_STATE_CHANGE_PLAYING_TO_PLAYING = 36    /* @text: GST_STATE_CHANGE_PLAYING_TO_PLAYING */,
++            };
++            enum EventType : uint8_t
++            {
++                UNKNOWN = 0                 /* @text: UNKNOWN */,
++                CAPTURE_START = 0x01        /* @text: CAPTURE_START */,
++                STATE_CHANGE = 0x02         /* @text: STATE_CHANGE */,
++                RESOLUTION_CHANGE = 0x03    /* @text: RESOLUTION_CHANGE */,
++                SINK_STATS = 0x04           /* @text: SINK_STATS */,
++                Z_ORDER_CHANGE = 0x05       /* @text: Z_ORDER_CHANGE */,
++                EOS = 0x06                  /* @text: EOS */,
++                CAPS = 0x07                 /* @text: CAPS */,
++                CAPTURE_STOP = 0x08         /* @text: CAPTURE_STOP */,
++            };
++
++            uint64_t timeStamp;
++            uint64_t id;
++            EventType type;
++            GstStateChange stateChange;
++            int16_t windowWidth;
++            int16_t windowHeight;
++            int8_t visible;
++            int8_t zorder;
++            int64_t startPTS;
++            int64_t firstPTS;
++            int64_t currentPTS;
++            int64_t position;
++            int64_t frameRenderCount;
++            int64_t frameDropCount;
++            int8_t fps;
++            int8_t fpsMean;
++            string gstCaps;
++        };
++
++        // @event
++        struct EXTERNAL INotification : virtual public Core::IUnknown {
++            enum { ID = ID_AVMONITOR_NOTIFICATION };
++            ~INotification() override = default;
++
++            // @brief Notifies that new events have been retrieved
++            // @text onnewevent
++            virtual void OnNewEvent(const EventInfo& event) = 0;
++
++            // @brief Notification with all events send after stop capture
++            // @text onsummary
++            virtual void OnSummary(const string& events) = 0;
++        };
++
++        ~IAVMonitor() override = default;
++
++        virtual uint32_t Register(IAVMonitor::INotification* sink) = 0;
++        virtual uint32_t Unregister(IAVMonitor::INotification* sink) = 0;
++
++        enum CaptureMode: int {
++            NONE = 0        /* @text: NONE */,
++            LIVE = 1        /* @text: LIVE */,
++            SUMMARY = 2     /* @text: SUMMARY */,
++            MIXED = 3       /* @text: MIXED */,
++        };
++        // @brief Begin capture session
++        // @text startcapture
++        virtual uint32_t StartCapture(const uint32_t interval, const CaptureMode captureMode) = 0;
++
++        // @brief End capture session
++        // @text stopcapture
++        virtual uint32_t StopCapture() = 0;
++
++        /* @json:omit */
++        virtual uint32_t RegisterEvent(const EventInfo& event /* @in */) = 0;
++
++    };
++}
++}
+diff --git a/apis/FCResourceMonitor/IFCResourceMonitor.h b/apis/FCResourceMonitor/IFCResourceMonitor.h
+new file mode 100644
+index 00000000..8fd90700
+--- /dev/null
++++ b/apis/FCResourceMonitor/IFCResourceMonitor.h
+@@ -0,0 +1,85 @@
++#pragma once
++#include "Module.h"
++
++namespace WPEFramework {
++    namespace Exchange {
++        // @json 1.0.0
++        struct EXTERNAL IFCResourceMonitor : virtual public Core::IUnknown {
++            enum { ID = ID_FCRESOURCEMONITOR };
++
++            typedef string EventData;
++
++            enum class CaptureMode : uint8_t {
++                NONE = 0 /* @text: NONE */,
++                LIVE = 1 /* @text: LIVE */,
++                SUMMARY = 2 /* @text: SUMMARY */,
++                MIXED = 3 /* @text: MIXED */,
++            };
++
++            enum class MeasurementType : uint8_t {
++                NONE /* @text: NONE */,
++                ALL /* @text: ALL */,
++                ALLMEMORY /* @text: ALLMEMORY */,
++                ALLCPU /* @text: ALLCPU */,
++                MEMORYUSS /* @text: MEMORYUSS */,
++                MEMORYPSS /* @text: MEMORYPSS */,
++                MEMORYRSS /* @text: MEMORYRSS */,
++                MEMORYRAMFREE /* @text: MEMORYRAMFREE */,
++                MEMORYRAMTOTAL /* @text: MEMORYRAMTOTAL */,
++                MEMORYRAMAVAILABLE /* @text: MEMORYRAMAVAILABLE */,
++                CPULOADTOTAL /* @text: CPULOADTOTAL */,
++                CPULOADTOTALUSER /* @text: CPULOADTOTALUSER */,
++                CPULOADTOTALSYSTEM /* @text: CPULOADTOTALSYSTEM */,
++            };
++
++            // @event
++            struct EXTERNAL INotification : virtual public Core::IUnknown {
++                enum { ID = ID_FCRESOURCEMONITOR_NOTIFICATION };
++                ~INotification() override = default;
++
++                // @brief Notification with resource monitor data
++                // @text onresourcemonitordata
++                // @param data EventData, which contains serialized JSON Lines with data
++                // samples
++                virtual void OnResourceMonitorData(const EventData &events) = 0;
++            };
++
++            ~IFCResourceMonitor() override = default;
++
++            // @brief Manage notifications lifecycle
++            virtual void Register(IFCResourceMonitor::INotification *sink) = 0;
++            virtual void Unregister(IFCResourceMonitor::INotification *sink) = 0;
++
++            // @brief Configure plugin
++            /* @json:omit */
++            virtual uint32_t Configure(PluginHost::IShell *framework) = 0;
++
++            // @brief Begin capture session
++            // @param interval - in - uint32_t
++            // @text startcapture
++            // @param captureMode - in - CaptureMode
++            // @returns uint32_t
++            virtual uint32_t StartCapture(const uint32_t interval,
++                                        const CaptureMode captureMode) = 0;
++
++            // @brief End capture session
++            // @text stopcapture
++            // @returns uint32_t
++            virtual uint32_t StopCapture() = 0;
++
++            // @brief Get current resource usage
++            // @text getcurrentusage
++            // @param processPrefix - in - string
++            // @param measurementType - in - MeasurementType
++            // @returns uint32_t
++            virtual uint32_t GetCurrentUsage(const string &processPrefix,
++                                            const MeasurementType measurementType) = 0;
++
++            // @brief Add custom label to dataset
++            // @text addlabel
++            // @param annotation - in - string
++            // @returns uint32_t
++            virtual uint32_t AddLabel(const string &annotation) = 0;
++        };
++    } // namespace Exchange
++} // namespace WPEFramework
+diff --git a/apis/Ids.h b/apis/Ids.h
+index e63f21bb..03b6c6a4 100755
+--- a/apis/Ids.h
++++ b/apis/Ids.h
+@@ -406,6 +406,12 @@ namespace Exchange {
+ 
+         ID_RESOURCE_MONITOR                         = ID_ENTOS_OFFSET + 0x610,
+         ID_RESOURCE_MONITOR_NOTIFICATION            = ID_RESOURCE_MONITOR + 1,
++
++        ID_FCRESOURCEMONITOR                          = ID_ENTOS_OFFSET + 0x700,
++        ID_FCRESOURCEMONITOR_NOTIFICATION             = ID_FCRESOURCEMONITOR + 1,
++
++        ID_AVMONITOR                                = ID_ENTOS_OFFSET + 0x710,
++        ID_AVMONITOR_NOTIFICATION                   = ID_AVMONITOR + 1,
+     }; // enum IDS
+ 
+ } // namespace Exchange
+-- 
+2.44.4
+

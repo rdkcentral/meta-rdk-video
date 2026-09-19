@@ -1,0 +1,6 @@
+autostart = "@PLUGIN_AVMONITOR_AUTOSTART@"
+
+configuration = JSON()
+
+configuration.add("sinkstatisticsfrequency", "@PLUGIN_AVMONITOR_SINK_STATISTICS_FREQUENCY@")
+configuration.add("resultfilelocation", "@PLUGIN_AVMONITOR_RESULT_FILE_LOCATION@")
