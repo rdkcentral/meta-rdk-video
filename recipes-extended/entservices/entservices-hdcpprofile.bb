@@ -2,7 +2,7 @@ SUMMARY = "ENTServices hdcpprofile plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.1.5"
+PV = "1.1.5_Test"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdcpprofile;${CMF_GITHUB_SRC_URI_SUFFI
           "
 
 # Release version - 1.1.5
-SRCREV = "2811a5ed16e4fbacf581f473155d2a4985444edd"
+SRCREV = "016be41e821fbc37f9c24097863acaf7d6d77fa4"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
