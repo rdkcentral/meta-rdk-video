@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 PV = "1.2.6"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SU
            "
 
 # Release version - 1.2.6
-SRCREV = "ddb4903974478bd5435d90773a200de47c1786c6"
+SRCREV = "6ad6a84b910da10c95563832cdb50041fc53d951"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
