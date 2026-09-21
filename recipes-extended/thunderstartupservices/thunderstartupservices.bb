@@ -11,7 +11,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = "systemd"
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'es1test-jsonrpc-benchmark', '', d)}"
 
-SRCREV = "c1d268fbcb49efe4c449fc425787b13493dd2e12"
+SRCREV = "b8dd5dee4f8a9d7b4964ed0c11bc194e1bde0ecb"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -94,6 +94,7 @@ do_install() {
     if ${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'true', 'false', d)} == 'true'; then
         install -m 0644 ${S}/es1bench.service ${D}${systemd_system_unitdir}
         install -m 0644 ${S}/es1bench-coldstart.service ${D}${systemd_system_unitdir}
+        install -m 0644 ${S}/JsonRpcLoadClient.service ${D}${systemd_system_unitdir}
         install -d ${D}${sysconfdir}/systemd/system/multi-user.target.wants
         ln -sf ${systemd_system_unitdir}/es1bench-coldstart.service ${D}${sysconfdir}/systemd/system/multi-user.target.wants/es1bench-coldstart.service
     fi

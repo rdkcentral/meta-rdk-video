@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "git://github.com/workkavint-ship-it/ES1Test-JSONRPC-Benchmark;protocol=https;branch=main"
 
-SRCREV = "68869fa0e11df199ea218cb65cb988218175d32d"
+SRCREV = "cd71d98c0ec582b1c442d59482d83a9831407750"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -39,13 +39,14 @@ do_install:append() {
     install -d ${D}/opt
     install -m 0644 ${S}/client/es1.config.default ${D}/opt/es1.config
     install -m 0644 ${S}/client/es1-coldstart.config.default ${D}/opt/es1-coldstart.config
+    install -m 0644 ${S}/client/JsonRpcLoadClient.config.default ${D}/opt/JsonRpcLoadClient.config
 
     install -d ${D}/opt/es1bench/log
     install -m 0644 /dev/null ${D}/opt/es1bench/log/.keep
 }
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/* ${bindir}/es1client /opt/es1.config /opt/es1-coldstart.config /opt/es1bench/log /opt/es1bench/log/.keep"
+FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/* ${bindir}/es1client ${bindir}/JsonRpcLoadClient /opt/es1.config /opt/es1-coldstart.config /opt/JsonRpcLoadClient.config /opt/es1bench/log /opt/es1bench/log/.keep"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
