@@ -6,9 +6,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV = "0.2.0-r3"
 PR = "r0"
 
-SRCREV = "11ae870f91ef4b25509a2098c48bf9ed3e670969"
+SRCREV = "947266be5cb98a7921b1ff358064dd08dd069fd5"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "develop"
+PLAYERINTERFACE_BRANCH ?= "support/0.2.0-8.6_VIPA"
 
 inherit pkgconfig
 inherit cmake
