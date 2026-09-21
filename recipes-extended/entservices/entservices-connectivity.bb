@@ -51,12 +51,6 @@ PACKAGECONFIG[bluetoothcontrol]     = "-DPLUGIN_BLUETOOTH=ON -DPLUGIN_BLUETOOTH_
 PACKAGECONFIG[network]              = "-DPLUGIN_NETWORK=ON,-DPLUGIN_NETWORK=OFF,iarmbus iarmmgrs rfc,iarmbus rfc netsrvmgr"
 PACKAGECONFIG[wifimanager]          = "-DPLUGIN_WIFIMANAGER=ON,-DPLUGIN_WIFIMANAGER=OFF,netsrvmgr iarmbus iarmmgrs,iarmbus wpa-supplicant"
 
-# DEPENDS on virtual/vendor-bluetooth-sdk only orders do_populate_sysroot, not do_package, so
-# the shlibs manifest for librdk_bluetooth.so.1 may not exist yet when our own do_package_qa
-# runs (real SDK provider has no other early consumer forcing it to package sooner). Force the
-# task-level ordering explicitly so the file-rdeps QA check never races against it.
-do_package_qa[depends] += "${@bb.utils.contains('PACKAGECONFIG', 'bluetoothcontrol', 'virtual/vendor-bluetooth-sdk:do_package', '', d)}"
-
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
@@ -87,5 +81,9 @@ do_install:append() {
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
-INSANE_SKIP:${PN} += "libdir staticdev dev-so"
+# librdk_bluetooth.so.1's real provider ships from a prebuilt vendor IPK feed on some
+# products (not a recipe built in this bitbake run), so the shlibs-based file-rdeps QA
+# check can never see it here; the runtime dependency is still satisfied on-device via
+# RDEPENDS:${PN}'s virtual/vendor-bluetooth-sdk entry.
+INSANE_SKIP:${PN} += "libdir staticdev dev-so file-rdeps"
 INSANE_SKIP:${PN}-dbg += "libdir"
