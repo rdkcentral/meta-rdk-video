@@ -18,6 +18,7 @@ DEPENDS:remove:vdevice_x86-64-mw = "devicesettings devicesettings-hal-headers ia
 
 RDEPENDS:${PN} = " devicesettings telemetry rdk-halif-aidl-mw-hdmicec rdk-halif-aidl-mw-common libbinderrdk"
 RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
+RDEPENDS:${PN}:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw-hdmicec rdk-halif-aidl-mw-common libbinderrdk"
 
 DEPENDS += "safec-common-wrapper"
 DEPENDS:append = " rdk-halif-aidl-mw libbinderrdk "
