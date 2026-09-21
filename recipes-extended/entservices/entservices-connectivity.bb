@@ -51,6 +51,12 @@ PACKAGECONFIG[bluetoothcontrol]     = "-DPLUGIN_BLUETOOTH=ON -DPLUGIN_BLUETOOTH_
 PACKAGECONFIG[network]              = "-DPLUGIN_NETWORK=ON,-DPLUGIN_NETWORK=OFF,iarmbus iarmmgrs rfc,iarmbus rfc netsrvmgr"
 PACKAGECONFIG[wifimanager]          = "-DPLUGIN_WIFIMANAGER=ON,-DPLUGIN_WIFIMANAGER=OFF,netsrvmgr iarmbus iarmmgrs,iarmbus wpa-supplicant"
 
+# DEPENDS on virtual/vendor-bluetooth-sdk only orders do_populate_sysroot, not do_package, so
+# the shlibs manifest for librdk_bluetooth.so.1 may not exist yet when our own do_package_qa
+# runs (real SDK provider has no other early consumer forcing it to package sooner). Force the
+# task-level ordering explicitly so the file-rdeps QA check never races against it.
+do_package_qa[depends] += "${@bb.utils.contains('PACKAGECONFIG', 'bluetoothcontrol', 'virtual/vendor-bluetooth-sdk:do_package', '', d)}"
+
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
