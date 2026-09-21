@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-framerate;${CMF_GITHUB_SRC_URI_SUFFIX}
            file://rdkservices.ini \
           "
 
-# Release version - 1.2.3_Test.
-SRCREV = "25716b367eef4d004df214893c6c697a6d37f7f4"
+# Release version - 1.2.3
+SRCREV = "9e9eed0b6c66c12ec1e2612f2e9faa3b14413135"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
