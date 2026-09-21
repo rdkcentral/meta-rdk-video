@@ -8,8 +8,8 @@ PR = "r1"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig python3native
 
-BRANCH ?= "R4_4"
-SRCREV ?= "95e24b4b03c4aab1794200bc47b502436cd682fe"
+BRANCH ?= "development/RDKEMW-23869"
+SRCREV ?= "b3ea21c1e90650682cb20f965a032114c7bff6ad"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderExtensions.git;protocol=https;branch=${BRANCH}"
 
