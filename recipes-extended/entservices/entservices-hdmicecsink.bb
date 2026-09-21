@@ -2,7 +2,7 @@ SUMMARY = "ENTServices hdmicecsink plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.4.7"
+PV = "1.4.7_Test"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsink;${CMF_GITHUB_SRC_URI_SUFFI
            file://rdkservices.ini \
           "
 
-# Release version - 1.4.7
-SRCREV = "920933745dc432b614d07bb83baef5db591bccea"
+# Release version - 1.4.7_Test
+SRCREV = "dc4236ddd3da3d2e6a05a5be2613deaa7bd278bc"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
