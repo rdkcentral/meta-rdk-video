@@ -1,7 +1,7 @@
 SUMMARY = "ENTServices AVOutput plugin"
 LICENSE = "CLOSED"
 
-PV = "2.2.2_Test"
+PV = "2.2.1_Test"
 PR = "r1"
 
 S = "${WORKDIR}/git"
