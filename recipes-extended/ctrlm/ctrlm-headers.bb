@@ -24,7 +24,6 @@ FILES:${PN} += "${includedir}/ctrlm_ipc.h \
                 ${includedir}/ctrlm_ipc_device_update.h \
                 ${includedir}/ctrlm_ipc_ble.h \
                 ${includedir}/ctrlm_hal.h \
-                ${includedir}/ctrlm_hal_ip.h \
                 ${includedir}/ctrlm_hal_ble.h \
                 ${includedir}/ctrlm_hal_rf4ce.h \
                "
