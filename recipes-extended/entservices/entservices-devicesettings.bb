@@ -1,63 +1,54 @@
-SUMMARY = "ENTServices firmware update plugin"
+SUMMARY = "ENTServices devicesettings plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.2.6"
+PV = "1.0.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
-inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
+inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           "
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
+           file://rdkservices.ini \
+          "
 
-# Release version - 1.2.6
-SRCREV = "ddb4903974478bd5435d90773a200de47c1786c6"
-
+# Release version - 1.0.0
+SRCREV = "66032d32aed342f36b8cb1ab405b566cddf9c998"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
-
-DEPENDS += "wpeframework wpeframework-tools-native"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON', '', d)}"
-
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
+CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/trower-base64/ "
 CXXFLAGS += " -DRFC_ENABLED "
 # enable filtering for undefined interfaces and link local ip address notifications
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
+#CXXFLAGS += "-DRDK_DSHAL_NAME="\""libds-hal.so.0\""""
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-# ----------------------------------------------------------------------------
+PACKAGECONFIG ?= " breakpadsupport \
+    telemetrysupport \
+    devicesettings \
+"
 
-PACKAGECONFIG ?= " firmwareupdate \
-    "
-
-PACKAGECONFIG[firmwareupdate]          = "-DPLUGIN_FIRMWAREUPDATE=ON,-DPLUGIN_FIRMWAREUPDATE=OFF,entservices-helpers iarmmgrs wpeframework-clientlibraries,iarmbus entservices-helpers"
-
-# ----------------------------------------------------------------------------
+PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
+PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
+PACKAGECONFIG[devicesettings]       = "-DPLUGIN_DEVICESETTINGS=ON,-DPLUGIN_DEVICESETTINGS=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus devicesettings entservices-helpers"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
 "
-
-# Check if DRI_DEVICE_NAME is defined. If yes- use that as DEFAULT_DEVICE. If not, use DEFAULT_DEVICE configured from rdkservices.
-python () {
-    dri_device_name = d.getVar('DRI_DEVICE_NAME')
-    if dri_device_name:
-        d.appendVar('OECMAKE_CXX_FLAGS', ' -DDEFAULT_DEVICE=\'\\"{}\\"\' '.format(dri_device_name))
-}
 
 do_install:append() {
     install -d ${D}${sysconfdir}/rfcdefaults
@@ -72,8 +63,6 @@ do_install:append() {
         fi
     fi
 }
-
-# ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
