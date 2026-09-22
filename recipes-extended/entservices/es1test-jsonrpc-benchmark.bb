@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "git://github.com/workkavint-ship-it/ES1Test-JSONRPC-Benchmark;protocol=https;branch=main"
 
-SRCREV = "6f591b74392ea1342cdd2f86ff5c0f170177c698"
+SRCREV = "3eb5719d7a913433db2e0402a0f543715524ba76"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
