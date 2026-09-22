@@ -25,13 +25,13 @@ EXTRA_OECONF += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_firebolt_compli
 EXTRA_OECONF += "--enable-xupnp"
 EXTRA_OECONF += " --enable-westeroshal"
 
-DEPENDS += "iarmbus devicesettings rdk-logger jsoncpp jsonrpc westeros aamp"
+DEPENDS += "iarmbus rdk-logger jsoncpp jsonrpc westeros aamp"
 DEPENDS:append:client = " iarmmgrs servicemanager netsrvmgr moca-hal"
 DEPENDS:append:hybrid = " iarmmgrs servicemanager xupnp virtual/dtcpmgr"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES','tdk_benchmark','libxml2', '',d)}"
 
 RDEPENDS:${PN} += " jsoncpp jsonrpc bash "
-RDEPENDS:${PN}_dunfell  += " jsoncpp jsonrpc bash devicesettings"
+RDEPENDS:${PN}_dunfell  += " jsoncpp jsonrpc bash"
 
 # This variable used as the condition for compiling TDK components
 # for hybrid and client devices

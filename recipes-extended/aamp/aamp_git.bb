@@ -56,10 +56,6 @@ CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_IT', ' -
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_DE', ' -DENABLE_PTS_RESTAMP=1', '', d)}"
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_AU', ' -DENABLE_PTS_RESTAMP=1', '', d)}"
 
-INCLUDE_DIRS = " \
-    -I=${includedir}/rdk/halif/ds-hal \
-    "
-
 do_install:append() {
     echo "Installing aamp-cli..."
     install -m755 ${B}/aamp-cli ${D}${libdir}

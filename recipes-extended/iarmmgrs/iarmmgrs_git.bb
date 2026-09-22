@@ -24,23 +24,22 @@ DEPENDS:append = " safec-common-wrapper"
 DEPENDS:append = " telemetry"
 
 PARALLEL_MAKE = ""
-DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal \
+DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec \
          ermgr iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
          deepsleep-manager-headers power-manager-headers wpeframework-clientlibraries"
 DEPENDS:append:client = " virtual/mfrlib"
 DEPENDS:append = " virtual/mfrlib"
-DEPENDS:append = " virtual/vendor-devicesettings-hal "
 DEPENDS:append = " virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal "
-RDEPENDS:${PN}:append = " devicesettings rfc"
+RDEPENDS:${PN}:append = " rfc"
 RDEPENDS:${PN}_client_morty += " virtual/mfrlib"
-RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_mfrlib} devicesettings"
+RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_mfrlib}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 
 inherit pkgconfig breakpad-logmapper syslog-ng-config-gen
 SYSLOG-NG_FILTER = "uimgr"
-SYSLOG-NG_SERVICE_uimgr += "dsmgr.service mfrmgr.service sysmgr.service"
+SYSLOG-NG_SERVICE_uimgr += "mfrmgr.service sysmgr.service"
 #The log rate and destination are mentioned at iarmbus_git.bb, to avoid duplication of variables set we have commented the below variables.
 #SYSLOG-NG_DESTINATION_uimgr = "uimgr_log.txt"
 #SYSLOG-NG_LOGRATE_uimgr = "very-high"
@@ -71,19 +70,14 @@ ASNEEDED = ""
 INCLUDE_DIRS = " \
     -I${S}/mfr/include \
     -I${S}/sysmgr/include \
-    -I${S}/dsmgr \
     -I=${includedir}/wdmp-c \
     -I=${includedir}/rdk/safeclib \
     -I=${includedir}/rdk/iarmbus \
     -I=${includedir}/rdk/halif/power-manager \
     -I=${includedir}/rdk/halif/deepsleep-manager \
-    -I=${includedir}/rdk/halif/ds-hal \
     -I=${includedir}/ccec/drivers/include \
     -I=${includedir}/ccec/drivers/ \
     -I=${includedir} \
-    -I=${includedir}/rdk/ds \
-    -I=${includedir}/rdk/ds-hal \
-    -I=${includedir}/rdk/ds-rpc \
     -I=${includedir}/rdk/iarmmgrs-hal \
     -I=${includedir}/directfb \
     -I=${includedir}/glib-2.0 \
@@ -144,7 +138,6 @@ do_compile() {
     oe_runmake -B -C ${S}/utils/
     #LDFLAGS="-lsystemd ${LDFLAGS}" CFLAGS="-DENABLE_SD_NOTIFY ${CFLAGS}" oe_runmake -B -C ${S}/sysmgr/
     LDFLAGS="${LDFLAGS}" CFLAGS="-DENABLE_SD_NOTIFY ${CFLAGS}" oe_runmake -B -C ${S}/sysmgr/
-    CFLAGS=" ${CFLAGS}" LDFLAGS="-lds -lds-hal -ldshalsrv -ldl -L${S}/utils -liarmUtils ${LDFLAGS}" oe_runmake -B -C ${S}/dsmgr/
 
     if [ "${@bb.utils.contains('PACKAGECONFIG', 'mfr', 'mfr', '', d)}" != "" ]; then
 
@@ -174,14 +167,13 @@ do_install() {
     done
 
     install -d ${D}${bindir}
-    for i in dsmgr/*Main sysmgr/*Main; do
+    for i in sysmgr/*Main; do
         install -m 0755 ${S}/$i ${D}${bindir}
     done
 
     install -d ${D}${libdir}
     install -m 0755 ${S}/utils/libiarmUtils.so ${D}${libdir}/libiarmUtils.so.0.0.0
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${S}/conf/dsmgr.service ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/conf/sysmgr.service ${D}${systemd_unitdir}/system
     ln -rsf ${D}${libdir}/libiarmUtils.so.0.0.0  ${D}${base_libdir}/libiarmUtils.so
 
@@ -201,7 +193,6 @@ do_install:append() {
 PACKAGECONFIG ??= ""
 PACKAGECONFIG[mfr] = "-DUSE_MFR,,,"
 
-SYSTEMD_SERVICE:${PN} += "dsmgr.service"
 SYSTEMD_SERVICE:${PN} += "sysmgr.service"
 
 SYSTEMD_SERVICE:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'mfr', 'mfrmgr.service', '', d)}"
@@ -211,7 +202,7 @@ FILES_SOLIBSDEV = ""
 SOLIBS = ".so"
 INSANE_SKIP:${PN} += "dev-so"
 # Breakpad processname and logfile mapping
-BREAKPAD_LOGMAPPER_PROCLIST = "dsMgrMain,IARMDaemonMain,mfrMgrMain,sysMgrMain"
+BREAKPAD_LOGMAPPER_PROCLIST = "IARMDaemonMain,mfrMgrMain,sysMgrMain"
 BREAKPAD_LOGMAPPER_LOGLIST = "uimgr_log.txt"
 
 DEPENDS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' sqlite3  ', '',d)}"
@@ -247,10 +238,10 @@ LDFLAGS += "-lRDKMfrLib "
 
 LDFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' -lsqlite3 ', '',d)}"
 
-LDFLAGS += " -ldshalcli -lds -liarmmgrs-deepsleep-hal"
+LDFLAGS += " -liarmmgrs-deepsleep-hal"
 
 do_compile:append() {
-    LDFLAGS="-ldshalcli -lds -liarmmgrs-deepsleep-hal -lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" oe_runmake -B -C ${S}/mfr/test_mfr/
+    LDFLAGS="-liarmmgrs-deepsleep-hal -lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" oe_runmake -B -C ${S}/mfr/test_mfr/
 }
 
 do_install:append(){

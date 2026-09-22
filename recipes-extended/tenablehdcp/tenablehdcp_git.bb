@@ -16,12 +16,7 @@ S = "${WORKDIR}/git"
 
 inherit autotools pkgconfig systemd coverity
 
-DEPENDS += "devicesettings iarmbus iarmmgrs"
-RDEPENDS:${PN} += " devicesettings"
-
-DEPENDS += " devicesettings-hal-headers "
-CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal/ "
-CFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal/ "
+DEPENDS += "iarmbus iarmmgrs"
 
 SRC_URI:append = "${@bb.utils.contains('DISTRO_FEATURES', 'disable_mfr_read_hdcpkey', ' file://0001-tenablehdcp-remove-mfr-dependency.patch file://0002-Fix-for-tenableHDCP-crash-and-added-hdmiservice.patch ', '', d)}"
 
