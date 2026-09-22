@@ -40,7 +40,6 @@ do_install() {
     install -m 644 ${S}/include/ctrlm_ipc_device_update.h ${D}${includedir}
     install -m 644 ${S}/include/ctrlm_ipc_ble.h ${D}${includedir}
     install -m 644 ${S}/include/ctrlm_hal.h ${D}${includedir}
-    install -m 644 ${S}/include/ctrlm_hal_ip.h ${D}${includedir}
     install -m 644 ${S}/include/ctrlm_hal_ble.h ${D}${includedir}
     install -m 644 ${S}/include/ctrlm_hal_rf4ce.h ${D}${includedir}
 
