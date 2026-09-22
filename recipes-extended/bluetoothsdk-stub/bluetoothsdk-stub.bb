@@ -6,14 +6,15 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 PV = "1.0.0"
 PR = "r0"
 
-# Vendor layers may ship a real SDK recipe that PROVIDES the same virtual.
-# Temporarily disabled: do not let this stub satisfy the virtual, so the
-# vendor-provided real SDK recipe is used instead.
+# Fallback provider of virtual/vendor-bluetooth-sdk: satisfies the plugin's
+# librdk_bluetooth.so.1 DT_NEEDED on products without the real vendor SDK.
+# Machines that ship the real SDK select it instead via
+# PREFERRED_PROVIDER_virtual/vendor-bluetooth-sdk = "bluetoothsdk".
 PROVIDES += "virtual/vendor-bluetooth-sdk"
 RPROVIDES:${PN} = "virtual/vendor-bluetooth-sdk"
 
 # Keep in sync with entservices-connectivity.bb - the stub lives in that repo.
-SRCREV = "fd40aee088c9dda4517309910ea3779250c7851c"
+SRCREV = "b1a8e38aeecfece0528075b8dc3d28b3e13d79eb"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 S = "${WORKDIR}/git"
@@ -30,26 +31,21 @@ PACKAGECONFIG ??= ""
 PACKAGECONFIG[audio] = "-DAUDIO_SUPPORT=ON,-DAUDIO_SUPPORT=OFF,,"
 
 # FindBLUETOOTH_SDK.cmake expects the real SDK layout:
-#   ${libdir}/bluetoothsdk/librdk_bluetooth.so and ${includedir}/bluetoothsdk/**
-# Temporarily disabled: no-op install so this stub never places files where a
-# vendor-provided real SDK recipe would install to.
 do_install() {
-    :
-    # install -d ${D}${libdir}/bluetoothsdk
-    # install -m 0755 ${B}/librdk_bluetooth.so.1.0.0 ${D}${libdir}/bluetoothsdk/librdk_bluetooth.so.1.0.0
-    # ln -sf librdk_bluetooth.so.1.0.0 ${D}${libdir}/bluetoothsdk/librdk_bluetooth.so.1
-    # ln -sf librdk_bluetooth.so.1.0.0 ${D}${libdir}/bluetoothsdk/librdk_bluetooth.so
+    install -d ${D}${libdir}/bluetoothsdk
+    install -m 0755 ${B}/librdk_bluetooth.so.1.0.0 ${D}${libdir}/bluetoothsdk/librdk_bluetooth.so.1.0.0
+    ln -sf librdk_bluetooth.so.1.0.0 ${D}${libdir}/bluetoothsdk/librdk_bluetooth.so.1
+    ln -sf librdk_bluetooth.so.1.0.0 ${D}${libdir}/bluetoothsdk/librdk_bluetooth.so
 
-    # install -d ${D}${includedir}/bluetoothsdk/bluetooth
-    # install -m 0644 ${STUB_SRC}/include/*.h ${D}${includedir}/bluetoothsdk/
-    # install -m 0644 ${STUB_SRC}/include/bluetooth/*.h ${D}${includedir}/bluetoothsdk/bluetooth/
+    install -d ${D}${includedir}/bluetoothsdk/bluetooth
+    install -m 0644 ${STUB_SRC}/include/*.h ${D}${includedir}/bluetoothsdk/
+    install -m 0644 ${STUB_SRC}/include/bluetooth/*.h ${D}${includedir}/bluetoothsdk/bluetooth/
 
     # The SONAME is resolved from a non-standard libdir at runtime.
-    # install -d ${D}${sysconfdir}/ld.so.conf.d
-# Temporarily disabled along with do_install above - nothing is installed,
-# so these FILES entries would otherwise just produce empty packages.
-# FILES_SOLIBSDEV = ""
-# FILES:${PN} = "${libdir}/bluetoothsdk/librdk_bluetooth.so.* ${sysconfdir}/ld.so.conf.d/bluetoothsdk.conf"
+    install -d ${D}${sysconfdir}/ld.so.conf.d
+    echo "${libdir}/bluetoothsdk" > ${D}${sysconfdir}/ld.so.conf.d/bluetoothsdk.conf
+}
+FILES:${PN} = "${libdir}/bluetoothsdk/librdk_bluetooth.so.* ${sysconfdir}/ld.so.conf.d/bluetoothsdk.conf"
 # 
 FILES_SOLIBSDEV = ""
 FILES:${PN} = "${libdir}/bluetoothsdk/librdk_bluetooth.so.* ${sysconfdir}/ld.so.conf.d/bluetoothsdk.conf"
