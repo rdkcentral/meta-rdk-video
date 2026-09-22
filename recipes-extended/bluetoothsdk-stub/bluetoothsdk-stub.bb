@@ -9,8 +9,8 @@ PR = "r0"
 # Vendor layers may ship a real SDK recipe that PROVIDES the same virtual.
 # Temporarily disabled: do not let this stub satisfy the virtual, so the
 # vendor-provided real SDK recipe is used instead.
-# PROVIDES += "virtual/vendor-bluetooth-sdk"
-# RPROVIDES:${PN} = "virtual/vendor-bluetooth-sdk"
+PROVIDES += "virtual/vendor-bluetooth-sdk"
+RPROVIDES:${PN} = "virtual/vendor-bluetooth-sdk"
 
 # Keep in sync with entservices-connectivity.bb - the stub lives in that repo.
 SRCREV = "fd40aee088c9dda4517309910ea3779250c7851c"
