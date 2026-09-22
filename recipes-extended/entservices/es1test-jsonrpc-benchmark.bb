@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 SRC_URI = "git://github.com/workkavint-ship-it/ES1Test-JSONRPC-Benchmark;protocol=https;branch=main"
 
-SRCREV = "3eb5719d7a913433db2e0402a0f543715524ba76"
+SRCREV = "c90e15b2dd9c79bbe5dfa584ee72d10a53446adb"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -21,7 +21,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
 RDEPENDS:${PN} += "wpeframework"
 
-PLUGIN_ES1BENCHMARK_MODE ?= "Off"
+PLUGIN_ES1BENCHMARK_MODE ?= "Local"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
