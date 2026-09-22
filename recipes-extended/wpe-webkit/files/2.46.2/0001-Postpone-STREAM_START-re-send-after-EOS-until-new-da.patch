@@ -1,0 +1,95 @@
+From becc96b897943771845062f2d481f367136e1ede Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Tue, 22 Sep 2026 10:55:32 +0200
+Subject: [PATCH] Postpone STREAM_START re-send after EOS until new data
+ arrives
+
+Sending STREAM_START right after EOS resets EOS flag inside gst pipeline
+before it even reaches sink elements.
+That results with no GST_MESSAGE_EOS emitted from the pipeline
+---
+ .../mse/WebKitMediaSourceGStreamer.cpp        | 40 +++++++++++++------
+ 1 file changed, 28 insertions(+), 12 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+index 3ea25ff8e38d..7989730575e6 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+@@ -187,6 +187,7 @@ struct Stream : public ThreadSafeRefCountedAndCanMakeThreadSafeWeakPtr<Stream> {
+ 
+         bool hasPushedStreamCollectionEvent { false };
+         bool wasStreamStartSent { false };
++        bool needStreamStartAfterEOS { false };
+         bool doesNeedSegmentEvent { true };
+         bool hasPushedFirstBuffer { false }; // Used to get a pipeline dump of the pipeline before buffers are flowing.
+         GstSegment segment;
+@@ -472,6 +473,22 @@ static void webKitMediaSrcWaitForPadLinkedOrFlush(GstPad* pad, DataMutexLocker<S
+     GST_DEBUG_OBJECT(pad, "Finished waiting for the pad to be linked.");
+ }
+ 
++static bool webKitMediaSrcPushStreamStart(GstPad* pad, Stream* stream, DataMutexLocker<Stream::StreamingMembers>& streamingMembers)
++{
++    assertIsHeld(streamingMembers.mutex());
++
++    GUniquePtr<char> streamId { g_strdup_printf("mse/%" PRIu64 "", stream->track->id()) };
++    GRefPtr<GstEvent> event = adoptGRef(gst_event_new_stream_start(streamId.get()));
++    gst_event_set_group_id(event.get(), stream->source->priv->groupId);
++    gst_event_set_stream(event.get(), stream->streamInfo.get());
++
++    GST_DEBUG_OBJECT(pad, "Pushing STREAM_START event.");
++    bool wasStreamStartSent = gst_pad_push_event(pad, event.leakRef());
++    GST_DEBUG_OBJECT(pad, "STREAM_START event pushed, %s was returned.", boolForPrinting(wasStreamStartSent));
++
++    return wasStreamStartSent;
++}
++
+ // Called with STREAM_LOCK.
+ static void webKitMediaSrcLoop(void* userData)
+ {
+@@ -514,16 +531,8 @@ static void webKitMediaSrcLoop(void* userData)
+     }
+ 
+     if (!streamingMembers->wasStreamStartSent) {
+-        GUniquePtr<char> streamId { g_strdup_printf("mse/%" PRIu64 "", stream->track->id()) };
+-        GRefPtr<GstEvent> event = adoptGRef(gst_event_new_stream_start(streamId.get()));
+-        gst_event_set_group_id(event.get(), stream->source->priv->groupId);
+-        gst_event_set_stream(event.get(), stream->streamInfo.get());
+-
+-        GST_DEBUG_OBJECT(pad, "Pushing STREAM_START event.");
+-        bool wasStreamStartSent = gst_pad_push_event(pad, event.leakRef());
+-        streamingMembers->wasStreamStartSent = wasStreamStartSent;
+-        GST_DEBUG_OBJECT(pad, "STREAM_START event pushed, %s was returned.", boolForPrinting(wasStreamStartSent));
+-        ASSERT(wasStreamStartSent);
++        streamingMembers->wasStreamStartSent = webKitMediaSrcPushStreamStart(pad, stream.get(), streamingMembers);
++        ASSERT(streamingMembers->wasStreamStartSent);
+     }
+ 
+     if (streamingMembers->pendingInitialCaps) {
+@@ -572,6 +581,13 @@ static void webKitMediaSrcLoop(void* userData)
+         return;
+     }
+ 
++    // Now that new data is available, re-open the stream that was closed by the previously pushed EOS.
++    if (streamingMembers->needStreamStartAfterEOS) {
++        streamingMembers->needStreamStartAfterEOS = false;
++        streamingMembers->wasStreamStartSent = webKitMediaSrcPushStreamStart(pad, stream.get(), streamingMembers);
++        ASSERT(streamingMembers->wasStreamStartSent);
++    }
++
+     // We wait to get a sample before emitting the first segment. This way, if we get a seek before any
+     // enqueue, we're sending only one segment. This also ensures that when such a seek is made, where we also
+     // omit the flush (see webKitMediaSrcFlush) we actually emit the updated, correct segment.
+@@ -644,8 +660,8 @@ static void webKitMediaSrcLoop(void* userData)
+ 
+         if (isEOS) {
+             DataMutexLocker streamingMembersAfterEOS { stream->streamingMembersDataMutex };
+-            GST_INFO_OBJECT(pad, "EOS pushed, resetting wasStreamStartSent to allow re-sending STREAM_START.");
+-            streamingMembersAfterEOS->wasStreamStartSent = false;
++            GST_DEBUG_OBJECT(pad, "EOS received, marking needStreamStartAfterEOS as true.");
++            streamingMembersAfterEOS->needStreamStartAfterEOS = true;
+         }
+     } else
+         ASSERT_NOT_REACHED();
+-- 
+2.53.0
+
