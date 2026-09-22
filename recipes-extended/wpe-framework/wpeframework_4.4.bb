@@ -16,9 +16,9 @@ PR = "r46"
 PV = "4.4.6"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=debug/PluginNotification;name=thunder"
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=test/PluginNotification;name=thunder"
 
-SRCREV_thunder = "8998426c03b9499105504febf84c67b12ac6429d"
+SRCREV_thunder = "fbdb80f38104d96b12b2fa8ba932bed3f0ba4250"
 
 SRC_URI += "file://wpeframework-init \
             file://wpeframework.service.in \
