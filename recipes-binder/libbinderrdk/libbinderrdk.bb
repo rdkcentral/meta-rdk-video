@@ -6,9 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/linux_binder_idl;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://servicemanager.service \
-          "
+SRC_URI = "${CMF_GITHUB_ROOT}/linux_binder_idl;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 PV ?= "2.6.0"
 PR = "r0"
@@ -51,7 +49,7 @@ EXTRA_OECMAKE:append = " \
 # MW_LIBDIR is outside the default staged ${libdir}, so it must be staged explicitly
 SYSROOT_DIRS += "${prefix}/mw"
 
-inherit cmake systemd siteinfo
+inherit cmake siteinfo
 
 # Build the target Binder runtime with the fixed protocol used by the image.
 EXTRA_OECMAKE += " \
@@ -73,14 +71,6 @@ do_configure:prepend() {
 
     cd ${B}
 }
-
-do_install:append() {
-    install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/servicemanager.service ${D}${systemd_unitdir}/system/
-}
-
-SYSTEMD_SERVICE:${PN} = "servicemanager.service"
-SYSTEMD_AUTO_ENABLE = "enable"
 
 FILES:${PN} += " \
     ${libdir}/lib*.so* \
