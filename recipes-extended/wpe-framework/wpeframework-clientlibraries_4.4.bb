@@ -36,8 +36,11 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-RDKEMW-13372-Support-for-additional-clear-data-after.patch \
            "
 
-# Oct 17, 2023
-SRCREV_wpeframework-clientlibraries = "09a75a85e1263e0520f182dea6dc19c673e070a1"
+# Sep 15, 2026 - picks up RDKEMW-2864 (INetflixSecurity interface guideline
+# rename: ESN/EncryptionKey/HMACKey/WrappingKey -> GetESN/GetEncryptionKey/
+# GetHMACKey/GetWrappingKey returning Core::hresult), which entservices-apis'
+# INetflixSecurity.h already requires as of the 4.2.4 tag merge.
+SRCREV_wpeframework-clientlibraries = "7e45a65211f9a3f926d3dbd18679ccfcbc9ef559"
 
 # ----------------------------------------------------------------------------
 
