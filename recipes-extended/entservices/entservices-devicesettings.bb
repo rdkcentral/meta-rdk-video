@@ -54,7 +54,7 @@ PACKAGECONFIG[devicesettings]       = "-DPLUGIN_DEVICESETTINGS=ON,-DPLUGIN_DEVIC
 
 # Use the generated HDMI-input AIDL headers and library for non-vDevice builds.
 EXTRA_OECMAKE:append = " \
-    -DAIDL_INCLUDE_DIR=${STAGING_INCDIR} \
+    -DAIDL_INCLUDE_DIR=${STAGING_INCDIR}/mw/hdmiinput/0.1.0.0/include \
     -DBINDER_INCLUDE_DIR=${STAGING_INCDIR}/android \
     -DHAL_AIDL_LIBRARY=${STAGING_LIBDIR}/mw/rdk-halif-aidl/libhdmiinput-v0.1.0.0-cpp.so \
     -DBINDER_LIBRARY=${STAGING_DIR_HOST}${prefix}/mw/lib/binder/libbinder.so \
@@ -62,12 +62,15 @@ EXTRA_OECMAKE:append = " \
 "
 
 CXXFLAGS:append = " \
+    -I${STAGING_INCDIR}/mw/hdmiinput/0.1.0.0/include \
+    -I${STAGING_INCDIR}/mw/common/0.2.0.0/include \
     -I${STAGING_INCDIR}/mw/include \
     -I${STAGING_INCDIR}/android \
 "
 
 LDFLAGS:append = " \
     -L${STAGING_DIR_HOST}${prefix}/mw/lib/binder \
+    -L${STAGING_LIBDIR}/mw/rdk-halif-aidl \
 "
 
 # Pass component-specific HDMIInput AIDL/binder paths to CMake for vdevice.
