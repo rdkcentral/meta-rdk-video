@@ -6,12 +6,13 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/linux_binder_idl;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI = "${CMF_GITHUB_ROOT}/linux_binder_idl;${CMF_GITHUB_SRC_URI_SUFFIX} \
+           file://servicemanager.service \
+          "
 
-PV ?= "1.1.1"
+PV ?= "2.6.0"
 PR = "r0"
-#SRCREV_TAG = 1.0.0"
-SRCREV = "0f7a23b6b879f0a67d90c9b8b74ecba8dc0c5312"
+SRCREV = "2.6.0"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -22,7 +23,9 @@ S = "${WORKDIR}/git"
 # Middleware package provides
 #
 PROVIDES += "libbinderrdk liblogrdk"
+PROVIDES:append = " liblog"
 RPROVIDES:${PN} += "libbinderrdk liblogrdk"
+RPROVIDES:${PN}:append = " liblog"
 
 #
 # Middleware installation locations
@@ -48,7 +51,13 @@ EXTRA_OECMAKE:append = " \
 # MW_LIBDIR is outside the default staged ${libdir}, so it must be staged explicitly
 SYSROOT_DIRS += "${prefix}/mw"
 
-inherit cmake
+inherit cmake systemd siteinfo
+
+# Build the target Binder runtime with the fixed protocol used by the image.
+EXTRA_OECMAKE += " \
+    -DBUILD_HOST_AIDL=OFF \
+    -DBINDER_PROTOCOL=8 \
+"
 
 #
 # Configure Android Binder sources
@@ -65,12 +74,22 @@ do_configure:prepend() {
     cd ${B}
 }
 
+do_install:append() {
+    install -d ${D}${systemd_unitdir}/system
+    install -m 0644 ${WORKDIR}/servicemanager.service ${D}${systemd_unitdir}/system/
+}
+
+SYSTEMD_SERVICE:${PN} = "servicemanager.service"
+SYSTEMD_AUTO_ENABLE = "enable"
+
 FILES:${PN} += " \
+    ${libdir}/lib*.so* \
     ${MW_LIBDIR} \
     ${MW_LIBDIR}/* \
     ${MW_BINDIR} \
     ${MW_BINDIR}/* \
 "
+FILES:${PN}-dev = "${includedir}/*"
 
 #
 # QA
