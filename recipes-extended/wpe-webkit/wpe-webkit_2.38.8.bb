@@ -3,7 +3,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r21"
+PR  = "r22"
 
 # Temporary build fix
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
@@ -22,6 +22,7 @@ SRC_URI += "file://2.38.7/1410.patch"
 SRC_URI += "file://2.38.8/1628.patch"
 SRC_URI += "file://2.38.8/1689.patch"
 SRC_URI += "file://2.38.8/1719.patch"
+SRC_URI += "file://2.38.8/MSE_reopen_with_flush.patch"
 
 # Drop after issue is addressed and a corresponding PR is merged
 SRC_URI += "file://2.38.8/1456-RDKTV-35082-Workaround-premature-finishSeek.patch"
