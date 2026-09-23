@@ -1,0 +1,74 @@
+From 2339b8fa3c9eaf960e95ed787afd5e525dd7fd0d Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Wed, 23 Sep 2026 14:24:01 +0200
+Subject: [PATCH] [GStreamer][MSE] Flush track queues on MediaSource reopen
+
+Reopen MediaSource using a GStreamer pipeline flush to clear the EOS state.
+Print a warning if the reopening occurs during active playback.
+---
+ .../mse/MediaPlayerPrivateGStreamerMSE.cpp         |  3 +++
+ .../gstreamer/mse/MediaSourcePrivateGStreamer.cpp  | 14 ++++++++++++++
+ .../gstreamer/mse/WebKitMediaSourceGStreamer.cpp   |  5 ++---
+ 3 files changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
+index 5650576c8adf..2eaae143a6a3 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
+@@ -429,6 +429,9 @@ void MediaPlayerPrivateGStreamerMSE::setEosWithNoBuffers(bool eosWithNoBuffers)
+         changePipelineState(GST_STATE_READY);
+         if (!webkitGstCheckVersion(1, 24, 0))
+             m_ignoreErrors = false;
++    } else {
++        GST_DEBUG_OBJECT(pipeline(), "Clear m_isEndReached.");
++        m_isEndReached = false;
+     }
+ }
+ 
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/MediaSourcePrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/MediaSourcePrivateGStreamer.cpp
+index 17529f2ef8c2..667f226425d4 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/MediaSourcePrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/MediaSourcePrivateGStreamer.cpp
+@@ -151,9 +151,23 @@ void MediaSourcePrivateGStreamer::markEndOfStream(EndOfStreamStatus endOfStreamS
+ void MediaSourcePrivateGStreamer::unmarkEndOfStream()
+ {
+     ASSERT(isMainThread());
++    bool didEnd = m_playerPrivate.ended();
+     GST_DEBUG_OBJECT(m_playerPrivate.pipeline(), "Un-marking EOS");
+     m_playerPrivate.setEosWithNoBuffers(false);
+     m_isEnded = false;
++    if (m_hasAllTracks) {
++        if (didEnd) {
++            GST_DEBUG_OBJECT(m_playerPrivate.pipeline(), "Force flush tracks to clear EOS");
++        } else {
++            GST_WARNING_OBJECT(m_playerPrivate.pipeline(), "Force flush queued samples to clear EOS");
++        }
++        for (auto& privateSourceBuffer : m_sourceBuffers) {
++            auto& sourceBuffer = downcast<SourceBufferPrivateGStreamer>(privateSourceBuffer);
++            for (auto& [trackId, _] : sourceBuffer.tracks()) {
++                sourceBuffer.flush(trackId);
++            }
++        }
++    }
+ }
+ 
+ MediaPlayer::ReadyState MediaSourcePrivateGStreamer::readyState() const
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+index ba30b60224ba..a193ad3d0904 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+@@ -607,9 +607,8 @@ static void webKitMediaSrcLoop(void* userData)
+             GST_DEBUG_OBJECT(pad, "Pushed event was not handled: %" GST_PTR_FORMAT, event.get());
+ 
+         if (isEOS) {
+-            DataMutexLocker streamingMembersAfterEOS { stream->streamingMembersDataMutex };
+-            GST_INFO_OBJECT(pad, "EOS pushed, resetting wasStreamStartSent to allow re-sending STREAM_START.");
+-            streamingMembersAfterEOS->wasStreamStartSent = false;
++            GST_INFO_OBJECT(pad, "EOS pushed, pausing pad task.");
++            gst_pad_pause_task(pad);
+         }
+     } else
+         ASSERT_NOT_REACHED();
+-- 
+2.53.0
+
