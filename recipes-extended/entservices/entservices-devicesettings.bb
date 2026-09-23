@@ -66,6 +66,9 @@ CXXFLAGS:append = " \
     -I${STAGING_INCDIR}/mw/common/0.2.0.0/include \
     -I${STAGING_INCDIR}/mw/include \
     -I${STAGING_INCDIR}/android \
+    -Wno-error=attributes \
+    -Wno-error=unknown-pragmas \
+    -Wno-error=write-strings \
 "
 
 LDFLAGS:append = " \
