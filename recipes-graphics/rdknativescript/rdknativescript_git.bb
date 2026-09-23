@@ -19,7 +19,7 @@ PR = "r0"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};branch=test/network;"
 
 #Release 2.0.8
-SRCREV = "02168f4cfdca0cd7d19da1a49b4edc5205cbb052"
+SRCREV = "44e61d9aa917db1cc187b2e954891dc6757a1c43"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
