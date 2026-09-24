@@ -8,7 +8,7 @@
 # Please contact DL-Rialto@sky.uk if you want to change this file or in case of problems
 
 RIALTO_SRCREV ?= "f46c06a177783aafc1728893b64ee57bc43d999c"
-RIALTO_BRANCH ?= "feature/RDKEMW-25167"
+RIALTO_BRANCH ?= "SingleThreadTimer"
 RIALTO_VERSION ?= "v0.25.0"
 RIALTO_PR ?= "r0"
 
