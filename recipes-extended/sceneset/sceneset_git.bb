@@ -1,9 +1,9 @@
 SUMMARY = "This recipe provides the sceneset component for RDK "
 
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=407da69579b1d6dd0c1e099faeb9624b"
 
-PV = "0.7.0"
+PV = "0.8.0"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -33,7 +33,7 @@ SYSLOG-NG_SERVICE_sceneset = "sceneset.service"
 SYSLOG-NG_DESTINATION_sceneset = "sceneset.log"
 SYSLOG-NG_LOGRATE_sceneset = "high"
 
-SRCREV = "0fe82bbbc5d613b05d4cef3fa0545f8c731aef07"
+SRCREV = "69f43e6614933c1c7dd02467a31bde064f54ba1e"
 SRC_URI = "${CMF_GITHUB_ROOT}/sceneset;${CMF_GITHUB_SRC_URI_SUFFIX};name=sceneset"
 SRCREV_FORMAT = "sceneset"
 
