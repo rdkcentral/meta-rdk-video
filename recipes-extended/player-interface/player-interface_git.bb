@@ -7,7 +7,7 @@ PV = "1.0.4"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "f169bbc9064659a6e5a43d6437bc10e0ff2966c2"
+SRCREV_player-interface ?= "1c7cdd8c867095a50c093f4423b6dab39cb93617"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "feature/VPAAMP-959_PI"
 
