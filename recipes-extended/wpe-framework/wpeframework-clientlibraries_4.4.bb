@@ -10,23 +10,10 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 inherit python3native cmake pkgconfig
 
 SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https;branch=R4_4;name=wpeframework-clientlibraries \
-           file://r4.4/Library-version-Matched-With-Release-ClientLibs.patch \
-           file://r4.4/0004-R4-Security-Agent-Library-NameChange.patch \
-           file://r4.4/0004-Cipher-CipherNetflix-methods-return-type-changes.patch \
-           file://r4.4/R4.2_compilation_error_assert.patch \
-           file://r4.4/0001-Cryptography-CipherNetflix.r4.4.patch \
-           file://r4.4/0003-trace_l2-BuildError-fix.patch \
-           file://r4.4/RDK-55149.patch \
-           file://r4.4/0001-Add-vault-platform-case.patch \
-           file://r4.4/0001-Implement-IPersistent-interface-for-RPC-Vault.patch \
-           file://r4.4/0001-SecAPI-Re-acquire-sec-handle-after-flush.patch \
-           file://r4.4/0002-RDKEMW-19048-Release-and-reacquire-Vault-SecProcessor-for-deep-sleep.patch \
-           file://r4.4/0003-RDKEMW-20680-vault-processor-release-openssl-thunder-stubs.patch \
-           file://r4.4/0001-PowerManagerClient-library-implementation.patch \
            "
 
 # Sept 15, 2026
-SRCREV_wpeframework-clientlibraries = "7e45a65211f9a3f926d3dbd18679ccfcbc9ef559"
+SRCREV_wpeframework-clientlibraries = "2f4d80c1ea85bb540de58420b237e378ba1e3820"
 
 # ----------------------------------------------------------------------------
 
