@@ -1,0 +1,80 @@
+From fa0e8906b9d4602787855f93b52a0483ce5f8fd3 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Wed, 9 Sep 2026 18:31:26 +0000
+Subject: [PATCH 2/6] Add an option to pass package configuration args via
+ gn.py
+
+---
+ cobalt/build/gn.py | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/cobalt/build/gn.py b/cobalt/build/gn.py
+index 78d1d81784a..47408eae8f3 100755
+--- a/cobalt/build/gn.py
++++ b/cobalt/build/gn.py
+@@ -81,7 +81,7 @@ _COBALT_TVOS_PLATFORMS = [
+ 
+ # pylint: disable=too-many-positional-arguments
+ def write_build_args(build_args_path, platform_args_path, build_type, use_rbe,
+-                     use_coverage, use_sccache):
++                     use_coverage, use_sccache, rdkargs):
+   """ Write args file, modifying settings for config"""
+   gen_comment = '# Set by gn.py'
+   with open(build_args_path, 'w', encoding='utf-8') as f:
+@@ -96,11 +96,14 @@ def write_build_args(build_args_path, platform_args_path, build_type, use_rbe,
+     f.write(f'import("//{platform_args_path}")\n')
+     if use_coverage:
+       f.write(f'import("//cobalt/build/configs/coverage.gn") {gen_comment}\n')
++    if rdkargs:
++      for arg in rdkargs.split():
++        f.write(f'{arg} {gen_comment}\n')
+ 
+ 
+ def configure_out_directory(out_directory: str, platform: str, build_type: str,
+                             use_rbe: bool, gn_gen_args: List[str], *,
+-                            use_coverage: bool, use_sccache: bool):
++                            use_coverage: bool, use_sccache: bool, rdkargs: str):
+   Path(out_directory).mkdir(parents=True, exist_ok=True)
+   platform_path = f'cobalt/build/configs/{platform}'
+   dst_args_gn_file = os.path.join(out_directory, 'args.gn')
+@@ -114,7 +117,7 @@ def configure_out_directory(out_directory: str, platform: str, build_type: str,
+           'Old file was copied to stale_args.gn.')
+ 
+   write_build_args(dst_args_gn_file, src_args_gn_file, build_type, use_rbe,
+-                   use_coverage, use_sccache)
++                   use_coverage, use_sccache, rdkargs)
+ 
+   gn_command = ['gn', 'gen', out_directory] + gn_gen_args
+   print('Running', ' '.join(gn_command))
+@@ -172,6 +175,8 @@ def parse_args():
+   # Consume --args to avoid passing to gn gen, overriding args.gn file.
+   parser.add_argument('--args', help=argparse.SUPPRESS)
+ 
++  parser.add_argument('--rdkargs', help=argparse.SUPPRESS)
++
+   script_args, gen_args = parser.parse_known_args()
+ 
+   if script_args.platform == 'linux':
+@@ -183,6 +188,9 @@ def parse_args():
+   if script_args.args:
+     print('WARNING: \'--args\' was ignored to avoid overriding args.gn file.')
+ 
++  if script_args.rdkargs:
++    print(f'rdkargs: {script_args.rdkargs}')
++
+   return script_args, gen_args
+ 
+ 
+@@ -200,7 +208,8 @@ def main():
+       not script_args.no_rbe,
+       gen_args,
+       use_coverage=script_args.coverage,
+-      use_sccache=script_args.use_sccache)
++      use_sccache=script_args.use_sccache,
++      rdkargs=script_args.rdkargs)
+ 
+ 
+ if __name__ == '__main__':
+-- 
+2.34.1
+
