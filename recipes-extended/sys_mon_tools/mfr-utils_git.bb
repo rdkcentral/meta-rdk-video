@@ -5,11 +5,11 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PV = "1.0.11"
-PR = "r0"
+PR = "r1"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 
-SRCREV_mfr-utils = "7778a631ba1360379d6d30f0c67a9b5fb458fd59"
+SRCREV_mfr-utils = "f6439f53b1f0dcd611dad206a910095613cd2004"
 SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX};name=mfr-utils"
 S = "${WORKDIR}/git"
 
