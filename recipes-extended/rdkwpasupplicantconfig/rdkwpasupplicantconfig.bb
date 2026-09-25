@@ -8,7 +8,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SECTION = "base"
 DEPENDS = "systemd"
-RDEPENDS:${PN} = "wpa-supplicant systemd"
+RDEPENDS:${PN} = "wpa-supplicant systemd iw"
 
 inherit systemd
 
@@ -17,13 +17,26 @@ SRC_URI = "file://prepareWpaSuppConfig.sh"
 SRC_URI += "file://00-wpa-supplicant.conf"
 SRC_URI += "file://wpa_supplicant.logging"
 
+# WiFi regulatory domain, derived from the RDKE_REGION_<CC> distro feature that the region
+# config layer adds (e.g. rdke-region-us-config -> RDKE_REGION_US). New regions must be added
+# here. Note UK maps to GB, the ISO 3166-1 alpha-2 code the regulatory database expects.
+WIFI_COUNTRY_CODE ?= "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_US', 'US', \
+                        bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', 'GB', \
+                        bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_IT', 'IT', \
+                        bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_DE', 'DE', \
+                        bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_AU', 'AU', \
+                        'US', d), d), d), d), d)}"
+
 do_install() {
     install -d ${D}${base_libdir}/rdk/
     install -d ${D}${sysconfdir}
     install -m 0755 ${WORKDIR}/prepareWpaSuppConfig.sh ${D}${base_libdir}/rdk
+    sed -i 's/@WIFI_COUNTRY_CODE@/${WIFI_COUNTRY_CODE}/' ${D}${base_libdir}/rdk/prepareWpaSuppConfig.sh
     install -m 0644 ${WORKDIR}/wpa_supplicant.logging ${D}${sysconfdir}
     install -D -m 0644 ${WORKDIR}/00-wpa-supplicant.conf ${D}${systemd_unitdir}/system/wpa_supplicant.service.d/00-wpa-supplicant.conf
 }
+
+do_install[vardeps] += "WIFI_COUNTRY_CODE"
 
 FILES:${PN} += " ${base_libdir}/rdk/prepareWpaSuppConfig.sh"
 FILES:${PN} += " ${systemd_unitdir}/system/wpa_supplicant.service.d/*"

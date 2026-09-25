@@ -30,6 +30,8 @@ WPA_P2P_SUPP_ARGS=""
 # Protected Management Frames - 0-Disabled, 1-Optional, 2-Required
 PMF_CONFIG=1
 THIS_SCRIPT=`basename "$0"`
+# Alpha-2 country code, substituted at build time from the regional config
+COUNTRY_CODE="@WIFI_COUNTRY_CODE@"
 
 log ()
 {
@@ -60,18 +62,9 @@ while ! mkdir -p "$WPA_SUPP_CONF_DIR" &> /dev/null;do
     sleep 3
 done
 
-# Fetch alpha-2 country code from driver using iw
-COUNTRY_CODE=$(sed -rn 's/.*country ([A-Z]{2}):.*/\1/p' <<< `iw reg get`)
-if [ -z "$COUNTRY_CODE" ]; then
-    log "Failed to get country code from iw, trying to fetch using wl"
-    COUNTRY_CODE=`wl country | cut -f 1 -d " "`
-    if [ -z "$COUNTRY_CODE" ]
-    then
-        log "Country code is still empty from wl, Lets set it to default US"
-        COUNTRY_CODE="US"
-    fi
-fi
 log "Setting WiFi Regulatory domain to $COUNTRY_CODE."
+iw reg set $COUNTRY_CODE
+log "WiFi Regulatory domain in use: `iw reg get | grep '^country' | tail -1`"
 # Generate wpa_supplicant.conf
 # 1. If the file is not present, create one and fill it with the ctrl_interface/country values
 # 2. If the file is present and ctrl_interface is missing, recreate the file with proper values
@@ -91,10 +84,13 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
 		sed -i "/bssid=/d" $WPA_SUPP_CONF_FILE
         sed -i "s/key_mgmt=OPEN/key_mgmt=NONE/g" $WPA_SUPP_CONF_FILE
 		sed -i "/update_config/d" $WPA_SUPP_CONF_FILE
-        if grep "country=" "$WPA_SUPP_CONF_FILE"; then
-            log "Country code is present , No need to change"
+        if grep -q "^country=$COUNTRY_CODE$" $WPA_SUPP_CONF_FILE; then
+            log "Country code $COUNTRY_CODE is present, No need to change"
+        elif grep -q "^country=" $WPA_SUPP_CONF_FILE; then
+            log "Updating country code to $COUNTRY_CODE"
+            sed -i "s/^country=.*/country=$COUNTRY_CODE/" $WPA_SUPP_CONF_FILE
         else
-            sed -i "2acountry=$COUNTRY_CODE" $WPA_SUPP_CONF_FILE
+            sed -i "1icountry=$COUNTRY_CODE" $WPA_SUPP_CONF_FILE
         fi
     else
         log "$WPA_SUPP_CONF_FILE file exists, Updating missing configurations..."
