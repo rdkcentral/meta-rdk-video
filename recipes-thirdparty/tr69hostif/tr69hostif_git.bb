@@ -4,10 +4,10 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=76ae13a6bce633447ea2284294f073c2"
 
-SRCREV = "e9e7a285c4796916841c93252092db986d642aa5"
+SRCREV = "6bc007177ca01e66b10c23843400e675e79ff668"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
-PV = "1.5.8"
+PV = "1.5.9-alpha"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 S = "${WORKDIR}/git"
@@ -18,11 +18,15 @@ DEPENDS = "iarmbus iarmmgrs e2fsprogs libsoup libsyswrapper yajl \
 	  "
 DEPENDS:append = " rdk-logger libparodus parodus ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d)}"
 
+DEPENDS += " opentelemetry-cpp "
+
 DEPENDS += " python-lxml-native"
 DEPENDS:append = " python3-lxml-native"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetooth-mgr', '',d)}"
 RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' bluetooth-mgr', '',d)}"
+
+RDEPENDS:${PN}:append = " rdk-otel-collector "
 
 DEPENDS += "safec-common-wrapper"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
