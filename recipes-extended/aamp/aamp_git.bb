@@ -8,6 +8,10 @@ PR ?= "r0"
 
 SRCREV_FORMAT = "aamp"
 
+AAMP_BRANCH = "feature/SERXIONE-9006"
+CMF_GITHUB_BRANCH = "branch=${AAMP_BRANCH}"
+SRCREV_aamp = "eafc3c20cd7801901e2e25b309e6e413c375f5d5"
+
 inherit pkgconfig
 
 DEPENDS += "curl libdash libxml2 cjson iarmmgrs wpeframework readline"
