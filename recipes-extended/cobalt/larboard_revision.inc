@@ -1,6 +1,6 @@
 LARBOARD_SRC_URI = "${CMF_GITHUB_ROOT}/larboard"
 
-LARBOARD_SRCREV_25 = "8d006792d5f86e5d635b8eb2fa9ef16c19673de2"
+LARBOARD_SRCREV_25 = "ac684073548b497ee6788c8fc22015498c6907ca"
 
 # Required for unmerged PR commits
 LARBOARD_SRC_URI:append = ";nobranch=1"
