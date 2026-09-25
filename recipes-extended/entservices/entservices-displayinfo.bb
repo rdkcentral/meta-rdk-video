@@ -2,8 +2,8 @@ SUMMARY = "ENTServices displayinfo plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=0545acf8134821be0c0b6cb6d4603200"
 
-PV = "1.2.7"
-PR = "r0"
+PV = "1.2.8_Test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displayinfo;${CMF_GITHUB_SRC_URI_SUFFI
            file://rdkservices.ini \
           "
 
-# Release version - 1.2.7
-SRCREV = "06b0cb939915f8f2e2e5b64f0a394b6deb1dadf9"
+# Release version - 1.2.8
+SRCREV = "8fbf30511408fdb82ef100a360f43f881df0efad"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -22,11 +22,6 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
-
-
-
-
-
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'link_localtime', ' -DBUILD_ENABLE_LINK_LOCALTIME=ON', '',d)}"
 
 DEPENDS += "wpeframework wpeframework-tools-native"
@@ -55,7 +50,6 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[displayinfo]          = "-DPLUGIN_DISPLAYINFO=ON  -DUSE_DEVICESETTINGS=1,-DPLUGIN_DISPLAYINFO=OFF,iarmbus iarmmgrs drm entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal virtual/vendor-displayinfo-soc,iarmbus libdrm entservices-apis entservices-helpers devicesettings virtual/vendor-displayinfo-soc"
 
 # ----------------------------------------------------------------------------
-
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \

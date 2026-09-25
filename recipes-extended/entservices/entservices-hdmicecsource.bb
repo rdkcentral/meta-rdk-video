@@ -2,8 +2,8 @@ SUMMARY = "ENTServices hdmicecsource plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.2.9"
-PR = "r0"
+PV = "1.2.8_Test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUFFIX} \
            "
 
-# Release version - 1.2.9
-SRCREV = "624d5e12f7b487f680ef561f2281a1f086e8e2e9"
+# Release version - 1.2.8
+SRCREV = "c6bd6691f882ddafcbb590e195ef86eaf1c0cb16"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -49,7 +49,6 @@ HDMICEC_RDEPS:vdevice_x86-64-mw = "iarmbus hdmicec entservices-helpers"
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[hdmicecsource]        = "-DPLUGIN_HDMICECSOURCE=ON,-DPLUGIN_HDMICECSOURCE=OFF,${HDMICEC_DEPS},${HDMICEC_RDEPS}"
-
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
