@@ -2,8 +2,8 @@ SUMMARY = "ENTServices Playerinfo plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=b8674f44703ede95bec14083251335db"
 
-PV = "1.1.4"
-PR = "r0"
+PV = "1.1.4_Test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -16,8 +16,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-playerinfo;${CMF_GITHUB_SRC_URI_SUFFIX
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
           
-# Release version - 1.0.3
-SRCREV = "a000d1e3dd5b264e32180d694e9f376a47b5e9bb"
+# Release version - 1.0.4
+SRCREV = "02ec1510f07e2cfae90a3be0386ed68b96eab367"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
@@ -69,7 +69,7 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[playerinfo]           = "-DPLUGIN_PLAYERINFO=ON -DUSE_DEVICESETTINGS=1,-DPLUGIN_PLAYERINFO=OFF,iarmbus iarmmgrs entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal gstreamer1.0,iarmbus entservices-apis entservices-helpers devicesettings gstreamer1.0"
 
 # ----------------------------------------------------------------------------
-
+EXTRA_OECMAKE += " -DUSE_DEVICESETTING_PLUGIN=ON"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
