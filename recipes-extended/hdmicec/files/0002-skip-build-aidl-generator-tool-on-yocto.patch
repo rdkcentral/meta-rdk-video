@@ -1,0 +1,16 @@
+diff --git a/setup-env.sh b/setup-env.sh
+index 9e3dd0b..7e45da8 100755
+--- a/setup-env.sh
++++ b/setup-env.sh
+@@ -295,6 +295,11 @@ build_binder_examples() {
+ ###########################################################
+ build_aidl_generator_tool() {
+
++    if [ -n "${YOCTO_SKIP_AIDL}" ]; then
++        LOGI "Skipping AIDL generator tool build for Yocto"
++        return 0
++    fi
++
+     LOGI "Build linux binder idl generator tool"
+     ${CD} ${WORK_DIR}
+
