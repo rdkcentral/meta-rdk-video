@@ -30,6 +30,8 @@ EXTRA_OECONF += "${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', '--ena
 EXTRA_OECONF += "--enable-iarmevent"
 
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
+LDFLAGS:append = " -lRDKMfrLib"
+RDEPENDS:${PN} += "virtual/mfrlib"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
