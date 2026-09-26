@@ -1,5 +1,5 @@
 diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
-index 70df2b3..c2182d2 100644
+index 70df2b3..1999bec 100644
 --- a/plugin/FrameworkRPC.cpp
 +++ b/plugin/FrameworkRPC.cpp
 @@ -287,7 +287,7 @@ namespace Plugin {
@@ -206,7 +206,7 @@ index 70df2b3..c2182d2 100644
                              TRACE(Trace::Information, ("Server::Session::CreateSessionBuffer(%s,%s,%s) => %p", _keySystem.c_str(), _sessionId.c_str(), BufferId().c_str(), this));
                          } else {
                              _adminLock.Unlock();
-@@ -849,6 +943,159 @@ namespace Plugin {
+@@ -849,6 +943,179 @@ namespace Plugin {
                  return result;
              }
  
@@ -363,10 +363,30 @@ index 70df2b3..c2182d2 100644
 +                    return result;
 +            }
 +
++           Exchange::OCDM_RESULT GetLibraryVersion(const std::string& keySystem, uint8_t* versionOut, uint32_t versionOutSize) const override
++           {
++                    Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++                    CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
++                    // TODO: if versionOutSize is not equal to sizeof(uint32_t), this will write out of bounds.
++                    if (system != nullptr) {
++                        CDMi::CDMi_RESULT mediasystem_return = system->GetLibraryVersion(reinterpret_cast<uint32_t*>(versionOut));
++                        if (mediasystem_return == CDMi::CDMi_RESULT::CDMi_SUCCESS)
++                        {
++                            result = Exchange::OCDM_SUCCESS;
++                        }
++                        else
++                        {
++                            result = Exchange::OCDM_S_FALSE;
++                        }
++                    }
++
++                    return result;
++            }
++
              Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& bufferSize, uint8_t buffer[]) const override {
                  Exchange::OCDM_RESULT result = Exchange::OCDM_KEYSYSTEM_NOT_SUPPORTED;
  
-@@ -921,10 +1168,21 @@ namespace Plugin {
+@@ -921,10 +1188,21 @@ namespace Plugin {
                       {
                           if (sessionInterface != nullptr)
                           {
