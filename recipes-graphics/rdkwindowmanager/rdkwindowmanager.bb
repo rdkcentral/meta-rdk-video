@@ -59,6 +59,11 @@ do_install() {
 
     install -d ${D}${includedir}/rdkwindowmanager/include/
     install -m 644 ${S}/include/*.h ${D}${includedir}/rdkwindowmanager/include/
+
+   ## Write component version info to /etc
+   install -d ${D}${sysconfdir}
+   echo "RDK_WINDOW_MANAGER_PV = \"${PV}\"" >  ${D}${sysconfdir}/rdkwindowmanagerversion.txt
+   echo "RDK_WINDOW_MANAGER_SHA = \"${SRCREV}\"" >> ${D}${sysconfdir}/rdkwindowmanagerversion.txt
 }
 
 INSANE_SKIP:${PN} = "installed-vs-shipped"
@@ -76,4 +81,4 @@ FILES:${PN} += "${libdir}/plugins/westeros/libwstplugin_rdkwmfireboltwm.so"
 FILES:${PN} += "${bindir}/rdkwindowmanager"
 FILES:${PN} += "${bindir}/rdkwindowmanagertest"
 FILES:${PN} += "${bindir}/rdkwmtest"
-
+FILES:${PN} += "${sysconfdir}/rdkwindowmanagerversion.txt"
