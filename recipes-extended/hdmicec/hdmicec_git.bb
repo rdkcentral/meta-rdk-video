@@ -8,7 +8,7 @@ PV = "1.0.11"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV_hdmicec = "a140e96fc59986130b5875c9d349cbd0455f5ea8"
+SRCREV_hdmicec = "a4e55f1d00aa3d572561a27c0df304c5f937a378"
 SRCREV_hdmicec:vdevice_x86-64-mw = "57df60fdf8866460613735af1d2e39caa3939242"
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
@@ -105,10 +105,11 @@ do_configure:append() {
 
     # Patch the generated Makefile to:
     #  1. link the AIDL stubs archive into libRCEC.so so typeinfo symbols are defined
-    #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
-        #     runtime from the binder provider in the target image
+    #  2. link libdshalcli so dsGetDisplay uses the Device Settings client API
+    #  3. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
+    #     runtime from the binder provider in the target image
     sed -i \
-                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = -lhdmicec-cpp \${top_builddir}/osal/src/libRCECOSHal.la|" \
+                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = -lhdmicec-cpp \${top_builddir}/osal/src/libRCECOSHal.la -ldshalcli|" \
                                 "${B}/ccec/src/Makefile"
 
     sed -i \
