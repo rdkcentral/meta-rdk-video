@@ -7,9 +7,6 @@ LIC_FILES_CHKSUM = " \
     file://../larboard/LICENSE;md5=a1045f140d2e71b4e089875cd5d07e42 \
 "
 
-inherit features_check
-CONFLICT_DISTRO_FEATURES = "cobalt-24"
-
 require larboard_revision.inc
 require rdke-cobalt-buildfix.inc
 
@@ -18,7 +15,7 @@ TOOLCHAIN = "gcc"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI  = "git://github.com/youtube/cobalt.git;protocol=https;name=cobalt;branch=25.lts.stable"
-SRC_URI += "${LARBOARD_SRC_URI};protocol=${CMF_GITHUB_PROTOCOL};destsuffix=larboard;name=larboard;branch=develop"
+SRC_URI += "${LARBOARD_SRC_URI};protocol=${CMF_GITHUB_PROTOCOL};destsuffix=larboard;name=larboard;branch=25.lts.stable"
 SRC_URI += "file://25/0001-Include-RDK-platforms.patch"
 SRC_URI += "file://25/0002-Fix-crashpad-build.patch"
 SRC_URI += "file://25/0003-breakpad-add-mapping-info.patch"
@@ -30,7 +27,7 @@ SRC_URI += "file://25/0007-Prevent-cobalt-unloading.patch"
 CR = "40"
 PR = "r${CR}"
 SRCREV_cobalt = "25.lts.${CR}"
-SRCREV_larboard = "${LARBOARD_SRCREV_DEV}"
+SRCREV_larboard = "${LARBOARD_SRCREV_25}"
 SRCREV_FORMAT = "cobalt_larboard"
 PV .= "+git${SRCPV}"
 
