@@ -5,9 +5,8 @@ voices it out through gstreamer"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${THISDIR}/files/Apache-2.0;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-DEPENDS += "gstreamer1.0-plugins-base rdk-logger wpeframework wpeframework-clientlibraries"
+DEPENDS += "gstreamer1.0-plugins-base firebolt-cpp-client"
 
-SRCREV = "0845f4da2b886e6cc707077c8f290cc279a84e11"
 
 PV = "1.0.5"
 PR = "r0"
@@ -18,13 +17,15 @@ DEPENDS += "breakpad breakpad-wrapper"
 EXTRA_OECMAKE += "-DENABLE_BREAKPAD=1"
 BREAKPAD_BIN = " TTSEngine *.so "
 
-SRC_URI = "${CMF_GITHUB_ROOT}/ttsengine;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI = "git://github.com/rdkcentral/ttsengine.git;protocol=https;branch=feature/RDKEMW-16133"
+SRCREV = "0da3439d2e688eb1fcf3388c6610715aa1779677"
 
 S = "${WORKDIR}/git"
 
 CXXFLAGS += " -I${STAGING_INCDIR}/Firebolt -I${STAGING_INCDIR}/glib-2.0 -I${STAGING_INCDIR}/../usr/lib/glib-2.0/include "
 CXXFLAGS += " -std=gnu++17"
 EXTRA_OECMAKE:remove = " -std=gnu++11"
+EXTRA_OECMAKE:append = " -DTTS_DEFAULT_BACKEND=firebolt -DENABLE_FIREBOLT_ONLY=ON"
 CXXFLAGS:remove = " -std=gnu++11"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
