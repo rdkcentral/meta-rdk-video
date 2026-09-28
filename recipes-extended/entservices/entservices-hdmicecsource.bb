@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
 PV = "1.2.9_Test"
-PR = "r1"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUF
            "
 
 # Release version - 1.2.9
-SRCREV = "6b64b552ef4f46895c3aff63e9e6c60cb89868cd"
+SRCREV = "52d8f8d70129751cd26f9ab48ec6680c60e6d7e4"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
