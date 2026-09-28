@@ -7,7 +7,7 @@ PV = "3.6.7e"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "31b55991b21917f2d143b6019e81748a792352fb"
+SRCREV_aamp ?= "053306d447f7268b16793cb540bfc06e25e3c6d5"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "feature/VPAAMP-1189_1.6.X_vipa"
