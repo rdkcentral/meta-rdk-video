@@ -1,6 +1,6 @@
 SUMMARY = "ENTServices PersistentStore plugin"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://../LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
+LIC_FILES_CHKSUM = "file://../LICENSE;md5=943bbbdffda09ea061f1ee2d8cf5f7c09c20ae6d"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-persistentstore;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
