@@ -31,7 +31,7 @@ PR = "r${CR}"
 
 SRCREV_cobalt = "3befd332486952f6603ae3baf2a8713878d6e200"
 SRCREV_depottools = "2cea9cdd785391335d448773124631cb711225e2"
-SRCREV_larboard = "f296c2792a63bd3d34dba786c866ac7bdc9a5046"
+SRCREV_larboard = "c5fd7fd0868844a816e11caa817ef58a41d28dbb"
 
 SRCREV_FORMAT = "cobalt_larboard"
 PV .= "+git${SRCPV}"
@@ -55,6 +55,8 @@ def get_cobalt_platform(d):
         return 'rdk-arm64'
     elif target_arch == 'arm':
         return 'rdk-arm'
+    elif target_arch == 'x86_64':
+        return 'rdk-x64'
     else:
         bb.fatal("Unsupported target architecture: {}".format(target_arch))
 
@@ -98,6 +100,14 @@ python() {
     """
     d.delVar("CCACHE")
 }
+
+do_link_rialto_ocdm_pkgconfig() {
+  if [ ! -e "${RECIPE_SYSROOT}${exec_prefix}/${baselib}/pkgconfig/ocdm.pc" ] && \
+     [ -e "${RECIPE_SYSROOT}${exec_prefix}/${baselib}/pkgconfig/ocdmRialto.pc" ]; then
+     ln -s ocdmRialto.pc "${RECIPE_SYSROOT}${exec_prefix}/${baselib}/pkgconfig/ocdm.pc"
+  fi
+}
+do_prepare_recipe_sysroot[postfuncs] += "do_link_rialto_ocdm_pkgconfig"
 
 do_setup_ca_certs_env() {
     # workaround broken ca-certificates-native
