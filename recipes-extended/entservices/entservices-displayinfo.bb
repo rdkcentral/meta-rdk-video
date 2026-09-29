@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displayinfo;${CMF_GITHUB_SRC_URI_SUFFI
           "
 
 # Release version - 1.2.8
-SRCREV = "c86c72940938a9b27e27d1126b250958e7bbed03"
+SRCREV = "e58a29144fb63edb6fabee68736bc3b2a1e5ba8e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
