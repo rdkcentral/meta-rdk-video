@@ -19,9 +19,10 @@ DEPENDS:remove:vdevice_x86-64-mw = "devicesettings devicesettings-hal-headers ia
 
 RDEPENDS:${PN} = " devicesettings telemetry"
 RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
+RDEPENDS:${PN}:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw-hdmicec rdk-halif-aidl-mw-common libbinderrdk"
 
 DEPENDS += "safec-common-wrapper"
-DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinder"
+DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw libbinderrdk"
 
 ASNEEDED = ""
 ALLOW_EMPTY:${PN} = "1"
@@ -50,49 +51,18 @@ CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-confi
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
+LDFLAGS:append:vdevice_x86-64-mw = " \
+    -L${STAGING_DIR_HOST}${prefix}/mw/lib/binder -L${STAGING_LIBDIR}/mw/rdk-halif-aidl \
+"
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
-CFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
-CXXFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
+CFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/mw/hdmicec/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include -I${STAGING_INCDIR}/android"
+CXXFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/mw/hdmicec/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include -I${STAGING_INCDIR}/android"
 
 INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/ds-hal \
     "
-
-
-do_compile:prepend:vdevice_x86-64-mw() {
-        OBJ_DIR="${B}/aidl_helpers"
-        mkdir -p "${OBJ_DIR}"
-        AIDL_CPP_DIR=$(find ${TMPDIR}/work \
-                -path "*/rdk-halif-aidl/*/build/current/cpp/com/rdk/hal" \
-                ! -path "*/package/*" \
-                ! -path "*/packages-split/*" \
-                ! -path "*/image/*" \
-                -type d 2>/dev/null | head -n 1)
-        if [ -z "${AIDL_CPP_DIR}" ]; then
-                bbfatal "Unable to locate generated AIDL C++ sources for rdk-halif-aidl under ${TMPDIR}/work"
-        fi
-        HELPER_DIR="${AIDL_CPP_DIR}/hdmicec"
-        HAL_DIR="${AIDL_CPP_DIR}"
-        INCFLAGS="-I${STAGING_INCDIR} -I${STAGING_INCDIR}/com/rdk/hal/hdmicec -I${STAGING_INCDIR}/binder -I${STAGING_INCDIR}/android"
-        for f in IHdmiCec IHdmiCecController IHdmiCecEventListener Property SendMessageStatus State; do
-                ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
-                        -c "${HELPER_DIR}/${f}.cpp" -o "${OBJ_DIR}/${f}.o"
-        done
-        ${CXX} ${CXXFLAGS} ${INCFLAGS} -fPIC \
-                -c "${HAL_DIR}/PropertyValue.cpp" -o "${OBJ_DIR}/PropertyValue.o"
-        ${AR} rcs "${B}/libhdmicec_aidl_helpers.a" \
-                "${OBJ_DIR}/IHdmiCec.o" \
-                "${OBJ_DIR}/IHdmiCecController.o" \
-                "${OBJ_DIR}/IHdmiCecEventListener.o" \
-                "${OBJ_DIR}/Property.o" \
-                "${OBJ_DIR}/SendMessageStatus.o" \
-                "${OBJ_DIR}/State.o" \
-                "${OBJ_DIR}/PropertyValue.o"
-}
-
-
 
 do_install:append() {
 #        install -d ${D}${includedir}/rdk/hdmicec
@@ -110,7 +80,7 @@ do_configure:append:vdevice_x86-64-mw() {
     #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
                 #     runtime from libbinder.so
     sed -i \
-                                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = ${B}/libhdmicec_aidl_helpers.a \${top_builddir}/osal/src/libRCECOSHal.la|" \
+                                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = -lhdmicec-cpp \${top_builddir}/osal/src/libRCECOSHal.la|" \
       ${B}/ccec/src/Makefile
 
     sed -i \
