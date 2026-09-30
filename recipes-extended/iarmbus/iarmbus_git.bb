@@ -21,7 +21,7 @@ S = "${WORKDIR}/git"
 CFLAGS += "-DENABLE_SD_NOTIFY"
 LDFLAGS += "-lsystemd"
 
-EXTRA_OECONF += "--enable-otel-tp"
+EXTRA_OECONF += "--enable-tp"
 
 DEPENDS="libxml2 dbus glib-2.0"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
