@@ -27,9 +27,9 @@ RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth',' 
 DEPENDS += "safec-common-wrapper"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 
-# Add wpeframework-clientlibraries dependency
-DEPENDS += "wpeframework-clientlibraries"
-RDEPENDS:${PN}:append = " wpeframework-clientlibraries "
+# Add powercontroller dependency
+DEPENDS += "entservices-powermanager"
+RDEPENDS:${PN}:append = " entservices-powermanager"
 LDFLAGS += "-lWPEFrameworkPowerController"
 
 # Add remotedebugger dependency

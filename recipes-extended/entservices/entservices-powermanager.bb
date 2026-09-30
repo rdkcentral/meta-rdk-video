@@ -14,7 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFF
           "
 
 # Release version - 1.4.9
-SRCREV = "6917fb8256851598e5ce04e98c3340634078e630"
+SRCREV = "9702ccea82cab57615089a596cb3c1cbb5c1fdaf"
 SRCREV:vdevice_x86-64-mw = "c7519329de6b1af6ac9e8a64694ffc64bf8830c3"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -208,6 +208,7 @@ do_install:append() {
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
+FILES:${PN}-dev += "${includedir}/WPEFramework/powercontroller ${libdir}/pkgconfig/*.pc ${libdir}/cmake/*"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so dev-deps"
 INSANE_SKIP:${PN}-dbg += "libdir"
