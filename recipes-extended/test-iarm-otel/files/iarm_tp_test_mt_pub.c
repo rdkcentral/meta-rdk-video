@@ -1,13 +1,13 @@
 /*
  * iarm_tp_test_mt_pub.c — IARM traceparent pass-through test: concurrency stress
  *
- * Spawns N worker threads, each repeatedly calling IARM_Bus_SetTraceparent()
- * immediately followed by IARM_Bus_Call() / IARM_Bus_BroadcastEvent() from its
- * own thread, all against the same connected IARM_Bus_Init() member.
+ * Spawns N worker threads, each repeatedly starting its own real distributed
+ * trace via rdk_otlp, then immediately calling IARM_Bus_SetTraceparent()
+ * followed by IARM_Bus_Call() / IARM_Bus_BroadcastEvent() from its own thread,
+ * all against the same connected IARM_Bus_Init() member.
  *
- * Each thread generates its own synthetic-but-valid W3C traceparent per call
- * (no dependency on any tracing library — plain deterministic hex strings),
- * embeds it in the payload it sends, and:
+ * Each thread's traceparent comes from its own active span (rdk_otlp keys the
+ * current span per-thread), is embedded in the payload it sends, and:
  *   - RPC path:   the subscriber echoes back whatever IARM_Bus_GetTraceparent()
  *                 returned inside its handler; this process compares the echo
  *                 to what it set for that specific call.
@@ -25,6 +25,7 @@
  */
 
 #include "libIBus.h"
+#include "rdk_otlp_instrumentation.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,12 +62,19 @@ typedef struct {
     int event_sent;
 } ThreadCtx_t;
 
-/* Deterministic, per-(thread,iteration,tag) valid W3C traceparent - no tracer involved. */
-static void make_synthetic_traceparent(char *out, size_t outsz, int thread_id, int iteration, unsigned tag)
+/* Starts a new real distributed trace on the calling thread and returns a
+ * caller-owned copy of its traceparent (the tracer's own buffer is reused on
+ * the next call from this thread, so we must copy it out immediately). */
+static int get_fresh_traceparent(char *out, size_t outsz, const char *operation)
 {
-    unsigned long long span_val = ((unsigned long long)(unsigned)thread_id << 32) | (unsigned)iteration;
-    snprintf(out, outsz, "00-%08x%08x%08x%08x-%016llx-01",
-             (unsigned)thread_id, (unsigned)iteration, tag, 0xA5A5A5A5u, span_val);
+    rdk_otlp_start_distributed_trace(MT_TEST_OWNER, operation);
+    const char *tp = rdk_otlp_get_current_traceparent();
+    if (!tp) {
+        rdk_otlp_finish_distributed_trace();
+        return 0;
+    }
+    snprintf(out, outsz, "%s", tp);
+    return 1;
 }
 
 static void *worker_thread(void *arg)
@@ -76,7 +84,12 @@ static void *worker_thread(void *arg)
     for (int i = 0; i < ctx->iterations; i++) {
         /* ── RPC round trip ─────────────────────────────────────────────── */
         char tp_rpc[TP_BUF_SIZE];
-        make_synthetic_traceparent(tp_rpc, sizeof(tp_rpc), ctx->thread_id, i, 0x1111u);
+        if (!get_fresh_traceparent(tp_rpc, sizeof(tp_rpc), "pub-mt-rpc")) {
+            ctx->rpc_fail++;
+            printf("[PUB][thread %d][iter %d] no active trace - skipping RPC\n",
+                   ctx->thread_id, i);
+            continue;
+        }
         IARM_Bus_SetTraceparent(tp_rpc);
 
         TestMtRpcArg_t rpc;
@@ -87,6 +100,7 @@ static void *worker_thread(void *arg)
 
         IARM_Result_t rc = IARM_Bus_Call("iarm_tp_test_mt_sub", MT_TEST_METHOD,
                                           &rpc, sizeof(rpc));
+        rdk_otlp_finish_distributed_trace();
         if (rc != IARM_RESULT_SUCCESS) {
             ctx->rpc_fail++;
             printf("[PUB][thread %d][iter %d] IARM_Bus_Call failed rc=%d\n",
@@ -101,7 +115,11 @@ static void *worker_thread(void *arg)
 
         /* ── Event broadcast, self-checked on the receiver side ───────────── */
         char tp_evt[TP_BUF_SIZE];
-        make_synthetic_traceparent(tp_evt, sizeof(tp_evt), ctx->thread_id, i, 0x2222u);
+        if (!get_fresh_traceparent(tp_evt, sizeof(tp_evt), "pub-mt-event")) {
+            printf("[PUB][thread %d][iter %d] no active trace - skipping event\n",
+                   ctx->thread_id, i);
+            continue;
+        }
         IARM_Bus_SetTraceparent(tp_evt);
 
         TestMtEventData_t ev;
@@ -112,6 +130,7 @@ static void *worker_thread(void *arg)
 
         IARM_Bus_BroadcastEvent(MT_TEST_OWNER, (IARM_EventId_t)MT_TEST_EVENT_ID,
                                  &ev, sizeof(ev));
+        rdk_otlp_finish_distributed_trace();
         ctx->event_sent++;
     }
 
@@ -130,6 +149,9 @@ int main(int argc, char **argv)
 
     printf("[PUB] Starting iarm_tp_test_mt_pub (pid %d) threads=%d iterations=%d\n",
            (int)getpid(), thread_count, iterations);
+
+    rdk_otlp_init("iarm-tp-mt-poc-pub", "1.0.0");
+    printf("[PUB] rdk_otlp_init done\n");
 
     IARM_Bus_Init("iarm_tp_test_mt_pub");
     IARM_Bus_Connect();
@@ -167,7 +189,8 @@ int main(int argc, char **argv)
     free(threads);
     free(ctxs);
 
-    sleep(1); /* let the last events land before the subscriber prints its own summary */
+    rdk_otlp_force_flush();
+    sleep(1); /* let the last events/spans land before the subscriber prints its own summary */
 
     printf("\n[PUB] ── Summary ──\n");
     printf("[PUB] RPC calls: ok=%d mismatch=%d failed=%d (expected %d total)\n",
@@ -177,6 +200,7 @@ int main(int argc, char **argv)
 
     IARM_Bus_Disconnect();
     IARM_Bus_Term();
+    rdk_otlp_shutdown();
 
     int rc = (total_mismatch == 0 && total_fail == 0) ? 0 : 1;
     printf("[PUB] %s\n", rc == 0 ? "PASS (RPC path)" : "FAIL (RPC path)");
