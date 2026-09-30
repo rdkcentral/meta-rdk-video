@@ -3,7 +3,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r20"
+PR  = "r21"
 
 # Temporary build fix
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
@@ -41,6 +41,7 @@ SRC_URI += "file://2.38.8/1611_Load-libWPEWebInspectorResources-from-widget.patc
 SRC_URI += "file://2.38.8/1626_Video_decoding_limit.patch"
 SRC_URI += "file://2.38.8/1470_Hide-KHR-khrplatform.h-header-under-ANGLE-directory.patch"
 SRC_URI += "file://2.38.8/1651_Disable_GPU_mem_check_for_service_workers.patch"
+SRC_URI += "file://2.38.8/MSE_pause_task_on_eos.patch"
 
 # Drop after libwpe upgrade
 SRC_URI += "file://2.38.8/RDK-54304-Fix-build-with-an-older-libpwe.patch"
