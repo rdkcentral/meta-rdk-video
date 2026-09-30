@@ -7,9 +7,9 @@ PV = "1.0.4"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "a2d85a788c6782b02adea7a6f3f17436fd27e8bd"
+SRCREV_player-interface ?= "86a62b1c12e65d03727441f5d5491e4e114c0a72"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "main"
+PLAYERINTERFACE_BRANCH ?= "feature/VPAAMP-959_PI"
 
 # Pass version/tag/rev info into CMake so they get baked into the library at build time
 EXTRA_OECMAKE += " -DPI_GIT_TAG=${PV}"
