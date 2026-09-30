@@ -44,7 +44,17 @@ add_executable(iarm_tp_test_sub iarm_tp_test_sub.c)
 target_include_directories(iarm_tp_test_sub PRIVATE ${COMMON_INCLUDES})
 target_link_libraries(iarm_tp_test_sub PRIVATE ${COMMON_LIBS})
 
+add_executable(iarm_tp_test_mt_pub iarm_tp_test_mt_pub.c)
+target_include_directories(iarm_tp_test_mt_pub PRIVATE ${COMMON_INCLUDES})
+target_link_libraries(iarm_tp_test_mt_pub PRIVATE ${COMMON_LIBS})
+
+add_executable(iarm_tp_test_mt_sub iarm_tp_test_mt_sub.c)
+target_include_directories(iarm_tp_test_mt_sub PRIVATE ${COMMON_INCLUDES})
+target_link_libraries(iarm_tp_test_mt_sub PRIVATE ${COMMON_LIBS})
+
 install(TARGETS iarm_tp_test_pub iarm_tp_test_sub
+        iarm_tp_test_mt_pub iarm_tp_test_mt_sub
         DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(PROGRAMS run_iarm_tp_test.sh
+        run_iarm_tp_mt_test.sh
         DESTINATION ${CMAKE_INSTALL_BINDIR})
