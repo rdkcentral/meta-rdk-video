@@ -62,9 +62,6 @@ while ! mkdir -p "$WPA_SUPP_CONF_DIR" &> /dev/null;do
     sleep 3
 done
 
-log "Setting WiFi Regulatory domain to $COUNTRY_CODE."
-iw reg set $COUNTRY_CODE
-log "WiFi Regulatory domain in use: `iw reg get | grep '^country' | tail -1`"
 # Generate wpa_supplicant.conf
 # 1. If the file is not present, create one and fill it with the ctrl_interface/country values
 # 2. If the file is present and ctrl_interface is missing, recreate the file with proper values
