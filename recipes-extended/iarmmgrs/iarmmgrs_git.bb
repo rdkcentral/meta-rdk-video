@@ -20,11 +20,6 @@ S = "${WORKDIR}/git"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 DEPENDS:append = " safec-common-wrapper"
 
-# Add powercontroller dependency
-DEPENDS += "entservices-powermanager"
-RDEPENDS:${PN}:append = " entservices-powermanager"
-LDFLAGS += "-lWPEFrameworkPowerController"
-
 # Telemetry Support
 DEPENDS:append = " telemetry"
 
@@ -97,7 +92,7 @@ INCLUDE_DIRS = " \
     -I${S}/deviceUpdateMgr \
     -I${S}/utils \
     -I${S}/deviceUpdateMgr/include \
-    -I${S}/ipMgr/include \
+    -I${S}/ipMgr/include 
     -I${S}/vrexmgr/include \
     -I=${includedir}/rdk/servicemanager/helpers \
     -I=${includedir}/rdk/servicemanager \
