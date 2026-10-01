@@ -10,8 +10,3 @@ LDFLAGS += "-lRDKMfrLib -lcjson"
 LDFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'dunfell', ' -lsafec-3.5.1',' -lsafec',d)}"
 RDEPENDS:${PN} += "iarmbus wpeframework  virtual/mfrlib cjson safec"
 
-# Add powercontroller dependency
-DEPENDS += "entservices-powermanager"
-RDEPENDS:${PN}:append = " entservices-powermanager"
-LDFLAGS += "-lWPEFrameworkPowerController"
-
