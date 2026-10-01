@@ -20,6 +20,11 @@ S = "${WORKDIR}/git"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
 DEPENDS:append = " safec-common-wrapper"
 
+# Add powercontroller dependency
+DEPENDS += "entservices-powermanager"
+RDEPENDS:${PN}:append = " entservices-powermanager"
+LDFLAGS += "-lWPEFrameworkPowerController"
+
 # Telemetry Support
 DEPENDS:append = " telemetry"
 
