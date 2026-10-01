@@ -25,6 +25,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 EXTRA_OECMAKE += " -DBUILD_ENABLE_THERMAL_PROTECTION=ON "
+EXTRA_OECMAKE += " -DPOWERCONTROLLER=ON "
 EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
     -DENABLE_POWERMANAGER_AIDL=ON \
     -DPOWERMANAGER_AIDL_STAGING_INCLUDE_DIR=${STAGING_INCDIR} \
@@ -207,9 +208,6 @@ do_install:append() {
 }
 
 # ----------------------------------------------------------------------------
-
-FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so dev-deps"
 INSANE_SKIP:${PN}-dbg += "libdir"
