@@ -92,7 +92,7 @@ INCLUDE_DIRS = " \
     -I${S}/deviceUpdateMgr \
     -I${S}/utils \
     -I${S}/deviceUpdateMgr/include \
-    -I${S}/ipMgr/include 
+    -I${S}/ipMgr/include \
     -I${S}/vrexmgr/include \
     -I=${includedir}/rdk/servicemanager/helpers \
     -I=${includedir}/rdk/servicemanager \
