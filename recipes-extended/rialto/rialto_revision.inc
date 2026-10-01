@@ -7,6 +7,6 @@
 #
 # Please contact DL-Rialto@sky.uk if you want to change this file or in case of problems
 
-RIALTO_VERSION ?= "7877afe3e8ab271c6ffa2f98276104b91120dae0"
+RIALTO_VERSION ?= "279d243e423917ae439c86e4d2a64a0f554e541d"
 RIALTO_OCDM_VERSION ?= "v0.6.1"
 RIALTO_GSTREAMER_VERSION ?= "v0.6.0"
