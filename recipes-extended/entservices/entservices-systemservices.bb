@@ -2,7 +2,7 @@ SUMMARY = "ENTServices systemservices plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.6.0.1"
+PV = "5d7e9f7eabeb3460716ef4798f0a17f44a21bd27"
 PR = "r0"
 
 S = "${WORKDIR}/git"
