@@ -2,7 +2,8 @@ SUMMARY = "ENTServices Connectivity plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV = "2add50287d1204ea2e9645728f01bfb8b6dbdb24"
+# Release version - 1.7.9
+PV = "436b89d05cf8df9f4bb7f5eff762d8863732a616"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -11,7 +12,6 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
-# Release version - 1.7.7
 SRCREV = "${PV}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -47,7 +47,7 @@ PACKAGECONFIG:remove = "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FE
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[bluetoothcontrol]     = "-DPLUGIN_BLUETOOTH=ON -DPLUGIN_BLUETOOTH_AUTOSTART=true,-DPLUGIN_BLUETOOTH=OFF,entservices-helpers iarmbus iarmmgrs bluetooth-mgr,bluez5 iarmbus entservices-helpers"
+PACKAGECONFIG[bluetoothcontrol]     = "-DPLUGIN_BLUETOOTH=ON -DPLUGIN_BLUETOOTH_AUTOSTART=true,-DPLUGIN_BLUETOOTH=OFF,entservices-helpers iarmbus iarmmgrs bluetooth-mgr,bluez5 iarmbus bluetooth-mgr entservices-helpers"
 PACKAGECONFIG[network]              = "-DPLUGIN_NETWORK=ON,-DPLUGIN_NETWORK=OFF,iarmbus iarmmgrs rfc,iarmbus rfc netsrvmgr"
 PACKAGECONFIG[wifimanager]          = "-DPLUGIN_WIFIMANAGER=ON,-DPLUGIN_WIFIMANAGER=OFF,netsrvmgr iarmbus iarmmgrs,iarmbus wpa-supplicant"
 
@@ -81,9 +81,5 @@ do_install:append() {
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
-# librdk_bluetooth.so.1's real provider ships from a prebuilt vendor IPK feed on some
-# products (not a recipe built in this bitbake run), so the shlibs-based file-rdeps QA
-# check can never see it here; the runtime dependency is still satisfied on-device via
-# RDEPENDS:${PN}'s virtual/vendor-bluetooth-sdk entry.
-INSANE_SKIP:${PN} += "libdir staticdev dev-so file-rdeps"
+INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
