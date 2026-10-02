@@ -22,7 +22,6 @@ SRC_URI += "${CMF_GITHUB_ROOT}/larboard;protocol=${CMF_GITHUB_PROTOCOL};destsuff
 SRC_URI += "file://27/0001-Add-RDK-platforms.patch"
 SRC_URI += "file://27/0002-Add-an-option-to-pass-package-configuration-args-via.patch"
 SRC_URI += "file://27/0003-Fix-location-of-src-folder.patch"
-SRC_URI += "file://27/0004-Disable-rewriting-of-paths-returned-by-pkg-config.patch"
 SRC_URI += "file://27/0005-Allow-starboard-implementation-set-rpath.patch"
 SRC_URI += "file://27/0006-Pickup-strip-binary-path-from-Yocto-environment.patch"
 
@@ -31,7 +30,7 @@ PR = "r${CR}"
 
 SRCREV_cobalt = "3befd332486952f6603ae3baf2a8713878d6e200"
 SRCREV_depottools = "2cea9cdd785391335d448773124631cb711225e2"
-SRCREV_larboard = "c5fd7fd0868844a816e11caa817ef58a41d28dbb"
+SRCREV_larboard = "f3197ca2c60ab16ca5e7cd1aecae3fe082c1c554"
 
 SRCREV_FORMAT = "cobalt_larboard"
 PV .= "+git${SRCPV}"
@@ -91,8 +90,10 @@ inherit python3native pkgconfig breakpad-wrapper ccache
 BREAKPAD_BIN = "lib*.so* crashpad_handler"
 
 export PYTHONPATH="${S}"
+export PYTHONPYCACHEPREFIX="${WORKDIR}/.py-cache"
 export CCACHE_COMPILERCHECK = "%compiler% -v"
 export VPYTHON_VIRTUALENV_ROOT="${WORKDIR}/.vpython-root"
+export OECORE_TARGET_SYSROOT="${RECIPE_SYSROOT}"
 
 python() {
     """
@@ -127,14 +128,17 @@ do_unpack_extra() {
     do_setup_ca_certs_env
 
     export PATH="${WORKDIR}/depot_tools:$PATH"
+    export DEPOT_TOOLS_COLLECT_METRICS="0"
     export DEPOT_TOOLS_METRICS="0"
+    export DEPOT_TOOLS_REPORT_BUILD="0"
+    export DEPOT_TOOLS_UPDATE="0"
 
     # TODO: explore possibility to use yocto fetch to download dependencies
     bbnote "gclient sync"
     cd ${WORKDIR}
-    gclient config -v --name=src $(git -C ${S} remote get-url origin)
+    gclient config -v --name=src --custom-var='checkout_configuration="small"' $(git -C ${S} remote get-url origin)
     cd ${S}
-    gclient sync -v --no-history -r ${SRCREV_cobalt}
+    gclient sync -v --no-history -r ${SRCREV_cobalt} --nohooks
     gclient runhooks -v
 
     bbnote "link larboard"
@@ -145,12 +149,14 @@ addtask unpack_extra after do_patch before do_configure
 do_configure[cleandirs] = "${B}"
 do_configure() {
     cd ${S}
+    unset PKG_CONFIG_SYSROOT_DIR
     mkdir -p ${COBALT_OUT_DIR}
     ${PYTHON} ${S}/cobalt/build/gn.py --no-check --no-rbe -p ${COBALT_PLATFORM} -c ${COBALT_BUILD_TYPE} --out_directory ${COBALT_OUT_DIR} --rdkargs '${GN_ARGS_EXTRA}'
 }
 
 do_compile[progress] = "percent"
 do_compile() {
+    unset PKG_CONFIG_SYSROOT_DIR
     export NINJA_STATUS='%p '
     ninja ${PARALLEL_MAKE} -C ${COBALT_OUT_DIR} native_target/crashpad_handler
 }
