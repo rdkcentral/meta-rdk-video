@@ -12,17 +12,16 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r44"
-PV = "4.4.6"
+PR = "r57"
+PV = "4.4.7"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder"
-
-SRCREV_thunder = "c92cffa3b4d08ef385d7c74c505ce69d5152b24b"
-
-SRC_URI += "file://wpeframework-init \
-            file://wpeframework.service.in \
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder \
+           file://wpeframework-init \
+           file://wpeframework.service.in \
            "
+
+SRCREV_thunder = "7c33637bdfd36109ffb556da4e9b58d1443ebd69"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
@@ -114,9 +113,11 @@ EXTRA_OECMAKE += " \
     -DHIDE_NON_EXTERNAL_SYMBOLS=OFF \
     -DEXIT_REASONS=${WPEFRAMEWORK_EXIT_REASONS} \
     -DMESSAGING=ON \
+    -DFLUSH_LOGS=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
-    -DAUTHORIZEDEXTENSIONS='MessagingControl;PluginInitializer;Systemd' \
+    -DAUTHORIZEDEXTENSIONS='MessagingControl;PluginInitializerService;Systemd' \
+    -DDISABLEPLUGINAUTOACTIVATION=true \
 "
 
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"

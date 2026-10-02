@@ -10,8 +10,7 @@ S = "${WORKDIR}/git"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdmicecsource;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-# Commit with test cases - f35bd2be9f70f2384f5a9053943cf1121a249564
-SRCREV = "fa1966da3c31f1f57faf674ad1326597de2b255f"
+SRCREV = "6c254285cc33bf255d2babb03a5f0189087cb3a2"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -50,6 +49,9 @@ do_install() {
     install -m 0644 ${S}/stubs/manager.hpp ${D}${includedir}/rdk/ds/
     install -m 0644 ${S}/stubs/host.hpp ${D}${includedir}/rdk/ds/
     install -m 0644 ${S}/stubs/videoOutputPort.hpp ${D}${includedir}/rdk/ds/
+    install -m 0644 ${S}/stubs/exception.hpp ${D}${includedir}/rdk/ds/
+    install -m 0644 ${S}/stubs/hdmiIn.hpp ${D}${includedir}/rdk/ds/
+    install -m 0644 ${S}/stubs/dsError.h ${D}${includedir}/rdk/ds/
     
     install -d ${D}${includedir}/rdk/halif/ds-hal
     install -m 0644 ${S}/stubs/dsTypes.h ${D}${includedir}/rdk/halif/ds-hal/

@@ -5,13 +5,13 @@ HOMEPAGE = "https://github.com/rdkcentral/ThunderTools"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=c3349dc67b2f8c28fc99b300eb39e3cc"
 
 TOOLCHAIN = "gcc"
-PR = "r3"
-PV = "4.4.6"
+PR = "r6"
+PV = "4.4.7"
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderTools.git;protocol=https;branch=R4_4-RDK"
 
-SRCREV = "e5d5fc04c39486336270a0117cfb9cce975614fd"
+SRCREV = "cf40bf92f37bdf93e775b98ee77332db7e5e36d0"
 
 inherit cmake pkgconfig python3native
 

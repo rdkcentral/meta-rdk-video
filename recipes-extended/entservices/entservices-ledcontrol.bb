@@ -2,7 +2,7 @@ SUMMARY = "ENTServices ledcontrol plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.0.2"
+PV = "1.0.5"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,18 +12,19 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-ledcontrol;${CMF_GITHUB_SRC_URI_SUFFIX
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.2
-SRCREV = "2f089e743db1534d3b9821b621865f65c89a91b0"
+# Release version - 1.0.5
+SRCREV = "51a9d8c9dfb7cc92d5c22fc034c9d1344dd81b91"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
-RDEPENDS:${PN} += "wpeframework"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis libbinderrdk rdk-halif-aidl-mw"
+RDEPENDS:${PN} += "wpeframework rdk-halif-aidl-mw-indicator rdk-halif-aidl-mw-common"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
+TARGET_LDFLAGS += " -L${STAGING_DIR_HOST}${prefix}/mw/lib/binder -L${STAGING_LIBDIR}/mw/rdk-halif-aidl "
 
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 CXXFLAGS += " -DRFC_ENABLED "
@@ -31,6 +32,9 @@ CXXFLAGS += " -DRFC_ENABLED "
 CXXFLAGS += " -DNET_DEFINED_INTERFACES_ONLY -DNET_NO_LINK_LOCAL_ANNOUNCE "
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
+CFLAGS:append = " -I${STAGING_INCDIR}/mw/indicator/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include"
+CXXFLAGS:append = " -I${STAGING_INCDIR}/mw/indicator/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include -I${STAGING_INCDIR}/wpeframework/helpers"
+CXXFLAGS:append = " -Wno-attributes -Wno-write-strings"
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 
@@ -40,8 +44,7 @@ PACKAGECONFIG ?= " breakpadsupport \
    "
 
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[ledcontrol]           = "-DPLUGIN_LEDCONTROL=ON,,iarmbus iarmmgrs devicesettings entservices-apis entservices-helpers virtual/vendor-devicesettings-hal,iarmbus devicesettings entservices-apis entservices-helpers"
-
+PACKAGECONFIG[ledcontrol]           = "-DPLUGIN_LEDCONTROL=ON, entservices-apis entservices-helpers , entservices-apis entservices-helpers"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
