@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-xcast;${CMF_GITHUB_SRC_URI_SUFFIX}\
           "
 
 # Release version - 2.1.1
-SRCREV = "4264d0e441afc4dc22a2ea5f0f7105e42827b3a2"
+SRCREV = "1f1c762ac3ea83b13971ca8b490beff1ad93c395"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
