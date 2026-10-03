@@ -1,0 +1,602 @@
+From 71184ebfb0cf8ef4e9189fe8e692433acfac1001 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Mon, 10 Aug 2026 20:21:48 +0000
+Subject: [PATCH] debug changes
+
+---
+ .../Modules/mediasource/SourceBuffer.cpp      |  10 +
+ .../WebCore/bindings/js/JSEventListener.cpp   |   1 +
+ Source/WebCore/dom/ActiveDOMObject.cpp        |   6 +
+ Source/WebCore/dom/EventTarget.cpp            |   2 +
+ Source/WebCore/html/HTMLMediaElement.cpp      | 319 +++++++++++++++++-
+ 5 files changed, 334 insertions(+), 4 deletions(-)
+
+diff --git a/Source/WebCore/Modules/mediasource/SourceBuffer.cpp b/Source/WebCore/Modules/mediasource/SourceBuffer.cpp
+index 324306d07f7e..749a002a6397 100644
+--- a/Source/WebCore/Modules/mediasource/SourceBuffer.cpp
++++ b/Source/WebCore/Modules/mediasource/SourceBuffer.cpp
+@@ -424,6 +424,7 @@ void SourceBuffer::rangeRemoval(const MediaTime& start, const MediaTime& end)
+     m_updating = true;
+ 
+     // 4. Queue a task to fire a simple event named updatestart at this SourceBuffer object.
++    fprintf(stderr, "[MSE-DEBUG] %s:%d scheduleEvent(updatestart) [remove path]\n", __FUNCTION__, __LINE__);
+     scheduleEvent(eventNames().updatestartEvent);
+ 
+     m_removeCodedFramesPending = true;
+@@ -439,9 +440,11 @@ void SourceBuffer::rangeRemoval(const MediaTime& start, const MediaTime& end)
+         m_updating = false;
+ 
+         // 8. Queue a task to fire a simple event named update at this SourceBuffer object.
++        fprintf(stderr, "[MSE-DEBUG] %s:%d scheduleEvent(update) [remove complete]\n", __FUNCTION__, __LINE__);
+         scheduleEvent(eventNames().updateEvent);
+ 
+         // 9. Queue a task to fire a simple event named updateend at this SourceBuffer object.
++        fprintf(stderr, "[MSE-DEBUG] %s:%d scheduleEvent(updateend) [remove complete]\n", __FUNCTION__, __LINE__);
+         scheduleEvent(eventNames().updateendEvent);
+ 
+         m_source->monitorSourceBuffers();
+@@ -534,6 +537,7 @@ void SourceBuffer::abortIfUpdating()
+     scheduleEvent(eventNames().abortEvent);
+ 
+     // 4.4. Queue a task to fire a simple event named updateend at this SourceBuffer object.
++    fprintf(stderr, "[MSE-DEBUG] %s:%d scheduleEvent(updateend) [abort path]\n", __FUNCTION__, __LINE__);
+     scheduleEvent(eventNames().updateendEvent);
+ }
+ 
+@@ -581,6 +585,7 @@ bool SourceBuffer::isRemoved() const
+ 
+ void SourceBuffer::scheduleEvent(const AtomString& eventName)
+ {
++    fprintf(stderr, "[MSE-DEBUG] %s:%d dispatching event '%s' to JS via queueTaskToDispatchEvent\n", __FUNCTION__, __LINE__, eventName.string().utf8().data());
+     queueTaskToDispatchEvent(*this, TaskSource::MediaElement, Event::create(eventName, Event::CanBubble::No, Event::IsCancelable::No));
+ }
+ 
+@@ -624,6 +629,7 @@ ExceptionOr<void> SourceBuffer::appendBufferInternal(std::span<const uint8_t> da
+     m_updating = true;
+ 
+     // 5. Queue a task to fire a simple event named updatestart at this SourceBuffer object.
++    fprintf(stderr, "[MSE-DEBUG] %s:%d scheduleEvent(updatestart) [appendBuffer path]\n", __FUNCTION__, __LINE__);
+     scheduleEvent(eventNames().updatestartEvent);
+ 
+     m_appendBufferPending = true;
+@@ -652,6 +658,7 @@ ExceptionOr<void> SourceBuffer::appendBufferInternal(std::span<const uint8_t> da
+ 
+ void SourceBuffer::sourceBufferPrivateAppendComplete(MediaPromise::Result&& result)
+ {
++    fprintf(stderr, "[MSE-DEBUG] %s:%d promise settled, appendComplete called (success=%d)\n", __FUNCTION__, __LINE__, !!result);
+     m_appendBufferPending = false;
+ 
+     if (isRemoved())
+@@ -681,9 +688,11 @@ void SourceBuffer::sourceBufferPrivateAppendComplete(MediaPromise::Result&& resu
+     m_updating = false;
+ 
+     // 4. Queue a task to fire a simple event named update at this SourceBuffer object.
++    fprintf(stderr, "[MSE-DEBUG] %s:%d scheduleEvent(update) [appendComplete]\n", __FUNCTION__, __LINE__);
+     scheduleEvent(eventNames().updateEvent);
+ 
+     // 5. Queue a task to fire a simple event named updateend at this SourceBuffer object.
++    fprintf(stderr, "[MSE-DEBUG] %s:%d scheduleEvent(updateend) [appendComplete]\n", __FUNCTION__, __LINE__);
+     scheduleEvent(eventNames().updateendEvent);
+ 
+     m_source->monitorSourceBuffers();
+@@ -1132,6 +1141,7 @@ void SourceBuffer::appendError(bool decodeError)
+     scheduleEvent(eventNames().errorEvent);
+ 
+     // 4. Queue a task to fire a simple event named updateend at this SourceBuffer object.
++    fprintf(stderr, "[MSE-DEBUG] %s:%d scheduleEvent(updateend) [appendError path]\n", __FUNCTION__, __LINE__);
+     scheduleEvent(eventNames().updateendEvent);
+ 
+     // 5. If decode error is true, then run the end of stream algorithm with the error parameter set to "decode".
+diff --git a/Source/WebCore/bindings/js/JSEventListener.cpp b/Source/WebCore/bindings/js/JSEventListener.cpp
+index fb3f29685960..b3a8932b6c43 100644
+--- a/Source/WebCore/bindings/js/JSEventListener.cpp
++++ b/Source/WebCore/bindings/js/JSEventListener.cpp
+@@ -174,6 +174,7 @@ void JSEventListener::handleEvent(ScriptExecutionContext& scriptExecutionContext
+ 
+     auto* jsFunctionGlobalObject = jsFunction->globalObject();
+ 
++    fprintf(stderr, "[MSE-DEBUG] %s:%d Target:%p handleEvent '%s'\n", __FUNCTION__, __LINE__, this,event.type().string().utf8().data());
+     RefPtr<Event> savedEvent;
+     auto* jsFunctionWindow = jsDynamicCast<JSDOMWindow*>(jsFunctionGlobalObject);
+     if (jsFunctionWindow) {
+diff --git a/Source/WebCore/dom/ActiveDOMObject.cpp b/Source/WebCore/dom/ActiveDOMObject.cpp
+index 47a153ded7b8..d401997effca 100644
+--- a/Source/WebCore/dom/ActiveDOMObject.cpp
++++ b/Source/WebCore/dom/ActiveDOMObject.cpp
+@@ -181,8 +181,14 @@ void ActiveDOMObject::queueTaskToDispatchEventInternal(EventTarget& target, Task
+     RefPtr context = scriptExecutionContext();
+     if (!context)
+         return;
++    //auto& eventType = event->type();
++    //bool isMSEEvent = eventType == "updatestart" || eventType == "update" || eventType == "updateend" || eventType == "sourceopen" || eventType == "sourceclose";
++    //if (isMSEEvent)
++        fprintf(stderr, "[MSE-DEBUG] %s:%d queueTask event '%s' (will dispatch in future task)\n", __FUNCTION__, __LINE__, event->type().string().utf8().data());
+     auto& eventLoopTaskGroup = context->eventLoop();
+     auto task = makeUnique<ActiveDOMObjectEventDispatchTask>(source, eventLoopTaskGroup, *this, [target = Ref { target }, event = WTFMove(event)] {
++        //if (isMSEEvent)
++            fprintf(stderr, "[MSE-DEBUG] %s:%d >>> DISPATCH event '%s' to JS NOW <<<\n", __FUNCTION__, __LINE__, event->type().string().utf8().data());
+         target->dispatchEvent(event);
+     });
+     eventLoopTaskGroup.queueTask(WTFMove(task));
+diff --git a/Source/WebCore/dom/EventTarget.cpp b/Source/WebCore/dom/EventTarget.cpp
+index 7e50867195d0..58f5086a18ba 100644
+--- a/Source/WebCore/dom/EventTarget.cpp
++++ b/Source/WebCore/dom/EventTarget.cpp
+@@ -243,6 +243,7 @@ void EventTarget::dispatchEvent(Event& event)
+     ASSERT(event.isInitialized());
+     ASSERT(!event.isBeingDispatched());
+ 
++   fprintf(stderr, "[MSE-DEBUG] %s:%d Target:%p queueTask event '%s'\n", __FUNCTION__, __LINE__, this,event.type().string().utf8().data());
+     EventPath eventPath { *this };
+     event.setTarget(this);
+     event.setCurrentTarget(this);
+@@ -291,6 +292,7 @@ void EventTarget::fireEventListeners(Event& event, EventInvokePhase phase)
+ #endif
+     ASSERT(event.isInitialized());
+ 
++    fprintf(stderr, "[MSE-DEBUG] %s:%d Target:%p fireEventListeners event '%s'\n", __FUNCTION__, __LINE__, this,event.type().string().utf8().data());
+     auto* data = eventTargetData();
+     if (!data)
+         return;
+diff --git a/Source/WebCore/html/HTMLMediaElement.cpp b/Source/WebCore/html/HTMLMediaElement.cpp
+index efaf5b8d3c52..075da70937e7 100644
+--- a/Source/WebCore/html/HTMLMediaElement.cpp
++++ b/Source/WebCore/html/HTMLMediaElement.cpp
+@@ -619,6 +619,22 @@ HTMLMediaElement::HTMLMediaElement(const QualifiedName& tagName, Document& docum
+ 
+     ALWAYS_LOG(LOGIDENTIFIER);
+ 
++    fprintf(stderr,
++        "[KKDBG][DOM_CTOR] this=%p createdByParser=%d parsingInProgress=%d autoplay=%d hasAutoplay=%d src='%s' currentSrc='%s' paused=%d m_autoplaying=%d inActiveDocument=%d isConnected=%d networkState=%d\n",
++        this,
++        createdByParser,
++        m_parsingInProgress,
++        autoplay(),
++        hasAttributeWithoutSynchronization(autoplayAttr),
++        attributeWithoutSynchronization(srcAttr).string().utf8().data(),
++        m_currentSrc.string().utf8().data(),
++        paused(),
++        m_autoplaying,
++        m_inActiveDocument,
++        isConnected(),
++        m_networkState);
++    fflush(stderr);
++
+     InspectorInstrumentation::addEventListenersToNode(*this);
+ }
+ 
+@@ -899,6 +915,23 @@ void HTMLMediaElement::didMoveToNewDocument(Document& oldDocument, Document& new
+     HTMLElement::didMoveToNewDocument(oldDocument, newDocument);
+     updateShouldAutoplay();
+     visibilityStateChanged();
++
++    fprintf(stderr,
++        "[KKDBG][MOVE_DOC] this=%p autoplay=%d hasAutoplay=%d src='%s' currentSrc='%s' paused=%d m_autoplaying=%d inActiveDocument=%d isConnected=%d networkState=%d delayLoad=%d oldDocURL='%s' newDocURL='%s'\n",
++        this,
++        autoplay(),
++        hasAttributeWithoutSynchronization(autoplayAttr),
++        attributeWithoutSynchronization(srcAttr).string().utf8().data(),
++        m_currentSrc.string().utf8().data(),
++        paused(),
++        m_autoplaying,
++        m_inActiveDocument,
++        isConnected(),
++        m_networkState,
++        m_shouldDelayLoadEvent,
++        oldDocument.url().string().utf8().data(),
++        newDocument.url().string().utf8().data());
++    fflush(stderr);
+ }
+ 
+ #if ENABLE(WIRELESS_PLAYBACK_TARGET)
+@@ -951,6 +984,29 @@ void HTMLMediaElement::removeAllEventListeners()
+ 
+ void HTMLMediaElement::attributeChanged(const QualifiedName& name, const AtomString& oldValue, const AtomString& newValue, AttributeModificationReason attributeModificationReason)
+ {
++    if (name.nodeName() == AttributeNames::autoplayAttr || name.nodeName() == AttributeNames::srcAttr || name.nodeName() == AttributeNames::preloadAttr) {
++        fprintf(stderr,
++            "[KKDBG][ATTR_CHANGED] this=%p attr='%s' oldValue='%s' newValue='%s' oldIsNull=%d newIsNull=%d reason=%d autoplay=%d hasAutoplay=%d src='%s' currentSrc='%s' paused=%d m_autoplaying=%d parsingInProgress=%d isConnected=%d networkState=%d docURL='%s'\n",
++            this,
++            name.localName().string().utf8().data(),
++            oldValue.string().utf8().data(),
++            newValue.string().utf8().data(),
++            oldValue.isNull(),
++            newValue.isNull(),
++            static_cast<int>(attributeModificationReason),
++            autoplay(),
++            hasAttributeWithoutSynchronization(autoplayAttr),
++            attributeWithoutSynchronization(srcAttr).string().utf8().data(),
++            m_currentSrc.string().utf8().data(),
++            paused(),
++            m_autoplaying,
++            m_parsingInProgress,
++            isConnected(),
++            m_networkState,
++            document().url().string().utf8().data());
++        fflush(stderr);
++    }
++
+     switch (name.nodeName()) {
+     case AttributeNames::idAttr:
+         m_id = newValue;
+@@ -991,6 +1047,26 @@ void HTMLMediaElement::attributeChanged(const QualifiedName& name, const AtomStr
+         setMediaGroup(newValue);
+         return;
+     case AttributeNames::autoplayAttr:
++        fprintf(stderr,
++            "[KKDBG][AUTOPLAY_ATTR] this=%p oldValue='%s' newValue='%s' oldIsNull=%d newIsNull=%d reason=%d autoplay=%d hasAutoplay=%d src='%s' currentSrc='%s' paused=%d m_autoplaying=%d parsingInProgress=%d isConnected=%d networkState=%d processingGesture=%d docURL='%s'\n",
++            this,
++            oldValue.string().utf8().data(),
++            newValue.string().utf8().data(),
++            oldValue.isNull(),
++            newValue.isNull(),
++            static_cast<int>(attributeModificationReason),
++            autoplay(),
++            hasAttributeWithoutSynchronization(autoplayAttr),
++            attributeWithoutSynchronization(srcAttr).string().utf8().data(),
++            m_currentSrc.string().utf8().data(),
++            paused(),
++            m_autoplaying,
++            m_parsingInProgress,
++            isConnected(),
++            m_networkState,
++            processingUserGestureForMedia(),
++            document().url().string().utf8().data());
++        fflush(stderr);
+         if (processingUserGestureForMedia())
+             removeBehaviorRestrictionsAfterFirstUserGesture();
+         return;
+@@ -1019,10 +1095,29 @@ void HTMLMediaElement::attributeChanged(const QualifiedName& name, const AtomStr
+ 
+ void HTMLMediaElement::finishParsingChildren()
+ {
++    auto hasTrackChild = !!childrenOfType<HTMLTrackElement>(*this).first();
++
+     HTMLElement::finishParsingChildren();
+     m_parsingInProgress = false;
+ 
+-    if (childrenOfType<HTMLTrackElement>(*this).first())
++    fprintf(stderr,
++        "[KKDBG][FINISH_PARSING] this=%p autoplay=%d hasAutoplay=%d src='%s' currentSrc='%s' paused=%d m_autoplaying=%d parsingInProgress=%d hasTrackChild=%d inActiveDocument=%d isConnected=%d networkState=%d docURL='%s'\n",
++        this,
++        autoplay(),
++        hasAttributeWithoutSynchronization(autoplayAttr),
++        attributeWithoutSynchronization(srcAttr).string().utf8().data(),
++        m_currentSrc.string().utf8().data(),
++        paused(),
++        m_autoplaying,
++        m_parsingInProgress,
++        hasTrackChild,
++        m_inActiveDocument,
++        isConnected(),
++        m_networkState,
++        document().url().string().utf8().data());
++    fflush(stderr);
++
++    if (hasTrackChild)
+         scheduleConfigureTextTracks();
+ }
+ 
+@@ -1049,6 +1144,24 @@ Node::InsertedIntoAncestorResult HTMLMediaElement::insertedIntoAncestor(Insertio
+     if (insertionType.connectedToDocument)
+         setInActiveDocument(true);
+ 
++    fprintf(stderr,
++        "[KKDBG][INSERTED] this=%p connectedToDocument=%d autoplay=%d hasAutoplay=%d src='%s' currentSrc='%s' paused=%d m_autoplaying=%d parsingInProgress=%d inActiveDocument=%d isConnected=%d networkState=%d parent=%p docURL='%s'\n",
++        this,
++        insertionType.connectedToDocument,
++        autoplay(),
++        hasAttributeWithoutSynchronization(autoplayAttr),
++        attributeWithoutSynchronization(srcAttr).string().utf8().data(),
++        m_currentSrc.string().utf8().data(),
++        paused(),
++        m_autoplaying,
++        m_parsingInProgress,
++        m_inActiveDocument,
++        isConnected(),
++        m_networkState,
++        &parentOfInsertedTree,
++        document().url().string().utf8().data());
++    fflush(stderr);
++
+     if (!insertionType.connectedToDocument)
+         return InsertedIntoAncestorResult::Done;
+     return InsertedIntoAncestorResult::NeedsPostInsertionCallback;
+@@ -1057,10 +1170,30 @@ Node::InsertedIntoAncestorResult HTMLMediaElement::insertedIntoAncestor(Insertio
+ void HTMLMediaElement::didFinishInsertingNode()
+ {
+     Ref protectedThis { *this }; // prepareForLoad may result in a 'beforeload' event, which can make arbitrary DOM mutations.
++    bool willPrepareForLoad = m_inActiveDocument && m_networkState == NETWORK_EMPTY && !attributeWithoutSynchronization(srcAttr).isEmpty();
+ 
+     ALWAYS_LOG(LOGIDENTIFIER);
+ 
+-    if (m_inActiveDocument && m_networkState == NETWORK_EMPTY && !attributeWithoutSynchronization(srcAttr).isEmpty())
++    fprintf(stderr,
++        "[KKDBG][POST_INSERT] this=%p autoplay=%d hasAutoplay=%d src='%s' currentSrc='%s' paused=%d m_autoplaying=%d parsingInProgress=%d inActiveDocument=%d isConnected=%d networkState=%d willPrepareForLoad=%d explicitlyMuted=%d mutedAttr=%d docURL='%s'\n",
++        this,
++        autoplay(),
++        hasAttributeWithoutSynchronization(autoplayAttr),
++        attributeWithoutSynchronization(srcAttr).string().utf8().data(),
++        m_currentSrc.string().utf8().data(),
++        paused(),
++        m_autoplaying,
++        m_parsingInProgress,
++        m_inActiveDocument,
++        isConnected(),
++        m_networkState,
++        willPrepareForLoad,
++        m_explicitlyMuted,
++        hasAttributeWithoutSynchronization(mutedAttr),
++        document().url().string().utf8().data());
++    fflush(stderr);
++
++    if (willPrepareForLoad)
+         prepareForLoad();
+ 
+     visibilityAdjustmentStateDidChange();
+@@ -1151,6 +1284,24 @@ void HTMLMediaElement::removedFromAncestor(RemovalType removalType, ContainerNod
+ 
+     HTMLElement::removedFromAncestor(removalType, oldParentOfRemovedTree);
+ 
++    fprintf(stderr,
++        "[KKDBG][REMOVED] this=%p disconnectedFromDocument=%d autoplay=%d hasAutoplay=%d src='%s' currentSrc='%s' paused=%d m_autoplaying=%d parsingInProgress=%d inActiveDocument=%d isConnected=%d networkState=%d oldParent=%p docURL='%s'\n",
++        this,
++        removalType.disconnectedFromDocument,
++        autoplay(),
++        hasAttributeWithoutSynchronization(autoplayAttr),
++        attributeWithoutSynchronization(srcAttr).string().utf8().data(),
++        m_currentSrc.string().utf8().data(),
++        paused(),
++        m_autoplaying,
++        m_parsingInProgress,
++        m_inActiveDocument,
++        isConnected(),
++        m_networkState,
++        &oldParentOfRemovedTree,
++        document().url().string().utf8().data());
++    fflush(stderr);
++
+     visibilityAdjustmentStateDidChange();
+ }
+ 
+@@ -1410,6 +1561,17 @@ void HTMLMediaElement::load()
+ 
+     INFO_LOG(LOGIDENTIFIER);
+ 
++    fprintf(stderr,
++    "[KKDBG][LOAD] this=%p autoplay=%d m_autoplaying=%d paused=%d processingGesture=%d src='%s' currentSrc='%s'\n",
++    this,
++    autoplay(),
++    m_autoplaying,
++    paused(),
++    processingUserGestureForMedia(),
++    attributeWithoutSynchronization(srcAttr).string().utf8().data(),
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
++
+     if (m_videoFullscreenMode == VideoFullscreenModePictureInPicture && document().quirks().requiresUserGestureToLoadInPictureInPicture() && !document().processingUserGestureForMedia())
+         return;
+ 
+@@ -1424,7 +1586,16 @@ void HTMLMediaElement::prepareForLoad()
+     // 12 February 2017
+ 
+     ALWAYS_LOG(LOGIDENTIFIER, "gesture = ", processingUserGestureForMedia());
+-
++fprintf(stderr,
++    "[KKDBG][PREPARE_FOR_LOAD] this=%p autoplay=%d m_autoplaying=%d paused=%d processingGesture=%d src='%s' currentSrc='%s'\n",
++    this,
++    autoplay(),
++    m_autoplaying,
++    paused(),
++    processingUserGestureForMedia(),
++    attributeWithoutSynchronization(srcAttr).string().utf8().data(),
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
+     if (processingUserGestureForMedia())
+         removeBehaviorRestrictionsAfterFirstUserGesture();
+ 
+@@ -3013,31 +3184,130 @@ void HTMLMediaElement::mediaPlayerReadyStateChanged()
+ 
+ Expected<void, MediaPlaybackDenialReason> HTMLMediaElement::canTransitionFromAutoplayToPlay() const
+ {
++fprintf(stderr,
++    "[KKDBG][CAN_TRANSITION_ENTER] this=%p readyState=%d autoplay=%d isAutoplaying=%d autoplayPermitted=%d paused=%d pausedForUserInteraction=%d m_autoplaying=%d currentSrc='%s'\n",
++    this,
++    m_readyState,
++    autoplay(),
++    isAutoplaying(),
++    mediaSession().autoplayPermitted(),
++    paused(),
++    pausedForUserInteraction(),
++    m_autoplaying,
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
++
++
+     if (m_readyState != HAVE_ENOUGH_DATA) {
++	    fprintf(stderr,
++    "[KKDBG][CAN_TRANSITION_DENY] this=%p reason=NOT_PAUSED readyState=%d autoplay=%d isAutoplaying=%d autoplayPermitted=%d paused=%d pausedForUserInteraction=%d currentSrc='%s'\n",
++    this,
++    m_readyState,
++    autoplay(),
++    isAutoplaying(),
++    mediaSession().autoplayPermitted(),
++    paused(),
++    pausedForUserInteraction(),
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
++
+         ALWAYS_LOG(LOGIDENTIFIER, "m_readyState != HAVE_ENOUGH_DATA");
+         return makeUnexpected(MediaPlaybackDenialReason::PageConsentRequired);
+     }
+     if (!isAutoplaying()) {
++
++	    fprintf(stderr,
++    "[KKDBG][CAN_TRANSITION_DENY] this=%p reason=NOT_PAUSED readyState=%d autoplay=%d isAutoplaying=%d autoplayPermitted=%d paused=%d pausedForUserInteraction=%d currentSrc='%s'\n",
++    this,
++    m_readyState,
++    autoplay(),
++    isAutoplaying(),
++    mediaSession().autoplayPermitted(),
++    paused(),
++    pausedForUserInteraction(),
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
++
+         ALWAYS_LOG(LOGIDENTIFIER, "!isAutoplaying");
+         return makeUnexpected(MediaPlaybackDenialReason::PageConsentRequired);
+     }
+     if (!mediaSession().autoplayPermitted()) {
++	    fprintf(stderr,
++    "[KKDBG][CAN_TRANSITION_DENY] this=%p reason=NOT_PAUSED readyState=%d autoplay=%d isAutoplaying=%d autoplayPermitted=%d paused=%d pausedForUserInteraction=%d currentSrc='%s'\n",
++    this,
++    m_readyState,
++    autoplay(),
++    isAutoplaying(),
++    mediaSession().autoplayPermitted(),
++    paused(),
++    pausedForUserInteraction(),
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
++
+         ALWAYS_LOG(LOGIDENTIFIER, "!mediaSession().autoplayPermitted");
+         return makeUnexpected(MediaPlaybackDenialReason::PageConsentRequired);
+     }
+     if (!paused()) {
++	    fprintf(stderr,
++    "[KKDBG][CAN_TRANSITION_DENY] this=%p reason=NOT_PAUSED readyState=%d autoplay=%d isAutoplaying=%d autoplayPermitted=%d paused=%d pausedForUserInteraction=%d currentSrc='%s'\n",
++    this,
++    m_readyState,
++    autoplay(),
++    isAutoplaying(),
++    mediaSession().autoplayPermitted(),
++    paused(),
++    pausedForUserInteraction(),
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
++
+         ALWAYS_LOG(LOGIDENTIFIER, "!paused");
+         return makeUnexpected(MediaPlaybackDenialReason::PageConsentRequired);
+     }
+     if (!autoplay()) {
++	    fprintf(stderr,
++    "[KKDBG][CAN_TRANSITION_DENY] this=%p reason=NOT_PAUSED readyState=%d autoplay=%d isAutoplaying=%d autoplayPermitted=%d paused=%d pausedForUserInteraction=%d currentSrc='%s'\n",
++    this,
++    m_readyState,
++    autoplay(),
++    isAutoplaying(),
++    mediaSession().autoplayPermitted(),
++    paused(),
++    pausedForUserInteraction(),
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
++
+         ALWAYS_LOG(LOGIDENTIFIER, "!autoplay");
+         return makeUnexpected(MediaPlaybackDenialReason::PageConsentRequired);
+     }
+     if (pausedForUserInteraction()) {
++	    fprintf(stderr,
++    "[KKDBG][CAN_TRANSITION_DENY] this=%p reason=NOT_PAUSED readyState=%d autoplay=%d isAutoplaying=%d autoplayPermitted=%d paused=%d pausedForUserInteraction=%d currentSrc='%s'\n",
++    this,
++    m_readyState,
++    autoplay(),
++    isAutoplaying(),
++    mediaSession().autoplayPermitted(),
++    paused(),
++    pausedForUserInteraction(),
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
++
+         ALWAYS_LOG(LOGIDENTIFIER, "pausedForUserInteraction");
+         return makeUnexpected(MediaPlaybackDenialReason::PageConsentRequired);
+     }
+     if (document().isSandboxed(SandboxAutomaticFeatures)) {
++	    fprintf(stderr,
++    "[KKDBG][CAN_TRANSITION_DENY] this=%p reason=NOT_PAUSED readyState=%d autoplay=%d isAutoplaying=%d autoplayPermitted=%d paused=%d pausedForUserInteraction=%d currentSrc='%s'\n",
++    this,
++    m_readyState,
++    autoplay(),
++    isAutoplaying(),
++    mediaSession().autoplayPermitted(),
++    paused(),
++    pausedForUserInteraction(),
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
++
+         ALWAYS_LOG(LOGIDENTIFIER, "isSandboxed");
+         return makeUnexpected(MediaPlaybackDenialReason::PageConsentRequired);
+     }
+@@ -3050,6 +3320,18 @@ Expected<void, MediaPlaybackDenialReason> HTMLMediaElement::canTransitionFromAut
+         ALWAYS_LOG(LOGIDENTIFIER, "can transition!");
+ #endif
+ 
++    fprintf(stderr,
++    "[KKDBG][CAN_TRANSITION_ALLOW] this=%p readyState=%d autoplay=%d isAutoplaying=%d autoplayPermitted=%d paused=%d pausedForUserInteraction=%d currentSrc='%s'\n",
++    this,
++    m_readyState,
++    autoplay(),
++    isAutoplaying(),
++    mediaSession().autoplayPermitted(),
++    paused(),
++    pausedForUserInteraction(),
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
++
+     return permitted;
+ }
+ 
+@@ -4351,6 +4633,16 @@ void HTMLMediaElement::play()
+ {
+     ALWAYS_LOG(LOGIDENTIFIER);
+ 
++    fprintf(stderr,
++    "[KKDBG][PLAY_API] this=%p autoplay=%d isAutoplaying=%d m_autoplaying=%d paused=%d processingGesture=%d currentSrc='%s'\n",
++    this,
++    autoplay(),
++    isAutoplaying(),
++    m_autoplaying,
++    paused(),
++    processingUserGestureForMedia(),
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
+     auto permitted = mediaSession().playbackStateChangePermitted(MediaPlaybackState::Playing);
+     if (!permitted) {
+         ERROR_LOG(LOGIDENTIFIER, "playback not permitted: ", permitted.error());
+@@ -4367,7 +4659,15 @@ void HTMLMediaElement::play()
+ void HTMLMediaElement::playInternal()
+ {
+     ALWAYS_LOG(LOGIDENTIFIER);
+-
++fprintf(stderr,
++    "[KKDBG][PLAY_INTERNAL] this=%p autoplay=%d isAutoplaying=%d m_autoplaying=%d paused=%d currentSrc='%s'\n",
++    this,
++    autoplay(),
++    isAutoplaying(),
++    m_autoplaying,
++    paused(),
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
+     if (isSuspended()) {
+         ALWAYS_LOG(LOGIDENTIFIER, "returning because context is suspended");
+         return;
+@@ -9246,6 +9546,17 @@ void HTMLMediaElement::userDidInterfereWithAutoplay()
+ void HTMLMediaElement::setAutoplayEventPlaybackState(AutoplayEventPlaybackState reason)
+ {
+     ALWAYS_LOG(LOGIDENTIFIER, reason);
++fprintf(stderr,
++    "[KKDBG][AUTOPLAY_STATE] this=%p autoplay=%d isAutoplaying=%d m_autoplaying=%d paused=%d processingGesture=%d currentSrc='%s'\n",
++    this,
++    autoplay(),
++    isAutoplaying(),
++    m_autoplaying,
++    paused(),
++    processingUserGestureForMedia(),
++    m_currentSrc.string().utf8().data());
++fflush(stderr);
++
+ 
+     m_autoplayEventPlaybackState = reason;
+ 
+-- 
+2.44.4
+

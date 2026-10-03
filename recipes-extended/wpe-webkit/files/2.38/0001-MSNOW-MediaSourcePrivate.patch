@@ -1,0 +1,31 @@
+From 6f6edc1e5b33eeb818b0917b4943d4126cb21826 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Wed, 12 Aug 2026 16:29:55 +0000
+Subject: [PATCH] MSNOW MediaSourcePrivate
+
+---
+ .../gstreamer/mse/MediaSourcePrivateGStreamer.cpp         | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/MediaSourcePrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/MediaSourcePrivateGStreamer.cpp
+index 17529f2ef8c2..d8af4be7dd56 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/MediaSourcePrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/MediaSourcePrivateGStreamer.cpp
+@@ -154,6 +154,14 @@ void MediaSourcePrivateGStreamer::unmarkEndOfStream()
+     GST_DEBUG_OBJECT(m_playerPrivate.pipeline(), "Un-marking EOS");
+     m_playerPrivate.setEosWithNoBuffers(false);
+     m_isEnded = false;
++
++    if (m_hasAllTracks) {
++	printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
++        for (auto& sourceBuffer : m_sourceBuffers) {
++            for (auto& track : sourceBuffer->tracks())
++                sourceBuffer->flush(track->trackId());
++        }
++    }
+ }
+ 
+ MediaPlayer::ReadyState MediaSourcePrivateGStreamer::readyState() const
+-- 
+2.44.4
+
