@@ -1,5 +1,5 @@
 diff --git a/apis/OpenCDMi/IDRM.h b/apis/OpenCDMi/IDRM.h
-index 2cc86dd..c376fee 100644
+index 2cc86dd..329b48a 100644
 --- a/apis/OpenCDMi/IDRM.h
 +++ b/apis/OpenCDMi/IDRM.h
 @@ -269,6 +269,12 @@ typedef struct {
@@ -28,7 +28,7 @@ index 2cc86dd..c376fee 100644
      virtual CDMi_RESULT ReleaseClearContent(
          const uint8_t* f_pbSessionKey,
          uint32_t f_cbSessionKey,
-@@ -447,6 +459,42 @@ public:
+@@ -447,6 +459,47 @@ public:
      virtual CDMi_RESULT DestroyMediaKeySession(
          IMediaKeySession* f_piMediaKeySession)
          = 0;
@@ -68,6 +68,11 @@ index 2cc86dd..c376fee 100644
 +     {
 +             return CDMi_METHOD_NOT_IMPLEMENTED;
 +     }
++
++    virtual CDMi_RESULT GetLibraryVersion(uint32_t* versionOut)
++    {
++        return CDMi_METHOD_NOT_IMPLEMENTED;
++    }
  };
  
  // IMediaKeySession defines the MediaKeySessionExt interface.

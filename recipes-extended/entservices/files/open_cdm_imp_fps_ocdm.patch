@@ -83,7 +83,7 @@ index c860ab0..cb4a398 100644
   * @brief Close the cached open connection if it exists.
   *
 diff --git a/client/open_cdm_ext.cpp b/client/open_cdm_ext.cpp
-index a730528..30c0c74 100644
+index a730528..5541c3e 100644
 --- a/client/open_cdm_ext.cpp
 +++ b/client/open_cdm_ext.cpp
 @@ -46,6 +46,7 @@ static domainKeysystemMap domainMap =  {
@@ -94,7 +94,7 @@ index a730528..30c0c74 100644
  OpenCDMError opencdm_parse_keysystem(std::string& keySystemDomain)
  {
      OpenCDMError result = ERROR_NONE;
-@@ -501,3 +502,117 @@ OpenCDMError opencdm_system_ext_get_properties(struct PlayLevels* system, const
+@@ -501,3 +502,133 @@ OpenCDMError opencdm_system_ext_get_properties(struct PlayLevels* system, const
       return result;
      
  }
@@ -212,11 +212,27 @@ index a730528..30c0c74 100644
 +    }
 +    return result;
 +}
++
++OpenCDMError opencdm_get_library_version(struct OpenCDMSystem* system, uint8_t* versionOut, uint32_t versionOutSize)
++{
++    ASSERT(system != nullptr);
++    OpenCDMError result(OpenCDMError::ERROR_INVALID_ARG);
++
++    if (system != nullptr) {
++        OpenCDMAccessor* accessor = OpenCDMAccessor::Instance();
++        if(!accessor)
++            return ERROR_INVALID_ACCESSOR;
++
++        std::string keySystem = system->keySystem();
++        result = (OpenCDMError)accessor->GetLibraryVersion(keySystem, versionOut, versionOutSize);
++    }
++    return result;
++}
 diff --git a/client/open_cdm_ext.h b/client/open_cdm_ext.h
-index 24a85e4..60e6f99 100644
+index 24a85e4..6c59ef4 100644
 --- a/client/open_cdm_ext.h
 +++ b/client/open_cdm_ext.h
-@@ -234,6 +234,14 @@ struct PlayLevels {
+@@ -234,6 +234,15 @@ struct PlayLevels {
   */
  EXTERNAL OpenCDMError opencdm_system_ext_get_properties(struct PlayLevels* system, const char* propertiesJSONText);
  
@@ -228,14 +244,15 @@ index 24a85e4..60e6f99 100644
 +EXTERNAL OpenCDMError opencdm_init_library(struct OpenCDMSystem* system);
 +EXTERNAL OpenCDMError opencdm_process_license(struct OpenCDMSystem* system, uint32_t version, uint8_t* session, uint32_t sessionsize_bytes,  const uint8_t* licenseData, uint32_t licenseDataSize, uint8_t* cryptoId, uint32_t crytorId_bytes);
 +EXTERNAL OpenCDMError opencdm_destroy_cryptor(struct OpenCDMSystem* system, uint32_t version, uint64_t cryptoId);
++EXTERNAL OpenCDMError opencdm_get_library_version(struct OpenCDMSystem* system, uint8_t *versionOut, uint32_t versionOutSize);
  
  #ifdef __cplusplus
  } // extern "C"
 diff --git a/client/open_cdm_impl.h b/client/open_cdm_impl.h
-index 9010689..e861a71 100644
+index 4d6905a..a8df98c 100644
 --- a/client/open_cdm_impl.h
 +++ b/client/open_cdm_impl.h
-@@ -164,6 +164,102 @@ public:
+@@ -164,6 +164,116 @@ public:
          }
      }
  
@@ -335,10 +352,24 @@ index 9010689..e861a71 100644
 +        }
 +    }
 +
++    virtual Exchange::OCDM_RESULT GetLibraryVersion(const std::string& keySystem, uint8_t* versionOut, uint32_t versionOutSize) const override
++    {
++        Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
++        if (_remote == nullptr) {
++            Reconnect();
++        }
++        if (_remote == nullptr) {
++            return Exchange::OCDM_RESULT::OCDM_S_FALSE;
++        } else {
++            result = _remote->GetLibraryVersion(keySystem, versionOut, versionOutSize);
++            return result;
++        }
++    }
++
      virtual Exchange::OCDM_RESULT Metricdata(const string& keySystem, uint32_t& length, uint8_t buffer[]) const override {
          Exchange::OCDM_RESULT result = Exchange::OCDM_INVALID_ACCESSOR;
   
-@@ -470,6 +566,67 @@ private:
+@@ -470,6 +580,67 @@ private:
          }
  
      public:
@@ -406,7 +437,7 @@ index 9010689..e861a71 100644
          uint32_t Decrypt(uint8_t* encryptedData, uint32_t encryptedDataLength,
              const ::SampleInfo* sampleInfo,
              uint32_t initWithLast15,
-@@ -738,6 +895,50 @@ public:
+@@ -740,6 +911,50 @@ public:
          return (result);
      }
  
@@ -457,7 +488,7 @@ index 9010689..e861a71 100644
      void* SessionPrivateData() const
      {
          return _pvtData;
-@@ -839,7 +1040,6 @@ protected:
+@@ -851,7 +1066,6 @@ protected:
              std::string bufferid;
              ASSERT(_session != nullptr);
              uint32_t result = _session->CreateSessionBuffer(bufferid);
