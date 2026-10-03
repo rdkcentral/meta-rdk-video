@@ -1,0 +1,32 @@
+diff --git a/aidl-generator/CMakeLists.txt b/aidl-generator/CMakeLists.txt
+index 20e2ff0..91ab7d3 100644
+--- a/aidl-generator/CMakeLists.txt
++++ b/aidl-generator/CMakeLists.txt
+@@ -34,6 +34,11 @@ find_package(PkgConfig)
+
+ project (aidl-compiler)
+
++if(DEFINED ENV{YOCTO_SKIP_AIDL})
++    message(STATUS "Skipping aidl-generator for Yocto (using native AIDL tool)")
++    return()
++endif()
++
+ ###########################################################
+ # Set build environment flags
+ ###########################################################
+@@ -263,7 +268,6 @@ find_package(FLEX)
+ find_package(BISON)
+
+ set(FLEX_FOUND "True")
+-set(FLEX_EXECUTABLE "/usr/bin/flex")
+
+ set(FLEX_OUT "${GENERATED_DIR}/aidl_language_l.cpp")
+ set(FLEX_SRC "${AIDL_DIR}/aidl_language_l.ll")
+@@ -271,7 +275,6 @@ set(FLEX_SRC "${AIDL_DIR}/aidl_language_l.ll")
+ FLEX_TARGET(lexer ${FLEX_SRC} ${FLEX_OUT})
+
+ set(BISON_FOUND "True")
+-set(BISON_EXECUTABLE "${ANDROID_BUILD_TOOLS_DIR}/bin/bison")
+
+ set(BISON_OUT       "${GENERATED_DIR}/aidl_language_y.cpp")
+ set(BISON_DEFINES   "${GENERATED_DIR}/aidl_language_y.h")
