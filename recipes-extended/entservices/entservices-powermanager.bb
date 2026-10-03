@@ -14,7 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFF
           "
 
 # Release version - 1.4.9
-SRCREV = "f31899d61472a1537ec6fd1194c3011e7d4982c4"
+SRCREV = "d03328b5fa0b36003e2ad1330526b5c09a8b7a73"
 SRCREV:vdevice_x86-64-mw = "c7519329de6b1af6ac9e8a64694ffc64bf8830c3"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -25,6 +25,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 EXTRA_OECMAKE += " -DBUILD_ENABLE_THERMAL_PROTECTION=ON "
+EXTRA_OECMAKE += " -DPOWERCONTROLLER=ON "
 EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
     -DENABLE_POWERMANAGER_AIDL=ON \
     -DPOWERMANAGER_AIDL_STAGING_INCLUDE_DIR=${STAGING_INCDIR} \
@@ -72,6 +73,7 @@ CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB',
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
     powermanager \
+    powercontroller \
 "
 
 POWERMANAGER_DEPS = "iarmbus iarmmgrs virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal virtual/mfrlib entservices-apis entservices-helpers"
@@ -83,6 +85,7 @@ POWERMANAGER_RDEPS:vdevice_x86-64-mw = "virtual/mfrlib entservices-apis entservi
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 PACKAGECONFIG[powermanager]         = "-DPLUGIN_POWERMANAGER=ON,-DPLUGIN_POWERMANAGER=OFF,${POWERMANAGER_DEPS},${POWERMANAGER_RDEPS}"
+PACKAGECONFIG[powercontroller]      = "-DPOWERCONTROLLER=ON, -DPOWERCONTROLLER=OFF,"
 
 # ----------------------------------------------------------------------------
 
@@ -208,6 +211,7 @@ do_install:append() {
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
+FILES:${PN}-dev += "${includedir}/WPEFramework/powercontroller ${libdir}/pkgconfig/*.pc ${libdir}/cmake/*"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so dev-deps"
 INSANE_SKIP:${PN}-dbg += "libdir"
