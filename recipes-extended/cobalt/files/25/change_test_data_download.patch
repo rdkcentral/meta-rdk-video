@@ -1,0 +1,28 @@
+diff --git a/starboard/build/config/os_definitions.gni b/starboard/build/config/os_definitions.gni
+index e97deda7aee..38a1dd4fda8 100644
+--- a/starboard/build/config/os_definitions.gni
++++ b/starboard/build/config/os_definitions.gni
+@@ -39,3 +39,4 @@ is_win_host = host_os == "win"
+ is_linux_host = host_os == "linux"
+ is_mac_host = host_os == "mac"
+ is_lto = false
++enable_test_data_download = false
+diff --git a/starboard/nplb/BUILD.gn b/starboard/nplb/BUILD.gn
+index ca1f90be780..2a29a25e6aa 100644
+--- a/starboard/nplb/BUILD.gn
++++ b/starboard/nplb/BUILD.gn
+@@ -342,9 +342,13 @@ target(gtest_target_type, "nplb") {
+   data_deps = [
+     "//cobalt/network:copy_ssl_certificates",
+     "//starboard/nplb/testdata/file_tests:nplb_file_tests_data",
+-    "//starboard/shared/starboard/player:player_download_test_data",
+   ]
+ 
++
++  if (enable_test_data_download) {
++    data_deps += [ "//starboard/shared/starboard/player:player_download_test_data" ]
++  }
++
+   if (is_clang_16) {
+     # signedness_and_size_of_enum_test.cc casts -1 to enum value
+     cflags = [ "-Wno-enum-constexpr-conversion" ]
