@@ -43,7 +43,7 @@ EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
 LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
 
 PACKAGECONFIG ?= " \
-    debug \
+    release \
     virtualinput \
     websocket \
     "
