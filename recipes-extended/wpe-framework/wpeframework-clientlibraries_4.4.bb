@@ -49,6 +49,7 @@ require recipes-extended/entservices/include/compositor.inc
 
 DEPENDS = " \
     entservices-apis \
+    entservices-powermanager \
     wpeframework-tools-native \
     ${@bb.utils.contains('DISTRO_FEATURES', 'compositor', '${WPE_COMPOSITOR_DEP}', '', d)} \
     gstreamer1.0 \
