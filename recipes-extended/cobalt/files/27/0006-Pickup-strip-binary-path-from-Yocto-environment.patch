@@ -1,0 +1,28 @@
+From 10a37adc7677c76796eaab8b9a163a9ebd0535f1 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Wed, 9 Sep 2026 18:34:44 +0000
+Subject: [PATCH 6/6] Pickup strip binary path from Yocto environment
+
+---
+ cobalt/build/toolchain/linux/strip.gni | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/cobalt/build/toolchain/linux/strip.gni b/cobalt/build/toolchain/linux/strip.gni
+index dd2ab98ee42..6dee218c64c 100644
+--- a/cobalt/build/toolchain/linux/strip.gni
++++ b/cobalt/build/toolchain/linux/strip.gni
+@@ -14,9 +14,9 @@
+ 
+ if (is_official_build && is_cobalt_hermetic_build) {
+   if (target_cpu == "arm") {
+-    strip_executable = "arm-linux-gnueabi-strip"
++    strip_executable = getenv("STRIP")
+   } else if (target_cpu == "arm64") {
+-    strip_executable = "aarch64-linux-gnu-strip"
++    strip_executable = getenv("STRIP")
+   } else if (target_cpu == "x64") {
+     strip_executable = "strip"
+   } else {
+-- 
+2.34.1
+
