@@ -8,6 +8,9 @@ SRC_URI        = "git://github.com/tensorflow/tensorflow;protocol=https;branch=$
 SRCREV         = "7598e84989f70a75070534cb51ef49aaef927379"
 
 S = "${WORKDIR}/git/tensorflow/lite/c"
+# Match xr-mfv-hal so the lib32/multilib package lands in the same feed and opkg
+# can resolve it at do_rootfs.
+PACKAGE_ARCH            = "${MIDDLEWARE_ARCH}"
 FILES:${PN}:append      = " /vendor/lib/libtensorflowlite_c.so"
 FILES:${PN}-dev:append  = " /vendor/include"
 INHIBIT_PACKAGE_STRIP   = "0"

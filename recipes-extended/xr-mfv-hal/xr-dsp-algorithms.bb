@@ -24,6 +24,10 @@ SRCREV_FORMAT = "vsdk-xraudio-ffv-algorithms"
 
 S = "${WORKDIR}/git"
 
+# Match xr-mfv-hal so the lib32/multilib package lands in the same feed and opkg
+# can resolve it at do_rootfs.
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
 # Workaround for package error "canonicalization unexpectedly shrank by one character"
 PACKAGE_DEBUG_SPLIT_STYLE = "debug-without-src"
 
