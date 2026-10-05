@@ -211,7 +211,6 @@ do_install:append() {
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
-FILES:${PN}-dev += "${includedir}/WPEFramework/powercontroller ${libdir}/pkgconfig/*.pc ${libdir}/cmake/*"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so dev-deps"
 INSANE_SKIP:${PN}-dbg += "libdir"
