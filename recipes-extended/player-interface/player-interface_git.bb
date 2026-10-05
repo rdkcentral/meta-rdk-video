@@ -6,9 +6,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 PV = "0.2.0-r3"
 PR = "r0"
 
-SRCREV = "42c9a1e38a6eff8157a388fd33941948c21134f0"
+SRCREV = "25d98a267580ca2cfc200bb7e591e545f6dd61b2"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-23221"
+PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-23221_1"
 
 inherit pkgconfig
 inherit cmake
