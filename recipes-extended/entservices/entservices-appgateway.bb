@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=af6837dbae6be5e19b54c9b43888caa3"
 PV = "1.6.0.0"
 PR = "r0"
 # Release version - 1.6.0.0
-SRCREV = "bf73b0aeebd871ba05439671bbe9293cdfba1daa"
+SRCREV = "d7fb6b62db9a55c1a61f2ffcf13b27fc87649b77"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
