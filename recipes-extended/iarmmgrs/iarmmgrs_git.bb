@@ -26,7 +26,7 @@ DEPENDS:append = " telemetry"
 PARALLEL_MAKE = ""
 DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal \
          ermgr iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
-         deepsleep-manager-headers power-manager-headers wpeframework-clientlibraries entservices-powermanager"
+         deepsleep-manager-headers power-manager-headers entservices-powermanager wpeframework-clientlibraries"
 DEPENDS:append:client = " virtual/mfrlib"
 DEPENDS:append = " virtual/mfrlib"
 DEPENDS:append = " virtual/vendor-devicesettings-hal "
