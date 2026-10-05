@@ -72,8 +72,6 @@ PACKAGECONFIG ?= " \
     powercontroller \
     "
 
-PACKAGECONFIG:append = " powercontroller"
-
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'compositor', 'compositorclient', '', d)}"
 
 PACKAGECONFIG[compositorclient] = "-DCOMPOSITORCLIENT=ON,-DCOMPOSITORCLIENT=OFF"
