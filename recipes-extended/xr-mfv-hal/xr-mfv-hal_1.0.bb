@@ -48,8 +48,10 @@ do_install() {
     install -m 0644 ${S}/MFV/opt/mfv_plugin/comcast_kw_model_uk_26-06-18.tflite ${D}${sysconfdir}/mfv_plugin/comcast_kw_model_uk_26-06-18.tflite
 }
 
+# xr-voice-sdk-xlog is listed explicitly (not just via the shlib scanner) so the
+# runtime provider is guaranteed to build and be pulled into the image feed.
 FILES:${PN} += "${libdir}/libxraudio_mfv.so ${sysconfdir}/mfv_plugin/*"
-RDEPENDS:${PN} += "xraudio-tensorflow-lite-lib xr-dsp-algorithms"
+RDEPENDS:${PN} += "xraudio-tensorflow-lite-lib xr-dsp-algorithms xr-voice-sdk-xlog"
 
 # libxraudio_mfv.so is an unversioned plugin loaded at runtime. Treat it as a
 # runtime solib and stop the -dev package from claiming the bare .so, otherwise

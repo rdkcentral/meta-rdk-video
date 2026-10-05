@@ -7,6 +7,10 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 # xlog ships from the same xr-voice-sdk repo, so track the same version/SRCREV.
 include xr-voice-sdk.inc
 
+# Match the consumers (xr-voice-sdk, xr-mfv-hal) so the lib32/multilib shlib
+# provider lands in the same package feed and opkg can resolve it at do_rootfs.
+PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
+
 SRC_URI = "${CMF_GITHUB_ROOT}/xr-voice-sdk;${CMF_GITHUB_SRC_URI_SUFFIX};name=xr-voice-sdk-xlog"
 
 SRCREV        := "${XR_VOICE_SDK_SRCREV}"
