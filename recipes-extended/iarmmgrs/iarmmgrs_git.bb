@@ -34,6 +34,7 @@ DEPENDS:append = " virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal "
 RDEPENDS:${PN}:append = " devicesettings rfc"
 RDEPENDS:${PN}_client_morty += " virtual/mfrlib"
 RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_mfrlib} devicesettings"
+RDEPENDS:${PN}:append = " entservices-powermanager"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
