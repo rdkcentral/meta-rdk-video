@@ -33,7 +33,6 @@ RDEPENDS:${PN}:append = " wpeframework-clientlibraries "
 
 # Add powercontroller dependency
 DEPENDS += "entservices-powercontroller"
-RDEPENDS:${PN}:append = " entservices-powermanager"
 LDFLAGS += "-lWPEFrameworkPowerController"
 
 # Add remotedebugger dependency
