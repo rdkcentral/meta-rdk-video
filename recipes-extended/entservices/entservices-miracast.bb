@@ -5,11 +5,18 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 PV = "2.1.3"
 PR = "r0"
 
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-miracast;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
+
+SRC_URI += " \
+    file://wpa_ctrl_210.h \
+    file://wpa_ctrl_211.h \
+"
 
 # Release version - 2.1.3
 SRCREV = "76003a7a5a0bbdd4987e850e00a7b17f24893ca3"
@@ -30,6 +37,22 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
+python __anonymous () {
+    pv = d.getVar('PREFERRED_VERSION_wpa-supplicant')
+    if pv == "2.11":
+        d.setVar('WPA_CTRL_HEADER', 'wpa_ctrl_211.h')
+    elif pv == "2.10":
+        d.setVar('WPA_CTRL_HEADER', 'wpa_ctrl_210.h')
+    else:
+        bb.fatal("Unsupported PREFERRED_VERSION_wpa-supplicant: %s" % pv)
+}
+
+do_configure:prepend() {
+    mkdir -p ${S}/wpa_includes/
+    install -m 0644 ${WORKDIR}/${WPA_CTRL_HEADER} ${S}/wpa_includes/wpa_ctrl.h
+}
+
+CXXFLAGS:append = " -I${S}/wpa_includes/ "
 # ----------------------------------------------------------------------------
 
 PACKAGECONFIG ?= " breakpadsupport \
