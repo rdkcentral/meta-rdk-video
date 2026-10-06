@@ -9,7 +9,7 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFFIX}"
-SRCREV = "d03328b5fa0b36003e2ad1330526b5c09a8b7a73"
+SRCREV = "2b8212b80ad5d799443e0d11446e2df9e0f19c74"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
