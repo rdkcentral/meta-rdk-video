@@ -14,10 +14,10 @@ NETWORKMANAGER_STUN_PORT ?= "19302"
 NETWORKMANAGER_LOGLEVEL ?= "3"
 
 PR = "r0"
-PV = "4.3.0"
+PV = "4.4.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=RDKEMW-21089_Dev"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=topic/RDKEMW-21089_Dev"
 
 SRCREV = "345c37de4f78d73d323aac3dc8d952f702e7249b"
 
