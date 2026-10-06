@@ -2,7 +2,7 @@ SUMMARY = "ENTServices XCast plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV = "2.2.0"
+PV = "2.2.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-xcast;${CMF_GITHUB_SRC_URI_SUFFIX}\
           "
 
-# Release version - 2.2.0
-SRCREV = "61b897d5bb937dab3f5c9444ac6fc58051c13381"
+# Release version - 2.2.1
+SRCREV = "befdf1f23236489591fc64677f29690e4c696e89"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
