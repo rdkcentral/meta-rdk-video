@@ -26,7 +26,7 @@ DEPENDS:append = " telemetry"
 PARALLEL_MAKE = ""
 DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal \
          ermgr iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
-         deepsleep-manager-headers power-manager-headers entservices-powermanager wpeframework-clientlibraries"
+         deepsleep-manager-headers power-manager-headers entservices-powercontroller wpeframework-clientlibraries"
 DEPENDS:append:client = " virtual/mfrlib"
 DEPENDS:append = " virtual/mfrlib"
 DEPENDS:append = " virtual/vendor-devicesettings-hal "
@@ -34,7 +34,6 @@ DEPENDS:append = " virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal "
 RDEPENDS:${PN}:append = " devicesettings rfc"
 RDEPENDS:${PN}_client_morty += " virtual/mfrlib"
 RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_mfrlib} devicesettings"
-RDEPENDS:${PN}:append = " entservices-powermanager"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
