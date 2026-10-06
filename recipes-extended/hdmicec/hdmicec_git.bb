@@ -5,11 +5,10 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PV = "1.0.11"
-PV:vdevice_x86-64-mw = "1.0.11.1"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV_hdmicec = "7c46960036c15c66727d06b65454273715563c8a"
+SRCREV_hdmicec = "8968afb10ad6992300c6c6aa149403c5d1ad4da0"
 SRCREV_hdmicec:vdevice_x86-64-mw = "57df60fdf8866460613735af1d2e39caa3939242"
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
@@ -17,11 +16,15 @@ SRCREV_FORMAT = "hdmicec"
 DEPENDS = "glib-2.0 dbus iarmbus devicesettings devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
 DEPENDS:remove:vdevice_x86-64-mw = "devicesettings devicesettings-hal-headers iarmmgrs-hal-headers"
 
-RDEPENDS:${PN} = " devicesettings telemetry"
+RDEPENDS:${PN} = " devicesettings telemetry rdk-halif-aidl-mw-hdmicec rdk-halif-aidl-mw-common libbinderrdk"
 RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
-RDEPENDS:${PN}:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw-hdmicec rdk-halif-aidl-mw-common libbinderrdk"
+DEPENDS:remove:vdevice_x86-64-mw = "devicesettings devicesettings-hal-headers iarmmgrs-hal-headers"
+
+RDEPENDS:${PN} = " devicesettings telemetry rdk-halif-aidl-mw-hdmicec rdk-halif-aidl-mw-common libbinderrdk"
+RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
 
 DEPENDS += "safec-common-wrapper"
+DEPENDS:append = " rdk-halif-aidl-mw libbinderrdk "
 DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw libbinderrdk"
 
 ASNEEDED = ""
@@ -51,18 +54,41 @@ CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-confi
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
-LDFLAGS:append:vdevice_x86-64-mw = " \
+LDFLAGS:append = " \
     -L${STAGING_DIR_HOST}${prefix}/mw/lib/binder -L${STAGING_LIBDIR}/mw/rdk-halif-aidl \
 "
+
+LDFLAGS:append = " -L${STAGING_LIBDIR}/mw"
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
-CFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/mw/hdmicec/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include -I${STAGING_INCDIR}/android"
-CXXFLAGS:append:vdevice_x86-64-mw = " -I${STAGING_INCDIR}/mw/hdmicec/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include -I${STAGING_INCDIR}/android"
+CFLAGS:append = " -I${STAGING_INCDIR}/mw/hdmicec/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include -I${STAGING_INCDIR}/android"
+CFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
+
+CXXFLAGS:append = " -I${STAGING_INCDIR}/mw/hdmicec/0.1.0.0/include -I${STAGING_INCDIR}/mw/common/0.2.0.0/include -I${STAGING_INCDIR}/mw/include -I${STAGING_INCDIR}/android"
+
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
+
+CFLAGS:append:vdevice_x86-64-mw = " \
+    -I${STAGING_INCDIR}/mw \
+    -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
+"
+
+CXXFLAGS:append:vdevice_x86-64-mw = " \
+    -I${STAGING_INCDIR}/mw \
+    -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
+"
 
 INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/ds-hal \
     "
+
+EXTRA_OECONF += " \
+    HALIF_PREFIX=${STAGING_INCDIR}/mw \
+    HALIF_LIB_DIR=${STAGING_LIBDIR}/mw/rdk-halif-aidl \
+    BINDER_SDK_DIR=${STAGING_DIR_HOST}${prefix}/mw \
+    BINDER_SDK_INCLUDE_DIR=${STAGING_INCDIR}/mw/include \
+"
 
 do_install:append() {
 #        install -d ${D}${includedir}/rdk/hdmicec
@@ -74,18 +100,38 @@ do_install:append() {
 #        install -d ${D}${base_libdir}/rdk
 }
 
-do_configure:append:vdevice_x86-64-mw() {
+do_configure:append() {
+        case ":${OVERRIDES}:" in
+                *:vdevice_x86-64-mw:*)
+                        return 0
+                        ;;
+        esac
+
     # Patch the generated Makefile to:
-        #  1. link the AIDL helpers archive into libRCEC.so so typeinfo symbols are defined
+    #  1. link the AIDL stubs archive into libRCEC.so so typeinfo symbols are defined
     #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
-                #     runtime from libbinder.so
+        #     runtime from the binder provider in the target image
     sed -i \
-                                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = -lhdmicec-cpp \${top_builddir}/osal/src/libRCECOSHal.la|" \
-      ${B}/ccec/src/Makefile
+                                "s|^libRCEC_la_LIBADD = .*|libRCEC_la_LIBADD = -lhdmicec-cpp \${top_builddir}/osal/src/libRCECOSHal.la|" \
+                                "${B}/ccec/src/Makefile"
 
     sed -i \
-      's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinder -lutils -llog -lbase|' \
-      ${B}/ccec/src/Makefile
+                                's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinder -lutils -llog -lbase|' \
+                                "${B}/ccec/src/Makefile"
+}
+
+do_configure:append:vdevice_x86-64-mw() {
+                # Patch the generated Makefile to:
+                #  1. link the AIDL stubs archive into libRCEC.so so typeinfo symbols are defined
+                #  2. add -lbinder so android::BBinder/android::BpBinder typeinfo is resolved at
+                #     runtime from libbinder.so (which rdk-halif-aidl installs)
+                sed -i \
+                        's|libRCEC_la_LIBADD = -lRCECOSHal|libRCEC_la_LIBADD = -lhdmicec-cpp -lRCECOSHal|' \
+                        ${B}/ccec/src/Makefile
+
+                sed -i \
+                        's|libRCEC_la_LDFLAGS = -lpthread|libRCEC_la_LDFLAGS = -lpthread -lbinder -lutils -llog -lbase|' \
+                        ${B}/ccec/src/Makefile
 }
 
 # entservices-hdmicecsource still looks for the legacy HAL soname.
