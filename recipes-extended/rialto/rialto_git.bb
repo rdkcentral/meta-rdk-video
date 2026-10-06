@@ -26,6 +26,8 @@ DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform "
 S = "${WORKDIR}/git"
 inherit pkgconfig cmake coverity features_check
 
+INHIBIT_STRIP = "1"
+
 EXTRA_OECMAKE += " ${@bb.utils.contains("IMAGE_FEATURES", "prod", "-DRIALTO_BUILD_TYPE=Release", "-DRIALTO_BUILD_TYPE=Debug", d)} "
 
 PACKAGES =+ "${PN}-client ${PN}-server ${PN}-servermanager-lib ${PN}-servermanager ${PN}-client-dev ${PN}-server-dev ${PN}-servermanager-lib-dev ${PN}-servermanager-dev "
