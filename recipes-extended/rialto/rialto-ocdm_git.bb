@@ -17,7 +17,7 @@ PV = "${RIALTO_OCDM_VERSION}"
 PR = "${RIALTO_OCDM_PR}"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "990e56634478bcb3d86c4e5ef18e66ce787f1245"
+SRCREV = "${RIALTO_OCDM_SRCREV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto-ocdm;protocol=${CMF_GIT_PROTOCOL};branch=${RIALTO_OCDM_BRANCH}"
 
 DEPENDS = "openssl jsoncpp glib-2.0 gstreamer1.0 gstreamer1.0-plugins-base wpeframework-tools-native wpeframework-clientlibraries protobuf protobuf-native rialto"
