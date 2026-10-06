@@ -77,7 +77,6 @@ PACKAGECONFIG[compositorclient] = "-DCOMPOSITORCLIENT=ON,-DCOMPOSITORCLIENT=OFF"
 PACKAGECONFIG[provisionproxy]   = "-DPROVISIONPROXY=ON,-DPROVISIONPROXY=OFF,libprovision"
 PACKAGECONFIG[securityagent]    = "-DSECURITYAGENT=ON, -DSECURITYAGENT=OFF"
 PACKAGECONFIG[cryptography]     = "-DCRYPTOGRAPHY=ON, -DCRYPTOGRAPHY=OFF,"
-# PACKAGECONFIG[powercontroller]     = "-DPOWERCONTROLLER=ON, -DPOWERCONTROLLER=OFF,"
 
 # ----------------------------------------------------------------------------
 

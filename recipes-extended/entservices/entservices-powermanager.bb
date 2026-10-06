@@ -58,6 +58,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 INCLUDE_DIRS = " \
     -I=${includedir}/rdk/halif/power-manager \
+    -I=${includedir}/WPEFramework/powercontroller \
     "
 
 CXXFLAGS += " -DPLATCO_BOOTTO_STANDBY"

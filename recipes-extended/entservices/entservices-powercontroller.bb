@@ -29,7 +29,6 @@ EXTRA_OECMAKE += " \
 "
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/*.so ${PKG_CONFIG_DIR}/*.pc"
-FILES:${PN}-dev += "${includedir}/WPEFramework/powercontroller ${libdir}/cmake/*"
+FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
 INSANE_SKIP:${PN} += "dev-so"
