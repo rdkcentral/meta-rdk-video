@@ -22,8 +22,8 @@ RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
 RDEPENDS:${PN}:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw-hdmicec rdk-halif-aidl-mw-common libbinderrdk"
 
 DEPENDS += "safec-common-wrapper"
-DEPENDS:append = " rdk-halif-aidl libbinderrdk"
-DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinderrdk"
+DEPENDS:append = " rdk-halif-aidl-mw libbinderrdk"
+DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw libbinderrdk"
 
 ASNEEDED = ""
 ALLOW_EMPTY:${PN} = "1"
@@ -67,10 +67,14 @@ CFLAGS:append = " \
     -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
 "
 
+CFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
+
 CXXFLAGS:append = " \
     -I${STAGING_INCDIR}/mw \
     -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
 "
+
+CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
 
 CFLAGS:append:vdevice_x86-64-mw = " \
     -I${STAGING_INCDIR}/mw \
