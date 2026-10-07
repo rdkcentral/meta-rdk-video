@@ -8,7 +8,7 @@ PV = "1.0.11"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV_hdmicec = "57f438cf7106483a63d76e2de0a196926e68d720"
+SRCREV_hdmicec = "57df60fdf8866460613735af1d2e39caa3939242"
 SRCREV_hdmicec:vdevice_x86-64-mw = "57df60fdf8866460613735af1d2e39caa3939242"
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
@@ -18,10 +18,11 @@ DEPENDS:remove:vdevice_x86-64-mw = "devicesettings devicesettings-hal-headers ia
 
 RDEPENDS:${PN} = " devicesettings telemetry"
 RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
+RDEPENDS:${PN}:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw-hdmicec rdk-halif-aidl-mw-common libbinderrdk"
 
 DEPENDS += "safec-common-wrapper"
-DEPENDS:append = " rdk-halif-aidl-mw libbinderrdk"
-DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw libbinderrdk"
+DEPENDS:append = " rdk-halif-aidl libbinderrdk"
+DEPENDS:append:vdevice_x86-64-mw = " rdk-halif-aidl libbinderrdk"
 
 ASNEEDED = ""
 ALLOW_EMPTY:${PN} = "1"
@@ -50,7 +51,14 @@ CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-confi
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
+
+LDFLAGS:append:vdevice_x86-64-mw = " \
+    -L${STAGING_DIR_HOST}${prefix}/mw/lib/binder -L${STAGING_LIBDIR}/mw/rdk-halif-aidl \
+"
+LDFLAGS:append:vdevice_x86-64-mw = " -L${STAGING_LIBDIR}/mw"
+
 LDFLAGS:append = " -L${STAGING_LIBDIR}/mw"
+
 CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', '', ' -DSAFEC_DUMMY_API', d)}"
 
@@ -59,14 +67,10 @@ CFLAGS:append = " \
     -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
 "
 
-CFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
-
 CXXFLAGS:append = " \
     -I${STAGING_INCDIR}/mw \
     -I${STAGING_INCDIR}/mw/com/rdk/hal/hdmicec \
 "
-
-CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal "
 
 CFLAGS:append:vdevice_x86-64-mw = " \
     -I${STAGING_INCDIR}/mw \

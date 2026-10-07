@@ -4,7 +4,7 @@ SECTION = "rdk/libs"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "2.0.0"
+PV = "2.0.1"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -13,7 +13,7 @@ RPROVIDES:${PN} = "virtual/libpackage"
 
 DEPENDS += "packager-headers"
 
-SRCREV = "5a6a9dba78259c68611a4e4101e83af04e1bf4b9"
+SRCREV = "${PV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/libpackage;${CMF_GITHUB_SRC_URI_SUFFIX};name=lisapack"
 SRCREV_FORMAT = "lisapack"
 
