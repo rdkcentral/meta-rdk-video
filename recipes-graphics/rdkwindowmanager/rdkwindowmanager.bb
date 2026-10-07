@@ -8,10 +8,10 @@ DEPENDS = "westeros wayland essos virtual/egl rapidjson jpeg libpng curl"
 DEPENDS:append = "${@bb.utils.contains_any('DISTRO_FEATURES', 'prodlog-variant prod-variant', '', 'libsoup-2.4 boost libsyswrapper', d)}"
 
 S = "${WORKDIR}/git"
-PV = "1.3.2"
+PV = "1.4.0"
 PR = "r0"
 
-SRCREV = "0ac8aeb73f4298e6355b07737aa3d54435941ae4"
+SRCREV = "d43ff7a95b0166aa2ceaafc4bac29eb911624f24"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdk-window-manager;${CMF_GITHUB_SRC_URI_SUFFIX}"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -59,6 +59,11 @@ do_install() {
 
     install -d ${D}${includedir}/rdkwindowmanager/include/
     install -m 644 ${S}/include/*.h ${D}${includedir}/rdkwindowmanager/include/
+
+   ## Write component version info to /etc
+   install -d ${D}${sysconfdir}
+   echo "RDK_WINDOW_MANAGER_PV = \"${PV}\"" >  ${D}${sysconfdir}/rdkwindowmanagerversion.txt
+   echo "RDK_WINDOW_MANAGER_SHA = \"${SRCREV}\"" >> ${D}${sysconfdir}/rdkwindowmanagerversion.txt
 }
 
 INSANE_SKIP:${PN} = "installed-vs-shipped"
@@ -76,4 +81,4 @@ FILES:${PN} += "${libdir}/plugins/westeros/libwstplugin_rdkwmfireboltwm.so"
 FILES:${PN} += "${bindir}/rdkwindowmanager"
 FILES:${PN} += "${bindir}/rdkwindowmanagertest"
 FILES:${PN} += "${bindir}/rdkwmtest"
-
+FILES:${PN} += "${sysconfdir}/rdkwindowmanagerversion.txt"
