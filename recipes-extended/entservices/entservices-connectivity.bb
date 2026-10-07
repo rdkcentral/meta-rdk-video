@@ -81,5 +81,9 @@ do_install:append() {
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
 
-INSANE_SKIP:${PN} += "libdir staticdev dev-so"
+# librdk_bluetooth.so.1 may come from a prebuilt vendor IPK feed, which has no shlibs data in this build.
+INSANE_SKIP:${PN} += "libdir staticdev dev-so file-rdeps"
 INSANE_SKIP:${PN}-dbg += "libdir"
+
+# Products without the real SDK (HAS_BLUETOOTH_SDK != 1) get the stub's librdk_bluetooth.so.1.
+RDEPENDS:${PN}:append = "${@' bluetoothsdk-stub' if ('bluetoothcontrol' in (d.getVar('PACKAGECONFIG') or '').split() and d.getVar('HAS_BLUETOOTH_SDK') != '1') else ''}"
