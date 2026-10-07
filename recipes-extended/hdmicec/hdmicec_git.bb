@@ -5,6 +5,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PV = "1.0.11"
+PV:vdevice_x86-64-mw = "1.0.11.1"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -51,7 +52,6 @@ CFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-confi
 CXXFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec',  ' `pkg-config --cflags libsafec`', '-fPIC', d)}"
 
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
-
 LDFLAGS:append:vdevice_x86-64-mw = " \
     -L${STAGING_DIR_HOST}${prefix}/mw/lib/binder -L${STAGING_LIBDIR}/mw/rdk-halif-aidl \
 "
