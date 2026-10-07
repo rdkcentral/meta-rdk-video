@@ -9,7 +9,7 @@ PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'es1test-jsonrpc-benchmark', '', d)}"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'es1test-jsonrpc-benchmark es1benchmark-async', '', d)}"
 
 SRCREV = "b348f149972b38fa17aaf30aa653c91486de758c"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
@@ -69,6 +69,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-telemetrymetrics.service \
     wpeframework-devicediagnostics.service \
     ${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'wpeframework-es1benchmark.service', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'wpeframework-es1benchmarkasync.service', '', d)} \
     "
 
 CONTROL_FILES = "\
@@ -95,6 +96,7 @@ do_install() {
         install -m 0644 ${S}/es1bench.service ${D}${systemd_system_unitdir}
         install -m 0644 ${S}/es1bench-coldstart.service ${D}${systemd_system_unitdir}
         install -m 0644 ${S}/JsonRpcLoadClient.service ${D}${systemd_system_unitdir}
+        install -m 0644 ${S}/es1benchmarkasync.service ${D}${systemd_system_unitdir}
         install -d ${D}${sysconfdir}/systemd/system/multi-user.target.wants
         ln -sf ${systemd_system_unitdir}/es1bench-coldstart.service ${D}${sysconfdir}/systemd/system/multi-user.target.wants/es1bench-coldstart.service
     fi
