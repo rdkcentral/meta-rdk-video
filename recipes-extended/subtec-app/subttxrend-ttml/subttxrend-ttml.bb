@@ -5,13 +5,13 @@
 ##
 LICENSE = "Apache-2.0 & MIT & BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://../LICENSE;md5=626bbc2ac7625da5b97fcb8a24bd88b3"
-PV = "1.8.1"
+PV = "1.8.2"
 PR = "r0"
 DEPENDS = "subttxrend-common libxml2 subttxrend-gfx"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "dabbbc39aae83561eda24ea28c9e742bbb1fce39"
+SRCREV = "43a13fb34ba24484512f6c7fc8e68011ed95b92a"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-ttml"
 
