@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-maintenancemanager;${CMF_GITHUB_SRC_UR
 # Release version - 1.16.0
 PV = "1.16.0"
 PR = "r0"
-SRCREV = "d07176aa349bce937cc59c603220f9ba0af0ec3a"
+SRCREV = "f496544661b158ec1f92b059d20204daf7e5f506"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
