@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
 PV = "4.1.6"
 PR = "r0"
-SRCREV_entservices-apis = "9fc6ffb937d538e6d3029f2b6cfead3288e83dde"
+SRCREV_entservices-apis = "bdc446fdf1903711dfc5b2e7f675333c6fc539dc"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -15,8 +15,7 @@ DEPENDS = "${THUNDER_NAMESPACE_LC} ${THUNDER_NAMESPACE_LC}-tools-native"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis"
 
-IAUTHSERVICE_PATCH = "${@bb.utils.contains('DISTRO_FEATURES', 'thunder_5', 'file://RDKEMW-1007-Thunder5.patch', 'file://RDKEMW-1007.patch', d)}"
-SRC_URI += "${IAUTHSERVICE_PATCH}"
+SRC_URI += "file://RDKEMW-1007-Thunder5.patch"
 SRC_URI += "file://entservices-apis-fps-ocdm.patch"
 SRC_URI += "file://idrm.patch"
 
