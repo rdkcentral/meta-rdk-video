@@ -1,86 +1,28 @@
 diff --git a/Source/com/IUnknown.cpp b/Source/com/IUnknown.cpp
-index 7694a30c..042761e0 100644
+index 7694a30c..f3b120f7 100644
 --- a/Source/com/IUnknown.cpp
 +++ b/Source/com/IUnknown.cpp
-@@ -110,6 +110,14 @@ namespace ProxyStub {
+@@ -110,6 +110,23 @@ namespace ProxyStub {
  
                  if (result == Core::ERROR_TIMEDOUT) {
                      SYSLOG(Logging::Error, (_T("IPC method Invoke failed due to timeout (Interface ID 0x%X, Method ID 0x%X). Execution of code may or may not have happened. Side effects are to be expected after this message"), message->Parameters().InterfaceId(), message->Parameters().MethodId()));
-+                    Dl_info info;
-+                    void* vtable_addr = *reinterpret_cast<void* const*>(this);
-+                    dladdr(vtable_addr, &info);
-+                    fprintf(stderr, "pid=%d tid=%d %s fname=%s\n",
-+                            getpid(),
-+                            gettid(),
-+                            __FUNCTION__,
-+                            info.dli_fname);
++
++                    std::stringstream ss;
++                    ss << std::hex << std::this_thread::get_id();
++                    fprintf(stderr, "Pid=%d tid=%d T:%s\n", getpid(), gettid(), ss.str().c_str());
++                    const auto metaData = Core::WorkerPool::Instance().Snapshot();
++                    for (const auto& jobInfo : metaData.Pending) {
++                        fprintf(stderr, "Job: %s\n", jobInfo.c_str());
++                    }
++                    fprintf(stderr, "Poolruns:\n");
++                    for (uint8_t index = 0; index < metaData.Slots; index++) {
++                        fprintf(stderr, "  Thread%02d|0x%16lX: %10d", (index + 1), metaData.Slot[index].WorkerId, metaData.Slot[index].Runs);
++                        if (metaData.Slot[index].Job.IsSet() == false) {
++                            fprintf(stderr, "\n");
++                        } else {
++                            fprintf(stderr, " [%s]\n", metaData.Slot[index].Job.Value().c_str());
++                        }
++                    }
                  }
  
                  result |= COM_ERROR;
-diff --git a/Source/websocket/JSONRPCLink.h b/Source/websocket/JSONRPCLink.h
-index ed8026b2..db40adcc 100644
---- a/Source/websocket/JSONRPCLink.h
-+++ b/Source/websocket/JSONRPCLink.h
-@@ -406,6 +406,14 @@ namespace WPEFramework {
- 							message.Id = id;
- 							message.Error.Code = Core::ERROR_TIMEDOUT;
- 							message.Error.Text = _T("Pending a-sync call has timed out");
-+                            Dl_info info;
-+                            void* vtable_addr = *reinterpret_cast<void**>(this);
-+                            dladdr(vtable_addr, &info);
-+                            fprintf(stderr, "pid=%d tid=%d %s fname=%s\n",
-+                                    getpid(),
-+                                    gettid(),
-+                                    __FUNCTION__,
-+                                    info.dli_fname);
- 							_info.async._completed(message);
- 							expired = true;
- 						}
-@@ -522,6 +530,15 @@ namespace WPEFramework {
- 				, _scheduledTime(0)
- 				, _versionstring()
- 			{
-+                Dl_info info;
-+                void* vtable_addr = *reinterpret_cast<void**>(this);
-+                dladdr(vtable_addr, &info);
-+                fprintf(stderr, "pid=%d tid=%d %s callsign=%s fname=%s\n",
-+                        getpid(),
-+                        gettid(),
-+                        __FUNCTION__,
-+                        _callsign.c_str(),
-+                        info.dli_fname);
- 				if (localCallsign == nullptr) {
- 					static uint32_t sequence;
- 					_localSpace = string("temporary") + Core::NumberType<uint32_t>(Core::InterlockedIncrement(sequence)).Text();
-@@ -556,6 +573,15 @@ namespace WPEFramework {
- 			}
- 			virtual ~LinkType()
- 			{
-+                Dl_info info;
-+                void* vtable_addr = *reinterpret_cast<void**>(this);
-+                dladdr(vtable_addr, &info);
-+                fprintf(stderr, "pid=%d tid=%d %s callsign=%s fname=%s\n",
-+                        getpid(),
-+                        gettid(),
-+                        __FUNCTION__,
-+                        _callsign.c_str(),
-+                        info.dli_fname);
- 				_channel->Unregister(*this);
- 
- 				for (auto& element : _pendingQueue) {
-@@ -1032,6 +1058,15 @@ namespace WPEFramework {
- 						}
- 						else {
- 							result = Core::ERROR_TIMEDOUT;
-+                            Dl_info info;
-+                            void* vtable_addr = *reinterpret_cast<void**>(this);
-+                            dladdr(vtable_addr, &info);
-+                            fprintf(stderr, "pid=%d tid=%d %s method=%s fname=%s\n",
-+                                    getpid(),
-+                                    gettid(),
-+                                    __FUNCTION__,
-+                                    method.c_str(),
-+                                    info.dli_fname);
- 						}
- 
- 						_adminLock.Lock();
