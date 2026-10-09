@@ -3,8 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
 PV = "4.1.6"
 PR = "r0"
-SRCREV_entservices-apis = "${PV}"
-SRCREV_entservices-apis:thunder_5 = "208f7f0bebaa1d181c7ac17acc3a2333b77df3c4"
+SRCREV = "cf7b192ebbe92ec793651d76891b79b51c20f9ce"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -14,10 +13,9 @@ inherit python3native cmake pkgconfig
 
 DEPENDS = "${THUNDER_NAMESPACE_LC} ${THUNDER_NAMESPACE_LC}-tools-native"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-IAUTHSERVICE_PATCH = "${@bb.utils.contains('DISTRO_FEATURES', 'thunder_5', 'file://RDKEMW-1007-Thunder5.patch', 'file://RDKEMW-1007.patch', d)}"
-SRC_URI += "${IAUTHSERVICE_PATCH}"
+SRC_URI += "file://RDKEMW-1007-Thunder5.patch"
 SRC_URI += "file://entservices-apis-fps-ocdm.patch"
 SRC_URI += "file://idrm.patch"
 

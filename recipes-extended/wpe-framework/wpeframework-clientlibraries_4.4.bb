@@ -94,6 +94,8 @@ EXTRA_OECMAKE += " \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
 "
 
+CXXFLAGS:append = " -DThunder=WPEFramework"
+
 # ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
