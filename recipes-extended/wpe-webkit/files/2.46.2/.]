@@ -1,0 +1,184 @@
+From 2f6b048043ef81163383380f9fe965c0335e996d Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Fri, 9 Oct 2026 19:41:38 +0000
+Subject: [PATCH] debug logs for rendering
+
+---
+ .../src/libANGLE/renderer/gl/TextureGL.cpp    | 31 +++++++++++++++++++
+ .../html/canvas/WebGLRenderingContext.cpp     |  3 ++
+ .../html/canvas/WebGLRenderingContextBase.cpp |  2 ++
+ .../graphics/texmap/BitmapTexture.cpp         |  6 ++++
+ .../GraphicsContextGLTextureMapperANGLE.cpp   | 24 ++++++++++++--
+ 5 files changed, 64 insertions(+), 2 deletions(-)
+
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+index 9372f7c6204e..59163d0f12f9 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+@@ -159,11 +159,19 @@ TextureGL::TextureGL(const gl::TextureState &state, GLuint id)
+       mAppliedDepthStencilTextureMode(state.getDepthStencilTextureMode()),
+       mTextureID(id)
+ {
++   fprintf(stderr,
++    "[GPUDEBUG] ANGLE_TEXTURE_CREATE this=%p texture=%u\n",
++    this,
++    mTextureID);
+     mLevelInfo.resize(GetMaxLevelInfoCountForTextureType(getType()));
+ }
+ 
+ TextureGL::~TextureGL()
+ {
++fprintf(stderr,
++    "[GPUDEBUG] ANGLE_TEXTURE_DESTROY_BEGIN this=%p texture=%u\n",
++    this,
++    mTextureID);
+     ASSERT(mTextureID == 0);
+ }
+ 
+@@ -269,6 +277,29 @@ angle::Result TextureGL::setImageHelper(const gl::Context *context,
+     if (nativegl::UseTexImage2D(getType()))
+     {
+         ASSERT(size.depth == 1);
++
++unsigned long long approxBytes =
++static_cast<unsigned long long>(size.width) *
++static_cast<unsigned long long>(size.height) * 4;
++
++	fprintf(stderr,
++    "[GPUDEBUG] TEXIMAGE2D "
++    "object=%p texture=%u "
++    "target=0x%x level=%d "
++    "width=%d height=%d "
++    "approxBytes=%llu "
++    "internalFormat=0x%x format=0x%x type=0x%x pixels=%p \n",
++    this,
++    mTextureID,
++    target,
++    level,
++    size.width,
++    size.height,
++    approxBytes,
++    texImageFormat.internalFormat,
++    texImageFormat.format,
++    texImageFormat.type,
++    pixels);
+         ANGLE_GL_TRY_ALWAYS_CHECK(
+             context, functions->texImage2D(nativegl::GetTextureBindingTarget(target),
+                                            static_cast<GLint>(level), texImageFormat.internalFormat,
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContext.cpp b/Source/WebCore/html/canvas/WebGLRenderingContext.cpp
+index 3b32524958b7..87cbe3237712 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContext.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderingContext.cpp
+@@ -114,11 +114,14 @@ WTF_MAKE_TZONE_OR_ISO_ALLOCATED_IMPL(WebGLRenderingContext);
+ 
+ std::unique_ptr<WebGLRenderingContext> WebGLRenderingContext::create(CanvasBase& canvas, WebGLContextAttributes&& attributes)
+ {
++    fprintf(stderr,"[GPUDEBUG] WebGLContext CREATE\n");
++
+     return std::unique_ptr<WebGLRenderingContext>(new WebGLRenderingContext(canvas, WTFMove(attributes)));
+ }
+ 
+ WebGLRenderingContext::~WebGLRenderingContext()
+ {
++    fprintf(stderr,"[GPUDEBUG] WebGLContext DESTROY this\n");
+     m_activeQuery = nullptr;
+ }
+ 
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+index a1be2992f421..d029b147bb73 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+@@ -666,6 +666,8 @@ void WebGLRenderingContextBase::addCompressedTextureFormat(GCGLenum format)
+ 
+ WebGLRenderingContextBase::~WebGLRenderingContextBase()
+ {
++    fprintf(stderr,"[GPUDEBUG] WebGLContextBase DESTROY this=%p\n",this);
++
+     // Remove all references to WebGLObjects so if they are the last reference
+     // they will be freed before the last context is removed from the context group.
+     m_boundArrayBuffer = nullptr;
+diff --git a/Source/WebCore/platform/graphics/texmap/BitmapTexture.cpp b/Source/WebCore/platform/graphics/texmap/BitmapTexture.cpp
+index c763a9986577..5eb90503536b 100644
+--- a/Source/WebCore/platform/graphics/texmap/BitmapTexture.cpp
++++ b/Source/WebCore/platform/graphics/texmap/BitmapTexture.cpp
+@@ -89,6 +89,9 @@ BitmapTexture::BitmapTexture(const IntSize& size, OptionSet<Flags> flags, GLint
+     glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_size.width(), m_size.height(), 0, m_format, s_pixelDataType, nullptr);
+ 
+     glBindTexture(GL_TEXTURE_2D, boundTexture);
++    fprintf(stderr,
++    "[GPUDEBUG] BITMAP_TEXTURE_CREATE this=%p\n",
++    this);
+ }
+ 
+ void BitmapTexture::reset(const IntSize& size, OptionSet<Flags> flags)
+@@ -288,6 +291,9 @@ void BitmapTexture::bindAsSurface()
+ 
+ BitmapTexture::~BitmapTexture()
+ {
++    fprintf(stderr,
++    "[GPUDEBUG] BITMAP_TEXTURE_DESTROY this=%p\n",
++    this);
+     GLContext* currentContext = GLContext::current();
+     if (!currentContext || !currentContext->platformContext()) {
+         // The context has been destroyed already, so we can't clean up.
+diff --git a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+index 1c77f4b9a08a..2a271e4e24c7 100644
+--- a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
++++ b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+@@ -69,7 +69,9 @@ GraphicsContextGLANGLE::~GraphicsContextGLANGLE()
+         // When rendering to the host window, destroy the context only, not the surface, as it's the static one.
+         if (m_contextObj) {
+             EGL_MakeCurrent(m_displayObj, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+-            EGL_DestroyContext(m_displayObj, m_contextObj);
++            fprintf(stderr,"[GPUDEBUG] EGL DESTROY BEGIN this=%p display=%p context=%p\n", this, m_displayObj, m_contextObj);
++	    EGL_DestroyContext(m_displayObj, m_contextObj);
++	    fprintf(stderr,"[GPUDEBUG] EGL DESTROY END this=%p context=%p \n", this, m_contextObj);
+             s_windowSurfaceUsers--;
+             if (!s_windowSurfaceUsers) {
+                 EGL_DestroySurface(m_displayObj, s_windowSurfaceObj);
+@@ -108,11 +110,16 @@ GraphicsContextGLANGLE::~GraphicsContextGLANGLE()
+     GL_DeleteFramebuffers(1, &m_fbo);
+ 
+     if (m_contextObj) {
++	fprintf(stderr,"[GPUDEBUG] EGL DESTROY BEGIN this=%p display=%p context=%p\n", this, m_displayObj, m_contextObj);
+         EGL_DestroyContext(m_displayObj, m_contextObj);
++	fprintf(stderr,"[GPUDEBUG] EGL DESTROY END this=%p context=%p \n", this, m_contextObj);
+     }
+ 
+-    if (m_angleSharingContextObj)
++    if (m_angleSharingContextObj) {
++	fprintf(stderr,"[GPUDEBUG] EGL DESTROY BEGIN this=%p display=%p context=%p\n", this, m_displayObj, m_contextObj);
+         EGL_DestroyContext(m_displayObj, m_angleSharingContextObj);
++	fprintf(stderr,"[GPUDEBUG] EGL DESTROY END this=%p context=%p\n", this, m_contextObj);
++ }
+ 
+     // Ideally this should go before the m_contextObj destruction, but there are platforms where it breaks
+     // the destruction m_contextObj. Putting it here works for all the platforms that I've tested.
+@@ -320,11 +327,24 @@ bool GraphicsContextGLTextureMapperANGLE::platformInitializeContext()
+         }
+     }
+ 
++fprintf(stderr,
++    "[GPUDEBUG] EGL CREATE_REQ this=%p display=%p shareContext=%p\n",
++    this,
++    m_displayObj,
++    sharedDisplay.angleSharingGLContext());
++
+     m_contextObj = EGL_CreateContext(m_displayObj, m_configObj, m_angleSharingContextObj, eglContextAttributes.data());
+     if (m_contextObj == EGL_NO_CONTEXT) {
+         LOG(WebGL, "EGLContext Initialization failed.");
+         return false;
+     }
++
++fprintf(stderr,
++    "[GPUDEBUG] EGL CREATED this=%p context=%p shareContext=%p\n",
++    this,
++    m_contextObj,
++    sharedDisplay.angleSharingGLContext());
++
+     if (!makeContextCurrent()) {
+         LOG(WebGL, "ANGLE makeContextCurrent failed.");
+         return false;
+-- 
+2.44.4
+
