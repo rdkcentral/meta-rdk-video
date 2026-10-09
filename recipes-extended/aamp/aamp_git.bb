@@ -10,7 +10,8 @@ SRCREV_FORMAT = "aamp"
 #SRCREV_aamp ?= "32ffcb2f9ba33838d243954abca53a9195cc2762"
 #SRCREV_aamp ?= "d927560e73d16e709015036c43140d4282775705"
 #SRCREV_aamp ?= "2bec7811f8f726db8fef8266d7bc3ab2415505df"
-SRCREV_aamp ?= "7018594ff128c716a21055d6d911e3826236c6d1"
+#SRCREV_aamp ?= "7018594ff128c716a21055d6d911e3826236c6d1"
+SRCREV_aamp ?= "de331fec10f94861ac2788f954b946a6d27a85bb"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 #AAMP_BRANCH ?= "develop"
