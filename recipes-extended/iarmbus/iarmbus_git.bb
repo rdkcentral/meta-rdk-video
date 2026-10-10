@@ -12,7 +12,7 @@ PV = "1.0.7"
 PR = "r0"
 
 # Release version - 1.0.7
-SRCREV_iarmbus = "162d44cd413f0982a06537ffefae1db12f5d4abf"
+SRCREV_iarmbus = "c0b78a44dfbc778f8c6acda7510c1db2803fb3f7"
 SRCREV_FORMAT = "iarmbus"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmbus;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmbus"
 
@@ -20,6 +20,8 @@ S = "${WORKDIR}/git"
 
 CFLAGS += "-DENABLE_SD_NOTIFY"
 LDFLAGS += "-lsystemd"
+
+EXTRA_OECONF += "--enable-tp"
 
 DEPENDS="libxml2 dbus glib-2.0"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
