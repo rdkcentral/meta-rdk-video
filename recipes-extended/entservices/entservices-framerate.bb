@@ -2,8 +2,8 @@ SUMMARY = "ENTServices framerate plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.2.3"
-PR = "r0"
+PV = "1.2.3_Test"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-framerate;${CMF_GITHUB_SRC_URI_SUFFIX}
           "
 
 # Release version - 1.2.3
-SRCREV = "215b40631439bf28603d04aecded77e64a4c2c92"
+SRCREV = "39f20d436dcde7b49d669ccdc828cbec6508469e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 

@@ -2,7 +2,7 @@ SUMMARY = "ENTServices devicesettings plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.0.0"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicesettings;${CMF_GITHUB_SRC_URI_SU
            file://rdkservices.ini \
           "
 
-# Release version - 1.0.0
-SRCREV = "66032d32aed342f36b8cb1ab405b566cddf9c998"
+# Release version - 1.0.1
+SRCREV = "4ebff6c1eeaa97cb5ee06ffeaf971d4fe627d357"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"

@@ -2,8 +2,8 @@ SUMMARY = "ENTServices deviceinfo plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=34aa8e5c0a5ec9c81c534b40fb21b5b6"
 
-PV = "1.0+git${SRCPV}"
-PR = "r0"
+PV = "1.1.7_Test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceinfo;${CMF_GITHUB_SRC_URI_SUFFIX
            file://rdkservices.ini \
           "
 
-# Release tag - 1.1.7
-SRCREV = "1.1.7"
+# Release tag - 1.1.7_Test
+SRCREV = "f96381862378837990e10828a6e7c9eb13ba7705"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
