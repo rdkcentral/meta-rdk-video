@@ -4,13 +4,13 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-PV = "1.5.6"
-PR = "r0"
+PV = "1.5.7_Test"
+PR = "r1"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "a2eaf07a584ca75db7ae0b8970e99d980f48219f"
+SRCREV = "a3310b99464cfc7565f2b25212be036f8f56306f"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -70,6 +70,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-victimselector.service \
     wpeframework-devicediagnostics.service \
     wpeframework-tools.service \
+    wpeframework-devicesettings.service \
     "
 
 CONTROL_FILES = "\
