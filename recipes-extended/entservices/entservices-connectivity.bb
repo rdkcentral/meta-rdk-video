@@ -8,11 +8,12 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX} \
+# TEST ONLY: feature branch from 1.7.8; revert to ${CMF_GITHUB_ROOT} + SRCREV = "${PV}"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;protocol=https;branch=feature/bt-audio-ignore-ui-calls \
           "
 
-# Release version - 1.7.7
-SRCREV = "${PV}"
+# Head of feature/bt-audio-ignore-ui-calls; bump on every new push to the branch
+SRCREV = "1416afa16fb90b930ea747ae646633ad6dae9501"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
