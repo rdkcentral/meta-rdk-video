@@ -30,7 +30,7 @@ PR = "r${CR}"
 
 SRCREV_cobalt = "3befd332486952f6603ae3baf2a8713878d6e200"
 SRCREV_depottools = "2cea9cdd785391335d448773124631cb711225e2"
-SRCREV_larboard = "fa2ed3c76e544e40e4d845356adb9512e442982f"
+SRCREV_larboard = "d28ead8a1d5e1695d1b67f476083664148b01dab"
 
 SRCREV_FORMAT = "cobalt_larboard"
 PV .= "+git${SRCPV}"
