@@ -11,7 +11,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = "systemd"
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'es1test-jsonrpc-benchmark es1benchmark-async', '', d)}"
 
-SRCREV = "b348f149972b38fa17aaf30aa653c91486de758c"
+SRCREV = "4e42b6d691ac555b15b7d6f39eb9512b242096ff"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
