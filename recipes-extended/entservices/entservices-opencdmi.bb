@@ -13,12 +13,10 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
-           file://open_cdm_imp_fps_ocdm.patch \
-           file://opencdmi-fps-plugin-frameworkrpc.patch \
           "
           
 # Release version - 2.0.4
-SRCREV = "158c1beda78023f60549a9b6d0f5e0cfbc117105"
+SRCREV = "5f3023f376ed4a5df33fae8e900d3ee923ebf165"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
