@@ -11,7 +11,7 @@ PR = "r0"
 # Machines that ship the real SDK select it instead via
 # PREFERRED_PROVIDER_virtual/vendor-bluetooth-sdk = "bluetoothsdk".
 PROVIDES += "virtual/vendor-bluetooth-sdk"
-RPROVIDES:${PN} = "virtual/vendor-bluetooth-sdk"
+RPROVIDES:${PN} = "virtual/vendor-bluetooth-sdk bluetoothsdk"
 
 # Keep in sync with entservices-connectivity.bb - the stub lives in that repo.
 SRCREV = "2add50287d1204ea2e9645728f01bfb8b6dbdb24"

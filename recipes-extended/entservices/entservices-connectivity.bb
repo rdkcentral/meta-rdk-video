@@ -85,5 +85,5 @@ FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WP
 INSANE_SKIP:${PN} += "libdir staticdev dev-so file-rdeps"
 INSANE_SKIP:${PN}-dbg += "libdir"
 
-# Products without the real SDK (HAS_BLUETOOTH_SDK != 1) get the stub's librdk_bluetooth.so.1.
-RDEPENDS:${PN}:append = "${@' bluetoothsdk-stub' if ('bluetoothcontrol' in (d.getVar('PACKAGECONFIG') or '').split() and d.getVar('HAS_BLUETOOTH_SDK') != '1') else ''}"
+# opkg prefers a real package named bluetoothsdk (vendor feed) over the stub, which only RPROVIDES it.
+RDEPENDS:${PN}:append = "${@' bluetoothsdk' if 'bluetoothcontrol' in (d.getVar('PACKAGECONFIG') or '').split() else ''}"
