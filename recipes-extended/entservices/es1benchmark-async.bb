@@ -9,7 +9,7 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "git://github.com/workkavint-ship-it/JsonRPC_Benchmark_Async;protocol=https;branch=main"
-SRCREV = "20d004174e54dde802bb97d645bf91aab65f22ce"
+SRCREV = "babc2c807cb87d731da1873b71fa303fa696019e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -41,13 +41,14 @@ do_install:append() {
 
     install -d ${D}/opt
     install -m 0644 ${S}/client/async-client.config.default ${D}/opt/es1-async.config
+    install -m 0644 ${S}/client/AsyncJsonRpcLoadClient.config.default ${D}/opt/AsyncJsonRpcLoadClient.config
 
     install -d ${D}/opt/es1bench/log
     install -m 0644 /dev/null ${D}/opt/es1bench/log/.keep
 }
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/* ${bindir}/es1asyncclient /opt/es1-async.config /opt/es1bench/log /opt/es1bench/log/.keep"
+FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/* ${bindir}/es1asyncclient ${bindir}/AsyncJsonRpcLoadClient /opt/es1-async.config /opt/AsyncJsonRpcLoadClient.config /opt/es1bench/log /opt/es1bench/log/.keep"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
