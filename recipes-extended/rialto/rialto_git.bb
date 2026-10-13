@@ -46,6 +46,7 @@ RDEPENDS:${PN}-server += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstre
 RDEPENDS:${PN}-servermanager += "${PN}-server"
 RDEPENDS:${PN}-servermanager-lib += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
 
+FILES:${PN}-dbg += "${bindir}/.debug ${libdir}/.debug"
 FILES:${PN}-client += "${libdir}/libRialtoClient.so.*"
 FILES:${PN}-server += "${bindir}/RialtoServer"
 FILES:${PN}-servermanager += "${bindir}/RialtoServerManagerSim"
