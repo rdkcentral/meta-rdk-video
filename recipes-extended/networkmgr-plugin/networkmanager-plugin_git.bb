@@ -11,7 +11,7 @@ NETWORKMANAGER_STUN_ENDPOINT ?= "stun.l.google.com"
 NETWORKMANAGER_STUN_PORT ?= "19302"
 
 # Default Loglevel configuration
-NETWORKMANAGER_LOGLEVEL ?= "3"
+NETWORKMANAGER_LOGLEVEL ?= "4"
 
 PR = "r0"
 PV = "4.5.0"
