@@ -5,13 +5,13 @@ LICENSE = "Apache-2.0 & ISC"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=83a31d934b0cc2ab2d44a329445b4366"
 
 
-PV = "1.1.20"
-PR = "r0"
+PV = "1.1.21"
+PR = "r1"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
-SRCREV = "177f8768079a6eb9f39a012c6936089bef64c9fa"
+SRCREV = "cc6a9364cbd62955d6fb46f91f88e237d3ef798d"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
 #SRC_URI:append = " file://irmgr.diff"
@@ -137,6 +137,10 @@ CXXLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', '-DENABLE_
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_AU', '-DENABLE_EU_RESOLUTION', \
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', '-DENABLE_FLEX2_RESOLUTION', \
              '', d), d), d), d), d)}"
+
+CFLAGS += " -DDSMGR_LOGGER_ENABLED"
+LDFLAGS += " -lrdkloggers"
+
 EXTRA_OEMAKE += "-e MAKEFLAGS="
 
 do_compile() {
