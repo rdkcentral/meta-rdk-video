@@ -101,6 +101,8 @@ do_install() {
         install -m 0644 ${S}/AsyncJsonRpcLoadClient.service ${D}${systemd_system_unitdir}
         install -m 0644 ${S}/es1bench-sync.service ${D}${systemd_system_unitdir}
         install -m 0644 ${S}/SyncJsonRpcLoadClient.service ${D}${systemd_system_unitdir}
+        install -m 0644 ${S}/ES1BenchmarkSyncClient.service ${D}${systemd_system_unitdir}
+        install -m 0644 ${S}/ES1BenchmarkLoadClient.service ${D}${systemd_system_unitdir}
         install -d ${D}${sysconfdir}/systemd/system/multi-user.target.wants
         ln -sf ${systemd_system_unitdir}/es1bench-coldstart.service ${D}${sysconfdir}/systemd/system/multi-user.target.wants/es1bench-coldstart.service
     fi

@@ -9,7 +9,7 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "git://github.com/workkavint-ship-it/JsonRPC_Benchmark_sync;protocol=https;branch=main"
-SRCREV = "9eac3027195d3c155ef3a6652ca92e385b3ffb68"
+SRCREV = "8e2f3be92c042525dfb44d18db42ac91bb1655a8"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -42,13 +42,15 @@ do_install:append() {
     install -d ${D}/opt
     install -m 0644 ${S}/client/es1sync.config.default ${D}/opt/es1sync.config
     install -m 0644 ${S}/client/SyncJsonRpcLoadClient.config.default ${D}/opt/SyncJsonRpcLoadClient.config
+    install -m 0644 ${S}/client/es1benchmark.config.default ${D}/opt/es1benchmark.config
+    install -m 0644 ${S}/client/ES1BenchmarkLoadClient.config.default ${D}/opt/ES1BenchmarkLoadClient.config
 
     install -d ${D}/opt/es1bench/log
     install -m 0644 /dev/null ${D}/opt/es1bench/log/.keep
 }
 
 FILES_SOLIBSDEV = ""
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/* ${bindir}/es1syncclient ${bindir}/SyncJsonRpcLoadClient /opt/es1sync.config /opt/SyncJsonRpcLoadClient.config /opt/es1bench/log /opt/es1bench/log/.keep"
+FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${datadir}/WPEFramework/* ${bindir}/es1syncclient ${bindir}/SyncJsonRpcLoadClient /opt/es1sync.config /opt/SyncJsonRpcLoadClient.config /opt/es1benchmark.config /opt/ES1BenchmarkLoadClient.config /opt/es1bench/log /opt/es1bench/log/.keep"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
