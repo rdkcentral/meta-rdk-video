@@ -1,0 +1,42 @@
+From 4952af8819cb0fd979ea5972883a8565132f2618 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Wed, 23 Sep 2026 14:24:01 +0200
+Subject: [PATCH] [GStreamer][MSE] Pause WebKitMediaSource task after EOS event
+ is pushed
+
+Pushing any data after an EOS event results in failures that trigger a playback error.
+The only way to unblock data pushing is to flush the GStreamer pipeline.
+
+The best way to ensure that no data is pushed into the pipeline is to pause the WebKitMediaSource pad task.
+The task will be resumed after a flush.
+
+The flush is expected to come from the JS application. In the worst case,
+HTMLMediaElement will seek back to position 0 when playback is restored with a play request
+without a position adjustment (while in the ended state).
+
+Reopening the MediaSource during active playback and appending new data to SourceBuffers
+will still result in an EOS message when the old duration is reached.
+However, no playback error will be triggered.
+---
+ .../graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp    | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+index 90a17aba2a75..67c35a8ebd38 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+@@ -643,9 +643,8 @@ static void webKitMediaSrcLoop(void* userData)
+             GST_DEBUG_OBJECT(pad, "Pushed event was not handled: %" GST_PTR_FORMAT, event.get());
+ 
+         if (isEOS) {
+-            DataMutexLocker streamingMembersAfterEOS { stream->streamingMembersDataMutex };
+-            GST_INFO_OBJECT(pad, "EOS pushed, resetting wasStreamStartSent to allow re-sending STREAM_START.");
+-            streamingMembersAfterEOS->wasStreamStartSent = false;
++            GST_INFO_OBJECT(pad, "EOS pushed, pausing pad task.");
++            gst_pad_pause_task(pad);
+         }
+     } else
+         ASSERT_NOT_REACHED();
+-- 
+2.53.0
+
