@@ -9,9 +9,9 @@ PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'es1test-jsonrpc-benchmark es1benchmark-async', '', d)}"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'es1test-jsonrpc-benchmark es1benchmark-async es1benchmark-sync', '', d)}"
 
-SRCREV = "5483255743921cc9c85bad3477f22149702db246"
+SRCREV = "973c46052c353805ccf9d4316de38863e5a662fe"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -70,6 +70,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-devicediagnostics.service \
     ${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'wpeframework-es1benchmark.service', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'wpeframework-es1benchmarkasync.service', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'es1bench', 'wpeframework-es1benchmarksync.service', '', d)} \
     "
 
 CONTROL_FILES = "\
@@ -98,6 +99,8 @@ do_install() {
         install -m 0644 ${S}/JsonRpcLoadClient.service ${D}${systemd_system_unitdir}
         install -m 0644 ${S}/es1benchmarkasync.service ${D}${systemd_system_unitdir}
         install -m 0644 ${S}/AsyncJsonRpcLoadClient.service ${D}${systemd_system_unitdir}
+        install -m 0644 ${S}/es1bench-sync.service ${D}${systemd_system_unitdir}
+        install -m 0644 ${S}/SyncJsonRpcLoadClient.service ${D}${systemd_system_unitdir}
         install -d ${D}${sysconfdir}/systemd/system/multi-user.target.wants
         ln -sf ${systemd_system_unitdir}/es1bench-coldstart.service ${D}${sysconfdir}/systemd/system/multi-user.target.wants/es1bench-coldstart.service
     fi
