@@ -3,10 +3,10 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=70514b59ff7b36bbbc30d093c6814d8e"
 
 # To have a possibility to override SRC_URI later, we are introducing the following workaround:
-PV = "1.8.4"
+PV = "1.8.5"
 PR = "r0"
 
-SRCREV_rdkfw = "78e281e91332eaa05354e7c9b91305de2c99e969"
+SRCREV_rdkfw = "c8f18827a32e877527c57c9d62e08bb724d564d8"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkfwupdater;${CMF_GITHUB_SRC_URI_SUFFIX};name=rdkfw"
 
 DEPENDS +=" cjson curl rdk-logger rbus"
@@ -27,6 +27,7 @@ CXXFLAGS += " -Wall -Werror"
 
 EXTRA_OECONF = "--enable-rfcapi --enable-t2api"
 EXTRA_OECONF += "${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', '--enable-test-fwupgrader', '', d)}"
+EXTRA_OECONF += "--enable-iarmevent"
 
 LDFLAGS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' `pkg-config --libs libsafec`', '', d)}"
 

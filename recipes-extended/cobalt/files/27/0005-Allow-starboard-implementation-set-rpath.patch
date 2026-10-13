@@ -1,0 +1,25 @@
+From c1b226ea4c179b7a92bb2c50dd067dc974637265 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Wed, 9 Sep 2026 18:33:51 +0000
+Subject: [PATCH 5/6] Allow starboard implementation set rpath
+
+---
+ starboard/build/config/BUILD.gn | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/starboard/build/config/BUILD.gn b/starboard/build/config/BUILD.gn
+index beb9bd1504a..37dc2e7e344 100644
+--- a/starboard/build/config/BUILD.gn
++++ b/starboard/build/config/BUILD.gn
+@@ -62,7 +62,7 @@ config("starboard") {
+   # because -rpath=/path/to/something is not a valid linker option (and
+   # everything works fine without it anyway).
+   # Check for |target_os| because this also affects the host (macOS) side.
+-  if (target_os != "ios") {
++  if (target_os != "ios" && false) {
+     sb_out_dir =
+         get_label_info("//starboard($starboard_toolchain)", "root_out_dir")
+     ldflags = [ "-Wl,-rpath=" + rebase_path("$sb_out_dir") ]
+-- 
+2.34.1
+
