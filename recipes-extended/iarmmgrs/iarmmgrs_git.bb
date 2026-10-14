@@ -11,7 +11,7 @@ PR = "r1"
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
-SRCREV = "c3f4cae54613ee9abce5b25cc4515d7ad5d9cf65"
+SRCREV = "8257f503af421bf6dd313e2bf5ab606bc6921e43"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
 #SRC_URI:append = " file://irmgr.diff"
@@ -139,6 +139,7 @@ CXXLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', '-DENABLE_
              '', d), d), d), d), d)}"
 
 CFLAGS += " -DDSMGR_LOGGER_ENABLED"
+CXXLAGS += " -DDSMGR_LOGGER_ENABLED"
 LDFLAGS += " -lrdkloggers"
 
 EXTRA_OEMAKE += "-e MAKEFLAGS="
