@@ -2,13 +2,14 @@ SUMMARY = "ENTServices appmanagers plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e78363a23fa72036998d7f40b889d209"
 
-PV = "1.1.0.0"
+PV = "1.1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "6956880380461124a8d03199455b7790095a2f8f"
+# Custom: 1.1.0.0-RC2 + NW Hardening PR
+SRCREV = "01c12dbf80ae9241fdbdfe20efeb789e14b16eb8"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
