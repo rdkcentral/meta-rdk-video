@@ -1,0 +1,26 @@
+commit 5a6ce258dfbe036b0920dc294642106a4cc163a9
+Author: ukesav729 <Umesh_Kesavan@comcast.com>
+Date:   Fri Jun 26 09:27:12 2026 +0000
+
+    RDKEMW-20128: Set font package name overrides
+    
+    Reason for change: Fix for [RDKEMW][BCM][XFINITY]Unable to change font family
+    from caption style in YouTube.
+     -Set font package name overrides to FCC and serif
+    Test Procedure: Verify via test.
+    Risks: None identified.
+    Signed-off-by: ukesav729 <Umesh_Kesavan@comcast.com>
+
+diff --git a/src/third_party/starboard/rdk/shared/platform_configuration/configuration.gni b/src/third_party/starboard/rdk/shared/platform_configuration/configuration.gni
+index e28ca5d..e201122 100644
+--- a/src/third_party/starboard/rdk/shared/platform_configuration/configuration.gni
++++ b/src/third_party/starboard/rdk/shared/platform_configuration/configuration.gni
+@@ -31,6 +31,8 @@
+ import("//starboard/build/config/base_configuration.gni")
+ 
+ cobalt_font_package = "limited"
++cobalt_font_package_override_named_fcc_fonts = 2
++cobalt_font_package_override_named_serif = 3
+ final_executable_type = "shared_library"
+ starboard_level_final_executable_type = "shared_library"
+ 
