@@ -13,6 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_S
           "
 # Release version - 1.8.1
 SRCREV = "56e58599c117e5b336f255943aa3e3610198140f"
+SRCREV:vdevice_x86-64-mw = "09530f31cf3ad67b3684e8ce259e356b880856ab"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -47,7 +48,17 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[displaysettings]      = "-DPLUGIN_DISPLAYSETTINGS=ON,-DPLUGIN_DISPLAYSETTINGS=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus rfc devicesettings entservices-helpers"
+DISPLAYSETTINGS_DEPS = "iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-helpers"
+DISPLAYSETTINGS_DEPS:vdevice_x86-64-mw = "iarmbus rfc entservices-devicesettings entservices-helpers"
+DISPLAYSETTINGS_RDEPS = "iarmbus rfc devicesettings entservices-helpers"
+DISPLAYSETTINGS_RDEPS:vdevice_x86-64-mw = "${DISPLAYSETTINGS_DEPS}"
+PACKAGECONFIG[displaysettings]      = "-DPLUGIN_DISPLAYSETTINGS=ON,-DPLUGIN_DISPLAYSETTINGS=OFF,${DISPLAYSETTINGS_DEPS},${DISPLAYSETTINGS_RDEPS}"
+
+EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
+    -DIARMBUS_INCLUDE_DIRS:PATH=${RECIPE_SYSROOT}${includedir}/rdk/iarmbus \
+    -DIARMRECEIVER_INCLUDE_DIRS:PATH= \
+    -DDS_COMRPC=ON \
+"
 
 # ----------------------------------------------------------------------------
 
