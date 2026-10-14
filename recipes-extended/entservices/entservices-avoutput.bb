@@ -11,16 +11,26 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avoutput;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 # Release version - 2.2.1
 SRCREV = "${PV}"
+SRCREV:vdevice_x86-64-mw = "47c58d110dfcf2b1bf5a4ccd65a8e093a1526dcf"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
+EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
+    -DIARMBUS_INCLUDE_DIRS:PATH=${RECIPE_SYSROOT}${includedir}/rdk/iarmbus \
+    -DIARMRECEIVER_INCLUDE_DIRS:PATH= \
+    -DDS_COMRPC=ON \
+"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
 DEPENDS += "wpeframework wpeframework-tools-native entservices-apis boost devicesettings"
+DEPENDS:remove:vdevice_x86-64-mw = "devicesettings"
+DEPENDS:append:vdevice_x86-64-mw = " entservices-devicesettings entservices-helpers"
 RDEPENDS:${PN} += "wpeframework devicesettings"
+RDEPENDS:${PN}:remove:vdevice_x86-64-mw = "devicesettings"
+RDEPENDS:${PN}:append:vdevice_x86-64-mw = " entservices-devicesettings entservices-helpers"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
