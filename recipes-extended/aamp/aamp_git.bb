@@ -7,10 +7,10 @@ PV = "3.9.0.3_VIPA"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "f92656484a9cf6c9b4cff9b59524a66700677770"
+SRCREV_aamp ?= "4913ab28c7a0406deb509c1bbedd031e0d144976"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
-AAMP_BRANCH ?= "support/3.9.0_vipa"
+AAMP_BRANCH ?= "feature/VPAAMP-1189_3.9.0_vipa_add"
 CMF_GITHUB_BRANCH = "branch=${AAMP_BRANCH}"
 
 DEPENDS += "curl libdash libxml2 cjson readline ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
