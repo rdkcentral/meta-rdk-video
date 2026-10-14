@@ -27,6 +27,8 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://0001-error-handling-if-invalid-external-input.patch \
            file://r4.4/0001-Implement-IPersistent-interface-for-RPC-Vault.patch \
            file://r4.4/0001-SecAPI-Re-acquire-sec-handle-after-flush.patch \
+           file://r4.4/0002-RDKEMW-19048-Release-and-reacquire-Vault-SecProcessor-for-deep-sleep.patch \
+           file://r4.4/0003-RDKEMW-20680-vault-processor-release-openssl-thunder-stubs.patch \
            file://r4.4/0001-DELIA-64727-Prealloc-secure-memory-before-decrypt.patch \
            file://r4.4/0001-RDKEMW-7064-Dont-decrypt-fake-buffer-is-revoke-has-b.patch \
            file://r4.4/0001-PowerManagerClient-library-implementation.patch \
