@@ -29,8 +29,10 @@ FILES:${PN}-dbg += " ${datadir}/WPEFramework/OCDM/.debug/"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-WIDEVINE_VERSION="${@bb.utils.contains('DISTRO_FEATURES', 'widevine_v18', '18', \
+WIDEVINE_VERSION="${@bb.utils.contains('DISTRO_FEATURES', 'widevine_v19', '19', \
+                     bb.utils.contains('DISTRO_FEATURES', 'widevine_v18', '18', \
                      bb.utils.contains('DISTRO_FEATURES', 'widevine_v17', '17', \
                                                                           '16', \
                                                                             d), \
+									    d), \
                                                                             d)}"
