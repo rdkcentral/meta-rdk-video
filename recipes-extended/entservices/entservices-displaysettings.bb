@@ -14,6 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displaysettings;${CMF_GITHUB_SRC_URI_S
 # Release version - 1.8.1
 SRCREV = "56e58599c117e5b336f255943aa3e3610198140f"
 SRCREV:vdevice_x86-64-mw = "09530f31cf3ad67b3684e8ce259e356b880856ab"
+SRC_URI:append:vdevice_x86-64-mw = " file://0001-fix-short-audio-descriptor-format.patch"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
