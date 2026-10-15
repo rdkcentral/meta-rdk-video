@@ -4,7 +4,7 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0 & ISC"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=83a31d934b0cc2ab2d44a329445b4366"
 
-PV ?= "1.1.0"
+PV ?= "1.1.5-hotfix.5"
 PR ?= "r0"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
@@ -132,6 +132,11 @@ CXXLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', '-DENABLE_
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_AU', '-DENABLE_EU_RESOLUTION', \
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', '-DENABLE_FLEX2_RESOLUTION', \
              '', d), d), d), d), d)}"
+
+CFLAGS += " -DDSMGR_LOGGER_ENABLED"
+CXXLAGS += " -DDSMGR_LOGGER_ENABLED"
+LDFLAGS += " -lrdkloggers"
+
 EXTRA_OEMAKE += "-e MAKEFLAGS="
 
 do_compile() {
