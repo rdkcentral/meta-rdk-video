@@ -1,0 +1,6 @@
+diff --git a/plugin/DisplaySettings.cpp b/plugin/DisplaySettings.cpp
+--- a/plugin/DisplaySettings.cpp
++++ b/plugin/DisplaySettings.cpp
+@@ -6527,1 +6527,1 @@
+-                        LOGINFO("Short Audio Descriptor[%d]: %lld \n", i, shortAudioDescriptorList[i].Number());
++                        LOGINFO("Short Audio Descriptor[%d]: %lld \n", i, static_cast<long long>(shortAudioDescriptorList[i].Number()));
