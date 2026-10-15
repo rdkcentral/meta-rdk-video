@@ -13,7 +13,7 @@ SRCREV = "f7c7326a99c5b534a787c5bfa59d5fc4f7d8955b"
 
 # Platform configurations
 DEPENDS += " ${platform-widevine-depends}"
-EXTRA_OECMAKE += " ${platform-widevine-flags}"
+EXTRA_OECMAKE += " ${platform-widevine-flags} -DCMAKE_WIDEVINE_VERSION=${WIDEVINE_VERSION}"
 RDEPENDS:${PN} += " ${platform-widevine-rdepends}"
 
 DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native entservices-apis"
@@ -29,8 +29,10 @@ FILES:${PN}-dbg += " ${datadir}/WPEFramework/OCDM/.debug/"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-WIDEVINE_VERSION="${@bb.utils.contains('DISTRO_FEATURES', 'widevine_v18', '18', \
+WIDEVINE_VERSION="${@bb.utils.contains('DISTRO_FEATURES', 'widevine_v19', '19', \
+                     bb.utils.contains('DISTRO_FEATURES', 'widevine_v18', '18', \
                      bb.utils.contains('DISTRO_FEATURES', 'widevine_v17', '17', \
                                                                           '16', \
                                                                             d), \
+									    d), \
                                                                             d)}"
