@@ -11,10 +11,13 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
+SRC_URI:vdevice_x86-64-mw = "git://github.com/adithv000/entservices-devicesettings.git;protocol=https;branch=topic/m7-release \
+           file://rdkservices.ini \
+          "
 
 # Release version - 1.0.0
 SRCREV = "66032d32aed342f36b8cb1ab405b566cddf9c998"
-SRCREV:vdevice_x86-64-mw = "b7a6fb53281cab1aeea5b578c1a9a08413b73a3d"
+SRCREV:vdevice_x86-64-mw = "d6abcae90dbcd730ce381f5c3b9ab45ab220dd8e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -48,7 +51,7 @@ DEVICESETTINGS_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesett
 DEVICESETTINGS_DEPS:vdevice_x86-64-mw = "iarmbus entservices-helpers rdk-halif-aidl-mw libbinderrdk vdevice-noop"
 
 DEVICESETTINGS_RDEPS = "iarmbus devicesettings entservices-helpers"
-DEVICESETTINGS_RDEPS:vdevice_x86-64-mw = "iarmbus entservices-helpers libbinderrdk rdk-halif-aidl-mw-hdmiinput rdk-halif-aidl-mw-common vdevice-noop"
+DEVICESETTINGS_RDEPS:vdevice_x86-64-mw = "iarmbus entservices-helpers libbinderrdk rdk-halif-aidl-mw-hdmiinput rdk-halif-aidl-mw-hdmioutput rdk-halif-aidl-mw-compositeinput rdk-halif-aidl-mw-planecontrol rdk-halif-aidl-mw-common vdevice-noop"
 
 PACKAGECONFIG[devicesettings]       = "-DPLUGIN_DEVICESETTINGS=ON,-DPLUGIN_DEVICESETTINGS=OFF,${DEVICESETTINGS_DEPS},${DEVICESETTINGS_RDEPS}"
 
@@ -57,6 +60,12 @@ EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
     -DAIDL_INCLUDE_DIR=${STAGING_INCDIR}/mw/hdmiinput/0.1.0.0/include \
     -DBINDER_INCLUDE_DIR=${STAGING_INCDIR}/android \
     -DHAL_AIDL_LIBRARY=${STAGING_LIBDIR}/mw/rdk-halif-aidl/libhdmiinput-v0.1.0.0-cpp.so \
+    -DHDMIOUTPUT_AIDL_INCLUDE_DIR=${STAGING_INCDIR}/mw/hdmioutput/0.1.0.0/include \
+    -DHDMIOUTPUT_AIDL_LIBRARY=${STAGING_LIBDIR}/mw/rdk-halif-aidl/libhdmioutput-v0.1.0.0-cpp.so \
+    -DCOMPOSITEINPUT_AIDL_INCLUDE_DIR=${STAGING_INCDIR}/mw/compositeinput/0.2.0.0/include \
+    -DCOMPOSITEINPUT_AIDL_LIBRARY=${STAGING_LIBDIR}/mw/rdk-halif-aidl/libcompositeinput-v0.2.0.0-cpp.so \
+    -DPLANECONTROL_AIDL_INCLUDE_DIR=${STAGING_INCDIR}/mw/planecontrol/0.2.0.0/include \
+    -DPLANECONTROL_AIDL_LIBRARY=${STAGING_LIBDIR}/mw/rdk-halif-aidl/libplanecontrol-v0.2.0.0-cpp.so \
     -DBINDER_LIBRARY=${STAGING_DIR_HOST}${prefix}/mw/lib/binder/libbinder.so \
     -DUTILS_LIBRARY=${STAGING_DIR_HOST}${prefix}/mw/lib/binder/libutils.so \
     -DIARMBUS_INCLUDE_DIRS:PATH=${RECIPE_SYSROOT}${includedir}/rdk/iarmbus \
@@ -67,6 +76,10 @@ EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
 
 CXXFLAGS:append:vdevice_x86-64-mw = " \
     -I${STAGING_INCDIR}/mw/hdmiinput/0.1.0.0/include \
+    -I${STAGING_INCDIR}/mw/hdmioutput/0.1.0.0/include \
+    -I${STAGING_INCDIR}/mw/compositeinput/0.2.0.0/include \
+    -I${STAGING_INCDIR}/mw/planecontrol/0.2.0.0/include \
+    -I${STAGING_INCDIR}/mw/videodecoder/0.2.0.1/include \
     -I${STAGING_INCDIR}/mw/common/0.2.0.0/include \
     -I${STAGING_INCDIR}/mw/include \
     -I${STAGING_INCDIR}/android \
@@ -90,6 +103,16 @@ do_configure:append:vdevice_x86-64-mw() {
     if [ ! -e "${STAGING_LIBDIR}/mw/rdk-halif-aidl/libhdmiinput-v0.1.0.0-cpp.so" ]; then
         bbfatal "Unable to locate staged libhdmiinput-v0.1.0.0-cpp.so under ${STAGING_LIBDIR}/mw/rdk-halif-aidl"
     fi
+    for component in hdmioutput/0.1.0.0 compositeinput/0.2.0.0 planecontrol/0.2.0.0; do
+        if [ ! -d "${STAGING_INCDIR}/mw/${component}/include" ]; then
+            bbfatal "Unable to locate staged ${component} AIDL headers under ${STAGING_INCDIR}/mw"
+        fi
+    done
+    for library in libhdmioutput-v0.1.0.0-cpp.so libcompositeinput-v0.2.0.0-cpp.so libplanecontrol-v0.2.0.0-cpp.so; do
+        if [ ! -e "${STAGING_LIBDIR}/mw/rdk-halif-aidl/${library}" ]; then
+            bbfatal "Unable to locate staged ${library} under ${STAGING_LIBDIR}/mw/rdk-halif-aidl"
+        fi
+    done
 }
 
 EXTRA_OECMAKE += " \
