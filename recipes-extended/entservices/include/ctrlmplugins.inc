@@ -26,7 +26,7 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 PACKAGECONFIG ?= "breakpadsupport"
 PACKAGECONFIG[breakpadsupport] = ",,breakpad-wrapper,breakpad-wrapper"
 
-# CMAKE_PROJECT_VERSION sets the plugin's API version and startup log version, same as ctrlm and xr-voice-sdk
+# CMAKE_PROJECT_VERSION sets the plugin's API version and startup log version
 EXTRA_OECMAKE += " \
     -DCMAKE_PROJECT_VERSION=${PV} \
     -DBUILD_REFERENCE=${SRCREV} \
