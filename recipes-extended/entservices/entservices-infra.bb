@@ -67,7 +67,6 @@ PACKAGECONFIG ?= " monitor \
     lifecyclemanager \
     storagemanager \
     appmanager \
-    texttospeechmonitor \
     preinstallmanager \
     migration \
     appgateway \
@@ -138,7 +137,6 @@ PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LI
 PACKAGECONFIG[storagemanager]       = "-DPLUGIN_STORAGE_MANAGER=ON,-DPLUGIN_STORAGE_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[appmanager]           = "-DPLUGIN_APPMANAGER=ON,-DPLUGIN_APPMANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON"
-PACKAGECONFIG[texttospeechmonitor]  = "-DPLUGIN_MONITOR_TEXTTOSPEECH=ON"
 PACKAGECONFIG[preinstallmanager]    = "-DPLUGIN_PREINSTALL_MANAGER=ON,-DPLUGIN_PREINSTALL_MANAGER=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[migration]            = "-DPLUGIN_MIGRATION=ON,-DPLUGIN_MIGRATION=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[appgateway]           = "-DPLUGIN_APPGATEWAY=ON,-DPLUGIN_APPGATEWAY=OFF,entservices-apis,entservices-apis"
