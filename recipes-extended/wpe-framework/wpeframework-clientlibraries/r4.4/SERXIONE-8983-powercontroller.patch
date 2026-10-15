@@ -1,0 +1,24 @@
+--- a/Source/powercontroller/power_controller.cpp	2026-10-14 12:14:16
++++ b/Source/powercontroller/power_controller.cpp	2026-10-14 12:14:25
+@@ -182,6 +182,12 @@
+ }
+ 
+ static constexpr const TCHAR callSign[] = _T("org.rdk.PowerManager");
++
++/* Upper bound for the COM-RPC channel open. RPC::CommunicationTimeOut is
++ * Core::infinite in __DEBUG__ builds, which let PowerController_Init() (and so
++ * dsMgrMain startup) block forever while WPEFramework is hung or crashing.
++ * On timeout Connect() fails with ERROR_UNAVAILABLE and callers retry. */
++static constexpr uint32_t kConnectTimeoutMs = 5000;
+ 
+ // Templated Callback list avoid code duplication, for individual callback types
+ // This class expects mechanism to register / unregister for individual & unique notifications with PowerManager
+@@ -942,7 +948,7 @@
+             do {
+                 if (!isConnected()) {
+                     LOGINFO("Opening COM-RPC channel ...");
+-                    uint32_t res = BaseClass::Open(RPC::CommunicationTimeOut, BaseClass::Connector(), callSign);
++                    uint32_t res = BaseClass::Open(kConnectTimeoutMs, BaseClass::Connector(), callSign);
+                     if (Core::ERROR_NONE == res) {
+                         LOGINFO("COM-RPC channel opened successfully");
+                         _connected = true;

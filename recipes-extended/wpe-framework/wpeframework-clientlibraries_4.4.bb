@@ -23,6 +23,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0002-RDKEMW-19048-Release-and-reacquire-Vault-SecProcessor-for-deep-sleep.patch \
            file://r4.4/0003-RDKEMW-20680-vault-processor-release-openssl-thunder-stubs.patch \
            file://r4.4/0001-PowerManagerClient-library-implementation.patch \
+           file://r4.4/SERXIONE-8983-powercontroller.patch \
            "
 
 # Sept 15, 2026
