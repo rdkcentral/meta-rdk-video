@@ -17,7 +17,7 @@ S = "${WORKDIR}/git"
 
 CFLAGS:append = " -DYOCTO_BUILD"
 DEPENDS = "iarmbus iarmmgrs dbus glib-2.0 wpeframework-clientlibraries entservices-powercontroller devicesettings"
-RDEPENDS:${PN} += "iarmmgrs wpeframework-clientlibraries"
+RDEPENDS:${PN} += "iarmmgrs wpeframework-clientlibraries entservices-powercontroller"
 DEPENDS += " ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', '', 'netsrvmgr', d), '', d)}"
 
 
