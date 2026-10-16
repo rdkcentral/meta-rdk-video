@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "git://github.com/adithv000/entservices-devicesettings.git;protocol=https;branch=topic/m7-release \
            file://rdkservices.ini \
           "
 SRC_URI:vdevice_x86-64-mw = "git://github.com/adithv000/entservices-devicesettings.git;protocol=https;branch=topic/m7-release \
