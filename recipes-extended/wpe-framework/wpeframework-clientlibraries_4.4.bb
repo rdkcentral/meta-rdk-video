@@ -22,7 +22,6 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-SecAPI-Re-acquire-sec-handle-after-flush.patch \
            file://r4.4/0002-RDKEMW-19048-Release-and-reacquire-Vault-SecProcessor-for-deep-sleep.patch \
            file://r4.4/0003-RDKEMW-20680-vault-processor-release-openssl-thunder-stubs.patch \
-           file://r4.4/0001-PowerManagerClient-library-implementation.patch \
            "
 
 # Sept 15, 2026
@@ -70,7 +69,6 @@ PACKAGECONFIG ?= " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'provisioning', 'provisionproxy', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'securityagent', d)} \
     cryptography \
-    powercontroller \
     "
 
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'compositor', 'compositorclient', '', d)}"
@@ -79,7 +77,6 @@ PACKAGECONFIG[compositorclient] = "-DCOMPOSITORCLIENT=ON,-DCOMPOSITORCLIENT=OFF"
 PACKAGECONFIG[provisionproxy]   = "-DPROVISIONPROXY=ON,-DPROVISIONPROXY=OFF,libprovision"
 PACKAGECONFIG[securityagent]    = "-DSECURITYAGENT=ON, -DSECURITYAGENT=OFF"
 PACKAGECONFIG[cryptography]     = "-DCRYPTOGRAPHY=ON, -DCRYPTOGRAPHY=OFF,"
-PACKAGECONFIG[powercontroller]     = "-DPOWERCONTROLLER=ON, -DPOWERCONTROLLER=OFF,"
 
 # ----------------------------------------------------------------------------
 
