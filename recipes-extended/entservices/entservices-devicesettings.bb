@@ -16,7 +16,7 @@ SRC_URI:vdevice_x86-64-mw = "git://github.com/adithv000/entservices-devicesettin
           "
 
 # Release version - 1.0.0
-SRCREV = "66032d32aed342f36b8cb1ab405b566cddf9c998"
+SRCREV = "d6abcae90dbcd730ce381f5c3b9ab45ab220dd8e"
 SRCREV:vdevice_x86-64-mw = "d6abcae90dbcd730ce381f5c3b9ab45ab220dd8e"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -24,8 +24,8 @@ TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis"
-RDEPENDS:${PN} += "wpeframework"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis rdk-halif-aidl-mw libbinderrdk"
+RDEPENDS:${PN} += "wpeframework rdk-halif-aidl-mw-hdmiinput rdk-halif-aidl-mw-hdmioutput rdk-halif-aidl-mw-compositeinput rdk-halif-aidl-mw-planecontrol rdk-halif-aidl-mw-common libbinderrdk"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 
@@ -54,6 +54,40 @@ DEVICESETTINGS_RDEPS = "iarmbus devicesettings entservices-helpers"
 DEVICESETTINGS_RDEPS:vdevice_x86-64-mw = "iarmbus entservices-helpers libbinderrdk rdk-halif-aidl-mw-hdmiinput rdk-halif-aidl-mw-hdmioutput rdk-halif-aidl-mw-compositeinput rdk-halif-aidl-mw-planecontrol rdk-halif-aidl-mw-common vdevice-noop"
 
 PACKAGECONFIG[devicesettings]       = "-DPLUGIN_DEVICESETTINGS=ON,-DPLUGIN_DEVICESETTINGS=OFF,${DEVICESETTINGS_DEPS},${DEVICESETTINGS_RDEPS}"
+
+# Use the generated HDMI-input AIDL headers and library for non-vDevice builds.
+EXTRA_OECMAKE:append = " \
+    -DAIDL_INCLUDE_DIR=${STAGING_INCDIR}/mw/hdmiinput/0.1.0.0/include \
+    -DBINDER_INCLUDE_DIR=${STAGING_INCDIR}/android \
+    -DHAL_AIDL_LIBRARY=${STAGING_LIBDIR}/mw/rdk-halif-aidl/libhdmiinput-v0.1.0.0-cpp.so \
+    -DHDMIOUTPUT_AIDL_INCLUDE_DIR=${STAGING_INCDIR}/mw/hdmioutput/0.1.0.0/include \
+    -DHDMIOUTPUT_AIDL_LIBRARY=${STAGING_LIBDIR}/mw/rdk-halif-aidl/libhdmioutput-v0.1.0.0-cpp.so \
+    -DCOMPOSITEINPUT_AIDL_INCLUDE_DIR=${STAGING_INCDIR}/mw/compositeinput/0.2.0.0/include \
+    -DCOMPOSITEINPUT_AIDL_LIBRARY=${STAGING_LIBDIR}/mw/rdk-halif-aidl/libcompositeinput-v0.2.0.0-cpp.so \
+    -DPLANECONTROL_AIDL_INCLUDE_DIR=${STAGING_INCDIR}/mw/planecontrol/0.2.0.0/include \
+    -DPLANECONTROL_AIDL_LIBRARY=${STAGING_LIBDIR}/mw/rdk-halif-aidl/libplanecontrol-v0.2.0.0-cpp.so \
+    -DBINDER_LIBRARY=${STAGING_DIR_HOST}${prefix}/mw/lib/binder/libbinder.so \
+    -DUTILS_LIBRARY=${STAGING_DIR_HOST}${prefix}/mw/lib/binder/libutils.so \
+"
+
+CXXFLAGS:append = " \
+    -I${STAGING_INCDIR}/mw/hdmiinput/0.1.0.0/include \
+    -I${STAGING_INCDIR}/mw/hdmioutput/0.1.0.0/include \
+    -I${STAGING_INCDIR}/mw/compositeinput/0.2.0.0/include \
+    -I${STAGING_INCDIR}/mw/planecontrol/0.2.0.0/include \
+    -I${STAGING_INCDIR}/mw/videodecoder/0.2.0.1/include \
+    -I${STAGING_INCDIR}/mw/common/0.2.0.0/include \
+    -I${STAGING_INCDIR}/mw/include \
+    -I${STAGING_INCDIR}/android \
+    -Wno-error=attributes \
+    -Wno-error=unknown-pragmas \
+    -Wno-error=write-strings \
+"
+
+LDFLAGS:append = " \
+    -L${STAGING_DIR_HOST}${prefix}/mw/lib/binder \
+    -L${STAGING_LIBDIR}/mw/rdk-halif-aidl \
+"
 
 # Pass component-specific HDMIInput AIDL/binder paths to CMake for vdevice.
 EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
