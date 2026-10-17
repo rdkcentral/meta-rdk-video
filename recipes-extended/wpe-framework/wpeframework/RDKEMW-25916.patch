@@ -1,0 +1,28 @@
+diff --git a/Source/com/IUnknown.cpp b/Source/com/IUnknown.cpp
+index 7694a30c..f3b120f7 100644
+--- a/Source/com/IUnknown.cpp
++++ b/Source/com/IUnknown.cpp
+@@ -110,6 +110,23 @@ namespace ProxyStub {
+ 
+                 if (result == Core::ERROR_TIMEDOUT) {
+                     SYSLOG(Logging::Error, (_T("IPC method Invoke failed due to timeout (Interface ID 0x%X, Method ID 0x%X). Execution of code may or may not have happened. Side effects are to be expected after this message"), message->Parameters().InterfaceId(), message->Parameters().MethodId()));
++
++                    std::stringstream ss;
++                    ss << std::hex << std::this_thread::get_id();
++                    fprintf(stderr, "Pid=%d tid=%d T:%s\n", getpid(), gettid(), ss.str().c_str());
++                    const auto metaData = Core::WorkerPool::Instance().Snapshot();
++                    for (const auto& jobInfo : metaData.Pending) {
++                        fprintf(stderr, "Job: %s\n", jobInfo.c_str());
++                    }
++                    fprintf(stderr, "Poolruns:\n");
++                    for (uint8_t index = 0; index < metaData.Slots; index++) {
++                        fprintf(stderr, "  Thread%02d|0x%16lX: %10d", (index + 1), metaData.Slot[index].WorkerId, metaData.Slot[index].Runs);
++                        if (metaData.Slot[index].Job.IsSet() == false) {
++                            fprintf(stderr, "\n");
++                        } else {
++                            fprintf(stderr, " [%s]\n", metaData.Slot[index].Job.Value().c_str());
++                        }
++                    }
+                 }
+ 
+                 result |= COM_ERROR;
