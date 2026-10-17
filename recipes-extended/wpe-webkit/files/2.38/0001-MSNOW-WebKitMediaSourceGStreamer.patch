@@ -1,0 +1,37 @@
+From be7300c03f7182a7cd05742f0e073dffb7055006 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Wed, 12 Aug 2026 16:32:15 +0000
+Subject: [PATCH] MSNOW WebKitMediaSourceGStreamer
+
+---
+ .../graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+index e6ad6bd96686..d42f99060305 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+@@ -815,12 +815,20 @@ static void webKitMediaSrcLoop(void* userData)
+     } else if (GST_IS_EVENT(object.get())) {
+         // EOS events and other enqueued events are also sent unlocked so they can react to flushes if necessary.
+         GRefPtr<GstEvent> event = GRefPtr<GstEvent>(GST_EVENT(object.leakRef()));
++        bool isEOS = GST_EVENT_TYPE(event.get()) == GST_EVENT_EOS;
+ 
+         streamingMembers.unlockEarly();
+         GST_DEBUG_OBJECT(pad, "Pushing event downstream: %" GST_PTR_FORMAT, event.get());
+         bool eventHandled = gst_pad_push_event(pad, GRefPtr<GstEvent>(event).leakRef());
+         if (!eventHandled)
+             GST_DEBUG_OBJECT(pad, "Pushed event was not handled: %" GST_PTR_FORMAT, event.get());
++
++        if (isEOS) {
++	printf("%d %s KKP\n",__LINE__,__PRETTY_FUNCTION__);fflush(stdout);
++            DataMutexLocker streamingMembersAfterEOS { stream->streamingMembersDataMutex };
++            GST_ERROR_OBJECT(pad, "KKP: EOS pushed, resetting wasStreamStartSent to allow re-sending STREAM_START.");
++            streamingMembersAfterEOS->wasStreamStartSent = false;
++        }
+     } else
+         ASSERT_NOT_REACHED();
+ }
+-- 
+2.44.4
+
