@@ -1,0 +1,32 @@
+From 33dd93d8803b5690e4a7c5d1708a04a96632634c Mon Sep 17 00:00:00 2001
+From: BunioFH <buniofh@gmail.com>
+Date: Wed, 16 Sep 2026 20:40:33 +0200
+Subject: [PATCH] BCM-1983 add vorbis & vp8 to rialto known types
+
+---
+ source/GStreamerMSEUtils.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/source/GStreamerMSEUtils.cpp b/source/GStreamerMSEUtils.cpp
+index e7d0b09..6bb5ea3 100644
+--- a/source/GStreamerMSEUtils.cpp
++++ b/source/GStreamerMSEUtils.cpp
+@@ -37,6 +37,7 @@ void rialto_mse_sink_setup_supported_caps(GstElementClass *elementClass,
+          {"audio/aac", {"audio/mpeg, mpegversion=2", "audio/mpeg, mpegversion=4"}},
+          {"audio/x-eac3", {"audio/x-ac3", "audio/x-eac3"}},
+          {"audio/x-opus", {"audio/x-opus"}},
++         {"audio/x-vorbis", {"audio/x-vorbis"}},
+          {"audio/b-wav", {"audio/b-wav"}},
+          {"audio/x-flac", {"audio/x-flac"}},
+          {"audio/x-raw", {"audio/x-raw"}},
+@@ -44,6 +45,7 @@ void rialto_mse_sink_setup_supported_caps(GstElementClass *elementClass,
+          {"video/h265", {"video/x-h265"}},
+          {"video/x-av1", {"video/x-av1"}},
+          {"video/x-vp9", {"video/x-vp9"}},
++         {"video/x-vp8", {"video/x-vp8"}},
+          {"text/vtt", {"text/vtt", "application/x-subtitle-vtt"}},
+          {"text/ttml", {"application/ttml+xml"}},
+          {"text/cc",
+-- 
+2.43.0
+
