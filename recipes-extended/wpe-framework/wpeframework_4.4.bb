@@ -12,7 +12,7 @@ DEPENDS += "breakpad-wrapper"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r57"
+PR = "r58"
 PV = "4.4.7"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -25,6 +25,10 @@ SRCREV_thunder = "7c33637bdfd36109ffb556da4e9b58d1443ebd69"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
+
+# Enable GCC level-3 optimization for WPEFramework only.
+CFLAGS:append = " -O3"
+CXXFLAGS:append = " -O3"
 
 
 inherit cmake pkgconfig systemd python3native add-version
