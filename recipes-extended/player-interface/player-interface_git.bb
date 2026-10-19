@@ -7,7 +7,7 @@ PV = "1.0.4"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "d61ce9cb40dff236edabbf985b181400f864c92a"
+SRCREV_player-interface ?= "f372f6b07e3e9a236236e8d0209e4ecba15df0d6"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-26814-phase1"
 
