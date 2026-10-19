@@ -27,6 +27,8 @@ S = "${WORKDIR}/git"
 inherit pkgconfig cmake coverity features_check
 
 EXTRA_OECMAKE += " ${@bb.utils.contains("IMAGE_FEATURES", "prod", "-DRIALTO_BUILD_TYPE=Release", "-DRIALTO_BUILD_TYPE=Debug", d)} "
+INHIBIT_PACKAGE_STRIP = "${@bb.utils.contains('IMAGE_FEATURES', 'prod', '0', '1', d)}"
+INHIBIT_PACKAGE_DEBUG_SPLIT = "${@bb.utils.contains('IMAGE_FEATURES', 'prod', '0', '1', d)}"
 
 PACKAGES =+ "${PN}-client ${PN}-server ${PN}-servermanager-lib ${PN}-servermanager ${PN}-client-dev ${PN}-server-dev ${PN}-servermanager-lib-dev ${PN}-servermanager-dev "
 
