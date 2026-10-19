@@ -9,7 +9,7 @@ DEPENDS = "zlib thunder-tools-native"
 DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder;protocol=https;nobranch=1"
+SRC_URI = "${CMF_GITHUB_ROOT}/Thunder;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 SRCREV ?= "R${PV}"
 

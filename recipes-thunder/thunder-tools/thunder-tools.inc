@@ -10,7 +10,7 @@ DEPENDS = "\
     python3-jsonref-native \
 "
 
-SRC_URI = "git://github.com/rdkcentral/ThunderTools;protocol=https;nobranch=1"
+SRC_URI = "${CMF_GITHUB_ROOT}/ThunderTools;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 SRCREV ?= "R${PV}"
 
