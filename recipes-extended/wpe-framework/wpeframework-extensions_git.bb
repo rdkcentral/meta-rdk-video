@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PV = "4.4.7"
-PR = "r1"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig python3native
@@ -22,6 +22,10 @@ RDEPENDS:${PN} += "wpeframework telemetry"
 # Explicitly stage the proxystubs subdir and headers into the sysroot so that
 # recipes which DEPEND on this recipe can find libWPEFrameworkExtensionsMarshalling.
 SYSROOT_DIRS:append = " ${libdir}/wpeframework/proxystubs ${includedir}/WPEFramework/extensions"
+
+# Enable GCC level-3 optimization for WPEFramework extensions.
+CFLAGS:append = " -O3"
+CXXFLAGS:append = " -O3"
 
 CXXFLAGS += " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"

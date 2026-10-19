@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 HOMEPAGE = "https://github.com/rdkcentral/ThunderClientlibraries"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=847677038847363222ffb66cfa6406c2"
 
-PR = "r20"
+PR = "r21"
 PV = "4.4.2"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -44,6 +44,10 @@ RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'entservic
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
+
+# Enable GCC level-3 optimization for WPEFramework client libraries.
+CFLAGS:append = " -O3"
+CXXFLAGS:append = " -O3"
 
 require recipes-extended/entservices/include/compositor.inc
 #include include/compositor.inc
