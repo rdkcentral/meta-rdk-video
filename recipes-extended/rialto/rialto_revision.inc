@@ -7,7 +7,7 @@
 #
 # Please contact DL-Rialto@sky.uk if you want to change this file or in case of problems
 
-RIALTO_SRCREV ?= "7462419af1921d0ed40e25d261d55cc1380c4a60"
+RIALTO_SRCREV ?= "225c50111d4eab747a7e3b5427fb3e2754a9c8a5"
 RIALTO_BRANCH ?= "${CMF_GITHUB_MASTER_BRANCH}"
 RIALTO_VERSION ?= "v0.26.0"
 RIALTO_PR ?= "rn0"
