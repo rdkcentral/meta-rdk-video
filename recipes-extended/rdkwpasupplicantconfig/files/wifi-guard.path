@@ -1,8 +1,1 @@
-[Unit]
-Description=Watch for wifi disable flag
 
-[Path]
-PathExists=/opt/persistent/wifi.interface.disable
-
-[Install]
-WantedBy=multi-user.target
