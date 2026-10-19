@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "5954161d917e235026388d85db0f4ab92189bbd3"
+SRCREV = "03ee7505f4244be1713585a4e6f12f1800e5a78f"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-monitor;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
