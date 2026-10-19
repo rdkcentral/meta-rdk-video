@@ -26,9 +26,9 @@ do_install() {
     install -m 0755 ${WORKDIR}/prepareWpaSuppConfig.sh ${D}${base_libdir}/rdk
     install -m 0644 ${WORKDIR}/wpa_supplicant.logging ${D}${sysconfdir}
     install -D -m 0644 ${WORKDIR}/00-wpa-supplicant.conf ${D}${systemd_unitdir}/system/wpa_supplicant.service.d/00-wpa-supplicant.conf
-    install -m 0755 ${WORKDIR}/handle-wifi-interface.sh ${D}${base_libdir}/rdk
     install -m 0644 ${WORKDIR}/wifi-guard.service ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/wifi-guard.path ${D}${systemd_unitdir}/system
+    install -m 0755 ${WORKDIR}/handle-wifi-interface.sh ${D}${base_libdir}/rdk
 }
 
 FILES:${PN} += " ${base_libdir}/rdk/prepareWpaSuppConfig.sh"
@@ -36,7 +36,7 @@ FILES:${PN} += " ${systemd_unitdir}/system/wpa_supplicant.service.d/*"
 FILES:${PN} += " ${sysconfdir}/wpa_supplicant.logging"
 FILES:${PN} += " ${systemd_unitdir}/system/wifi-guard.service"
 FILES:${PN} += " ${systemd_unitdir}/system/wifi-guard.path"
-
+FILES:${PN} += " ${base_libdir}/rdk/handle-wifi-interface.sh"
 
 do_configure[noexec] = "1"
 do_compile[noexec] = "1"
