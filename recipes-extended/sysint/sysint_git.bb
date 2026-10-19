@@ -130,7 +130,10 @@ do_install() {
 	    install -m 0644 ${S}/systemd_units/system-time-set.path ${D}${systemd_unitdir}/system
 	    install -m 0644 ${S}/systemd_units/system-time-set.target ${D}${systemd_unitdir}/system
 	    install -m 0644 ${S}/systemd_units/system-time-event.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/systemd_units/wifi-guard.path ${D}${systemd_unitdir}/system
+            install -m 0644 ${S}/systemd_units/wifi-guard.path ${D}${systemd_unitdir}/system
+            install -m 0644 ${S}/systemd_units/wifi-gurad.service ${D}${systemd_unitdir}/system
+            install -m 0644 ${S}/systemd_units/handle-wifi-interface.sh ${D}${base_libdir}/rdk
+}
 
         if [ "${BIND_ENABLED}" = "true" ]; then
            echo "BIND_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
