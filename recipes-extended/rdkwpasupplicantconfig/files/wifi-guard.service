@@ -1,7 +1,0 @@
-[Unit]
-Description=Handle wpa_supplicant based on wifi.interface.disable existence
-After=network.target
-
-[Service]
-Type=oneshot
-ExecStart=/lib/rdk/handle-wifi-interface.sh
