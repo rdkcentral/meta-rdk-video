@@ -9,10 +9,10 @@ PR = "r5"
 PV = "4.4.7"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/ThunderTools.git;protocol=https;branch=R4_4-RDK"
+SRC_URI = "git://github.com/rdkcentral/ThunderTools.git;protocol=https;nobranch=1"
 
 # supports outputting and parsing of multi namespaces, should be included in 4.4.8
-SRCREV = "a6976a075099ec5babb45c81329ace17becfad33"
+SRCREV = "15dbc4148325a04d7ae7d1eaba66b4837b7fd517"
 
 inherit cmake pkgconfig python3native
 
