@@ -2,7 +2,7 @@ SUMMARY = "ENTServices AppGateway plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=af6837dbae6be5e19b54c9b43888caa3"
 
-PV = "1.6.0.0"
+PV = "1.7.0.0"
 PR = "r0"
 # Release version - 1.6.0.0
 SRCREV = "e7cb5e3db9a4a4f3cfd6fad46c9b2bdf6b9ebc4a"
