@@ -3,7 +3,8 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
 PV = "4.3.4"
 PR = "r0"
-SRCREV_entservices-apis = "${PV}"
+# 4.3.4 + PR #1065 (IAppPackagesStatus), required by entservices-appmanagers develop
+SRCREV_entservices-apis = "b87c26fea51e026ce7ba50b357be417fd91bfdbf"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
