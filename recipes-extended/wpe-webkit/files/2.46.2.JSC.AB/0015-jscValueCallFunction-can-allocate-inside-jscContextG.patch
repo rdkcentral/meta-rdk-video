@@ -1,0 +1,526 @@
+From 3fd47de878436001d8bf9906edb7aeef44ae7282 Mon Sep 17 00:00:00 2001
+From: Justin Michaud <jmichaud@igalia.com>
+Date: Mon, 21 Sep 2026 12:00:34 -0600
+Subject: [PATCH] jscValueCallFunction can allocate inside
+ jscContextGValueToJSValue, but does not root these values anywhere
+
+---
+ .../JavaScriptCore/API/APICallbackFunction.h  |  15 +-
+ .../API/JSCallbackObjectFunctions.h           |  14 +-
+ Source/JavaScriptCore/API/glib/JSCValue.cpp   |  27 +++-
+ Source/JavaScriptCore/API/tests/testapi.cpp   | 126 ++++++++++++++++
+ .../Tests/JavaScriptCore/glib/TestJSC.cpp     | 142 ++++++++++++++++++
+ 5 files changed, 304 insertions(+), 20 deletions(-)
+
+diff --git a/Source/JavaScriptCore/API/APICallbackFunction.h b/Source/JavaScriptCore/API/APICallbackFunction.h
+index bd3b99bd7208..18fea5d4ddf6 100644
+--- a/Source/JavaScriptCore/API/APICallbackFunction.h
++++ b/Source/JavaScriptCore/API/APICallbackFunction.h
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2013-2020 Apple Inc. All rights reserved.
++ * Copyright (C) 2026 Igalia S.L.
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+@@ -30,7 +31,7 @@
+ #include "Error.h"
+ #include "JSCallbackConstructor.h"
+ #include "JSLock.h"
+-#include <wtf/Vector.h>
++#include "MarkedJSValueRefArray.h"
+ 
+ namespace JSC {
+ 
+@@ -49,9 +50,9 @@ EncodedJSValue APICallbackFunction::callImpl(JSGlobalObject* globalObject, CallF
+     JSObjectRef thisObjRef = toRef(jsCast<JSObject*>(callFrame->thisValue().toThis(globalObject, ECMAMode::sloppy())));
+ 
+     int argumentCount = static_cast<int>(callFrame->argumentCount());
+-    Vector<JSValueRef, 16> arguments(argumentCount, [&](size_t i) {
+-        return toRef(globalObject, callFrame->uncheckedArgument(i));
+-    });
++    MarkedJSValueRefArray arguments(toGlobalRef(globalObject), static_cast<unsigned>(argumentCount));
++    for (unsigned i = 0; i < arguments.size(); ++i)
++        arguments[i] = toRef(globalObject, callFrame->uncheckedArgument(i));
+ 
+     JSValueRef exception = nullptr;
+     JSValueRef result;
+@@ -92,9 +93,9 @@ EncodedJSValue APICallbackFunction::constructImpl(JSGlobalObject* globalObject,
+         }
+ 
+         size_t argumentCount = callFrame->argumentCount();
+-        Vector<JSValueRef, 16> arguments(argumentCount, [&](size_t i) {
+-            return toRef(globalObject, callFrame->uncheckedArgument(i));
+-        });
++        MarkedJSValueRefArray arguments(toGlobalRef(globalObject), static_cast<unsigned>(argumentCount));
++        for (unsigned i = 0; i < arguments.size(); ++i)
++            arguments[i] = toRef(globalObject, callFrame->uncheckedArgument(i));
+ 
+         JSValueRef exception = nullptr;
+         JSObjectRef result;
+diff --git a/Source/JavaScriptCore/API/JSCallbackObjectFunctions.h b/Source/JavaScriptCore/API/JSCallbackObjectFunctions.h
+index 264b4c6319c9..7a803243b1f6 100644
+--- a/Source/JavaScriptCore/API/JSCallbackObjectFunctions.h
++++ b/Source/JavaScriptCore/API/JSCallbackObjectFunctions.h
+@@ -1,6 +1,7 @@
+ /*
+  * Copyright (C) 2006-2020 Apple Inc. All rights reserved.
+  * Copyright (C) 2007 Eric Seidel <eric@webkit.org>
++ * Copyright (C) 2026 Igalia S.L.
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+@@ -35,6 +36,7 @@
+ #include "JSLock.h"
+ #include "JSObjectRef.h"
+ #include "JSString.h"
++#include "MarkedJSValueRefArray.h"
+ #include "OpaqueJSString.h"
+ #include "PropertyNameArray.h"
+ #include <wtf/Vector.h>
+@@ -479,9 +481,9 @@ EncodedJSValue JSCallbackObject<Parent>::constructImpl(JSGlobalObject* globalObj
+     for (JSClassRef jsClass = jsCast<JSCallbackObject<Parent>*>(constructor)->classRef(); jsClass; jsClass = jsClass->parentClass) {
+         if (JSObjectCallAsConstructorCallback callAsConstructor = jsClass->callAsConstructor) {
+             size_t argumentCount = callFrame->argumentCount();
+-            Vector<JSValueRef, 16> arguments(argumentCount, [&](size_t i) {
+-                return toRef(globalObject, callFrame->uncheckedArgument(i));
+-            });
++            MarkedJSValueRefArray arguments(toGlobalRef(globalObject), static_cast<unsigned>(argumentCount));
++            for (unsigned i = 0; i < arguments.size(); ++i)
++                arguments[i] = toRef(globalObject, callFrame->uncheckedArgument(i));
+             JSValueRef exception = nullptr;
+             JSObject* result;
+             {
+@@ -557,9 +559,9 @@ EncodedJSValue JSCallbackObject<Parent>::callImpl(JSGlobalObject* globalObject,
+     for (JSClassRef jsClass = jsCast<JSCallbackObject<Parent>*>(toJS(functionRef))->classRef(); jsClass; jsClass = jsClass->parentClass) {
+         if (JSObjectCallAsFunctionCallback callAsFunction = jsClass->callAsFunction) {
+             size_t argumentCount = callFrame->argumentCount();
+-            Vector<JSValueRef, 16> arguments(argumentCount, [&](size_t i) {
+-                return toRef(globalObject, callFrame->uncheckedArgument(i));
+-            });
++            MarkedJSValueRefArray arguments(toGlobalRef(globalObject), static_cast<unsigned>(argumentCount));
++            for (unsigned i = 0; i < arguments.size(); ++i)
++                arguments[i] = toRef(globalObject, callFrame->uncheckedArgument(i));
+ 
+             JSValueRef exception = nullptr;
+             JSValue result;
+diff --git a/Source/JavaScriptCore/API/glib/JSCValue.cpp b/Source/JavaScriptCore/API/glib/JSCValue.cpp
+index 48e5ad211e62..9abad30e2868 100644
+--- a/Source/JavaScriptCore/API/glib/JSCValue.cpp
++++ b/Source/JavaScriptCore/API/glib/JSCValue.cpp
+@@ -31,6 +31,7 @@
+ #include "JSRetainPtr.h"
+ #include "JSTypedArray.h"
+ #include "LiteralParser.h"
++#include "MarkedJSValueRefArray.h"
+ #include "OpaqueJSString.h"
+ #include "TypedArrayType.h"
+ #include <array>
+@@ -874,7 +875,7 @@ char** jsc_value_object_enumerate_properties(JSCValue* value)
+     return result;
+ }
+ 
+-static JSValueRef jsObjectCall(JSGlobalContextRef jsContext, JSObjectRef function, JSC::JSCCallbackFunction::Type functionType, JSObjectRef thisObject, const Vector<JSValueRef>& arguments, JSValueRef* exception)
++static JSValueRef jsObjectCall(JSGlobalContextRef jsContext, JSObjectRef function, JSC::JSCCallbackFunction::Type functionType, JSObjectRef thisObject, std::span<const JSValueRef> arguments, JSValueRef* exception)
+ {
+     switch (functionType) {
+     case JSC::JSCCallbackFunction::Type::Constructor:
+@@ -896,7 +897,8 @@ static GRefPtr<JSCValue> jscValueCallFunction(JSCValue* value, JSObjectRef funct
+     JSC::JSLockHolder locker(globalObject);
+ 
+     JSValueRef exception = nullptr;
+-    Vector<JSValueRef> arguments;
++    // Converting a parameter allocates, so the values converted so far need a buffer the collector marks.
++    JSC::MarkedArgumentBuffer parameters;
+     GType parameterType = firstParameterType;
+     while (parameterType != G_TYPE_NONE) {
+         GValue parameter;
+@@ -915,11 +917,22 @@ static GRefPtr<JSCValue> jscValueCallFunction(JSCValue* value, JSObjectRef funct
+         if (jscContextHandleExceptionIfNeeded(priv->context.get(), exception))
+             return jscContextGetOrCreateValue(priv->context.get(), jsValue);
+ 
+-        arguments.append(jsValue);
++        parameters.append(toJS(globalObject, jsValue));
+         parameterType = va_arg(args, GType);
+     }
++    if (parameters.hasOverflowed()) {
++        exception = toRef(JSC::createOutOfMemoryError(globalObject));
++        jscContextHandleExceptionIfNeeded(priv->context.get(), exception);
++        return adoptGRef(jsc_value_new_undefined(priv->context.get()));
++    }
++
++    // Where a JSValue does not fit in a pointer toRef() allocates a wrapper cell, so the JSValueRefs
++    // need marking as well.
++    JSC::MarkedJSValueRefArray arguments(jsContext, static_cast<unsigned>(parameters.size()));
++    for (unsigned i = 0; i < arguments.size(); ++i)
++        arguments[i] = toRef(globalObject, parameters.at(i));
+ 
+-    auto result = jsObjectCall(jsContext, function, functionType, thisObject, arguments, &exception);
++    auto result = jsObjectCall(jsContext, function, functionType, thisObject, unsafeMakeSpan(arguments.data(), arguments.size()), &exception);
+     if (jscContextHandleExceptionIfNeeded(priv->context.get(), exception))
+         return adoptGRef(jsc_value_new_undefined(priv->context.get()));
+ 
+@@ -1019,7 +1032,7 @@ JSCValue* jsc_value_object_invoke_methodv(JSCValue* value, const char* name, uns
+         WTF_ALLOW_UNSAFE_BUFFER_USAGE_END
+     });
+ 
+-    auto result = jsObjectCall(jsContext, function, JSC::JSCCallbackFunction::Type::Method, object, arguments, &exception);
++    auto result = jsObjectCall(jsContext, function, JSC::JSCCallbackFunction::Type::Method, object, arguments.span(), &exception);
+     if (jscContextHandleExceptionIfNeeded(priv->context.get(), exception))
+         return jsc_value_new_undefined(priv->context.get());
+ 
+@@ -1376,7 +1389,7 @@ JSCValue* jsc_value_function_callv(JSCValue* value, unsigned parametersCount, JS
+         WTF_ALLOW_UNSAFE_BUFFER_USAGE_END
+     });
+ 
+-    auto result = jsObjectCall(jsContext, function, JSC::JSCCallbackFunction::Type::Function, nullptr, arguments, &exception);
++    auto result = jsObjectCall(jsContext, function, JSC::JSCCallbackFunction::Type::Function, nullptr, arguments.span(), &exception);
+     if (jscContextHandleExceptionIfNeeded(priv->context.get(), exception))
+         return jsc_value_new_undefined(priv->context.get());
+ 
+@@ -1461,7 +1474,7 @@ JSCValue* jsc_value_constructor_callv(JSCValue* value, unsigned parametersCount,
+         WTF_ALLOW_UNSAFE_BUFFER_USAGE_END
+     });
+ 
+-    auto result = jsObjectCall(jsContext, function, JSC::JSCCallbackFunction::Type::Constructor, nullptr, arguments, &exception);
++    auto result = jsObjectCall(jsContext, function, JSC::JSCCallbackFunction::Type::Constructor, nullptr, arguments.span(), &exception);
+     if (jscContextHandleExceptionIfNeeded(priv->context.get(), exception))
+         return jsc_value_new_undefined(priv->context.get());
+ 
+diff --git a/Source/JavaScriptCore/API/tests/testapi.cpp b/Source/JavaScriptCore/API/tests/testapi.cpp
+index 22bde49cd4bd..f84ef2c1d27c 100644
+--- a/Source/JavaScriptCore/API/tests/testapi.cpp
++++ b/Source/JavaScriptCore/API/tests/testapi.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2017-2024 Apple Inc. All rights reserved.
++ * Copyright (C) 2026 Igalia S.L.
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+@@ -38,6 +39,7 @@
+ #include <wtf/MainThread.h>
+ #include <wtf/Vector.h>
+ #include <wtf/text/MakeString.h>
++#include <wtf/text/StringBuilder.h>
+ #include <wtf/text/StringCommon.h>
+ 
+ #if PLATFORM(COCOA)
+@@ -158,6 +160,10 @@ public:
+     void promiseDrainDoesNotEatExceptions();
+     void topCallFrameAccess();
+     void markedJSValueArrayAndGC();
++    void functionCallbackArgumentsAndGC();
++    void constructorCallbackArgumentsAndGC();
++    void classCallAsFunctionArgumentsAndGC();
++    void classCallAsConstructorArgumentsAndGC();
+     void classDefinitionWithJSSubclass();
+     void proxyReturnedWithJSSubclassing();
+     void testJSObjectSetOnGlobalObjectSubclassDefinition();
+@@ -675,6 +681,122 @@ void TestAPI::markedJSValueArrayAndGC()
+     testMarkedJSValueArray(1000);
+ }
+ 
++// Above MarkedJSValueRefArray's inline capacity, where a stack buffer would be found by conservative
++// scanning whether or not the collector knows about it.
++static constexpr unsigned manyArgumentCount = 32;
++static constexpr double recycledArgumentValue = 987654321;
++
++static bool argumentsSurviveCollectionInCallback(JSContextRef ctx, size_t argumentCount, const JSValueRef arguments[])
++{
++    if (argumentCount != manyArgumentCount)
++        return false;
++
++    {
++        auto* globalObject = toJS(ctx);
++        JSC::VM& vm = globalObject->vm();
++        JSC::JSLockHolder locker(vm);
++        JSC::sanitizeStackForVM(vm);
++        vm.heap.collectNow(JSC::Sync, JSC::CollectionScope::Full);
++    }
++
++    // Where a JSValue does not fit in a pointer a JSValueRef for a number is a JSAPIValueWrapper cell,
++    // so these allocations recycle the wrappers that a dangling argument still points at.
++    for (unsigned index = 0; index < 8192; ++index)
++        JSValueMakeNumber(ctx, recycledArgumentValue);
++
++    for (unsigned index = 0; index < argumentCount; ++index) {
++        if (!JSValueIsNumber(ctx, arguments[index]))
++            return false;
++        if (JSValueToNumber(ctx, arguments[index], nullptr) != index)
++            return false;
++    }
++    return true;
++}
++
++static CString scriptCallingWithManyArguments(ASCIILiteral prefix, ASCIILiteral suffix)
++{
++    StringBuilder builder;
++    builder.append(prefix);
++    for (unsigned index = 0; index < manyArgumentCount; ++index) {
++        if (index)
++            builder.append(", "_s);
++        builder.append(index);
++    }
++    builder.append(suffix);
++    return builder.toString().utf8();
++}
++
++static JSValueRef checkArgumentsAsFunctionCallback(JSContextRef ctx, JSObjectRef, JSObjectRef, size_t argumentCount, const JSValueRef arguments[], JSValueRef*)
++{
++    return JSValueMakeBoolean(ctx, argumentsSurviveCollectionInCallback(ctx, argumentCount, arguments));
++}
++
++static JSObjectRef checkArgumentsAsConstructorCallback(JSContextRef ctx, JSObjectRef, size_t argumentCount, const JSValueRef arguments[], JSValueRef*)
++{
++    bool survived = argumentsSurviveCollectionInCallback(ctx, argumentCount, arguments);
++    JSObjectRef result = JSObjectMake(ctx, nullptr, nullptr);
++    JSObjectSetProperty(ctx, result, APIString("ok"), JSValueMakeBoolean(ctx, survived), kJSPropertyAttributeNone, nullptr);
++    return result;
++}
++
++void TestAPI::functionCallbackArgumentsAndGC()
++{
++    APIString name("functionWithManyArguments");
++    JSObjectRef function = JSObjectMakeFunctionWithCallback(context, name, checkArgumentsAsFunctionCallback);
++    JSObjectSetProperty(context, JSContextGetGlobalObject(context), name, function, kJSPropertyAttributeNone, nullptr);
++
++    auto script = scriptCallingWithManyArguments("functionWithManyArguments("_s, ")"_s);
++    ScriptResult result = evaluateScript(script.data());
++    check(!!result && JSValueToBoolean(context, result.value()), "JSObjectMakeFunctionWithCallback arguments should survive a collection inside the callback.");
++}
++
++void TestAPI::constructorCallbackArgumentsAndGC()
++{
++    JSClassDefinition definition = kJSClassDefinitionEmpty;
++    JSClassRef jsClass = JSClassCreate(&definition);
++    APIString name("ConstructorWithManyArguments");
++    JSObjectRef constructor = JSObjectMakeConstructor(context, jsClass, checkArgumentsAsConstructorCallback);
++    JSObjectSetProperty(context, JSContextGetGlobalObject(context), name, constructor, kJSPropertyAttributeNone, nullptr);
++
++    auto script = scriptCallingWithManyArguments("new ConstructorWithManyArguments("_s, ").ok"_s);
++    ScriptResult result = evaluateScript(script.data());
++    check(!!result && JSValueToBoolean(context, result.value()), "JSObjectMakeConstructor arguments should survive a collection inside the callback.");
++
++    JSClassRelease(jsClass);
++}
++
++void TestAPI::classCallAsFunctionArgumentsAndGC()
++{
++    JSClassDefinition definition = kJSClassDefinitionEmpty;
++    definition.className = "CallableWithManyArguments";
++    definition.callAsFunction = checkArgumentsAsFunctionCallback;
++    JSClassRef jsClass = JSClassCreate(&definition);
++    APIString name("callableWithManyArguments");
++    JSObjectSetProperty(context, JSContextGetGlobalObject(context), name, JSObjectMake(context, jsClass, nullptr), kJSPropertyAttributeNone, nullptr);
++
++    auto script = scriptCallingWithManyArguments("callableWithManyArguments("_s, ")"_s);
++    ScriptResult result = evaluateScript(script.data());
++    check(!!result && JSValueToBoolean(context, result.value()), "JSClassDefinition::callAsFunction arguments should survive a collection inside the callback.");
++
++    JSClassRelease(jsClass);
++}
++
++void TestAPI::classCallAsConstructorArgumentsAndGC()
++{
++    JSClassDefinition definition = kJSClassDefinitionEmpty;
++    definition.className = "ConstructibleWithManyArguments";
++    definition.callAsConstructor = checkArgumentsAsConstructorCallback;
++    JSClassRef jsClass = JSClassCreate(&definition);
++    APIString name("ConstructibleWithManyArguments");
++    JSObjectSetProperty(context, JSContextGetGlobalObject(context), name, JSObjectMake(context, jsClass, nullptr), kJSPropertyAttributeNone, nullptr);
++
++    auto script = scriptCallingWithManyArguments("new ConstructibleWithManyArguments("_s, ").ok"_s);
++    ScriptResult result = evaluateScript(script.data());
++    check(!!result && JSValueToBoolean(context, result.value()), "JSClassDefinition::callAsConstructor arguments should survive a collection inside the callback.");
++
++    JSClassRelease(jsClass);
++}
++
+ void TestAPI::classDefinitionWithJSSubclass()
+ {
+     const static JSClassDefinition definition = kJSClassDefinitionEmpty;
+@@ -1226,6 +1348,10 @@ int testCAPIViaCpp(const char* filter)
+     RUN(promiseDrainDoesNotEatExceptions());
+     RUN(promiseEarlyHandledRejections());
+     RUN(markedJSValueArrayAndGC());
++    RUN(functionCallbackArgumentsAndGC());
++    RUN(constructorCallbackArgumentsAndGC());
++    RUN(classCallAsFunctionArgumentsAndGC());
++    RUN(classCallAsConstructorArgumentsAndGC());
+     RUN(classDefinitionWithJSSubclass());
+     RUN(proxyReturnedWithJSSubclassing());
+     RUN(testJSObjectSetOnGlobalObjectSubclassDefinition());
+diff --git a/Tools/TestWebKitAPI/Tests/JavaScriptCore/glib/TestJSC.cpp b/Tools/TestWebKitAPI/Tests/JavaScriptCore/glib/TestJSC.cpp
+index 6a3213a66421..359fb0e06d95 100644
+--- a/Tools/TestWebKitAPI/Tests/JavaScriptCore/glib/TestJSC.cpp
++++ b/Tools/TestWebKitAPI/Tests/JavaScriptCore/glib/TestJSC.cpp
+@@ -27,6 +27,7 @@
+ #include <JavaScriptCore/JSContextRef.h>
+ #include <jsc/jsc.h>
+ #include <wtf/HashSet.h>
++#include <wtf/MainThread.h>
+ #include <wtf/Threading.h>
+ #include <wtf/Vector.h>
+ #include <wtf/glib/GRefPtr.h>
+@@ -4680,9 +4681,147 @@ static void testJSCJSON()
+     }
+ }
+ 
++static constexpr unsigned varargsParameterCount = 16;
++static constexpr unsigned varargsParameterLength = 512 * 1024;
++
++// Each parameter reports half a megabyte against a one megabyte smallHeapSize(), so the collector runs
++// partway through the conversion loop, when only the argument Vector refers to the earlier parameters.
++static void testJSCFunctionCallParameterLifetime()
++{
++    LeakChecker checker;
++    GRefPtr<JSCContext> context = adoptGRef(jsc_context_new());
++    checker.watch(context.get());
++    ExceptionHandler exceptionHandler(context.get());
++
++    GRefPtr<JSCValue> function = adoptGRef(jsc_context_evaluate(context.get(),
++        "(function() {\n"
++        "    for (var i = 0; i < arguments.length; i++) {\n"
++        "        if (arguments[i] !== String.fromCharCode(65 + i).repeat(524288))\n"
++        "            return 'parameter ' + i + ' did not survive';\n"
++        "    }\n"
++        "    return 'ok';\n"
++        "})", -1));
++    checker.watch(function.get());
++    g_assert_true(jsc_value_is_function(function.get()));
++
++    GUniquePtr<char> parameters[varargsParameterCount];
++    for (unsigned i = 0; i < varargsParameterCount; ++i)
++        parameters[i].reset(g_strnfill(varargsParameterLength, static_cast<char>('A' + i)));
++
++#define STRING_PARAMETER(index) G_TYPE_STRING, parameters[index].get()
++    GRefPtr<JSCValue> result = adoptGRef(jsc_value_function_call(function.get(),
++        STRING_PARAMETER(0), STRING_PARAMETER(1), STRING_PARAMETER(2), STRING_PARAMETER(3),
++        STRING_PARAMETER(4), STRING_PARAMETER(5), STRING_PARAMETER(6), STRING_PARAMETER(7),
++        STRING_PARAMETER(8), STRING_PARAMETER(9), STRING_PARAMETER(10), STRING_PARAMETER(11),
++        STRING_PARAMETER(12), STRING_PARAMETER(13), STRING_PARAMETER(14), STRING_PARAMETER(15),
++        G_TYPE_NONE));
++#undef STRING_PARAMETER
++
++    checker.watch(result.get());
++    GUniquePtr<char> resultString(jsc_value_to_string(result.get()));
++    g_assert_cmpstr(resultString.get(), ==, "ok");
++}
++
++// Above the argument array's inline capacity, where a stack buffer would be found by conservative
++// scanning whether or not the collector knows about it.
++static constexpr unsigned manyArgumentCount = 32;
++static constexpr double recycledArgumentValue = 987654321;
++
++// Called from the toString() of the first argument, which JSC calls while it is still converting the
++// remaining arguments of the function being invoked.
++static void collectAndRecycleValues(int)
++{
++    JSCContext* context = jsc_context_get_current();
++    jscContextGarbageCollect(context, true);
++
++    // Where a JSValue does not fit in a pointer a JSValueRef for a number is a JSAPIValueWrapper cell,
++    // so these allocations recycle the wrappers that a dangling argument still points at. The unref
++    // only unprotects the cell; it stays allocated until the next collection.
++    for (unsigned i = 0; i < 4096; ++i)
++        g_object_unref(jsc_value_new_number(context, recycledArgumentValue));
++}
++
++static GRefPtr<JSCValue> collectFunction(JSCContext* context)
++{
++    return adoptGRef(jsc_value_new_function(context, "collect", G_CALLBACK(collectAndRecycleValues), nullptr, nullptr, G_TYPE_NONE, 1, G_TYPE_INT));
++}
++
++// Converting the first argument to G_TYPE_STRING calls its toString(), so "collect(0)" runs before
++// JSC converts the second argument.
++static GUniquePtr<char> scriptCallingWithManyArguments(const char* callee)
++{
++    GString* script = g_string_new(callee);
++    g_string_append(script, "({ toString: function() { collect(0); return 'trigger'; } }, 42");
++    for (unsigned i = 2; i < manyArgumentCount; ++i)
++        g_string_append_printf(script, ", %u", i);
++    g_string_append(script, ")");
++    return GUniquePtr<char>(g_string_free(script, FALSE));
++}
++
++static double s_secondArgument;
++
++static void recordSecondArgument(const char*, double second)
++{
++    s_secondArgument = second;
++}
++
++static void testJSCCallbackArgumentLifetime()
++{
++    LeakChecker checker;
++    GRefPtr<JSCContext> context = adoptGRef(jsc_context_new());
++    checker.watch(context.get());
++    ExceptionHandler exceptionHandler(context.get());
++
++    GRefPtr<JSCValue> collect = collectFunction(context.get());
++    checker.watch(collect.get());
++    jsc_context_set_value(context.get(), "collect", collect.get());
++
++    GRefPtr<JSCValue> function = adoptGRef(jsc_value_new_function(context.get(), "check", G_CALLBACK(recordSecondArgument), nullptr, nullptr, G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_DOUBLE));
++    checker.watch(function.get());
++    jsc_context_set_value(context.get(), "check", function.get());
++
++    s_secondArgument = 0;
++    GUniquePtr<char> script = scriptCallingWithManyArguments("check");
++    GRefPtr<JSCValue> result = adoptGRef(jsc_context_evaluate(context.get(), script.get(), -1));
++    checker.watch(result.get());
++    g_assert_cmpfloat(s_secondArgument, ==, 42);
++}
++
++static Foo* fooCreateRecordingSecondArgument(const char*, double second)
++{
++    s_secondArgument = second;
++    return fooCreate();
++}
++
++static void testJSCConstructorArgumentLifetime()
++{
++    LeakChecker checker;
++    GRefPtr<JSCContext> context = adoptGRef(jsc_context_new());
++    checker.watch(context.get());
++    ExceptionHandler exceptionHandler(context.get());
++
++    GRefPtr<JSCValue> collect = collectFunction(context.get());
++    checker.watch(collect.get());
++    jsc_context_set_value(context.get(), "collect", collect.get());
++
++    JSCClass* jscClass = jsc_context_register_class(context.get(), "Foo", nullptr, nullptr, reinterpret_cast<GDestroyNotify>(fooFree));
++    checker.watch(jscClass);
++    GRefPtr<JSCValue> constructor = adoptGRef(jsc_class_add_constructor(jscClass, nullptr, G_CALLBACK(fooCreateRecordingSecondArgument), nullptr, nullptr,
++        G_TYPE_POINTER, 2, G_TYPE_STRING, G_TYPE_DOUBLE));
++    checker.watch(constructor.get());
++    jsc_context_set_value(context.get(), jsc_class_get_name(jscClass), constructor.get());
++
++    s_secondArgument = 0;
++    GUniquePtr<char> script = scriptCallingWithManyArguments("new Foo");
++    GRefPtr<JSCValue> result = adoptGRef(jsc_context_evaluate(context.get(), script.get(), -1));
++    checker.watch(result.get());
++    g_assert_cmpfloat(s_secondArgument, ==, 42);
++}
++
+ int main(int argc, char** argv)
+ {
+     g_test_init(&argc, &argv, nullptr);
++    WTF::initializeMainThread();
+ 
+     // options should always be the first test, since changing options
+     // is not allowed after the first VM instance is created.
+@@ -4707,6 +4846,9 @@ int main(int argc, char** argv)
+     g_test_add_func("/jsc/autocleanups", testsJSCAutocleanups);
+ #endif
+     g_test_add_func("/jsc/json", testJSCJSON);
++    g_test_add_func("/jsc/function-call-parameter-lifetime", testJSCFunctionCallParameterLifetime);
++    g_test_add_func("/jsc/callback-argument-lifetime", testJSCCallbackArgumentLifetime);
++    g_test_add_func("/jsc/constructor-argument-lifetime", testJSCConstructorArgumentLifetime);
+ 
+     return g_test_run();
+ }
+-- 
+2.34.1
+

@@ -1,0 +1,197 @@
+From fa9348bac40c76764813500105e27b67eea6b4bc Mon Sep 17 00:00:00 2001
+From: Justin Michaud <jmichaud@igalia.com>
+Date: Wed, 28 May 2025 20:46:37 -0600
+Subject: [PATCH] Exclude non-user portions of the main thread stack from stack
+ scanning on 32 bits. https://bugs.webkit.org/show_bug.cgi?id=293720
+
+Reviewed by Yusuke Suzuki.
+
+On 32-bit armv7/linux we run into an issue where the environment strings
+located at the bottom of the stack, as well as some random bits inside
+the libc portion of the stack are interpreted as cells pointing
+into the heap, keeping actually dead objects alive.
+
+Yusuke previously attempted to fix this by excluding environ and before,
+but there are additional fake roots only a few hundred bytes below that.
+
+This patch excludes the caller of main entirely.
+
+* Source/JavaScriptCore/jsc.cpp:
+(jscmain):
+* Source/JavaScriptCore/runtime/JSLock.cpp:
+(JSC::JSLock::didAcquireLock):
+* Source/WTF/wtf/StackBounds.cpp:
+(WTF::StackBounds::setBottomOfMainThreadMain):
+(WTF::StackBounds::currentThreadStackBoundsInternal):
+* Source/WTF/wtf/StackBounds.h:
+(WTF::StackBounds::checkConsistency const):
+* Source/WebKit/WebProcess/gtk/WebProcessMainGtk.cpp:
+(WebKit::WebProcessMain):
+* Source/WebKit/WebProcess/wpe/WebProcessMainWPE.cpp:
+(WebKit::WebProcessMain):
+---
+ Source/JavaScriptCore/jsc.cpp                 |  1 +
+ Source/JavaScriptCore/runtime/JSLock.cpp      |  4 +++
+ Source/WTF/wtf/StackBounds.cpp                | 32 ++++++++++++++++---
+ Source/WTF/wtf/StackBounds.h                  |  7 ++--
+ .../WebProcess/gtk/WebProcessMainGtk.cpp      |  2 ++
+ .../WebProcess/wpe/WebProcessMainWPE.cpp      |  2 ++
+ 6 files changed, 40 insertions(+), 8 deletions(-)
+
+diff --git a/Source/JavaScriptCore/jsc.cpp b/Source/JavaScriptCore/jsc.cpp
+index 1dfd6103d008..7f8f141550f7 100644
+--- a/Source/JavaScriptCore/jsc.cpp
++++ b/Source/JavaScriptCore/jsc.cpp
+@@ -4415,6 +4415,7 @@ int jscmain(int argc, char** argv)
+     JSC::Config::enableRestrictedOptions();
+     JSC::Options::machExceptionHandlerSandboxPolicy = JSC::Options::SandboxPolicy::Allow;
+ 
++    WTF::StackBounds::setBottomOfMainThreadMain(__builtin_frame_address(0));
+     WTF::initializeMainThread();
+ 
+     // Note that the options parsing can affect VM creation, and thus
+diff --git a/Source/JavaScriptCore/runtime/JSLock.cpp b/Source/JavaScriptCore/runtime/JSLock.cpp
+index ca0175a06c3f..fc509c05ac63 100644
+--- a/Source/JavaScriptCore/runtime/JSLock.cpp
++++ b/Source/JavaScriptCore/runtime/JSLock.cpp
+@@ -155,6 +155,10 @@ void JSLock::didAcquireLock()
+             samplingProfiler->noticeJSLockAcquisition();
+     }
+ #endif
++#if ASSERT_ENABLED
++    StackBounds::currentThreadStackBounds(); // Check stack bounds consistency.
++#endif
++
+ }
+ 
+ void JSLock::unlock()
+diff --git a/Source/WTF/wtf/StackBounds.cpp b/Source/WTF/wtf/StackBounds.cpp
+index 57acb25b5967..f1807584d9f5 100644
+--- a/Source/WTF/wtf/StackBounds.cpp
++++ b/Source/WTF/wtf/StackBounds.cpp
+@@ -21,6 +21,8 @@
+ #include "config.h"
+ #include <wtf/StackBounds.h>
+ 
++#include "MainThread.h"
++
+ #if OS(DARWIN)
+ 
+ #include <pthread.h>
+@@ -50,6 +52,18 @@
+ 
+ namespace WTF {
+ 
++#if !CPU(ADDRESS64)
++static std::atomic<void*> bottomOfMainThreadMain = nullptr;
++#endif
++
++void StackBounds::setBottomOfMainThreadMain([[maybe_unused]] void* stack)
++{
++#if !CPU(ADDRESS64)
++    RELEASE_ASSERT(bottomOfMainThreadMain == nullptr);
++    bottomOfMainThreadMain = stack;
++#endif
++}
++
+ #if OS(DARWIN)
+ 
+ StackBounds StackBounds::newThreadStackBounds(PlatformThreadHandle thread)
+@@ -149,15 +163,23 @@ StackBounds StackBounds::currentThreadStackBoundsInternal()
+ 
+         static char** oldestEnviron = environ;
+ 
+-        // In 32bit architecture, it is possible that environment variables are having a characters which looks like a pointer,
+-        // and conservative GC will find it as a live pointer. We would like to avoid that to precisely exclude non user stack
+-        // data region from this stack bounds. As the article (https://lwn.net/Articles/631631/) and the elf loader implementation
+-        // explain how Linux main thread stack is organized, environment variables vector is placed on the stack, so we can exclude
+-        // environment variables if we use `environ` global variable as a origin of the stack.
++        // On 32bit, it is possible that environment variables and other random data in libc have bytes which look like a pointer,
++        // and conservative GC will find it as a live pointer. We would like to avoid that, so we exclude the non-user stack
++        // data region from these stack bounds. This article explains how the main thread looks (https://lwn.net/Articles/631631/).
++        //
++        // First, we exclude environment variables by using `environ` global variable as a origin of the stack.
+         // But `setenv` / `putenv` may alter `environ` variable's content. So we record the oldest `environ` variable content, and use it.
++
+         StackBounds stackBounds { origin, bound };
+         if (stackBounds.contains(oldestEnviron))
+             stackBounds = { oldestEnviron, bound };
++
++        // Then, we exclude any greater region based on manual calls to setBottomOfMainThreadMain.
++#if !CPU(ADDRESS64)
++        if (stackBounds.contains(bottomOfMainThreadMain))
++            stackBounds = { bottomOfMainThreadMain, bound };
++#endif
++
+         return stackBounds;
+     }
+ #endif
+diff --git a/Source/WTF/wtf/StackBounds.h b/Source/WTF/wtf/StackBounds.h
+index 574bf5103b2d..c69ff2da14dc 100644
+--- a/Source/WTF/wtf/StackBounds.h
++++ b/Source/WTF/wtf/StackBounds.h
+@@ -63,6 +63,7 @@ public:
+         result.checkConsistency();
+         return result;
+     }
++    WTF_EXPORT_PRIVATE static void setBottomOfMainThreadMain(void*);
+ 
+     void* origin() const
+     {
+@@ -142,10 +143,10 @@ private:
+ 
+     void checkConsistency() const
+     {
+-#if ASSERT_ENABLED
++#if ASSERT_ENABLED || OS(LINUX)
+         void* currentPosition = currentStackPointer();
+-        ASSERT(m_origin != m_bound);
+-        ASSERT(currentPosition < m_origin && currentPosition > m_bound);
++        RELEASE_ASSERT(m_origin != m_bound);
++        RELEASE_ASSERT(currentPosition < m_origin && currentPosition > m_bound);
+ #endif
+     }
+ 
+diff --git a/Source/WebKit/WebProcess/gtk/WebProcessMainGtk.cpp b/Source/WebKit/WebProcess/gtk/WebProcessMainGtk.cpp
+index ff864ef3353f..cd4baeba624b 100644
+--- a/Source/WebKit/WebProcess/gtk/WebProcessMainGtk.cpp
++++ b/Source/WebKit/WebProcess/gtk/WebProcessMainGtk.cpp
+@@ -31,6 +31,7 @@
+ #include "WebProcess.h"
+ #include <WebCore/GtkVersioning.h>
+ #include <libintl.h>
++#include <wtf/StackBounds.h>
+ 
+ #if USE(GSTREAMER)
+ #include <WebCore/GStreamerCommon.h>
+@@ -103,6 +104,7 @@ int WebProcessMain(int argc, char** argv)
+     // This call needs to happen before any threads begin execution
+     unsetenv("GTK_THEME");
+ 
++    WTF::StackBounds::setBottomOfMainThreadMain(__builtin_frame_address(0));
+     return AuxiliaryProcessMain<WebProcessMainGtk>(argc, argv);
+ }
+ 
+diff --git a/Source/WebKit/WebProcess/wpe/WebProcessMainWPE.cpp b/Source/WebKit/WebProcess/wpe/WebProcessMainWPE.cpp
+index 31088ef69279..e9f3374cbfbf 100644
+--- a/Source/WebKit/WebProcess/wpe/WebProcessMainWPE.cpp
++++ b/Source/WebKit/WebProcess/wpe/WebProcessMainWPE.cpp
+@@ -30,6 +30,7 @@
+ #include "AuxiliaryProcessMain.h"
+ #include "WebProcess.h"
+ #include <glib.h>
++#include <wtf/StackBounds.h>
+ 
+ #if USE(GCRYPT)
+ #include <pal/crypto/gcrypt/Initialization.h>
+@@ -95,6 +96,7 @@ public:
+ 
+ int WebProcessMain(int argc, char** argv)
+ {
++    WTF::StackBounds::setBottomOfMainThreadMain(__builtin_frame_address(0));
+     return AuxiliaryProcessMain<WebProcessMainWPE>(argc, argv);
+ }
+ 
+-- 
+2.34.1
+

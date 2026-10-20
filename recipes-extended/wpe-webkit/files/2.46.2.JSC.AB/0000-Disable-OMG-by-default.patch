@@ -1,0 +1,25 @@
+From 08346b94b9ad3f7839dd8b1ddefd699a6d0c9010 Mon Sep 17 00:00:00 2001
+From: Justin Michaud <jmichaud@igalia.com>
+Date: Thu, 30 Jul 2026 17:04:04 -0600
+Subject: [PATCH] Disable OMG by default
+
+---
+ Source/JavaScriptCore/runtime/OptionsList.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/JavaScriptCore/runtime/OptionsList.h b/Source/JavaScriptCore/runtime/OptionsList.h
+index cbcc27913b85..c5b1091f8a91 100644
+--- a/Source/JavaScriptCore/runtime/OptionsList.h
++++ b/Source/JavaScriptCore/runtime/OptionsList.h
+@@ -527,7 +527,7 @@ bool hasCapacityToUseLargeGigacage();
+     v(Bool, verboseBBQJITInstructions, false, Normal, "Logs instruction information during BBQ JIT"_s) \
+     v(Bool, useWasmLLInt, true, Normal, nullptr) \
+     v(Bool, useBBQJIT, true, Normal, "allows the BBQ JIT to be used if true"_s) \
+-    v(Bool, useOMGJIT, true, Normal, "allows the OMG JIT to be used if true"_s) \
++    v(Bool, useOMGJIT, !is32Bit(), Normal, "allows the OMG JIT to be used if true"_s) \
+     v(Bool, useWasmLLIntPrologueOSR, true, Normal, "allows prologue OSR from wasm LLInt if true"_s) \
+     v(Bool, useWasmLLIntLoopOSR, true, Normal, "allows loop OSR from wasm LLInt if true"_s) \
+     v(Bool, useWasmLLIntEpilogueOSR, true, Normal, "allows epilogue OSR from wasm LLInt if true"_s) \
+-- 
+2.34.1
+

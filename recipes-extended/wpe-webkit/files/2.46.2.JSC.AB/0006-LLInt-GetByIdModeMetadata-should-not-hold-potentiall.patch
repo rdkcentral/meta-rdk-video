@@ -1,0 +1,75 @@
+From 00c18ff9313b9ba5b69ad0e717fe2da2f450553b Mon Sep 17 00:00:00 2001
+From: Daniel Liu <daniel_liu4@apple.com>
+Date: Fri, 4 Apr 2025 11:05:37 -0700
+Subject: [PATCH] LLInt GetByIdModeMetadata should not hold potentially dead
+ structure IDs https://bugs.webkit.org/show_bug.cgi?id=287567 rdar://144076957
+
+Reviewed by Yijia Huang and Yusuke Suzuki.
+
+GetByIdModeMetadata does not reset its structure ID upon transitioning to ArrayLengthMode,
+meaning that this could get held over across another reset. This could later cause access
+to a freed (or reallocated) structure ID.
+
+This patch also cleans up the code in `setProtoLoadMode` slightly to clear up the specific
+writes being performed.
+
+This does not apply to other modes, since they set their structure ID explicitly. Since the
+mutator thread is the thread changing modes, it will only invalidate the structure ID after
+the call to clearToDefaultModeWithoutCache finishes, meaning that the structure ID already
+is cleared.
+
+* Source/JavaScriptCore/bytecode/GetByIdMetadata.h:
+(JSC::GetByIdModeMetadata::clearToDefaultModeWithoutCache):
+(JSC::GetByIdModeMetadata::setUnsetMode):
+(JSC::GetByIdModeMetadata::setArrayLengthMode):
+(JSC::GetByIdModeMetadata::setProtoLoadMode):
+* Source/JavaScriptCore/bytecode/GetByStatus.cpp:
+(JSC::GetByStatus::computeFromLLInt):
+
+Originally-landed-as: 289651.165@safari-7621-branch (a93595279e2b). rdar://148058163
+Canonical link: https://commits.webkit.org/293257@main
+---
+ Source/JavaScriptCore/bytecode/GetByIdMetadata.h | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/Source/JavaScriptCore/bytecode/GetByIdMetadata.h b/Source/JavaScriptCore/bytecode/GetByIdMetadata.h
+index 0bdf298f49ba..0f1489cb0861 100644
+--- a/Source/JavaScriptCore/bytecode/GetByIdMetadata.h
++++ b/Source/JavaScriptCore/bytecode/GetByIdMetadata.h
+@@ -136,22 +136,32 @@ inline void GetByIdModeMetadata::setUnsetMode(Structure* structure)
+ {
+     mode = GetByIdMode::Unset;
+     unsetMode.structureID = structure->id();
++    defaultMode.cachedOffset = 0;
+ }
+ 
+ inline void GetByIdModeMetadata::setArrayLengthMode()
+ {
+     mode = GetByIdMode::ArrayLength;
++    // We should clear the structure ID to avoid the old structure ID being saved.
++    defaultMode.structureID = StructureID();
++    defaultMode.cachedOffset = 0;
+     // Prevent the prototype cache from ever happening.
+     hitCountForLLIntCaching = 0;
+ }
+ 
+ inline void GetByIdModeMetadata::setProtoLoadMode(Structure* structure, PropertyOffset offset, JSObject* cachedSlot)
+ {
+-    mode = GetByIdMode::ProtoLoad; // This must be first set. In 64bit architecture, this field is shared with protoLoadMode.cachedSlot.
++    // We rely on ProtoLoad being 0, or else the high bits of the pointer would write the wrong mode and hit count
++    static_assert(!static_cast<std::underlying_type_t<GetByIdMode>>(GetByIdMode::ProtoLoad)); // In 64bit architecture, this field is shared with protoLoadMode.cachedSlot.
++
+     protoLoadMode.structureID = structure->id();
+     protoLoadMode.cachedOffset = offset;
++
+     // We know that this pointer will remain valid because it will be cleared by either a watchpoint fire or
+     // during GC when we clear the LLInt caches.
++
++    // The write to cachedSlot also writes the mode, since they overlap in the struct layout. We know that
++    // the mode ProtoLoad is 0 by the static assertion above.
+     protoLoadMode.cachedSlot = cachedSlot;
+ 
+     ASSERT(mode == GetByIdMode::ProtoLoad);
+-- 
+2.34.1
+

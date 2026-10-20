@@ -1,0 +1,50 @@
+From 366e6802038cafbcdf24b3d60dbd7c8418a45525 Mon Sep 17 00:00:00 2001
+From: Sosuke Suzuki <aosukeke@gmail.com>
+Date: Wed, 9 Jul 2025 10:27:01 -0700
+Subject: [PATCH] [JSC] Fix ARMv7 segfault in BBQJIT by avoid the use of
+ `wasmScratchGPR` https://bugs.webkit.org/show_bug.cgi?id=295498
+
+Reviewed by Justin Michaud.
+
+WASM BBQJIT on 32-bit uses wasmScratchGPR when loading F32/F64 constants,
+causing segmentation faults in JetStream3's tfjs-wasm.
+
+The issue occurs when emitCheckAndPrepareAndMaterializePointerApply stores a
+memory address in wasmScratchGPR, then passes it to a functor. If the functor
+loads a floating-point constant, it overwrites wasmScratchGPR, corrupting the
+address and causing null pointer access.
+
+This patch fixes by using MacroAssembler's move32ToFloat and move64ToDouble
+directly with immediate values, eliminating the use of wasmScratchGPR.
+
+* Source/JavaScriptCore/wasm/WasmBBQJIT32_64.cpp:
+(JSC::Wasm::BBQJITImpl::BBQJIT::emitMoveConst):
+
+Canonical link: https://commits.webkit.org/297169@main
+---
+ Source/JavaScriptCore/wasm/WasmBBQJIT32_64.cpp | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/Source/JavaScriptCore/wasm/WasmBBQJIT32_64.cpp b/Source/JavaScriptCore/wasm/WasmBBQJIT32_64.cpp
+index 5e9e5f734792..d1b32969c2c5 100644
+--- a/Source/JavaScriptCore/wasm/WasmBBQJIT32_64.cpp
++++ b/Source/JavaScriptCore/wasm/WasmBBQJIT32_64.cpp
+@@ -3476,13 +3476,10 @@ void BBQJIT::emitMoveConst(Value constant, Location loc)
+         m_jit.move(Imm32(constant.asI64lo()), loc.asGPRlo());
+         break;
+     case TypeKind::F32:
+-        m_jit.move(Imm32(constant.asI32()), wasmScratchGPR);
+-        m_jit.move32ToFloat(wasmScratchGPR, loc.asFPR());
++        m_jit.move32ToFloat(Imm32(constant.asI32()), loc.asFPR());
+         break;
+     case TypeKind::F64:
+-        m_jit.move(Imm32(constant.asI64hi()), wasmScratchGPR2);
+-        m_jit.move(Imm32(constant.asI64lo()), wasmScratchGPR);
+-        m_jit.move64ToDouble(wasmScratchGPR2, wasmScratchGPR, loc.asFPR());
++        m_jit.move64ToDouble(Imm64(constant.asI64()), loc.asFPR());
+         break;
+     default:
+         RELEASE_ASSERT_NOT_REACHED_WITH_MESSAGE("Unimplemented constant typekind.");
+-- 
+2.34.1
+

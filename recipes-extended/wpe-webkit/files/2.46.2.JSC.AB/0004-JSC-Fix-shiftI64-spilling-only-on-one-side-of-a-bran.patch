@@ -1,0 +1,71 @@
+From 41027ba816ae7f48516827ec6a77938b244362d4 Mon Sep 17 00:00:00 2001
+From: "Mikhail R. Gadelha" <mikhail@igalia.com>
+Date: Fri, 29 Aug 2025 08:16:51 -0700
+Subject: [PATCH] [JSC] Fix shiftI64 spilling only on one side of a branch on
+ 32-bit https://bugs.webkit.org/show_bug.cgi?id=298046
+
+Reviewed by Justin Michaud.
+
+The program import-mutable-global.js generates the following in armv7:
+
+1. if shift is zero jump to end
+2. if shift is less than 32 do:
+2.1 spill r0, r1 to use as scratch
+2.2 do the shift
+...
+4. end
+
+however, if we take shift is zero and we jump to end, BBQ still thinks we did
+the spill and reloads r0, r1, loading garbage.
+
+This PR fixes the issue by doing the spill as soon as we enter the function, so
+we always reload the right values.
+
+* Source/JavaScriptCore/wasm/WasmBBQJIT32_64.cpp:
+(JSC::Wasm::BBQJITImpl::BBQJIT::shiftI64Helper):
+
+Canonical link: https://commits.webkit.org/299328@main
+---
+ Source/JavaScriptCore/wasm/WasmBBQJIT32_64.cpp | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/Source/JavaScriptCore/wasm/WasmBBQJIT32_64.cpp b/Source/JavaScriptCore/wasm/WasmBBQJIT32_64.cpp
+index d1b32969c2c5..edda87da1269 100644
+--- a/Source/JavaScriptCore/wasm/WasmBBQJIT32_64.cpp
++++ b/Source/JavaScriptCore/wasm/WasmBBQJIT32_64.cpp
+@@ -2302,12 +2302,13 @@ PartialResult WARN_UNUSED_RETURN BBQJIT::addI64ShrU(Value lhs, Value rhs, Value&
+ 
+ void BBQJIT::shiftI64Helper(ShiftI64HelperOp op, Location lhsLocation, Location rhsLocation, Location resultLocation)
+ {
++    ScratchScope<1, 0> scratches(*this, lhsLocation, rhsLocation, resultLocation);
++
+     auto shift = rhsLocation.asGPRlo();
+     m_jit.and32(TrustedImm32(63), rhsLocation.asGPRlo(), shift);
+     auto zero = m_jit.branch32(RelationalCondition::Equal, shift, TrustedImm32(0));
+     auto aboveOrEqual32 = m_jit.branch32(RelationalCondition::AboveOrEqual, shift, TrustedImm32(32));
+     // shift < 32
+-    ScratchScope<1, 0> scratches(*this, lhsLocation, rhsLocation, resultLocation);
+     auto carry = scratches.gpr(0);
+     m_jit.move(TrustedImm32(32), carry);
+     m_jit.sub32(carry, shift, carry);
+@@ -2325,7 +2326,7 @@ void BBQJIT::shiftI64Helper(ShiftI64HelperOp op, Location lhsLocation, Location
+         m_jit.urshift32(lhsLocation.asGPRhi(), shift, resultLocation.asGPRhi());
+         m_jit.urshift32(lhsLocation.asGPRlo(), shift, resultLocation.asGPRlo());
+         m_jit.or32(carry, resultLocation.asGPRlo());
+-    } else if (op ==ShiftI64HelperOp::Rshift) {
++    } else if (op == ShiftI64HelperOp::Rshift) {
+         m_jit.lshift32(lhsLocation.asGPRhi(), carry, carry);
+         ASSERT(resultLocation.asGPRhi() != shift);
+         ASSERT(resultLocation.asGPRhi() != lhsLocation.asGPRlo());
+@@ -2343,7 +2344,7 @@ void BBQJIT::shiftI64Helper(ShiftI64HelperOp op, Location lhsLocation, Location
+     } else if (op == ShiftI64HelperOp::Urshift) {
+         m_jit.urshift32(lhsLocation.asGPRhi(), shift, resultLocation.asGPRlo());
+         m_jit.xor32(resultLocation.asGPRhi(), resultLocation.asGPRhi());
+-    } else if (op ==ShiftI64HelperOp::Rshift) {
++    } else if (op == ShiftI64HelperOp::Rshift) {
+         ASSERT(resultLocation.asGPRlo() != lhsLocation.asGPRhi());
+         m_jit.rshift32(lhsLocation.asGPRhi(), shift, resultLocation.asGPRlo());
+         m_jit.rshift32(lhsLocation.asGPRhi(), TrustedImm32(31), resultLocation.asGPRhi());
+-- 
+2.34.1
+

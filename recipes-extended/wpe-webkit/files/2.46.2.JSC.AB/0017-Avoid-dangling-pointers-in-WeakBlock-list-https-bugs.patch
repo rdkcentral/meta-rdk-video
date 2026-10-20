@@ -1,0 +1,198 @@
+From 3c276b9e5086fe7dbf0c399ed0a7230b5af7acaf Mon Sep 17 00:00:00 2001
+From: Dan Hecht <dan.hecht@apple.com>
+Date: Tue, 2 Sep 2025 14:05:54 -0700
+Subject: [PATCH] Avoid dangling pointers in WeakBlock list
+ https://bugs.webkit.org/show_bug.cgi?id=298236 rdar://157587352
+
+Reviewed by Keith Miller.
+
+Before this change, DoublyLinkedList leaves the next/prev pointers
+in a dangling state when removing a node from the list. Then,
+if the node is re-added, the next/prev pointers are reset when necessary.
+
+Let's make a stronger invariant: if the node is not in the list,
+then the prev/next pointers are nullptr. (Note that the converse
+is not true for single element lists.)
+
+Then, add some asserts to verify the WeakSet's WeakBlock list lifecycle
+to try to help track down a mysterious crash. The WeakBlock ownership
+can be transferred from the WeakSet to the Heap, at which point
+the prev/next should be nulled out and, after this change, no longer
+dangling.
+
+Bonus: remove MarkedSpace::freeOrShrinkBlock() since it's never called.
+Canonical link: https://commits.webkit.org/299454@main
+
+(cherry picked from commit 8bb4c6fbfc24c7cadb380e423108ee478292ea8a)
+---
+ Source/JavaScriptCore/heap/Heap.cpp      |  2 ++
+ Source/JavaScriptCore/heap/WeakBlock.cpp |  1 +
+ Source/JavaScriptCore/heap/WeakSet.cpp   |  9 ++---
+ Source/WTF/wtf/DoublyLinkedList.h        | 43 ++++++++++++++++++------
+ 4 files changed, 39 insertions(+), 16 deletions(-)
+
+diff --git a/Source/JavaScriptCore/heap/Heap.cpp b/Source/JavaScriptCore/heap/Heap.cpp
+index 1c77d0eaefcb..df2c155dd458 100644
+--- a/Source/JavaScriptCore/heap/Heap.cpp
++++ b/Source/JavaScriptCore/heap/Heap.cpp
+@@ -2650,6 +2650,7 @@ bool Heap::shouldDoFullCollection()
+ 
+ void Heap::addLogicallyEmptyWeakBlock(WeakBlock* block)
+ {
++    RELEASE_ASSERT(!block->next() && !block->prev());
+     m_logicallyEmptyWeakBlocks.append(block);
+ }
+ 
+@@ -2668,6 +2669,7 @@ bool Heap::sweepNextLogicallyEmptyWeakBlock()
+         return false;
+ 
+     WeakBlock* block = m_logicallyEmptyWeakBlocks[m_indexOfNextLogicallyEmptyWeakBlockToSweep];
++    RELEASE_ASSERT(!block->next() && !block->prev());
+ 
+     block->sweep();
+     if (block->isEmpty()) {
+diff --git a/Source/JavaScriptCore/heap/WeakBlock.cpp b/Source/JavaScriptCore/heap/WeakBlock.cpp
+index a6221ca32c18..fd37275e6a0f 100644
+--- a/Source/JavaScriptCore/heap/WeakBlock.cpp
++++ b/Source/JavaScriptCore/heap/WeakBlock.cpp
+@@ -47,6 +47,7 @@ WeakBlock* WeakBlock::create(JSC::Heap& heap, CellContainer container)
+ 
+ void WeakBlock::destroy(JSC::Heap& heap, WeakBlock* block)
+ {
++    RELEASE_ASSERT(!block->next() && !block->prev());
+     block->~WeakBlock();
+     WeakBlockMalloc::free(block);
+     heap.didFreeBlock(WeakBlock::blockSize);
+diff --git a/Source/JavaScriptCore/heap/WeakSet.cpp b/Source/JavaScriptCore/heap/WeakSet.cpp
+index 09f33394e6df..bb77492b683c 100644
+--- a/Source/JavaScriptCore/heap/WeakSet.cpp
++++ b/Source/JavaScriptCore/heap/WeakSet.cpp
+@@ -36,13 +36,10 @@ WeakSet::~WeakSet()
+     if (isOnList())
+         remove();
+     
+-    JSC::Heap& heap = *this->heap();
+-    WeakBlock* next = nullptr;
+-    for (WeakBlock* block = m_blocks.head(); block; block = next) {
+-        next = block->next();
++    auto& heap = *this->heap();
++    while (WeakBlock* block = m_blocks.removeHead())
+         WeakBlock::destroy(heap, block);
+-    }
+-    m_blocks.clear();
++    ASSERT(m_blocks.isEmpty());
+ }
+ 
+ void WeakSet::sweep()
+diff --git a/Source/WTF/wtf/DoublyLinkedList.h b/Source/WTF/wtf/DoublyLinkedList.h
+index ecef018c5f32..efcef7a9b637 100644
+--- a/Source/WTF/wtf/DoublyLinkedList.h
++++ b/Source/WTF/wtf/DoublyLinkedList.h
+@@ -41,8 +41,8 @@ public:
+ 
+ template<typename T> inline DoublyLinkedListNode<T>::DoublyLinkedListNode()
+ {
+-    setPrev(0);
+-    setNext(0);
++    setPrev(nullptr);
++    setNext(nullptr);
+ }
+ 
+ template<typename T> inline void DoublyLinkedListNode<T>::setPrev(T* prev)
+@@ -84,14 +84,16 @@ public:
+     void remove(T*);
+     void append(DoublyLinkedList<T>&);
+ 
++    DoublyLinkedList<T> splitAt(size_t);
++
+ private:
+     T* m_head;
+     T* m_tail;
+ };
+ 
+ template<typename T> inline DoublyLinkedList<T>::DoublyLinkedList()
+-    : m_head(0)
+-    , m_tail(0)
++    : m_head(nullptr)
++    , m_tail(nullptr)
+ {
+ }
+ 
+@@ -126,40 +128,59 @@ template<typename T> inline T* DoublyLinkedList<T>::tail() const
+ 
+ template<typename T> inline void DoublyLinkedList<T>::push(T* node)
+ {
++    ASSERT(!node->prev() && !node->next());
+     if (!m_head) {
+         ASSERT(!m_tail);
+         m_head = node;
+         m_tail = node;
+-        node->setPrev(0);
+-        node->setNext(0);
+         return;
+     }
+ 
+     ASSERT(m_tail);
+     m_head->setPrev(node);
+     node->setNext(m_head);
+-    node->setPrev(0);
+     m_head = node;
+ }
+ 
+ template<typename T> inline void DoublyLinkedList<T>::append(T* node)
+ {
++    ASSERT(!node->prev() && !node->next());
+     if (!m_tail) {
+         ASSERT(!m_head);
+         m_head = node;
+         m_tail = node;
+-        node->setPrev(0);
+-        node->setNext(0);
+         return;
+     }
+ 
+     ASSERT(m_head);
+     m_tail->setNext(node);
+     node->setPrev(m_tail);
+-    node->setNext(0);
+     m_tail = node;
+ }
+ 
++template<typename T> inline DoublyLinkedList<T> DoublyLinkedList<T>::splitAt(size_t toKeep)
++{
++    auto* p = head();
++
++    if (!p || !p->next())
++        return { };
++    for (size_t i = 1; i < toKeep; i++) {
++        p = p->next();
++        if (!p->next())
++            return { };
++    }
++
++    DoublyLinkedList<T> newList { };
++    newList.m_head = p->next();
++    newList.m_tail = m_tail;
++    newList.m_head->setPrev(nullptr);
++
++    m_tail = p;
++    m_tail->setNext(nullptr);
++
++    return newList;
++}
++
+ template<typename T> inline void DoublyLinkedList<T>::remove(T* node)
+ {
+     if (node->prev()) {
+@@ -177,6 +198,8 @@ template<typename T> inline void DoublyLinkedList<T>::remove(T* node)
+         ASSERT(node == m_tail);
+         m_tail = node->prev();
+     }
++    node->setNext(nullptr);
++    node->setPrev(nullptr);
+ }
+ 
+ template<typename T> inline T* DoublyLinkedList<T>::removeHead()
+-- 
+2.34.1
+

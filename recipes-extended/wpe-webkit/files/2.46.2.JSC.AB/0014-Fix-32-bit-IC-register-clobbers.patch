@@ -1,0 +1,207 @@
+From b5f8ac412d6568c38d9bd2af4ef8d194d1110afd Mon Sep 17 00:00:00 2001
+From: Justin Michaud <jmichaud@igalia.com>
+Date: Thu, 13 Aug 2026 11:49:53 -0600
+Subject: [PATCH] Fix 32-bit IC register clobbers.
+
+---
+ ...get-by-val-buffered-identifier-lifetime.js | 81 +++++++++++++++++++
+ ...line-cache-proxy-and-getter-spill-state.js | 17 ++++
+ ...-catch-restores-metadata-table-register.js | 22 +++++
+ .../bytecode/InlineCacheCompiler.cpp          | 13 ++-
+ Source/JavaScriptCore/jit/JITOpcodes.cpp      |  4 +
+ 5 files changed, 130 insertions(+), 7 deletions(-)
+ create mode 100644 JSTests/stress/get-by-val-buffered-identifier-lifetime.js
+ create mode 100644 JSTests/stress/inline-cache-proxy-and-getter-spill-state.js
+ create mode 100644 JSTests/stress/op-catch-restores-metadata-table-register.js
+
+diff --git a/JSTests/stress/get-by-val-buffered-identifier-lifetime.js b/JSTests/stress/get-by-val-buffered-identifier-lifetime.js
+new file mode 100644
+index 000000000000..866ee46fe219
+--- /dev/null
++++ b/JSTests/stress/get-by-val-buffered-identifier-lifetime.js
+@@ -0,0 +1,81 @@
++//@ requireOptions("--useZombieMode=1", "--repatchBufferingCountdown=10")
++
++// A by-val inline cache buffers (structure, property name) pairs while it waits for enough cases to
++// generate a stub, and every later miss on the site compares against all of them. The subscripts
++// here are fresh strings that nothing else refers to once the call returns, so the buffered pairs
++// have to keep working across collections that sweep those strings.
++
++function shouldBe(actual, expected) {
++    if (actual !== expected)
++        throw new Error("bad value: expected " + expected + " but got " + actual);
++}
++
++var prefix = "ta";
++var suffix = "rgetx";
++
++// A rope, which toPropertyKey resolves in place, so each call caches a different string cell.
++function freshKey() {
++    return prefix + suffix.substring(0, 4);
++}
++
++function makeSite() {
++    return new Function("o", "k", "return o[k];");
++}
++
++function makeBase(shape, value) {
++    var o = {};
++    for (var i = 0; i <= shape; ++i)
++        o["pad" + shape + "_" + i] = i;
++    o.target = value;
++    o[0] = value + 1000;
++    return o;
++}
++
++var siteCount = 16;
++var shapeCount = 6;
++var sites = [];
++var bases = [];
++for (var s = 0; s < siteCount; ++s) {
++    sites.push(makeSite());
++    var group = [];
++    for (var shape = 0; shape < shapeCount; ++shape)
++        group.push(makeBase(shape + s * shapeCount, shape));
++    bases.push(group);
++}
++
++function churn() {
++    var last = "";
++    for (var i = 0; i < 20000; ++i)
++        last = ("a" + i) + ("b" + i);
++    return last.length;
++}
++
++for (var round = 0; round < 40; ++round) {
++    for (var s = 0; s < siteCount; ++s) {
++        var site = sites[s];
++        var group = bases[s];
++        for (var i = 0; i < 24; ++i) {
++            var shape = i % shapeCount;
++            shouldBe(site(group[shape], freshKey()), shape);
++        }
++    }
++
++    churn();
++    gc();
++    churn();
++    edenGC();
++
++    // Integer subscripts compare against every buffered pair on the site.
++    for (var s = 0; s < siteCount; ++s) {
++        var group = bases[s];
++        for (var i = 0; i < shapeCount; ++i)
++            shouldBe(sites[s](group[i], 0), i + 1000);
++    }
++
++    // String subscripts compare against them too, with keys that are fresh cells again.
++    for (var s = 0; s < siteCount; ++s) {
++        var group = bases[s];
++        for (var i = 0; i < shapeCount; ++i)
++            shouldBe(sites[s](group[i], freshKey()), i);
++    }
++}
+diff --git a/JSTests/stress/inline-cache-proxy-and-getter-spill-state.js b/JSTests/stress/inline-cache-proxy-and-getter-spill-state.js
+new file mode 100644
+index 000000000000..d5cd581fb83a
+--- /dev/null
++++ b/JSTests/stress/inline-cache-proxy-and-getter-spill-state.js
+@@ -0,0 +1,17 @@
++// A stub records one spill state shared by all of its access cases, so every case that calls out
++// to JS has to spill the same registers. This inline cache sees both a Proxy and a JS getter.
++const target = { p: 1 };
++const proxy = new Proxy(target, { get(t, k) { return t[k]; } });
++const withGetter = {};
++Object.defineProperty(withGetter, "p", { get: function () { return 2; } });
++
++function f(o) { return o.p; }
++noInline(f);
++
++globalThis.testLoopCount ??= 1e4;
++for (let i = 0; i < testLoopCount; ++i) {
++    if (f(proxy) !== 1)
++        throw new Error("proxy load returned the wrong value");
++    if (f(withGetter) !== 2)
++        throw new Error("getter load returned the wrong value");
++}
+diff --git a/JSTests/stress/op-catch-restores-metadata-table-register.js b/JSTests/stress/op-catch-restores-metadata-table-register.js
+new file mode 100644
+index 000000000000..9eaa3fcad8ef
+--- /dev/null
++++ b/JSTests/stress/op-catch-restores-metadata-table-register.js
+@@ -0,0 +1,22 @@
++// A strict-mode indexed store whose Proxy set trap returns false throws out of the by-val inline
++// cache. Nothing between the throw and the handler copies the handler frame's callee saves into the
++// entry frame buffer, so op_catch restores a metadata table belonging to another CodeBlock and has to
++// rematerialize metadataTableRegister. A named store (proxy.x) takes a different path and does not
++// reach this, so keep the subscript numeric.
++
++globalThis.testLoopCount ??= 1e4;
++
++(function() {
++    "use strict";
++    const proxy = new Proxy({}, { set: function() { return false; } });
++    for (let i = 0; i < testLoopCount; ++i) {
++        let threw = false;
++        try {
++            proxy[42] = 40;
++        } catch (e) {
++            threw = e instanceof TypeError;
++        }
++        if (!threw)
++            throw new Error("strict indexed store through a rejecting proxy set trap should throw a TypeError");
++    }
++})();
+diff --git a/Source/JavaScriptCore/bytecode/InlineCacheCompiler.cpp b/Source/JavaScriptCore/bytecode/InlineCacheCompiler.cpp
+index e6d6f0d07a31..38b9c3df4681 100644
+--- a/Source/JavaScriptCore/bytecode/InlineCacheCompiler.cpp
++++ b/Source/JavaScriptCore/bytecode/InlineCacheCompiler.cpp
+@@ -1050,6 +1050,11 @@ const ScalarRegisterSet& InlineCacheCompiler::calculateLiveRegistersForCallAndEx
+         if (m_stubInfo.useDataIC)
+             liveRegistersForCall.add(m_stubInfo.m_stubInfoGPR, IgnoreVectors);
+         liveRegistersForCall.exclude(calleeSaveRegisters().buildAndValidate().includeWholeRegisterWidth());
++#if CPU(ARM_THUMB2)
++        // These are callee save on armv7 only, so DFG treats them as caller-saved. 
++        liveRegistersForCall.add(GPRInfo::metadataTableRegister, IgnoreVectors);
++        liveRegistersForCall.add(GPRInfo::jitDataRegister, IgnoreVectors);
++#endif
+         m_liveRegistersForCall = liveRegistersForCall.buildScalarRegisterSet();
+     }
+     return m_liveRegistersForCall;
+@@ -4048,13 +4053,7 @@ void InlineCacheCompiler::emitProxyObjectAccess(unsigned index, AccessCase& acce
+     jit.load8(CCallHelpers::Address(baseGPR, JSCell::typeInfoTypeOffset()), scratchGPR);
+     fallThrough.append(jit.branch32(CCallHelpers::NotEqual, scratchGPR, CCallHelpers::TrustedImm32(ProxyObjectType)));
+ 
+-    RegisterSet extraSpill;
+-#if CPU(ARM_THUMB2)
+-    // Calls below can clobber this, which is a problem for DFG.
+-    extraSpill.add(GPRInfo::metadataTableRegister, IgnoreVectors);
+-    extraSpill.add(GPRInfo::jitDataRegister, IgnoreVectors);
+-#endif
+-    InlineCacheCompiler::SpillState spillState = preserveLiveRegistersToStackForCall(extraSpill);
++    InlineCacheCompiler::SpillState spillState = preserveLiveRegistersToStackForCall();
+ 
+     if (m_stubInfo.useDataIC) {
+         callSiteIndexForExceptionHandlingOrOriginal();
+diff --git a/Source/JavaScriptCore/jit/JITOpcodes.cpp b/Source/JavaScriptCore/jit/JITOpcodes.cpp
+index 9764a06b6ef6..e66dd889193c 100644
+--- a/Source/JavaScriptCore/jit/JITOpcodes.cpp
++++ b/Source/JavaScriptCore/jit/JITOpcodes.cpp
+@@ -1210,10 +1210,14 @@ void JIT::emit_op_catch(const JSInstruction* currentInstruction)
+     // we updated the exception handlers to point here). Because the LLInt uses a different value
+     // inside GPRInfo::jitDataRegister, the callee saves we restore above may not contain the correct register.
+     // So we replenish it here.
++#if CPU(ARM_THUMB2)
++    emitMaterializeMetadataAndConstantPoolRegisters();
++#else
+     {
+         loadPtr(addressFor(CallFrameSlot::codeBlock), regT0);
+         loadPtr(Address(regT0, CodeBlock::offsetOfJITData()), GPRInfo::jitDataRegister);
+     }
++#endif
+ 
+     callOperationNoExceptionCheck(operationRetrieveAndClearExceptionIfCatchable, TrustedImmPtr(&vm()));
+     Jump isCatchableException = branchTest32(NonZero, returnValueGPR);
+-- 
+2.34.1
+

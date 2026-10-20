@@ -7,7 +7,8 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
-WPE_RECIPE_REVISION = "9"
+#WPE_RECIPE_REVISION = "9"
+WPE_RECIPE_REVISION = "21"
 
 PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
@@ -65,6 +66,26 @@ SRC_URI += "file://2.46/comcast-WebRTC-keep-render-time-interpolation.patch"
 SRC_URI += "file://2.46/comcast-DELIA-59087-Disable-pausing-playback-for-buf.patch"
 SRC_URI += "file://2.46/comcast-RDKTV-28214-Quick-_exit.patch"
 #SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
+
+# AB build patches
+SRC_URI += "file://2.46.2.JSC.AB/0000-Disable-OMG-by-default.patch"
+#SRC_URI += "file://2.46.2.JSC.AB/0001-Handle-wide-Air-Arg-offsets.patch"
+#SRC_URI += "file://2.46.2.JSC.AB/0002-JSC-Fix-integer-overflow-on-armv7-in-CompleteSubspac.patch"
+#SRC_URI += "file://2.46.2.JSC.AB/0003-JSC-Fix-ARMv7-segfault-in-BBQJIT-by-avoid-the-use-of.patch"
+#SRC_URI += "file://2.46.2.JSC.AB/0004-JSC-Fix-shiftI64-spilling-only-on-one-side-of-a-bran.patch"
+SRC_URI += "file://2.46.2.JSC.AB/0005-CodeBlock-should-reset-its-StubInfo-when-jettisoned.patch"
+SRC_URI += "file://2.46.2.JSC.AB/0006-LLInt-GetByIdModeMetadata-should-not-hold-potentiall.patch"
+SRC_URI += "file://2.46.2.JSC.AB/0007-JSC-Eagerly-unlinking-CodeBlock-when-jettisoning.patch"
+#SRC_URI += "file://2.46.2.JSC.AB/0008-Exclude-non-user-portions-of-the-main-thread-stack-f.patch"
+SRC_URI += "file://2.46.2.JSC.AB/0009-JSC-GetByIdModeMetadata-s-mode-needs-to-be-set-when-.patch"
+SRC_URI += "file://2.46.2.JSC.AB/0010-ARMv7-Set-temporaryCallFrame-in-WebAssembly.asm.patch"
+#SRC_URI += "file://2.46.2.JSC.AB/0011-Js-Wasm-engine-produce-an-invalid-ref.cast-runtime-f.patch"
+SRC_URI += "file://2.46.2.JSC.AB/0012-StringImpl-refcounting-should-be-atomic.patch"
+SRC_URI += "file://2.46.2.JSC.AB/0013-ARMv7-Fix-dfg-clobbers-with-dataIC.patch"
+SRC_URI += "file://2.46.2.JSC.AB/0014-Fix-32-bit-IC-register-clobbers.patch"
+SRC_URI += "file://2.46.2.JSC.AB/0015-jscValueCallFunction-can-allocate-inside-jscContextG.patch"
+SRC_URI += "file://2.46.2.JSC.AB/0016-Defensively-DeferGC-when-baking-butterflies.patch"
+SRC_URI += "file://2.46.2.JSC.AB/0017-Avoid-dangling-pointers-in-WeakBlock-list-https-bugs.patch"
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"

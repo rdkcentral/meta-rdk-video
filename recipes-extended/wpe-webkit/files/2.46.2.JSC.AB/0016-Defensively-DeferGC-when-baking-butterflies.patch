@@ -1,0 +1,58 @@
+From bf5a1f3d4d422aa860fe223d94bfaeb50a12a5df Mon Sep 17 00:00:00 2001
+From: Angelos Oikonomopoulos <angelos@igalia.com>
+Date: Thu, 7 May 2026 11:14:56 +0000
+Subject: [PATCH] Defensively DeferGC when baking butterflies
+
+This is a port of https://commits.webkit.org/307787@main to 2.38.
+
+Note that unshiftCountSlowCase is already protected by its sole caller.
+
+(cherry picked from commit 72c0e94c2f55becb226d2d29493d52d0c10b61fe)
+---
+ Source/JavaScriptCore/heap/Heap.h         | 1 +
+ Source/JavaScriptCore/runtime/JSArray.cpp | 3 +++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/Source/JavaScriptCore/heap/Heap.h b/Source/JavaScriptCore/heap/Heap.h
+index fc89cebe598f..cd5a2dc5128c 100644
+--- a/Source/JavaScriptCore/heap/Heap.h
++++ b/Source/JavaScriptCore/heap/Heap.h
+@@ -617,6 +617,7 @@ private:
+     friend class HeapVerifier;
+     friend class IsoSubspacePerVM;
+     friend class JITStubRoutine;
++    friend class JSArray;
+     friend class LLIntOffsetsExtractor;
+     friend class MarkStackMergingConstraint;
+     friend class MarkedSpace;
+diff --git a/Source/JavaScriptCore/runtime/JSArray.cpp b/Source/JavaScriptCore/runtime/JSArray.cpp
+index 1e7cb9525758..6aec8b0d90fe 100644
+--- a/Source/JavaScriptCore/runtime/JSArray.cpp
++++ b/Source/JavaScriptCore/runtime/JSArray.cpp
+@@ -64,6 +64,7 @@ JSArray* JSArray::tryCreateUninitializedRestricted(ObjectInitializationScope& sc
+             deferralContext, AllocationFailureMode::ReturnNull);
+         if (UNLIKELY(!temp))
+             return nullptr;
++        vm.heap.incrementDeferralDepth();
+         butterfly = Butterfly::fromBase(temp, 0, outOfLineStorage);
+         butterfly->setVectorLength(vectorLength);
+         butterfly->setPublicLength(initialLength);
+@@ -86,6 +87,7 @@ JSArray* JSArray::tryCreateUninitializedRestricted(ObjectInitializationScope& sc
+             deferralContext, AllocationFailureMode::ReturnNull);
+         if (UNLIKELY(!temp))
+             return nullptr;
++        vm.heap.incrementDeferralDepth();
+         butterfly = Butterfly::fromBase(temp, indexBias, outOfLineStorage);
+         *butterfly->indexingHeader() = indexingHeaderForArrayStorage(initialLength, vectorLength);
+         ArrayStorage* storage = butterfly->arrayStorage();
+@@ -99,6 +101,7 @@ JSArray* JSArray::tryCreateUninitializedRestricted(ObjectInitializationScope& sc
+     JSArray* result = createWithButterfly(vm, deferralContext, structure, butterfly);
+ 
+     scope.notifyAllocated(result);
++    vm.heap.decrementDeferralDepth();
+     return result;
+ }
+ 
+-- 
+2.34.1
+

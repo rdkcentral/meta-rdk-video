@@ -1,0 +1,44 @@
+From bd5c8abf594fe5d9e1412f93c043ad8add1b0f84 Mon Sep 17 00:00:00 2001
+From: Daniel Liu <danlliu@umich.edu>
+Date: Fri, 4 Apr 2025 04:11:45 -0700
+Subject: [PATCH] CodeBlock should reset its StubInfo when jettisoned
+ https://bugs.webkit.org/show_bug.cgi?id=288554 rdar://144072285
+
+Reviewed by Yusuke Suzuki.
+
+CodeBlock's StubInfo can keep watchpoints alive which do not ref data they hold, meaning
+that when the CodeBlock is jettisoned, we may have dangling pointers to data that was
+freed during a GC.
+
+* Source/JavaScriptCore/bytecode/CodeBlock.cpp:
+(JSC::CodeBlock::jettison):
+
+Originally-landed-as: 289651.190@safari-7621-branch (15053072f223). rdar://148056646
+Canonical link: https://commits.webkit.org/293230@main
+---
+ Source/JavaScriptCore/bytecode/CodeBlock.cpp | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/Source/JavaScriptCore/bytecode/CodeBlock.cpp b/Source/JavaScriptCore/bytecode/CodeBlock.cpp
+index 3dcd14be76a0..872229a5bb99 100644
+--- a/Source/JavaScriptCore/bytecode/CodeBlock.cpp
++++ b/Source/JavaScriptCore/bytecode/CodeBlock.cpp
+@@ -2178,6 +2178,15 @@ void CodeBlock::jettison(Profiler::JettisonReason reason, ReoptimizationMode mod
+     CODEBLOCK_LOG_EVENT(codeBlock, "jettison", ("due to ", reason, ", counting = ", mode == CountReoptimization, ", detail = ", pointerDump(detail)));
+ 
+     RELEASE_ASSERT(reason != Profiler::NotJettisoned);
++
++#if ENABLE(JIT)
++    ConcurrentJSLocker locker(m_lock);
++    forEachStructureStubInfo([&](StructureStubInfo& stubInfo) {
++        stubInfo.reset(locker, this);
++        return IterationStatus::Continue;
++    });
++#endif
++
+     
+ #if ENABLE(DFG_JIT)
+     if (DFG::shouldDumpDisassembly()) {
+-- 
+2.34.1
+

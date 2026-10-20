@@ -1,0 +1,43 @@
+From ff36632c27f86137dfc2619af8d477971d98fb79 Mon Sep 17 00:00:00 2001
+From: Angelos Oikonomopoulos <angelos@igalia.com>
+Date: Thu, 31 Jul 2025 11:38:04 -0700
+Subject: [PATCH] [ARMv7] Set temporaryCallFrame in WebAssembly.asm
+ https://bugs.webkit.org/show_bug.cgi?id=294597
+
+Reviewed by Justin Michaud.
+
+Cherry-pick: skipped the no-jit trampolines since they won't work anyway on armv7.
+
+ARMv7 can't rely on BUILTIN_FRAME_ADDRESS (it's broken on GCC).
+Properly initialize temporaryCallFrame in WebAssembly.asm.
+
+This should really be `or (not USE_BUILTIN_FRAME_ADDRESS)`, but we need
+to keep the number of configuration values down to avoid a combinatorial
+explosion in the size of LLIntAssembly.h.
+
+When we have a fix for GCC, we can just drop the reliance on
+temporaryCallFrame, but in the meantime this avoids flaky tests in EWS.
+
+* Source/JavaScriptCore/llint/WebAssembly.asm:
+
+Canonical link: https://commits.webkit.org/298095@main
+---
+ Source/JavaScriptCore/llint/WebAssembly.asm | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Source/JavaScriptCore/llint/WebAssembly.asm b/Source/JavaScriptCore/llint/WebAssembly.asm
+index 33e7acf05196..3dc68af0830e 100644
+--- a/Source/JavaScriptCore/llint/WebAssembly.asm
++++ b/Source/JavaScriptCore/llint/WebAssembly.asm
+@@ -1129,7 +1129,7 @@ end
+     loadp (constexpr (JSWebAssemblyInstance::offsetOfVM()))[wasmInstance], a0
+     copyCalleeSavesToVMEntryFrameCalleeSavesBuffer(a0, a1)
+ 
+-if ASSERT_ENABLED
++if ASSERT_ENABLED or ARMv7
+     storep cfr, (constexpr (JSWebAssemblyInstance::offsetOfTemporaryCallFrame()))[wasmInstance]
+ end
+ 
+-- 
+2.34.1
+

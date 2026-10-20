@@ -1,0 +1,138 @@
+From c0a5fe36b89a664dbe30bef902c57c15e427c0e9 Mon Sep 17 00:00:00 2001
+From: Justin Michaud <jmichaud@igalia.com>
+Date: Fri, 7 Aug 2026 17:47:50 -0600
+Subject: [PATCH] [ARMv7] Fix dfg clobbers with dataIC
+
+---
+ .../proxy-ic-does-not-clobber-callee-saves.js | 88 +++++++++++++++++++
+ .../bytecode/InlineCacheCompiler.cpp          | 12 +--
+ 2 files changed, 95 insertions(+), 5 deletions(-)
+ create mode 100644 JSTests/stress/proxy-ic-does-not-clobber-callee-saves.js
+
+diff --git a/JSTests/stress/proxy-ic-does-not-clobber-callee-saves.js b/JSTests/stress/proxy-ic-does-not-clobber-callee-saves.js
+new file mode 100644
+index 000000000000..0212d68e74da
+--- /dev/null
++++ b/JSTests/stress/proxy-ic-does-not-clobber-callee-saves.js
+@@ -0,0 +1,88 @@
++// A proxy inline cache emits a JS call, and values the enclosing JIT holds in callee save registers
++// have to survive it. Each function below keeps more live integers than ARMv7 has allocatable GPRs,
++// so some of them land in the registers that hold metadataTable and jitData there.
++
++function shouldBe(actual, expected) {
++    if (actual !== expected)
++        throw new Error(`bad value: ${actual}, expected ${expected}`);
++}
++
++const handler = {
++    get(target, property) {
++        return target[property];
++    },
++    set(target, property, value) {
++        target[property] = value;
++        return true;
++    },
++};
++
++const loadProxy = new Proxy({ field: 42 }, handler);
++const indexedProxy = new Proxy({ 0: 7 }, handler);
++const storeProxy = new Proxy({ field: 0 }, handler);
++
++function load(proxy, x) {
++    const v0 = (x + 1) | 0;
++    const v1 = (x + 2) | 0;
++    const v2 = (x + 3) | 0;
++    const v3 = (x + 4) | 0;
++    const v4 = (x + 5) | 0;
++    const v5 = (x + 6) | 0;
++    const v6 = (x + 7) | 0;
++    const v7 = (x + 8) | 0;
++    const v8 = (x + 9) | 0;
++    const v9 = (x + 10) | 0;
++    const v10 = (x + 11) | 0;
++    const v11 = (x + 12) | 0;
++    const got = proxy.field;
++    return (v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + got) | 0;
++}
++noInline(load);
++
++function loadByVal(proxy, x, index) {
++    const v0 = (x + 1) | 0;
++    const v1 = (x + 2) | 0;
++    const v2 = (x + 3) | 0;
++    const v3 = (x + 4) | 0;
++    const v4 = (x + 5) | 0;
++    const v5 = (x + 6) | 0;
++    const v6 = (x + 7) | 0;
++    const v7 = (x + 8) | 0;
++    const v8 = (x + 9) | 0;
++    const v9 = (x + 10) | 0;
++    const v10 = (x + 11) | 0;
++    const v11 = (x + 12) | 0;
++    const got = proxy[index];
++    return (v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + got) | 0;
++}
++noInline(loadByVal);
++
++function store(proxy, x) {
++    const v0 = (x + 1) | 0;
++    const v1 = (x + 2) | 0;
++    const v2 = (x + 3) | 0;
++    const v3 = (x + 4) | 0;
++    const v4 = (x + 5) | 0;
++    const v5 = (x + 6) | 0;
++    const v6 = (x + 7) | 0;
++    const v7 = (x + 8) | 0;
++    const v8 = (x + 9) | 0;
++    const v9 = (x + 10) | 0;
++    const v10 = (x + 11) | 0;
++    const v11 = (x + 12) | 0;
++    proxy.field = x;
++    return (v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11) | 0;
++}
++noInline(store);
++
++// The first call runs before any inline cache exists, so its result is the oracle for every tier.
++const expectedLoad = load(loadProxy, 1);
++const expectedLoadByVal = loadByVal(indexedProxy, 1, 0);
++const expectedStore = store(storeProxy, 1);
++
++for (let i = 0; i < 5e4; ++i) {
++    shouldBe(load(loadProxy, 1), expectedLoad);
++    shouldBe(loadByVal(indexedProxy, 1, 0), expectedLoadByVal);
++    shouldBe(store(storeProxy, 1), expectedStore);
++    shouldBe(storeProxy.field, 1);
++}
+diff --git a/Source/JavaScriptCore/bytecode/InlineCacheCompiler.cpp b/Source/JavaScriptCore/bytecode/InlineCacheCompiler.cpp
+index 31ee5b3feff5..e6d6f0d07a31 100644
+--- a/Source/JavaScriptCore/bytecode/InlineCacheCompiler.cpp
++++ b/Source/JavaScriptCore/bytecode/InlineCacheCompiler.cpp
+@@ -4048,7 +4048,13 @@ void InlineCacheCompiler::emitProxyObjectAccess(unsigned index, AccessCase& acce
+     jit.load8(CCallHelpers::Address(baseGPR, JSCell::typeInfoTypeOffset()), scratchGPR);
+     fallThrough.append(jit.branch32(CCallHelpers::NotEqual, scratchGPR, CCallHelpers::TrustedImm32(ProxyObjectType)));
+ 
+-    InlineCacheCompiler::SpillState spillState = preserveLiveRegistersToStackForCall();
++    RegisterSet extraSpill;
++#if CPU(ARM_THUMB2)
++    // Calls below can clobber this, which is a problem for DFG.
++    extraSpill.add(GPRInfo::metadataTableRegister, IgnoreVectors);
++    extraSpill.add(GPRInfo::jitDataRegister, IgnoreVectors);
++#endif
++    InlineCacheCompiler::SpillState spillState = preserveLiveRegistersToStackForCall(extraSpill);
+ 
+     if (m_stubInfo.useDataIC) {
+         callSiteIndexForExceptionHandlingOrOriginal();
+@@ -4192,10 +4198,6 @@ void InlineCacheCompiler::emitProxyObjectAccess(unsigned index, AccessCase& acce
+ #if USE(JSVALUE32_64)
+         // We *always* know that the proxy function, if non-null, is a cell.
+         jit.move(CCallHelpers::TrustedImm32(JSValue::CellTag), BaselineJITRegisters::Call::calleeJSR.tagGPR());
+-#endif
+-#if CPU(ARM_THUMB2)
+-        // ARMv7 clobbers metadataTable register. Thus we need to restore them back here.
+-        JIT::emitMaterializeMetadataAndConstantPoolRegisters(jit);
+ #endif
+         m_callLinkInfos[index] = makeUnique<OptimizingCallLinkInfo>(m_stubInfo.codeOrigin, nullptr);
+         auto* callLinkInfo = m_callLinkInfos[index].get();
+-- 
+2.34.1
+
