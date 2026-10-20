@@ -3,7 +3,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance PR with every change in the recipe
-PR  = "r21"
+PR  = "r22"
 
 # Temporary build fix
 DEPENDS:append = " virtual/vendor-secapi2-adapter virtual/vendor-gst-drm-plugins "
@@ -21,7 +21,7 @@ SRC_URI += "file://2.38.2/1196.patch"
 SRC_URI += "file://2.38.7/1410.patch"
 SRC_URI += "file://2.38.8/1628.patch"
 SRC_URI += "file://2.38.8/1689.patch"
-SRC_URI += "file://2.38.8/1719.patch"
+SRC_URI += "file://2.38.8/1719_1735_MSE_reopen.patch"
 
 # Drop after issue is addressed and a corresponding PR is merged
 SRC_URI += "file://2.38.8/1456-RDKTV-35082-Workaround-premature-finishSeek.patch"
@@ -91,6 +91,7 @@ SRC_URI += "file://2.38.8/comcast-RDKEMW-2744-BitmapTextureGL-Check-EGL-context.
 SRC_URI += "file://2.38.8/comcast-DELIA-68848-webrtc-improvements.patch"
 SRC_URI += "file://2.38.8/comcast-RDKEMW-8425-HDR-DV-MediaCapabilities.patch"
 SRC_URI += "file://2.38.8/comcast-RDKEMW-19501-adding-different-H264-profile-level.patch"
+SRC_URI += "file://2.38.8/0001-debug-rendering-2.38.patch"
 
 PACKAGECONFIG[wpeqtapi]          = "-DENABLE_WPE_QT_API=ON,-DENABLE_WPE_QT_API=OFF"
 PACKAGECONFIG[westeros]          = "-DUSE_WPEWEBKIT_PLATFORM_WESTEROS=ON -DUSE_GSTREAMER_HOLEPUNCH=ON -DUSE_EXTERNAL_HOLEPUNCH=ON -DUSE_WESTEROS_SINK=ON,,westeros virtual/vendor-westeros-sink"
