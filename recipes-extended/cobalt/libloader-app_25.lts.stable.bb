@@ -44,6 +44,9 @@ RDEPENDS:${PN} += "gstreamer1.0-plugins-base-app gstreamer1.0-plugins-base-playb
 
 TUNE_CCARGS:remove = "-fno-omit-frame-pointer -fno-optimize-sibling-calls"
 
+COMPATIBLE_MACHINE = "^$"
+COMPATIBLE_MACHINE:arm = "(.*)"
+
 def get_cobalt_platform(d):
     target_arch = d.getVar('TARGET_ARCH', True)
     if target_arch == 'aarch64':
