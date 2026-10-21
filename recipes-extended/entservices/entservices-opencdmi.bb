@@ -2,7 +2,7 @@ SUMMARY = "ENTServices opencdmi plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7a65e8e9836ac44d082594220a9a3883"
 
-PV = "2.0.4"
+PV = "2.1.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -13,12 +13,10 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
-           file://open_cdm_imp_fps_ocdm.patch \
-           file://opencdmi-fps-plugin-frameworkrpc.patch \
           "
           
-# Release version - 2.0.4
-SRCREV = "158c1beda78023f60549a9b6d0f5e0cfbc117105"
+# Release version - 2.1.0
+SRCREV = "d4c76022d3e448d90ee63b8c2fbd942361461bd2"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
