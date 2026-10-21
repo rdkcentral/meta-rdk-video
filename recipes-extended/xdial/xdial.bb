@@ -29,7 +29,7 @@ DEPENDS:append = " cmake-native"
 EXTRANATIVEPATH += "cmake-native"
 
 CFLAGS += "-fcommon"
-
+CLEANBROKEN = "1"
 
 DEPENDS += "openssl c-ares curl util-linux glib-2.0 cmake-native wpeframework wpeframework-clientlibraries entservices-apis iarmmgrs"
 
