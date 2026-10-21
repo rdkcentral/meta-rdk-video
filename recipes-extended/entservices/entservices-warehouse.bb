@@ -2,7 +2,7 @@ SUMMARY = "ENTServices warehouse plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.2.1"
+PV = "1.2.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-warehouse;${CMF_GITHUB_SRC_URI_SUFFIX}\
     file://rdkservices.ini \
     "
-# Release version - 1.2.1
-SRCREV = "e65bb6a8b362b586f1b8c8279002059c4f705968"
+# Release version - 1.2.2
+SRCREV = "7da4e0c978ab46ff4bb3756c004331892a3146ad"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
