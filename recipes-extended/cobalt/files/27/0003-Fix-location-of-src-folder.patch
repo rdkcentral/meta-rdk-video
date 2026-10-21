@@ -1,0 +1,26 @@
+From e2a987305d00dc857594ff1656d1f2cdb47c16bf Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Wed, 9 Sep 2026 18:32:08 +0000
+Subject: [PATCH 3/6] Fix location of src folder
+
+For the case when build folder is out of source tree
+---
+ cobalt/build/build_info.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cobalt/build/build_info.py b/cobalt/build/build_info.py
+index 71783b0197a..7877349e333 100755
+--- a/cobalt/build/build_info.py
++++ b/cobalt/build/build_info.py
+@@ -173,7 +173,7 @@ def write_build_id_header(output_path):
+ def write_licenses(txt_path, spdx_path):
+   """Writes Cobalt licenses files if they do not already exist."""
+   out_dir = os.getcwd()
+-  src_dir = os.path.dirname(os.path.dirname(out_dir))
++  src_dir = os.path.join(os.path.dirname(os.path.dirname(out_dir)), "src")
+   txt_file = os.path.join(out_dir, txt_path)
+   spdx_file = os.path.join(out_dir, spdx_path)
+ 
+-- 
+2.34.1
+
