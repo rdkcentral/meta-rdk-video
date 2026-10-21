@@ -6,7 +6,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
-WPE_RECIPE_REVISION = "9"
+WPE_RECIPE_REVISION = "10"
 
 PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
@@ -63,6 +63,7 @@ SRC_URI += "file://2.46/comcast-RDK-57915-Track-encrypted-playback.patch"
 SRC_URI += "file://2.46/comcast-WebRTC-keep-render-time-interpolation.patch"
 SRC_URI += "file://2.46/comcast-DELIA-59087-Disable-pausing-playback-for-buf.patch"
 SRC_URI += "file://2.46/comcast-RDKTV-28214-Quick-_exit.patch"
+SRC_URI += "file://2.46.2/comcast-RDKEMW-25325-Use-Content-Range-when-Content-Length-is-missing.patch"
 #SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
