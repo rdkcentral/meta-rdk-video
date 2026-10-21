@@ -180,7 +180,7 @@ SYSLOG-NG_LOGRATE_wpeframework = "high"
 LOGROTATE_NAME="wpeframework"
 LOGROTATE_LOGNAME_wpeframework="wpeframework.log"
 LOGROTATE_SIZE_wpeframework="1572864"
-LOGROTATE_ROTATION_wpeframework="3"
+LOGROTATE_ROTATION_wpeframework="6"
 LOGROTATE_SIZE_MEM_wpeframework="1572864"
 LOGROTATE_ROTATION_MEM_wpeframework="3"
 
