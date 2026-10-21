@@ -8,7 +8,7 @@ include recipes-extended/wpe-framework/include/wpeframework-plugins.inc
 PR = "r0"
 PV = "1.1.1"
 
-DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native entservices-apis"
+DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native entservices-apis entservices-apis-ocdm"
 DEPENDS += "  gst-svp-ext gstreamer1.0"
 
 # Platform configurations
