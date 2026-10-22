@@ -1,0 +1,91 @@
+From 0e0d9b383bb6835921f08bfb4f1d6f37cf91ca24 Mon Sep 17 00:00:00 2001
+From: sjulfk353 <shahin_julfkar@comcast.com>
+Date: Thu, 30 Jul 2026 16:36:01 +0000
+Subject: [PATCH] rename firebolttransport lib
+
+---
+ CMakeLists.txt                   | 10 +++++-----
+ src/CMakeLists.txt               |  2 +-
+ test/CMakeLists.txt              |  4 ++--
+ test/api_test_app/CMakeLists.txt |  4 ++--
+ 4 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ae3416f..1a362df 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -46,13 +46,13 @@ list(APPEND CMAKE_MODULE_PATH
+ 
+ find_package(nlohmann_json CONFIG REQUIRED)
+ 
+-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/.transport.version" FIREBOLT_TRANSPORT_VERSION_RAW)
+-string(STRIP "${FIREBOLT_TRANSPORT_VERSION_RAW}" FIREBOLT_TRANSPORT_VERSION)
+-string(REGEX REPLACE "^v?([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1" FIREBOLT_TRANSPORT_MAJOR_VERSION "${FIREBOLT_TRANSPORT_VERSION}")
++file(READ "${CMAKE_CURRENT_SOURCE_DIR}/.transport.version" FIREBOLT_CPP_TRANSPORT_VERSION_RAW)
++string(STRIP "${FIREBOLT_CPP_TRANSPORT_VERSION_RAW}" FIREBOLT_CPP_TRANSPORT_VERSION)
++string(REGEX REPLACE "^v?([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1" FIREBOLT_CPP_TRANSPORT_MAJOR_VERSION "${FIREBOLT_CPP_TRANSPORT_VERSION}")
+ 
+-find_package(FireboltTransport ${FIREBOLT_TRANSPORT_MAJOR_VERSION} CONFIG REQUIRED)
++find_package(FireboltCppTransport ${FIREBOLT_CPP_TRANSPORT_MAJOR_VERSION} CONFIG REQUIRED)
+ 
+-message(STATUS "Transport: installed version: ${FireboltTransport_VERSION}, expected: ${FIREBOLT_TRANSPORT_VERSION}")
++message(STATUS "Transport: installed version: ${FireboltCppTransport_VERSION}, expected: ${FIREBOLT_CPP_TRANSPORT_VERSION}")
+ 
+ add_compile_options(-Wall -Wextra -Wpedantic)
+ 
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index a126a70..31caf6e 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -54,7 +54,7 @@ target_link_libraries(${TARGET}
+     PRIVATE
+         nlohmann_json::nlohmann_json
+     PUBLIC
+-        $<IF:$<TARGET_EXISTS:FireboltTransport::FireboltTransport>,FireboltTransport::FireboltTransport,FireboltTransport>
++    $<IF:$<TARGET_EXISTS:FireboltCppTransport::FireboltCppTransport>,FireboltCppTransport::FireboltCppTransport,FireboltCppTransport>
+ )
+ 
+ target_include_directories(${TARGET}
+diff --git a/test/CMakeLists.txt b/test/CMakeLists.txt
+index 61916ca..a45697b 100644
+--- a/test/CMakeLists.txt
++++ b/test/CMakeLists.txt
+@@ -41,7 +41,7 @@ target_link_options(${UNIT_TESTS_APP} PRIVATE --coverage)
+ target_link_libraries(${UNIT_TESTS_APP}
+     PRIVATE
+         FireboltClient
+-        $<IF:$<TARGET_EXISTS:FireboltTransport::FireboltTransport>,FireboltTransport::FireboltTransport,FireboltTransport>
++	$<IF:$<TARGET_EXISTS:FireboltCppTransport::FireboltCppTransport>,FireboltCppTransport::FireboltCppTransport,FireboltCppTransport>
+         nlohmann_json::nlohmann_json
+         nlohmann_json_schema_validator::validator
+         GTest::gtest
+@@ -86,7 +86,7 @@ add_executable(${COMPONENT_TESTS_APP}
+ target_link_libraries(${COMPONENT_TESTS_APP}
+     PRIVATE
+         FireboltClient
+-        $<IF:$<TARGET_EXISTS:FireboltTransport::FireboltTransport>,FireboltTransport::FireboltTransport,FireboltTransport>
++	$<IF:$<TARGET_EXISTS:FireboltCppTransport::FireboltCppTransport>,FireboltCppTransport::FireboltCppTransport,FireboltCppTransport>
+         nlohmann_json::nlohmann_json
+         nlohmann_json_schema_validator::validator
+         CURL::libcurl
+diff --git a/test/api_test_app/CMakeLists.txt b/test/api_test_app/CMakeLists.txt
+index a395a34..1221249 100644
+--- a/test/api_test_app/CMakeLists.txt
++++ b/test/api_test_app/CMakeLists.txt
+@@ -64,11 +64,11 @@ if (ENABLE_DEMO_APP)
+             nlohmann_json::nlohmann_json
+     )
+ else()
+-    find_package(FireboltTransport CONFIG REQUIRED)
++	find_package(FireboltCppTransport CONFIG REQUIRED)
+     find_package(FireboltClient CONFIG REQUIRED)
+     target_link_libraries(${API_TEST_APP}
+         PRIVATE
+-            FireboltTransport::FireboltTransport
++	FireboltCppTransport::FireboltCppTransport
+             FireboltClient::FireboltClient
+     )
+ endif()
+-- 
+2.44.4
+
