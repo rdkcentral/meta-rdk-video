@@ -12,10 +12,10 @@ diff -uprN a/wpeframework-displaysettings.service b/wpeframework-displaysettings
 @@ -1,7 +1,7 @@
  [Unit]
  Description=WPEFramework DisplaySettings Initialiser
--Requires=wpeframework-powermanager.service wpeframework-devicesettings.service
--After=wpeframework-powermanager.service wpeframework-devicesettings.service
-+Requires=pqserver.service wpeframework-hdmicecsink.service wpeframework-powermanager.service wpeframework-devicesettings.service
-+After=pqserver.service wpeframework-hdmicecsink.service wpeframework-powermanager.service wpeframework-devicesettings.service
+-Requires=wpeframework-powermanager.service wpeframework-devicesettings.service wpeframework-audiooutput.service
+-After=wpeframework-powermanager.service wpeframework-devicesettings.service wpeframework-audiooutput.service
++Requires=pqserver.service wpeframework-hdmicecsink.service wpeframework-powermanager.service wpeframework-devicesettings.service wpeframework-audiooutput.service
++After=pqserver.service wpeframework-hdmicecsink.service wpeframework-powermanager.service wpeframework-devicesettings.service wpeframework-audiooutput.service
  [Service]
  Type=oneshot
  RemainAfterExit=yes
