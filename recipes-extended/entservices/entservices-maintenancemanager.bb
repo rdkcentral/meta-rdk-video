@@ -9,10 +9,10 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-maintenancemanager;${CMF_GITHUB_SRC_UR
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.15.0.2
-PV = "1.15.0.2"
+# Release version - 1.15.0.3
+PV = "1.15.0.3"
 PR = "r0"
-SRCREV = "22e969670b0e2eb0dcb508f8d1e14087e39c1a8a"
+SRCREV = "ef6584eee90eb61429ad6259245cb6ad3366fa0f"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
