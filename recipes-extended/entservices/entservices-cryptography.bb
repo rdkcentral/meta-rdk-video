@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e0be4633b6bc8df42eadad87f3e18a3a"
 
 PV = "1.0.5"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -17,7 +17,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-cryptography;${CMF_GITHUB_SRC_URI_SUFF
           "
           
 # Release version - 1.0.5
-SRCREV = "d95807fac4b50ae036aeb1486b0be0dc3142ea93"
+SRCREV = "128d77f6c551db4abf1804b143c1c6e610299576"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
