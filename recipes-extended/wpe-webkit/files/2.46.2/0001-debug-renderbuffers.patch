@@ -1,0 +1,158 @@
+From e5e15fe3a0c97fa24c9e5e3b1c37aea484407463 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Thu, 29 Oct 2026 05:54:16 +0000
+Subject: [PATCH] debug renderbuffers
+
+---
+ .../libANGLE/renderer/gl/RenderbufferGL.cpp   | 89 ++++++++++++++++++-
+ 1 file changed, 88 insertions(+), 1 deletion(-)
+
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/RenderbufferGL.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/RenderbufferGL.cpp
+index 4410f9b1a159..b28879b355d0 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/RenderbufferGL.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/RenderbufferGL.cpp
+@@ -21,12 +21,83 @@
+ #include "libANGLE/renderer/gl/renderergl_utils.h"
+ #include "platform/autogen/FeaturesGL_autogen.h"
+ 
++#include <algorithm>
++#include <cstdio>
++#include <map>
++#include <mutex>
++#include "libANGLE/formatutils.h"
++#include "../../../../../../WebCore/platform/graphics/GPUDebugNexus.h"
++
+ namespace rx
+ {
++namespace
++{
++std::mutex gpuDbgRenderbufferMutex;
++std::map<const void *, unsigned long long> gpuDbgRenderbufferBytes;
++unsigned long long gpuDbgRenderbufferLiveBytes = 0;
++unsigned long long gpuDbgRenderbufferPeakBytes = 0;
++
++void gpuDbgRecordRenderbuffer(const void *object, GLuint renderbuffer,
++                             unsigned long long bytes, const char *operation,
++                             bool remove)
++{
++    std::lock_guard<std::mutex> lock(gpuDbgRenderbufferMutex);
++    const unsigned long long oldBytes = gpuDbgRenderbufferBytes[object];
++    gpuDbgRenderbufferLiveBytes = gpuDbgRenderbufferLiveBytes - oldBytes + bytes;
++    if (remove)
++        gpuDbgRenderbufferBytes.erase(object);
++    else
++        gpuDbgRenderbufferBytes[object] = bytes;
++    gpuDbgRenderbufferPeakBytes = std::max(gpuDbgRenderbufferPeakBytes,
++                                         gpuDbgRenderbufferLiveBytes);
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_STATS pid=%d object=%p rb=%u operation=%s oldEstBytes=%llu newEstBytes=%llu liveCount=%zu liveEstBytes=%llu peakEstBytes=%llu\n",
++            getpid(), object, renderbuffer, operation, oldBytes, bytes,
++            gpuDbgRenderbufferBytes.size(), gpuDbgRenderbufferLiveBytes,
++            gpuDbgRenderbufferPeakBytes);
++}
++
++class GpuDbgRenderbufferStorage
++{
++  public:
++    GpuDbgRenderbufferStorage(const void *object, GLuint renderbuffer, GLenum format,
++                             GLsizei width, GLsizei height, GLsizei samples)
++        : mObject(object), mRenderbuffer(renderbuffer)
++    {
++        const GLuint pixelBytes = gl::GetSizedInternalFormatInfo(format).pixelBytes;
++        mBytes = static_cast<unsigned long long>(std::max(width, 0)) *
++                 std::max(height, 0) * pixelBytes * std::max(samples, 1);
++        fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_ALLOC_BEGIN pid=%d object=%p rb=%u nativeFormat=0x%x width=%d height=%d requestedSamples=%d pixelBytes=%u estBytes=%llu\n",
++                getpid(), object, renderbuffer, format, width, height, samples,
++                pixelBytes, mBytes);
++        GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_ALLOC_BEFORE");
++    }
++
++    ~GpuDbgRenderbufferStorage()
++    {
++        fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_ALLOC_END pid=%d object=%p rb=%u success=%d estBytes=%llu\n",
++                getpid(), mObject, mRenderbuffer, mSuccess, mBytes);
++        GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_ALLOC_AFTER");
++    }
++
++    void commit()
++    {
++        mSuccess = true;
++        gpuDbgRecordRenderbuffer(mObject, mRenderbuffer, mBytes, "storage", false);
++    }
++
++  private:
++    const void *mObject;
++    GLuint mRenderbuffer;
++    unsigned long long mBytes = 0;
++    bool mSuccess = false;
++};
++}
++
+ RenderbufferGL::RenderbufferGL(const gl::RenderbufferState &state, GLuint id)
+     : RenderbufferImpl(state), mRenderbufferID(id)
+ {
+     fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_CREATE this=%p rb=%u\n", this, mRenderbufferID);
++    gpuDbgRecordRenderbuffer(this, mRenderbufferID, 0, "create", false);
+ }
+ 
+ RenderbufferGL::~RenderbufferGL()
+@@ -38,7 +109,10 @@ void RenderbufferGL::onDestroy(const gl::Context *context)
+ {
+     fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_DESTROY this=%p rb=%u\n", this, mRenderbufferID);
+     StateManagerGL *stateManager = GetStateManagerGL(context);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_DELETE_BEFORE");
+     stateManager->deleteRenderbuffer(mRenderbufferID);
++    gpuDbgRecordRenderbuffer(this, mRenderbufferID, 0, "delete", true);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_DELETE_AFTER");
+     mRenderbufferID = 0;
+ }
+ 
+@@ -57,10 +131,13 @@ angle::Result RenderbufferGL::setStorage(const gl::Context *context,
+ 
+     nativegl::RenderbufferFormat renderbufferFormat =
+         nativegl::GetRenderbufferFormat(functions, features, internalformat);
++    GpuDbgRenderbufferStorage gpuDbgStorage(this, mRenderbufferID,
++                                           renderbufferFormat.internalFormat, width, height, 0);
+     ANGLE_GL_TRY_ALWAYS_CHECK(
+         context, functions->renderbufferStorage(GL_RENDERBUFFER, renderbufferFormat.internalFormat,
+                                                 width, height));
+ 
++    gpuDbgStorage.commit();
+     mNativeInternalFormat = renderbufferFormat.internalFormat;
+ 
+     return angle::Result::Continue;
+@@ -84,6 +161,8 @@ angle::Result RenderbufferGL::setStorageMultisample(const gl::Context *context,
+ 
+     nativegl::RenderbufferFormat renderbufferFormat =
+         nativegl::GetRenderbufferFormat(functions, features, internalformat);
++    GpuDbgRenderbufferStorage gpuDbgStorage(this, mRenderbufferID,
++                                           renderbufferFormat.internalFormat, width, height, samples);
+     if (mode == gl::MultisamplingMode::Regular)
+     {
+         ANGLE_GL_TRY_ALWAYS_CHECK(context, functions->renderbufferStorageMultisample(
+@@ -111,6 +190,7 @@ angle::Result RenderbufferGL::setStorageMultisample(const gl::Context *context,
+         }
+     }
+ 
++    gpuDbgStorage.commit();
+     mNativeInternalFormat = renderbufferFormat.internalFormat;
+ 
+     return angle::Result::Continue;
+@@ -120,7 +200,14 @@ angle::Result RenderbufferGL::setStorageEGLImageTarget(const gl::Context *contex
+                                                        egl::Image *image)
+ {
+     ImageGL *imageGL = GetImplAs<ImageGL>(image);
+-    return imageGL->setRenderbufferStorage(context, this, &mNativeInternalFormat);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_EGLIMAGE_BEFORE");
++    const angle::Result result = imageGL->setRenderbufferStorage(context, this, &mNativeInternalFormat);
++    if (result == angle::Result::Continue)
++        gpuDbgRecordRenderbuffer(this, mRenderbufferID, 0, "eglimage_shared_unestimated", false);
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_EGLIMAGE pid=%d object=%p rb=%u image=%p success=%d storageBytes=unknown_shared\n",
++            getpid(), this, mRenderbufferID, image, result == angle::Result::Continue);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_EGLIMAGE_AFTER");
++    return result;
+ }
+ 
+ GLuint RenderbufferGL::getRenderbufferID() const
+-- 
+2.44.4
+
