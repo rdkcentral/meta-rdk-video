@@ -2,8 +2,8 @@ SUMMARY = "ENTServices audiooutput plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=99ba59ffd1c3a94266cf01095316d8e0"
 
-PV = "1.0.2"
-PR = "r0"
+PV = "1.0.2_test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-audiooutput;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
-# Release version - 1.0.2
-SRCREV = "${PV}"
+# Release version - 1.0.2_test
+SRCREV = "aa3644099ad3a5039c3c8e369be9e66b946cdc0b"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
