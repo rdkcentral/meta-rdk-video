@@ -68,6 +68,7 @@ SRC_URI += "file://2.46.2/0001-debug-logs-for-rendering.patch"
 SRC_URI += "file://2.46.2/0001-debug-rendering.patch"
 SRC_URI += "file://2.46.2/0001-debug-CMAKE.patch"
 SRC_URI += "file://2.46.2/0001-rendering-2.46.patch"
+SRC_URI += "file://2.46.2/0001-additional-redering-debug.patch"
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"
