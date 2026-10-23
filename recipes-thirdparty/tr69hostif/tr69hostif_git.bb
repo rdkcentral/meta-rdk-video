@@ -165,7 +165,7 @@ do_install:append() {
         install -m 0644 ${S}/conf/rfcdefaults/tr69hostif.ini ${D}${sysconfdir}/rfcdefaults
 
         # RDKEMW-26997 - with kernel 6.X, cgroupv2 and older systemd230, process fails to start.
-        if ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_KERNEL6_CGROUPV2', 'true', 'false', d)}; then
+        if ${@bb.utils.contains('DISTRO_FEATURES', 'enable_kernel6_cgroupv2', 'true', 'false', d)}; then
             if [ -f "${D}${systemd_unitdir}/system/parodus.service" ]; then
                 sed -i '/^PIDFile=\/run\/parodus\.pid$/d' "${D}${systemd_unitdir}/system/parodus.service"
             fi
