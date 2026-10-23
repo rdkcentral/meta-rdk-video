@@ -11,7 +11,6 @@ inherit python3native cmake pkgconfig
 
 SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https;branch=R4_4;name=wpeframework-clientlibraries \
            file://r4.4/Library-version-Matched-With-Release-ClientLibs.patch \
-           file://r4.4/0004-R4-Security-Agent-Library-NameChange.patch \
            file://r4.4/0004-Cipher-CipherNetflix-methods-return-type-changes.patch \
            file://r4.4/R4.2_compilation_error_assert.patch \
            file://r4.4/0001-Cryptography-CipherNetflix.r4.4.patch \
