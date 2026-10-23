@@ -14,7 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFF
           "
 
 # Release version - 1.4.9
-SRCREV = "f31899d61472a1537ec6fd1194c3011e7d4982c4"
+SRCREV = "c7519329de6b1af6ac9e8a64694ffc64bf8830c3"
 SRCREV:vdevice_x86-64-mw = "c7519329de6b1af6ac9e8a64694ffc64bf8830c3"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -25,7 +25,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 EXTRA_OECMAKE += " -DBUILD_ENABLE_THERMAL_PROTECTION=ON "
-EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
+EXTRA_OECMAKE:append = " \
     -DENABLE_POWERMANAGER_AIDL=ON \
     -DPOWERMANAGER_AIDL_STAGING_INCLUDE_DIR=${STAGING_INCDIR} \
     -DAIDL_DEEPSLEEP_INCLUDE_DIR=${STAGING_INCDIR}/mw/deepsleep/0.1.0.0/include \
@@ -37,9 +37,9 @@ EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
 "
 
 DEPENDS += "power-manager-headers wpeframework wpeframework-tools-native"
-DEPENDS:append:vdevice_x86-64-mw = " deepsleep-manager-headers"
+DEPENDS:append= " deepsleep-manager-headers"
 
-CXXFLAGS:append:vdevice_x86-64-mw = " \
+CXXFLAGS:append = " \
     -I${STAGING_INCDIR}/mw/deepsleep/0.1.0.0/include \
     -I${STAGING_INCDIR}/mw/bootreason/0.1.0.0/include \
     -I${STAGING_INCDIR}/mw/common/0.2.0.0/include \
@@ -53,7 +53,7 @@ CXXFLAGS:append:vdevice_x86-64-mw = " \
     -Wno-error=unknown-pragmas \
     -Wno-error=write-strings \
 "
-LDFLAGS:append:vdevice_x86-64-mw = " \
+LDFLAGS:append = " \
     -L${STAGING_DIR_HOST}${prefix}/mw/lib/binder \
     -L${STAGING_LIBDIR}/mw/rdk-halif-aidl \
 "
@@ -87,12 +87,11 @@ PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
     powermanager \
 "
-
-POWERMANAGER_DEPS = "iarmbus iarmmgrs virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal virtual/mfrlib entservices-apis entservices-helpers"
+POWERMANAGER_DEPS = "iarmbus iarmmgrs virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal virtual/mfrlib entservices-apis entservices-helpers rdk-halif-aidl-mw libbinderrdk"
 POWERMANAGER_DEPS:vdevice_x86-64-mw = "iarmbus vdevice-noop virtual/mfrlib entservices-apis entservices-helpers rdk-halif-aidl-mw libbinderrdk"
 
-POWERMANAGER_RDEPS = "virtual/mfrlib entservices-apis entservices-helpers"
-POWERMANAGER_RDEPS:vdevice_x86-64-mw = "virtual/mfrlib entservices-apis entservices-helpers libbinderrdk rdk-halif-aidl-mw-deepsleep rdk-halif-aidl-mw-bootreason rdk-halif-aidl-mw-common"
+# POWERMANAGER_RDEPS = "virtual/mfrlib entservices-apis entservices-helpers"
+POWERMANAGER_RDEPS = "virtual/mfrlib entservices-apis entservices-helpers libbinderrdk rdk-halif-aidl-mw-deepsleep rdk-halif-aidl-mw-bootreason rdk-halif-aidl-mw-common"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
@@ -113,7 +112,7 @@ python () {
         d.appendVar('EXTRA_OECMAKE', ' -DBUILD_RPI=ON')
 }
 
-do_configure:prepend:vdevice_x86-64-mw() {
+do_configure:prepend() {
     for source in \
         ${S}/plugin/hal/PowerManagerFactory.cpp \
         ${S}/plugin/hal/PowerAidlImpl.h; do
@@ -128,7 +127,7 @@ do_configure:prepend:vdevice_x86-64-mw() {
     done
 }
 
-do_configure:append:vdevice_x86-64-mw() {
+do_configure:append() {
     if [ ! -e "${STAGING_INCDIR}/rdk/halif/deepsleep-manager/deepSleepMgr.h" ]; then
         bbfatal "Unable to locate staged deepSleepMgr.h from deepsleep-manager-headers"
     fi
