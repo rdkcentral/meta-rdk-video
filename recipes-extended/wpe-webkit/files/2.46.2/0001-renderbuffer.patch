@@ -1,0 +1,158 @@
+From 89ce7a974344a713fa270ca2c70126407a8a4af0 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Sat, 31 Oct 2026 10:03:27 +0000
+Subject: [PATCH] renderbuffer
+
+---
+ .../libANGLE/renderer/gl/RenderbufferGL.cpp   | 11 +++++++
+ .../src/libANGLE/renderer/gl/TextureGL.cpp    |  2 ++
+ .../graphics/angle/GraphicsContextGLANGLE.cpp | 30 ++++++++++++++++++-
+ 3 files changed, 42 insertions(+), 1 deletion(-)
+
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/RenderbufferGL.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/RenderbufferGL.cpp
+index b28879b355d0..ed48c84e81f6 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/RenderbufferGL.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/RenderbufferGL.cpp
+@@ -93,6 +93,17 @@ class GpuDbgRenderbufferStorage
+ };
+ }
+ 
++void GpuDbgDumpRenderbufferStats(const char *reason)
++{
++    std::lock_guard<std::mutex> lock(gpuDbgRenderbufferMutex);
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_SNAPSHOT reason=%s pid=%d backend=ANGLE liveCount=%zu liveEstBytes=%llu peakEstBytes=%llu\n",
++        reason, getpid(), gpuDbgRenderbufferBytes.size(), gpuDbgRenderbufferLiveBytes,
++        gpuDbgRenderbufferPeakBytes);
++    for (const auto &entry : gpuDbgRenderbufferBytes)
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_LIVE reason=%s pid=%d object=%p estBytes=%llu\n",
++        reason, getpid(), entry.first, entry.second);
++}
++
+ RenderbufferGL::RenderbufferGL(const gl::RenderbufferState &state, GLuint id)
+     : RenderbufferImpl(state), mRenderbufferID(id)
+ {
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+index fa59d3542bd2..a1b74fd92ea2 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+@@ -43,6 +43,7 @@ using angle::CheckedNumeric;
+ 
+ namespace rx
+ {
++void GpuDbgDumpRenderbufferStats(const char *reason);
+ 
+ // [GPUDEBUG] per-process accounting of native GL texture memory (estimated, excludes driver padding).
+ namespace gpudbg
+@@ -146,6 +147,7 @@ void GpuDbgDumpStats(const char *reason)
+     static const char *const selfKeys[] = {"VmRSS", "VmSize"};
+     gpudbg::DumpProcFile("/proc/meminfo", memKeys, 4);
+     gpudbg::DumpProcFile("/proc/self/status", selfKeys, 2);
++    GpuDbgDumpRenderbufferStats(reason);
+     GPUDebugNexus::dump(reason);
+     {
+         static unsigned s_gpuDbgProcDumps = 0;
+diff --git a/Source/WebCore/platform/graphics/angle/GraphicsContextGLANGLE.cpp b/Source/WebCore/platform/graphics/angle/GraphicsContextGLANGLE.cpp
+index 6dfc060e1df9..329b91e086f5 100644
+--- a/Source/WebCore/platform/graphics/angle/GraphicsContextGLANGLE.cpp
++++ b/Source/WebCore/platform/graphics/angle/GraphicsContextGLANGLE.cpp
+@@ -113,8 +113,12 @@ bool GraphicsContextGLANGLE::initialize()
+         GL_Enable(GraphicsContextGL::PRIMITIVE_RESTART_FIXED_INDEX);
+ 
+     // Nothing else to do on nonCompositedWebGL mode.
+-    if (m_rendersToHostWindow)
++    if (m_rendersToHostWindow) {
++        fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_INIT ctx=%p backend=ANGLE hostWindow=1 internalOffscreenBuffers=skipped antialias=%d depth=%d stencil=%d\n",
++            this, attributes.antialias, attributes.depth, attributes.stencil);
++        GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_INIT_HOST_WINDOW");
+         return platformInitialize();
++    }
+ 
+     // Create the texture that will be used for the framebuffer.
+     GLenum textureTarget = drawingBufferTextureTarget();
+@@ -155,6 +159,8 @@ bool GraphicsContextGLANGLE::initialize()
+         // Create an FBO with which to perform BlitFramebuffer from one texture to the other.
+         GL_GenFramebuffers(1, &m_preserveDrawingBufferFBO);
+     }
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_INIT ctx=%p backend=ANGLE hostWindow=0 fbo=%u depthStencilRB=%u multisampleFBO=%u multisampleColorRB=%u multisampleDepthStencilRB=%u\n",
++        this, m_fbo, m_depthStencilBuffer, m_multisampleFBO, m_multisampleColorBuffer, m_multisampleDepthStencilBuffer);
+ 
+     GL_ClearColor(0, 0, 0, 0);
+ 
+@@ -445,7 +451,12 @@ void GraphicsContextGLANGLE::renderbufferStorage(GCGLenum target, GCGLenum inter
+     if (!makeContextCurrent())
+         return;
+ 
++    GLint gpuDbgBound = 0;
++    GL_GetIntegerv(GL_RENDERBUFFER_BINDING, &gpuDbgBound);
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_API_STORAGE ctx=%p backend=ANGLE rb=%d target=0x%x format=0x%x width=%d height=%d samples=0\n", this, gpuDbgBound, target, internalformat, width, height);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_API_STORAGE_BEFORE");
+     GL_RenderbufferStorage(target, internalformat, width, height);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_API_STORAGE_AFTER");
+ }
+ 
+ void GraphicsContextGLANGLE::getIntegerv(GCGLenum pname, std::span<GCGLint> value)
+@@ -842,6 +853,7 @@ void GraphicsContextGLANGLE::bindRenderbuffer(GCGLenum target, PlatformGLObject
+         return;
+ 
+     GL_BindRenderbuffer(target, renderbuffer);
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_API_BIND ctx=%p backend=ANGLE target=0x%x rb=%u\n", this, target, renderbuffer);
+ }
+ 
+ 
+@@ -966,7 +978,12 @@ void GraphicsContextGLANGLE::renderbufferStorageMultisample(GCGLenum target, GCG
+     if (!makeContextCurrent())
+         return;
+ 
++    GLint gpuDbgBound = 0;
++    GL_GetIntegerv(GL_RENDERBUFFER_BINDING, &gpuDbgBound);
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_API_STORAGE ctx=%p backend=ANGLE rb=%d target=0x%x format=0x%x width=%d height=%d samples=%d path=core_ms\n", this, gpuDbgBound, target, internalformat, width, height, samples);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_API_STORAGE_MS_BEFORE");
+     GL_RenderbufferStorageMultisample(target, samples, internalformat, width, height);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_API_STORAGE_MS_AFTER");
+ }
+ 
+ void GraphicsContextGLANGLE::renderbufferStorageMultisampleANGLE(GCGLenum target, GCGLsizei samples, GCGLenum internalformat, GCGLsizei width, GCGLsizei height)
+@@ -974,7 +991,12 @@ void GraphicsContextGLANGLE::renderbufferStorageMultisampleANGLE(GCGLenum target
+     if (!makeContextCurrent())
+         return;
+ 
++    GLint gpuDbgBound = 0;
++    GL_GetIntegerv(GL_RENDERBUFFER_BINDING, &gpuDbgBound);
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_API_STORAGE ctx=%p backend=ANGLE rb=%d target=0x%x format=0x%x width=%d height=%d samples=%d path=angle_ms\n", this, gpuDbgBound, target, internalformat, width, height, samples);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_API_STORAGE_MS_BEFORE");
+     GL_RenderbufferStorageMultisampleANGLE(target, samples, internalformat, width, height);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_API_STORAGE_MS_AFTER");
+ }
+ 
+ void GraphicsContextGLANGLE::texStorage2D(GCGLenum target, GCGLsizei levels, GCGLenum internalformat, GCGLsizei width, GCGLsizei height)
+@@ -1269,6 +1291,8 @@ void GraphicsContextGLANGLE::framebufferRenderbuffer(GCGLenum target, GCGLenum a
+         return;
+ 
+     GL_FramebufferRenderbuffer(target, attachment, renderbuffertarget, buffer);
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_API_ATTACH ctx=%p backend=ANGLE target=0x%x attachment=0x%x rbTarget=0x%x rb=%u drawFBO=%u readFBO=%u\n",
++        this, target, attachment, renderbuffertarget, buffer, m_state.boundDrawFBO, m_state.boundReadFBO);
+ }
+ 
+ void GraphicsContextGLANGLE::framebufferTexture2D(GCGLenum target, GCGLenum attachment, GCGLenum textarget, PlatformGLObject texture, GCGLint level)
+@@ -2164,6 +2188,7 @@ PlatformGLObject GraphicsContextGLANGLE::createRenderbuffer()
+ 
+     GLuint o = 0;
+     GL_GenRenderbuffers(1, &o);
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_API_CREATE ctx=%p backend=ANGLE rb=%u\n", this, o);
+     return o;
+ }
+ 
+@@ -2227,7 +2252,10 @@ void GraphicsContextGLANGLE::deleteRenderbuffer(PlatformGLObject renderbuffer)
+     if (!makeContextCurrent())
+         return;
+ 
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_API_DELETE ctx=%p backend=ANGLE rb=%u\n", this, renderbuffer);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_API_DELETE_BEFORE");
+     GL_DeleteRenderbuffers(1, &renderbuffer);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_API_DELETE_AFTER");
+ }
+ 
+ void GraphicsContextGLANGLE::deleteShader(PlatformGLObject shader)
+-- 
+2.44.4
+
