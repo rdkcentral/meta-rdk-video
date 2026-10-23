@@ -1,0 +1,1489 @@
+From 8a5c6c1b21fbb4cab91facdd891aad59f1275a89 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Tue, 20 Oct 2026 19:18:52 +0300
+Subject: [PATCH] RDKEMW-27354 : entservices-helpers contains duplicate
+ definitons
+
+Reason for change: Logging macros are expected to be defined only in
+UtilsLogging.h. However at present they are also defined in utils.h.
+Same for returnResponse, sendNotify macros (defined in UtilsJsonRpc.h), IARM
+struct (defined in UtilsIarm.h), etc.
+This needs to be fixed.
+Original repo for rdkservices already had a refactored version of helpers where
+"utils.h" and "utils.cpp" were eliminated to follow Separation of Concerns.
+For some reason, they were copy-pasted from old codebase into RDK-E and now are
+part of entservices-helpers along with new separated headers. "utils.h" and
+"utils.cpp" contain duplicate definitons that already exist in other files
+(UtilsLogging.h, UtilsIarm.h, ...) and thus unnecessary.
+"utils.cpp" is the only translation module built by entservices-helpers as
+shared library, thus by eliminating "utils.h" and "utils.cpp"
+entservices-helpers package becomes INTERFACE library (no .so). No change is
+needed to other components that use entservices-helpers, they will continue
+linking entservices-helpers package but only headers will be used.
+Pre-requisite for CPESP-10472
+Test Procedure: None
+Risks: Low
+version: Patch
+---
+ Tests/L1Tests/CMakeLists.txt       |   1 -
+ Tests/L1Tests/tests/test_Utils.cpp | 483 -----------------------------
+ cmake/FindDS.cmake                 |  51 ---
+ cmake/FindIARMBus.cmake            |  50 ---
+ helpers/AbstractPlugin.h           |   3 +-
+ helpers/CMakeLists.txt             |  52 +---
+ helpers/utils.cpp                  | 311 -------------------
+ helpers/utils.h                    | 411 ------------------------
+ 8 files changed, 4 insertions(+), 1358 deletions(-)
+ delete mode 100644 Tests/L1Tests/tests/test_Utils.cpp
+ delete mode 100644 cmake/FindDS.cmake
+ delete mode 100644 cmake/FindIARMBus.cmake
+ delete mode 100755 helpers/utils.cpp
+ delete mode 100755 helpers/utils.h
+
+diff --git a/Tests/L1Tests/CMakeLists.txt b/Tests/L1Tests/CMakeLists.txt
+index 9606ebe..63aea3c 100644
+--- a/Tests/L1Tests/CMakeLists.txt
++++ b/Tests/L1Tests/CMakeLists.txt
+@@ -123,7 +123,6 @@ add_plugin_test_ex(PLUGIN_HELPERS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_Utilss
+ add_plugin_test_ex(PLUGIN_HELPERS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_UtilsSynchro.cpp" "${HELPERS_INC}" "${HELPERS_LIBS}")
+ add_plugin_test_ex(PLUGIN_HELPERS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_UtilsThreadRAII.cpp" "${HELPERS_INC}" "${HELPERS_LIBS}")
+ add_plugin_test_ex(PLUGIN_HELPERS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_UtilsProcess.cpp" "${HELPERS_INC}" "${HELPERS_LIBS}")
+-add_plugin_test_ex(PLUGIN_HELPERS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_Utils.cpp" "${HELPERS_INC}" "${HELPERS_LIBS}")
+ 
+ add_library(${MODULE_NAME} SHARED ${TEST_SRC})
+ 
+diff --git a/Tests/L1Tests/tests/test_Utils.cpp b/Tests/L1Tests/tests/test_Utils.cpp
+deleted file mode 100644
+index 9dfb6d6..0000000
+--- a/Tests/L1Tests/tests/test_Utils.cpp
++++ /dev/null
+@@ -1,483 +0,0 @@
+-/**
+- * If not stated otherwise in this file or this component's LICENSE file the
+- * following copyright and licenses apply:
+- *
+- * Copyright 2024 RDK Management
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- * http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- **/
+-
+-
+-#include <gtest/gtest.h>
+-#include <gmock/gmock.h>
+-#include <sys/stat.h>
+-#include <unistd.h>
+-
+-#include "IarmBusMock.h"
+-#include "utils.h"
+-
+-using ::testing::_;
+-using ::testing::Invoke;
+-using ::testing::NiceMock;
+-using ::testing::Return;
+-
+-// ---------------------------------------------------------------------------
+-// Fixture shared by IARM::isConnected and IARM::init tests
+-// ---------------------------------------------------------------------------
+-class UtilsIARMTest : public ::testing::Test
+-{
+-protected:
+-    NiceMock<IarmBusImplMock>* p_iarmBusImplMock = nullptr;
+-
+-    void SetUp() override
+-    {
+-        p_iarmBusImplMock = new NiceMock<IarmBusImplMock>();
+-        IarmBus::setImpl(p_iarmBusImplMock);
+-    }
+-
+-    void TearDown() override
+-    {
+-        IarmBus::setImpl(nullptr);
+-        delete p_iarmBusImplMock;
+-        p_iarmBusImplMock = nullptr;
+-    }
+-};
+-
+-
+-// isConnected() returns true when IARM_Bus_IsConnected sets isRegistered = 1
+-TEST_F(UtilsIARMTest, IsConnectedReturnsTrueWhenRegistered)
+-{
+-    LOGDBG("Testing IARM::isConnected returns true when registered");
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_IsConnected(_, _))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 1;
+-            return IARM_RESULT_SUCCESS;
+-        }));
+-
+-    bool result = Helpers::IARM::isConnected();
+-    EXPECT_TRUE(result);
+-}
+-
+-// isConnected() returns false when IARM_Bus_IsConnected sets isRegistered = 0
+-TEST_F(UtilsIARMTest, IsConnectedReturnsFalseWhenNotRegistered)
+-{
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_IsConnected(_, _))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 0;
+-            return IARM_RESULT_SUCCESS;
+-        }));
+-
+-    bool result = Helpers::IARM::isConnected();
+-    EXPECT_FALSE(result);
+-}
+-
+-// isConnected() uses NAME = "Thunder_Plugins" as the member name argument
+-TEST_F(UtilsIARMTest, IsConnectedPassesCorrectMemberName)
+-{
+-    EXPECT_CALL(*p_iarmBusImplMock,
+-                IARM_Bus_IsConnected(::testing::StrEq("Thunder_Plugins"), _))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 1;
+-            return IARM_RESULT_SUCCESS;
+-        }));
+-
+-    Helpers::IARM::isConnected();
+-}
+-
+-// isConnected() result depends only on isRegistered; even a non-SUCCESS
+-// IARM_Result_t still returns true if isRegistered was set to 1
+-TEST_F(UtilsIARMTest, IsConnectedIgnoresIARMResultCode)
+-{
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_IsConnected(_, _))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 1;              // registered
+-            return IARM_RESULT_INVALID_STATE; // non-success result — ignored
+-        }));
+-
+-    bool result = Helpers::IARM::isConnected();
+-    EXPECT_TRUE(result);
+-}
+-
+-
+-// init() returns true immediately when already connected (no Init/Connect calls)
+-TEST_F(UtilsIARMTest, InitReturnsTrueWhenAlreadyConnected)
+-{
+-    // isConnected() → registered = 1 → true on first call
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_IsConnected(_, _))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 1;
+-            return IARM_RESULT_SUCCESS;
+-        }));
+-
+-    // Init and Connect must NOT be called
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Init(_)).Times(0);
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Connect()).Times(0);
+-
+-    bool result = Helpers::IARM::init();
+-    EXPECT_TRUE(result);
+-}
+-
+-// init() runs Init+Connect when not yet connected; returns true on success
+-TEST_F(UtilsIARMTest, InitReturnsTrueAfterSuccessfulInitAndConnect)
+-{
+-    // Call 1: isConnected() → not registered (triggers Init path)
+-    // Call 2: isConnected() at end → registered (init succeeded)
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_IsConnected(_, _))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 0;
+-            return IARM_RESULT_SUCCESS;
+-        }))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 1;
+-            return IARM_RESULT_SUCCESS;
+-        }));
+-
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Init(_))
+-        .WillOnce(Return(IARM_RESULT_SUCCESS));
+-
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Connect())
+-        .WillOnce(Return(IARM_RESULT_SUCCESS));
+-
+-    bool result = Helpers::IARM::init();
+-    EXPECT_TRUE(result);
+-}
+-
+-// init() treats INVALID_STATE from IARM_Bus_Init as acceptable (already inited)
+-TEST_F(UtilsIARMTest, InitTreatsInvalidStateFromInitAsAcceptable)
+-{
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_IsConnected(_, _))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 0;
+-            return IARM_RESULT_SUCCESS;
+-        }))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 1;
+-            return IARM_RESULT_SUCCESS;
+-        }));
+-
+-    // IARM_RESULT_INVALID_STATE = already initialised — treated as success
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Init(_))
+-        .WillOnce(Return(IARM_RESULT_INVALID_STATE));
+-
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Connect())
+-        .WillOnce(Return(IARM_RESULT_SUCCESS));
+-
+-    bool result = Helpers::IARM::init();
+-    EXPECT_TRUE(result);
+-}
+-
+-// init() treats INVALID_STATE from IARM_Bus_Connect as acceptable (already connected)
+-TEST_F(UtilsIARMTest, InitTreatsInvalidStateFromConnectAsAcceptable)
+-{
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_IsConnected(_, _))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 0;
+-            return IARM_RESULT_SUCCESS;
+-        }))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 1;
+-            return IARM_RESULT_SUCCESS;
+-        }));
+-
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Init(_))
+-        .WillOnce(Return(IARM_RESULT_SUCCESS));
+-
+-    // IARM_RESULT_INVALID_STATE = already connected — treated as success
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Connect())
+-        .WillOnce(Return(IARM_RESULT_INVALID_STATE));
+-
+-    bool result = Helpers::IARM::init();
+-    EXPECT_TRUE(result);
+-}
+-
+-// init() returns false when IARM_Bus_Init fails (not SUCCESS or INVALID_STATE)
+-TEST_F(UtilsIARMTest, InitReturnsFalseWhenInitFails)
+-{
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_IsConnected(_, _))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 0;
+-            return IARM_RESULT_SUCCESS;
+-        }));
+-
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Init(_))
+-        .WillOnce(Return(IARM_RESULT_IPCCORE_FAIL));
+-
+-    // Connect must NOT be called if Init failed
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Connect()).Times(0);
+-
+-    bool result = Helpers::IARM::init();
+-    EXPECT_FALSE(result);
+-}
+-
+-// init() returns false when IARM_Bus_Connect fails
+-TEST_F(UtilsIARMTest, InitReturnsFalseWhenConnectFails)
+-{
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_IsConnected(_, _))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 0;
+-            return IARM_RESULT_SUCCESS;
+-        }));
+-
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Init(_))
+-        .WillOnce(Return(IARM_RESULT_SUCCESS));
+-
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Connect())
+-        .WillOnce(Return(IARM_RESULT_IPCCORE_FAIL));
+-
+-    bool result = Helpers::IARM::init();
+-    EXPECT_FALSE(result);
+-}
+-
+-// init() returns false when Init succeeds but isConnected() returns false
+-// even after Connect succeeds (edge case: bus reports not-connected post-connect)
+-TEST_F(UtilsIARMTest, InitReturnsFalseWhenStillNotConnectedAfterInitAndConnect)
+-{
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_IsConnected(_, _))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 0;
+-            return IARM_RESULT_SUCCESS;
+-        }))
+-        .WillOnce(Invoke([](const char*, int* isRegistered) -> IARM_Result_t {
+-            *isRegistered = 0; // still not connected after connect
+-            return IARM_RESULT_SUCCESS;
+-        }));
+-
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Init(_))
+-        .WillOnce(Return(IARM_RESULT_SUCCESS));
+-
+-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_Connect())
+-        .WillOnce(Return(IARM_RESULT_SUCCESS));
+-
+-    bool result = Helpers::IARM::init();
+-    EXPECT_FALSE(result);
+-}
+-
+-
+-TEST(FormatIARMResultTest, ReturnsCorrectStringForSuccess)
+-{
+-    std::string result = Helpers::formatIARMResult(IARM_RESULT_SUCCESS);
+-    EXPECT_EQ(result, "IARM_RESULT_SUCCESS [success]");
+-}
+-
+-TEST(FormatIARMResultTest, ReturnsCorrectStringForInvalidParam)
+-{
+-    std::string result = Helpers::formatIARMResult(IARM_RESULT_INVALID_PARAM);
+-    EXPECT_EQ(result, "IARM_RESULT_INVALID_PARAM [invalid input parameter]");
+-}
+-
+-TEST(FormatIARMResultTest, ReturnsCorrectStringForInvalidState)
+-{
+-    std::string result = Helpers::formatIARMResult(IARM_RESULT_INVALID_STATE);
+-    EXPECT_EQ(result, "IARM_RESULT_INVALID_STATE [invalid state encountered]");
+-}
+-
+-TEST(FormatIARMResultTest, ReturnsCorrectStringForIpcCoreFail)
+-{
+-    // NOTE: production code returns "IARM_RESULT_IPCORE_FAIL" (one C)
+-    // even though the enum is IARM_RESULT_IPCCORE_FAIL (two C's).
+-    // The test asserts the actual production output.
+-    std::string result = Helpers::formatIARMResult(IARM_RESULT_IPCCORE_FAIL);
+-    EXPECT_EQ(result, "IARM_RESULT_IPCORE_FAIL [underlying IPC failure]");
+-}
+-
+-TEST(FormatIARMResultTest, ReturnsCorrectStringForOOM)
+-{
+-    std::string result = Helpers::formatIARMResult(IARM_RESULT_OOM);
+-    EXPECT_EQ(result, "IARM_RESULT_OOM [out of memory]");
+-}
+-
+-TEST(FormatIARMResultTest, ReturnsUnknownStringForUnrecognisedValue)
+-{
+-    // Cast an out-of-range value to exercise the default branch
+-    IARM_Result_t unknownVal = static_cast<IARM_Result_t>(999);
+-    std::string result = Helpers::formatIARMResult(unknownVal);
+-    EXPECT_EQ(result, "999 [unknown IARM_Result_t]");
+-}
+-
+-
+-
+-TEST(ReadPropertyValueTest, ReturnsFalseForEmptyString)
+-{
+-    std::vector<std::string> list;
+-    bool result = Helpers::String::readPropertyValue("", list);
+-    EXPECT_FALSE(result);
+-    EXPECT_TRUE(list.empty());
+-}
+-
+-TEST(ReadPropertyValueTest, ReturnsFalseWhenNoEqualsSign)
+-{
+-    std::vector<std::string> list;
+-    bool result = Helpers::String::readPropertyValue("NOEQUALSSIGN", list);
+-    EXPECT_FALSE(result);
+-    EXPECT_TRUE(list.empty());
+-}
+-
+-TEST(ReadPropertyValueTest, ReturnsTrueAndExtractsSingleValue)
+-{
+-    std::vector<std::string> list;
+-    bool result = Helpers::String::readPropertyValue("KEY=hello", list);
+-    EXPECT_TRUE(result);
+-    ASSERT_EQ(list.size(), 1u);
+-    EXPECT_EQ(list[0], "hello");
+-}
+-
+-TEST(ReadPropertyValueTest, ReturnsTrueAndExtractsMultipleSpaceSeparatedValues)
+-{
+-    std::vector<std::string> list;
+-    bool result = Helpers::String::readPropertyValue("KEY=a b c", list);
+-    EXPECT_TRUE(result);
+-    ASSERT_EQ(list.size(), 3u);
+-    EXPECT_EQ(list[0], "a");
+-    EXPECT_EQ(list[1], "b");
+-    EXPECT_EQ(list[2], "c");
+-}
+-
+-TEST(ReadPropertyValueTest, ReturnsTrueAndExtractsParenthesisFormat)
+-{
+-    std::vector<std::string> list;
+-    bool result = Helpers::String::readPropertyValue("KEY=(v1 v2)", list);
+-    EXPECT_TRUE(result);
+-    ASSERT_EQ(list.size(), 2u);
+-    EXPECT_EQ(list[0], "v1");
+-    EXPECT_EQ(list[1], "v2");
+-}
+-
+-TEST(ReadPropertyValueTest, StripsTrailingNewline)
+-{
+-    std::vector<std::string> list;
+-    bool result = Helpers::String::readPropertyValue("KEY=value\n", list);
+-    EXPECT_TRUE(result);
+-    ASSERT_EQ(list.size(), 1u);
+-    EXPECT_EQ(list[0], "value");
+-}
+-
+-TEST(ReadPropertyValueTest, StripsTrailingCarriageReturn)
+-{
+-    std::vector<std::string> list;
+-    bool result = Helpers::String::readPropertyValue("KEY=value\r", list);
+-    EXPECT_TRUE(result);
+-    ASSERT_EQ(list.size(), 1u);
+-    EXPECT_EQ(list[0], "value");
+-}
+-
+-TEST(ReadPropertyValueTest, ReturnsFalseWhenValueAfterEqualsIsEmpty)
+-{
+-    std::vector<std::string> list;
+-    bool result = Helpers::String::readPropertyValue("KEY=", list);
+-    EXPECT_FALSE(result);
+-    EXPECT_TRUE(list.empty());
+-}
+-
+-
+-static std::string writeTempFile(const std::string& content)
+-{
+-    char tmpPath[] = "/tmp/test_utils_XXXXXX";
+-    mode_t old_mask = umask(S_IRWXG | S_IRWXO);
+-    int fd = mkstemp(tmpPath);
+-    umask(old_mask);
+-    if (fd != -1)
+-    {
+-        auto n = write(fd, content.c_str(), content.size()); (void)n;
+-        close(fd);
+-    }
+-    return std::string(tmpPath);
+-}
+-
+-TEST(HelpersReadPropertyFromFileTest, ReturnsFalseForNonExistentFile)
+-{
+-    std::vector<std::string> list;
+-    bool result = Helpers::readPropertyFromFile(
+-        "/tmp/does_not_exist_utils_test.txt", "KEY", list);
+-    EXPECT_FALSE(result);
+-    EXPECT_TRUE(list.empty());
+-}
+-
+-TEST(HelpersReadPropertyFromFileTest, ReturnsTrueAndExtractsValueForMatchingProperty)
+-{
+-    std::string path = writeTempFile("MYKEY=hello\n");
+-    std::vector<std::string> list;
+-    bool result = Helpers::readPropertyFromFile(path.c_str(), "MYKEY", list);
+-    EXPECT_TRUE(result);
+-    ASSERT_EQ(list.size(), 1u);
+-    EXPECT_EQ(list[0], "hello");
+-    (void)remove(path.c_str());
+-}
+-
+-TEST(HelpersReadPropertyFromFileTest, ReturnsFalseWhenPropertyNotFound)
+-{
+-    std::string path = writeTempFile("OTHER=value\n");
+-    std::vector<std::string> list;
+-    bool result = Helpers::readPropertyFromFile(path.c_str(), "MYKEY", list);
+-    EXPECT_FALSE(result);
+-    EXPECT_TRUE(list.empty());
+-    (void)remove(path.c_str());
+-}
+-
+-TEST(HelpersReadPropertyFromFileTest, SkipsCommentLines)
+-{
+-    std::string path = writeTempFile("# MYKEY=commented\nMYKEY=real\n");
+-    std::vector<std::string> list;
+-    bool result = Helpers::readPropertyFromFile(path.c_str(), "MYKEY", list);
+-    EXPECT_TRUE(result);
+-    ASSERT_EQ(list.size(), 1u);
+-    EXPECT_EQ(list[0], "real");
+-    (void)remove(path.c_str());
+-}
+-
+-TEST(HelpersReadPropertyFromFileTest, SkipsEmptyLines)
+-{
+-    std::string path = writeTempFile("\n\nMYKEY=found\n");
+-    std::vector<std::string> list;
+-    bool result = Helpers::readPropertyFromFile(path.c_str(), "MYKEY", list);
+-    EXPECT_TRUE(result);
+-    ASSERT_EQ(list.size(), 1u);
+-    EXPECT_EQ(list[0], "found");
+-    (void)remove(path.c_str());
+-}
+-
+-TEST(HelpersReadPropertyFromFileTest, ExtractsMultipleValuesInParenthesisFormat)
+-{
+-    std::string path = writeTempFile("MYKEY=(val1 val2 val3)\n");
+-    std::vector<std::string> list;
+-    bool result = Helpers::readPropertyFromFile(path.c_str(), "MYKEY", list);
+-    EXPECT_TRUE(result);
+-    ASSERT_EQ(list.size(), 3u);
+-    EXPECT_EQ(list[0], "val1");
+-    EXPECT_EQ(list[1], "val2");
+-    EXPECT_EQ(list[2], "val3");
+-    (void)remove(path.c_str());
+-}
+-
+-TEST(HelpersReadPropertyFromFileTest, MatchesOnlyLineStartingWithProperty)
+-{
+-    std::string path = writeTempFile("NOTMYKEY=x\nMYKEY=correct\n");
+-    std::vector<std::string> list;
+-    bool result = Helpers::readPropertyFromFile(path.c_str(), "MYKEY", list);
+-    EXPECT_TRUE(result);
+-    ASSERT_EQ(list.size(), 1u);
+-    EXPECT_EQ(list[0], "correct");
+-    (void)remove(path.c_str());
+-}
+-
+-TEST(HelpersReadPropertyFromFileTest, StopsAtFirstMatchingLine)
+-{
+-    std::string path = writeTempFile("MYKEY=first\nMYKEY=second\n");
+-    std::vector<std::string> list;
+-    bool result = Helpers::readPropertyFromFile(path.c_str(), "MYKEY", list);
+-    EXPECT_TRUE(result);
+-    ASSERT_EQ(list.size(), 1u);
+-    EXPECT_EQ(list[0], "first");
+-    (void)remove(path.c_str());
+-}
+-
+-
+diff --git a/cmake/FindDS.cmake b/cmake/FindDS.cmake
+deleted file mode 100644
+index af2a7a1..0000000
+--- a/cmake/FindDS.cmake
++++ /dev/null
+@@ -1,51 +0,0 @@
+-# If not stated otherwise in this file or this component's license file the
+-# following copyright and licenses apply:
+-#
+-# Copyright 2020 RDK Management
+-#
+-# Licensed under the Apache License, Version 2.0 (the "License");
+-# you may not use this file except in compliance with the License.
+-# You may obtain a copy of the License at
+-#
+-# http://www.apache.org/licenses/LICENSE-2.0
+-#
+-# Unless required by applicable law or agreed to in writing, software
+-# distributed under the License is distributed on an "AS IS" BASIS,
+-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-# See the License for the specific language governing permissions and
+-# limitations under the License.
+-
+-# - Try to find Display Settings library
+-# Once done this will define
+-#  DS_FOUND - System has DS
+-#  DS_INCLUDE_DIRS - The DS include directories
+-#  DS_LIBRARIES - The libraries needed to use DS
+-#  DS_FLAGS - The flags needed to use DS
+-#
+-
+-find_package(PkgConfig)
+-
+-find_library(DS_LIBRARIES NAMES ds)
+-find_library(DSHAL_LIBRARIES NAMES dshalcli)
+-find_library(OEMHAL_LIBRARIES NAMES ds-hal)
+-find_library(IARMBUS_LIBRARIES NAMES IARMBus)
+-find_path(DS_INCLUDE_DIRS NAMES manager.hpp PATH_SUFFIXES rdk/ds)
+-find_path(DSHAL_INCLUDE_DIRS NAMES dsTypes.h PATH_SUFFIXES rdk/halif/ds-hal)
+-find_path(DSRPC_INCLUDE_DIRS NAMES dsMgr.h PATH_SUFFIXES rdk/ds-rpc)
+-
+-set(DS_LIBRARIES ${DS_LIBRARIES} ${DSHAL_LIBRARIES})
+-set(DS_LIBRARIES ${DS_LIBRARIES} CACHE PATH "Path to DS library")
+-set(DS_INCLUDE_DIRS ${DS_INCLUDE_DIRS} ${DSHAL_INCLUDE_DIRS} ${DSRPC_INCLUDE_DIRS})
+-set(DS_INCLUDE_DIRS ${DS_INCLUDE_DIRS} CACHE PATH "Path to DS include")
+-
+-
+-
+-include(FindPackageHandleStandardArgs)
+-FIND_PACKAGE_HANDLE_STANDARD_ARGS(DS DEFAULT_MSG DS_INCLUDE_DIRS DS_LIBRARIES)
+-
+-mark_as_advanced(
+-    DS_FOUND
+-    DS_INCLUDE_DIRS
+-    DS_LIBRARIES
+-    DS_LIBRARY_DIRS
+-    DS_FLAGS)
+diff --git a/cmake/FindIARMBus.cmake b/cmake/FindIARMBus.cmake
+deleted file mode 100644
+index bd23553..0000000
+--- a/cmake/FindIARMBus.cmake
++++ /dev/null
+@@ -1,50 +0,0 @@
+-# If not stated otherwise in this file or this component's license file the
+-# following copyright and licenses apply:
+-#
+-# Copyright 2020 RDK Management
+-#
+-# Licensed under the Apache License, Version 2.0 (the "License");
+-# you may not use this file except in compliance with the License.
+-# You may obtain a copy of the License at
+-#
+-# http://www.apache.org/licenses/LICENSE-2.0
+-#
+-# Unless required by applicable law or agreed to in writing, software
+-# distributed under the License is distributed on an "AS IS" BASIS,
+-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-# See the License for the specific language governing permissions and
+-# limitations under the License.
+-
+-# - Try to find IARMBus
+-# Once done this will define
+-#  IARMBUS_FOUND - System has IARMBus
+-#  IARMBUS_INCLUDE_DIRS - The IARMBus include directories
+-#  IARMBUS_LIBRARIES - The libraries needed to use IARMBus
+-#  IARMBUS_FLAGS - The flags needed to use IARMBus
+-#
+-
+-find_package(PkgConfig)
+-
+-find_library(IARMBUS_LIBRARIES NAMES IARMBus)
+-find_path(IARMBUS_INCLUDE_DIRS NAMES libIARM.h PATH_SUFFIXES rdk/iarmbus)
+-find_path(IARMRECEIVER_INCLUDE_DIRS NAMES receiverMgr.h PATH_SUFFIXES rdk/iarmmgrs/receiver)
+-
+-set(IARMBUS_LIBRARIES ${IARMBUS_LIBRARIES} CACHE PATH "Path to IARMBus library")
+-set(IARMBUS_INCLUDE_DIRS ${IARMBUS_INCLUDE_DIRS} ${IARMRECEIVER_INCLUDE_DIRS})
+-set(IARMBUS_INCLUDE_DIRS ${IARMBUS_INCLUDE_DIRS} ${IARMRECEIVER_INCLUDE_DIRS} CACHE PATH "Path to IARMBus include")
+-
+-include(FindPackageHandleStandardArgs)
+-FIND_PACKAGE_HANDLE_STANDARD_ARGS(IARMBus DEFAULT_MSG IARMBUS_INCLUDE_DIRS IARMBUS_LIBRARIES)
+-
+-set(IARMBus_FOUND ${IARMBus_FOUND})
+-set(IARMBus_INCLUDE_DIRS ${IARMBUS_INCLUDE_DIRS})
+-set(IARMBus_LIBRARIES ${IARMBUS_LIBRARIES})
+-set(IARMBUS_FOUND ${IARMBus_FOUND})
+-
+-mark_as_advanced(
+-    IARMBus_FOUND
+-    IARMBUS_FOUND
+-    IARMBUS_INCLUDE_DIRS
+-    IARMBUS_LIBRARIES
+-    IARMBUS_LIBRARY_DIRS
+-    IARMBUS_FLAGS)
+diff --git a/helpers/AbstractPlugin.h b/helpers/AbstractPlugin.h
+index 3b5c66e..3c4bda4 100644
+--- a/helpers/AbstractPlugin.h
++++ b/helpers/AbstractPlugin.h
+@@ -20,7 +20,8 @@
+ #pragma once
+ 
+ #include <unordered_map>
+-#include "utils.h"
++#include <plugins/plugins.h>
++#include "UtilsJsonRpc.h"
+ 
+ namespace WPEFramework {
+ 
+diff --git a/helpers/CMakeLists.txt b/helpers/CMakeLists.txt
+index 93130e6..937b8f4 100644
+--- a/helpers/CMakeLists.txt
++++ b/helpers/CMakeLists.txt
+@@ -17,16 +17,6 @@
+ 
+ cmake_minimum_required(VERSION 3.3)
+ 
+-# entservices-helpers: common shared utility library
+-#
+-# Compiled sources:
+-#   - Module.cpp           : Thunder MODULE_NAME_DECLARATION
+-#   - WebSockets/JsonRpc/Notification.cpp
+-#   - WebSockets/JsonRpc/Request.cpp
+-#   - WebSockets/JsonRpc/Response.cpp
+-#
+-# WSEndpoint.cpp is a template implementation included by its header — NOT compiled standalone.
+-#
+ # All .h files (including subdirectories) are installed as public headers so
+ # downstream repos can use:
+ #   find_package(WPEFrameworkHelpers REQUIRED)
+@@ -38,50 +28,13 @@ set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
+ find_package(${NAMESPACE}Plugins REQUIRED)
+ find_package(CompileSettingsDebug CONFIG REQUIRED)
+ 
+-# ---- Compiled sources -------------------------------------------------------
+-set(HELPERS_SOURCES
+-    Module.cpp
+-    utils.cpp
+-    #    WebSockets/JsonRpc/Notification.cpp
+-    # WebSockets/JsonRpc/Request.cpp
+-    #WebSockets/JsonRpc/Response.cpp
+-)
+-
+-add_library(${MODULE_NAME} SHARED ${HELPERS_SOURCES})
+-
+-set_target_properties(${MODULE_NAME} PROPERTIES
+-    CXX_STANDARD 14
+-    CXX_STANDARD_REQUIRED YES)
+-
++add_library(${MODULE_NAME} INTERFACE)
+ 
+ # Public include: the helpers/ root (and subdirs) — consumers get all headers
+ target_include_directories(${MODULE_NAME}
+-    PUBLIC
++    INTERFACE
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+-	#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/WebSockets>
+         $<INSTALL_INTERFACE:include/${STORAGE_DIRECTORY}/helpers>)
+-	# $<INSTALL_INTERFACE:include/${STORAGE_DIRECTORY}/helpers/WebSockets>)
+-
+-target_compile_definitions(${MODULE_NAME} PRIVATE MODULE_NAME=Plugin_Helpers)
+-
+-target_link_libraries(${MODULE_NAME}
+-    PRIVATE
+-        CompileSettingsDebug::CompileSettingsDebug
+-        ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
+-
+-find_package(DS)
+-if(DS_FOUND)
+-    target_include_directories(${MODULE_NAME} PRIVATE ${DS_INCLUDE_DIRS})
+-    target_link_libraries(${MODULE_NAME} PRIVATE ${DS_LIBRARIES})
+-endif(DS_FOUND)
+-
+-find_package(IARMBus)
+-if(IARMBUS_FOUND)
+-    find_path(IARMSYS_INCLUDE_DIRS NAMES sysMgr.h PATH_SUFFIXES rdk/iarmmgrs/sysmgr)
+-    target_include_directories(${MODULE_NAME} PRIVATE ${IARMBUS_INCLUDE_DIRS} ${IARMSYS_INCLUDE_DIRS})
+-    target_link_libraries(${MODULE_NAME} PRIVATE ${IARMBUS_LIBRARIES})
+-    target_compile_definitions(${MODULE_NAME} PRIVATE HAS_API_POWERSTATE)
+-endif(IARMBUS_FOUND)
+ 
+ # ---- Install shared library --------------------------------------------------
+ install(TARGETS ${MODULE_NAME}
+@@ -98,7 +51,6 @@ file(GLOB_RECURSE HELPERS_PUBLIC_HEADERS
+     RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+     "*.h"
+     "*.hpp"
+-    # "WebSockets/WSEndpoint.cpp"
+ )
+ 
+ # Install each header into the mirror subdirectory under the install prefix so
+diff --git a/helpers/utils.cpp b/helpers/utils.cpp
+deleted file mode 100755
+index 5830cf8..0000000
+--- a/helpers/utils.cpp
++++ /dev/null
+@@ -1,311 +0,0 @@
+-/**
+-* If not stated otherwise in this file or this component's LICENSE
+-* file the following copyright and licenses apply:
+-*
+-* Copyright 2019 RDK Management
+-*
+-* Licensed under the Apache License, Version 2.0 (the "License");
+-* you may not use this file except in compliance with the License.
+-* You may obtain a copy of the License at
+-*
+-* http://www.apache.org/licenses/LICENSE-2.0
+-*
+-* Unless required by applicable law or agreed to in writing, software
+-* distributed under the License is distributed on an "AS IS" BASIS,
+-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-* See the License for the specific language governing permissions and
+-* limitations under the License.
+-**/
+-
+-/**
+- *  Utility functions used in plugins.
+- *
+- */
+-
+-#include <string.h>
+-#include <sstream>
+-#include "utils.h"
+-#include "libIBus.h"
+-#include <curl/curl.h>
+-#include <mutex>
+-
+-#define MAX_STRING_LENGTH 2048
+-using namespace WPEFramework;
+-using namespace std;
+-
+-const char* Helpers::IARM::NAME = "Thunder_Plugins";
+-
+-bool Helpers::IARM::isConnected() {
+-    IARM_Result_t res;
+-    int isRegistered = 0;
+-    res = IARM_Bus_IsConnected(NAME, &isRegistered);
+-    LOGINFO("IARM_Bus_IsConnected: %d (%d)", res, isRegistered);
+-
+-    return (isRegistered == 1);
+-}
+-
+-bool Helpers::IARM::init() {
+-    IARM_Result_t res;
+-    bool result = false;
+-
+-    if (isConnected()) {
+-        LOGINFO("IARM already connected");
+-        result = true;
+-    } else {
+-        res = IARM_Bus_Init(NAME);
+-        LOGINFO("IARM_Bus_Init: %d", res);
+-        if (res == IARM_RESULT_SUCCESS ||
+-            res == IARM_RESULT_INVALID_STATE /* already inited or connected */) {
+-
+-            res = IARM_Bus_Connect();
+-            LOGINFO("IARM_Bus_Connect: %d", res);
+-            if (res == IARM_RESULT_SUCCESS ||
+-                res == IARM_RESULT_INVALID_STATE /* already connected or not inited */) {
+-
+-                result = isConnected();
+-            } else {
+-                LOGERR("IARM_Bus_Connect failure: %d", res);
+-            }
+-        } else {
+-            LOGERR("IARM_Bus_Init failure: %d", res);
+-        }
+-    }
+-
+-    return result;
+-}
+-
+-std::string Helpers::formatIARMResult(IARM_Result_t result)
+-{
+-    switch (result) {
+-        case IARM_RESULT_SUCCESS:       return std::string("IARM_RESULT_SUCCESS [success]");
+-        case IARM_RESULT_INVALID_PARAM: return std::string("IARM_RESULT_INVALID_PARAM [invalid input parameter]");
+-        case IARM_RESULT_INVALID_STATE: return std::string("IARM_RESULT_INVALID_STATE [invalid state encountered]");
+-        case IARM_RESULT_IPCCORE_FAIL:  return std::string("IARM_RESULT_IPCORE_FAIL [underlying IPC failure]");
+-        case IARM_RESULT_OOM:           return std::string("IARM_RESULT_OOM [out of memory]");
+-        default:
+-            std::ostringstream tmp;
+-            tmp << result << " [unknown IARM_Result_t]";
+-            return tmp.str();
+-    }
+-}
+-
+-bool Helpers::String::readPropertyValue(const std::string &str, std::vector<std::string> &stringList)
+-{
+-    std::size_t found_start_pos = 0;
+-    std::string propertyValue = "";
+-    bool ret_value = false;
+-
+-    if (str.empty())
+-    {
+-        LOGERR("str - input line is empty");
+-    }
+-    // Extract the value after the '='
+-    else if ((found_start_pos = str.find("=")) != std::string::npos)
+-    {
+-       // Extract the value after the '(' if present
+-       if (str[found_start_pos+1] == '(')
+-       {
+-           propertyValue = str.substr(found_start_pos + 2);
+-       }
+-       else
+-       {
+-           propertyValue = str.substr(found_start_pos + 1);
+-       }
+-    }
+-    else
+-    {
+-        LOGERR("Property value not found in the input line");
+-    }
+-
+-    if (!propertyValue.empty())
+-    {
+-        /* Remove new line character from end of the string if it have */
+-        if ((propertyValue.back() == '\r') || (propertyValue.back() == '\n'))
+-        {
+-            propertyValue.pop_back();
+-        }
+-
+-        /* Remove ')' character from end of the string if it have */
+-        if (propertyValue.back() == ')')
+-        {
+-            propertyValue.pop_back();
+-        }
+-
+-        split(stringList, propertyValue, " ");
+-
+-        ret_value = true;
+-    }
+-    return ret_value;
+-}
+-
+-bool Helpers::readPropertyFromFile(const char* pfilename, const std::string& property, std::vector<std::string> &stringList)
+-{
+-    std::ifstream file(pfilename);
+-    std::string line = "";
+-    bool ret_value = false;
+-
+-    if (file.is_open())
+-    {
+-       while (std::getline(file, line))
+-       {
+-           if (!line.empty())
+-           {
+-               // Skip lines that start with '#' (single-line comments) and property not found
+-               if ((line[0] != '#') && (line.find(property) == 0))
+-               {
+-                   if (false == (ret_value = Helpers::String::readPropertyValue(line, stringList)))
+-                   {
+-                       LOGERR("Property value is not found");
+-                   }
+-                   break;
+-               }
+-           }
+-       }
+-       file.close();
+-    }
+-    else
+-    {
+-       LOGERR("Failed to open the file");
+-    }
+-
+-    return ret_value;
+-}
+-
+-#ifndef DONT_USE_TR181
+-bool Helpers::getTR181Config(const char* callerID, const char* paramName, TR181_ParamData_t& paramOutput)
+-{
+-    tr181ErrorCode_t status;
+-
+-    memset(&paramOutput, 0, sizeof(paramOutput));
+-    status = getParam((char*)callerID, (char*)paramName, &paramOutput);
+-    if (tr181Success == status )
+-    {
+-        std::cout << "getTR181Config for  " << paramName << " is " << paramOutput.value << std::endl;
+-    } else {
+-        std::cout << "Could not get param value for " << paramName  << std::endl;
+-    }
+-    return (tr181Success == status );
+-}
+-#endif
+-
+-static size_t writeCurlResponse(void *ptr, size_t size, size_t nmemb, string stream)
+-{
+-    size_t realsize = size * nmemb;
+-    string temp(static_cast<const char*>(ptr), realsize);
+-    stream.append(temp);
+-    return realsize;
+-}
+-
+-bool Helpers::SecurityToken::isThunderSecurityConfigured()
+-{
+-    bool configured = false;
+-    long http_code = 0;
+-    std::string jsonResp;
+-    CURL *curl_handle = NULL;
+-    CURLcode res = CURLE_OK;
+-    curl_handle = curl_easy_init();
+-    string serialNumber = "";
+-    string url = "http://127.0.0.1:9998/Service/Controller/Configuration/Controller";
+-    if (curl_handle &&
+-        !curl_easy_setopt(curl_handle, CURLOPT_URL, url.c_str()) &&
+-        !curl_easy_setopt(curl_handle, CURLOPT_HTTPGET,1) &&
+-        !curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1) && //when redirected, follow the redirections
+-        !curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, writeCurlResponse) &&
+-        !curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &jsonResp)) {
+-
+-        res = curl_easy_perform(curl_handle);
+-        if(curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code) != CURLE_OK)
+-        {
+-            std::cout << "curl_easy_getinfo failed\n";
+-        }
+-        std::cout << "Thunder Controller Configuration ret: " << res << " http response code: " << http_code << std::endl;
+-    }
+-    else
+-    {
+-        std::cout << "Could not perform curl to read Thunder Controller Configuration\n";
+-    }
+-
+-    if (curl_handle) {
+-        curl_easy_cleanup(curl_handle);
+-    }
+-    if ((res == CURLE_OK) && (http_code == 200))
+-    {
+-        //check for "Security" in response
+-        JsonObject responseJson = JsonObject(jsonResp);
+-        if (responseJson.HasLabel("subsystems"))
+-        {
+-            const JsonArray subsystemList = responseJson["subsystems"].Array();
+-            for (int i=0; i<subsystemList.Length(); i++)
+-            {
+-                string subsystem = subsystemList[i].String();
+-                if (subsystem == "Security")
+-                {
+-                    configured = true;
+-                    break;
+-                }
+-            }
+-        }
+-    }
+-    return configured;
+-}
+-
+-#ifdef USE_THUNDER_COMMUNICATION
+-std::shared_ptr<WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> > Helpers::getThunderControllerClient(std::string callsign)
+-{
+-    Core::SystemInfo::SetEnvironment(_T("THUNDER_ACCESS"), (_T(SERVER_DETAILS)));
+-    std::shared_ptr<WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> > thunderClient = make_shared<WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> >(callsign.c_str(), "",false);
+-
+-    return thunderClient;
+-}
+-
+-void Helpers::activatePlugin(const char* callSign)
+-{
+-    JsonObject joParams;
+-    joParams.Set("callsign",callSign);
+-    JsonObject joResult;
+-
+-    if(!isPluginActivated(callSign))
+-    {
+-        LOGINFO("Activating %s", callSign);
+-        uint32_t status = getThunderControllerClient()->Invoke<JsonObject, JsonObject>(2000, "activate", joParams, joResult);
+-        string strParams;
+-        string strResult;
+-        joParams.ToString(strParams);
+-        joResult.ToString(strResult);
+-        LOGINFO("Called method %s, with params %s, status: %d, result: %s"
+-                , "activate"
+-                , C_STR(strParams)
+-                , status
+-                , C_STR(strResult));
+-        if (status == Core::ERROR_NONE)
+-        {
+-            LOGINFO("%s Plugin activation status ret: %d ", callSign, status);
+-        }
+-    }
+-}
+-
+-bool Helpers::isPluginActivated(const char* callSign)
+-{
+-    string method = "status@" + string(callSign);
+-    Core::JSON::ArrayType<PluginHost::MetaData::Service> joResult;
+-    uint32_t status = getThunderControllerClient()->Get<Core::JSON::ArrayType<PluginHost::MetaData::Service> >(2000, method.c_str(),joResult);
+-    bool pluginActivated = false;
+-    if (status == Core::ERROR_NONE)
+-    {
+-        LOGINFO("Getting status for callSign %s, result: %s", callSign, joResult[0].JSONState.Data().c_str());
+-        pluginActivated = joResult[0].JSONState == PluginHost::IShell::ACTIVATED;
+-    }
+-    else
+-    {
+-        LOGWARN("Getting status for callSign %s, status: %d", callSign, status);
+-    }
+-
+-    if(!pluginActivated){
+-        LOGWARN("Plugin %s is not active", callSign);
+-    } else {
+-        LOGINFO("Plugin %s is active ", callSign);
+-    }
+-    return pluginActivated;
+-}
+-
+-#endif
+diff --git a/helpers/utils.h b/helpers/utils.h
+deleted file mode 100755
+index de78e7f..0000000
+--- a/helpers/utils.h
++++ /dev/null
+@@ -1,411 +0,0 @@
+-/**
+-* If not stated otherwise in this file or this component's LICENSE
+-* file the following copyright and licenses apply:
+-*
+-* Copyright 2019 RDK Management
+-*
+-* Licensed under the Apache License, Version 2.0 (the "License");
+-* you may not use this file except in compliance with the License.
+-* You may obtain a copy of the License at
+-*
+-* http://www.apache.org/licenses/LICENSE-2.0
+-*
+-* Unless required by applicable law or agreed to in writing, software
+-* distributed under the License is distributed on an "AS IS" BASIS,
+-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-* See the License for the specific language governing permissions and
+-* limitations under the License.
+-**/
+-
+-#pragma once
+-
+-#include <fstream>
+-#include <sstream>
+-#include <iterator>
+-#include <vector>
+-#include <algorithm>
+-#include "tracing/Logging.h"
+-#include <syscall.h>
+-#include "tr181api.h"
+-#include <plugins/plugins.h>
+-
+-
+-// IARM
+-#include "rdk/iarmbus/libIARM.h"
+-
+-// std
+-#include <string>
+-
+-#define SERVER_DETAILS  "127.0.0.1:9998"
+-
+-#define UNUSED(expr)(void)(expr)
+-#define C_STR(x) (x).c_str()
+-
+-enum LogLevel {FATAL_LEVEL = 0, ERROR_LEVEL, WARNING_LEVEL, INFO_LEVEL, DEBUG_LEVEL};
+-
+-static int gDefaultLogLevel = DEBUG_LEVEL;
+-
+-#define LOGDBG(fmt, ...) do { if(gDefaultLogLevel >= DEBUG_LEVEL) { fprintf(stderr, "[%d] DEBUG [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr); }} while (0)
+-#define LOGINFO(fmt, ...) do { if(gDefaultLogLevel >= INFO_LEVEL) { fprintf(stderr, "[%d] INFO [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr); }} while (0)
+-#define LOGWARN(fmt, ...) do { if(gDefaultLogLevel >= WARNING_LEVEL) { fprintf(stderr, "[%d] WARN [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr); }} while (0)
+-#define LOGERR(fmt, ...) do { if(gDefaultLogLevel >= ERROR_LEVEL) { fprintf(stderr, "[%d] ERROR [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr); }} while (0)
+-
+-#define LOGDBGMETHOD() do { std::string json; parameters.ToString(json); LOGDBG( "params=%s", json.c_str() ); } while (0)
+-#define LOGINFOMETHOD() do { std::string json; parameters.ToString(json); LOGINFO( "params=%s", json.c_str() ); } while (0)
+-#define LOGTRACEMETHODFIN() do { std::string json; response.ToString(json); LOGDBG( "response=%s", json.c_str() ); } while (0)
+-
+-#define LOG_DEVICE_EXCEPTION0() LOGWARN("Exception caught: code=%d message=%s", err.getCode(), err.what());
+-#define LOG_DEVICE_EXCEPTION1(param1) LOGWARN("Exception caught" #param1 "=%s code=%d message=%s", param1.c_str(), err.getCode(), err.what());
+-#define LOG_DEVICE_EXCEPTION2(param1, param2) LOGWARN("Exception caught " #param1 "=%s " #param2 "=%s code=%d message=%s", param1.c_str(), param2.c_str(), err.getCode(), err.what());
+-
+-template<typename T> inline T min(T x, T y) { return (x < y ? x : y); }
+-template<typename T> inline T max(T x, T y) { return (x > y ? x : y); }
+-template<typename T> inline T clamp(T x, T lo, T hi) { return max(min(x, hi), lo); }
+-
+-//this set of macros are used in the method handlers to make the code more consistent and easier to read
+-#define vectorSet(v,s) \
+-    if (find(begin(v), end(v), s) == end(v)) \
+-        v.emplace_back(s);
+-
+-#define stringContains(s1,s2) \
+-    (search(s1.begin(), s1.end(), s2, s2+strlen(s2), \
+-        [](char c1, char c2){ \
+-            return toupper(c1) == toupper(c2); \
+-    }) != s1.end())
+-
+-#define returnResponse(success) \
+-    { \
+-        response["success"] = success; \
+-        LOGTRACEMETHODFIN(); \
+-        return (Core::ERROR_NONE); \
+-    }
+-
+-#define returnResponse_noLog(success) \
+-    { \
+-        bool successBoolean = success; \
+-        response["success"] = successBoolean; \
+-        return (successBoolean ? Core::ERROR_NONE : Core::ERROR_GENERAL); \
+-    }
+-
+-#define returnIfWrongApiVersion(version)\
+-    if(m_apiVersionNumber < version)\
+-    {\
+-        LOGWARN("method %s not supported. version required=%u actual=%u", __FUNCTION__, version, m_apiVersionNumber);\
+-        returnResponse(false);\
+-    }
+-
+-#define returnIfParamNotFound(param, name)\
+-    if (!param.HasLabel(name))\
+-    {\
+-        LOGERR("No argument '%s'", name);\
+-        returnResponse(false);\
+-    }
+-
+-#define returnIfStringParamNotFound(param, name)\
+-    if (!param.HasLabel(name) || param[name].Content() != Core::JSON::Variant::type::STRING)\
+-    {\
+-        LOGERR("No argument '%s' or it has incorrect type", name);\
+-        returnResponse(false);\
+-    }
+-
+-#define returnIfStringParamEmpty(param, name)\
+-    if (!param.HasLabel(name) || param[name].Content() != Core::JSON::Variant::type::STRING || param[name].String().empty())\
+-    {\
+-        LOGERR("No argument '%s' or it has incorrect type", name);\
+-        returnResponse(false);\
+-    }
+-
+-#define returnIfBooleanParamNotFound(param, name)\
+-    if (!param.HasLabel(name) || param[name].Content() != Core::JSON::Variant::type::BOOLEAN)\
+-    {\
+-        LOGERR("No argument '%s' or it has incorrect type", name);\
+-        returnResponse(false);\
+-    }
+-
+-#define returnIfArrayParamNotFound(param, name)\
+-    if (!param.HasLabel(name) || param[name].Content() != Core::JSON::Variant::type::ARRAY)\
+-    {\
+-        LOGERR("No argument '%s' or it has incorrect type", name);\
+-        returnResponse(false);\
+-    }
+-
+-#define returnIfNumberParamNotFound(param, name)\
+-    if (!param.HasLabel(name) || param[name].Content() != Core::JSON::Variant::type::NUMBER)\
+-    {\
+-        LOGERR("No argument '%s' or it has incorrect type", name);\
+-        returnResponse(false);\
+-    }
+-
+-#define returnIfObjectParamNotFound(param, name)\
+-    if (!param.HasLabel(name) || param[name].Content() != Core::JSON::Variant::type::OBJECT)\
+-    {\
+-        LOGERR("No argument '%s' or it has incorrect type", name);\
+-        returnResponse(false);\
+-    }
+-
+-#define sendNotify(event,params)\
+-    std::string json;\
+-    params.ToString(json);\
+-    LOGINFO("Notify %s %s", event, json.c_str());\
+-    Notify(event,params);
+-
+-#define sendNotifyMaskParameters(event,params)\
+-    std::string json; \
+-    params.ToString(json); \
+-    LOGINFO("Notify %s <***>", event); \
+-    Notify(event,params);
+-
+-#define getNumberParameter(paramName, param) {\
+-    if (Core::JSON::Variant::type::NUMBER == parameters[paramName].Content()) \
+-        param = parameters[paramName].Number();\
+-    else\
+-        try { param = std::stoi( parameters[paramName].String()); }\
+-        catch (...) { param = 0; }\
+-}
+-
+-#define getNumberParameterObject(parameters, paramName, param) {\
+-    if (Core::JSON::Variant::type::NUMBER == parameters[paramName].Content()) \
+-        param = parameters[paramName].Number();\
+-    else\
+-        try {param = std::stoi( parameters[paramName].String());}\
+-        catch (...) { param = 0; }\
+-}
+-
+-#define getBoolParameter(paramName, param) {\
+-    if (Core::JSON::Variant::type::BOOLEAN == parameters[paramName].Content()) \
+-        param = parameters[paramName].Boolean();\
+-    else\
+-        param = parameters[paramName].String() == "true" || parameters[paramName].String() == "1";\
+-}
+-
+-#define getStringParameter(paramName, param) {\
+-    if (Core::JSON::Variant::type::STRING == parameters[paramName].Content()) \
+-        param = parameters[paramName].String();\
+-}
+-
+-#define IARM_CHECK(FUNC) \
+-  if ((res = FUNC) != IARM_RESULT_SUCCESS) { \
+-    LOGINFO("IARM %s: %s", #FUNC, \
+-        res == IARM_RESULT_INVALID_PARAM ? "invalid param" : ( \
+-        res == IARM_RESULT_INVALID_STATE ? "invalid state" : ( \
+-        res == IARM_RESULT_IPCCORE_FAIL ? "ipcore fail" : ( \
+-        res == IARM_RESULT_OOM ? "oom" : "unknown")))); \
+-  } else { \
+-    LOGINFO("IARM %s: success", #FUNC); \
+-  }
+-
+-namespace Helpers
+-{
+-    struct IARM {
+-        static bool init();
+-        static bool isConnected();
+-
+-        static const char* NAME;
+-    };
+-
+-    namespace String
+-    {
+-        // locale-wise comparison
+-        template<typename charT>
+-        struct loc_equal {
+-            explicit loc_equal( const std::locale& loc ) : loc_(loc) {}
+-            bool operator()(charT ch1, charT ch2) {
+-                return std::toupper(ch1, loc_) == std::toupper(ch2, loc_);
+-            }
+-        private:
+-            const std::locale& loc_;
+-        };
+-
+-        // Case-insensitive substring lookup.
+-        // Returns the substring position or -1
+-        // Example: int pos = find_substr_ci(string, substring, std::locale());
+-        template<typename T>
+-        int find_substr_ci( const T& string, const T& substring, const std::locale& loc = std::locale() )
+-        {
+-            typename T::const_iterator it = std::search( string.begin(), string.end(),
+-                                                         substring.begin(), substring.end(), loc_equal<typename T::value_type>(loc) );
+-            if ( it != string.end() ) return it - string.begin();
+-            else return -1; // not found
+-        }
+-
+-        // Case-insensitive substring inclusion lookup.
+-        // Example: if (Utils::String::contains(result, processName)) {..}
+-        template<typename T>
+-        bool contains( const T& string, const T& substring, const std::locale& loc = std::locale() )
+-        {
+-            int pos = find_substr_ci(string, substring, loc);
+-            return pos != -1;
+-        }
+-
+-        // Case-insensitive substring inclusion lookup.
+-        // Example: if(Utils::String::contains(tmp, "grep -i")) {..}
+-        template<typename T>
+-        bool contains( const T& string, const char* c_substring, const std::locale& loc = std::locale() )
+-        {
+-            std::string substring(c_substring);
+-            int pos = find_substr_ci(string, substring, loc);
+-            return pos != -1;
+-        }
+-
+-        // Looking for an element in a vector of elements
+-        template<typename T>
+-        bool contains(const std::vector<T>& vec, const T& label)
+-        {
+-            bool res = false;
+-            const typename std::vector<T>::iterator it;
+-            for(T lbl : vec)
+-            {
+-                if (label == lbl)
+-                    res = true;
+-            }
+-            return res;
+-        }
+-
+-        // Case-insensitive string comparison
+-        // returns true if the strings are equal, otherwise returns false
+-        // Example: if (Utils::String::equal(line, provisionType)) {..}
+-        template<typename T>
+-        bool equal(const T& string, const T& string2, const std::locale& loc = std::locale() )
+-        {
+-            int pos = find_substr_ci(string, string2, loc);
+-            bool res = (pos == 0) && (string.length() == string2.length());
+-            return res;
+-        }
+-
+-        // Case-insensitive string comparison
+-        // returns true if the strings are equal, otherwise returns false
+-        // Example: if(Utils::String::equal(line,"CRYPTANIUM")) {..}
+-        template<typename T>
+-        bool equal(const T& string, const char* c_string2, const std::locale& loc = std::locale() )
+-        {
+-            std::string string2(c_string2);
+-            int pos = find_substr_ci(string, string2, loc);
+-            bool res = (pos == 0) && (string.length() == string2.length());
+-            return res;
+-        }
+-
+-        // Trim space characters (' ', '\n', '\v', '\f', \r') on the left side of string
+-        inline void ltrim(std::string &s) {
+-            s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
+-                return !std::isspace(ch);
+-            }));
+-        }
+-
+-        // Trim space characters (' ', '\n', '\v', '\f', \r') on the right side of string
+-        inline void rtrim(std::string &s) {
+-            s.erase(std::find_if(s.rbegin(), s.rend(), [](int ch) {
+-                return !std::isspace(ch);
+-            }).base(), s.end());
+-        }
+-
+-        // Trim space characters (' ', '\n', '\v', '\f', \r') on both sides of string
+-        inline void trim(std::string &s) {
+-            ltrim(s);
+-            rtrim(s);
+-        }
+-
+-        // Replace all occurrences of substring 'before' with the substring 'after', e.g. replace("foo-bar-foo", "foo", "bar") => "bar-bar-bar"
+-        // Replace is case-sensitive
+-        inline void replace_substr(std::string& str, const std::string& before, const std::string& after) {
+-            if(before.empty())
+-                return;
+-            size_t start_pos = 0;
+-            while((start_pos = str.find(before, start_pos)) != std::string::npos) {
+-                str.replace(start_pos, before.length(), after);
+-                start_pos += after.length();
+-            }
+-        }
+-
+-        // Split string s into a vector of strings using the supplied delimiter
+-        inline void split(std::vector<std::string> &stringList, std::string &s, std::string delimiters)
+-        {
+-            size_t current = 0;
+-            size_t next;
+-            do
+-            {
+-                next = s.find_first_of( delimiters, current );
+-                stringList.push_back(s.substr( current, next - current ));
+-                if (next == string::npos) {
+-                    break;  // Exit before overflow
+-                }
+-                current = next + 1;
+-            }
+-            while (true);
+-        }
+-
+-        //Implode a vector of strings into a string
+-        inline std::string& implode(const std::vector<std::string> v, std::string& s, const std::string delim = " ")
+-        {
+-            std::ostringstream imploded;
+-            const char* delim_c = delim.c_str();
+-            size_t dl = strlen(delim_c);
+-
+-            std::copy(v.begin(), v.end(),
+-                      std::ostream_iterator<std::string>(imploded, delim_c));
+-            s = imploded.str();
+-            s.erase(s.end() - dl, s.end());
+-            return s;
+-        }
+-
+-       /**
+-        * @brief           :Read the property value from the given string
+-        *                  If the property value have one or more values so it will copy to the vector list.
+-        * @param1[in]      : str - the given string.
+-        * @param2[out]     : stringList - property values will fill here.
+-        * @return          : bool - return true if the property is found and its value are successfully read.
+-        *                         - false if the property is not found or if there is any failure during reading.
+-        *
+-        */
+-        bool readPropertyValue(const std::string &str, std::vector<std::string> &stringList);
+-    }
+-
+-    /**
+-     * @brief Format an IARM_Result_t value for error reporting.
+-     *
+-     * @param result The result of an IARM bus call.
+-     * @return       A corresponding string.
+-     *
+-     */
+-    std::string formatIARMResult(IARM_Result_t result);
+-
+-    /***
+-     * @brief	: Checks that file exists
+-     * @param1[in]	: pFileName name of file
+-     * @return		: true if file exists.
+-     */
+-    inline bool fileExists(const char *pFileName)
+-    {
+-        struct stat fileStat;
+-        return stat(pFileName, &fileStat) == 0;
+-    }
+-
+-    /**
+-     * @brief           :Read the property value from the given file if the given property is matches.
+-     *                  If the property value have one or more values so it will copy to the vector list.
+-     * @param1[in]      : pfilename - filename with path to parse the file.
+-     * @param2[in]      : property - property name need to be given.
+-     * @param3[out]     : stringList - property values will fill here.
+-     * @return          : bool - return true if the property is found and its value are successfully read.
+-     *                         - return false if the property is not found or if there is any failure during reading.
+-     *
+-     */
+-    bool readPropertyFromFile(const char* pfilename, const std::string& property, std::vector<std::string> &stringList);
+-
+-    struct SecurityToken
+-    {
+-        static bool isThunderSecurityConfigured();
+-    };
+-
+-#ifdef USE_THUNDER_COMMUNICATION
+-    // Thunder Plugin Communication
+-    std::shared_ptr<WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>> getThunderControllerClient(std::string callsign="");
+-
+-    void activatePlugin(const char* callSign);
+-
+-    bool isPluginActivated(const char* callSign);
+-#endif
+-
+-#ifndef DONT_USE_TR181
+-    bool getTR181Config(const char* callerID, const char* paramName, TR181_ParamData_t& paramOutput);
+-#endif
+-}
+-- 
+2.32.0 (Apple Git-132)
+
