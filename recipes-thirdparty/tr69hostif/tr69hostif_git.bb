@@ -164,6 +164,13 @@ do_install:append() {
         install -d ${D}${sysconfdir} ${D}${sysconfdir}/rfcdefaults
         install -m 0644 ${S}/conf/rfcdefaults/tr69hostif.ini ${D}${sysconfdir}/rfcdefaults
 
+        # RDKEMW-26997 - with kernel 6.X, cgroupv2 and older systemd230, process fails to start.
+        if ${@bb.utils.contains('DISTRO_FEATURES', 'enable_kernel6_cgroupv2', 'true', 'false', d)}; then
+            if [ -f "${D}${systemd_unitdir}/system/parodus.service" ]; then
+                sed -i '/^PIDFile=\/run\/parodus\.pid$/d' "${D}${systemd_unitdir}/system/parodus.service"
+            fi
+        fi
+
         # Below header files are installed by another recipe tr69hostif-headers
         rm -r ${D}${includedir}/hostIf_msgHandler.h
         rm -r ${D}${includedir}/hostIf_NotificationHandler.h
