@@ -16,7 +16,7 @@ DEPENDS += " ${platform-widevine-depends}"
 EXTRA_OECMAKE += " ${platform-widevine-flags} -DCMAKE_WIDEVINE_VERSION=${WIDEVINE_VERSION}"
 RDEPENDS:${PN} += " ${platform-widevine-rdepends}"
 
-DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native entservices-apis"
+DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native entservices-apis entservices-apis-ocdm"
 DEPENDS += "  gst-svp-ext gstreamer1.0"
 
 RDEPENDS:${PN} += " gst-svp-ext"
