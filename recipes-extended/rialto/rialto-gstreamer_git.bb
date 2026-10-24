@@ -19,6 +19,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRCREV = "${RIALTO_GSTREAMER_SRCREV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto-gstreamer;protocol=${CMF_GIT_PROTOCOL};branch=${RIALTO_GSTREAMER_BRANCH}"
+SRC_URI += "file://0001-BCM-1983-add-vorbis-vp8-to-rialto-gstreamer-known-types.patch"
 
 DEPENDS = "openssl jsoncpp glib-2.0 gstreamer1.0 gstreamer1.0-plugins-base wpeframework-clientlibraries protobuf protobuf-native rialto rialto-ocdm"
 
