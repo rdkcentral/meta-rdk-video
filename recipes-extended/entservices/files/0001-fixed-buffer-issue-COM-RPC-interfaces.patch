@@ -1,0 +1,192 @@
+From 0de93910707b56b7e3ed3ac34d6626fba203a455 Mon Sep 17 00:00:00 2001
+From: Radenko Mihajlovic <Radenko_Mihajlovic@comcast.com>
+Date: Thu, 23 Jul 2026 16:38:00 +0000
+Subject: [PATCH] fixed-buffer issue COM-RPC interfaces
+
+---
+ client/open_cdm_ext.cpp | 15 +++++++++++----
+ client/open_cdm_impl.h  | 16 ++++++++--------
+ plugin/FrameworkRPC.cpp | 11 ++++++-----
+ 3 files changed, 25 insertions(+), 17 deletions(-)
+
+diff --git a/client/open_cdm_ext.cpp b/client/open_cdm_ext.cpp
+index f04aa10..03b0d95 100644
+--- a/client/open_cdm_ext.cpp
++++ b/client/open_cdm_ext.cpp
+@@ -46,6 +46,13 @@ static domainKeysystemMap domainMap =  {
+         abort();                                                      \
+     }
+ 
++// FPS protocol buffer size constants
++static constexpr uint8_t  FPS_MOVIE_ID_SIZE              = sizeof(uint64_t);   // movieId is UInt64
++static constexpr uint32_t FPS_LICENSE_CHALLENGE_MAX_SIZE = 12000;              // max challenge buffer
++static constexpr uint8_t  FPS_LICENSE_SIZE_LEN           = sizeof(uint32_t);   // licenseSize is uint32_t
++static constexpr uint8_t  FPS_SESSION_SIZE               = sizeof(void*);      // session buffer holds a pointer value
++static constexpr uint8_t  FPS_CRYPTO_ID_SIZE             = sizeof(uint64_t);   // cryptoId is UInt64
++
+ OpenCDMError opencdm_parse_keysystem(std::string& keySystemDomain)
+ {
+     OpenCDMError result = ERROR_NONE;
+@@ -514,7 +521,7 @@ OpenCDMError opencdm_create_moviesession(struct OpenCDMSystem* system, uint32_t
+             return ERROR_INVALID_ACCESSOR;
+ 
+         std::string keySystem = system->keySystem();
+-        result = (OpenCDMError)accessor->CreateMovieSession(keySystem, version, cert, certificatesize, versionlist, versionListSize, movieIdOut);
++        result = (OpenCDMError)accessor->CreateMovieSession(keySystem, version, cert, certificatesize, versionlist, versionListSize, movieIdOut, FPS_MOVIE_ID_SIZE);
+     }
+     return result;
+ }
+@@ -547,7 +554,7 @@ OpenCDMError opencdm_generate_challenge_with_version_list(struct OpenCDMSystem*
+             return ERROR_INVALID_ACCESSOR;
+ 
+         std::string keySystem = system->keySystem();
+-        result = (OpenCDMError)accessor->GenerateChallengeWithVersionList(keySystem, version, movieId, assetidData, assetidSize, versionlist, versionListSize, streamerChallengeData, streamerChallengeSize, cryptorId, licenseChallengeBuffer, licenseSize, session);
++        result = (OpenCDMError)accessor->GenerateChallengeWithVersionList(keySystem, version, movieId, assetidData, assetidSize, versionlist, versionListSize, streamerChallengeData, streamerChallengeSize, cryptorId, licenseChallengeBuffer, FPS_LICENSE_CHALLENGE_MAX_SIZE, licenseSize, FPS_LICENSE_SIZE_LEN, session, FPS_SESSION_SIZE);
+     }
+     return result;
+ }
+@@ -563,7 +570,7 @@ OpenCDMError opencdm_destroy_server_exchange(struct OpenCDMSystem* system, uint3
+             return ERROR_INVALID_ACCESSOR;
+ 
+         std::string keySystem = system->keySystem();
+-        result = (OpenCDMError)accessor->DestroyServerExchange(keySystem, version, session);
++        result = (OpenCDMError)accessor->DestroyServerExchange(keySystem, version, session, FPS_SESSION_SIZE);
+     }
+     return result;
+ }
+@@ -595,7 +602,7 @@ OpenCDMError opencdm_process_license(struct OpenCDMSystem* system, uint32_t vers
+             return ERROR_INVALID_ACCESSOR;
+ 
+         std::string keySystem = system->keySystem();
+-        result = (OpenCDMError)accessor->ProcessLicense(keySystem, version, session, licenseData, licenseDataSize, cryptoId);
++        result = (OpenCDMError)accessor->ProcessLicense(keySystem, version, session, FPS_SESSION_SIZE, licenseData, licenseDataSize, cryptoId, FPS_CRYPTO_ID_SIZE);
+     }
+     return result;
+ }
+diff --git a/client/open_cdm_impl.h b/client/open_cdm_impl.h
+index a25a0f4..8af1c88 100644
+--- a/client/open_cdm_impl.h
++++ b/client/open_cdm_impl.h
+@@ -166,7 +166,7 @@ public:
+         }
+     }
+ 
+-    virtual Exchange::OCDM_RESULT CreateMovieSession(const string& keySystem, uint32_t version, const uint8_t* cert, uint32_t certificatesize, const uint8_t* versionlist, uint32_t versionListSize, uint8_t* movieIdOut) const override
++    virtual Exchange::OCDM_RESULT CreateMovieSession(const string& keySystem, uint32_t version, const uint8_t* cert, uint32_t certificatesize, const uint8_t* versionlist, uint32_t versionListSize, uint8_t* movieIdOut, uint8_t movieIdSize) const override
+     {
+         Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
+         if (_remote == nullptr) {
+@@ -175,7 +175,7 @@ public:
+         if (_remote == nullptr) {
+             return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+         } else {
+-            result = _remote->CreateMovieSession(keySystem, version, cert, certificatesize, versionlist, versionListSize, movieIdOut);
++            result = _remote->CreateMovieSession(keySystem, version, cert, certificatesize, versionlist, versionListSize, movieIdOut, movieIdSize);
+             return result;
+         }
+     }
+@@ -194,7 +194,7 @@ public:
+         }
+     }
+ 
+-    virtual Exchange::OCDM_RESULT GenerateChallengeWithVersionList(const string& keySystem, uint32_t version, uint64_t movieId, const uint8_t* assetidData, uint32_t assetidSize, const uint8_t* versionlist, uint32_t versionListSize, const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallengeBuffer, uint8_t* licenseSize, uint8_t* session) const override{
++    virtual Exchange::OCDM_RESULT GenerateChallengeWithVersionList(const string& keySystem, uint32_t version, uint64_t movieId, const uint8_t* assetidData, uint32_t assetidSize, const uint8_t* versionlist, uint32_t versionListSize, const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallengeBuffer, uint32_t licenseChallengeMaxSize, uint8_t* licenseSize, uint8_t licenseSizeLen, uint8_t* session, uint8_t sessionLen) const override{
+         Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
+         if (_remote == nullptr) {
+             Reconnect();
+@@ -202,13 +202,13 @@ public:
+         if (_remote == nullptr) {
+             return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+         } else {
+-            result = _remote->GenerateChallengeWithVersionList(keySystem, version, movieId, assetidData, assetidSize, versionlist, versionListSize,  streamerChallengeData, streamerChallengeSize, cryptorId, licenseChallengeBuffer, licenseSize, session);
++            result = _remote->GenerateChallengeWithVersionList(keySystem, version, movieId, assetidData, assetidSize, versionlist, versionListSize, streamerChallengeData, streamerChallengeSize, cryptorId, licenseChallengeBuffer, licenseChallengeMaxSize, licenseSize, licenseSizeLen, session, sessionLen);
+ 
+             return result;
+         }
+     }
+ 
+-    virtual Exchange::OCDM_RESULT DestroyServerExchange(const string& keySystem, uint32_t version, uint8_t* session) const override
++    virtual Exchange::OCDM_RESULT DestroyServerExchange(const string& keySystem, uint32_t version, uint8_t* session, uint8_t sessionSize) const override
+     {
+         Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
+         if (_remote == nullptr) {
+@@ -217,7 +217,7 @@ public:
+         if (_remote == nullptr) {
+             return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+         } else {
+-            result = _remote->DestroyServerExchange(keySystem, version, session);
++            result = _remote->DestroyServerExchange(keySystem, version, session, sessionSize);
+             return result;
+         }
+     }
+@@ -235,7 +235,7 @@ public:
+         }
+     }
+ 
+-    virtual Exchange::OCDM_RESULT ProcessLicense(const string& keySystem, uint32_t version, uint8_t* session, const uint8_t* licenseData, uint32_t licenseDataSize, uint8_t* cryptoId) const override{
++    virtual Exchange::OCDM_RESULT ProcessLicense(const string& keySystem, uint32_t version, uint8_t* session, uint8_t sessionSize, const uint8_t* licenseData, uint32_t licenseDataSize, uint8_t* cryptoId, uint8_t cryptoIdSize) const override{
+         Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
+         if (_remote == nullptr) {
+             Reconnect();
+@@ -243,7 +243,7 @@ public:
+         if (_remote == nullptr) {
+             return Exchange::OCDM_RESULT::OCDM_S_FALSE;
+         } else {
+-            result = _remote->ProcessLicense(keySystem, version, session, licenseData, licenseDataSize, cryptoId);
++            result = _remote->ProcessLicense(keySystem, version, session, sessionSize, licenseData, licenseDataSize, cryptoId, cryptoIdSize);
+             return result;
+         }
+     }
+diff --git a/plugin/FrameworkRPC.cpp b/plugin/FrameworkRPC.cpp
+index 8e7b0f2..952b065 100644
+--- a/plugin/FrameworkRPC.cpp
++++ b/plugin/FrameworkRPC.cpp
+@@ -855,7 +855,7 @@ namespace Plugin {
+                     return (Exchange::OCDM_RESULT)_mediaKeySessionExt->CancelChallengeDataExt();
+                 }
+ 
+-                Exchange::OCDM_RESULT StoreLicenseData(const uint8_t licenseData[], uint16_t licenseDataSize, unsigned char* secureStopId) override
++                Exchange::OCDM_RESULT StoreLicenseData(const uint8_t licenseData[], uint16_t licenseDataSize, uint8_t* secureStopId) override
+                 {
+                     return (Exchange::OCDM_RESULT)_mediaKeySessionExt->StoreLicenseData(licenseData, licenseDataSize, secureStopId);
+                 }
+@@ -995,7 +995,7 @@ namespace Plugin {
+                 return result;
+             }
+ 
+-            Exchange::OCDM_RESULT GenerateChallengeWithVersionList(const std::string& keySystem, uint32_t version, uint64_t movieId, const uint8_t* assetidData, uint32_t assetidSize, const uint8_t* versionlist, uint32_t versionListSize, const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallenge, uint8_t* licenseChallengeSize, uint8_t* session) const override
++            Exchange::OCDM_RESULT GenerateChallengeWithVersionList(const std::string& keySystem, uint32_t version, uint64_t movieId, const uint8_t* assetidData, uint32_t assetidSize, const uint8_t* versionlist, uint32_t versionListSize, const uint8_t* streamerChallengeData, uint32_t streamerChallengeSize, uint64_t cryptorId, uint8_t* licenseChallenge, uint32_t licenseChallengeMaxSize, uint8_t* licenseChallengeSize, uint8_t licenseSizeLen, uint8_t* session, uint8_t sessionLen) const override
+             {
+                     Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
+ 
+@@ -1027,7 +1027,8 @@ namespace Plugin {
+                 uint32_t certificatesize,
+                 const uint8_t* versionlist,
+                 uint32_t versionListSize,
+-                uint8_t *movieIdOut) const override
++                uint8_t *movieIdOut,
++                uint8_t movieIdSize) const override
+                 {
+                     Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
+ 
+@@ -1072,7 +1073,7 @@ namespace Plugin {
+                     return result;
+             }
+ 
+-            Exchange::OCDM_RESULT DestroyServerExchange(const std::string& keySystem, uint32_t version, uint8_t* session) const override
++            Exchange::OCDM_RESULT DestroyServerExchange(const std::string& keySystem, uint32_t version, uint8_t* session, uint8_t sessionSize) const override
+             {
+                 Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
+                 CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
+@@ -1088,7 +1089,7 @@ namespace Plugin {
+                 return result;
+             }
+ 
+-           Exchange::OCDM_RESULT ProcessLicense(const std::string& keySystem, uint32_t version, uint8_t *session, const uint8_t *licenseData, uint32_t licenseDataSize, uint8_t *cryptoId) const override
++           Exchange::OCDM_RESULT ProcessLicense(const std::string& keySystem, uint32_t version, uint8_t *session, uint8_t sessionSize, const uint8_t *licenseData, uint32_t licenseDataSize, uint8_t *cryptoId, uint8_t cryptoIdSize) const override
+            {
+                     Exchange::OCDM_RESULT result = Exchange::OCDM_S_FALSE;
+                     CDMi::IMediaKeys* system = _parent.KeySystem(keySystem);
+-- 
+2.34.1
+
