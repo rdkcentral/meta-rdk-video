@@ -70,6 +70,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-victimselector.service \
     wpeframework-devicediagnostics.service \
     wpeframework-tools.service \
+    wpeframework-resourcemonitor.service \
     "
 
 CONTROL_FILES = "\
