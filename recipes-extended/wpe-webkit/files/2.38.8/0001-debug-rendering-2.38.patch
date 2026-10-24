@@ -1,0 +1,474 @@
+From dac80d10aa0da24a257a01b01c4a638c117b9be1 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Tue, 20 Oct 2026 12:23:46 +0000
+Subject: [PATCH] debug rendering 2.38
+
+---
+ Source/WebCore/html/canvas/WebGLObject.cpp    |   4 +
+ .../html/canvas/WebGLRenderingContextBase.cpp |   7 +
+ Source/WebCore/html/canvas/WebGLTexture.cpp   |   2 +
+ Source/WebCore/page/MemoryRelease.cpp         |  12 ++
+ .../nicosia/texmap/NicosiaGCGLLayer.cpp       |  10 +
+ .../opengl/GraphicsContextGLOpenGL.cpp        | 196 +++++++++++++++++-
+ .../graphics/texmap/BitmapTextureGL.cpp       |  25 +++
+ 7 files changed, 255 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/html/canvas/WebGLObject.cpp b/Source/WebCore/html/canvas/WebGLObject.cpp
+index e4842c9d3228..8e03dbcda8ed 100644
+--- a/Source/WebCore/html/canvas/WebGLObject.cpp
++++ b/Source/WebCore/html/canvas/WebGLObject.cpp
+@@ -25,6 +25,7 @@
+ 
+ #include "config.h"
+ #include "WebGLObject.h"
++#include <stdio.h>
+ 
+ #if ENABLE(WEBGL)
+ 
+@@ -68,6 +69,9 @@ void WebGLObject::deleteObject(const AbstractLocker& locker, GraphicsContextGL*
+     if (!hasGroupOrContext())
+         return;
+ 
++    if (m_attachmentCount)
++        fprintf(stderr, "[GPUDEBUG] WEBGL_DELETE_DEFERRED obj=%p name=%u attachments=%u\n", this, m_object, m_attachmentCount);
++
+     if (!m_attachmentCount) {
+         if (!context3d)
+             context3d = getAGraphicsContextGL();
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+index dc3aeb046022..c60af7572c38 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+@@ -25,6 +25,7 @@
+ 
+ #include "config.h"
+ #include "WebGLRenderingContextBase.h"
++#include <stdio.h>
+ 
+ #if ENABLE(WEBGL)
+ 
+@@ -2396,6 +2397,8 @@ void WebGLRenderingContextBase::deleteTexture(WebGLTexture* texture)
+ {
+     Locker locker { objectGraphLock() };
+ 
++    fprintf(stderr, "[GPUDEBUG] WEBGL_JS_DELETE_TEXTURE ctx=%p tex=%p name=%u alreadyDeleted=%d\n",
++        this, texture, texture ? texture->object() : 0, texture ? texture->isDeleted() : -1);
+     if (!deleteObject(locker, texture))
+         return;
+ 
+@@ -4981,6 +4984,9 @@ ExceptionOr<void> WebGLRenderingContextBase::texImageSourceHelper(TexImageFuncti
+     if (isContextLostOrPending())
+         return { };
+ 
++    // source index: 0=ImageBitmap 1=ImageData 2=HTMLImageElement 3=HTMLCanvasElement 4=HTMLVideoElement
++    fprintf(stderr, "[GPUDEBUG] WEBGL_TEXIMAGE_SOURCE ctx=%p fn=%d level=%d internalformat=0x%x srcIdx=%zu rect=%dx%d\n",
++        this, static_cast<int>(functionID), level, static_cast<unsigned>(internalformat), source.index(), inputSourceImageRect.width(), inputSourceImageRect.height());
+     const char* functionName = getTexImageFunctionName(functionID);
+     TexImageFunctionType functionType;
+     if (functionID == TexImageFunctionID::TexImage2D || functionID == TexImageFunctionID::TexImage3D)
+@@ -6661,6 +6667,7 @@ void WebGLRenderingContextBase::viewport(GCGLint x, GCGLint y, GCGLsizei width,
+ 
+ void WebGLRenderingContextBase::forceLostContext(WebGLRenderingContextBase::LostContextMode mode)
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_FORCE_LOST_CONTEXT ctx=%p mode=%d alreadyLost=%d\n", this, static_cast<int>(mode), isContextLostOrPending());
+     if (isContextLostOrPending()) {
+         synthesizeLostContextGLError(GraphicsContextGL::INVALID_OPERATION, "loseContext", "context already lost");
+         return;
+diff --git a/Source/WebCore/html/canvas/WebGLTexture.cpp b/Source/WebCore/html/canvas/WebGLTexture.cpp
+index 0a7a01d295b1..4d853674d48e 100644
+--- a/Source/WebCore/html/canvas/WebGLTexture.cpp
++++ b/Source/WebCore/html/canvas/WebGLTexture.cpp
+@@ -28,6 +28,7 @@
+ #if ENABLE(WEBGL)
+ 
+ #include "WebGLTexture.h"
++#include <stdio.h>
+ 
+ #include "WebGLContextGroup.h"
+ #include "WebGLFramebuffer.h"
+@@ -62,6 +63,7 @@ WebGLTexture::WebGLTexture(WebGLRenderingContextBase& ctx)
+ 
+ WebGLTexture::~WebGLTexture()
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGLTEXTURE_DTOR this=%p name=%u deleted=%d hasCtx=%d\n", this, object(), isDeleted(), hasGroupOrContext());
+     if (!hasGroupOrContext())
+         return;
+ 
+diff --git a/Source/WebCore/page/MemoryRelease.cpp b/Source/WebCore/page/MemoryRelease.cpp
+index f13783a3f7c3..93f4f576cf06 100644
+--- a/Source/WebCore/page/MemoryRelease.cpp
++++ b/Source/WebCore/page/MemoryRelease.cpp
+@@ -26,6 +26,9 @@
+ #include "config.h"
+ #include "MemoryRelease.h"
+ 
++#include "GPUDebugNexus.h"
++#include <stdio.h>
++#include <time.h>
+ #include "BackForwardCache.h"
+ #include "CSSFontSelector.h"
+ #include "CSSValuePool.h"
+@@ -139,6 +142,15 @@ static void releaseCriticalMemory(Synchronous synchronous, MaintainBackForwardCa
+ void releaseMemory(Critical critical, Synchronous synchronous, MaintainBackForwardCache maintainBackForwardCache, MaintainMemoryCache maintainMemoryCache)
+ {
+     TraceScope scope(MemoryPressureHandlerStart, MemoryPressureHandlerEnd, static_cast<uint64_t>(critical), static_cast<uint64_t>(synchronous));
++    fprintf(stderr, "[GPUDEBUG] RELEASE_MEMORY critical=%d synchronous=%d\n", critical == Critical::Yes, synchronous == Synchronous::Yes);
++    {
++        static time_t s_gpuDbgLastNexusDump = 0;
++        time_t now = time(nullptr);
++        if (critical == Critical::Yes && now - s_gpuDbgLastNexusDump >= 10) {
++            s_gpuDbgLastNexusDump = now;
++            GPUDebugNexus::dump("RELEASE_MEMORY_CRITICAL");
++        }
++    }
+ 
+     if (critical == Critical::Yes) {
+         // Return unused pages back to the OS now as this will likely give us a little memory to work with.
+diff --git a/Source/WebCore/platform/graphics/nicosia/texmap/NicosiaGCGLLayer.cpp b/Source/WebCore/platform/graphics/nicosia/texmap/NicosiaGCGLLayer.cpp
+index 2ff26bcc4524..86aa9461e909 100644
+--- a/Source/WebCore/platform/graphics/nicosia/texmap/NicosiaGCGLLayer.cpp
++++ b/Source/WebCore/platform/graphics/nicosia/texmap/NicosiaGCGLLayer.cpp
+@@ -28,6 +28,8 @@
+ 
+ #include "config.h"
+ #include "NicosiaGCGLLayer.h"
++#include "GPUDebugNexus.h"
++#include <stdio.h>
+ 
+ #if ENABLE(WEBGL) && USE(NICOSIA) && USE(TEXTURE_MAPPER) && !USE(ANGLE)
+ 
+@@ -51,11 +53,19 @@ std::unique_ptr<GCGLLayer> GCGLLayer::create(WebCore::GraphicsContextGLOpenGL& c
+     auto attributes = context.contextAttributes();
+ 
+     if (attributes.renderTarget == GraphicsContextGLRenderTarget::Offscreen) {
++        fprintf(stderr, "[GPUDEBUG] WEBGL_GL_CONTEXT_CREATE mode=OFFSCREEN\n");
+         if (auto glContext = GLContext::createOffscreenContext(&PlatformDisplay::sharedDisplayForCompositing()))
+             return makeUnique<GCGLLayer>(context, WTFMove(glContext));
+     } else {
+         if (!s_windowContext) {
++            GPUDebugNexus::Snapshot gpuDbgBefore;
++            bool gpuDbgMeasure = GPUDebugNexus::takeSnapshot(gpuDbgBefore);
+             s_windowContext = GLContext::createContextForWindow(reinterpret_cast<GLNativeWindowType>(attributes.nativeWindowID), &PlatformDisplay::sharedDisplayForCompositing());
++            fprintf(stderr, "[GPUDEBUG] WEBGL_WINDOW_SURFACE_CREATE mode=HOSTWINDOW ok=%d nativeWindow=0x%llx\n", !!s_windowContext,
++                static_cast<unsigned long long>(attributes.nativeWindowID));
++            GPUDebugNexus::Snapshot gpuDbgAfter;
++            if (gpuDbgMeasure && GPUDebugNexus::takeSnapshot(gpuDbgAfter))
++                GPUDebugNexus::dumpDelta("WEBGL_WINDOW_SURFACE_CREATE", gpuDbgBefore, gpuDbgAfter, 0);
+         }
+         if (s_windowContext)
+             return makeUnique<GCGLLayer>(context);
+diff --git a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
+index 035016b6fdbb..ec243e13feeb 100644
+--- a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
++++ b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
+@@ -69,8 +69,125 @@
+ #include "NicosiaGCGLLayer.h"
+ #endif
+ 
++#include "GPUDebugNexus.h"
++#include <map>
++#include <mutex>
++#include <stdio.h>
++#include <unistd.h>
++
+ namespace WebCore {
+ 
++// [GPUDEBUG] estimated native GL texture bytes per process for the 2.38 native-GLES WebGL path (no ANGLE backend).
++namespace GPUDebug238 {
++static std::mutex s_lock;
++static std::map<unsigned, std::map<unsigned, unsigned long long>> s_texBytes;
++static unsigned long long s_liveBytes = 0, s_peakBytes = 0, s_created = 0, s_deleted = 0, s_events = 0;
++
++static void onCreate(unsigned name)
++{
++    std::lock_guard<std::mutex> l(s_lock);
++    s_texBytes[name];
++    s_created++;
++}
++
++static void setLevel(unsigned name, unsigned key, unsigned long long bytes)
++{
++    std::lock_guard<std::mutex> l(s_lock);
++    unsigned long long& slot = s_texBytes[name][key];
++    s_liveBytes = s_liveBytes - slot + bytes;
++    slot = bytes;
++    if (s_liveBytes > s_peakBytes)
++        s_peakBytes = s_liveBytes;
++}
++
++static unsigned long long onDelete(unsigned name)
++{
++    std::lock_guard<std::mutex> l(s_lock);
++    unsigned long long freed = 0;
++    auto it = s_texBytes.find(name);
++    if (it != s_texBytes.end()) {
++        for (auto& level : it->second)
++            freed += level.second;
++        s_texBytes.erase(it);
++    }
++    s_liveBytes -= freed;
++    s_deleted++;
++    return freed;
++}
++
++static unsigned long long liveBytes()
++{
++    std::lock_guard<std::mutex> l(s_lock);
++    return s_liveBytes;
++}
++
++static bool shouldPeriodicDump()
++{
++    std::lock_guard<std::mutex> l(s_lock);
++    return !(++s_events % 25);
++}
++
++static void dumpProcFile(const char* path, const char* const keys[], size_t count)
++{
++    FILE* f = fopen(path, "r");
++    if (!f)
++        return;
++    char line[256];
++    while (fgets(line, sizeof(line), f)) {
++        for (size_t i = 0; i < count; ++i) {
++            if (!strncmp(line, keys[i], strlen(keys[i])))
++                fprintf(stderr, "[GPUDEBUG]   %s: %s", path, line);
++        }
++    }
++    fclose(f);
++}
++
++static void dumpStats(const char* reason)
++{
++    {
++        std::lock_guard<std::mutex> l(s_lock);
++        size_t b64k = 0, b256k = 0, b1m = 0, bBig = 0;
++        for (auto& texture : s_texBytes) {
++            unsigned long long bytes = 0;
++            for (auto& level : texture.second)
++                bytes += level.second;
++            if (bytes < 65536)
++                b64k++;
++            else if (bytes < 262144)
++                b256k++;
++            else if (bytes < 1048576)
++                b1m++;
++            else
++                bBig++;
++        }
++        fprintf(stderr, "[GPUDEBUG] STATS reason=%s pid=%d backend=NATIVE_GLES liveTex=%zu created=%llu destroyed=%llu liveBytes=%llu peakBytes=%llu hist[<64K=%zu <256K=%zu <1M=%zu >=1M=%zu]\n",
++            reason, getpid(), s_texBytes.size(), s_created, s_deleted, s_liveBytes, s_peakBytes, b64k, b256k, b1m, bBig);
++    }
++    static const char* const memKeys[] = { "MemFree", "MemAvailable", "CmaTotal", "CmaFree" };
++    static const char* const selfKeys[] = { "VmRSS", "VmSize" };
++    dumpProcFile("/proc/meminfo", memKeys, 4);
++    dumpProcFile("/proc/self/status", selfKeys, 2);
++    GPUDebugNexus::dump(reason);
++}
++
++static unsigned bytesPerPixel(GCGLenum format, GCGLenum type)
++{
++    if (type == GL_UNSIGNED_SHORT_5_6_5 || type == GL_UNSIGNED_SHORT_4_4_4_4 || type == GL_UNSIGNED_SHORT_5_5_5_1)
++        return 2;
++    switch (format) {
++    case GL_ALPHA:
++    case GL_LUMINANCE:
++        return 1;
++    case GL_LUMINANCE_ALPHA:
++        return 2;
++    case GL_RGB:
++        return 3;
++    default:
++        return 4;
++    }
++}
++} // namespace GPUDebug238
++
+ static ThreadSpecific<ShaderNameHash*>& getCurrentNameHashMapForShader()
+ {
+     static std::once_flag onceFlag;
+@@ -127,6 +244,9 @@ GraphicsContextGLOpenGL::GraphicsContextGLOpenGL(GraphicsContextGLAttributes att
+ 
+ GraphicsContextGLOpenGL::~GraphicsContextGLOpenGL()
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_CONTEXT_DESTROY ctx=%p hostWindow=%d\n", this,
++        contextAttributes().renderTarget == GraphicsContextGLRenderTarget::HostWindow);
++    GPUDebug238::dumpStats("WEBGL_CONTEXT_DESTROY");
+     if (!makeContextCurrent())
+         return;
+ 
+@@ -184,6 +304,18 @@ bool GraphicsContextGLOpenGL::initialize()
+ 
+     validateAttributes();
+     auto attributes = contextAttributes(); // They may have changed during validation.
++    {
++        GLint gpuDbgMaxTex = 0;
++        ::glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gpuDbgMaxTex);
++        const char* gpuDbgRenderer = reinterpret_cast<const char*>(::glGetString(GL_RENDERER));
++        const char* gpuDbgVersion = reinterpret_cast<const char*>(::glGetString(GL_VERSION));
++        fprintf(stderr, "[GPUDEBUG] RENDER_BACKEND process=WebProcess pid=%d renderer=CAIRO webgl=NATIVE_GLES(no ANGLE backend)\n", getpid());
++        fprintf(stderr, "[GPUDEBUG] WEBGL_CONTEXT_CONFIG ctx=%p backend=NATIVE_GLES hostWindow=%d antialias=%d depth=%d stencil=%d alpha=%d preserveDrawingBuffer=%d premultipliedAlpha=%d maxTextureSize=%d glRenderer=%s glVersion=%s\n",
++            this, attributes.renderTarget == GraphicsContextGLRenderTarget::HostWindow, attributes.antialias, attributes.depth, attributes.stencil,
++            attributes.alpha, attributes.preserveDrawingBuffer, attributes.premultipliedAlpha, gpuDbgMaxTex,
++            gpuDbgRenderer ? gpuDbgRenderer : "?", gpuDbgVersion ? gpuDbgVersion : "?");
++        GPUDebugNexus::dump("WEBGL_CONTEXT_CREATED");
++    }
+ 
+     if (attributes.renderTarget == GraphicsContextGLRenderTarget::HostWindow) {
+         m_compiler = ANGLEWebKitBridge(SH_ESSL_OUTPUT, SH_WEBGL_SPEC);
+@@ -493,8 +625,19 @@ void GraphicsContextGLOpenGL::reshape(int width, int height)
+ 
+     TemporaryOpenGLSetting scopedScissor(GL_SCISSOR_TEST, GL_FALSE);
+     TemporaryOpenGLSetting scopedDither(GL_DITHER, GL_FALSE);
+-    
++
++    fprintf(stderr, "[GPUDEBUG] WEBGL_RESHAPE ctx=%p %dx%d hostWindow=%d antialias=%d\n", this, width, height,
++        contextAttributes().renderTarget == GraphicsContextGLRenderTarget::HostWindow, contextAttributes().antialias);
++    GPUDebugNexus::Snapshot gpuDbgBefore;
++    bool gpuDbgMeasure = GPUDebugNexus::takeSnapshot(gpuDbgBefore);
+     bool mustRestoreFBO = contextAttributes().renderTarget == GraphicsContextGLRenderTarget::HostWindow ? false : reshapeFBOs(IntSize(width, height));
++    ::glFinish();
++    GPUDebugNexus::Snapshot gpuDbgAfter;
++    if (gpuDbgMeasure && GPUDebugNexus::takeSnapshot(gpuDbgAfter)) {
++        char tag[96];
++        snprintf(tag, sizeof(tag), "WEBGL_DRAWING_BUFFERS ctx=%p %dx%d", this, width, height);
++        GPUDebugNexus::dumpDelta(tag, gpuDbgBefore, gpuDbgAfter, static_cast<unsigned long long>(width) * height * 4);
++    }
+ 
+     // Initialize renderbuffers to 0.
+     GLfloat clearColor[] = { 0, 0, 0, 0 }, clearDepth = 0;
+@@ -2316,6 +2459,8 @@ PlatformGLObject GraphicsContextGLOpenGL::createTexture()
+ 
+     GLuint o = 0;
+     glGenTextures(1, &o);
++    GPUDebug238::onCreate(o);
++    fprintf(stderr, "[GPUDEBUG] WEBGL_GEN_TEXTURE ctx=%p name=%u backend=NATIVE_GLES\n", this, o);
+     return o;
+ }
+ 
+@@ -2374,7 +2519,19 @@ void GraphicsContextGLOpenGL::deleteTexture(PlatformGLObject texture)
+     m_state.boundTextureMap.removeIf([texture] (auto& keyValue) {
+         return keyValue.value.first == texture;
+     });
++    unsigned long long gpuDbgFreed = GPUDebug238::onDelete(texture);
++    GPUDebugNexus::Snapshot gpuDbgBefore;
++    bool gpuDbgMeasure = gpuDbgFreed > 4 && GPUDebugNexus::takeSnapshot(gpuDbgBefore);
+     glDeleteTextures(1, &texture);
++    fprintf(stderr, "[GPUDEBUG] WEBGL_GL_DELETE_TEXTURE ctx=%p name=%u freedBytes=%llu liveBytes=%llu backend=NATIVE_GLES\n", this, texture, gpuDbgFreed, GPUDebug238::liveBytes());
++    GPUDebugNexus::Snapshot gpuDbgAfter;
++    if (gpuDbgMeasure && GPUDebugNexus::takeSnapshot(gpuDbgAfter)) {
++        char tag[96];
++        snprintf(tag, sizeof(tag), "GLES_TEXDELETE texture=%u", texture);
++        GPUDebugNexus::dumpDelta(tag, gpuDbgBefore, gpuDbgAfter, gpuDbgFreed);
++    }
++    if (GPUDebug238::shouldPeriodicDump())
++        GPUDebug238::dumpStats("periodic");
+ }
+ 
+ void GraphicsContextGLOpenGL::synthesizeGLError(GCGLenum error)
+@@ -2391,7 +2548,44 @@ void GraphicsContextGLOpenGL::texImage2DDirect(GCGLenum target, GCGLint level, G
+     if (!makeContextCurrent())
+         return;
+ 
++    GLint gpuDbgBound = 0;
++    ::glGetIntegerv(target == GL_TEXTURE_2D ? GL_TEXTURE_BINDING_2D : GL_TEXTURE_BINDING_CUBE_MAP, &gpuDbgBound);
++    unsigned long long gpuDbgEst = static_cast<unsigned long long>(width) * height * GPUDebug238::bytesPerPixel(format, type);
++    fprintf(stderr, "[GPUDEBUG] TEXIMAGE2D texture=%d target=0x%x level=%d width=%d height=%d approxBytes=%llu internalFormat=0x%x format=0x%x type=0x%x pixels=%p liveBytes=%llu backend=NATIVE_GLES\n",
++        gpuDbgBound, target, level, width, height, gpuDbgEst, internalformat, format, type, pixels, GPUDebug238::liveBytes());
++    GPUDebugNexus::Snapshot gpuDbgBefore;
++    bool gpuDbgMeasure = gpuDbgEst > 4 && GPUDebugNexus::takeSnapshot(gpuDbgBefore);
++    moveErrorsToSyntheticErrorList();
++
+     ::glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
++
++    // Errors are parked in the synthetic list so WebGL getError() still reports them in order.
++    bool gpuDbgOom = false;
++    for (unsigned i = 0; i < 100; ++i) {
++        GCGLenum error = ::glGetError();
++        if (error == GL_NO_ERROR)
++            break;
++        if (error == GL_OUT_OF_MEMORY)
++            gpuDbgOom = true;
++        m_syntheticErrors.add(error);
++    }
++    if (gpuDbgOom) {
++        static unsigned s_gpuDbgOomCount = 0;
++        ++s_gpuDbgOomCount;
++        fprintf(stderr, "[GPUDEBUG] GL_OOM #%u func=texImage2DDirect texture=%d %dx%d backend=NATIVE_GLES\n", s_gpuDbgOomCount, gpuDbgBound, width, height);
++        if (s_gpuDbgOomCount <= 5 || !(s_gpuDbgOomCount % 20))
++            GPUDebug238::dumpStats("GL_OUT_OF_MEMORY");
++        return;
++    }
++    GPUDebug238::setLevel(static_cast<unsigned>(gpuDbgBound), static_cast<unsigned>(target) * 64 + static_cast<unsigned>(level), gpuDbgEst);
++    GPUDebugNexus::Snapshot gpuDbgAfter;
++    if (gpuDbgMeasure && GPUDebugNexus::takeSnapshot(gpuDbgAfter)) {
++        char tag[128];
++        snprintf(tag, sizeof(tag), "GLES_TEXIMAGE texture=%d %dx%d level=%d", gpuDbgBound, width, height, level);
++        GPUDebugNexus::dumpDelta(tag, gpuDbgBefore, gpuDbgAfter, gpuDbgEst);
++    }
++    if (GPUDebug238::shouldPeriodicDump())
++        GPUDebug238::dumpStats("periodic");
+ }
+ 
+ void GraphicsContextGLOpenGL::drawArraysInstanced(GCGLenum mode, GCGLint first, GCGLsizei count, GCGLsizei primcount)
+diff --git a/Source/WebCore/platform/graphics/texmap/BitmapTextureGL.cpp b/Source/WebCore/platform/graphics/texmap/BitmapTextureGL.cpp
+index ee27b2f6398a..e2d570739f71 100644
+--- a/Source/WebCore/platform/graphics/texmap/BitmapTextureGL.cpp
++++ b/Source/WebCore/platform/graphics/texmap/BitmapTextureGL.cpp
+@@ -21,6 +21,12 @@
+ 
+ #include "config.h"
+ #include "BitmapTextureGL.h"
++#include "GPUDebugNexus.h"
++#include <atomic>
++#include <stdio.h>
++
++static std::atomic<int> s_gpuDbgBitmapLiveCount { 0 };
++static std::atomic<long long> s_gpuDbgBitmapLiveBytes { 0 };
+ 
+ #if USE(TEXTURE_MAPPER_GL)
+ 
+@@ -80,6 +86,7 @@ void BitmapTextureGL::didReset()
+     if (m_textureSize == contentSize())
+         return;
+ 
++    long long gpuDbgOldBytes = static_cast<long long>(m_textureSize.width()) * m_textureSize.height() * 4;
+     m_textureSize = contentSize();
+     glBindTexture(GL_TEXTURE_2D, m_id);
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+@@ -87,7 +94,19 @@ void BitmapTextureGL::didReset()
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+ 
++    GPUDebugNexus::Snapshot gpuDbgBefore;
++    bool gpuDbgMeasure = GPUDebugNexus::takeSnapshot(gpuDbgBefore);
+     glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_textureSize.width(), m_textureSize.height(), 0, m_format, m_type, 0);
++    GLenum gpuDbgErr = glGetError();
++    long long gpuDbgBytes = static_cast<long long>(m_textureSize.width()) * m_textureSize.height() * 4;
++    if (!gpuDbgOldBytes)
++        ++s_gpuDbgBitmapLiveCount;
++    fprintf(stderr, "[GPUDEBUG] BITMAP_TEXTURE_CREATE this=%p id=%u size=%dx%d bytes=%lld glError=0x%x liveCount=%d liveBytes=%lld\n",
++        this, m_id, m_textureSize.width(), m_textureSize.height(), gpuDbgBytes, gpuDbgErr,
++        s_gpuDbgBitmapLiveCount.load(), s_gpuDbgBitmapLiveBytes += gpuDbgBytes - gpuDbgOldBytes);
++    GPUDebugNexus::Snapshot gpuDbgAfter;
++    if (gpuDbgMeasure && GPUDebugNexus::takeSnapshot(gpuDbgAfter))
++        GPUDebugNexus::dumpDelta("BITMAP_TEXTURE_CREATE", gpuDbgBefore, gpuDbgAfter, static_cast<unsigned long long>(gpuDbgBytes));
+ }
+ 
+ void BitmapTextureGL::updateContents(const void* srcData, const IntRect& targetRect, const IntPoint& sourceOffset, int bytesPerLine)
+@@ -306,6 +325,12 @@ void BitmapTextureGL::bindAsSurface()
+ 
+ BitmapTextureGL::~BitmapTextureGL()
+ {
++    long long gpuDbgBytes = static_cast<long long>(m_textureSize.width()) * m_textureSize.height() * 4;
++    if (gpuDbgBytes)
++        --s_gpuDbgBitmapLiveCount;
++    fprintf(stderr, "[GPUDEBUG] BITMAP_TEXTURE_DESTROY this=%p id=%u size=%dx%d hasGLContext=%d liveCount=%d liveBytes=%lld\n",
++        this, m_id, m_textureSize.width(), m_textureSize.height(), GLContext::current() ? 1 : 0,
++        s_gpuDbgBitmapLiveCount.load(), s_gpuDbgBitmapLiveBytes -= gpuDbgBytes);
+     GLContext* currentContext = GLContext::current();
+     if (!currentContext || !currentContext->platformContext()) {
+         // The context has been destroyed already, so we can't clean up.
+-- 
+2.44.4
+
