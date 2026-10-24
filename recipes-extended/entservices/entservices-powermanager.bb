@@ -2,9 +2,9 @@ SUMMARY = "ENTServices powermanager plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
-PV = "1.4.9"
+PV = "1.4.9_Test"
 PV:vdevice_x86-64-mw = "1.4.7.1"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
