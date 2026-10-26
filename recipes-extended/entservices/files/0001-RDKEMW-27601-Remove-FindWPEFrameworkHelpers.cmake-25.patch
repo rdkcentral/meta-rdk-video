@@ -1,0 +1,80 @@
+From eb7f9157e396e982108f99b86844edaa223f8629 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Fri, 23 Oct 2026 14:56:54 +0300
+Subject: [PATCH] RDKEMW-27601 : Remove FindWPEFrameworkHelpers.cmake
+
+Reason for change: entservices-helpers package installs cmake config
+that other packages should use.
+For some reason, every entservices repo also contains a redundant hand-written
+cmake/FindWPEFrameworkHelpers.cmake that introduces custom logic. This makes
+impossible to use WPEFrameworkHelpers as INTERFACE library (no .so).
+Delete cmake/FindWPEFrameworkHelpers.cmake from entservices repos
+and use CONFIG mode instead.
+Test Procedure: None
+Risks: Low
+version: Patch
+---
+ cmake/FindWPEFrameworkHelpers.cmake | 27 ---------------------------
+ plugin/CMakeLists.txt               |  4 ++--
+ 2 files changed, 2 insertions(+), 29 deletions(-)
+ delete mode 100644 cmake/FindWPEFrameworkHelpers.cmake
+
+diff --git a/cmake/FindWPEFrameworkHelpers.cmake b/cmake/FindWPEFrameworkHelpers.cmake
+deleted file mode 100644
+index 7e97221..0000000
+--- a/cmake/FindWPEFrameworkHelpers.cmake
++++ /dev/null
+@@ -1,27 +0,0 @@
+-# - Try to find WPEFrameworkHelpers
+-# Once done this will define
+-#  WPEFrameworkHelpers_FOUND        - System has WPEFrameworkHelpers
+-#  WPEFrameworkHelpers_INCLUDE_DIRS - The WPEFrameworkHelpers include directories
+-#
+-# Also creates an imported target:
+-#  WPEFrameworkHelpers::WPEFrameworkHelpers
+-
+-find_path(WPEFrameworkHelpers_INCLUDE_DIRS
+-    NAMES DeviceSettingsInterface.h UtilsLogging.h
+-    PATH_SUFFIXES wpeframework/helpers wpeframework/helpers)
+-
+-set(WPEFrameworkHelpers_INCLUDE_DIRS ${WPEFrameworkHelpers_INCLUDE_DIRS} CACHE PATH "Path to WPEFrameworkHelpers includes")
+-
+-include(FindPackageHandleStandardArgs)
+-FIND_PACKAGE_HANDLE_STANDARD_ARGS(WPEFrameworkHelpers DEFAULT_MSG
+-    WPEFrameworkHelpers_INCLUDE_DIRS)
+-
+-if(WPEFrameworkHelpers_FOUND AND NOT TARGET WPEFrameworkHelpers::WPEFrameworkHelpers)
+-    add_library(WPEFrameworkHelpers::WPEFrameworkHelpers INTERFACE IMPORTED)
+-    set_target_properties(WPEFrameworkHelpers::WPEFrameworkHelpers PROPERTIES
+-        INTERFACE_INCLUDE_DIRECTORIES "${WPEFrameworkHelpers_INCLUDE_DIRS}")
+-endif()
+-
+-mark_as_advanced(
+-    WPEFrameworkHelpers_FOUND
+-    WPEFrameworkHelpers_INCLUDE_DIRS)
+\ No newline at end of file
+diff --git a/plugin/CMakeLists.txt b/plugin/CMakeLists.txt
+index 2413c5c..e63253b 100644
+--- a/plugin/CMakeLists.txt
++++ b/plugin/CMakeLists.txt
+@@ -28,7 +28,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+ find_package(${NAMESPACE}Plugins REQUIRED)
+ find_package(${NAMESPACE}Definitions REQUIRED)
+ find_package(CompileSettingsDebug CONFIG REQUIRED)
+-find_package(WPEFrameworkHelpers REQUIRED)
++find_package(${NAMESPACE}Helpers CONFIG REQUIRED)
+ find_package(PkgConfig REQUIRED)
+ pkg_check_modules(GLIB2 REQUIRED glib-2.0)
+ find_library(PROCPS_LIBRARIES NAMES procps)
+@@ -153,7 +153,7 @@ target_link_libraries(${PLUGIN_IMPLEMENTATION}
+     PRIVATE
+         CompileSettingsDebug::CompileSettingsDebug
+         ${NAMESPACE}Plugins::${NAMESPACE}Plugins
+-        WPEFrameworkHelpers::WPEFrameworkHelpers
++        ${NAMESPACE}::${NAMESPACE}Helpers
+         ${GLIB2_LIBRARIES})
+ 
+ install(TARGETS ${PLUGIN_IMPLEMENTATION}
+-- 
+2.32.0 (Apple Git-132)
+
