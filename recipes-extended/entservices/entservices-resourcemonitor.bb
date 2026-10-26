@@ -6,9 +6,11 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 PR = "r0"
 
 # local path to your plugin sources
+SRCREV = "${AUTOREV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-resourcemonitor;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
            "
+S = "${WORKDIR}/git"
 
 inherit cmake pkgconfig
 
