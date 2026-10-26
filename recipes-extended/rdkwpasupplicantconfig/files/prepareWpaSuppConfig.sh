@@ -88,6 +88,8 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
         sed -i "s/^country=.*/country=$COUNTRY_CODE/" $WPA_SUPP_CONF_FILE
 	elif [ ! -s "$WPA_SUPP_CONF_FILE" ]; then
         echo "country=$COUNTRY_CODE" > "$WPA_SUPP_CONF_FILE"
+	elif [ ! -s "$WPA_SUPP_CONF_FILE" ]; then
+        echo "country=$COUNTRY_CODE" > "$WPA_SUPP_CONF_FILE"
     else
         sed -i "1icountry=$COUNTRY_CODE" $WPA_SUPP_CONF_FILE
     fi
