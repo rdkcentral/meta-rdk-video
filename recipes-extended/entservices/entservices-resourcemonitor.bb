@@ -3,13 +3,12 @@ DESCRIPTION = "Plugin to monitor PSI, swap, memory, and flash space"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.0"
 PR = "r0"
 
 # local path to your plugin sources
-SRCREV = "${PV}"
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-resourcemonitor;${CMF_GITHUB_SRC_URI_SUFFIX}"
-S = "${WORKDIR}/git"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-resourcemonitor;${CMF_GITHUB_SRC_URI_SUFFIX} \
+           file://rdkservices.ini \
+           "
 
 inherit cmake pkgconfig
 
@@ -32,7 +31,7 @@ CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
-PACKAGECONFIG ?= "resourcemonitor erm"
+PACKAGECONFIG ?= "resourcemonitor"
 PACKAGES += "${PN}-l1tests"
 
 EXTRA_OEMAKE = "VERBOSE=1"
