@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 PR = "r0"
 
 # local path to your plugin sources
-SRCREV = "${AUTOREV}"
+SRCREV = "72bd31784e1a2f240d05678e5d22e771300a4f0f"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-resourcemonitor;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
            "
