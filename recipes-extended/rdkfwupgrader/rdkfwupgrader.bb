@@ -3,10 +3,10 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=70514b59ff7b36bbbc30d093c6814d8e"
 
 # To have a possibility to override SRC_URI later, we are introducing the following workaround:
-PV = "1.8.5"
+PV = "1.8.6"
 PR = "r0"
 
-SRCREV_rdkfw = "cdd7a86ca0aa58f2e643cca06dc1a7c849a69e37"
+SRCREV_rdkfw = "b835fb11e9c2f95cf243799e10f52119c67bf696"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdkfwupdater;${CMF_GITHUB_SRC_URI_SUFFIX};name=rdkfw"
 
 DEPENDS +=" cjson curl rdk-logger rbus"
