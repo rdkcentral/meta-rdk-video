@@ -3,13 +3,14 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=34aa8e5c0a5ec9c81c534b40fb21b5b6"
 
 PV = "1.0+git${SRCPV}"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceinfo;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
+           file://0001-RDKEMW-27601-Remove-FindWPEFrameworkHelpers.cmake-28.patch \
           "
 
 # Release tag - 1.1.7

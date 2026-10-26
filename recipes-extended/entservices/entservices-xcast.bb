@@ -3,12 +3,13 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
 PV = "2.2.1"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-xcast;${CMF_GITHUB_SRC_URI_SUFFIX}\
+          file://0001-RDKEMW-27601-Remove-FindWPEFrameworkHelpers.cmake-27.patch \
           "
 
 # Release version - 2.2.1
