@@ -7,7 +7,7 @@ DEPENDS = "subttxrend-common"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "9f12692ccca00f024109c46cbd1cc525df040c16"
+SRCREV = "eb851cf63e6083af26647e6989dd02c18360b7ee"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/ttxdecoder"
 
