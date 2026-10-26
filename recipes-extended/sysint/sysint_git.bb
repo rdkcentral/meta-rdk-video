@@ -8,7 +8,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PV = "6.0.8"
 PR = "r0"
 
-SRCREV = "4fbf570e5e5cceadf5a5f076f8fe5866f9cf9f7d"
+SRCREV = "e2ff18b3e59d05479c8f205bb010f2443dac307b"
 SRC_URI = "${CMF_GITHUB_ROOT}/sysint;${CMF_GITHUB_SRC_URI_SUFFIX};module=.;name=sysint"
 S = "${WORKDIR}/git"
 
@@ -130,6 +130,9 @@ do_install() {
 	    install -m 0644 ${S}/systemd_units/system-time-set.path ${D}${systemd_unitdir}/system
 	    install -m 0644 ${S}/systemd_units/system-time-set.target ${D}${systemd_unitdir}/system
 	    install -m 0644 ${S}/systemd_units/system-time-event.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/wifi-guard.path ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/systemd_units/wifi-guard.service ${D}${systemd_unitdir}/system
+        install -m 0755 ${S}/lib/rdk/handle-wifi-interface.sh ${D}${base_libdir}/rdk
 
         if [ "${BIND_ENABLED}" = "true" ]; then
            echo "BIND_ENABLED=true" >> ${D}${sysconfdir}/device-middleware.properties
@@ -282,6 +285,7 @@ SYSTEMD_SERVICE:${PN} += "ntp-time-sync.timer"
 SYSTEMD_SERVICE:${PN} += "system-time-set.path"
 SYSTEMD_SERVICE:${PN} += "system-time-event.service"
 SYSTEMD_SERVICE:${PN} += "notify-network-ready.service"
+SYSTEMD_SERVICE:${PN} += "wifi-guard.path"
 FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
 FILES:${PN} += "${base_libdir}/rdk/*"
