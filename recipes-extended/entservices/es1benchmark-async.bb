@@ -9,7 +9,7 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "git://github.com/workkavint-ship-it/JsonRPC_Benchmark_Async;protocol=https;branch=main"
-SRCREV = "fd134def152d7201351fe0427d7d62b600a959f2"
+SRCREV = "093923dec0d3512654045060ad39b5bdb8715a3a"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
