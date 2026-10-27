@@ -92,14 +92,9 @@ do_install() {
         ln -sf ${systemd_system_unitdir}/wpeframework.service ${D}${sysconfdir}/systemd/system/${x}.requires/wpeframework.service
     done
 
-    # Adding final THUNDER_STARTUP_SERVICES into the Requires= line of the target
-    FINAL_SERVICES="$(echo "${THUNDER_STARTUP_SERVICES}" | tr '\n' ' ')"
-    TARGET_FILE="${D}${systemd_system_unitdir}/wpeframework-services.target"
-
-    if grep -q "^Requires=" "$TARGET_FILE"; then
-        # Append to existing Requires= line
-        sed -i "/^Requires=/ s|$| ${FINAL_SERVICES}|" "$TARGET_FILE"
-    fi
+    for x in ${THUNDER_STARTUP_SERVICES}; do
+        echo "Requires=${x}" >> "${D}${systemd_system_unitdir}/wpeframework-services.target"
+    done
 }
 
 do_install:append() {
