@@ -8,7 +8,7 @@ PV = "1.0.7"
 PR = "r0"
 SRCREV = "${PV}"
 
-include include/ctrlmplugins.inc
+require include/ctrlmplugins.inc
 
 PACKAGES =+ "${PN}-test"
 FILES:${PN}-test += "${bindir}/remoteControlTestClient"

@@ -8,4 +8,4 @@ PV = "1.0.6"
 PR = "r0"
 SRCREV = "${PV}"
 
-include include/ctrlmplugins.inc
+require include/ctrlmplugins.inc
