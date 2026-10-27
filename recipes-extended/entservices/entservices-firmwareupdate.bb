@@ -2,8 +2,8 @@ SUMMARY = "ENTServices firmware update plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.2.6"
-PR = "r1"
+PV = "1.2.7"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
@@ -11,8 +11,8 @@ inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX} \
            "
 
-# Release version - 1.2.6-nosim
-SRCREV = "b56f1f4f16cf251e361bc70f7faf5298d6448867"
+# Release version - 1.2.7
+SRCREV = "0d783a04c328bb8b69ee2e6cb175dc07881e7c8d"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
