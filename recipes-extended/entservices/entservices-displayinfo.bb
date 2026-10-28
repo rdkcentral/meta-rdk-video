@@ -14,6 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-displayinfo;${CMF_GITHUB_SRC_URI_SUFFI
 
 # Release version - 1.2.8
 SRCREV = "03d5483c08deaa1dc8959db33111f4dca970b7bb"
+SRCREV:vdevice_x86-64-mw = "c5b705c607131c0e5cb99820ca91218f1b581c11"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -52,7 +53,16 @@ PACKAGECONFIG ?= " breakpadsupport \
 PACKAGECONFIG:append = " displayinfo"
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[displayinfo]          = "-DPLUGIN_DISPLAYINFO=ON  -DUSE_DEVICESETTINGS=1,-DPLUGIN_DISPLAYINFO=OFF,iarmbus iarmmgrs drm entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal virtual/vendor-displayinfo-soc,iarmbus libdrm entservices-apis entservices-helpers devicesettings virtual/vendor-displayinfo-soc"
+DISPLAYINFO_DEPS = "iarmbus iarmmgrs drm entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal virtual/vendor-displayinfo-soc"
+DISPLAYINFO_DEPS:vdevice_x86-64-mw = "iarmbus drm entservices-apis entservices-helpers entservices-devicesettings"
+DISPLAYINFO_RDEPS = "iarmbus libdrm entservices-apis entservices-helpers devicesettings virtual/vendor-displayinfo-soc"
+DISPLAYINFO_RDEPS:vdevice_x86-64-mw = "iarmbus libdrm entservices-apis entservices-helpers entservices-devicesettings"
+PACKAGECONFIG[displayinfo]          = "-DPLUGIN_DISPLAYINFO=ON -DUSE_DEVICESETTINGS=1,-DPLUGIN_DISPLAYINFO=OFF,${DISPLAYINFO_DEPS},${DISPLAYINFO_RDEPS}"
+
+EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
+    -DIARMBUS_INCLUDE_DIRS:PATH=${RECIPE_SYSROOT}${includedir}/rdk/iarmbus \
+    -DIARMRECEIVER_INCLUDE_DIRS:PATH= \
+"
 
 # ----------------------------------------------------------------------------
 
