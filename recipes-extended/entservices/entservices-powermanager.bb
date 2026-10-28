@@ -4,13 +4,14 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
 PV = "1.4.11"
 PV:vdevice_x86-64-mw = "1.4.7.1"
-PR = "r0"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
+           file://0001-RDKEMW-27440-Route-entservices-helpers-through-Messa-3.patch \
           "
 
 # Release version - 1.4.11

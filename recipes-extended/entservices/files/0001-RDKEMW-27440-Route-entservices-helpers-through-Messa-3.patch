@@ -1,0 +1,106 @@
+From c749df359c91e2ea701c62b986ce22b60cbe8d99 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Mon, 9 Nov 2026 14:11:57 +0200
+Subject: [PATCH] RDKEMW-27440 : Route entservices-helpers through Messaging
+
+Reason for change: include Module.h
+Test Procedure: None
+Risks: Low
+version: Patch
+---
+ plugin/DeepSleepController.h | 1 +
+ plugin/PowerController.cpp   | 1 +
+ plugin/PowerController.h     | 1 +
+ plugin/PowerUtils.h          | 1 +
+ plugin/RebootController.h    | 1 +
+ plugin/Settings.h            | 1 +
+ plugin/ThermalController.h   | 1 +
+ 7 files changed, 7 insertions(+)
+
+diff --git a/plugin/DeepSleepController.h b/plugin/DeepSleepController.h
+index 1abaa0e..b2f065b 100755
+--- a/plugin/DeepSleepController.h
++++ b/plugin/DeepSleepController.h
+@@ -18,6 +18,7 @@
+  */
+ #pragma once
+ 
++#include "Module.h"
+ #include <map>         // for map
+ #include <memory>      // for unique_ptr, operator!=
+ #include <stdint.h>    // for uint32_t
+diff --git a/plugin/PowerController.cpp b/plugin/PowerController.cpp
+index 445ec84..81421dd 100755
+--- a/plugin/PowerController.cpp
++++ b/plugin/PowerController.cpp
+@@ -17,6 +17,7 @@
+  * limitations under the License.
+  */
+ 
++#include "Module.h"
+ #include <functional> // for function
+ #include <unistd.h>   // for access, F_OK
+ 
+diff --git a/plugin/PowerController.h b/plugin/PowerController.h
+index 6b2cead..44fd774 100755
+--- a/plugin/PowerController.h
++++ b/plugin/PowerController.h
+@@ -18,6 +18,7 @@
+  */
+ #pragma once
+ 
++#include "Module.h"
+ #include <chrono>      // for steady_clock, time_point
+ #include <cstdint>     // for uint32_t
+ #include <memory>      // for unique_ptr, default_delete
+diff --git a/plugin/PowerUtils.h b/plugin/PowerUtils.h
+index 292a259..a4a9dd0 100755
+--- a/plugin/PowerUtils.h
++++ b/plugin/PowerUtils.h
+@@ -19,6 +19,7 @@
+ 
+ #pragma once
+ 
++#include "Module.h"
+ #include <interfaces/IPowerManager.h> // for IPowerManager
+ 
+ class PowerUtils {
+diff --git a/plugin/RebootController.h b/plugin/RebootController.h
+index e77acf1..5b31fe3 100755
+--- a/plugin/RebootController.h
++++ b/plugin/RebootController.h
+@@ -18,6 +18,7 @@
+  */
+ #pragma once
+ 
++#include "Module.h"
+ #include "UtilsLogging.h"
+ #include <core/WorkerPool.h>
+ #include <ctime>
+diff --git a/plugin/Settings.h b/plugin/Settings.h
+index f0e0881..e8b4a84 100755
+--- a/plugin/Settings.h
++++ b/plugin/Settings.h
+@@ -18,6 +18,7 @@
+  */
+ #pragma once
+ 
++#include "Module.h"
+ #include <chrono>
+ #include <cstdint>
+ 
+diff --git a/plugin/ThermalController.h b/plugin/ThermalController.h
+index 71e7a22..f0b4b87 100755
+--- a/plugin/ThermalController.h
++++ b/plugin/ThermalController.h
+@@ -19,6 +19,7 @@
+ 
+ #pragma once
+ 
++#include "Module.h"
+ #include <errno.h>  // for errno
+ #include <stdint.h> // for uint32_t
+ #include <stdio.h>  // for fclose, ferror, fopen, fscanf
+-- 
+2.32.0 (Apple Git-132)
+

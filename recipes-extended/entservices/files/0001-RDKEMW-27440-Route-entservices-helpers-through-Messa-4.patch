@@ -1,0 +1,29 @@
+From cc1cb73bde0811ff21c7fca8c552b313a2c2d9c2 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Tue, 10 Nov 2026 21:20:03 +0200
+Subject: [PATCH] RDKEMW-27440 : Route entservices-helpers through Messaging
+
+Reason for change: delete unused shit
+Test Procedure: None
+Risks: Low
+version: Patch
+---
+ plugin/DeviceSettingsLogger.h | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/plugin/DeviceSettingsLogger.h b/plugin/DeviceSettingsLogger.h
+index e58c2ec..4b815d4 100644
+--- a/plugin/DeviceSettingsLogger.h
++++ b/plugin/DeviceSettingsLogger.h
+@@ -4,8 +4,6 @@
+ #include <sys/syscall.h>
+ #include <unistd.h>
+ 
+-#include <wpeframework/helpers/UtilsLogging.h>
+-
+ #define DSLOG_INFO(fmt, ...) do { fprintf(stderr, "[DSMGR] [%d] INFO [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr); } while (0)
+ #define DSLOG_WARN(fmt, ...) do { fprintf(stderr, "[DSMGR] [%d] WARN [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr); } while (0)
+ #define DSLOG_ERR(fmt, ...) do { fprintf(stderr, "[DSMGR] [%d] ERROR [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr); } while (0)
+-- 
+2.32.0 (Apple Git-132)
+
