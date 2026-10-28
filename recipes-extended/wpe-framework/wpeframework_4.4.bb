@@ -13,13 +13,14 @@ DEPENDS += "rdk-logger"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r58"
+PR = "r59"
 PV = "4.4.8"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder \
            file://wpeframework-init \
            file://wpeframework.service.in \
+           file://RDKEMW-27440.patch \
            "
 
 SRCREV_thunder = "ce5f8fb9ac7e994f86ad4e6f81520e5eda99974c"
