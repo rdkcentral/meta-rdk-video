@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PV = "1.0.6"
-PR = "r1"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,6 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-helpers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 SRC_URI += "file://0001-RDKEMW-27354-entservices-helpers-contains-duplicate-.patch"
 
 SRCREV = "72a1aa9054e9ea0fdf3dcee25df8eb46c43bf61b"
+
+ALLOW_EMPTY:${PN} = "1"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
