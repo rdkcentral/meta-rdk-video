@@ -81,9 +81,6 @@ LDFLAGS:append = " \
 "
 
 do_configure:append() {
-    if [ ! -e "${STAGING_INCDIR}/rdk/halif/ds-hal/dsTypes.h" ]; then
-        bbfatal "Unable to locate dsTypes.h from vdevice-noop under ${STAGING_INCDIR}/rdk/halif/ds-hal"
-    fi
     if [ ! -d "${STAGING_INCDIR}/mw/hdmiinput/0.1.0.0/include" ]; then
         bbfatal "Unable to locate staged rdk-halif-aidl-mw-hdmiinput headers under ${STAGING_INCDIR}/mw/hdmiinput"
     fi
