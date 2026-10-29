@@ -46,9 +46,9 @@ PACKAGECONFIG ?= " \
     release \
     virtualinput \
     websocket \
+    slim_warning_reporting \
     "
-slim_warning_reporting \
-    
+
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com', '', d)}"
 
 # Buildtype
