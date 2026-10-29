@@ -50,6 +50,7 @@ CXXFLAGS:append = " \
     -Wno-error=class-memaccess \
     -Wno-error=format \
     -Wno-error=unknown-pragmas \
+    -Wno-error=unused-function \
     -Wno-error=write-strings \
 "
 LDFLAGS:append = " \
