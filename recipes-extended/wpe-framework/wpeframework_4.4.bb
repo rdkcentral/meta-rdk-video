@@ -47,7 +47,8 @@ PACKAGECONFIG ?= " \
     virtualinput \
     websocket \
     "
-
+slim_warning_reporting \
+    
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com', '', d)}"
 
 # Buildtype
@@ -74,6 +75,10 @@ PACKAGECONFIG[websocket]       = "-DWEBSOCKET=ON,,"
 
 PACKAGECONFIG[com] = "-DCOM=ON,,,"
 
+
+# Slim Warning Reporting (Thunder Source/CMakeLists.txt). Enabling this forces
+# WARNING_REPORTING=ON and only reports Invoke durations and WorkerPool warnings.
+PACKAGECONFIG[slim_warning_reporting] = "-DSLIM_WARNING_REPORTING=ON,-DSLIM_WARNING_REPORTING=OFF,"
 PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES', \
     'debug-variant', ' configoverride', '', d)}"
 
@@ -120,6 +125,22 @@ EXTRA_OECMAKE += " \
     -DDISABLEPLUGINAUTOACTIVATION=true \
 "
 
+
+# Warning Reporting report/warning bounds (Thunder Source/CMakeLists.txt defaults).
+EXTRA_OECMAKE += " \
+    -DWARNING_REPORTING_INVOKE_RPC_REPORT_BOUND=250 \
+    -DWARNING_REPORTING_INVOKE_RPC_WARNING_BOUND=750 \
+    -DWARNING_REPORTING_INVOKE_MESSAGE_REPORT_BOUND=500 \
+    -DWARNING_REPORTING_INVOKE_MESSAGE_WARNING_BOUND=500 \
+    -DWARNING_REPORTING_WORKERPOOL_FINISH_REPORT_BOUND=5000 \
+    -DWARNING_REPORTING_WORKERPOOL_FINISH_WARNING_BOUND=7500 \
+    -DWARNING_REPORTING_WORKERPOOL_QUEUE_REPORT_BOUND=200 \
+    -DWARNING_REPORTING_WORKERPOOL_QUEUE_WARNING_BOUND=400 \
+    -DWARNING_REPORTING_WORKERPOOL_ACTIVE_REPORT_BOUND=15000 \
+    -DWARNING_REPORTING_WORKERPOOL_ACTIVE_WARNING_BOUND=20000 \
+    -DWARNING_REPORTING_PLUGIN_STATE_REPORT_BOUND=5000 \
+    -DWARNING_REPORTING_PLUGIN_STATE_WARNING_BOUND=5000 \
+    "
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
 
 EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
