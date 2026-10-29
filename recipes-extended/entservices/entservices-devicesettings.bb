@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicesettings;${CMF_GITHUB_SRC_URI_SU
           "
 
 # HDMIInput AIDL source revision from support/AIDL
-SRCREV = "2b8642222f2c4219ebd0775beffe73b2b5ac9ef1"
-SRCREV:vdevice_x86-64-mw = "2b8642222f2c4219ebd0775beffe73b2b5ac9ef1"
+SRCREV = "66880cc7f9a96aff874f564b5f36d997055a9dcc"
+SRCREV:vdevice_x86-64-mw = "66880cc7f9a96aff874f564b5f36d997055a9dcc"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
