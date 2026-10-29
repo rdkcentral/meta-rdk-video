@@ -120,7 +120,6 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
     fi
 else
     log "$WPA_SUPP_CONF_FILE file is missing. Creating file and updating configurations..."
-    echo "ctrl_interface=/var/run/wpa_supplicant" > $WPA_SUPP_CONF_FILE
     echo "country=$COUNTRY_CODE" >> $WPA_SUPP_CONF_FILE
     echo "pmf=$PMF_CONFIG" >> $WPA_SUPP_CONF_FILE
 	echo "wowlan_triggers=any" >> $WPA_SUPP_CONF_FILE
