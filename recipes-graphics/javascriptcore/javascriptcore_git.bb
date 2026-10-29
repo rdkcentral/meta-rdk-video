@@ -54,7 +54,7 @@ SELECTED_OPTIMIZATION:append = " -g "
 #Optimize for size
 SELECTED_OPTIMIZATION:append = " -Os"
 SELECTED_OPTIMIZATION:append = " -fdata-sections -ffunction-sections"
-SELECTED_OPTIMIZATION:append = " -flto"
+#SELECTED_OPTIMIZATION:append = " -flto"
 SELECTED_OPTIMIZATION:append = " -fstack-usage"
 
 TUNE_CCARGS:remove = "-fno-omit-frame-pointer -fno-optimize-sibling-calls"
@@ -66,7 +66,7 @@ LDFLAGS:append = " -Wl,--no-keep-memory"
 do_install() {
    install -d ${D}/${libdir}
    install -d ${D}/${libdir}/javascriptcore
-   rm -f ${B}/lib/libJavaScriptCore.so*.ltrans*
+#   rm -f ${B}/lib/libJavaScriptCore.so*.ltrans*
    for f in ${B}/lib/libJavaScriptCore.so*; do
        if [ -L "$f" ]; then
            cp -d "$f" ${D}/${libdir}/javascriptcore/.
