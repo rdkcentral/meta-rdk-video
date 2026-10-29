@@ -8,11 +8,11 @@ SECTION = "console/utils"
 
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
-PV = "1.0.8"
+PV = "1.0.9"
 PR = "r0"
 
-# Release version - 1.0.8
-SRCREV_iarmbus = "d4ee24458214f3cfe30ca40c571e9ffc5ffaacaa"
+# Release version - 1.0.9
+SRCREV_iarmbus = "7853a67393baa53213396ddc59a93840c5defe1f"
 SRCREV_FORMAT = "iarmbus"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmbus;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmbus"
 
