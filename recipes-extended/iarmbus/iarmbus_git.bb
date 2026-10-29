@@ -28,6 +28,8 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd', '', d)
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 inherit autotools pkgconfig systemd coverity syslog-ng-config-gen logrotate_config
+PACKAGECONFIG:remove = "tp"
+EXTRA_OECONF:remove = "--enable-tp"
 SYSLOG-NG_FILTER = "uimgr"
 SYSLOG-NG_SERVICE_uimgr = "iarmbusd.service"
 SYSLOG-NG_DESTINATION_uimgr = "uimgr_log.txt"
