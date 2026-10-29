@@ -5,13 +5,13 @@ LICENSE = "Apache-2.0 & ISC"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=83a31d934b0cc2ab2d44a329445b4366"
 
 
-PV = "1.1.21"
+PV = "1.1.22_Test"
 PR = "r0"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
-SRCREV = "73805678122e92cee5dccfc8a099c26e47107105"
+SRCREV = "f18f046d0d954fb78465ca501ad1cfff66ba9939"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
 #SRC_URI:append = " file://irmgr.diff"
@@ -137,6 +137,14 @@ CXXLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', '-DENABLE_
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_AU', '-DENABLE_EU_RESOLUTION', \
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', '-DENABLE_FLEX2_RESOLUTION', \
              '', d), d), d), d), d)}"
+
+CFLAGS += " -DDSMGR_LOGGER_ENABLED"
+CXXLAGS += " -DDSMGR_LOGGER_ENABLED"
+LDFLAGS += " -lrdkloggers"
+
+CFLAGS += " -DDEVICESETTINGS_PLUGIN_ENABLED"
+CXXLAGS += " -DDEVICESETTINGS_PLUGIN_ENABLED"
+
 EXTRA_OEMAKE += "-e MAKEFLAGS="
 
 do_compile() {
