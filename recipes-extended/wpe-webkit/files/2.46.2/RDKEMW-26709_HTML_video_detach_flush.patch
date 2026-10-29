@@ -1,0 +1,264 @@
+From 41456d8e1f8991513abc8c8a6296f0b41e07ca7b Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Tue, 13 Oct 2026 16:32:41 +0200
+Subject: [PATCH] [MSE][GStreamer] Flush GStreamer pipeline when media element is detached from DOM
+
+HTMLMediaElement::removedFromAncestor() now flushes the GStreamer
+pipeline (and suspends the MSE source's data flow) instead of leaving
+the MediaPlayer fully active while detached.
+This releases media buffers and secure video memory for pages that detach
+video elements without resetting or destroying them.
+---
+ Source/WebCore/html/HTMLMediaElement.cpp      | 22 ++++++++---
+ .../WebCore/platform/graphics/MediaPlayer.cpp |  8 ++++
+ .../WebCore/platform/graphics/MediaPlayer.h   |  3 ++
+ .../platform/graphics/MediaPlayerPrivate.h    |  3 ++
+ .../mse/MediaPlayerPrivateGStreamerMSE.cpp    | 25 ++++++++++++
+ .../mse/MediaPlayerPrivateGStreamerMSE.h      |  4 ++
+ .../mse/WebKitMediaSourceGStreamer.cpp        | 38 ++++++++++++++++---
+ .../mse/WebKitMediaSourceGStreamer.h          |  3 ++
+ 8 files changed, 95 insertions(+), 11 deletions(-)
+
+diff --git a/Source/WebCore/html/HTMLMediaElement.cpp b/Source/WebCore/html/HTMLMediaElement.cpp
+index efaf5b8d3c52..7c2caaf0dc59 100644
+--- a/Source/WebCore/html/HTMLMediaElement.cpp
++++ b/Source/WebCore/html/HTMLMediaElement.cpp
+@@ -1072,14 +1072,14 @@ void HTMLMediaElement::didFinishInsertingNode()
+     }
+ 
+     configureMediaControls();
++
++    if (RefPtr player = m_player) {
++        player->didFinishInsertingNode();
++    }
+ }
+ 
+ void HTMLMediaElement::pauseAfterDetachedTask()
+ {
+-    // If we were re-inserted into an active document, no need to pause.
+-    if (m_inActiveDocument)
+-        return;
+-
+     if (m_videoFullscreenMode != VideoFullscreenModePictureInPicture && m_networkState > NETWORK_EMPTY && !m_wasInterruptedForInvisibleAutoplay)
+         pause();
+     if (m_videoFullscreenMode == VideoFullscreenModeStandard)
+@@ -1141,8 +1141,18 @@ void HTMLMediaElement::removedFromAncestor(RemovalType removalType, ContainerNod
+     if (removalType.disconnectedFromDocument) {
+         // Pause asynchronously to let the operation that removed us finish, in case we get inserted back into a document.
+         queueTaskKeepingObjectAlive(*this, TaskSource::MediaElement, [this] {
+-            if (!isContextStopped())
+-                pauseAfterDetachedTask();
++            if (isContextStopped())
++                return;
++
++            // If we were re-inserted into an active document, no need to pause.
++            if (m_inActiveDocument)
++                return;
++
++            pauseAfterDetachedTask();
++
++            if (RefPtr player = m_player; player && m_videoFullscreenMode != VideoFullscreenModePictureInPicture) {
++                player->didDetachFromAncestor();
++            }
+         });
+     }
+ 
+diff --git a/Source/WebCore/platform/graphics/MediaPlayer.cpp b/Source/WebCore/platform/graphics/MediaPlayer.cpp
+index 9ef8f5ae9636..064edefe41d0 100644
+--- a/Source/WebCore/platform/graphics/MediaPlayer.cpp
++++ b/Source/WebCore/platform/graphics/MediaPlayer.cpp
+@@ -1126,6 +1126,14 @@ void MediaPlayer::setPageIsSuspended(bool suspended)
+     m_private->setPageIsSuspended(suspended);
+ }
+ 
++void MediaPlayer::didDetachFromAncestor()
++{
++    m_private->didDetachFromAncestor();
++}
++void MediaPlayer::didFinishInsertingNode()
++{
++    m_private->didFinishInsertingNode();
++}
+ void MediaPlayer::setVisibleForCanvas(bool visible)
+ {
+     if (visible == m_visibleForCanvas)
+diff --git a/Source/WebCore/platform/graphics/MediaPlayer.h b/Source/WebCore/platform/graphics/MediaPlayer.h
+index 5f21c445187d..60e1c4c6cf0c 100644
+--- a/Source/WebCore/platform/graphics/MediaPlayer.h
++++ b/Source/WebCore/platform/graphics/MediaPlayer.h
+@@ -425,6 +425,9 @@ public:
+     using MediaPlayerEnums::BufferingPolicy;
+     void setBufferingPolicy(BufferingPolicy);
+ 
++    void didDetachFromAncestor();
++    void didFinishInsertingNode();
++
+ #if ENABLE(LEGACY_ENCRYPTED_MEDIA)
+     // Represents synchronous exceptions that can be thrown from the Encrypted Media methods.
+     // This is different from the asynchronous MediaKeyError.
+diff --git a/Source/WebCore/platform/graphics/MediaPlayerPrivate.h b/Source/WebCore/platform/graphics/MediaPlayerPrivate.h
+index d95cf96e33c9..9f202adf5214 100644
+--- a/Source/WebCore/platform/graphics/MediaPlayerPrivate.h
++++ b/Source/WebCore/platform/graphics/MediaPlayerPrivate.h
+@@ -106,6 +106,9 @@ public:
+     virtual void pause() = 0;
+     virtual void setBufferingPolicy(MediaPlayer::BufferingPolicy) { }
+ 
++    virtual void didDetachFromAncestor() { }
++    virtual void didFinishInsertingNode() { }
++
+     virtual bool supportsPictureInPicture() const { return false; }
+     virtual bool supportsFullscreen() const { return false; }
+     virtual bool supportsScanning() const { return false; }
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
+index 958059298618..648407af937b 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
+@@ -536,6 +536,31 @@ void MediaPlayerPrivateGStreamerMSE::setInitialVideoSize(const FloatSize& videoS
+     m_videoSize = videoSize;
+ }
+ 
++void MediaPlayerPrivateGStreamerMSE::didDetachFromAncestor()
++{
++#if PLATFORM(WPE)
++    if (!m_source || m_playbackSuspendedWhileDetached)
++        return;
++
++    GST_INFO_OBJECT(pipeline(), "Suspending and flushing all WebKitMediaSrc streams");
++    webKitMediaSrcFlushAndSuspend(webKitMediaSrc());
++    m_playbackSuspendedWhileDetached = true;
++#endif // PLATFORM(WPE)
++}
++
++void MediaPlayerPrivateGStreamerMSE::didFinishInsertingNode()
++{
++#if PLATFORM(WPE)
++    if (!m_source || !m_playbackSuspendedWhileDetached)
++        return;
++
++    GST_INFO_OBJECT(pipeline(), "Resuming all WebKitMediaSrc streams");
++    doSeek(SeekTarget { currentTime() }, rate());
++    webKitMediaSrcResume(webKitMediaSrc());
++    m_playbackSuspendedWhileDetached = false;
++#endif // PLATFORM(WPE)
++}
++
+ void MediaPlayerPrivateGStreamerMSE::startSource(const Vector<RefPtr<MediaSourceTrackGStreamer>>& tracks)
+ {
+     m_tracks = filterOutRepeatingTracks(tracks);
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.h b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.h
+index 45b12dd68aca..a9ce8f89f68d 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.h
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.h
+@@ -68,6 +68,9 @@ public:
+     bool timeIsProgressing() const override;
+     void notifyActiveSourceBuffersChanged() final;
+ 
++    void didDetachFromAncestor() final;
++    void didFinishInsertingNode() final;
++
+     void sourceSetup(GstElement*) override;
+ 
+     // return false to avoid false-positive "stalled" event - it should be soon addressed in the spec
+@@ -133,6 +136,7 @@ private:
+     MediaPlayer::NetworkState m_mediaSourceNetworkState = MediaPlayer::NetworkState::Empty;
+ 
+     bool m_playbackStateChangedNotificationPending { false };
++    bool m_playbackSuspendedWhileDetached { false };
+ };
+ 
+ } // namespace WebCore
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+index 3ea25ff8e38d..9fd53600a9fb 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+@@ -103,7 +103,7 @@ static gboolean webKitMediaSrcActivateMode(GstPad*, GstObject*, GstPadMode, gboo
+ static void webKitMediaSrcLoop(void*);
+ static void webKitMediaSrcTearDownStream(WebKitMediaSrc* source, TrackID);
+ static void webKitMediaSrcGetProperty(GObject*, unsigned propId, GValue*, GParamSpec*);
+-static void webKitMediaSrcStreamFlush(Stream*, bool isSeekingFlush);
++static void webKitMediaSrcStreamFlush(Stream*, bool isSeekingFlush, bool suspend = false);
+ static gboolean webKitMediaSrcSendEvent(GstElement*, GstEvent*);
+ static RefPtr<MediaPlayerPrivateGStreamerMSE> webKitMediaSrcPlayer(WebKitMediaSrc*);
+ 
+@@ -651,7 +651,7 @@ static void webKitMediaSrcLoop(void* userData)
+         ASSERT_NOT_REACHED();
+ }
+ 
+-static void webKitMediaSrcStreamFlush(Stream* stream, bool isSeekingFlush)
++static void webKitMediaSrcStreamFlush(Stream* stream, bool isSeekingFlush, bool suspend)
+ {
+     ASSERT(isMainThread());
+     bool skipFlush = false;
+@@ -661,7 +661,7 @@ static void webKitMediaSrcStreamFlush(Stream* stream, bool isSeekingFlush)
+     {
+         DataMutexLocker streamingMembers { stream->streamingMembersDataMutex };
+ 
+-        if (!streamingMembers->hasPoppedFirstObject) {
++        if (!streamingMembers->hasPoppedFirstObject && !suspend) {
+             GST_DEBUG_OBJECT(stream->source, "Flush request for stream '%" PRIu64 "' occurred before hasPoppedFirstObject, just clearing the queue and readjusting the segment.", stream->track->id());
+             DataMutexLocker queue { stream->track->queueDataMutex() };
+             // We use clear() instead of flush() because the WebKitMediaSrc streaming thread could be waiting
+@@ -763,8 +763,12 @@ static void webKitMediaSrcStreamFlush(Stream* stream, bool isSeekingFlush)
+             streamingMembers->hasPoppedFirstObject = false;
+         }
+ 
+-        GST_DEBUG_OBJECT(stream->pad.get(), "Starting webKitMediaSrcLoop task and releasing the STREAM_LOCK.");
+-        gst_pad_start_task(stream->pad.get(), webKitMediaSrcLoop, stream->pad.get(), nullptr);
++        if (!suspend) {
++            GST_DEBUG_OBJECT(stream->pad.get(), "Starting webKitMediaSrcLoop task and releasing the STREAM_LOCK.");
++            gst_pad_start_task(stream->pad.get(), webKitMediaSrcLoop, stream->pad.get(), nullptr);
++        } else {
++            GST_INFO_OBJECT(stream->pad.get(), "Data flow is suspended, not starting webKitMediaSrcLoop task.");
++        }
+     }
+ 
+     GST_DEBUG_OBJECT(stream->source, "Flush request for stream '%" PRIu64 "' (isSeekingFlush = %s) satisfied.",
+@@ -785,6 +789,30 @@ void webKitMediaSrcFlush(WebKitMediaSrc* source, TrackID streamId)
+     webKitMediaSrcStreamFlush(stream, false);
+ }
+ 
++void webKitMediaSrcFlushAndSuspend(WebKitMediaSrc* source)
++{
++    ASSERT(isMainThread());
++    GST_INFO_OBJECT(source, "Flushing all streams and suspending data flow.");
++
++    // Flush all streams and pause streaming threads.
++    // The streaming threads will remain paused until webKitMediaSrcResume is called,
++    // hasPoppedFirstObject will prevent the streaming threads from resuming until explicitly requested.
++    for (const RefPtr<Stream>& stream : source->priv->streams.values()) {
++        webKitMediaSrcStreamFlush(stream.get(), false, true);
++    }
++}
++
++void webKitMediaSrcResume(WebKitMediaSrc* source)
++{
++    ASSERT(isMainThread());
++    GST_INFO_OBJECT(source, "Resuming data flow for all streams.");
++
++    for (const RefPtr<Stream>& stream : source->priv->streams.values()) {
++        ASSERT(stream->pad);
++        gst_pad_start_task(stream->pad.get(), webKitMediaSrcLoop, stream->pad.get(), nullptr);
++    }
++}
++
+ static void webKitMediaSrcSeek(WebKitMediaSrc* source, uint64_t startTime, double rate)
+ {
+     ASSERT(isMainThread());
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.h b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.h
+index a24412b2c5cf..271f453245e1 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.h
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.h
+@@ -65,6 +65,9 @@ void webKitMediaSrcEmitStreams(WebKitMediaSrc* source, const Vector<RefPtr<WebCo
+ 
+ void webKitMediaSrcFlush(WebKitMediaSrc*, TrackID streamId);
+ 
++void webKitMediaSrcFlushAndSuspend(WebKitMediaSrc*);
++void webKitMediaSrcResume(WebKitMediaSrc*);
++
+ void webKitMediaSrcSetPlayer(WebKitMediaSrc*, ThreadSafeWeakPtr<WebCore::MediaPlayerPrivateGStreamerMSE>&&);
+ 
+ G_END_DECLS
+-- 
+2.53.0
+
