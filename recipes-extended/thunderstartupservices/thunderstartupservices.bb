@@ -4,13 +4,13 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-PV = "1.5.1"
+PV = "1.5.7"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "30a0c56e1c1a58a454f3eafe614cf1109ef45f04"
+SRCREV = "e2ea0c7502d741c973355dbcf6d67f488ecb8e0b"
 SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -67,6 +67,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-downloadmanager.service \
     wpeframework-preinstallmanager.service \
     wpeframework-telemetrymetrics.service \
+    wpeframework-victimselector.service \
     wpeframework-devicediagnostics.service \
     wpeframework-tools.service \
     "
@@ -91,14 +92,9 @@ do_install() {
         ln -sf ${systemd_system_unitdir}/wpeframework.service ${D}${sysconfdir}/systemd/system/${x}.requires/wpeframework.service
     done
 
-    # Adding final THUNDER_STARTUP_SERVICES into the Requires= line of the target
-    FINAL_SERVICES="$(echo "${THUNDER_STARTUP_SERVICES}" | tr '\n' ' ')"
-    TARGET_FILE="${D}${systemd_system_unitdir}/wpeframework-services.target"
-
-    if grep -q "^Requires=" "$TARGET_FILE"; then
-        # Append to existing Requires= line
-        sed -i "/^Requires=/ s|$| ${FINAL_SERVICES}|" "$TARGET_FILE"
-    fi
+    for x in ${THUNDER_STARTUP_SERVICES}; do
+        echo "Requires=${x}" >> "${D}${systemd_system_unitdir}/wpeframework-services.target"
+    done
 }
 
 do_install:append() {

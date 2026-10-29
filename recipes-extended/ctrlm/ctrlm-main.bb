@@ -3,10 +3,10 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 SECTION = "base"
-DEPENDS = "sqlite3 curl rdkversion jansson glib-2.0 systemd iarmbus iarmmgrs util-linux devicesettings nopoll rfc libarchive safec-common-wrapper gperf-native xr-voice-sdk libsyswrapper xr-voice-sdk-headers"
+DEPENDS = "sqlite3 curl rdkversion jansson glib-2.0 systemd iarmbus iarmmgrs util-linux nopoll rfc libarchive safec-common-wrapper gperf-native xr-voice-sdk libsyswrapper xr-voice-sdk-headers"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
-RDEPENDS:${PN}:append = " devicesettings iarmbus"
+RDEPENDS:${PN}:append = " iarmbus"
 
 PROVIDES = "ctrlm"
 RPROVIDES:${PN} = "ctrlm"
@@ -88,7 +88,6 @@ THUNDER_SECURITY  ??= "${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security
 DEPENDS:append      = "${@bb.utils.contains('THUNDER_SECURITY', 'true', ' wpeframework-clientlibraries', '', d)}"
 LDFLAGS:append      = "${@bb.utils.contains('THUNDER_SECURITY', 'true', ' -lWPEFrameworkSecurityUtil', '', d)}"
 EXTRA_OECMAKE:append = "${@bb.utils.contains('THUNDER_SECURITY', 'true', ' -DTHUNDER_SECURITY=ON', '', d)}"
-
 
 # Telemetry Support
 TELEMETRY_SUPPORT  ??= "true"
