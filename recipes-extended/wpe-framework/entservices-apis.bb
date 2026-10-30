@@ -1,9 +1,9 @@
 SUMMARY = "entservices-apis"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
-PV = "4.3.5"
+PV = "4.3.6"
 PR = "r0"
-SRCREV_entservices-apis = "${PV}"
+SRCREV_entservices-apis = "b1b586c699a1a82a2e794c7c0c92a1eebed0eec7"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -13,7 +13,7 @@ inherit python3native cmake pkgconfig
 
 DEPENDS = "wpeframework wpeframework-tools-native"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis;branch=feature/MRITE-446"
 
 SRC_URI += "file://RDKEMW-1007.patch"
 
