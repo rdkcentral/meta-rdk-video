@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 # The ThunderOpenTelemetry example lives in the ThunderNanoServices repo. Override
 # BRANCH/SRCREV to match the branch that carries the OpenTelemetry example.
-BRANCH ?= "master"
+BRANCH ?= "R4_4"
 SRC_URI = "git://github.com/rdkcentral/ThunderNanoServices.git;protocol=https;branch=${BRANCH}"
 
 SRCREV = "${AUTOREV}"
