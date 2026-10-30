@@ -17,15 +17,15 @@ PR = "r0"
 PV = "4.5.0"
 S = "${WORKDIR}/git"
 
-SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=main"
+SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=feature/RDKEMW-27773"
 
-SRCREV = "36f9559051263adec7c7937c073624ea5ad8bc8d"
+SRCREV = "24e1da4d5550aea39e1dde7a1b287d7cd409bbbf"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
 RDEPENDS:${PN} += " wpeframework rdk-logger curl iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
 
-inherit cmake pkgconfig python3native
+inherit cmake pkgconfig python3native systemd
 
 # Specify any options you want to pass to cmake using EXTRA_OECMAKE:
 EXTRA_OECMAKE += " \
@@ -51,6 +51,9 @@ do_install:append(){
     install -d ${D}${sysconfdir}/NetworkManager
     install -d ${D}${sysconfdir}/NetworkManager/conf.d
     install -m 0755 ${S}/conf/99-default-link-local ${D}${sysconfdir}/NetworkManager/conf.d/99-default-link-local.conf
+    install -m 0644 ${S}/plugin/gnome/systemd/wifi-guard.path ${D}${systemd_unitdir}/system
+    install -m 0644 ${S}/plugin/gnome/systemd/wifi-guard.service ${D}${systemd_unitdir}/system 
+    install -m 0755 ${S}/plugin/gnome/scripts/handle-wifi-interface.sh ${D}${base_libdir}/rdk
 }
 
 # Configure Logging for the Router Discovery Tool
@@ -71,6 +74,8 @@ LOGROTATE_ROTATION_MEM_routerDiscovery="3"
 DEBIAN_NOAUTONAME:${PN} = "1"
 DEBIAN_NOAUTONAME:${PN}-dev = "1"
 DEBIAN_NOAUTONAME:${PN}-dbg = "1"
+
+SYSTEMD_SERVICE:${PN} += "wifi-guard.path"
 
 # Configure RootFS stuff
 FILES:${PN} += "${bindir}/* "
