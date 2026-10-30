@@ -20,7 +20,7 @@ SRCREV = "${RIALTO_SRCREV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${RIALTO_BRANCH}"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
-DEPENDS = "openssl jsoncpp protobuf protobuf-native"
+DEPENDS = "openssl jsoncpp protobuf protobuf-native yaml-cpp"
 DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform"
 # entservices-opencdmi provides opencdm/open_cdm.h and ocdm.pc; wpeframework-clientlibraries is still used for other Thunder components (see PACKAGECONFIG[server]).
 DEPENDS:append = " entservices-opencdmi"
@@ -32,7 +32,7 @@ EXTRA_OECMAKE += " ${@bb.utils.contains("IMAGE_FEATURES", "prod", "-DRIALTO_BUIL
 PACKAGES =+ "${PN}-client ${PN}-server ${PN}-servermanager-lib ${PN}-servermanager ${PN}-client-dev ${PN}-server-dev ${PN}-servermanager-lib-dev ${PN}-servermanager-dev "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-PACKAGECONFIG[server] = "-DENABLE_SERVER=ON,-DENABLE_SERVER=OFF,wpeframework-clientlibraries gstreamer1.0 gstreamer1.0-plugins-base glib-2.0 virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
+PACKAGECONFIG[server] = "-DENABLE_SERVER=ON,-DENABLE_SERVER=OFF,wpeframework-clientlibraries gstreamer1.0 gstreamer1.0-plugins-base glib-2.0 virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils yaml-cpp"
 PACKAGECONFIG[servermanager] = "-DENABLE_SERVER_MANAGER=ON,-DENABLE_SERVER_MANAGER=OFF,mongoose,"
 
 # The 'servermanager' package config has a runtime
