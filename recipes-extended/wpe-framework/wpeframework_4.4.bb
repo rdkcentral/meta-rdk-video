@@ -18,7 +18,6 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder \
            file://wpeframework-init \
-           file://wpeframework.service.in \
            "
 
 SRCREV_thunder = "7c33637bdfd36109ffb556da4e9b58d1443ebd69"
@@ -124,27 +123,7 @@ EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
 
 EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
 
-do_install:append() {
-    install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/wpeframework.service.in  ${D}${systemd_unitdir}/system/wpeframework.service
-
-    # Propagate configured keymap via parent service environment to rdkwindowmanager plugin.
-    if [ -n "${WINDOWMANAGER_RCU_KEYMAP_FILE}" ]; then
-        WPEFW_SERVICE="${D}${systemd_unitdir}/system/wpeframework.service"
-
-        if [ -f "$WPEFW_SERVICE" ]; then
-            if grep -Eq '^[[:space:]]*Environment="?RDK_WINDOW_MANAGER_KEYMAP_FILE=' "${WPEFW_SERVICE}"; then
-                bbnote "Updating Windowmanager KEYMAP env in wpeframework.service"
-                sed -i -E "s|^[[:space:]]*Environment=\"?RDK_WINDOW_MANAGER_KEYMAP_FILE=.*$|Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"|" "${WPEFW_SERVICE}"
-            else
-                bbnote "Adding Windowmanager KEYMAP env in wpeframework.service"
-                sed -i "/^\[Service\]/a Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"" "${WPEFW_SERVICE}"
-            fi
-        fi
-    fi
-}
-
-SYSTEMD_SERVICE:${PN} = "wpeframework.service"
+# wpeframework.service is shipped by the thunder-service recipe (recipes-thunder)
 
 # ----------------------------------------------------------------------------
 
