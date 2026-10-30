@@ -25,7 +25,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
 RDEPENDS:${PN} += " wpeframework rdk-logger curl iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
 
-inherit cmake pkgconfig python3native
+inherit cmake pkgconfig python3native 
 
 # Specify any options you want to pass to cmake using EXTRA_OECMAKE:
 EXTRA_OECMAKE += " \
@@ -74,6 +74,8 @@ LOGROTATE_ROTATION_MEM_routerDiscovery="3"
 DEBIAN_NOAUTONAME:${PN} = "1"
 DEBIAN_NOAUTONAME:${PN}-dev = "1"
 DEBIAN_NOAUTONAME:${PN}-dbg = "1"
+
+SYSTEMD_SERVICE:${PN} += "wifi-guard.path"
 
 # Configure RootFS stuff
 FILES:${PN} += "${bindir}/* "
