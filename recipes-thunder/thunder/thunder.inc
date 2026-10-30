@@ -33,6 +33,8 @@ PACKAGECONFIG[websocket]                    = "-DWEBSOCKET=ON,,"
 PACKAGECONFIG[warningreporting]             = "-DWARNING_REPORTING=ON,-DWARNING_REPORTING=OFF,"
 PACKAGECONFIG[profiler]                     = "-DPROFILER=ON,-DPROFILER=OFF,"
 PACKAGECONFIG[securesocket]                 = "-DSECURE_SOCKET=ON,-DSECURE_SOCKET=OFF,openssl"
+PACKAGECONFIG[initv-script]                 = "-DINITV_SCRIPT=ON,-DINITV_SCRIPT=OFF,"
+PACKAGECONFIG[systemd-service]              = "-DSYSTEMD_SERVICE=ON,-DSYSTEMD_SERVICE=OFF,"
 
 # Build class specific variables
 THUNDER_PERSISTENT_PATH ?= "/tmp/rdkservices"
@@ -62,10 +64,9 @@ EXTRA_OECMAKE += " \
     -DMESSAGING=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
     -DPOSTMORTEM_PATH=/opt/secure/minidumps \
-    -DSYSTEMD_SERVICE=ON \
 "
 
-SYSTEMD_SERVICE:${PN} = "thunder.service"
+SYSTEMD_SERVICE:${PN} = "${@bb.utils.contains('PACKAGECONFIG', 'systemd-service', 'thunder.service', '', d)}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -84,7 +85,7 @@ FILES:${PN} += " \
 # ${systemd_unitdir}, because that's where upstream's CMake installs it.
 # systemd.bbclass's automatic FILES handling targets ${systemd_unitdir},
 # so this needs an explicit FILES entry or the unit ends up unpackaged.
-FILES:${PN} += "${sysconfdir}/systemd/system/thunder.service"
+FILES:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'systemd-service', '${sysconfdir}/systemd/system/thunder.service', '', d)}"
 
 # ----------------------------------------------------------------------------
 
