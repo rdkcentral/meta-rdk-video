@@ -51,6 +51,9 @@ do_install:append(){
     install -d ${D}${sysconfdir}/NetworkManager
     install -d ${D}${sysconfdir}/NetworkManager/conf.d
     install -m 0755 ${S}/conf/99-default-link-local ${D}${sysconfdir}/NetworkManager/conf.d/99-default-link-local.conf
+    install -m 0644 ${S}/plugin/gnome/systemd/wifi-guard.path ${D}${systemd_unitdir}/system
+    install -m 0644 ${S}/plugin/gnome/systemd/wifi-guard.service ${D}${systemd_unitdir}/system 
+    install -m 0755 ${S}/plugin/gnome/scripts/handle-wifi-interface.sh ${D}${base_libdir}/rdk
 }
 
 # Configure Logging for the Router Discovery Tool
