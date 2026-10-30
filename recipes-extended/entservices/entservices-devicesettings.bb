@@ -2,8 +2,8 @@ SUMMARY = "ENTServices devicesettings plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.0.0"
-PR = "r0"
+PV = "1.0.0_Test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicesettings;${CMF_GITHUB_SRC_URI_SU
           "
 
 # Release version - 1.0.0
-SRCREV = "66032d32aed342f36b8cb1ab405b566cddf9c998"
+SRCREV = "b7a6fb53281cab1aeea5b578c1a9a08413b73a3d"
 SRCREV:vdevice_x86-64-mw = "b7a6fb53281cab1aeea5b578c1a9a08413b73a3d"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -44,16 +44,16 @@ PACKAGECONFIG ?= " breakpadsupport \
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
 
-DEVICESETTINGS_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal entservices-helpers"
-DEVICESETTINGS_DEPS:vdevice_x86-64-mw = "iarmbus entservices-helpers rdk-halif-aidl-mw libbinderrdk vdevice-noop"
+DEVICESETTINGS_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal entservices-helpers rdk-halif-aidl-mw libbinderrdk"
+#DEVICESETTINGS_DEPS:vdevice_x86-64-mw = "iarmbus entservices-helpers rdk-halif-aidl-mw libbinderrdk vdevice-noop"
 
-DEVICESETTINGS_RDEPS = "iarmbus devicesettings entservices-helpers"
-DEVICESETTINGS_RDEPS:vdevice_x86-64-mw = "iarmbus entservices-helpers libbinderrdk rdk-halif-aidl-mw-hdmiinput rdk-halif-aidl-mw-common vdevice-noop"
+DEVICESETTINGS_RDEPS = "iarmbus devicesettings entservices-helpers libbinderrdk rdk-halif-aidl-mw-hdmiinput rdk-halif-aidl-mw-common"
+#DEVICESETTINGS_RDEPS:vdevice_x86-64-mw = "iarmbus entservices-helpers libbinderrdk rdk-halif-aidl-mw-hdmiinput rdk-halif-aidl-mw-common vdevice-noop"
 
 PACKAGECONFIG[devicesettings]       = "-DPLUGIN_DEVICESETTINGS=ON,-DPLUGIN_DEVICESETTINGS=OFF,${DEVICESETTINGS_DEPS},${DEVICESETTINGS_RDEPS}"
 
 # Pass component-specific HDMIInput AIDL/binder paths to CMake for vdevice.
-EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
+EXTRA_OECMAKE:append = " \
     -DAIDL_INCLUDE_DIR=${STAGING_INCDIR}/mw/hdmiinput/0.1.0.0/include \
     -DBINDER_INCLUDE_DIR=${STAGING_INCDIR}/android \
     -DHAL_AIDL_LIBRARY=${STAGING_LIBDIR}/mw/rdk-halif-aidl/libhdmiinput-v0.1.0.0-cpp.so \
@@ -65,7 +65,7 @@ EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
     -DOEMHAL_LIBRARIES:FILEPATH=${STAGING_LIBDIR}/libds-hal.so \
 "
 
-CXXFLAGS:append:vdevice_x86-64-mw = " \
+CXXFLAGS:append = " \
     -I${STAGING_INCDIR}/mw/hdmiinput/0.1.0.0/include \
     -I${STAGING_INCDIR}/mw/common/0.2.0.0/include \
     -I${STAGING_INCDIR}/mw/include \
@@ -75,15 +75,12 @@ CXXFLAGS:append:vdevice_x86-64-mw = " \
     -Wno-error=write-strings \
 "
 
-LDFLAGS:append:vdevice_x86-64-mw = " \
+LDFLAGS:append = " \
     -L${STAGING_DIR_HOST}${prefix}/mw/lib/binder \
     -L${STAGING_LIBDIR}/mw/rdk-halif-aidl \
 "
 
-do_configure:append:vdevice_x86-64-mw() {
-    if [ ! -e "${STAGING_INCDIR}/rdk/halif/ds-hal/dsTypes.h" ]; then
-        bbfatal "Unable to locate dsTypes.h from vdevice-noop under ${STAGING_INCDIR}/rdk/halif/ds-hal"
-    fi
+do_configure:append() {
     if [ ! -d "${STAGING_INCDIR}/mw/hdmiinput/0.1.0.0/include" ]; then
         bbfatal "Unable to locate staged rdk-halif-aidl-mw-hdmiinput headers under ${STAGING_INCDIR}/mw/hdmiinput"
     fi
