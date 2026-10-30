@@ -137,6 +137,11 @@ CXXLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', '-DENABLE_
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_AU', '-DENABLE_EU_RESOLUTION', \
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', '-DENABLE_FLEX2_RESOLUTION', \
              '', d), d), d), d), d)}"
+
+CFLAGS += " -DDSMGR_LOGGER_ENABLED"
+CXXLAGS += " -DDSMGR_LOGGER_ENABLED"
+LDFLAGS += " -lrdkloggers"
+
 EXTRA_OEMAKE += "-e MAKEFLAGS="
 
 do_compile() {
