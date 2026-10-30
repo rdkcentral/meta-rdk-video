@@ -1,0 +1,36 @@
+[Unit]
+Description=wpeframework-Thunder RPC version-R4.4.3
+Wants= local-fs.target
+After= local-fs.target securemount.service
+RequiresMountsFor=/opt/secure
+
+[Service]
+Type=notify
+EnvironmentFile=-/etc/default/westeros-env
+Environment="LD_LIBRARY_PATH=/usr/lib:/media/apps/netflix/usr/lib:/tmp/netflix/usr/lib:/media/apps/libcobalt/usr/lib:/tmp/libcobalt/usr/lib:/usr/lib/javascriptcore"
+Environment="XDG_RUNTIME_DIR=/tmp"
+Environment="GST_REGISTRY=/opt/.gstreamer/registry.bin"
+Environment="GST_REGISTRY_UPDATE=no"
+Environment="ENABLE_WEBKITBROWSER_PLUGIN_ACCESSIBILITY=1"
+Environment="RDK_WINDOW_MANAGER_KEYMAP_FILE=/etc/rdk/keymappings.json"
+Environment="TTS_USE_THUNDER_CLIENT=1"
+Environment="XDG_DATA_HOME=/opt/QT/home"
+Environment="FORCE_SVP=TRUE"
+Environment="FORCE_SAP=TRUE"
+Environment="CDLFILE=$(cat /opt/cdl_flashed_file_name)"
+Environment="PREV_CDLFILE=$(cat /opt/previous_flashed_file_name)"
+ExecStartPre=/bin/sh -c 'if [[ ${CDLFILE} != *"${PREV_CDLFILE}"* ]]; then echo "Removing override.json/override_V2.json on bootup after CDL"; rm -rf /opt/persistent/rdkservices/PluginHost/override*.json; fi'
+ExecStartPre=-/usr/bin/rdkLogMileStone WPE_FRAMEWORK_START
+SyslogIdentifier=WPEFramework
+ExecStart=/usr/bin/WPEFramework -b
+# Manually adding PID file support. This is used by Thunder clients to know if
+# Thunder aka WPEFramework process is restarted. Please note if PIDFile name is changed
+# it will need corresponding code change in ThunderClientLibraries (power_controller) too.
+ExecStartPost=-/bin/sh -c '/bin/echo ${MAINPID} > /tmp/wpeframework.pid'
+ExecStartPost=/bin/touch /tmp/wpeframeworkstarted
+KillSignal=SIGKILL
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
