@@ -7,7 +7,7 @@ PV = "1.0.4"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "a2d85a788c6782b02adea7a6f3f17436fd27e8bd"
+SRCREV_player-interface ?= "d1fe103e2c5ef2ebf01d1cafb42ebeccca1d28fc"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "main"
 
@@ -47,6 +47,9 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', '-DCMAKE_GST
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_disable', ' -DDISABLE_SECURITY_TOKEN=ON ', '', d)}"
 
 EXTRA_OECMAKE += " -DCMAKE_WPEFRAMEWORK_REQUIRED=1"
+
+EXTRA_OECMAKE += " -DCMAKE_TELEMETRY_2_0_REQUIRED=1 "
+DEPENDS += " telemetry"
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'sec_manager', ' -DCMAKE_USE_SECMANAGER=1 ', '', d)}"
 
