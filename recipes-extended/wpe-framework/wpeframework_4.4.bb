@@ -14,7 +14,7 @@ DEPENDS += "opentelemetry-cpp"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r57"
+PR = "r58"
 PV = "4.4.7"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -165,6 +165,22 @@ do_install:append() {
                 sed -i "/^\[Service\]/a Environment=\"RDK_WINDOW_MANAGER_KEYMAP_FILE=${WINDOWMANAGER_RCU_KEYMAP_FILE}\"" "${WPEFW_SERVICE}"
             fi
         fi
+    fi
+
+    # core/WarningReportingCategories.h includes the generated core/WarningReportingConfig.h,
+    # which is not always staged by INSTALL_HEADERS_TO_TARGET. Install it explicitly so
+    # downstream consumers (e.g. amazonprime-launcher) can resolve the include.
+    if [ ! -f "${D}${includedir}/WPEFramework/core/WarningReportingConfig.h" ]; then
+        for src in \
+            "${B}/Source/core/generated/core/WarningReportingConfig.h" \
+            "${B}/generated/core/WarningReportingConfig.h" \
+            "${S}/Source/core/WarningReportingConfig.h"; do
+            if [ -f "$src" ]; then
+                install -d ${D}${includedir}/WPEFramework/core
+                install -m 0644 "$src" ${D}${includedir}/WPEFramework/core/WarningReportingConfig.h
+                break
+            fi
+        done
     fi
 }
 
