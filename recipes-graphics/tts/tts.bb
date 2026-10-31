@@ -7,10 +7,13 @@ LIC_FILES_CHKSUM = "file://${THISDIR}/files/Apache-2.0;md5=3b83ef96387f14655fc85
 
 DEPENDS += "gstreamer1.0-plugins-base rdk-logger wpeframework wpeframework-clientlibraries"
 
-SRCREV = "0845f4da2b886e6cc707077c8f290cc279a84e11"
+SRCREV = "d2921e565aa6342e2ecb693729aedac518467591"
 
 PV = "1.0.5"
 PR = "r0"
+
+#This distro feature can be disabled to use extended firebolt apis for tts
+DISTRO_FEATURES:append = " tts-firebolt-native"
 
 inherit cmake breakpad-wrapper pkgconfig
 
@@ -18,11 +21,14 @@ DEPENDS += "breakpad breakpad-wrapper"
 EXTRA_OECMAKE += "-DENABLE_BREAKPAD=1"
 BREAKPAD_BIN = " TTSEngine *.so "
 
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'tts-firebolt-native', 'firebolt-cpp-client', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'tts-firebolt-native', '-DUSE_NATIVE_FIREBOLT_SDK=ON', '-DUSE_NATIVE_FIREBOLT_SDK=OFF', d)}"
 SRC_URI = "${CMF_GITHUB_ROOT}/ttsengine;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 S = "${WORKDIR}/git"
 
-CXXFLAGS += " -I${STAGING_INCDIR}/Firebolt -I${STAGING_INCDIR}/glib-2.0 -I${STAGING_INCDIR}/../usr/lib/glib-2.0/include "
+CXXFLAGS += "  -I${STAGING_INCDIR}/glib-2.0 -I${STAGING_INCDIR}/../usr/lib/glib-2.0/include "
+CXXFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'tts-firebolt-native', '-I${STAGING_INCDIR}/firebolt', '-I${STAGING_INCDIR}/Firebolt', d)}"
 CXXFLAGS += " -std=gnu++17"
 EXTRA_OECMAKE:remove = " -std=gnu++11"
 CXXFLAGS:remove = " -std=gnu++11"
