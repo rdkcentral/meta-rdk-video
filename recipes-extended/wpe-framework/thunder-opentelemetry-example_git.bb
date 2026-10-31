@@ -13,7 +13,8 @@ inherit cmake pkgconfig
 BRANCH ?= "R4_4"
 SRC_URI = "git://github.com/rdkcentral/ThunderNanoServices.git;protocol=https;branch=${BRANCH}"
 
-SRCREV = "${AUTOREV}"
+# R4_4 commit containing the ThunderOpenTelemetry examples.
+SRCREV = "2fd1f90ad536826bc50129fe66245192e2d3aa24"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"

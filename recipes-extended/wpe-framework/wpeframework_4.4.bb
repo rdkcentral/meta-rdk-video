@@ -21,6 +21,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder \
            file://wpeframework-init \
            file://wpeframework.service.in \
+           file://0001-opentelemetry-link-targets-available-in-otel-cpp-1.23.patch \
            "
 
 SRCREV_thunder = "6385af2f604192fab7e067fa6b284b114cb4bf76"
@@ -171,16 +172,11 @@ do_install:append() {
     # which is not always staged by INSTALL_HEADERS_TO_TARGET. Install it explicitly so
     # downstream consumers (e.g. amazonprime-launcher) can resolve the include.
     if [ ! -f "${D}${includedir}/WPEFramework/core/WarningReportingConfig.h" ]; then
-        for src in \
-            "${B}/Source/core/generated/core/WarningReportingConfig.h" \
-            "${B}/generated/core/WarningReportingConfig.h" \
-            "${S}/Source/core/WarningReportingConfig.h"; do
-            if [ -f "$src" ]; then
-                install -d ${D}${includedir}/WPEFramework/core
-                install -m 0644 "$src" ${D}${includedir}/WPEFramework/core/WarningReportingConfig.h
-                break
-            fi
-        done
+        src="$(find "${B}" -type f -name WarningReportingConfig.h -print -quit)"
+        if [ -n "$src" ]; then
+            install -d ${D}${includedir}/WPEFramework/core
+            install -m 0644 "$src" ${D}${includedir}/WPEFramework/core/WarningReportingConfig.h
+        fi
     fi
 }
 
@@ -197,6 +193,7 @@ FILES:${PN} += "${libdir}/*.so ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN} += "${includedir}/cdmi.h"
 FILES:${PN} += "${systemd_unitdir}/system/wpeframework.service.d/network_manager_migration.conf"
 FILES:${PN}-dev += "${libdir}/cmake/*"
+FILES:${PN}-dev += "${includedir}/WPEFramework/core/WarningReportingConfig.h"
 FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/"
 
 # ----------------------------------------------------------------------------
