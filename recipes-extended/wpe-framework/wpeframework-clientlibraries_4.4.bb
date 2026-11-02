@@ -11,6 +11,7 @@ inherit python3native cmake pkgconfig
 
 SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https;branch=R4_4;name=wpeframework-clientlibraries \
            file://r4.4/Library-version-Matched-With-Release-ClientLibs.patch \
+           file://r4.4/0004-R4-Security-Agent-Library-NameChange.patch \
            file://r4.4/0004-Cipher-CipherNetflix-methods-return-type-changes.patch \
            file://r4.4/R4.2_compilation_error_assert.patch \
            file://r4.4/0001-Cryptography-CipherNetflix.r4.4.patch \
@@ -21,6 +22,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            file://r4.4/0001-SecAPI-Re-acquire-sec-handle-after-flush.patch \
            file://r4.4/0002-RDKEMW-19048-Release-and-reacquire-Vault-SecProcessor-for-deep-sleep.patch \
            file://r4.4/0003-RDKEMW-20680-vault-processor-release-openssl-thunder-stubs.patch \
+           file://r4.4/0001-PowerManagerClient-library-implementation.patch \
            "
 
 # Sept 15, 2026
@@ -68,6 +70,7 @@ PACKAGECONFIG ?= " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'provisioning', 'provisionproxy', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_security_disable', '', 'securityagent', d)} \
     cryptography \
+    powercontroller \
     "
 
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'compositor', 'compositorclient', '', d)}"
@@ -76,6 +79,7 @@ PACKAGECONFIG[compositorclient] = "-DCOMPOSITORCLIENT=ON,-DCOMPOSITORCLIENT=OFF"
 PACKAGECONFIG[provisionproxy]   = "-DPROVISIONPROXY=ON,-DPROVISIONPROXY=OFF,libprovision"
 PACKAGECONFIG[securityagent]    = "-DSECURITYAGENT=ON, -DSECURITYAGENT=OFF"
 PACKAGECONFIG[cryptography]     = "-DCRYPTOGRAPHY=ON, -DCRYPTOGRAPHY=OFF,"
+PACKAGECONFIG[powercontroller]     = "-DPOWERCONTROLLER=ON, -DPOWERCONTROLLER=OFF,"
 
 # ----------------------------------------------------------------------------
 

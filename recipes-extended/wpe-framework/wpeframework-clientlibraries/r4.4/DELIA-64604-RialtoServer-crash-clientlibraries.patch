@@ -1,0 +1,58 @@
+From 57b4704a3add67ed50e4e12661f9344553a146bc Mon Sep 17 00:00:00 2001
+From: Thamim Razith <ThamimRazith_AbbasAli@comcast.com>
+Date: Tue, 30 Apr 2024 14:49:57 +0000
+Subject: [PATCH] RDK-49093 RDK-49094 RDK-49095 : Sync up WPEFramework
+
+---
+ Source/ocdm/open_cdm.cpp    | 11 ++++++++---
+ Source/ocdm/open_cdm_impl.h |  1 +
+ 2 files changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/Source/ocdm/open_cdm.cpp b/Source/ocdm/open_cdm.cpp
+index fbb5c89..44779ca 100644
+--- a/Source/ocdm/open_cdm.cpp
++++ b/Source/ocdm/open_cdm.cpp
+@@ -72,7 +72,13 @@ OpenCDMError StringToAllocatedBuffer(const std::string& source, char* destinatio
+             Core::SingletonType<OpenCDMAccessor>::Create(connector.c_str());
+         }
+         ~TheOne() {
+-            Core::SingletonType<OpenCDMAccessor>::Dispose();
++
++            if( Core::SingletonType<OpenCDMAccessor>::Dispose() == true ) {
++                // if the accessor was disposed here because the destructor of the static instance was called there
++                // was no proper dispose before (opencdm_dispose and/or Singleton::Dispose).
++                // The static dispose might be incomplete or have side effects (e.g. Threads could already be killed)
++                TRACE_L1(_T("OpenCDM Accessor was not disposed properly"));
++            }
+         }
+ 
+     public:
+@@ -83,7 +89,6 @@ OpenCDMError StringToAllocatedBuffer(const std::string& source, char* destinatio
+     } singleton;
+ 
+     OpenCDMAccessor& result = singleton.Instance();
+-    result.Reconnect();
+     return &result;
+ }
+ 
+@@ -660,7 +665,7 @@ OpenCDMError opencdm_get_metric_session_data(struct OpenCDMSession* session,
+ 
+ 
+ void opencdm_dispose() {
+-    Core::Singleton::Dispose();
++    Core::SingletonType<OpenCDMAccessor>::Dispose();
+ }
+ 
+ bool OpenCDMAccessor::WaitForKey(const uint8_t keyLength, const uint8_t keyId[],
+diff --git a/Source/ocdm/open_cdm_impl.h b/Source/ocdm/open_cdm_impl.h
+index aa80ad7..ea4d8fe 100644
+--- a/Source/ocdm/open_cdm_impl.h
++++ b/Source/ocdm/open_cdm_impl.h
+@@ -63,6 +63,7 @@ protected:
+         , _sessionKeys()
+     {
+         TRACE_L1("Trying to open an OCDM connection @ %s\n", domainName);
++        Reconnect(); // make sure ResourceMonitor singleton is created before OpenCDMAccessor so the destruction order is correct
+     }
+ 
+     void Reconnect() const
