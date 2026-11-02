@@ -194,7 +194,7 @@ FILES:${PN} += "${libdir}/*.so ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN} += "${includedir}/cdmi.h"
 FILES:${PN} += "${systemd_unitdir}/system/wpeframework.service.d/network_manager_migration.conf"
 FILES:${PN}-dev += "${libdir}/cmake/*"
-FILES:${PN}-dev += "${includedir}/WPEFramework/core/WarningReportingConfig.h"
+FILES:${PN} += "${includedir}/WPEFramework/core/WarningReportingConfig.h"
 FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/"
 
 # ----------------------------------------------------------------------------
