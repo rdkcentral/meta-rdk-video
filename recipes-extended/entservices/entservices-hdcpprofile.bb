@@ -14,6 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-hdcpprofile;${CMF_GITHUB_SRC_URI_SUFFI
 
 # Release version - 1.1.5
 SRCREV = "2811a5ed16e4fbacf581f473155d2a4985444edd"
+SRCREV:vdevice_x86-64-mw = "e287e6bc76925a827418ebd18ac7638b7e7493be"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -43,7 +44,17 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[hdcpprofile]          = "-DPLUGIN_HDCPPROFILE=ON,-DPLUGIN_HDCPPROFILE=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus devicesettings entservices-helpers"
+HDCPPROFILE_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal entservices-helpers"
+HDCPPROFILE_DEPS:vdevice_x86-64-mw = "iarmbus entservices-devicesettings entservices-helpers"
+HDCPPROFILE_RDEPS = "iarmbus devicesettings entservices-helpers"
+HDCPPROFILE_RDEPS:vdevice_x86-64-mw = "${HDCPPROFILE_DEPS}"
+PACKAGECONFIG[hdcpprofile]          = "-DPLUGIN_HDCPPROFILE=ON,-DPLUGIN_HDCPPROFILE=OFF,${HDCPPROFILE_DEPS},${HDCPPROFILE_RDEPS}"
+
+EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
+    -DIARMBUS_INCLUDE_DIRS:PATH=${RECIPE_SYSROOT}${includedir}/rdk/iarmbus \
+    -DIARMRECEIVER_INCLUDE_DIRS:PATH= \
+    -DDS_COMRPC=ON \
+"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \

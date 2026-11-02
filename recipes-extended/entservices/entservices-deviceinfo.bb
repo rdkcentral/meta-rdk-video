@@ -14,6 +14,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceinfo;${CMF_GITHUB_SRC_URI_SUFFIX
 
 # Release tag - 1.1.7
 SRCREV = "1.1.7"
+SRCREV:vdevice_x86-64-mw = "f96381862378837990e10828a6e7c9eb13ba7705"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -50,7 +51,17 @@ PACKAGECONFIG:append = " deviceinfo"
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[deviceinfo]           = "-DPLUGIN_DEVICEINFO=ON,-DPLUGIN_DEVICEINFO=OFF,iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-apis entservices-helpers,iarmbus rfc devicesettings entservices-apis entservices-helpers"
+DEVICEINFO_DEPS = "iarmbus iarmmgrs rfc devicesettings virtual/vendor-devicesettings-hal entservices-apis entservices-helpers"
+DEVICEINFO_DEPS:vdevice_x86-64-mw = "iarmbus rfc entservices-devicesettings entservices-apis entservices-helpers"
+DEVICEINFO_RDEPS = "iarmbus rfc devicesettings entservices-apis entservices-helpers"
+DEVICEINFO_RDEPS:vdevice_x86-64-mw = "${DEVICEINFO_DEPS}"
+PACKAGECONFIG[deviceinfo]           = "-DPLUGIN_DEVICEINFO=ON,-DPLUGIN_DEVICEINFO=OFF,${DEVICEINFO_DEPS},${DEVICEINFO_RDEPS}"
+
+EXTRA_OECMAKE:append:vdevice_x86-64-mw = " \
+    -DUSE_DEVICESETTING_PLUGIN=ON \
+    -DIARMBUS_INCLUDE_DIRS:PATH=${RECIPE_SYSROOT}${includedir}/rdk/iarmbus \
+    -DIARMRECEIVER_INCLUDE_DIRS:PATH= \
+"
 
 # ----------------------------------------------------------------------------
 
