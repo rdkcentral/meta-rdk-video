@@ -11,7 +11,8 @@ DEPENDS:append = " cairo pixman fontconfig"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 # Tip of the branch on Dec 19, 2024
-SRCREV = "680d0afd323e533a8ed07749eccd091996c66e2c"
+#SRCREV = "680d0afd323e533a8ed07749eccd091996c66e2c"
+SRCREV = "6152d9521d504fa41479408aab07bb4a3a991476"
 
 BASE_URI ?= "git://github.com/WebPlatformForEmbedded/WPEWebKit.git;protocol=http;branch=wpe-2.38"
 SRC_URI = "${BASE_URI}"
