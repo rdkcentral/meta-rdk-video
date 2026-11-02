@@ -1,0 +1,925 @@
+From e13fb6704bc47d227ff9b46ca3dbaf2cc19727d9 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Mon, 2 Nov 2026 13:05:27 +0200
+Subject: [PATCH] RDKEMW-27441 : Migrate Local Logging Wrappers
+
+Reason for change: Reduce duplicate logging macros and utility headers.
+Test Procedure: None
+Risks: Low
+version: Patch
+---
+ build_dependencies.sh            |  14 ++
+ helpers/PluginInterfaceBuilder.h | 227 ------------------------------
+ helpers/UtilsCStr.h              |  22 ---
+ helpers/UtilsIarm.h              |  90 ------------
+ helpers/UtilsJsonRpc.h           | 176 ------------------------
+ helpers/UtilsLogging.h           |  30 ----
+ helpers/UtilsString.h            | 228 -------------------------------
+ helpers/UtilsUnused.h            |  22 ---
+ plugin/CMakeLists.txt            |   7 +-
+ 9 files changed, 19 insertions(+), 797 deletions(-)
+ delete mode 100755 helpers/PluginInterfaceBuilder.h
+ delete mode 100644 helpers/UtilsCStr.h
+ delete mode 100644 helpers/UtilsIarm.h
+ delete mode 100644 helpers/UtilsJsonRpc.h
+ delete mode 100644 helpers/UtilsLogging.h
+ delete mode 100644 helpers/UtilsString.h
+ delete mode 100644 helpers/UtilsUnused.h
+
+diff --git a/build_dependencies.sh b/build_dependencies.sh
+index 693bb96..9259758 100644
+--- a/build_dependencies.sh
++++ b/build_dependencies.sh
+@@ -183,6 +183,20 @@ echo "==========================================================================
+ cd ../../
+ cp -r /usr/include/gstreamer-1.0/gst /usr/include/glib-2.0/* /usr/lib/x86_64-linux-gnu/glib-2.0/include/* /usr/local/include/trower-base64/base64.h /usr/include/libdrm/drm.h /usr/include/libdrm/drm_mode.h /usr/include/xf86drm.h .
+ 
++#############################
++# Build entservices-helpers
++echo "======================================================================================"
++echo "building entservices-helpers"
++cd $GITHUB_WORKSPACE
++git clone --branch develop https://github.com/rdkcentral/entservices-helpers.git
++cmake -G Ninja -S entservices-helpers -B build/entservices-helpers \
++    -DEXCEPTIONS_ENABLE=ON \
++    -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr" \
++    -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake" \
++    "-DCMAKE_CXX_FLAGS=-I$GITHUB_WORKSPACE/entservices-testframework/Tests/mocks -I$GITHUB_WORKSPACE/entservices-testframework/Tests/headers -I$GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/iarmbus -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Iarm.h "
++
++cmake --build build/entservices-helpers --target install
++
+ ############################
+ # Build test dependencies
+ if $BUILD_TESTS; then
+diff --git a/helpers/PluginInterfaceBuilder.h b/helpers/PluginInterfaceBuilder.h
+deleted file mode 100755
+index 82c5455..0000000
+--- a/helpers/PluginInterfaceBuilder.h
++++ /dev/null
+@@ -1,227 +0,0 @@
+-/**
+- * If not stated otherwise in this file or this component's LICENSE
+- * file the following copyright and licenses apply:
+- *
+- * Copyright 2024 RDK Management
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- * http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- **/
+-#pragma once
+-
+-#include <com/Communicator.h>
+-#include <core/Proxy.h>
+-#include <plugins/IShell.h>
+-
+-#include "UtilsLogging.h"
+-
+-namespace WPEFramework {
+-namespace PluginHost {
+-    class IShell;
+-}
+-
+-namespace Plugin {
+-
+-    template <typename INTERFACE>
+-    class PluginInterfaceRef {
+-        INTERFACE* _interface;
+-        PluginHost::IShell* _service;
+-
+-    public:
+-        PluginInterfaceRef()
+-            : _interface(nullptr)
+-            , _service(nullptr)
+-        {
+-        }
+-
+-        PluginInterfaceRef(INTERFACE* interface, PluginHost::IShell* controller)
+-            : _interface(interface)
+-            , _service(controller)
+-        {
+-        }
+-
+-        ~PluginInterfaceRef()
+-        {
+-            Reset();
+-        }
+-
+-        // avoid copies
+-        PluginInterfaceRef(const PluginInterfaceRef&) = delete;
+-        PluginInterfaceRef& operator=(const PluginInterfaceRef&) = delete;
+-
+-        // use move
+-        PluginInterfaceRef(PluginInterfaceRef&& other)
+-            : _interface(other._interface)
+-            , _service(other._service)
+-        {
+-            other._interface = nullptr;
+-        }
+-
+-        PluginInterfaceRef& operator=(PluginInterfaceRef&& other)
+-        {
+-            if (this != &other) {
+-                _interface = other._interface;
+-                other._interface = nullptr;
+-            }
+-            return *this;
+-        }
+-
+-        operator bool() const
+-        {
+-            return _interface != nullptr;
+-        }
+-
+-        INTERFACE* operator->() const
+-        {
+-            return _interface;
+-        }
+-
+-        void Reset()
+-        {
+-            if (_interface) {
+-                _interface->Release();
+-                _interface = nullptr;
+-            }
+-        }
+-    };
+-
+-    template <typename INTERFACE>
+-    class PluginInterfaceBuilder;
+-
+-    // default impl
+-    template <typename INTERFACE>
+-    INTERFACE* createInterface(PluginInterfaceBuilder<INTERFACE>& builder)
+-    {
+-        WPEFramework::PluginHost::IShell* controller = builder.controller();
+-        const std::string& callsign = builder.callSign();
+-        const int retry_count = builder.retryCount();
+-        const uint32_t retry_interval = builder.retryInterval();
+-        int count = 0;
+-
+-        if (!controller) {
+-            LOGERR("Invalid controller");
+-            return nullptr;
+-        }
+-
+-        do {
+-            auto pluginInterface = controller->QueryInterfaceByCallsign<INTERFACE>(callsign.c_str());
+-
+-            if (pluginInterface) {
+-                LOGINFO("plugin interface succeed and retry count: %d",count);
+-                return pluginInterface;
+-            }
+-            else
+-            {
+-                count++;
+-                LOGERR("plugin interface failed and retry: %d",count);
+-                usleep(retry_interval*1000);
+-            }
+-        }while(count < retry_count);
+-
+-        return nullptr;
+-    }
+-
+-    template <typename T, typename... Args>
+-    std::unique_ptr<T> make_unique(Args&&... args)
+-    {
+-        return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+-    }
+-
+-    template <typename INTERFACE>
+-    class PluginInterfaceBuilder {
+-
+-        const std::string _callsign;
+-        PluginHost::IShell* _service;
+-        uint32_t _version;
+-        uint32_t _timeout;
+-        int _retry_count;
+-        uint32_t _retry_interval;
+-
+-    public:
+-        PluginInterfaceBuilder(const char* callsign)
+-            : _callsign(callsign)
+-            , _service(nullptr)
+-            , _version(static_cast<uint32_t>(~0))
+-            , _timeout(3000)
+-            ,_retry_count(0)
+-            ,_retry_interval(0)
+-        {
+-        }
+-
+-        // won't take ownership of ref members
+-        ~PluginInterfaceBuilder() = default;
+-
+-        inline PluginInterfaceBuilder& withVersion(uint32_t version)
+-        {
+-            _version = version;
+-            return *this;
+-        }
+-
+-        inline PluginInterfaceBuilder& withTimeout(uint32_t timeoutMs)
+-        {
+-            _timeout = timeoutMs;
+-            return *this;
+-        }
+-
+-        inline PluginInterfaceBuilder& withIShell(PluginHost::IShell * service)
+-        {
+-            _service = service;
+-            return *this;
+-        }
+-
+-        inline PluginInterfaceBuilder& withRetryIntervalMS(int retryInterval)
+-        {
+-            _retry_interval = retryInterval;
+-            return *this;
+-        }
+-
+-        inline PluginInterfaceBuilder& withRetryCount(int retryCount)
+-        {
+-            _retry_count = retryCount;
+-            return *this;
+-        }
+-
+-        PluginInterfaceRef<INTERFACE> createInterface()
+-        {
+-            auto* interface = ::WPEFramework::Plugin::createInterface<INTERFACE>(*this);
+-
+-            if (!interface) {
+-                LOGERR("Failed to create plugin interface for %s", _callsign.c_str());
+-            }
+-
+-            // pass on the ownership of controller to interfaceRef
+-            return std::move(PluginInterfaceRef<INTERFACE>(interface, _service));
+-        }
+-
+-        uint32_t retryInterval() const
+-        {
+-            return _retry_interval;
+-        }
+-
+-        int retryCount() const
+-        {
+-            return _retry_count;
+-        }
+-
+-        const std::string& callSign() const
+-        {
+-            return _callsign;
+-        }
+-
+-        WPEFramework::PluginHost::IShell* controller()
+-        {
+-            return _service;
+-        }
+-    };
+-
+-} // Plugin
+-} // WPEFramework
+diff --git a/helpers/UtilsCStr.h b/helpers/UtilsCStr.h
+deleted file mode 100644
+index 0d1bbab..0000000
+--- a/helpers/UtilsCStr.h
++++ /dev/null
+@@ -1,22 +0,0 @@
+-/**
+-* If not stated otherwise in this file or this component's LICENSE
+-* file the following copyright and licenses apply:
+-*
+-* Copyright 2024 RDK Management
+-*
+-* Licensed under the Apache License, Version 2.0 (the "License");
+-* you may not use this file except in compliance with the License.
+-* You may obtain a copy of the License at
+-*
+-* http://www.apache.org/licenses/LICENSE-2.0
+-*
+-* Unless required by applicable law or agreed to in writing, software
+-* distributed under the License is distributed on an "AS IS" BASIS,
+-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-* See the License for the specific language governing permissions and
+-* limitations under the License.
+-**/
+-
+-#pragma once
+-
+-#define C_STR(x) (x).c_str()
+diff --git a/helpers/UtilsIarm.h b/helpers/UtilsIarm.h
+deleted file mode 100644
+index c9e6116..0000000
+--- a/helpers/UtilsIarm.h
++++ /dev/null
+@@ -1,90 +0,0 @@
+-/**
+-* If not stated otherwise in this file or this component's LICENSE
+-* file the following copyright and licenses apply:
+-*
+-* Copyright 2024 RDK Management
+-*
+-* Licensed under the Apache License, Version 2.0 (the "License");
+-* you may not use this file except in compliance with the License.
+-* You may obtain a copy of the License at
+-*
+-* http://www.apache.org/licenses/LICENSE-2.0
+-*
+-* Unless required by applicable law or agreed to in writing, software
+-* distributed under the License is distributed on an "AS IS" BASIS,
+-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-* See the License for the specific language governing permissions and
+-* limitations under the License.
+-**/
+-
+-#pragma once
+-
+-#include "UtilsLogging.h"
+-
+-#include "libIBus.h"
+-#include <unistd.h>
+-
+-#define IARM_CHECK(FUNC) { \
+-    if ((res = FUNC) != IARM_RESULT_SUCCESS) { \
+-        LOGINFO("IARM %s: %s", #FUNC, \
+-            res == IARM_RESULT_INVALID_PARAM ? "invalid param" : ( \
+-            res == IARM_RESULT_INVALID_STATE ? "invalid state" : ( \
+-            res == IARM_RESULT_IPCCORE_FAIL ? "ipcore fail" : ( \
+-            res == IARM_RESULT_OOM ? "oom" : "unknown")))); \
+-    } \
+-    else \
+-    { \
+-        LOGINFO("IARM %s: success", #FUNC); \
+-    } \
+-}
+-
+-namespace Utils {
+-struct IARM {
+-    static bool init()
+-    {
+-        IARM_Result_t res;
+-        bool result = false;
+-
+-        if (isConnected()) {
+-            LOGINFO("IARM already connected");
+-            result = true;
+-        } else {
+-            unsigned int retryCount = 0;
+-            do
+-            {
+-                res = IARM_Bus_Init(NAME);
+-                LOGINFO("IARM_Bus_Init: %d", res);
+-                if (res == IARM_RESULT_SUCCESS || res == IARM_RESULT_INVALID_STATE /* already inited or connected */) {
+-                    res = IARM_Bus_Connect();
+-                    LOGINFO("IARM_Bus_Connect: %d", res);
+-                    if (res == IARM_RESULT_SUCCESS || res == IARM_RESULT_INVALID_STATE /* already connected or not inited */) {
+-                        result = isConnected();
+-                        LOGERR("ARM_Bus_Connect result: %d res: %d retryCount :%d ",result, res, retryCount);
+-                    } else {
+-                        LOGERR("IARM_Bus_Connect failure:result :%d res: %d retryCount :%d ",result, res, retryCount);
+-                    }
+-                } else {
+-                    LOGERR("IARM_Bus_Init failure: result :%d res: %d retryCount :%d",result, res,retryCount);
+-                }
+-
+-                if(result == false) usleep(100000);
+-
+-            }while((result == false) && (retryCount++ < 20));
+-        }
+-
+-        return result;
+-    }
+-
+-    static bool isConnected()
+-    {
+-        IARM_Result_t res;
+-        int isRegistered = 0;
+-        res = IARM_Bus_IsConnected(NAME, &isRegistered);
+-        LOGINFO("IARM_Bus_IsConnected: res:%d  isRegistered (%d)", res, isRegistered);
+-
+-        return (isRegistered == 1);
+-    }
+-
+-    static constexpr const char* NAME = "Thunder_Plugins";
+-};
+-}
+diff --git a/helpers/UtilsJsonRpc.h b/helpers/UtilsJsonRpc.h
+deleted file mode 100644
+index 2f3504e..0000000
+--- a/helpers/UtilsJsonRpc.h
++++ /dev/null
+@@ -1,176 +0,0 @@
+-/**
+-* If not stated otherwise in this file or this component's LICENSE
+-* file the following copyright and licenses apply:
+-*
+-* Copyright 2026 RDK Management
+-*
+-* Licensed under the Apache License, Version 2.0 (the "License");
+-* you may not use this file except in compliance with the License.
+-* You may obtain a copy of the License at
+-*
+-* http://www.apache.org/licenses/LICENSE-2.0
+-*
+-* Unless required by applicable law or agreed to in writing, software
+-* distributed under the License is distributed on an "AS IS" BASIS,
+-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-* See the License for the specific language governing permissions and
+-* limitations under the License.
+-**/
+-
+-#pragma once
+-
+-#include "UtilsLogging.h"
+-
+-#define LOGINFOMETHOD() { std::string json; parameters.ToString(json); LOGINFO( "params=%s", json.c_str() ); }
+-#define LOGTRACEMETHODFIN() { std::string json; response.ToString(json); LOGINFO( "response=%s", json.c_str() ); }
+-
+-/**
+- * DO NOT USE THIS.
+- *
+- * "success" parameter was added for legacy reasons.
+- * Newer APIs should return only error code to match the spec
+- */
+-
+-#define originalReturnResponse(expression) \
+-    { \
+-        bool successBoolean = expression; \
+-        response["success"] = successBoolean; \
+-        LOGTRACEMETHODFIN(); \
+-        return (successBoolean ? WPEFramework::Core::ERROR_NONE : WPEFramework::Core::ERROR_GENERAL); \
+-    }
+-// This is the legacy behavior of returnResponse.  Once Web Apps can properly catch exceptions to handle an error return, the the above originalReturnResponse() can be used.
+-#define returnResponse(success) \
+-    { \
+-        response["success"] = success; \
+-        LOGTRACEMETHODFIN(); \
+-        return (WPEFramework::Core::ERROR_NONE); \
+-    }
+-#define returnIfParamNotFound(param, name) \
+-    if (!param.HasLabel(name)) \
+-    { \
+-        LOGERR("No argument '%s'", name); \
+-        returnResponse(false); \
+-    }
+-#define returnIfStringParamNotFound(param, name) \
+-    if (!param.HasLabel(name) || param[name].Content() != WPEFramework::Core::JSON::Variant::type::STRING) \
+-    {\
+-        LOGERR("No argument '%s' or it has incorrect type", name); \
+-        returnResponse(false); \
+-    }
+-#define returnIfBooleanParamNotFound(param, name) \
+-    if (!param.HasLabel(name) || param[name].Content() != WPEFramework::Core::JSON::Variant::type::BOOLEAN) \
+-    { \
+-        LOGERR("No argument '%s' or it has incorrect type", name); \
+-        returnResponse(false); \
+-    }
+-#define returnIfNumberParamNotFound(param, name) \
+-    if (!param.HasLabel(name) || param[name].Content() != WPEFramework::Core::JSON::Variant::type::NUMBER) \
+-    { \
+-        LOGERR("No argument '%s' or it has incorrect type", name); \
+-        returnResponse(false); \
+-    }
+-
+-/**
+- * DO NOT USE THIS.
+- *
+- * You should be capable of just using "Notify".
+- */
+-
+-#if ((THUNDER_VERSION >= 4) && (THUNDER_VERSION_MINOR == 4))
+-
+-#define sendNotify(event,params) { \
+-    std::string json; \
+-    params.ToString(json); \
+-    LOGINFO("Notify %s %s", event, json.c_str()); \
+-    Notify(event,params); \
+-}
+-
+-#define sendNotifyMaskParameters(event,params) { \
+-    std::string json; \
+-    params.ToString(json); \
+-    LOGINFO("Notify %s <***>", event); \
+-    Notify(event,params); \
+-}
+-
+-#else
+-
+-#define sendNotify(event,params) { \
+-    std::string json; \
+-    params.ToString(json); \
+-    LOGINFO("Notify %s %s", event, json.c_str()); \
+-    for (uint8_t i = 1; GetHandler(i); i++) GetHandler(i)->Notify(event,params); \
+-}
+-#define sendNotifyMaskParameters(event,params) { \
+-    std::string json; \
+-    params.ToString(json); \
+-    LOGINFO("Notify %s <***>", event); \
+-    for (uint8_t i = 1; GetHandler(i); i++) GetHandler(i)->Notify(event,params); \
+-}
+-
+-#endif
+-/**
+- * DO NOT USE THIS.
+- *
+- * Instead, add YOURPLUGINNAME.json to https://github.com/rdkcentral/ThunderInterfaces
+- * and use the generated classes from <interfaces/json/JsonData_YOURPLUGINNAME.h>
+- */
+-
+-#define getNumberParameter(paramName, param) { \
+-    if (WPEFramework::Core::JSON::Variant::type::NUMBER == parameters[paramName].Content()) \
+-        param = parameters[paramName].Number(); \
+-    else \
+-        try { param = std::stoi( parameters[paramName].String()); } \
+-        catch (...) { param = 0; } \
+-}
+-#define getNumberParameterObject(parameters, paramName, param) { \
+-    if (WPEFramework::Core::JSON::Variant::type::NUMBER == parameters[paramName].Content()) \
+-        param = parameters[paramName].Number(); \
+-    else \
+-        try {param = std::stoi( parameters[paramName].String());} \
+-        catch (...) { param = 0; } \
+-}
+-#define getBoolParameter(paramName, param) { \
+-    if (WPEFramework::Core::JSON::Variant::type::BOOLEAN == parameters[paramName].Content()) \
+-        param = parameters[paramName].Boolean(); \
+-    else \
+-        param = parameters[paramName].String() == "true" || parameters[paramName].String() == "1"; \
+-}
+-#define getStringParameter(paramName, param) { \
+-    if (WPEFramework::Core::JSON::Variant::type::STRING == parameters[paramName].Content()) \
+-        param = parameters[paramName].String(); \
+-}
+-#define getFloatParameter(paramName, param) { \
+-    if (Core::JSON::Variant::type::FLOAT == parameters[paramName].Content()) \
+-        param = parameters[paramName].Float(); \
+-    else \
+-        try { param = std::stof( parameters[paramName].String()); } \
+-        catch (...) { param = 0; } \
+-}
+-#define vectorSet(v,s) \
+-    if (find(begin(v), end(v), s) == end(v)) \
+-        v.emplace_back(s);
+-#define getDefaultNumberParameter(paramName, param, default) { \
+-    if (parameters.HasLabel(paramName)) { \
+-        if (WPEFramework::Core::JSON::Variant::type::NUMBER == parameters[paramName].Content()) \
+-            param = parameters[paramName].Number(); \
+-        else \
+-            try { param = std::stoi( parameters[paramName].String()); } \
+-            catch (...) { param = default; } \
+-    } else param = default; \
+-}
+-#define getDefaultStringParameter(paramName, param, default) { \
+-    if (parameters.HasLabel(paramName)) { \
+-        if (WPEFramework::Core::JSON::Variant::type::STRING == parameters[paramName].Content()) \
+-            param = parameters[paramName].String(); \
+-        else \
+-            param = default; \
+-    } else param = default; \
+-}
+-#define getDefaultBoolParameter(paramName, param, default) { \
+-    if (parameters.HasLabel(paramName)) { \
+-        if (WPEFramework::Core::JSON::Variant::type::BOOLEAN == parameters[paramName].Content()) \
+-            param = parameters[paramName].Boolean(); \
+-        else \
+-            param = parameters[paramName].String() == "true" || parameters[paramName].String() == "1"; \
+-     } else param = default; \
+-}
+diff --git a/helpers/UtilsLogging.h b/helpers/UtilsLogging.h
+deleted file mode 100644
+index 2fd3d7b..0000000
+--- a/helpers/UtilsLogging.h
++++ /dev/null
+@@ -1,30 +0,0 @@
+-/**
+-* If not stated otherwise in this file or this component's LICENSE
+-* file the following copyright and licenses apply:
+-*
+-* Copyright 2024 RDK Management
+-*
+-* Licensed under the Apache License, Version 2.0 (the "License");
+-* you may not use this file except in compliance with the License.
+-* You may obtain a copy of the License at
+-*
+-* http://www.apache.org/licenses/LICENSE-2.0
+-*
+-* Unless required by applicable law or agreed to in writing, software
+-* distributed under the License is distributed on an "AS IS" BASIS,
+-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-* See the License for the specific language governing permissions and
+-* limitations under the License.
+-**/
+-
+-#pragma once
+-
+-#include <syscall.h>
+-
+-#define LOGINFO(fmt, ...) do { fprintf(stderr, "[%d] INFO [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr); } while (0)
+-#define LOGWARN(fmt, ...) do { fprintf(stderr, "[%d] WARN [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr); } while (0)
+-#define LOGERR(fmt, ...) do { fprintf(stderr, "[%d] ERROR [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr); } while (0)
+-
+-#define LOG_DEVICE_EXCEPTION0() LOGWARN("Exception caught: code=%d message=%s", err.getCode(), err.what());
+-#define LOG_DEVICE_EXCEPTION1(param1) LOGWARN("Exception caught" #param1 "=%s code=%d message=%s", param1.c_str(), err.getCode(), err.what());
+-#define LOG_DEVICE_EXCEPTION2(param1, param2) LOGWARN("Exception caught " #param1 "=%s " #param2 "=%s code=%d message=%s", param1.c_str(), param2.c_str(), err.getCode(), err.what());
+diff --git a/helpers/UtilsString.h b/helpers/UtilsString.h
+deleted file mode 100644
+index 8091719..0000000
+--- a/helpers/UtilsString.h
++++ /dev/null
+@@ -1,228 +0,0 @@
+-/**
+-* If not stated otherwise in this file or this component's LICENSE
+-* file the following copyright and licenses apply:
+-*
+-* Copyright 2024 RDK Management
+-*
+-* Licensed under the Apache License, Version 2.0 (the "License");
+-* you may not use this file except in compliance with the License.
+-* You may obtain a copy of the License at
+-*
+-* http://www.apache.org/licenses/LICENSE-2.0
+-*
+-* Unless required by applicable law or agreed to in writing, software
+-* distributed under the License is distributed on an "AS IS" BASIS,
+-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-* See the License for the specific language governing permissions and
+-* limitations under the License.
+-**/
+-
+-#pragma once
+-
+-namespace Utils {
+-namespace String {
+-    // locale-wise comparison
+-    template <typename charT>
+-    struct loc_equal {
+-        explicit loc_equal(const std::locale& loc)
+-            : loc_(loc)
+-        {
+-        }
+-        bool operator()(charT ch1, charT ch2)
+-        {
+-            return std::toupper(ch1, loc_) == std::toupper(ch2, loc_);
+-        }
+-
+-    private:
+-        const std::locale& loc_;
+-    };
+-
+-    // Case-insensitive substring lookup.
+-    // Returns the substring position or -1
+-    // Example: int pos = find_substr_ci(string, substring, std::locale());
+-    template <typename T>
+-    int find_substr_ci(const T& string, const T& substring, const std::locale& loc = std::locale())
+-    {
+-        typename T::const_iterator it = std::search(string.begin(), string.end(),
+-            substring.begin(), substring.end(), loc_equal<typename T::value_type>(loc));
+-        if (it != string.end())
+-            return it - string.begin();
+-        else
+-            return -1; // not found
+-    }
+-
+-    // Case-insensitive substring inclusion lookup.
+-    // Example: if (Utils::String::contains(result, processName)) {..}
+-    template <typename T>
+-    bool contains(const T& string, const T& substring, const std::locale& loc = std::locale())
+-    {
+-        int pos = find_substr_ci(string, substring, loc);
+-        return pos != -1;
+-    }
+-
+-    // Case-insensitive substring inclusion lookup.
+-    // Example: if(Utils::String::contains(tmp, "grep -i")) {..}
+-    template <typename T>
+-    bool contains(const T& string, const char* c_substring, const std::locale& loc = std::locale())
+-    {
+-        std::string substring(c_substring);
+-        int pos = find_substr_ci(string, substring, loc);
+-        return pos != -1;
+-    }
+-
+-    // Case-insensitive string comparison
+-    // returns true if the strings are equal, otherwise returns false
+-    // Example: if (Utils::String::equal(line, provisionType)) {..}
+-    template <typename T>
+-    bool equal(const T& string, const T& string2, const std::locale& loc = std::locale())
+-    {
+-        int pos = find_substr_ci(string, string2, loc);
+-        bool res = (pos == 0) && (string.length() == string2.length());
+-        return res;
+-    }
+-
+-    // Case-insensitive string comparison
+-    // returns true if the strings are equal, otherwise returns false
+-    // Example: if(Utils::String::equal(line,"CRYPTANIUM")) {..}
+-    template <typename T>
+-    bool equal(const T& string, const char* c_string2, const std::locale& loc = std::locale())
+-    {
+-        std::string string2(c_string2);
+-        int pos = find_substr_ci(string, string2, loc);
+-        bool res = (pos == 0) && (string.length() == string2.length());
+-        return res;
+-    }
+-
+-    // Trim space characters (' ', '\n', '\v', '\f', \r') on the left side of string
+-    inline void ltrim(std::string& s)
+-    {
+-        s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
+-            return !std::isspace(ch);
+-        }));
+-    }
+-
+-    // Trim space characters (' ', '\n', '\v', '\f', \r') on the right side of string
+-    inline void rtrim(std::string& s)
+-    {
+-        s.erase(std::find_if(s.rbegin(), s.rend(), [](int ch) {
+-            return !std::isspace(ch);
+-        }).base(),
+-            s.end());
+-    }
+-
+-    // Trim space characters (' ', '\n', '\v', '\f', \r') on both sides of string
+-    inline void trim(std::string& s)
+-    {
+-        ltrim(s);
+-        rtrim(s);
+-    }
+-
+-    inline void toUpper(std::string& s)
+-    {
+-        std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+-    }
+-
+-    inline void toLower(std::string& s)
+-    {
+-        std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+-    }
+-
+-    // case insensitive comparison of strings
+-    inline bool stringContains(const std::string& s1, const std::string& s2)
+-    {
+-        return search(s1.begin(), s1.end(), s2.begin(), s2.end(), [](char c1, char c2) { return toupper(c1) == toupper(c2); }) != s1.end();
+-    }
+-
+-    // case insensitive comparison of strings
+-    inline bool stringContains(const std::string& s1, const char* s2)
+-    {
+-        return stringContains(s1, std::string(s2));
+-    }
+-    
+-    // Split string s into a vector of strings using the supplied delimiter
+-    inline void split(std::vector<std::string> &stringList, std::string &s, std::string delimiters)
+-    {
+-        size_t current;
+-        size_t next = -1;
+-        do
+-        {
+-            current = next + 1;
+-            next = s.find_first_of( delimiters, current );
+-
+-            stringList.push_back(s.substr( current, next - current ));
+-        }
+-        while (next != string::npos);
+-     }
+-
+-    static const TCHAR base64_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+-                                        "abcdefghijklmnopqrstuvwxyz"
+-                                        "0123456789+/";
+-
+-
+-    inline void imageEncoder(const uint8_t object[], const uint32_t length, const bool padding, string& result)
+-    {
+-        uint8_t state = 0;
+-        uint32_t index = 0;
+-        uint8_t lastStuff = 0;
+-
+-        while (index < length) {
+-            if (state == 0) {
+-                result += base64_chars[((object[index] & 0xFC) >> 2)];
+-                lastStuff = ((object[index] & 0x03) << 4);
+-                state = 1;
+-            } else if (state == 1) {
+-                result += base64_chars[(((object[index] & 0xF0) >> 4) | lastStuff)];
+-                lastStuff = ((object[index] & 0x0F) << 2);
+-                state = 2;
+-            } else if (state == 2) {
+-                result += base64_chars[(((object[index] & 0xC0) >> 6) | lastStuff)];
+-                result += base64_chars[(object[index] & 0x3F)];
+-                state = 0;
+-            }
+-            index++;
+-        }
+-        if (state != 0) {
+-            result += base64_chars[lastStuff];
+-
+-            if (padding == true) {
+-                if (state == 1) {
+-                    result += _T("==");
+-                } else {
+-                    result += _T("=");
+-                }
+-            }
+-        }
+-
+-    }
+-
+-/**
+-* @brief Remove extra spaces from the given input string
+-* @param[in] in_str - The input string
+-* @param[out] out_str - The output string (equals input_string with extra spaces removed)
+-* @return true if the input string is a valid string
+-*/
+-    inline bool removeExtraWhitespaces(string& in_str, string& out_str)
+-    {
+-        bool ret_status = false;
+-        int idx = 0;
+-        if (!in_str.empty())
+-        {
+-            while (in_str[idx] != '\0')
+-            {
+-                out_str += in_str[idx];
+-                if (in_str[idx] == ' ')
+-                {
+-                    while (in_str[idx+1] == ' ')
+-                    {
+-                        idx++;
+-                    }
+-                }
+-                idx++;
+-            }
+-            ret_status = true;
+-        }
+-        return ret_status;
+-    }
+-
+-}
+-}
+diff --git a/helpers/UtilsUnused.h b/helpers/UtilsUnused.h
+deleted file mode 100644
+index 786a6e8..0000000
+--- a/helpers/UtilsUnused.h
++++ /dev/null
+@@ -1,22 +0,0 @@
+-/**
+-* If not stated otherwise in this file or this component's LICENSE
+-* file the following copyright and licenses apply:
+-*
+-* Copyright 2024 RDK Management
+-*
+-* Licensed under the Apache License, Version 2.0 (the "License");
+-* you may not use this file except in compliance with the License.
+-* You may obtain a copy of the License at
+-*
+-* http://www.apache.org/licenses/LICENSE-2.0
+-*
+-* Unless required by applicable law or agreed to in writing, software
+-* distributed under the License is distributed on an "AS IS" BASIS,
+-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-* See the License for the specific language governing permissions and
+-* limitations under the License.
+-**/
+-
+-#pragma once
+-
+-#define UNUSED(expr)(void)(expr)
+diff --git a/plugin/CMakeLists.txt b/plugin/CMakeLists.txt
+index 4f62baa..5a7cf57 100644
+--- a/plugin/CMakeLists.txt
++++ b/plugin/CMakeLists.txt
+@@ -27,6 +27,7 @@ option(BUILD_TESTS "Will build remote control test client and include dependenci
+ find_package(${NAMESPACE}Plugins REQUIRED)
+ find_package(${NAMESPACE}Definitions REQUIRED)
+ find_package(${NAMESPACE}Core REQUIRED)
++find_package(${NAMESPACE}Helpers CONFIG REQUIRED)
+ find_package(CTRLM REQUIRED)
+ find_package(IARMBus)
+ 
+@@ -59,7 +60,8 @@ target_include_directories(${MODULE_NAME} PRIVATE ../helpers)
+ component_version(${MODULE_NAME} DEFINE_PREFIX PLUGIN)
+ target_link_libraries(${MODULE_NAME} PRIVATE
+         ${NAMESPACE}Plugins::${NAMESPACE}Plugins
+-        ${NAMESPACE}Definitions::${NAMESPACE}Definitions)
++        ${NAMESPACE}Definitions::${NAMESPACE}Definitions
++        ${NAMESPACE}::${NAMESPACE}Helpers)
+ 
+ add_library(${PLUGIN_IMPLEMENTATION} SHARED
+         RemoteControlImplementation.cpp
+@@ -75,7 +77,8 @@ target_compile_definitions(${PLUGIN_IMPLEMENTATION} PRIVATE CTRLM_FOUND)
+ target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${CTRLM_INCLUDE_DIRS})
+ target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE
+         ${NAMESPACE}Plugins::${NAMESPACE}Plugins
+-        ${NAMESPACE}Definitions::${NAMESPACE}Definitions)
++        ${NAMESPACE}Definitions::${NAMESPACE}Definitions
++        ${NAMESPACE}::${NAMESPACE}Helpers)
+ 
+ target_include_directories(${PLUGIN_IMPLEMENTATION} PRIVATE ${IARMBUS_INCLUDE_DIRS})
+ target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE ${IARMBUS_LIBRARIES})
+-- 
+2.32.0 (Apple Git-132)
+

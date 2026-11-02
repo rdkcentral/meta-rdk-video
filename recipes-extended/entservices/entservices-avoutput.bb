@@ -2,12 +2,13 @@ SUMMARY = "ENTServices AVOutput plugin"
 LICENSE = "CLOSED"
 
 PV = "2.2.1"
-PR = "r0"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avoutput;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI += "file://0001-RDKEMW-27441-Migrate-Local-Logging-Wrappers-4.patch"
 
 # Release version - 2.2.1
 SRCREV = "${PV}"
@@ -19,7 +20,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "tvsettings-hal-headers ", "", d)}"
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', "virtual/vendor-tvsettings-hal ", "", d)}"
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis boost devicesettings"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis boost devicesettings entservices-helpers"
 RDEPENDS:${PN} += "wpeframework devicesettings"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "

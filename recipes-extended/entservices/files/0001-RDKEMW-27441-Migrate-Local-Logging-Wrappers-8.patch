@@ -1,0 +1,820 @@
+From 885cccbcf8a4e786204950b76fe29bbb9a271a84 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Wed, 4 Nov 2026 15:58:42 +0200
+Subject: [PATCH] RDKEMW-27441 : Migrate Local Logging Wrappers
+
+Reason for change: Reduce duplicate logging macros and utility headers.
+Test Procedure: None
+Risks: Low
+version: Patch
+---
+ .github/workflows/L1-tests.yml   |  30 ++++-
+ .github/workflows/L2-tests.yml   |  28 +++++
+ Tests/L1Tests/CMakeLists.txt     |   2 +
+ Tests/L2Tests/CMakeLists.txt     |   3 +-
+ build_dependencies.sh            |  14 +++
+ helpers/PluginInterfaceBuilder.h | 185 -------------------------------
+ helpers/UtilsFile.h              | 112 -------------------
+ helpers/UtilsIarm.h              |  90 ---------------
+ helpers/UtilsJsonRpc.h           | 169 ----------------------------
+ helpers/UtilsLogging.h           |  30 -----
+ plugin/CMakeLists.txt            |   4 +-
+ 11 files changed, 78 insertions(+), 589 deletions(-)
+ delete mode 100755 helpers/PluginInterfaceBuilder.h
+ delete mode 100644 helpers/UtilsFile.h
+ delete mode 100644 helpers/UtilsIarm.h
+ delete mode 100644 helpers/UtilsJsonRpc.h
+ delete mode 100644 helpers/UtilsLogging.h
+
+diff --git a/.github/workflows/L1-tests.yml b/.github/workflows/L1-tests.yml
+index 65ad0d1..77a4a83 100644
+--- a/.github/workflows/L1-tests.yml
++++ b/.github/workflows/L1-tests.yml
+@@ -296,6 +296,34 @@ jobs:
+           &&
+           cmake --install build/googletest
+ 
++      - name: Checkout entservices-helpers
++        uses: actions/checkout@v3
++        with:
++          repository: rdkcentral/entservices-helpers
++          path: entservices-helpers
++          ref: develop
++
++      - name: Build entservices-helpers
++        run: >
++          cmake -G Ninja
++          -S "$GITHUB_WORKSPACE/entservices-helpers"
++          -B build/entservices-helpers
++          -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
++          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
++          -DUSE_THUNDER_R4=ON
++          -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
++          -DPLUGIN_HELPERS=ON
++          "-DCMAKE_CXX_FLAGS=
++          -I$GITHUB_WORKSPACE/entservices-testframework/Tests/headers
++          -I$GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/iarmbus
++          -I$GITHUB_WORKSPACE/entservices-testframework/Tests/mocks
++          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/tr181api.h
++          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Iarm.h"
++          &&
++          cmake --build build/entservices-helpers
++          &&
++          cmake --install build/entservices-helpers
++
+       - name: Build mocks
+         run: >
+           cmake
+@@ -324,7 +352,7 @@ jobs:
+           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/ccec/drivers
+           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/network
+           -I $GITHUB_WORKSPACE/entservices-testframework/Tests
+-          -I $GITHUB_WORKSPACE/entservices-playerinfo/helpers
++          -I $GITHUB_WORKSPACE/entservices-helpers/helpers
+           -I $GITHUB_WORKSPACE/install/usr/include
+           -I ./usr/include/libdrm
+           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/devicesettings.h
+diff --git a/.github/workflows/L2-tests.yml b/.github/workflows/L2-tests.yml
+index 56ec378..e16caae 100644
+--- a/.github/workflows/L2-tests.yml
++++ b/.github/workflows/L2-tests.yml
+@@ -306,6 +306,34 @@ jobs:
+           &&
+           cmake --install build/mocks
+ 
++      - name: Checkout entservices-helpers
++        uses: actions/checkout@v3
++        with:
++          repository: rdkcentral/entservices-helpers
++          path: entservices-helpers
++          ref: develop
++
++      - name: Build entservices-helpers
++        run: >
++          cmake -G Ninja
++          -S "$GITHUB_WORKSPACE/entservices-helpers"
++          -B build/entservices-helpers
++          -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
++          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
++          -DUSE_THUNDER_R4=ON
++          -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
++          -DPLUGIN_HELPERS=ON
++          "-DCMAKE_CXX_FLAGS=
++          -I$GITHUB_WORKSPACE/entservices-testframework/Tests/headers
++          -I$GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/iarmbus
++          -I$GITHUB_WORKSPACE/entservices-testframework/Tests/mocks
++          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/tr181api.h
++          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Iarm.h"
++          &&
++          cmake --build build/entservices-helpers
++          &&
++          cmake --install build/entservices-helpers
++
+       - name: Build entservices-playerinfo
+         run: >
+           cmake
+diff --git a/Tests/L1Tests/CMakeLists.txt b/Tests/L1Tests/CMakeLists.txt
+index 5b7565c..37872f0 100755
+--- a/Tests/L1Tests/CMakeLists.txt
++++ b/Tests/L1Tests/CMakeLists.txt
+@@ -23,6 +23,7 @@ set(CMAKE_CXX_STANDARD 14)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ 
+ find_package(${NAMESPACE}Plugins REQUIRED)
++find_package(${NAMESPACE}Helpers CONFIG REQUIRED)
+ 
+ set (TEST_SRC
+     tests/test_UtilsFile.cpp
+@@ -30,6 +31,7 @@ set (TEST_SRC
+ 
+ set (TEST_LIB
+     ${NAMESPACE}Plugins::${NAMESPACE}Plugins
++    ${NAMESPACE}::${NAMESPACE}Helpers
+ )
+ 
+ set (TEST_INC ../../helpers)
+diff --git a/Tests/L2Tests/CMakeLists.txt b/Tests/L2Tests/CMakeLists.txt
+index 61d2167..d29dc2b 100755
+--- a/Tests/L2Tests/CMakeLists.txt
++++ b/Tests/L2Tests/CMakeLists.txt
+@@ -21,6 +21,7 @@ set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
+ set(THUNDER_PORT 9998)
+ 
+ find_package(${NAMESPACE}Plugins REQUIRED)
++find_package(${NAMESPACE}Helpers CONFIG REQUIRED)
+ 
+ find_package(PkgConfig REQUIRED) 
+ 
+@@ -51,7 +52,7 @@ target_compile_definitions(${MODULE_NAME}
+             THUNDER_PORT="${THUNDER_PORT}")
+ 
+ target_compile_options(${MODULE_NAME} PRIVATE -Wno-error)
+-target_link_libraries(${MODULE_NAME} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
++target_link_libraries(${MODULE_NAME} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${NAMESPACE}::${NAMESPACE}Helpers)
+ 
+ if (NOT L2_TEST_OOP_RPC)
+     find_library(TESTMOCKLIB_LIBRARIES NAMES TestMocklib)
+diff --git a/build_dependencies.sh b/build_dependencies.sh
+index c9d4e83..1482a54 100644
+--- a/build_dependencies.sh
++++ b/build_dependencies.sh
+@@ -135,4 +135,18 @@ touch rdk/iarmmgrs-hal/mfrMgr.h
+ touch rdk/iarmmgrs-hal/sysMgr.h
+ echo "======================================================================================"
+ 
++#############################
++# Build entservices-helpers
++echo "======================================================================================"
++echo "building entservices-helpers"
++cd $GITHUB_WORKSPACE
++git clone --branch develop https://github.com/rdkcentral/entservices-helpers.git
++cmake -G Ninja -S entservices-helpers -B build/entservices-helpers \
++    -DEXCEPTIONS_ENABLE=ON \
++    -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr" \
++    -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake" \
++    "-DCMAKE_CXX_FLAGS=-I$GITHUB_WORKSPACE/entservices-testframework/Tests/mocks -I$GITHUB_WORKSPACE/entservices-testframework/Tests/headers -I$GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/iarmbus -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Iarm.h "
++
++cmake --build build/entservices-helpers --target install
++
+ ls -la ${GITHUB_WORKSPACE}
+diff --git a/helpers/PluginInterfaceBuilder.h b/helpers/PluginInterfaceBuilder.h
+deleted file mode 100755
+index d10a7f2..0000000
+--- a/helpers/PluginInterfaceBuilder.h
++++ /dev/null
+@@ -1,185 +0,0 @@
+-/**
+- * If not stated otherwise in this file or this component's LICENSE
+- * file the following copyright and licenses apply:
+- *
+- * Copyright 2024 RDK Management
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- * http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- **/
+-#pragma once
+-
+-#include <com/Communicator.h>
+-#include <core/Proxy.h>
+-#include <plugins/IShell.h>
+-
+-#include "UtilsLogging.h"
+-
+-namespace WPEFramework {
+-namespace PluginHost {
+-    class IShell;
+-}
+-
+-namespace Plugin {
+-
+-    template <typename INTERFACE>
+-    class PluginInterfaceRef {
+-        INTERFACE* _interface;
+-        PluginHost::IShell* _service;
+-
+-    public:
+-        PluginInterfaceRef()
+-            : _interface(nullptr)
+-        {
+-        }
+-
+-        PluginInterfaceRef(INTERFACE* interface, PluginHost::IShell* controller)
+-            : _interface(interface)
+-        {
+-        }
+-
+-        ~PluginInterfaceRef()
+-        {
+-            Reset();
+-        }
+-
+-        // avoid copies
+-        PluginInterfaceRef(const PluginInterfaceRef&) = delete;
+-        PluginInterfaceRef& operator=(const PluginInterfaceRef&) = delete;
+-
+-        // use move
+-        PluginInterfaceRef(PluginInterfaceRef&& other)
+-            : _interface(other._interface)
+-        {
+-            other._interface = nullptr;
+-        }
+-
+-        PluginInterfaceRef& operator=(PluginInterfaceRef&& other)
+-        {
+-            if (this != &other) {
+-                _interface = other._interface;
+-                other._interface = nullptr;
+-            }
+-            return *this;
+-        }
+-
+-        operator bool() const
+-        {
+-            return _interface != nullptr;
+-        }
+-
+-        INTERFACE* operator->() const
+-        {
+-            return _interface;
+-        }
+-
+-        void Reset()
+-        {
+-            if (_interface) {
+-                _interface->Release();
+-                _interface = nullptr;
+-            }
+-        }
+-    };
+-
+-    template <typename INTERFACE>
+-    class PluginInterfaceBuilder;
+-
+-    // default impl
+-    template <typename INTERFACE>
+-    INTERFACE* createInterface(PluginInterfaceBuilder<INTERFACE>& builder)
+-    {
+-        WPEFramework::PluginHost::IShell* controller = builder.controller();
+-        const std::string& callsign = builder.callSign();
+-        if (!controller) {
+-            LOGERR("Invalid controller");
+-            return nullptr;
+-        }
+-
+-        auto pluginInterface = controller->QueryInterfaceByCallsign<INTERFACE>(callsign.c_str());
+-
+-        if (pluginInterface) {
+-            pluginInterface->AddRef();
+-        }
+-
+-        return pluginInterface;
+-    }
+-
+-    template <typename T, typename... Args>
+-    std::unique_ptr<T> make_unique(Args&&... args)
+-    {
+-        return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+-    }
+-
+-    template <typename INTERFACE>
+-    class PluginInterfaceBuilder {
+-
+-        const std::string _callsign;
+-        PluginHost::IShell* _service;
+-        uint32_t _version;
+-        uint32_t _timeout;
+-
+-    public:
+-        PluginInterfaceBuilder(const char* callsign)
+-            : _callsign(callsign)
+-            , _service(nullptr)
+-            , _version(static_cast<uint32_t>(~0))
+-            , _timeout(3000)
+-        {
+-        }
+-
+-        // won't take ownership of ref members
+-        ~PluginInterfaceBuilder() = default;
+-
+-        inline PluginInterfaceBuilder& withVersion(uint32_t version)
+-        {
+-            _version = version;
+-            return *this;
+-        }
+-
+-        inline PluginInterfaceBuilder& withTimeout(uint32_t timeoutMs)
+-        {
+-            _timeout = timeoutMs;
+-            return *this;
+-        }
+-
+-        inline PluginInterfaceBuilder& withIShell(PluginHost::IShell * service)
+-        {
+-            _service = service;
+-            return *this;
+-        }
+-
+-        PluginInterfaceRef<INTERFACE> createInterface()
+-        {
+-            auto* interface = ::WPEFramework::Plugin::createInterface<INTERFACE>(*this);
+-
+-            if (!interface) {
+-                LOGERR("Failed to create plugin interface for %s", _callsign.c_str());
+-            }
+-
+-            // pass on the ownership of controller to interfaceRef
+-            return std::move(PluginInterfaceRef<INTERFACE>(interface, _service));
+-        }
+-
+-        const std::string& callSign() const
+-        {
+-            return _callsign;
+-        }
+-
+-        WPEFramework::PluginHost::IShell* controller()
+-        {
+-            return _service;
+-        }
+-    };
+-
+-} // Plugin
+-} // WPEFramework
+diff --git a/helpers/UtilsFile.h b/helpers/UtilsFile.h
+deleted file mode 100644
+index 5d34c2a..0000000
+--- a/helpers/UtilsFile.h
++++ /dev/null
+@@ -1,112 +0,0 @@
+-/**
+-* If not stated otherwise in this file or this component's LICENSE
+-* file the following copyright and licenses apply:
+-*
+-* Copyright 2024 RDK Management
+-*
+-* Licensed under the Apache License, Version 2.0 (the "License");
+-* you may not use this file except in compliance with the License.
+-* You may obtain a copy of the License at
+-*
+-* http://www.apache.org/licenses/LICENSE-2.0
+-*
+-* Unless required by applicable law or agreed to in writing, software
+-* distributed under the License is distributed on an "AS IS" BASIS,
+-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-* See the License for the specific language governing permissions and
+-* limitations under the License.
+-**/
+-
+-#pragma once
+-
+-#include <core/core.h>
+-#include <iostream>
+-#include <fstream>
+-#include <string>
+-
+-using namespace std;
+-
+-namespace Utils
+-{
+-auto MoveFile(
+-    const string &from,
+-    const string &to) -> bool
+-{
+-    using namespace WPEFramework::Core;
+-
+-    File fileFrom(from);
+-    File fileTo(to);
+-
+-    Directory(fileTo.PathName().c_str()).CreatePath();
+-
+-    bool result =
+-        fileFrom.Exists() &&
+-            !fileTo.Exists() &&
+-            fileFrom.Open(true) &&
+-            fileTo.Create();
+-
+-    if (result) {
+-        const uint32_t bufLen = 1024;
+-
+-        uint8_t buffer[bufLen];
+-
+-        do {
+-            auto len = fileFrom.Read(buffer, bufLen);
+-            if (len <= 0) {
+-                break;
+-            }
+-
+-            auto ptr = buffer;
+-
+-            do {
+-                auto count = fileTo.Write(ptr, len);
+-                if (count <= 0) {
+-                    result = false;
+-                    break;
+-                }
+-
+-                len -= count;
+-                ptr += count;
+-            }
+-            while (len > 0);
+-        }
+-        while (result);
+-
+-        if (result) {
+-            fileFrom.Destroy();
+-        }
+-        else {
+-            fileTo.Destroy();
+-        }
+-    }
+-
+-    return result;
+-}
+-
+-/**
+-* @brief Get the last non empty line from the input string, equivalent to "tr -s '\r' '\n' | tail -n 1"
+-* @param[in] input - The input string
+-* @param[out] res_str - The last non empty line from the input string
+-* @return whether or not a non empty line was found
+-*/
+-bool getLastLine(const std::string& input, std::string& res_str)
+-{
+-    string read_line = "";
+-    bool ret_value = false;
+-
+-    if (!input.empty())
+-    {
+-        stringstream read_str(input);
+-        while (getline(read_str, read_line, '\n'))
+-        {
+-            if (!read_line.empty())
+-            {
+-                res_str = read_line;
+-                ret_value = true;
+-            }
+-        }
+-    }
+-    return ret_value;
+-}
+-
+-}
+diff --git a/helpers/UtilsIarm.h b/helpers/UtilsIarm.h
+deleted file mode 100644
+index c9e6116..0000000
+--- a/helpers/UtilsIarm.h
++++ /dev/null
+@@ -1,90 +0,0 @@
+-/**
+-* If not stated otherwise in this file or this component's LICENSE
+-* file the following copyright and licenses apply:
+-*
+-* Copyright 2024 RDK Management
+-*
+-* Licensed under the Apache License, Version 2.0 (the "License");
+-* you may not use this file except in compliance with the License.
+-* You may obtain a copy of the License at
+-*
+-* http://www.apache.org/licenses/LICENSE-2.0
+-*
+-* Unless required by applicable law or agreed to in writing, software
+-* distributed under the License is distributed on an "AS IS" BASIS,
+-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-* See the License for the specific language governing permissions and
+-* limitations under the License.
+-**/
+-
+-#pragma once
+-
+-#include "UtilsLogging.h"
+-
+-#include "libIBus.h"
+-#include <unistd.h>
+-
+-#define IARM_CHECK(FUNC) { \
+-    if ((res = FUNC) != IARM_RESULT_SUCCESS) { \
+-        LOGINFO("IARM %s: %s", #FUNC, \
+-            res == IARM_RESULT_INVALID_PARAM ? "invalid param" : ( \
+-            res == IARM_RESULT_INVALID_STATE ? "invalid state" : ( \
+-            res == IARM_RESULT_IPCCORE_FAIL ? "ipcore fail" : ( \
+-            res == IARM_RESULT_OOM ? "oom" : "unknown")))); \
+-    } \
+-    else \
+-    { \
+-        LOGINFO("IARM %s: success", #FUNC); \
+-    } \
+-}
+-
+-namespace Utils {
+-struct IARM {
+-    static bool init()
+-    {
+-        IARM_Result_t res;
+-        bool result = false;
+-
+-        if (isConnected()) {
+-            LOGINFO("IARM already connected");
+-            result = true;
+-        } else {
+-            unsigned int retryCount = 0;
+-            do
+-            {
+-                res = IARM_Bus_Init(NAME);
+-                LOGINFO("IARM_Bus_Init: %d", res);
+-                if (res == IARM_RESULT_SUCCESS || res == IARM_RESULT_INVALID_STATE /* already inited or connected */) {
+-                    res = IARM_Bus_Connect();
+-                    LOGINFO("IARM_Bus_Connect: %d", res);
+-                    if (res == IARM_RESULT_SUCCESS || res == IARM_RESULT_INVALID_STATE /* already connected or not inited */) {
+-                        result = isConnected();
+-                        LOGERR("ARM_Bus_Connect result: %d res: %d retryCount :%d ",result, res, retryCount);
+-                    } else {
+-                        LOGERR("IARM_Bus_Connect failure:result :%d res: %d retryCount :%d ",result, res, retryCount);
+-                    }
+-                } else {
+-                    LOGERR("IARM_Bus_Init failure: result :%d res: %d retryCount :%d",result, res,retryCount);
+-                }
+-
+-                if(result == false) usleep(100000);
+-
+-            }while((result == false) && (retryCount++ < 20));
+-        }
+-
+-        return result;
+-    }
+-
+-    static bool isConnected()
+-    {
+-        IARM_Result_t res;
+-        int isRegistered = 0;
+-        res = IARM_Bus_IsConnected(NAME, &isRegistered);
+-        LOGINFO("IARM_Bus_IsConnected: res:%d  isRegistered (%d)", res, isRegistered);
+-
+-        return (isRegistered == 1);
+-    }
+-
+-    static constexpr const char* NAME = "Thunder_Plugins";
+-};
+-}
+diff --git a/helpers/UtilsJsonRpc.h b/helpers/UtilsJsonRpc.h
+deleted file mode 100644
+index bff772a..0000000
+--- a/helpers/UtilsJsonRpc.h
++++ /dev/null
+@@ -1,169 +0,0 @@
+-/**
+-* If not stated otherwise in this file or this component's LICENSE
+-* file the following copyright and licenses apply:
+-*
+-* Copyright 2024 RDK Management
+-*
+-* Licensed under the Apache License, Version 2.0 (the "License");
+-* you may not use this file except in compliance with the License.
+-* You may obtain a copy of the License at
+-*
+-* http://www.apache.org/licenses/LICENSE-2.0
+-*
+-* Unless required by applicable law or agreed to in writing, software
+-* distributed under the License is distributed on an "AS IS" BASIS,
+-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-* See the License for the specific language governing permissions and
+-* limitations under the License.
+-**/
+-
+-#pragma once
+-
+-#include "UtilsLogging.h"
+-
+-#define LOGINFOMETHOD() { std::string json; parameters.ToString(json); LOGINFO( "params=%s", json.c_str() ); }
+-#define LOGTRACEMETHODFIN() { std::string json; response.ToString(json); LOGINFO( "response=%s", json.c_str() ); }
+-
+-/**
+- * DO NOT USE THIS.
+- *
+- * "success" parameter was added for legacy reasons.
+- * Newer APIs should return only error code to match the spec
+- */
+-
+-#define returnResponse(expression) \
+-    { \
+-        bool successBoolean = expression; \
+-        response["success"] = successBoolean; \
+-        LOGTRACEMETHODFIN(); \
+-        return (successBoolean ? WPEFramework::Core::ERROR_NONE : WPEFramework::Core::ERROR_GENERAL); \
+-    }
+-#define returnIfParamNotFound(param, name) \
+-    if (!param.HasLabel(name)) \
+-    { \
+-        LOGERR("No argument '%s'", name); \
+-        returnResponse(false); \
+-    }
+-#define returnIfStringParamNotFound(param, name) \
+-    if (!param.HasLabel(name) || param[name].Content() != WPEFramework::Core::JSON::Variant::type::STRING) \
+-    {\
+-        LOGERR("No argument '%s' or it has incorrect type", name); \
+-        returnResponse(false); \
+-    }
+-#define returnIfBooleanParamNotFound(param, name) \
+-    if (!param.HasLabel(name) || param[name].Content() != WPEFramework::Core::JSON::Variant::type::BOOLEAN) \
+-    { \
+-        LOGERR("No argument '%s' or it has incorrect type", name); \
+-        returnResponse(false); \
+-    }
+-#define returnIfNumberParamNotFound(param, name) \
+-    if (!param.HasLabel(name) || param[name].Content() != WPEFramework::Core::JSON::Variant::type::NUMBER) \
+-    { \
+-        LOGERR("No argument '%s' or it has incorrect type", name); \
+-        returnResponse(false); \
+-    }
+-
+-/**
+- * DO NOT USE THIS.
+- *
+- * You should be capable of just using "Notify".
+- */
+-
+-#if ((THUNDER_VERSION >= 4) && (THUNDER_VERSION_MINOR == 4))
+-
+-#define sendNotify(event,params) { \
+-    std::string json; \
+-    params.ToString(json); \
+-    LOGINFO("Notify %s %s", event, json.c_str()); \
+-    Notify(event,params); \
+-}
+-
+-#define sendNotifyMaskParameters(event,params) { \
+-    std::string json; \
+-    params.ToString(json); \
+-    LOGINFO("Notify %s <***>", event); \
+-    Notify(event,params); \
+-}
+-
+-#else
+-
+-#define sendNotify(event,params) { \
+-    std::string json; \
+-    params.ToString(json); \
+-    LOGINFO("Notify %s %s", event, json.c_str()); \
+-    for (uint8_t i = 1; GetHandler(i); i++) GetHandler(i)->Notify(event,params); \
+-}
+-#define sendNotifyMaskParameters(event,params) { \
+-    std::string json; \
+-    params.ToString(json); \
+-    LOGINFO("Notify %s <***>", event); \
+-    for (uint8_t i = 1; GetHandler(i); i++) GetHandler(i)->Notify(event,params); \
+-}
+-
+-#endif
+-/**
+- * DO NOT USE THIS.
+- *
+- * Instead, add YOURPLUGINNAME.json to https://github.com/rdkcentral/ThunderInterfaces
+- * and use the generated classes from <interfaces/json/JsonData_YOURPLUGINNAME.h>
+- */
+-
+-#define getNumberParameter(paramName, param) { \
+-    if (WPEFramework::Core::JSON::Variant::type::NUMBER == parameters[paramName].Content()) \
+-        param = parameters[paramName].Number(); \
+-    else \
+-        try { param = std::stoi( parameters[paramName].String()); } \
+-        catch (...) { param = 0; } \
+-}
+-#define getNumberParameterObject(parameters, paramName, param) { \
+-    if (WPEFramework::Core::JSON::Variant::type::NUMBER == parameters[paramName].Content()) \
+-        param = parameters[paramName].Number(); \
+-    else \
+-        try {param = std::stoi( parameters[paramName].String());} \
+-        catch (...) { param = 0; } \
+-}
+-#define getBoolParameter(paramName, param) { \
+-    if (WPEFramework::Core::JSON::Variant::type::BOOLEAN == parameters[paramName].Content()) \
+-        param = parameters[paramName].Boolean(); \
+-    else \
+-        param = parameters[paramName].String() == "true" || parameters[paramName].String() == "1"; \
+-}
+-#define getStringParameter(paramName, param) { \
+-    if (WPEFramework::Core::JSON::Variant::type::STRING == parameters[paramName].Content()) \
+-        param = parameters[paramName].String(); \
+-}
+-#define getFloatParameter(paramName, param) { \
+-    if (Core::JSON::Variant::type::FLOAT == parameters[paramName].Content()) \
+-        param = parameters[paramName].Float(); \
+-    else \
+-        try { param = std::stof( parameters[paramName].String()); } \
+-        catch (...) { param = 0; } \
+-}
+-#define vectorSet(v,s) \
+-    if (find(begin(v), end(v), s) == end(v)) \
+-        v.emplace_back(s);
+-#define getDefaultNumberParameter(paramName, param, default) { \
+-    if (parameters.HasLabel(paramName)) { \
+-        if (WPEFramework::Core::JSON::Variant::type::NUMBER == parameters[paramName].Content()) \
+-            param = parameters[paramName].Number(); \
+-        else \
+-            try { param = std::stoi( parameters[paramName].String()); } \
+-            catch (...) { param = default; } \
+-    } else param = default; \
+-}
+-#define getDefaultStringParameter(paramName, param, default) { \
+-    if (parameters.HasLabel(paramName)) { \
+-        if (WPEFramework::Core::JSON::Variant::type::STRING == parameters[paramName].Content()) \
+-            param = parameters[paramName].String(); \
+-        else \
+-            param = default; \
+-    } else param = default; \
+-}
+-#define getDefaultBoolParameter(paramName, param, default) { \
+-    if (parameters.HasLabel(paramName)) { \
+-        if (WPEFramework::Core::JSON::Variant::type::BOOLEAN == parameters[paramName].Content()) \
+-            param = parameters[paramName].Boolean(); \
+-        else \
+-            param = parameters[paramName].String() == "true" || parameters[paramName].String() == "1"; \
+-     } else param = default; \
+-}
+diff --git a/helpers/UtilsLogging.h b/helpers/UtilsLogging.h
+deleted file mode 100644
+index 2fd3d7b..0000000
+--- a/helpers/UtilsLogging.h
++++ /dev/null
+@@ -1,30 +0,0 @@
+-/**
+-* If not stated otherwise in this file or this component's LICENSE
+-* file the following copyright and licenses apply:
+-*
+-* Copyright 2024 RDK Management
+-*
+-* Licensed under the Apache License, Version 2.0 (the "License");
+-* you may not use this file except in compliance with the License.
+-* You may obtain a copy of the License at
+-*
+-* http://www.apache.org/licenses/LICENSE-2.0
+-*
+-* Unless required by applicable law or agreed to in writing, software
+-* distributed under the License is distributed on an "AS IS" BASIS,
+-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-* See the License for the specific language governing permissions and
+-* limitations under the License.
+-**/
+-
+-#pragma once
+-
+-#include <syscall.h>
+-
+-#define LOGINFO(fmt, ...) do { fprintf(stderr, "[%d] INFO [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr); } while (0)
+-#define LOGWARN(fmt, ...) do { fprintf(stderr, "[%d] WARN [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr); } while (0)
+-#define LOGERR(fmt, ...) do { fprintf(stderr, "[%d] ERROR [%s:%d] %s: " fmt "\n", (int)syscall(SYS_gettid), WPEFramework::Core::FileNameOnly(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr); } while (0)
+-
+-#define LOG_DEVICE_EXCEPTION0() LOGWARN("Exception caught: code=%d message=%s", err.getCode(), err.what());
+-#define LOG_DEVICE_EXCEPTION1(param1) LOGWARN("Exception caught" #param1 "=%s code=%d message=%s", param1.c_str(), err.getCode(), err.what());
+-#define LOG_DEVICE_EXCEPTION2(param1, param2) LOGWARN("Exception caught " #param1 "=%s " #param2 "=%s code=%d message=%s", param1.c_str(), param2.c_str(), err.getCode(), err.what());
+diff --git a/plugin/CMakeLists.txt b/plugin/CMakeLists.txt
+index 1ebe106..9a1f2ac 100644
+--- a/plugin/CMakeLists.txt
++++ b/plugin/CMakeLists.txt
+@@ -38,6 +38,7 @@ set(PLUGIN_PLAYERINFO_MODE "Off" CACHE STRING "Controls if the plugin should run
+ find_package(${NAMESPACE}Plugins REQUIRED)
+ find_package(${NAMESPACE}Definitions REQUIRED)
+ find_package(CompileSettingsDebug CONFIG REQUIRED)
++find_package(${NAMESPACE}Helpers CONFIG REQUIRED)
+ 
+ add_library(${MODULE_NAME} SHARED
+     PlayerInfo.cpp
+@@ -51,7 +52,8 @@ target_link_libraries(${MODULE_NAME}
+     PRIVATE
+         CompileSettingsDebug::CompileSettingsDebug
+         ${NAMESPACE}Definitions::${NAMESPACE}Definitions
+-        ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
++        ${NAMESPACE}Plugins::${NAMESPACE}Plugins
++        ${NAMESPACE}::${NAMESPACE}Helpers)
+ 
+ find_package(GStreamer REQUIRED)
+ 
+-- 
+2.32.0 (Apple Git-132)
+

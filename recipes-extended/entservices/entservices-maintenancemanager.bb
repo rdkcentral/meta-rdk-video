@@ -6,12 +6,12 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-maintenancemanager;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+           file://0001-RDKEMW-27441-Migrate-Local-Logging-Wrappers-12.patch \
           "
 
 # Release version - 1.16.2
 PV = "1.16.2"
-PR = "r0"
+PR = "r1"
 SRCREV = "709a5ca16a2c67f0cd3f60333fd89110c59fddab"
 
 
@@ -20,7 +20,7 @@ TOOLCHAIN = "gcc"
 DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
-DEPENDS += "wpeframework wpeframework-tools-native"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-helpers"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
