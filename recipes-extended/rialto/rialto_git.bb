@@ -9,7 +9,7 @@
 
 SUMMARY = "Rialto"
 LICENSE  = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=327e572d11c37963726ba0b02d30cf2c"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=b679e934da2525398d071accae36703c"
 
 require rialto_revision.inc
 
@@ -20,7 +20,7 @@ SRCREV = "${RIALTO_SRCREV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${RIALTO_BRANCH}"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
-DEPENDS = "openssl jsoncpp protobuf protobuf-native"
+DEPENDS = "openssl jsoncpp protobuf protobuf-native yaml-cpp"
 DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform"
 # entservices-opencdmi provides opencdm/open_cdm.h and ocdm.pc; wpeframework-clientlibraries is still used for other Thunder components (see PACKAGECONFIG[server]).
 DEPENDS:append = " entservices-opencdmi"
@@ -41,7 +41,7 @@ PACKAGECONFIG[servermanager] = "-DENABLE_SERVER_MANAGER=ON,-DENABLE_SERVER_MANAG
 PACKAGECONFIG ??= "server servermanager"
 
 RDEPENDS:${PN} += "protobuf mongoose"
-RDEPENDS:${PN}-server += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
+RDEPENDS:${PN}-server += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils yaml-cpp"
 RDEPENDS:${PN}-servermanager += "${PN}-server"
 RDEPENDS:${PN}-servermanager-lib += " virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
 
