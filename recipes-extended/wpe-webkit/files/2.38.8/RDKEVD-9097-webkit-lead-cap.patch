@@ -1,0 +1,143 @@
+diff --git a/Source/WebCore/platform/graphics/SourceBufferPrivate.cpp b/Source/WebCore/platform/graphics/SourceBufferPrivate.cpp
+index 9588e029146a..8b3312e6cbb9 100644
+--- a/Source/WebCore/platform/graphics/SourceBufferPrivate.cpp
++++ b/Source/WebCore/platform/graphics/SourceBufferPrivate.cpp
+@@ -1181,8 +1181,35 @@ bool SourceBufferPrivate::processMediaSample(SourceBufferPrivateClient& client,
+             if (trackBuffer.highestEnqueuedPresentationTime().isValid() && currentTime < trackBuffer.highestEnqueuedPresentationTime() && (!hasAudio() || !m_shouldBypassAudioFlushOnSampleReplacement)) {
+                 PlatformTimeRanges possiblyEnqueuedRanges(currentTime, trackBuffer.highestEnqueuedPresentationTime());
+                 possiblyEnqueuedRanges.intersectWith(erasedRanges);
+-                if (possiblyEnqueuedRanges.length())
++
++                String allTrackBuffersInfo = ""_s;
++                for (auto& pair : m_trackBufferMap) {
++                    const auto& tb = pair.second.get();
++                    const auto& desc = tb.description();
++                    allTrackBuffersInfo = makeString(allTrackBuffersInfo,
++                        " ["_s, (desc ? (desc->isAudio() ? "AUDIO"_s : (desc->isVideo() ? "VIDEO"_s : "OTHER"_s)) : (hasAudio() ? "AUDIO"_s : (hasVideo() ? "VIDEO"_s : "OTHER"_s))),
++                        " TrackBuffer.buffered="_s, tb.buffered().toString(),
++                        " highestEnqueued="_s, tb.highestEnqueuedPresentationTime().isValid() ? String::number(tb.highestEnqueuedPresentationTime().toDouble()) : "invalid"_s,
++                        " decodeQueueSize="_s, String::number(tb.decodeQueue().size()),
++                        " samplesCount="_s, String::number(tb.samples().size()), "]"_s);
++                }
++
++                if (possiblyEnqueuedRanges.length()) {
++                    fprintf(stderr, "[RDKEVD-9097][OVERLAP DETECTED] Coded frame replacement erasedRanges=%s OVERLAPS enqueued range [%.3fs .. %.3fs] (currentTime=%.3fs) | ALL TRACK BUFFERS:%s -> setNeedsReenqueueing(true) / FLUSH TRIGGERED!\n",
++                        erasedRanges.toString().utf8().data(),
++                        currentTime.toDouble(),
++                        trackBuffer.highestEnqueuedPresentationTime().toDouble(),
++                        currentTime.toDouble(),
++                        allTrackBuffersInfo.utf8().data());
+                     trackBuffer.setNeedsReenqueueing(true);
++                } else {
++                    fprintf(stderr, "[RDKEVD-9097][APPEND OK] Coded frame replacement erasedRanges=%s is SAFELY OUTSIDE enqueued range [%.3fs .. %.3fs] (currentTime=%.3fs) | ALL TRACK BUFFERS:%s -> NO OVERLAP, NO FLUSH!\n",
++                        erasedRanges.toString().utf8().data(),
++                        currentTime.toDouble(),
++                        trackBuffer.highestEnqueuedPresentationTime().toDouble(),
++                        currentTime.toDouble(),
++                        allTrackBuffersInfo.utf8().data());
++                }
+             }
+ 
+             erasedRanges.invert();
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.h b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.h
+index 45b12dd68aca..54aaf79c20bf 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.h
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.h
+@@ -42,6 +42,7 @@ class MediaSourceTrackGStreamer;
+ class MediaPlayerPrivateGStreamerMSE : public MediaPlayerPrivateGStreamer {
+ 
+ public:
++    using MediaPlayerPrivateGStreamer::url;
+     Ref<MediaPlayerPrivateGStreamerMSE> create(MediaPlayer* player) { return adoptRef(*new MediaPlayerPrivateGStreamerMSE(player)); }
+     virtual ~MediaPlayerPrivateGStreamerMSE();
+ 
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+index 3ea25ff8e38d..0d69e35623f6 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/WebKitMediaSourceGStreamer.cpp
+@@ -174,6 +174,7 @@ struct Stream : public ThreadSafeRefCountedAndCanMakeThreadSafeWeakPtr<Stream> {
+     GRefPtr<GstPad> const pad;
+     Ref<MediaSourceTrackGStreamer> track;
+     GRefPtr<GstStream> streamInfo;
++    mutable std::optional<double> maxLeadCap;
+ 
+     struct StreamingMembers {
+         StreamingMembers(GRefPtr<GstCaps>&& initialCaps, GstClockTime startTime, double rate)
+@@ -472,6 +473,34 @@ static void webKitMediaSrcWaitForPadLinkedOrFlush(GstPad* pad, DataMutexLocker<S
+     GST_DEBUG_OBJECT(pad, "Finished waiting for the pad to be linked.");
+ }
+ 
++
++static double maxVideoEnqueuedLeadSeconds(Stream* stream)
++{
++    if (!stream || !stream->source)
++        return 0.0;
++
++    if (stream->maxLeadCap)
++        return *stream->maxLeadCap;
++
++    auto player = webKitMediaSrcPlayer(stream->source);
++    if (!player)
++        return 0.0;
++
++    String urlStr = player->url().string();
++    bool isSpotify = urlStr.contains("spotify.com"_s) || urlStr.contains("scdn.co"_s);
++    if (!isSpotify) {
++        stream->maxLeadCap = 0.0;
++        return 0.0;
++    }
++
++    const char* envCap = getenv("WEBKIT_MSE_SRC_LOOP_LEAD_CAP_SECONDS");
++    double cap = envCap ? atof(envCap) : 0.0;
++    stream->maxLeadCap = cap;
++    fprintf(stderr, "Spotify URL: %s | WEBKIT_MSE_SRC_LOOP_LEAD_CAP_SECONDS: %s | maxLeadCap: %.1fs\n",
++        urlStr.utf8().data(), envCap ? envCap : "(null)", cap);
++    return cap;
++}
++
+ // Called with STREAM_LOCK.
+ static void webKitMediaSrcLoop(void* userData)
+ {
+@@ -619,6 +648,41 @@ static void webKitMediaSrcLoop(void* userData)
+         streamingMembers.unlockEarly();
+ 
+         ASSERT(GST_BUFFER_PTS_IS_VALID(buffer.get()));
++
++        if (stream->track->type() == TrackPrivateBaseGStreamer::TrackType::Video && GST_BUFFER_PTS_IS_VALID(buffer.get())) {
++            double maxLeadSec = maxVideoEnqueuedLeadSeconds(stream.get());
++            if (maxLeadSec > 0.0) {
++                GstClockTime bufferPts = GST_BUFFER_PTS(buffer.get());
++                int waitRetry = 60;
++                                while (waitRetry > 0) {
++                    {
++                        DataMutexLocker streamingMembersCheck { stream->streamingMembersDataMutex };
++                        if (streamingMembersCheck->isFlushing) {
++                            gst_pad_pause_task(pad);
++                            return;
++                        }
++                    }
++
++                    auto player = webKitMediaSrcPlayer(stream->source);
++                    GstClockTime currentPos = GST_CLOCK_TIME_NONE;
++                    if (player) {
++                        MediaTime curTime = player->currentTime();
++                        currentPos = toGstClockTime(curTime);
++                    }
++
++                    if (GST_CLOCK_TIME_IS_VALID(currentPos) && bufferPts > (GstClockTime)currentPos) {
++                        double leadSec = (double)(bufferPts - currentPos) / 1000000000.0;
++                        if (leadSec > maxLeadSec) {
++                            g_usleep(50000);
++                            waitRetry--;
++                            continue;
++                        }
++                    }
++                    break;
++                }
++            }
++        }
++
+         GST_TRACE_OBJECT(pad, "Pushing buffer downstream: %" GST_PTR_FORMAT, buffer.get());
+         GstFlowReturn result = gst_pad_push(pad, buffer.leakRef());
+         if (result == GST_FLOW_NOT_LINKED && stream->track->type() == TrackPrivateBaseGStreamer::TrackType::Video) {
+
