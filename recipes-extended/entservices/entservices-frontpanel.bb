@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-frontpanel;${CMF_GITHUB_SRC_URI_SUFFIX
           "
 
 # Release version - 1.1.4
-SRCREV = "479f27a3b93eb9c5b47cd4799d5c6b682b613a92"
+SRCREV = "fb8d99bed30a21277df6a560d6c3c5ef5a840278"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
