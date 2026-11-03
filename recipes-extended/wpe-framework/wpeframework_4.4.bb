@@ -49,6 +49,8 @@ PACKAGECONFIG ?= " \
 
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com', '', d)}"
 
+RDEPENDS:${PN}:append =  " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'thunder-systemd-unit', '', d)}"
+
 # Buildtype
 # Maybe we need to couple this to a Yocto feature
 PACKAGECONFIG[debug]            = "-DCMAKE_BUILD_TYPE=Debug,-DCMAKE_BUILD_TYPE=Release,"
@@ -122,8 +124,6 @@ EXTRA_OECMAKE += " \
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
 
 EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
-
-# wpeframework.service is shipped by the thunder-service recipe (recipes-thunder)
 
 # ----------------------------------------------------------------------------
 
