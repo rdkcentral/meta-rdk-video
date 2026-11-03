@@ -12,7 +12,7 @@ DEPENDS = "subttxrend-common"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "1f5c0fb9f2a460828dae582b20d9dd4f86e8345d"
+SRCREV = "2d0106609ee425a402679e6d097dff5044275eaa"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/dvbsubdecoder"
 
