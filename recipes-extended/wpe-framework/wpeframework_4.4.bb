@@ -77,10 +77,6 @@ PACKAGECONFIG[websocket]       = "-DWEBSOCKET=ON,,"
 
 PACKAGECONFIG[com] = "-DCOM=ON,,,"
 
-
-# Slim Warning Reporting (Thunder Source/CMakeLists.txt). Enabling this forces
-# WARNING_REPORTING=ON and only reports Invoke durations and WorkerPool warnings.
-PACKAGECONFIG[slim_warning_reporting] = "-DSLIM_WARNING_REPORTING=ON,-DSLIM_WARNING_REPORTING=OFF,"
 PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES', \
     'debug-variant', ' configoverride', '', d)}"
 
@@ -121,30 +117,12 @@ EXTRA_OECMAKE += " \
     -DEXIT_REASONS=${WPEFRAMEWORK_EXIT_REASONS} \
     -DMESSAGING=ON \
     -DFLUSH_LOGS=ON \
-    -DW3C_TRACE_CONTEXT_ENABLED=ON \
-    -DWPEFRAMEWORK_OPENTELEMETRY=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
     -DAUTHORIZEDEXTENSIONS='MessagingControl;PluginInitializerService;Systemd' \
     -DDISABLEPLUGINAUTOACTIVATION=true \
 "
 
-
-# Warning Reporting report/warning bounds (Thunder Source/CMakeLists.txt defaults).
-EXTRA_OECMAKE += " \
-    -DWARNING_REPORTING_INVOKE_RPC_REPORT_BOUND=250 \
-    -DWARNING_REPORTING_INVOKE_RPC_WARNING_BOUND=750 \
-    -DWARNING_REPORTING_INVOKE_MESSAGE_REPORT_BOUND=500 \
-    -DWARNING_REPORTING_INVOKE_MESSAGE_WARNING_BOUND=500 \
-    -DWARNING_REPORTING_WORKERPOOL_FINISH_REPORT_BOUND=5000 \
-    -DWARNING_REPORTING_WORKERPOOL_FINISH_WARNING_BOUND=7500 \
-    -DWARNING_REPORTING_WORKERPOOL_QUEUE_REPORT_BOUND=200 \
-    -DWARNING_REPORTING_WORKERPOOL_QUEUE_WARNING_BOUND=400 \
-    -DWARNING_REPORTING_WORKERPOOL_ACTIVE_REPORT_BOUND=15000 \
-    -DWARNING_REPORTING_WORKERPOOL_ACTIVE_WARNING_BOUND=20000 \
-    -DWARNING_REPORTING_PLUGIN_STATE_REPORT_BOUND=5000 \
-    -DWARNING_REPORTING_PLUGIN_STATE_WARNING_BOUND=5000 \
-    "
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
 
 EXTRA_OECMAKE:append = ' -DPOSTMORTEM_PATH=/opt/secure/minidumps'
@@ -167,22 +145,6 @@ do_install:append() {
             fi
         fi
     fi
-
-    # core/WarningReportingCategories.h includes the generated core/WarningReportingConfig.h,
-    # which is not always staged by INSTALL_HEADERS_TO_TARGET. Install it explicitly so
-    # downstream consumers (e.g. amazonprime-launcher) can resolve the include.
-    if [ ! -f "${D}${includedir}/WPEFramework/core/WarningReportingConfig.h" ]; then
-        for src in \
-            "${B}/Source/core/generated/core/WarningReportingConfig.h" \
-            "${B}/generated/core/WarningReportingConfig.h" \
-            "${S}/Source/core/WarningReportingConfig.h"; do
-            if [ -f "$src" ]; then
-                install -d ${D}${includedir}/WPEFramework/core
-                install -m 0644 "$src" ${D}${includedir}/WPEFramework/core/WarningReportingConfig.h
-                break
-            fi
-        done
-    fi
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
@@ -198,7 +160,6 @@ FILES:${PN} += "${libdir}/*.so ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN} += "${includedir}/cdmi.h"
 FILES:${PN} += "${systemd_unitdir}/system/wpeframework.service.d/network_manager_migration.conf"
 FILES:${PN}-dev += "${libdir}/cmake/*"
-FILES:${PN} += "${includedir}/WPEFramework/core/WarningReportingConfig.h"
 FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/"
 
 # ----------------------------------------------------------------------------
