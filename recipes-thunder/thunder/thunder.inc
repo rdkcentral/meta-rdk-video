@@ -99,7 +99,7 @@ INSANE_SKIP:${PN}-dbg += "dev-so"
 inherit breakpad-logmapper syslog-ng-config-gen logrotate_config
 
 SYSLOG-NG_FILTER = "thunder"
-SYSLOG-NG_SERVICE_thunder = "thunder.service"
+SYSLOG-NG_SERVICE_thunder = "${@bb.utils.contains('PACKAGECONFIG', 'systemd-service', 'thunder.service', 'wpeframework.service', d)}"
 SYSLOG-NG_DESTINATION_thunder = "thunder.log"
 SYSLOG-NG_LOGRATE_thunder = "high"
 
