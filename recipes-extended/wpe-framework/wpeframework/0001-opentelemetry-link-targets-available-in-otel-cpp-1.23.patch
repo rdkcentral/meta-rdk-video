@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RDK <rdk@comcast.com>
+Date: Thu, 30 Oct 2026 00:00:00 +0000
+Subject: [PATCH] opentelemetry: link only targets available in
+ opentelemetry-cpp 1.23.0
+
+The OpenTelemetry extension over-links the exporter *_builder factory
+targets and the generic http_client target, which only exist in
+opentelemetry-cpp 1.24+/1.28+. The extension code uses the classic
+exporter Factory classes (OtlpHttpExporterFactory,
+OStreamSpanExporterFactory, ...) provided by the base exporter
+libraries, so these targets are never referenced. Drop them so the
+extension configures and links against opentelemetry-cpp 1.23.0.
+
+Upstream-Status: Inappropriate [rdk-specific opentelemetry-cpp version pin]
+---
+ Source/extensions/opentelemetry/CMakeLists.txt | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/Source/extensions/opentelemetry/CMakeLists.txt b/Source/extensions/opentelemetry/CMakeLists.txt
+--- a/Source/extensions/opentelemetry/CMakeLists.txt
++++ b/Source/extensions/opentelemetry/CMakeLists.txt
+@@ -49,18 +49,12 @@
+         CompileSettings::CompileSettings
+         CompileSettingsDebug::CompileSettingsDebug
+         opentelemetry-cpp::ostream_span_exporter
+-        opentelemetry-cpp::ostream_span_exporter_builder
+         opentelemetry-cpp::ostream_log_record_exporter
+         opentelemetry-cpp::otlp_http_exporter
+-        opentelemetry-cpp::otlp_http_exporter_builder
+         opentelemetry-cpp::otlp_http_log_record_exporter
+-        opentelemetry-cpp::otlp_http_log_record_exporter_builder
+         opentelemetry-cpp::otlp_http_metric_exporter
+-        opentelemetry-cpp::otlp_http_metric_exporter_builder
+         opentelemetry-cpp::ostream_metrics_exporter
+-        opentelemetry-cpp::ostream_metrics_exporter_builder
+         opentelemetry-cpp::http_client_curl
+-        opentelemetry-cpp::http_client
+ )
+ 
+  set_target_properties(${TARGET} PROPERTIES

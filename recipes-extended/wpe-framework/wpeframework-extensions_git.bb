@@ -3,13 +3,13 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 PV = "4.4.7"
-PR = "r1"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig python3native
 
 BRANCH ?= "R4_4"
-SRCREV ?= "95e24b4b03c4aab1794200bc47b502436cd682fe"
+SRCREV ?= "2df8fb014c4af12c3288d1daeb86e675ad105bea"
 
 SRC_URI = "git://github.com/rdkcentral/ThunderExtensions.git;protocol=https;branch=${BRANCH}"
 
