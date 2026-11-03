@@ -38,7 +38,7 @@ index fb50b6a..87b727d 100644
 +#define LOGDBG(fmt, ...) TRACE_GLOBAL(WPEFramework::Trace::Text, (_T("[%d]: " fmt), (int)syscall(SYS_gettid), ##__VA_ARGS__))
 +#define LOGINFO(fmt, ...) TRACE_GLOBAL(WPEFramework::Trace::Information, (_T("[%d]: " fmt), (int)syscall(SYS_gettid), ##__VA_ARGS__))
 +#define LOGWARN(fmt, ...) TRACE_GLOBAL(WPEFramework::Trace::Warning, (_T("[%d]: " fmt), (int)syscall(SYS_gettid), ##__VA_ARGS__))
-+#define LOGERR(fmt, ...) TRACE_GLOBAL(WPEFramework::Trace:Error, (_T("[%d]: " fmt), (int)syscall(SYS_gettid), ##__VA_ARGS__))
++#define LOGERR(fmt, ...) TRACE_GLOBAL(WPEFramework::Trace::Error, (_T("[%d]: " fmt), (int)syscall(SYS_gettid), ##__VA_ARGS__))
  
  #define LOG_DEVICE_EXCEPTION0() LOGWARN("Exception caught: code=%d message=%s", err.getCode(), err.what());
  #define LOG_DEVICE_EXCEPTION1(param1) LOGWARN("Exception caught" #param1 "=%s code=%d message=%s", param1.c_str(), err.getCode(), err.what());
