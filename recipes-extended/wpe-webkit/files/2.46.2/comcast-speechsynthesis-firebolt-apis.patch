@@ -1,0 +1,121 @@
+From d5160fb00869e834aeba25be8fd0c8b52e3ee5d3 Mon Sep 17 00:00:00 2001
+From: kkarup694 <kumar_Karuppiahyogarajah@comcast.com>
+Date: Mon, 2 Nov 2026 10:49:42 +0000
+Subject: [PATCH 2/2] tts new firebolt changes
+
+%% original patch:
+---
+ .../PlatformSpeechSynthesizerTTSClient.cpp    | 70 +++++++++----------
+ 1 file changed, 32 insertions(+), 38 deletions(-)
+
+diff --git a/Source/WebCore/platform/ttsclient/PlatformSpeechSynthesizerTTSClient.cpp b/Source/WebCore/platform/ttsclient/PlatformSpeechSynthesizerTTSClient.cpp
+index e60c4e09efc1..53c763c93feb 100644
+--- a/Source/WebCore/platform/ttsclient/PlatformSpeechSynthesizerTTSClient.cpp
++++ b/Source/WebCore/platform/ttsclient/PlatformSpeechSynthesizerTTSClient.cpp
+@@ -36,6 +36,7 @@
+ #include <unistd.h>
+ 
+ #define MAX_ALLOWED_TEXT_LENGTH 1024
++#define USE_TTS_NATIVE_FIREBOLT_SDK 1
+ 
+ #define CHECK_TTS_SESSION(utterance)                                                    \
+     do {                                                                                \
+@@ -96,24 +97,17 @@ public:
+     void fillVoiceList(Vector<RefPtr<PlatformSpeechSynthesisVoice>>& voiceList)
+     {
+         if (m_ttsClient) {
+-            const char* v = nullptr;
+-            TTS::Configuration config;
+-            std::vector<std::string> voices;
+-
+-            TTS::TTS_Error err = m_ttsClient->getTTSConfiguration(config);
+-            m_ttsClient->listVoices(config.language, voices);
+-            for (unsigned int i = 0; i < voices.size(); i++) {
+-                v = voices[i].c_str();
++            std::pmr::vector<TTS::Voice> voices;
++            if(m_ttsClient->listVoices(voices) != TTS::TTS_OK)
++                return;
++            for (const auto& voice : voices) {
+                 voiceList.append(PlatformSpeechSynthesisVoice::create(
+-                    String::fromUTF8(v),
+-                    String::fromUTF8(v),
+-                    String::fromUTF8((err == TTS::TTS_OK) ? config.language.c_str() : "en-US"),
+-                    true,
+-                    true));
++                String::fromUTF8(voice.name.c_str()),
++                String::fromUTF8(voice.name.c_str()),
++                String::fromUTF8(voice.lang.c_str()),
++                true,
++                voice._default));
+             }
+-
+-            m_TTSVolume = config.volume;
+-            m_TTSRate = config.rate;
+         }
+     }
+ 
+@@ -138,23 +132,6 @@ public:
+             return;
+         }
+ 
+-        if (bSpeechSynthOverrideSysTTSConfig) {
+-            printf("kykumar override ttsconfig\n");
+-            TTS::Configuration config;
+-            config.volume = utterance->volume() * 100;
+-            config.rate = (utterance->rate() <= 1.0 ? 50.0 : (utterance->rate() <= 5.0 ? 75.0 : 100.0));
+-
+-            if ((int)m_TTSVolume != (int)config.volume || (int)m_TTSRate != (int)config.rate) {
+-                printf("kykumar calling setttsconfig\n");
+-                if (m_ttsClient->setTTSConfiguration(config) != TTS::TTS_OK) {
+-                    notifyClient(utterance, SpeechSynthesisErrorCode::SynthesisFailed);
+-                    return;
+-                }
+-                m_TTSVolume = config.volume;
+-                m_TTSRate = config.rate;
+-            }
+-        }
+-
+         static uint32_t s_speechId = 0;
+         uint32_t speechId = ++s_speechId;
+         m_currentUtteranceSpeechId = 0;
+@@ -162,15 +139,32 @@ public:
+         TTS::SpeechData sdata;
+         sdata.text = utterance->text().utf8().data();
+         sdata.id = speechId;
+-        sdata.volume = utterance->volume() * 100;
+-        sdata.rate = utterance->rate();
+-        sdata.lang = utterance->lang().utf8().data();
+-        sdata.pitch = utterance->pitch();
+-        sdata.voice = utterance->voice().utf8().data();
++        if (utterance->volume() > 0)
++            sdata.volume = utterance->volume();
++        else
++            sdata.volume = -1;
++
++        if (utterance->rate() > 0)
++            sdata.rate = utterance->rate();
++        else
++            sdata.rate = -1;
++
++        if (!utterance->lang().isEmpty())
++            sdata.lang = utterance->lang().utf8().data();
++
++        if (utterance->pitch() > 0)
++            sdata.pitch = utterance->pitch();
++        else
++            sdata.pitch = -1;
++        
++        if (utterance->voice()) {
++            sdata.voice = utterance->voice()->name().utf8().data();
++        }
+         printf("kykumar speak data text %s id %d vol %f rate %f lang %s pitch %f voice %s\n",
+                sdata.text.c_str(), sdata.id, sdata.volume, sdata.rate, sdata.lang.c_str(), sdata.pitch, sdata.voice.c_str());
+         TTS::TTS_Error err = m_ttsClient->speak(m_ttsSessionId, sdata);
+         if (err != TTS::TTS_OK) {
++            printf("kykumar speak failed with error %d\n", err);
+             if (err == TTS::TTS_RESOURCE_BUSY || err == TTS::TTS_SESSION_NOT_ACTIVE)
+                 notifyClient(utterance, SpeechSynthesisErrorCode::AudioBusy);
+             else
+-- 
+2.25.1
+
