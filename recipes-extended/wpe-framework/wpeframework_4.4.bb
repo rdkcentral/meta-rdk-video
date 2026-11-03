@@ -18,13 +18,13 @@ PR = "r58"
 PV = "4.4.8"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder \
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=development/WR_revert;name=thunder \
            file://wpeframework-init \
            file://wpeframework.service.in \
            file://0001-opentelemetry-link-targets-available-in-otel-cpp-1.23.patch \
            "
 
-SRCREV_thunder = "6385af2f604192fab7e067fa6b284b114cb4bf76"
+SRCREV_thunder = "4de941ecd712331a92a47c9e4b7468f4155130a8"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
