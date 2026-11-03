@@ -12,6 +12,8 @@ S = "${WORKDIR}"
 inherit systemd
 
 THUNDER_SERVICE_EXEC ?= "/usr/bin/${THUNDER_NAMESPACE} -b"
+THUNDER_SYSLOG_ID ?= "WPEFramework"
+THUNDER_SERVICE_NAME ?= "${THUNDER_NAMESPACE}"
 
 do_compile[noexec] = "1"
 
@@ -19,7 +21,11 @@ do_install() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/wpeframework.service.in ${D}${systemd_unitdir}/system/wpeframework.service
 
-    sed -i "s|^ExecStart=.*|ExecStart=${THUNDER_SERVICE_EXEC}|" ${D}${systemd_unitdir}/system/wpeframework.service
+    sed -i \
+        -e "s|@THUNDER_SERVICE_NAME@|${THUNDER_SERVICE_NAME}|" \
+        -e "s|@THUNDER_SERVICE_EXEC@|${THUNDER_SERVICE_EXEC}|" \
+        -e "s|@THUNDER_SYSLOG_ID@|${THUNDER_SYSLOG_ID}|" \
+        ${D}${systemd_unitdir}/system/wpeframework.service
 
     # Propagate configured keymap via parent service environment to rdkwindowmanager plugin.
     if [ -n "${WINDOWMANAGER_RCU_KEYMAP_FILE}" ]; then
@@ -38,5 +44,3 @@ do_install() {
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
-
-RDEPENDS:${PN} += "${THUNDER_NAMESPACE_LC}"
