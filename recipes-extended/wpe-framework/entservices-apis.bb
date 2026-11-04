@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
 PV = "4.1.6"
 PR = "r0"
-SRCREV = "3c4e0e2a3df87d4bc8160313188600419309d3e4"
+SRCREV = "a703afc6dba5d523cd3eae8ff5a31fa74f571b0d"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
@@ -18,6 +18,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX}"
 SRC_URI += "file://RDKEMW-1007-Thunder5.patch"
 SRC_URI += "file://entservices-apis-fps-ocdm.patch"
 SRC_URI += "file://idrm.patch"
+SRC_URI += "file://RDKEMW-22650-RemoteControl-VoiceControl-thunder5.patch"
 
 
 S = "${WORKDIR}/git"
