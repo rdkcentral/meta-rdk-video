@@ -1,0 +1,148 @@
+RDKEMW-19048: Release and reacquire the Vault SecProcessor handle for
+deep sleep.
+
+The default Implementation::Vault is a process-lifetime singleton (static
+local in vault_instance()); its destructor never runs at deep sleep, so the
+SA2 SecProcessor handle stays open across S3.  On BCM with Network Standby
+OFF this triggers SOFTWARE_MASTER_RESET because SAGE refuses S3 entry while
+the handle is held.
+
+Two parts, squashed from the original 0002/0003 patches:
+
+- Expose Implementation::Vault::ProcessorRelease() (paired with
+  ProcessorAcquire() added by 0001-SecAPI-Re-acquire-sec-handle-after-flush.patch)
+  via a vault_processor_release() C wrapper so the CryptographyExtAccess
+  plugin can call it from onPowerModeChanged before deep-sleep entry.
+
+- Reacquire the SecProcessor at Vault method entry (EnsureProcessor) so
+  callers that hold a cached VaultImplementation* (bypassing
+  vault_instance) do not crash on _secProcHandle deref after
+  ProcessorRelease.
+
+Upstream-Status: Pending
+Signed-off-by: Sergiy Gladkyy <sgladkyy@productengine.com>
+
+Index: git/Source/cryptography/implementation/SecApi/Vault.cpp
+===================================================================
+--- git.orig/Source/cryptography/implementation/SecApi/Vault.cpp
++++ git/Source/cryptography/implementation/SecApi/Vault.cpp
+@@ -75,6 +75,17 @@
+ 	     _lock.Unlock();
+      }
+ 
++    void Vault::EnsureProcessor() const
++    {
++        if (_secProcHandle == NULL) {
++            Sec_Result sec_res = SecProcessor_GetInstance_Directories(&_secProcHandle, globalDir, appDir);
++            if (sec_res != SEC_RESULT_SUCCESS) {
++                TRACE_L1(_T("SEC : processor instance failed retval= %d\n"), sec_res);
++                _secProcHandle = NULL;
++            }
++        }
++    }
++
+     /*********************************************************************
+      * @function Size 
+      *
+@@ -91,6 +102,7 @@
+         uint16_t size = 0;
+ 
+         _lock.Lock();
++        EnsureProcessor();
+         auto it = _items.find(id);
+         if (it != _items.end()) {
+             if ((allowSealed == true) || (*it).second.IsExportable() == true) {
+@@ -141,6 +153,7 @@
+         uint32_t id = 0;
+ 
+         _lock.Lock();
++        EnsureProcessor();
+             if (size > 0) {
+                 id = (_lastHandle + 1);
+                 if (id != 0) {
+@@ -226,6 +239,7 @@
+         uint32_t id = 0;
+ 
+         _lock.Lock();
++        EnsureProcessor();
+         SEC_OBJECTID idcheck = 0x0;
+         struct IdStore ids;
+         string kFile(keyFile);
+@@ -287,6 +301,7 @@
+         bool ret =false;
+ 
+         _lock.Lock();
++        EnsureProcessor();
+         SEC_OBJECTID idcheck = 0x0;
+         string kFile(keyFile);
+         string fileName = kFile.substr(0,SEC_ID_SIZE);
+@@ -330,6 +345,7 @@
+         uint32_t id = 0;
+ 
+         _lock.Lock();
++        EnsureProcessor();
+         struct IdStore ids;
+         Sec_KeyType key = SEC_KEYTYPE_AES_128; //DEFAULT
+ 
+@@ -410,6 +426,7 @@
+         uint16_t outSize = 0;
+         if (size > 0) {
+             _lock.Lock();
++            EnsureProcessor();
+             auto it = _items.find(id);
+             if (it != _items.end()) {
+                 if (((allowSealed == true) || (*it).second.IsExportable() == true) && ((*it).second.KeyLength() != 0)) {
+@@ -467,6 +484,7 @@
+ 
+         if (size > 0) {
+             _lock.Lock();
++            EnsureProcessor();
+             id = (_lastHandle + 1);
+             if (id != 0) {
+                 SEC_BYTE store[SEC_KEYCONTAINER_MAX_LEN];
+@@ -508,6 +526,7 @@
+ 
+         if (size > 0) {
+             _lock.Lock();
++            EnsureProcessor();
+             auto it = _items.find(id);
+             if (it != _items.end()) {
+                 SEC_BYTE* buff = const_cast<SEC_BYTE*>((*it).second.Buffer());
+@@ -549,6 +568,7 @@
+         bool result = false;
+ 
+         _lock.Lock();
++        EnsureProcessor();
+         auto it = _items.find(id);
+         if (it != _items.end()) {
+             IdStore* ids = const_cast<IdStore*>((*it).second.getIdStore());
+@@ -749,6 +769,14 @@
+ 
+     }
+ 
++    void vault_processor_release(void)
++    {
++        VaultImplementation* impl = vault_instance(CRYPTOGRAPHY_VAULT_DEFAULT);
++        if (impl != nullptr) {
++            reinterpret_cast<Implementation::Vault*>(impl)->ProcessorRelease();
++        }
++    }
++
+     uint32_t persistent_flush(struct VaultImplementation* vault)
+     {
+         ASSERT(vault != nullptr);
+Index: git/Source/cryptography/implementation/SecApi/Vault.h
+===================================================================
+--- git.orig/Source/cryptography/implementation/SecApi/Vault.h
++++ git/Source/cryptography/implementation/SecApi/Vault.h
+@@ -122,8 +122,9 @@
+ 	void ProcessorAcquire();
+ 
+     private:
++        void EnsureProcessor() const;
+         mutable WPEFramework::Core::CriticalSection _lock;
+-        Sec_ProcessorHandle* _secProcHandle;
++        mutable Sec_ProcessorHandle* _secProcHandle;
+         std::map<uint32_t, MapStore> _items;
+         uint32_t _lastHandle;
+     };
