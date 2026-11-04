@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
 # Release version - 1.7.9
-PV = "0cb912d280802a6d087fbbb10202a86d40d40ae0"
+PV = "a646adead153bf4dcd8b312af61a523e1bb72fb4"
 PR = "r0"
 
 S = "${WORKDIR}/git"
