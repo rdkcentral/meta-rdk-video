@@ -18,7 +18,6 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX}"
 SRC_URI += "file://RDKEMW-1007-Thunder5.patch"
 SRC_URI += "file://entservices-apis-fps-ocdm.patch"
 SRC_URI += "file://idrm.patch"
-SRC_URI += "file://RDKEMW-22650-RemoteControl-VoiceControl-thunder5.patch"
 
 
 S = "${WORKDIR}/git"
