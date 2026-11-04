@@ -98,13 +98,18 @@ INSANE_SKIP:${PN}-dbg += "dev-so"
 
 inherit breakpad-logmapper syslog-ng-config-gen logrotate_config
 
+# Keep the legacy log name: sysint (logfiles.sh), the syslog-ng AppArmor
+# profile, RRD and gen-rmgr still use wpeframework.log. Rename together later.
+# The daemon runs as wpeframework.service (shipped by thunder-systemd-unit);
+# thunder.service is only installed with the systemd-service PACKAGECONFIG.
+
 SYSLOG-NG_FILTER = "thunder"
 SYSLOG-NG_SERVICE_thunder = "${@bb.utils.contains('PACKAGECONFIG', 'systemd-service', 'thunder.service', 'wpeframework.service', d)}"
-SYSLOG-NG_DESTINATION_thunder = "thunder.log"
+SYSLOG-NG_DESTINATION_thunder = "wpeframework.log"
 SYSLOG-NG_LOGRATE_thunder = "high"
 
 LOGROTATE_NAME="thunder"
-LOGROTATE_LOGNAME_thunder="thunder.log"
+LOGROTATE_LOGNAME_thunder="wpeframework.log"
 LOGROTATE_SIZE_thunder="1572864"
 LOGROTATE_ROTATION_thunder="5"
 LOGROTATE_SIZE_MEM_thunder="1572864"
@@ -112,4 +117,4 @@ LOGROTATE_ROTATION_MEM_thunder="5"
 
 # Breakpad processname and logfile mapping
 BREAKPAD_LOGMAPPER_PROCLIST = "Thunder,WorkerPool::Thr,Monitor::IResou,ThunderPlugin"
-BREAKPAD_LOGMAPPER_LOGLIST = "thunder.log"
+BREAKPAD_LOGMAPPER_LOGLIST = "wpeframework.log"
