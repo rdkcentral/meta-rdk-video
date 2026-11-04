@@ -16,8 +16,8 @@ S = "${WORKDIR}/git"
 
 CFLAGS:append = " -DYOCTO_BUILD"
 
-DEPENDS = "iarmbus iarmmgrs dbus glib-2.0 wpeframework-clientlibraries devicesettings"
-RDEPENDS:${PN} += "iarmmgrs wpeframework-clientlibraries"
+DEPENDS = "iarmbus iarmmgrs dbus glib-2.0 wpeframework-clientlibraries entservices-powercontroller devicesettings"
+RDEPENDS:${PN} += "iarmmgrs wpeframework-clientlibraries entservices-powercontroller"
 inherit autotools pkgconfig coverity
 
 do_install() {

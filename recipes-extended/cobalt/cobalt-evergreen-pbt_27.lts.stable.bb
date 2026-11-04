@@ -35,6 +35,16 @@ DBG_FILE:aarch64:cobalt-qa = "libcobalt_7.3.2_unstripped_arm64_sbversion-18_qa_4
 CRX_FILE_SHA256SUM:aarch64:cobalt-qa = "9ce88ceb9ded430de43b6f5ac91e6a91735bf2de0c92a92f697f4b5afb4f8866"
 DBG_FILE_SHA256SUM:aarch64:cobalt-qa = "90b7ae7a121313ed048832d68666efda3a1f321ddfec959e7c9da545a1fcffd6"
 
+CRX_FILE:x86-64 = "cobalt_evergreen_7.3.2_x64_sbversion-18_release_compressed_20260905002529.crx"
+DBG_FILE:x86-64 = "libcobalt_7.3.2_unstripped_x64_sbversion-18_release_739726c6552d87a319de5106f918c6a8e9ab9341.tar.gz"
+CRX_FILE_SHA256SUM:x86-64 = "94b6fabd5f880a6e7cdcb82588eaba785ed1d050ebf61b396c49ff064e6afbd2"
+DBG_FILE_SHA256SUM:x86-64 = "61d050e683f22873dd61b998447de0402884f15687c316a2d89eed5cd458b6d4"
+
+CRX_FILE:x86-64:cobalt-qa = "cobalt_evergreen_7.3.2_x64_sbversion-18_qa_compressed_20260905002529.crx"
+DBG_FILE:x86-64:cobalt-qa = "libcobalt_7.3.2_unstripped_x64_sbversion-18_qa_2f016baf1923b123dba3543cb0878866641061dc.tar.gz"
+CRX_FILE_SHA256SUM:x86-64:cobalt-qa = "38d5a282e18e3f05f8a78fdc106feea6195c5b8e9688b92ea1e37c93e6b94518"
+DBG_FILE_SHA256SUM:x86-64:cobalt-qa = "0ef0d1a08eb2836b69db840e30649283f9996d3bac94cf108319092c96d62eea"
+
 PV = "7.3.2"
 YT_BASE_URI = "https://github.com/youtube/cobalt/releases/download/27.lts.3"
 
