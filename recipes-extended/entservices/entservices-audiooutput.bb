@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-audiooutput;${CMF_GITHUB_SRC_URI_SUFFI
            file://rdkservices.ini \
           "
 # Release version - 1.0.2
-SRCREV = "${PV}"
+SRCREV = "d8bfbab315ece954589a58c5ec54bf7053bb6bc9"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
