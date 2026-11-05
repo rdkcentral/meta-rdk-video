@@ -9,7 +9,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "${PV}"
+SRCREV = "0d937b74a735da454f724fbe652a45eb791f0914"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usbmassstorage;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
