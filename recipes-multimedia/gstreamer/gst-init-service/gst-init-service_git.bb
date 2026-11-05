@@ -29,7 +29,7 @@ do_install:append () {
     install -m 0755 ${WORKDIR}/gstreamer-cleanup.sh ${D}${base_libdir}/rdk/gstreamer-cleanup.sh
 }
 
-SYSTEMD_SERVICE:${PN} = "gstreamer-cleanup.service"
-SYSTEMD_AUTO_ENABLE = "enable"
-FILES:${PN} += "${systemd_unitdir}/system/gstreamer-cleanup.service"
-FILES:${PN} += "${base_libdir}/rdk/gstreamer-cleanup.sh"
+#SYSTEMD_SERVICE:${PN} = "gstreamer-cleanup.service"
+#SYSTEMD_AUTO_ENABLE = "enable"
+#FILES:${PN} += "${systemd_unitdir}/system/gstreamer-cleanup.service"
+#FILES:${PN} += "${base_libdir}/rdk/gstreamer-cleanup.sh"
