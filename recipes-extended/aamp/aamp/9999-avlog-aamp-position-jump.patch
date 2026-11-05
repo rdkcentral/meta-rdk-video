@@ -1,0 +1,121 @@
+aamp: write a USER record to avlog on every fragment position jump
+
+HandleFragmentPositionJump already logs "Found a positionDelta" when the
+next DASH fragment does not start where the previous one ended. Record the
+same four values (track, positionDelta, lastInjectedDuration, absPosition,
+all in microseconds) in avlog.ko as an AVLOG_USER / AVLOG_USER_AAMP_JUMP
+record. Audio and video jumps also ask the module for a capture window
+(AVLOG_UF_ARM_TIMER): the module snapshots its rings trigger_ms later and
+marks the record AVLOG_UF_TRIGGER, so the dump holds the PTS stream before
+and after the jump and the parser can show whether fragment PTS spacing
+changed across it.
+
+AampAvlog.h is a self-contained copy of the needed <linux/avlog.h> v2
+definitions; no dependency on the vendor layer. Everything is a no-op when
+/proc/avlog/data is absent.
+
+---
+--- /dev/null
++++ b/AampAvlog.h
+@@ -0,0 +1,81 @@
++/*
++ * AampAvlog.h - write AAMP position-jump records to avlog.ko.
++ *
++ * Self-contained copy of the parts of <linux/avlog.h> v2 (kernel patch
++ * 9999-avlog-headers.patch) and <avlog/avlog_user.h> that AAMP needs, so
++ * the middleware build has no dependency on the vendor layer. Keep the
++ * values identical to the kernel header; the kernel header is authoritative.
++ *
++ * Every call is a no-op when /proc/avlog/data cannot be opened (avlog.ko
++ * not loaded), so this is safe in every image.
++ */
++#ifndef AAMP_AVLOG_H
++#define AAMP_AVLOG_H
++
++#include <stdint.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <atomic>
++#include <cmath>
++
++#define AVLOG_PAYLOAD_SIZE     52
++#define AVLOG_USER             6     /* enum avlog_type */
++#define AVLOG_MEDIA_VIDEO      1     /* enum avlog_media */
++#define AVLOG_MEDIA_AUDIO      2
++#define AVLOG_MEDIA_SUB        3
++#define AVLOG_USER_AAMP_JUMP   1     /* enum avlog_user_id */
++#define AVLOG_UF_ARM_TIMER     (1u << 0)
++#define AVLOG_UF_TRIGGER       (1u << 1)   /* kernel-set, never by us */
++
++/* must match struct avlog_aamp_jump in the kernel header: 13 x u32 = 52 bytes */
++struct avlog_aamp_jump {
++       uint32_t type;
++       uint32_t user;
++       uint32_t media;
++       uint32_t flags;
++       uint32_t position_delta_lo;     /* signed microseconds */
++       uint32_t position_delta_hi;
++       uint32_t last_injected_lo;      /* microseconds */
++       uint32_t last_injected_hi;
++       uint32_t abs_position_lo;       /* microseconds */
++       uint32_t abs_position_hi;
++       uint32_t seq;                   /* per-process counter of these records */
++       uint32_t reserved[2];
++};
++static_assert(sizeof(struct avlog_aamp_jump) == AVLOG_PAYLOAD_SIZE, "avlog payload must be 52 bytes");
++
++static inline void AampAvlogPut64(uint32_t &lo, uint32_t &hi, int64_t v)
++{
++       lo = (uint32_t)(uint64_t)v;
++       hi = (uint32_t)((uint64_t)v >> 32);
++}
++
++/*
++ * trackType: TrackType (eTRACK_VIDEO 0, eTRACK_AUDIO 1, eTRACK_SUBTITLE 2, ...)
++ * seconds in, microseconds stored. Audio/video jumps set AVLOG_UF_ARM_TIMER;
++ * avlog.ko then snapshots trigger_ms later and marks this record AVLOG_UF_TRIGGER.
++ */
++static inline void AampAvlogPositionJump(int trackType, double positionDelta,
++                                        double lastInjectedDuration, double absPosition)
++{
++       static int fd = open("/proc/avlog/data", O_WRONLY | O_CLOEXEC);   /* thread-safe init, once */
++       static std::atomic<uint32_t> seq{0};
++       struct avlog_aamp_jump j = {};
++
++       if (fd < 0)
++               return;
++       j.type  = AVLOG_USER;
++       j.user  = AVLOG_USER_AAMP_JUMP;
++       j.media = trackType == 0 ? AVLOG_MEDIA_VIDEO :
++                 trackType == 1 ? AVLOG_MEDIA_AUDIO :
++                 trackType == 2 ? AVLOG_MEDIA_SUB : 0;
++       if (j.media == AVLOG_MEDIA_VIDEO || j.media == AVLOG_MEDIA_AUDIO)
++               j.flags |= AVLOG_UF_ARM_TIMER;
++       AampAvlogPut64(j.position_delta_lo, j.position_delta_hi, (int64_t)std::llround(positionDelta * 1e6));
++       AampAvlogPut64(j.last_injected_lo,  j.last_injected_hi,  (int64_t)std::llround(lastInjectedDuration * 1e6));
++       AampAvlogPut64(j.abs_position_lo,   j.abs_position_hi,   (int64_t)std::llround(absPosition * 1e6));
++       j.seq = ++seq;
++       (void)!write(fd, &j, sizeof(j));
++}
++
++#endif /* AAMP_AVLOG_H */
+--- a/streamabstraction.cpp
++++ b/streamabstraction.cpp
+@@ -62,6 +62,7 @@
+ #include "AampUtils.h"
+ #include "AampMp4Demuxer.h"
+ #include "AampUnderflowMonitor.h"
++#include "AampAvlog.h"
+ 
+ // checks if current state is going to use IFRAME ( Fragment/Playlist )
+ #define IS_FOR_IFRAME(rate, type) ((type == eTRACK_VIDEO) && (rate != AAMP_NORMAL_PLAY_RATE))
+@@ -4559,6 +4560,8 @@
+                                AAMPLOG_WARN("[%s] Found a positionDelta (%lf) between lastInjectedDuration (%lf) and new fragment absPosition (%lf)",
+                                                name, positionDelta, lastInjectedDuration, cachedFragment->absPosition);
+                        }
++                       // avlog: record the jump; audio/video jumps also open a capture window
++                       AampAvlogPositionJump(type, positionDelta, lastInjectedDuration, cachedFragment->absPosition);
+                }
+        }
+ }
+ 
