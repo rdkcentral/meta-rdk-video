@@ -101,7 +101,7 @@ definitions; no dependency on the vendor layer. Everything is a no-op when
 +#endif /* AAMP_AVLOG_H */
 --- a/streamabstraction.cpp
 +++ b/streamabstraction.cpp
-@@ -62,6 +62,7 @@
+@@ -63,6 +63,7 @@
  #include "AampUtils.h"
  #include "AampMp4Demuxer.h"
  #include "AampUnderflowMonitor.h"
@@ -109,11 +109,10 @@ definitions; no dependency on the vendor layer. Everything is a no-op when
  
  // checks if current state is going to use IFRAME ( Fragment/Playlist )
  #define IS_FOR_IFRAME(rate, type) ((type == eTRACK_VIDEO) && (rate != AAMP_NORMAL_PLAY_RATE))
-@@ -4559,6 +4560,8 @@
+@@ -4695,6 +4696,7 @@
                                 AAMPLOG_WARN("[%s] Found a positionDelta (%lf) between lastInjectedDuration (%lf) and new fragment absPosition (%lf)",
                                                 name, positionDelta, lastInjectedDuration, cachedFragment->absPosition);
                         }
-+                       // avlog: record the jump; audio/video jumps also open a capture window
 +                       AampAvlogPositionJump(type, positionDelta, lastInjectedDuration, cachedFragment->absPosition);
                 }
         }
