@@ -4,7 +4,7 @@ SECTION = "rdk/libs"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "2.0.1"
+PV = "2.0.2"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -34,3 +34,4 @@ RALF_SUPPORT_ARGS = " \
                       -DRDK_PACKAGE_CERT_PATH=${DAC_APP_CERT_PATH} \
                       "
 EXTRA_OECMAKE:append = " -DBUILD_REFERENCE=${SRCREV}"
+EXTRA_OECMAKE:append = " -DBUILD_VER=${PV}"
