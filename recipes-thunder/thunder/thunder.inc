@@ -66,6 +66,8 @@ EXTRA_OECMAKE += " \
     -DPOSTMORTEM_PATH=/opt/secure/minidumps \
 "
 
+PACKAGECONFIG:remove = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'systemd-service', '', d)}"
+
 RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'thunder-systemd-unit', '', d)}"
 
 SYSTEMD_SERVICE:${PN} = "${@bb.utils.contains('PACKAGECONFIG', 'systemd-service', 'thunder.service', '', d)}"
