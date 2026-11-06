@@ -13,13 +13,13 @@ inherit cmake pkgconfig perlnative ${@bb.utils.contains("DISTRO_FEATURES", "kirk
 
 S = "${WORKDIR}/git"
 
-PV = "2.0.8"
+PV = "2.0.9-r3"
 PR = "r0"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};"
+SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;branch=topic/testing;"
 
 #Release 2.0.8
-SRCREV = "13753ca4ece16d2225d44be52c64109d7ce2d307"
+SRCREV = "4f6be9d04fd84167b96e6e7e94509d3fd748a485"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
