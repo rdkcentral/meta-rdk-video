@@ -1,4 +1,4 @@
-From dbc8d731f65c4c40d41dd237c30014a8d059d2ad Mon Sep 17 00:00:00 2001
+From 65bd1c10bf40fa308aaa8750a4fd783b5a9cb5e9 Mon Sep 17 00:00:00 2001
 From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
 Date: Wed, 4 Nov 2026 23:45:36 +0200
 Subject: [PATCH] RDKEMW-27441 : Migrate Local Logging Wrappers
@@ -9,6 +9,9 @@ Risks: Low
 version: Patch
 ---
  Analytics/CMakeLists.txt                      |    2 +
+ .../Implementation/Backend/CMakeLists.txt     |    2 +-
+ .../Implementation/LocalStore/CMakeLists.txt  |    2 +-
+ .../Implementation/SystemTime/CMakeLists.txt  |    2 +-
  NativeJS/CMakeLists.txt                       |    3 +-
  helpers/BaseEventDelegate.h                   |  239 ----
  helpers/PluginInterfaceBuilder.h              |  225 ----
@@ -64,7 +67,7 @@ version: Patch
  helpers/frontpanel.cpp                        |  713 -----------
  helpers/frontpanel.h                          |  151 ---
  helpers/tptimer.h                             |  140 ---
- 56 files changed, 4 insertions(+), 8230 deletions(-)
+ 59 files changed, 7 insertions(+), 8233 deletions(-)
  delete mode 100644 helpers/BaseEventDelegate.h
  delete mode 100755 helpers/PluginInterfaceBuilder.h
  delete mode 100755 helpers/PowerManagerInterface.h
@@ -140,6 +143,36 @@ index 832299fb..87790cc9 100644
          ${MODULE_NAME}Backends
          ${MODULE_NAME}SystemTime
          ${MODULE_NAME}LocalStore)
+diff --git a/Analytics/Implementation/Backend/CMakeLists.txt b/Analytics/Implementation/Backend/CMakeLists.txt
+index 0e50ad80..5ade6009 100644
+--- a/Analytics/Implementation/Backend/CMakeLists.txt
++++ b/Analytics/Implementation/Backend/CMakeLists.txt
+@@ -29,4 +29,4 @@ target_compile_definitions(${TARGET_LIB} PRIVATE LIBLOADER_DFL_DIR="${PLUGIN_ANA
+ 
+ set_property(TARGET ${TARGET_LIB} PROPERTY POSITION_INDEPENDENT_CODE ON)
+ set_target_properties(${TARGET_LIB} PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+-target_link_libraries(${TARGET_LIB} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
++target_link_libraries(${TARGET_LIB} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${NAMESPACE}::${NAMESPACE}Helpers)
+diff --git a/Analytics/Implementation/LocalStore/CMakeLists.txt b/Analytics/Implementation/LocalStore/CMakeLists.txt
+index 23966bf3..ed81b26b 100644
+--- a/Analytics/Implementation/LocalStore/CMakeLists.txt
++++ b/Analytics/Implementation/LocalStore/CMakeLists.txt
+@@ -35,4 +35,4 @@ target_include_directories(${TARGET_LIB} PRIVATE "${CMAKE_SOURCE_DIR}/Analytics/
+ target_include_directories(${TARGET_LIB} PRIVATE "${CMAKE_SOURCE_DIR}/helpers")
+ set_property(TARGET ${TARGET_LIB} PROPERTY POSITION_INDEPENDENT_CODE ON)
+ set_target_properties(${TARGET_LIB} PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+-target_link_libraries(${TARGET_LIB} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
++target_link_libraries(${TARGET_LIB} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${NAMESPACE}::${NAMESPACE}Helpers)
+diff --git a/Analytics/Implementation/SystemTime/CMakeLists.txt b/Analytics/Implementation/SystemTime/CMakeLists.txt
+index 96811cbb..cec07625 100644
+--- a/Analytics/Implementation/SystemTime/CMakeLists.txt
++++ b/Analytics/Implementation/SystemTime/CMakeLists.txt
+@@ -26,4 +26,4 @@ target_include_directories(${TARGET_LIB} PRIVATE "${CMAKE_SOURCE_DIR}/Analytics/
+ target_include_directories(${TARGET_LIB} PRIVATE "${CMAKE_SOURCE_DIR}/helpers")
+ set_property(TARGET ${TARGET_LIB} PROPERTY POSITION_INDEPENDENT_CODE ON)
+ set_target_properties(${TARGET_LIB} PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+-target_link_libraries(${TARGET_LIB} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
++target_link_libraries(${TARGET_LIB} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${NAMESPACE}::${NAMESPACE}Helpers)
 diff --git a/NativeJS/CMakeLists.txt b/NativeJS/CMakeLists.txt
 index e3ad3b5b..dfb510c6 100644
 --- a/NativeJS/CMakeLists.txt
