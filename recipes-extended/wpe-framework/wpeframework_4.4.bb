@@ -24,7 +24,7 @@ SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=develop
            file://0001-opentelemetry-link-targets-available-in-otel-cpp-1.23.patch \
            "
 
-SRCREV_thunder = "b008022f27c9d2dcc113452e7bce3925a28f8496"
+SRCREV_thunder = "2968c995b694d1ac36a509e39e3dfea80c9a35f0"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
@@ -116,6 +116,7 @@ EXTRA_OECMAKE += " \
     -DHIDE_NON_EXTERNAL_SYMBOLS=OFF \
     -DEXIT_REASONS=${WPEFRAMEWORK_EXIT_REASONS} \
     -DMESSAGING=ON \
+    -DMESSAGING_EXTERNAL_OUTPUT=ON \
     -DFLUSH_LOGS=ON \
     -DW3C_TRACE_CONTEXT_ENABLED=ON \
     -DWPEFRAMEWORK_OPENTELEMETRY=ON \
