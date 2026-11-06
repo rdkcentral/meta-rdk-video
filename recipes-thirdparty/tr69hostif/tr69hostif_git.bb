@@ -30,6 +30,10 @@ DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " 
 # Add wpeframework-clientlibraries dependency
 DEPENDS += "wpeframework-clientlibraries"
 RDEPENDS:${PN}:append = " wpeframework-clientlibraries "
+
+# Add powercontroller dependency
+DEPENDS += "entservices-powercontroller"
+RDEPENDS:${PN}:append = " entservices-powercontroller "
 LDFLAGS += "-lWPEFrameworkPowerController"
 
 # Add remotedebugger dependency
