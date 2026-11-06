@@ -1,4 +1,4 @@
-From 65bd1c10bf40fa308aaa8750a4fd783b5a9cb5e9 Mon Sep 17 00:00:00 2001
+From d5b0eaa1fdbd1c50e7ca0729b91cbd293f18857c Mon Sep 17 00:00:00 2001
 From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
 Date: Wed, 4 Nov 2026 23:45:36 +0200
 Subject: [PATCH] RDKEMW-27441 : Migrate Local Logging Wrappers
@@ -27,7 +27,6 @@ version: Patch
  helpers/UtilsJsonRpc.h                        |  169 ---
  helpers/UtilsJsonrpcDirectLink.h              |  183 ---
  helpers/UtilsLOG_MILESTONE.h                  |   24 -
- helpers/UtilsLibraryLoader.h                  |   98 --
  helpers/UtilsLogging.h                        |   36 -
  helpers/UtilsProcess.h                        |   92 --
  helpers/UtilsSearchRDKProfile.h               |   75 --
@@ -67,7 +66,7 @@ version: Patch
  helpers/frontpanel.cpp                        |  713 -----------
  helpers/frontpanel.h                          |  151 ---
  helpers/tptimer.h                             |  140 ---
- 59 files changed, 7 insertions(+), 8233 deletions(-)
+ 58 files changed, 7 insertions(+), 8135 deletions(-)
  delete mode 100644 helpers/BaseEventDelegate.h
  delete mode 100755 helpers/PluginInterfaceBuilder.h
  delete mode 100755 helpers/PowerManagerInterface.h
@@ -82,7 +81,6 @@ version: Patch
  delete mode 100644 helpers/UtilsJsonRpc.h
  delete mode 100644 helpers/UtilsJsonrpcDirectLink.h
  delete mode 100644 helpers/UtilsLOG_MILESTONE.h
- delete mode 100644 helpers/UtilsLibraryLoader.h
  delete mode 100644 helpers/UtilsLogging.h
  delete mode 100755 helpers/UtilsProcess.h
  delete mode 100644 helpers/UtilsSearchRDKProfile.h
@@ -2305,111 +2303,6 @@ index 45ef5f81..00000000
 -#include "rdk_logger_milestone.h"
 -
 -#define LOG_MILESTONE(milestone) logMilestone(milestone);
-diff --git a/helpers/UtilsLibraryLoader.h b/helpers/UtilsLibraryLoader.h
-deleted file mode 100644
-index f8734ee7..00000000
---- a/helpers/UtilsLibraryLoader.h
-+++ /dev/null
-@@ -1,98 +0,0 @@
--/**
--* If not stated otherwise in this file or this component's LICENSE
--* file the following copyright and licenses apply:
--*
--* Copyright 2025 RDK Management
--*
--* Licensed under the Apache License, Version 2.0 (the "License");
--* you may not use this file except in compliance with the License.
--* You may obtain a copy of the License at
--*
--* http://www.apache.org/licenses/LICENSE-2.0
--*
--* Unless required by applicable law or agreed to in writing, software
--* distributed under the License is distributed on an "AS IS" BASIS,
--* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--* See the License for the specific language governing permissions and
--* limitations under the License.
--**/
--
--#pragma once
--
--#include <string>
--#include <memory>
--#include <dlfcn.h>
--#include <fstream>
--
--#ifndef LIBLOADER_DFL_DIR
--#error LIBLOADER_DFL_DIR is not defined
--#endif
--
--namespace Utils {
--
--class LibraryLoader 
--{
--public:
--    enum ErrorCode {
--        NO_ERROR = 0,
--        LIBRARY_PATH_EMPTY,
--        LIBRARY_LOAD_FAILURE
--    };
--
--    LibraryLoader() = default;
--    ~LibraryLoader()
--    {
--        if (mLibraryHandle != nullptr) {
--            dlclose(mLibraryHandle);
--        }
--    }
--
--    ErrorCode Load(const std::string &libraryPath, std::string &errorMessage)
--    {
--        dlerror();
--        if (libraryPath.empty()) {
--            errorMessage = "Library path is empty.";
--            return ErrorCode::LIBRARY_PATH_EMPTY;
--        }
--
--        if (mLibraryHandle != nullptr) {
--            dlclose(mLibraryHandle);
--            mLibraryHandle = nullptr;
--        }
--
--        std::string fullPath = std::string(LIBLOADER_DFL_DIR) + "/" + libraryPath;
--
--        mLibraryHandle = dlopen(fullPath.c_str(), RTLD_LAZY);
--        if (mLibraryHandle == nullptr) {
--            errorMessage = dlerror();
--            return ErrorCode::LIBRARY_LOAD_FAILURE;
--        }
--
--        return ErrorCode::NO_ERROR;
--    }
--
--    template <typename T, typename... Args>
--    std::shared_ptr<T> CreateShared(Args&&... args, std::string &errorMessage)
--    {
--        using CreatorFunc = T* (*)(Args...);
--
--        if (mLibraryHandle == nullptr) {
--            errorMessage = "Library not loaded.";
--            return nullptr;
--        }
--
--        dlerror();
--        CreatorFunc func = reinterpret_cast<CreatorFunc>(dlsym(mLibraryHandle, "Create"));
--        if (func == nullptr) {
--            errorMessage = dlerror();
--            return nullptr;
--        }
--        return std::shared_ptr<T>(func(std::forward<Args>(args)...));
--    }
--
--private:
--
--    void* mLibraryHandle = nullptr;
--};
--
--}
-\ No newline at end of file
 diff --git a/helpers/UtilsLogging.h b/helpers/UtilsLogging.h
 deleted file mode 100644
 index fb50b6af..00000000
