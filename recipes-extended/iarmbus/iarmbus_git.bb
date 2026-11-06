@@ -12,7 +12,7 @@ PV = "1.0.9"
 PR = "r0"
 
 # Release version - 1.0.9
-SRCREV_iarmbus = "7853a67393baa53213396ddc59a93840c5defe1f"
+SRCREV_iarmbus = "0859fa5fdc98f6ce96673e183fddea246cb4fc00"
 SRCREV_FORMAT = "iarmbus"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmbus;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmbus"
 
