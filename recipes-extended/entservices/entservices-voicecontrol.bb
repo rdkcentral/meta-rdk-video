@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-voicecontrol;${CMF_GITHUB_SRC_URI_SUFF
 
 PV = "1.0.6"
 PR = "r0"
-SRCREV = "${PV}"
+SRCREV = "c571f580edb1fa62cce2e0b6c0ea1c67018a22d3"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
