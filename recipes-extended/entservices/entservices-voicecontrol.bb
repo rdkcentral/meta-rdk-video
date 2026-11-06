@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-voicecontrol;${CMF_GITHUB_SRC_URI_SUFF
 
 PV = "1.0.5"
 PR = "r0"
-SRCREV = "${PV}"
+SRCREV = "48e2f5b25e69df158057fd64c700d4284b6bb0a6"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -35,7 +35,9 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= ""
 
+# CMAKE_PROJECT_VERSION sets the plugin's API version and startup log version
 EXTRA_OECMAKE += " \
+    -DCMAKE_PROJECT_VERSION=${PV} \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \

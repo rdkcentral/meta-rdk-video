@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-remotecontrol;${CMF_GITHUB_SRC_URI_SUF
 
 PV = "1.0.6"
 PR = "r0"
-SRCREV = "${PV}"
+SRCREV = "eb08dcfaa703f9afdd6337245fcf0bc8c53d4b6c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -37,7 +37,9 @@ include include/remotecontrol.inc
 
 PACKAGECONFIG ?= ""
 
+# CMAKE_PROJECT_VERSION sets the plugin's API version and startup log version
 EXTRA_OECMAKE += " \
+    -DCMAKE_PROJECT_VERSION=${PV} \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
