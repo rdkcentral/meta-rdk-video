@@ -2,13 +2,13 @@ SUMMARY = "ENTServices appmanagers plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e78363a23fa72036998d7f40b889d209"
 
-PV = "1.1.0.0"
+PV = "1.2.0.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "5e526a90e96a10a311bfad29b5c92f5fa4d695e6"
+SRCREV = "746f77f2b7d9a2becb70b8c3c93bebec27a285d4"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -50,6 +50,7 @@ PACKAGECONFIG ?= " telemetrysupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_bolt_apps', '', 'rdknativescript', d)} \
     runtimemanager \
     victimselector \
+    resourcemonitor \
     packagemanager \
     lifecyclemanager \
     appstoragemanager \
@@ -83,6 +84,7 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[telemetry]            = "-DPLUGIN_TELEMETRY=ON,,iarmbus iarmmgrs entservices-apis rfc rbus,iarmbus entservices-apis rfc rbus"
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON ${RUNTIMEMANAGER_PLUGIN_ARGS},-DPLUGIN_RUNTIME_MANAGER=OFF,entservices-apis iptables,entservices-apis iptables"
 PACKAGECONFIG[victimselector]       = "-DPLUGIN_VICTIM_SELECTOR=ON,-DPLUGIN_VICTIM_SELECTOR=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[resourcemonitor]      = "-DPLUGIN_RESOURCEMONITOR=ON,-DPLUGIN_RESOURCEMONITOR=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[packagemanager]       = "-DPLUGIN_PACKAGE_MANAGER=ON ${PACKAGEMANAGER_PLUGIN_ARGS} -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_PACKAGE_MANAGER=OFF -DLIB_PACKAGE=OFF,curl virtual/libpackage,curl virtual/libpackage"
 PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LIFECYCLE_MANAGER=OFF,websocketpp entservices-apis,entservices-apis"
 PACKAGECONFIG[appstoragemanager]    = "-DPLUGIN_APP_STORAGE_MANAGER=ON ${APPSTORAGEMANAGER_PLUGIN_ARGS},-DPLUGIN_APP_STORAGE_MANAGER=OFF,entservices-apis,entservices-apis"
