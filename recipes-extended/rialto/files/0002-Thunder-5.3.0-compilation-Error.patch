@@ -1,0 +1,57 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index eb66410b..8ae7f359 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -20,6 +20,10 @@
+ cmake_minimum_required( VERSION 3.10 )
+ project( Rialto LANGUAGES C CXX VERSION 1.0.0 )
+
++find_package(Thunder)
++
++add_compile_options(-DTHUNDER_VERSION=5)
++
+ # Preprocesser Variable
+ add_compile_definitions(PROJECT_VER_MAJOR="${PROJECT_VERSION_MAJOR}")
+ add_compile_definitions(PROJECT_VER_MINOR="${PROJECT_VERSION_MINOR}")
+diff --git a/wrappers/CMakeLists.txt b/wrappers/CMakeLists.txt
+index 0fd368a9..ba12219e 100644
+--- a/wrappers/CMakeLists.txt
++++ b/wrappers/CMakeLists.txt
+@@ -49,8 +49,8 @@ if( NOT CMAKE_BUILD_FLAG STREQUAL "UnitTests" AND NOT CMAKE_BUILD_FLAG STREQUAL
+     add_compile_definitions(WRAPPERS_ENABLED)
+
+     find_package( ocdm REQUIRED )
+-    find_package( WPEFrameworkCore REQUIRED )
+-    find_package( WPEFrameworkCOM REQUIRED )
++    find_package( ${NAMESPACE}Core REQUIRED )
++    find_package( ${NAMESPACE}COM REQUIRED )
+
+     set(WRAPPER_INCLUDES
+         ${OCdm_INCLUDE_DIRS}
+@@ -62,8 +62,8 @@ if( NOT CMAKE_BUILD_FLAG STREQUAL "UnitTests" AND NOT CMAKE_BUILD_FLAG STREQUAL
+         rdkgstreamerutils
+         rdkgstreamerutilsplatform
+         ocdm::ocdm
+-        WPEFrameworkCore::WPEFrameworkCore
+-        WPEFrameworkCOM::WPEFrameworkCOM
++        ${NAMESPACE}Core::${NAMESPACE}Core
++        ${NAMESPACE}COM::${NAMESPACE}COM
+         ${CMAKE_DL_LIBS})
+
+     set(WRAPPER_SOURCES
+diff --git a/wrappers/source/ThunderWrapper.cpp b/wrappers/source/ThunderWrapper.cpp
+index 4c15ca1ff..a4af74926 100644
+--- a/wrappers/source/ThunderWrapper.cpp
++++ b/wrappers/source/ThunderWrapper.cpp
+@@ -18,7 +18,11 @@
+  */
+
+ #include "ThunderWrapper.h"
++#if THUNDER_VERSION >= 5
++#include <core/Errors.h>
++#else
+ #include <core/Portability.h>
++#endif
+
+ namespace firebolt::rialto::wrappers
+ {
