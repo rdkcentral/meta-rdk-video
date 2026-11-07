@@ -19,56 +19,14 @@ S = "${WORKDIR}/git"
 
 DEPENDS = "gperf-native util-linux jansson"
 
-FILES:${PN} += "${includedir}/xr_mq.h \
-                ${includedir}/xr_fdc.h \
-                ${includedir}/xr_timer.h \
-                ${includedir}/xr_timestamp.h \
-                ${includedir}/xr_sm_engine.h \
-                ${includedir}/xraudio.h \
-                ${includedir}/xraudio_hal.h \
-                ${includedir}/xraudio_eos.h \
-                ${includedir}/xraudio_dga.h \
-                ${includedir}/xraudio_kwd.h \
-                ${includedir}/xraudio_sdf.h \
-                ${includedir}/xraudio_ovc.h \
-                ${includedir}/xraudio_ppr.h \
-                ${includedir}/xraudio_common.h \
-                ${includedir}/xraudio_platform.h \
-                ${includedir}/xraudio_version.h \
-                ${includedir}/vsdk_json_combine.py \
-                ${includedir}/vsdk_json_to_header.py \
-                ${includedir}/rdkx_logger.h \
-                ${includedir}/rdkx_logger_modules.h \
-               "
+inherit cmake
 
-do_configure[noexec] = "1"
+EXTRA_OECMAKE:append = " -DCMAKE_PROJECT_VERSION=${PV} -DINSTALL_INTERNAL_HEADERS=ON"
+
+# Header list is maintained in the xr-voice-sdk CMakeLists.txt; only run the internal headers install target
+OECMAKE_TARGET_INSTALL = "install_internal_headers"
+
 do_compile[noexec] = "1"
-
-do_install() {
-   install -d ${D}${includedir}
-   install -m 644 ${S}/src/xr-mq/xr_mq.h               ${D}${includedir}
-   install -m 644 ${S}/src/xr-fdc/xr_fdc.h             ${D}${includedir}
-   install -m 644 ${S}/src/xr-timer/xr_timer.h         ${D}${includedir}
-   install -m 644 ${S}/src/xr-timestamp/xr_timestamp.h ${D}${includedir}
-   install -m 644 ${S}/src/xr-sm-engine/xr_sm_engine.h ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio.h          ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_hal.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_eos.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_dga.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_kwd.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_sdf.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_ovc.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_ppr.h      ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_common.h   ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_platform.h ${D}${includedir}
-   install -m 644 ${S}/src/xr-audio/xraudio_version.h  ${D}${includedir}
-   install -m 644 ${S}/scripts/vsdk_json_combine.py    ${D}${includedir}
-   install -m 644 ${S}/scripts/vsdk_json_to_header.py  ${D}${includedir}
-   install -m 644 ${S}/src/xr-logger/rdkx_logger_mw.h  ${D}${includedir}/rdkx_logger.h
-
-   ${S}/scripts/rdkx_logger_modules_to_c.py ${S}/src/xr-logger/rdkv/rdkx_logger_modules.json rdkx_logger_modules "mw"
-   install -m 644 rdkx_logger_modules.h  ${D}${includedir}
-}
 
 ALLOW_EMPTY:${PN} = "1"
 
