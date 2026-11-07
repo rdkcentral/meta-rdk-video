@@ -19,6 +19,7 @@ PR = "${RIALTO_PR}"
 SRCREV = "${RIALTO_SRCREV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${RIALTO_BRANCH}"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
+SRC_URI += "file://0002-Add-audio-vorbis-video-x-vp8-to-recognizable-mime-ty.patch"
 
 DEPENDS = "openssl jsoncpp protobuf protobuf-native"
 DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform"
