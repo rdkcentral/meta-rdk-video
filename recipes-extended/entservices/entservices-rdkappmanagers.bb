@@ -44,6 +44,7 @@ CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
+DEVOPTIONS = "${@d.getVar('APPMGR_DEV_PKGCONFIG',True) if d.getVar('APPMGR_DEV_PKGCONFIG',True) else ''}"
 
 PACKAGECONFIG ?= " telemetrysupport \
     ocicontainer \
@@ -63,6 +64,7 @@ PACKAGECONFIG ?= " telemetrysupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'rialtosupport', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_ralf', ' ralfsupport', '', d)} \
+    ${DEVOPTIONS} \
 "
 
 inherit features_check
