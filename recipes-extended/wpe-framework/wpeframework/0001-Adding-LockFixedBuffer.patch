@@ -1,0 +1,29 @@
+From f1879b4ea2caa2636c5df9516a00189772d88dd2 Mon Sep 17 00:00:00 2001
+From: Radenko Mihajlovic <Radenko_Mihajlovic@comcast.com>
+Date: Wed, 8 Jul 2026 15:05:04 +0000
+Subject: [PATCH] Adding LockFixedBuffer
+
+---
+ Source/core/Frame.h | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/Source/core/Frame.h b/Source/core/Frame.h
+index dd9c8368..de972782 100644
+--- a/Source/core/Frame.h
++++ b/Source/core/Frame.h
+@@ -231,6 +231,15 @@ namespace Core {
+                 return (result);
+             }
+             template <typename TYPENAME>
++            TYPENAME LockFixedBuffer(const uint8_t*& buffer, const TYPENAME fixedSize) const
++            {
++                ASSERT(_container != nullptr);
++
++                buffer = &(_container->operator[](_offset));
++
++                return (fixedSize);
++            }
++            template <typename TYPENAME>
+             void UnlockBuffer(TYPENAME length) const
+             {
+                 ASSERT(_container != nullptr);
