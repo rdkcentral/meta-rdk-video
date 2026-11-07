@@ -32,6 +32,7 @@ FILES:${PN} += "${includedir}/xr_mq.h \
                 ${includedir}/xraudio_sdf.h \
                 ${includedir}/xraudio_ovc.h \
                 ${includedir}/xraudio_ppr.h \
+                ${includedir}/xraudio_mfv.h \
                 ${includedir}/xraudio_common.h \
                 ${includedir}/xraudio_platform.h \
                 ${includedir}/xraudio_version.h \
@@ -59,6 +60,7 @@ do_install() {
    install -m 644 ${S}/src/xr-audio/xraudio_sdf.h      ${D}${includedir}
    install -m 644 ${S}/src/xr-audio/xraudio_ovc.h      ${D}${includedir}
    install -m 644 ${S}/src/xr-audio/xraudio_ppr.h      ${D}${includedir}
+   install -m 644 ${S}/src/xr-audio/xraudio_mfv.h      ${D}${includedir}
    install -m 644 ${S}/src/xr-audio/xraudio_common.h   ${D}${includedir}
    install -m 644 ${S}/src/xr-audio/xraudio_platform.h ${D}${includedir}
    install -m 644 ${S}/src/xr-audio/xraudio_version.h  ${D}${includedir}
