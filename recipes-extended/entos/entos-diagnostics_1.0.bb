@@ -20,7 +20,7 @@ PR = "r0"
 
 # Source repository - GitHub public repository
 SRC_URI = "git://github.com/Yogaraj97/entos-diagnostics.git;protocol=https;branch=main"
-SRCREV = "9888db5e56f33cbe0e0682c52a4e3dcf2b47aac4"
+SRCREV = "c5743e45e926ef30caa942efd7bcf06241167ee0"
 
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
