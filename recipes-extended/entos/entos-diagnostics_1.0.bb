@@ -234,19 +234,6 @@ COMPATIBLE_HOST = ".*-linux"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 # ============================================================================
-# RDK INTEGRATION
-# ============================================================================
-
-# Use RDK utilities if available
-inherit rdk-utils
-
-# Optional: Add to specific package groups
-# Can be referenced in packagegroup recipes
-
-# Metadata tags for package discovery and organization
-TAGS = "diagnostics rdk ai2.0 operational-snapshot thunder"
-
-# ============================================================================
 # BUILD VARIANTS (Optional)
 # ============================================================================
 # Uncomment to add build variants for different configurations.
