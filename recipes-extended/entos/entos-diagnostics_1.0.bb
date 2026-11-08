@@ -36,7 +36,6 @@ inherit cmake pkgconfig
 
 DEPENDS = " \
     cmake-native \
-    pkg-config-native \
 "
 
 # Core C++ and system libraries (required)
@@ -61,7 +60,7 @@ RDEPENDS:${PN} = " \
     curl \
     jsoncpp \
     yaml-cpp \
-    gcc-runtime \
+    libgcc \
     libstdc++ \
 "
 

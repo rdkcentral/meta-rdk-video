@@ -83,7 +83,7 @@ opkg install entos-diagnostics
 | curl | HTTP/HTTPS client library |
 | jsoncpp | JSON library |
 | yaml-cpp | YAML support (optional) |
-| gcc-runtime | GCC runtime (libgcc_s) |
+| libgcc | GCC runtime (libgcc_s) |
 | libstdc++ | C++ standard library |
 
 ## Integration Steps

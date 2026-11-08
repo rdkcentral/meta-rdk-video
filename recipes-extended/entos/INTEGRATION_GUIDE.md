@@ -76,7 +76,7 @@ Required on target device for execution:
 curl                        libcurl runtime
 jsoncpp                     JsonCpp runtime library
 yaml-cpp                    YAML support (if enabled)
-gcc-runtime                 GCC runtime (libgcc_s)
+libgcc                      GCC runtime (libgcc_s)
 libstdc++                   C++ standard library
 ```
 

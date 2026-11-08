@@ -59,7 +59,7 @@ These packages must be present on the target device for the utility to function:
 curl                  # Runtime curl library (libcurl.so.*)
 jsoncpp               # Runtime JsonCpp library
 yaml-cpp              # Runtime YAML library (if YAML support enabled)
-gcc-runtime           # GCC runtime library (libgcc_s.so.*)
+libgcc                # GCC runtime library (libgcc_s.so.*)
 libstdc++             # C++ standard library (libstdc++.so.*)
 ```
 
@@ -312,7 +312,7 @@ The Yocto build system automatically:
 | `curl not found` | curl recipe not in layers | Add meta-openembedded or similar |
 | `jsoncpp not found` | jsoncpp recipe missing | Add meta-jsoncpp layer or provide recipe |
 | `yaml-cpp not found` | yaml-cpp recipe missing | Set `ENTOS_DISABLE_YAML=1` or add recipe |
-| `gcc-runtime missing` | Not in image | Add to IMAGE_INSTALL or depend recipe |
+| `gcc-runtime missing` | Recipe name used as a runtime package | Use `libgcc` in RDEPENDS; multilib maps it to `lib32-libgcc` |
 | `libstdc++ version error` | Toolchain mismatch | Verify matching GCC versions |
 
 ---
