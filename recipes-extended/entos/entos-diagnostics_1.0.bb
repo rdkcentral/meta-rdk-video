@@ -20,7 +20,7 @@ PR = "r0"
 
 # Source repository - GitHub public repository
 SRC_URI = "git://github.com/Yogaraj97/entos-diagnostics.git;protocol=https;branch=main"
-SRCREV = "c5743e45e926ef30caa942efd7bcf06241167ee0"
+SRCREV = "${AUTOREV}"
 
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
@@ -88,21 +88,6 @@ EXTRA_OECMAKE = " \
 
 TARGET_CFLAGS:append = " -Wall -Wextra -Wpedantic"
 TARGET_CXXFLAGS:append = " -Wall -Wextra -Wpedantic"
-
-# ============================================================================
-# BUILD STEPS
-# ============================================================================
-# Override default CMake configuration if needed.
-
-do_configure() {
-    cmake -S ${S} -B ${B} \
-        -DCMAKE_TOOLCHAIN_FILE=${OE_CMAKE_TOOLCHAIN_FILE} \
-        ${EXTRA_OECMAKE}
-}
-
-do_compile() {
-    cmake --build ${B}
-}
 
 # ============================================================================
 # INSTALLATION
