@@ -4,7 +4,7 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-PV = "1.0.36-hotfix.5"
+PV = "1.0.36-hotfix.6"
 PR = "r0"
 
 SRCREV_devicesettings = "f0454c7d0279d3e960334fc2a270c822ffd9dce8"

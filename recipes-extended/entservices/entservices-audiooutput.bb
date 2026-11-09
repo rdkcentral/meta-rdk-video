@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-audiooutput;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
-# Release version - 1.0.0
-SRCREV = "068580839d752a4b853d97d286625755cc9f1080"
+# Release version - 1.0.3
+SRCREV = "78a999460fde9d771a4c87d61003b9906a92d24b"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
