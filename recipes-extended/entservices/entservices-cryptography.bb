@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Cryptography plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e0be4633b6bc8df42eadad87f3e18a3a"
 
-PV = "1.0.5"
+PV = "1.0.7"
 PR = "r1"
 
 S = "${WORKDIR}/git"
@@ -16,8 +16,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-cryptography;${CMF_GITHUB_SRC_URI_SUFF
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
           
-# Release version - 1.0.5
-SRCREV = "128d77f6c551db4abf1804b143c1c6e610299576"
+# Release version - 1.0.7
+SRCREV = "00274f8c7fda7bf8d5043a9e10d109af3d8500b0"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
