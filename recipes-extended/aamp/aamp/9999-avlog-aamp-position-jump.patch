@@ -1,22 +1,23 @@
 HandleFragmentPositionJump: write an AVLOG_USER_AAMP_JUMP record (track, delta,
 lastInjectedDuration, absPosition in microseconds) for any non-zero delta and
 ask avlog.ko for a capture window when |delta| >= 1 ms.
-ProcessAndInjectFragment: write an AVLOG_USER_AAMP_RESTAMP record whenever the
-PTS offset applied to a track changes (old and new offset, first fragment
-position, timescale, discontinuity index).
-No-op when avlog.ko is not loaded.
+Both IsoBmffHelper::RestampPts call sites (whole fragments in
+ProcessAndInjectFragment, LL-DASH chunks in ProcessFragmentChunk): write an
+AVLOG_USER_AAMP_RESTAMP record whenever the PTS offset applied to a track
+changes (old and new offset, first fragment position, timescale, discontinuity
+index); a change while playing also asks for a capture window.
+A failed write is reported once on stderr. No-op when avlog.ko is not loaded.
 ---
- AampAvlog.h           | 158 ++++++++++++++++++++++++++++++++++++++++++
- streamabstraction.cpp |   6 ++
- 2 files changed, 164 insertions(+)
- create mode 100644 AampAvlog.h
+  AampAvlog.h           | 176 ++++++++++++++++++++++++++++++++++++++++++++++++++
+  streamabstraction.cpp |   9 +++
+  2 files changed, 185 insertions(+)
 
 diff --git a/AampAvlog.h b/AampAvlog.h
 new file mode 100644
-index 0000000..1640efe
+index 0000000..bdecf32
 --- /dev/null
 +++ b/AampAvlog.h
-@@ -0,0 +1,158 @@
+@@ -0,0 +1,176 @@
 +/*
 + * AampAvlog.h - write AAMP PTS bookkeeping records to avlog.ko (/proc/avlog/data).
 + *
@@ -30,10 +31,15 @@ index 0000000..1640efe
 + *                            Written for any non-zero delta (AAMP itself only
 + *                            acts on delta > 0); asks avlog.ko for a capture
 + *                            window (AVLOG_UF_ARM_TIMER) when |delta| >= 1 ms.
-+ *   AVLOG_USER_AAMP_RESTAMP  MediaTrack::ProcessAndInjectFragment: the PTS
-+ *                            offset AAMP applies to this track changed; written
-+ *                            once per change with the old and new offset and the
-+ *                            position of the first fragment carrying it.
++ *   AVLOG_USER_AAMP_RESTAMP  every MediaTrack call site of IsoBmffHelper::RestampPts
++ *                            (whole fragments and LL-DASH chunks): the PTS offset
++ *                            AAMP applies to this track changed; written once per
++ *                            change with the old and new offset and the position
++ *                            of the first fragment carrying it. A change while
++ *                            playing (previous offset != 0) also asks avlog.ko
++ *                            for a capture window; the first offset after start
++ *                            is recorded without arming.
++ * A failed write() is reported once per process on stderr (AAMP log).
 + */
 +#ifndef AAMP_AVLOG_H
 +#define AAMP_AVLOG_H
@@ -43,6 +49,9 @@ index 0000000..1640efe
 +#include <unistd.h>
 +#include <atomic>
 +#include <cmath>
++#include <cerrno>
++#include <cstdio>
++#include <cstring>
 +
 +#define AVLOG_PAYLOAD_SIZE       52
 +#define AVLOG_USER               6
@@ -77,7 +86,7 @@ index 0000000..1640efe
 +    uint32_t type;                 /* AVLOG_USER */
 +    uint32_t user;                 /* AVLOG_USER_AAMP_RESTAMP */
 +    uint32_t media;
-+    uint32_t flags;                /* 0 */
++    uint32_t flags;                /* AVLOG_UF_* (ARM on a change while playing) */
 +    uint32_t pts_offset_lo;        /* new offset, signed microseconds */
 +    uint32_t pts_offset_hi;
 +    uint32_t prev_offset_lo;       /* previous offset, signed microseconds */
@@ -98,6 +107,14 @@ index 0000000..1640efe
 +    if (fd < 0)                     /* retried: avlog.ko may load after this process started */
 +        fd = open("/proc/avlog/data", O_WRONLY | O_CLOEXEC);
 +    return fd;
++}
++
++/* write one record; report the first failure (e.g. avlog.ko rejecting the record) */
++static inline void AampAvlogWrite(int fd, const void *rec, size_t len, const char *what)
++{
++    static std::atomic<bool> reported{false};
++    if (write(fd, rec, len) != (ssize_t)len && !reported.exchange(true))
++        fprintf(stderr, "AampAvlog: write(%s) to /proc/avlog/data failed: %s\n", what, strerror(errno));
 +}
 +
 +static inline uint32_t AampAvlogMedia(int trackType)
@@ -144,10 +161,10 @@ index 0000000..1640efe
 +    AampAvlogPut64(j.abs_position_lo, j.abs_position_hi, AampAvlogUs(absPosition));
 +    j.seq = ++seq;
 +    j.ad_playing = adPlaying ? 1u : 0u;
-+    (void)!write(fd, &j, sizeof(j));
++    AampAvlogWrite(fd, &j, sizeof(j), "AAMP_JUMP");
 +}
 +
-+/* ProcessAndInjectFragment: called for every restamped fragment; records a change of offset */
++/* RestampPts call sites: called for every restamped fragment/chunk; records a change of offset */
 +static inline void AampAvlogRestamp(int trackType, double ptsOffsetSec, double absPosition,
 +                                    uint32_t timeScale, uint64_t discontinuityIndex, bool adPlaying)
 +{
@@ -165,18 +182,20 @@ index 0000000..1640efe
 +    r.type = AVLOG_USER;
 +    r.user = AVLOG_USER_AAMP_RESTAMP;
 +    r.media = AampAvlogMedia(trackType);
++    if (prev_us != 0 && (r.media == AVLOG_MEDIA_VIDEO || r.media == AVLOG_MEDIA_AUDIO))
++        r.flags |= AVLOG_UF_ARM_TIMER;          /* offset changed while playing */
 +    AampAvlogPut64(r.pts_offset_lo, r.pts_offset_hi, off_us);
 +    AampAvlogPut64(r.prev_offset_lo, r.prev_offset_hi, prev_us);
 +    AampAvlogPut64(r.abs_position_lo, r.abs_position_hi, AampAvlogUs(absPosition));
 +    r.timescale = timeScale;
 +    r.discontinuity = static_cast<uint32_t>(discontinuityIndex);
 +    r.ad_playing = adPlaying ? 1u : 0u;
-+    (void)!write(fd, &r, sizeof(r));
++    AampAvlogWrite(fd, &r, sizeof(r), "AAMP_RESTAMP");
 +}
 +
 +#endif /* AAMP_AVLOG_H */
 diff --git a/streamabstraction.cpp b/streamabstraction.cpp
-index bfcce1b..7482c62 100644
+index bfcce1b..43857f2 100644
 --- a/streamabstraction.cpp
 +++ b/streamabstraction.cpp
 @@ -63,6 +63,7 @@
@@ -187,7 +206,17 @@ index bfcce1b..7482c62 100644
  
  // checks if current state is going to use IFRAME ( Fragment/Playlist )
  #define IS_FOR_IFRAME(rate, type) ((type == eTRACK_VIDEO) && (rate != AAMP_NORMAL_PLAY_RATE))
-@@ -1291,6 +1292,9 @@ void MediaTrack::ProcessAndInjectFragment(CachedFragment *cachedFragment, bool f
+@@ -1080,6 +1081,9 @@ bool MediaTrack::ProcessFragmentChunk()
+ 				int64_t ptsOffset = cachedFragment->PTSOffsetSec * cachedFragment->timeScale;
+ 				(void)mIsoBmffHelper->RestampPts(parsedBufferChunk, ptsOffset, cachedFragment->uri,
+ 												name, cachedFragment->timeScale);
++				// avlog: one record each time the offset applied to this track changes (LL-DASH chunks)
++				AampAvlogRestamp(type, cachedFragment->PTSOffsetSec, cachedFragment->absPosition,
++								 cachedFragment->timeScale, cachedFragment->discontinuityIndex, aamp->IsAdPlaying());
+ 				fpts += cachedFragment->PTSOffsetSec;
+ 			}
+ 		}
+@@ -1291,6 +1295,9 @@ void MediaTrack::ProcessAndInjectFragment(CachedFragment *cachedFragment, bool f
  					(void)mIsoBmffHelper->RestampPts(cachedFragment->fragment, ptsOffset,
  													cachedFragment->uri, name,
  													cachedFragment->timeScale);
@@ -197,7 +226,7 @@ index bfcce1b..7482c62 100644
  				}
  				else
  				{
-@@ -4681,6 +4685,8 @@ void MediaTrack::HandleFragmentPositionJump(CachedFragment* cachedFragment)
+@@ -4681,6 +4688,8 @@ void MediaTrack::HandleFragmentPositionJump(CachedFragment* cachedFragment)
  	{
  		// Find the delta between the last injected fragment end position and the current fragment position
  		double positionDelta = (cachedFragment->absPosition - lastInjectedDuration);
