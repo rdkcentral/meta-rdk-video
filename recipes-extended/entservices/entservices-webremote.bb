@@ -11,7 +11,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-webremote;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 # Release version - 1.0.0
-SRCREV = "3489e47d03a92fcc422b28a67d084b418f5dc31c"
+SRCREV = "7f1467ac41488ed9b925cda96a9d4561b77d0f49"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -24,6 +24,8 @@ RDEPENDS:${PN} += "wpeframework"
 
 CXXFLAGS += " -Wall -Werror "
 CXXFLAGS:remove_morty = " -Wall -Werror "
+# ILinchpinClientProxy.h is installed by entservices-cpc-apis under interfaces_cpc
+CXXFLAGS += " -I${STAGING_INCDIR}/WPEFramework/interfaces_cpc"
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # Device id used to build the X<device_id> Linchpin topic (plugin config "deviceid")
