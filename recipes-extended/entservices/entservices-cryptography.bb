@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e0be4633b6bc8df42eadad87f3e18a3a"
 
 PV = "1.0.7"
-PR = "r1"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
