@@ -1,14 +1,11 @@
-HandleFragmentPositionJump: write an AVLOG_USER_AAMP_JUMP record (track, delta,
-lastInjectedDuration, absPosition in microseconds) for any non-zero delta and
-ask avlog.ko for a capture window when |delta| >= 1 ms.
-Both IsoBmffHelper::RestampPts call sites (whole fragments in
-ProcessAndInjectFragment, LL-DASH chunks in ProcessFragmentChunk): write an
-AVLOG_USER_AAMP_RESTAMP record whenever the PTS offset applied to a track
-changes (old and new offset, first fragment position, timescale, discontinuity
-index); a change while playing also asks for a capture window.
-v6: records go through the avlog HAL (libavloghal.so.1, vendor layer), loaded
-with dlopen() at run time: no build dependency on the vendor layer, no-op when
-the library or avlog.ko is missing. A failed write is reported once on stderr.
+avlog: AAMP position-jump and PTS-restamp records through the avlog HAL
+
+AampAvlog.h loads libavloghal.so.1 with dlopen() (no build dependency on the
+vendor layer; no-op when the library or avlog.ko is missing) and writes:
+- AAMP_JUMP in HandleFragmentPositionJump for any non-zero positionDelta
+  (arms a capture window when |delta| >= 1 ms);
+- AAMP_RESTAMP after both RestampPts call sites when a track's PTS offset
+  changes (arms when it changes while playing).
 ---
   AampAvlog.h           | 151 ++++++++++++++++++++++++++++++++++++++++++++++++++
   streamabstraction.cpp |   9 +++
@@ -16,7 +13,7 @@ the library or avlog.ko is missing. A failed write is reported once on stderr.
 
 diff --git a/AampAvlog.h b/AampAvlog.h
 new file mode 100644
-index 0000000..0000000
+index 00000000..d3cf6f0e
 --- /dev/null
 +++ b/AampAvlog.h
 @@ -0,0 +1,151 @@
@@ -172,7 +169,7 @@ index 0000000..0000000
 +
 +#endif /* AAMP_AVLOG_H */
 diff --git a/streamabstraction.cpp b/streamabstraction.cpp
-index bfcce1b..43857f2 100644
+index bfcce1b3..43857f2e 100644
 --- a/streamabstraction.cpp
 +++ b/streamabstraction.cpp
 @@ -63,6 +63,7 @@
