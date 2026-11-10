@@ -13,7 +13,6 @@ SAVEDDIR := "${THISDIR}"
 SRCREV = "a7efde8c441305751d7c7d2a2ac2fbfea12ff048"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
-#SRC_URI:append = " file://irmgr.diff"
 S = "${WORKDIR}/git"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
@@ -25,7 +24,7 @@ DEPENDS:append = " telemetry"
 PARALLEL_MAKE = ""
 DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal \
          ermgr iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
-         deepsleep-manager-headers power-manager-headers wpeframework-clientlibraries"
+         deepsleep-manager-headers power-manager-headers entservices-powercontroller wpeframework-clientlibraries"
 DEPENDS:append:client = " virtual/mfrlib"
 DEPENDS:append = " virtual/mfrlib"
 DEPENDS:append = " virtual/vendor-devicesettings-hal "
