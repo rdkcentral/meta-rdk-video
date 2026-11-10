@@ -12,7 +12,7 @@ PV = "1.5.0"
 PR = "r0"
 
 #develop
-SRCREV = "97ffe78b2b9bd052b77ee6eee59c1a80cc01f168"
+SRCREV = "5d5e1bac181af1a82fcd52bc615ed32de971d873"
 SRC_URI = "${CMF_GITHUB_ROOT}/rdk-window-manager;${CMF_GITHUB_SRC_URI_SUFFIX}"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
