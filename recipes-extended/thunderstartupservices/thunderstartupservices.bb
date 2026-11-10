@@ -5,13 +5,13 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 PV = "1.5.8"
-PR = "r0"
+PR = "r1"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "f77db62afe6f9f31bfe959e917d635446bca30e2"
-SRC_URI = "git://github.com/rdkcentral/thunder-startup-services.git;protocol=git;name=thunderstartupservices \
+SRCREV = "7c15385f164b1cc3c220bacc5ac84390e176668c"
+SRC_URI = "${CMF_GITHUB_ROOT}/thunder-startup-services;${CMF_GITHUB_SRC_URI_SUFFIX};name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
 S = "${WORKDIR}/git/systemd/system"
@@ -72,6 +72,10 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-tools.service \
     "
 
+# Install these services, but allow activation failure without failing the target.
+# RuntimeManager also orders and requests Eyil through After/Wants.
+THUNDER_OPTIONAL_STARTUP_SERVICES ?= "wpeframework-eyilgateway.service"
+
 CONTROL_FILES = "\
     wpeframework-services.path \
     wpeframework-services.target \
@@ -86,7 +90,7 @@ do_install() {
         ln -sf ${systemd_system_unitdir}/${y} ${D}${sysconfdir}/systemd/system/multi-user.target.wants/${y}
     done
 
-    for x in ${THUNDER_STARTUP_SERVICES}; do
+    for x in ${THUNDER_STARTUP_SERVICES} ${THUNDER_OPTIONAL_STARTUP_SERVICES}; do
         install -m 0644 ${S}/${x} ${D}${systemd_system_unitdir}
         install -d ${D}${sysconfdir}/systemd/system/${x}.requires
         ln -sf ${systemd_system_unitdir}/wpeframework.service ${D}${sysconfdir}/systemd/system/${x}.requires/wpeframework.service
@@ -94,6 +98,10 @@ do_install() {
 
     for x in ${THUNDER_STARTUP_SERVICES}; do
         echo "Requires=${x}" >> "${D}${systemd_system_unitdir}/wpeframework-services.target"
+    done
+
+    for x in ${THUNDER_OPTIONAL_STARTUP_SERVICES}; do
+        echo "Wants=${x}" >> "${D}${systemd_system_unitdir}/wpeframework-services.target"
     done
 }
 
@@ -123,7 +131,7 @@ do_install:append() {
     # Ensure all services are in proper Unix LF format
     find "$SERVICE_DIR" -type f -name "*.service" -exec sed -i 's/\r$//' {} +
 
-    for x in ${THUNDER_STARTUP_SERVICES}; do
+    for x in ${THUNDER_STARTUP_SERVICES} ${THUNDER_OPTIONAL_STARTUP_SERVICES}; do
         SERVICE_FILE="${SERVICE_DIR}/${x}"
 
         # --- Normalize Description ---

@@ -3,12 +3,13 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e78363a23fa72036998d7f40b889d209"
 
 PV = "1.2.0.0"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "01ebfacde2983325320815b39ac3aad5e29927a4"
+# Includes optional Eyil socket mounts and the development-client mount.
+SRCREV = "757c27f30c3c70eee7ffd91ccb868f31eb319190"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
