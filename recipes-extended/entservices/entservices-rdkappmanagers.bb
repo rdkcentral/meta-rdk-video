@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 
 SRCREV = "49566b162a970604ef38ba5eb67bd75599ebd232"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/stutter2"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
