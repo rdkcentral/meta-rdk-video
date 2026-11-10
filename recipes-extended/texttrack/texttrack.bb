@@ -3,8 +3,8 @@ DESCRIPTION = "Text Track Plugin Meta Package"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-SRCREV = "e4dbeea1b8762235f320cfb96525f9bbb0bb8b86"
-PV = "2.0.0"
+SRCREV = "f143816d63c6f7a19944c849b46fc5670c3ee639"
+PV = "2.1.0"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -14,7 +14,7 @@ inherit cmake features_check pkgconfig
 # texttrack : enables full functionality, including session management and compatibility socket
 REQUIRED_DISTRO_FEATURES = "texttrack"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/texttrack;protocol=${CMF_GITHUB_PROTOCOL};branch=main"
+SRC_URI = "${CMF_GITHUB_ROOT}/texttrack;protocol=${CMF_GITHUB_PROTOCOL};branch=develop"
 SRC_URI += "file://texttrack.conf"
 SRC_URI += "file://config.ini"
 S = "${WORKDIR}/git"
