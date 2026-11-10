@@ -2,8 +2,8 @@ SUMMARY = "ENTServices avinput plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.2.7_Test"
-PR = "r4"
+PV = "2.0.0"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avinput;${CMF_GITHUB_SRC_URI_SUFFIX} \
           "
 
-# Release version - 1.2.7_Test
-SRCREV = "e55a9d1788467ef96496e9f29109ec18deae9732"
+# Release version - 2.0.0
+SRCREV = "847388d3a88230fed9f68a13a1b8fc526fa0a107"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"

@@ -2,7 +2,7 @@ SUMMARY = "ENTServices AVOutput plugin"
 LICENSE = "CLOSED"
 
 PV = "2.2.1_Test"
-PR = "r2"
+PR = "r3"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avoutput;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 # Release version - 2.2.1
-SRCREV = "bc0f80484839776a63908913b5e350e6c9e28a58"
+SRCREV = "0e2ced463f9ae4d70607e5f184beb0d09f7f9f73"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
