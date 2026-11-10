@@ -1,5 +1,5 @@
 diff --git a/Source/WebCore/platform/ttsclient/PlatformSpeechSynthesizerTTSClient.cpp b/Source/WebCore/platform/ttsclient/PlatformSpeechSynthesizerTTSClient.cpp
-index e4e2f229f2ca..53c763c93feb 100644
+index e4e2f229f2ca..0e37118cbb43 100644
 --- a/Source/WebCore/platform/ttsclient/PlatformSpeechSynthesizerTTSClient.cpp
 +++ b/Source/WebCore/platform/ttsclient/PlatformSpeechSynthesizerTTSClient.cpp
 @@ -36,6 +36,7 @@
@@ -66,36 +66,30 @@ index e4e2f229f2ca..53c763c93feb 100644
          static uint32_t s_speechId = 0;
          uint32_t speechId = ++s_speechId;
          m_currentUtteranceSpeechId = 0;
-@@ -160,8 +139,32 @@ public:
+@@ -160,13 +139,17 @@ public:
          TTS::SpeechData sdata;
          sdata.text = utterance->text().utf8().data();
          sdata.id = speechId;
-+        if (utterance->volume() > 0)
-+            sdata.volume = utterance->volume();
-+        else
-+            sdata.volume = -1;
-+
-+        if (utterance->rate() > 0)
-+            sdata.rate = utterance->rate();
-+        else
-+            sdata.rate = -1;
-+
-+        if (!utterance->lang().isEmpty())
-+            sdata.lang = utterance->lang().utf8().data();
-+
-+        if (utterance->pitch() > 0)
-+            sdata.pitch = utterance->pitch();
-+        else
-+            sdata.pitch = -1;
-+        
-+        if (utterance->voice()) {
-+            sdata.voice = utterance->voice()->name().utf8().data();
-+        }
-+        printf("kykumar speak data text %s id %d vol %f rate %f lang %s pitch %f voice %s\n",
++        printf("kykumar webkit speak data text %s id %d vol %f rate %f lang %s pitch %f voice %s\n",
 +               sdata.text.c_str(), sdata.id, sdata.volume, sdata.rate, sdata.lang.c_str(), sdata.pitch, sdata.voice.c_str());
          TTS::TTS_Error err = m_ttsClient->speak(m_ttsSessionId, sdata);
          if (err != TTS::TTS_OK) {
-+            printf("kykumar speak failed with error %d\n", err);
++            printf("kykumar webkitspeak failed with error %d\n", err);
              if (err == TTS::TTS_RESOURCE_BUSY || err == TTS::TTS_SESSION_NOT_ACTIVE)
                  notifyClient(utterance, SpeechSynthesisErrorCode::AudioBusy);
              else
+                 notifyClient(utterance, SpeechSynthesisErrorCode::SynthesisFailed);
+         } else {
++            printf("kykumar webkit speak passed %d\n", speechId);
+             m_currentUtteranceSpeechId = speechId;
+             m_utterancesInProgress.set(m_currentUtteranceSpeechId, utterance);
+             m_currentUtterance = utterance;
+@@ -257,7 +240,7 @@ public:
+             speakingFinished(m_currentUtteranceSpeechId, SpeechSynthesisErrorCode::Interrupted);
+     }
+ 
+-    void onTTSStateChanged(bool) {}
++    void onTTSStateChanged(bool) {printf("kykumar ontts changed\n");}
+ 
+     void onVoiceChanged(std::string)
+     {
