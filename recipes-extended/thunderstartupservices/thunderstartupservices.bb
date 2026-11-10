@@ -54,6 +54,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-powermanager.service \
     wpeframework-networkmanager.service \
     wpeframework-ocicontainer.service \
+    wpeframework-webremote.service \
     ${@bb.utils.contains('DISTRO_FEATURES', 'rdkwindowmanager',' wpeframework-rdkwindowmanager.service', '', d)} \
     wpeframework-lifecyclemanager.service \
     wpeframework-runtimemanager.service \
