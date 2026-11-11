@@ -9,14 +9,14 @@ PR = "r0"
 PV = "1.1.1"
 
 DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native entservices-apis"
-DEPENDS += "  gst-svp-ext gstreamer1.0"
+DEPENDS += "  gst-svp-ext drm-ext gstreamer1.0"
 
 # Platform configurations
 DEPENDS += " ${platform-playready-depends}"
 EXTRA_OECMAKE += " ${platform-playready-flags}"
 RDEPENDS:${PN} += " ${platform-playready-rdepends}"
 
-RDEPENDS_${PN} += " gst-svp-ext"
+RDEPENDS:${PN} += " gst-svp-ext drm-ext"
 
 inherit cmake pkgconfig
 
@@ -26,7 +26,8 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/playready-rdk.git;${CMF_GITHUB_SRC_URI_SUFFIX};name=pr-source"
 # TAG version 1.1.1
-SRCREV = "ca4dee54c45c1ddbb21c280078e5ffa075d4b1ae"
+# drm-ext d05a0fdf7dd7629b7e4efc9fcec13826aa2c06e3
+SRCREV = "d05a0fdf7dd7629b7e4efc9fcec13826aa2c06e3"
 SRCREV_FORMAT = "pr-source pr-header"
 S = "${WORKDIR}/git"
 
@@ -43,8 +44,8 @@ EXTRA_OECMAKE += " -DCMAKE_SYSROOT=${STAGING_DIR_TARGET} "
 CFLAGS += " -fpermissive "
 CXXFLAGS += " -fpermissive "
 
-OECMAKE_C_FLAGS += " -I${STAGING_INCDIR}/gstreamer-1.0 -I${STAGING_INCDIR} -I${STAGING_INCDIR}/glib-2.0 -I${STAGING_DIR_TARGET}${libdir}/glib-2.0/include"
-CXXFLAGS += " -I${STAGING_INCDIR}/gstreamer-1.0 -I${STAGING_INCDIR} -I${STAGING_INCDIR}/glib-2.0 -I${STAGING_DIR_TARGET}${libdir}/glib-2.0/include"
+OECMAKE_C_FLAGS += " -I${STAGING_INCDIR}/gstreamer-1.0 -I${STAGING_INCDIR} -I${STAGING_INCDIR}/drm_platform -I${STAGING_INCDIR}/glib-2.0 -I${STAGING_DIR_TARGET}${libdir}/glib-2.0/include"
+CXXFLAGS += " -I${STAGING_INCDIR}/gstreamer-1.0 -I${STAGING_INCDIR} -I${STAGING_INCDIR}/glib-2.0 -I${STAGING_DIR_TARGET}${libdir}/glib-2.0/include -I${STAGING_INCDIR}/drm_platform"
 INHIBIT_PACKAGE_DEBUG_SPLIT = '1'
 
 FILES:${PN} += " \
