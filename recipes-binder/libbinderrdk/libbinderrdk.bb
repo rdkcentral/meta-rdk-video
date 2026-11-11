@@ -8,15 +8,13 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/linux_binder_idl;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-PV ?= "1.1.1"
-PR = "r0"
+#PR = "r0"
 #SRCREV_TAG = 1.0.0"
-SRCREV = "0f7a23b6b879f0a67d90c9b8b74ecba8dc0c5312"
-
+PV ?= "2.6.0"
+SRCREV ?= "2.6.0"
+S = "${WORKDIR}/git"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-
-S = "${WORKDIR}/git"
 
 #
 # Middleware package provides
@@ -36,6 +34,8 @@ EXTRA_OECMAKE += " \
     -DCMAKE_INSTALL_LIBDIR=${MW_LIBDIR} \
     -DCMAKE_INSTALL_BINDIR=${MW_BINDIR} \
     -DCMAKE_INSTALL_INCDIR=${MW_INCDIR} \
+    -DBUILD_HOST_AIDL=OFF \
+    -DBINDER_PROTOCOL=8 \
 "
 
 EXTRA_OECMAKE:append = " \
@@ -44,26 +44,10 @@ EXTRA_OECMAKE:append = " \
 	-DTARGET_LIB64_VERSION=ON \
 "
 
-
 # MW_LIBDIR is outside the default staged ${libdir}, so it must be staged explicitly
 SYSROOT_DIRS += "${prefix}/mw"
 
-inherit cmake
-
-#
-# Configure Android Binder sources
-#
-do_configure:prepend() {
-    cd ${S}
-
-    # Initialise Android Binder build environment
-    . ./setup-env.sh
-
-    # Clone Android Binder sources
-    clone_android_binder_repo
-
-    cd ${B}
-}
+inherit cmake siteinfo
 
 FILES:${PN} += " \
     ${MW_LIBDIR} \
@@ -71,11 +55,3 @@ FILES:${PN} += " \
     ${MW_BINDIR} \
     ${MW_BINDIR}/* \
 "
-
-#
-# QA
-#
-INSANE_SKIP:${PN}-dev += "dev-elf"
-INSANE_SKIP:${PN} += "dev-deps"
-
-FILES_SOLIBSDEV = ""
