@@ -14,16 +14,16 @@ DEPENDS += "opentelemetry-cpp"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r59"
+PR = "r58"
 PV = "4.4.8"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=development/revert_richerrorsupport;name=thunder \
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=development/json_revert;name=thunder \
            file://wpeframework-init \
            file://wpeframework.service.in \
            "
 
-SRCREV_thunder = "f2d07935413032eb3da3b24e9f6b628f8a8c7a2f"
+SRCREV_thunder = "7d9dca482c3dc44aa1cac273643ee21cb3c23ade"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
