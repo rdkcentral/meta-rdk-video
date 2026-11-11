@@ -1,16 +1,16 @@
 SUMMARY = "ENTServices AVOutput plugin"
 LICENSE = "CLOSED"
 
-PV = "2.2.1_Test"
-PR = "r3"
+PV = "2.2.1-hotfix-dsmgr-comrpc.1"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avoutput;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
-# Release version - 2.2.1
-SRCREV = "0e2ced463f9ae4d70607e5f184beb0d09f7f9f73"
+# Release version - 2.2.1-hotfix-dsmgr-comrpc.1
+SRCREV = "892655d22c7ce74637ba834942790a90bd49ba18"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
