@@ -21,7 +21,6 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=development/revert_richerrorsupport;name=thunder \
            file://wpeframework-init \
            file://wpeframework.service.in \
-           file://0001-opentelemetry-link-targets-available-in-otel-cpp-1.23.patch \
            "
 
 SRCREV_thunder = "f2d07935413032eb3da3b24e9f6b628f8a8c7a2f"
