@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 PV = "1.0.0"
 PR = "r0"
-SRCREV = "e5afdca5957bc4a31e1cb70779f5fb50a3e194ea"
+SRCREV = "bd43f57890aaf2607fa2376e738ddd29a885ad66"
 SRC_URI = "${CMF_GITHUB_ROOT}/eyil-secure-gateway;protocol=${CMF_GITHUB_PROTOCOL};branch=topic/RDKEMW-27976"
 
 S = "${WORKDIR}/git"
@@ -30,7 +30,6 @@ EXTRA_OECMAKE += " \
     -DBUILD_EYILCLIENT=ON \
     -DBUILD_TESTING=OFF \
     -DENABLE_COVERAGE=OFF \
-    -DPLUGIN_EYILGATEWAY_MODE=Off \
     -DPLUGIN_EYILGATEWAY_AUTOSTART=false \
     -DPLUGIN_EYILGATEWAY_CRYPTO_CALLSIGN=${EYILGATEWAY_CRYPTO_CALLSIGN} \
     -DPLUGIN_EYILGATEWAY_WORKERS=${EYILGATEWAY_WORKERS} \
@@ -63,15 +62,18 @@ EOF
 }
 
 PACKAGE_BEFORE_PN += "${PN}-tools ${PN}-client ${PN}-protocol"
-FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${sysconfdir}/WPEFramework/plugins/EyilGateway.json"
+FILES:${PN} += "${prefix}/lib/wpeframework/plugins/*.so ${sysconfdir}/WPEFramework/plugins/EyilGateway.json"
 FILES:${PN}-client = "${libdir}/libeyilclient.so.*"
 FILES:${PN}-protocol = "${libdir}/libeyilprotocol.so.*"
 FILES:${PN}-tools = "${bindir}/eyil-client ${libdir}/eyil \
-                    ${libdir}/wpeframework/plugins/libWPEFrameworkCryptoTestBackend.so \
+                    ${prefix}/lib/wpeframework/plugins/libWPEFrameworkCryptoTestBackend.so \
                     ${sysconfdir}/WPEFramework/plugins/CryptoTestBackend.json"
 # Consumer build metadata belongs to the SDK/development package, not runtime.
 FILES:${PN}-dev += "${includedir}/eyilclient/EyilClient.h \
-                    ${libdir}/cmake/EyilClient ${libdir}/pkgconfig/eyilclient.pc"
+                    ${includedir}/eyilprotocol ${datadir}/eyil/proto \
+                    ${libdir}/cmake/EyilClient ${libdir}/cmake/EyilProtocol \
+                    ${libdir}/pkgconfig/eyilclient.pc"
+RDEPENDS:${PN}-dev += "${PN}-client ${PN}-protocol protobuf-dev"
 RDEPENDS:${PN} += "wpeframework entservices-apis ${PN}-client"
 RDEPENDS:${PN}:append = "${@bb.utils.contains('PACKAGECONFIG', 'dev-tools', ' ${PN}-tools', '', d)}"
 RDEPENDS:${PN}-tools += "${PN}-client ${PN}-protocol"
