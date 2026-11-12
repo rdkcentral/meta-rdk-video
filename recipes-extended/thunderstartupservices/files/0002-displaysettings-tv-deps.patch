@@ -20,7 +20,6 @@ diff -uprN a/wpeframework-displaysettings.service b/wpeframework-displaysettings
  [Service]
  Type=oneshot
  RemainAfterExit=yes
-
 diff --git a/wpeframework-audiooutput.service b/wpeframework-audiooutput.service
 index 182a4b1..635ea6c 100644
 --- a/wpeframework-audiooutput.service
