@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 PV = "1.0.0"
 PR = "r0"
-SRCREV = "bd43f57890aaf2607fa2376e738ddd29a885ad66"
+SRCREV = "9046714db6f52a655025f100516258a41957eb5a"
 SRC_URI = "${CMF_GITHUB_ROOT}/eyil-secure-gateway;protocol=${CMF_GITHUB_PROTOCOL};branch=topic/RDKEMW-27976"
 
 S = "${WORKDIR}/git"
@@ -37,8 +37,6 @@ EXTRA_OECMAKE += " \
     -DEYIL_CRYPTO_INCLUDE_DIR=${STAGING_INCDIR}/WPEFramework \
     -DProtobuf_PROTOC_EXECUTABLE=${STAGING_BINDIR_NATIVE}/protoc \
     -DPython3_EXECUTABLE=${PYTHON} \
-    -DEYIL_DEV_SYSROOT=${RECIPE_SYSROOT} \
-    -DCMAKE_READELF=${READELF} \
 "
 
 # Fail the build against stock headers or a library lacking the draft monitor
@@ -65,7 +63,7 @@ PACKAGE_BEFORE_PN += "${PN}-tools ${PN}-client ${PN}-protocol"
 FILES:${PN} += "${prefix}/lib/wpeframework/plugins/*.so ${sysconfdir}/WPEFramework/plugins/EyilGateway.json"
 FILES:${PN}-client = "${libdir}/libeyilclient.so.*"
 FILES:${PN}-protocol = "${libdir}/libeyilprotocol.so.*"
-FILES:${PN}-tools = "${bindir}/eyil-client ${libdir}/eyil \
+FILES:${PN}-tools = "${bindir}/CryptoTestClient \
                     ${prefix}/lib/wpeframework/plugins/libWPEFrameworkCryptoTestBackend.so \
                     ${sysconfdir}/WPEFramework/plugins/CryptoTestBackend.json"
 # Consumer build metadata belongs to the SDK/development package, not runtime.
@@ -80,35 +78,3 @@ RDEPENDS:${PN}-tools += "${PN}-client ${PN}-protocol"
 INSANE_SKIP:${PN} += "dev-so"
 # Thunder plugin entry points are unversioned loadable modules.
 INSANE_SKIP:${PN}-tools += "dev-so"
-
-# Dependencies copied from the target sysroot may already be stripped by their
-# owning recipes. Exclude only those private, pre-stripped copies from another
-# debug split. Keep normal QA/stripping for Eyil's own libraries and executable.
-PACKAGE_PREPROCESS_FUNCS += "eyil_skip_stripped_bundle_libraries"
-python eyil_skip_stripped_bundle_libraries() {
-    import os
-    import oe.package
-
-    directory = d.expand('${PKGD}${libdir}/eyil')
-    if not os.path.isdir(directory):
-        return
-    for name in sorted(os.listdir(directory)):
-        if '.so' not in name or name.startswith(('libeyilclient.so', 'libeyilprotocol.so')):
-            continue
-        path = os.path.join(directory, name)
-        if not os.path.isfile(path) or os.path.islink(path):
-            continue
-        _, elf_type = oe.package.is_elf(path)
-        if elf_type & 1 and elf_type & 2:
-            d.appendVar('INHIBIT_PACKAGE_STRIP_FILES', ' ' + path)
-}
-
-# The container bundle contains private copies of its runtime dependencies.
-# They must not replace the rootfs libraries as shlib providers.
-python populate_packages:prepend() {
-    import os
-    directory = d.expand('${D}${libdir}/eyil')
-    if os.path.isdir(directory):
-        libraries = ' '.join(sorted(name for name in os.listdir(directory) if '.so' in name))
-        d.setVar('PRIVATE_LIBS:' + d.getVar('PN') + '-tools', libraries)
-}
