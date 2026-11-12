@@ -9,7 +9,7 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 # Includes optional Eyil socket mounts and the development-client mount.
-SRCREV = "587dceb79121010d4d05131441e1ca51e5834582"
+SRCREV = "bb58850243688342b050344e5fe780215962dd9a"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
