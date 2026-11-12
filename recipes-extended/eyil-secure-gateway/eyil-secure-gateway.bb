@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 PV = "1.0.0"
 PR = "r0"
-SRCREV = "4311278b537da72b1e7422135ef5e30dab281aa1"
+SRCREV = "e5afdca5957bc4a31e1cb70779f5fb50a3e194ea"
 SRC_URI = "${CMF_GITHUB_ROOT}/eyil-secure-gateway;protocol=${CMF_GITHUB_PROTOCOL};branch=topic/RDKEMW-27976"
 
 S = "${WORKDIR}/git"
@@ -20,7 +20,9 @@ DEPENDS = "wpeframework wpeframework-tools-native entservices-apis protobuf prot
 
 EYILGATEWAY_CRYPTO_CALLSIGN ?= ""
 EYILGATEWAY_WORKERS ?= "4"
-PACKAGECONFIG ??= "${@bb.utils.contains('DISTRO_FEATURES', 'debug-variant', 'dev-tools', '', d)}"
+# Enable the diagnostic client and CryptoTestBackend during integration.
+# Remove dev-tools from PACKAGECONFIG to disable both after integration.
+PACKAGECONFIG ??= "dev-tools"
 PACKAGECONFIG[dev-tools] = "-DBUILD_EYIL_DEV_TOOLS=ON,-DBUILD_EYIL_DEV_TOOLS=OFF"
 
 EXTRA_OECMAKE += " \
@@ -64,7 +66,9 @@ PACKAGE_BEFORE_PN += "${PN}-tools ${PN}-client ${PN}-protocol"
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${sysconfdir}/WPEFramework/plugins/EyilGateway.json"
 FILES:${PN}-client = "${libdir}/libeyilclient.so.*"
 FILES:${PN}-protocol = "${libdir}/libeyilprotocol.so.*"
-FILES:${PN}-tools = "${bindir}/eyil-client ${libdir}/eyil"
+FILES:${PN}-tools = "${bindir}/eyil-client ${libdir}/eyil \
+                    ${libdir}/wpeframework/plugins/libWPEFrameworkCryptoTestBackend.so \
+                    ${sysconfdir}/WPEFramework/plugins/CryptoTestBackend.json"
 # Consumer build metadata belongs to the SDK/development package, not runtime.
 FILES:${PN}-dev += "${includedir}/eyilclient/EyilClient.h \
                     ${libdir}/cmake/EyilClient ${libdir}/pkgconfig/eyilclient.pc"
@@ -72,6 +76,8 @@ RDEPENDS:${PN} += "wpeframework entservices-apis ${PN}-client"
 RDEPENDS:${PN}:append = "${@bb.utils.contains('PACKAGECONFIG', 'dev-tools', ' ${PN}-tools', '', d)}"
 RDEPENDS:${PN}-tools += "${PN}-client ${PN}-protocol"
 INSANE_SKIP:${PN} += "dev-so"
+# Thunder plugin entry points are unversioned loadable modules.
+INSANE_SKIP:${PN}-tools += "dev-so"
 
 # Dependencies copied from the target sysroot may already be stripped by their
 # owning recipes. Exclude only those private, pre-stripped copies from another
