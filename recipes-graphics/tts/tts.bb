@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://${THISDIR}/files/Apache-2.0;md5=3b83ef96387f14655fc85
 
 DEPENDS += "gstreamer1.0-plugins-base rdk-logger wpeframework wpeframework-clientlibraries"
 
-SRCREV = "039ba2dc3b877819d979bf977eb80462104db3c0"
+SRCREV = "1e5437d95e67b2f5780a865eb3f4a35e41cfaba9"
 
 PV = "1.0.6"
 PR = "r0"

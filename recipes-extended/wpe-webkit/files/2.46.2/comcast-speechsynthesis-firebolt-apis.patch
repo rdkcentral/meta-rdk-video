@@ -1,5 +1,5 @@
 diff --git a/Source/WebCore/platform/ttsclient/PlatformSpeechSynthesizerTTSClient.cpp b/Source/WebCore/platform/ttsclient/PlatformSpeechSynthesizerTTSClient.cpp
-index e4e2f229f2ca..0e37118cbb43 100644
+index e4e2f229f2ca..839065234ffd 100644
 --- a/Source/WebCore/platform/ttsclient/PlatformSpeechSynthesizerTTSClient.cpp
 +++ b/Source/WebCore/platform/ttsclient/PlatformSpeechSynthesizerTTSClient.cpp
 @@ -36,6 +36,7 @@
@@ -30,13 +30,12 @@ index e4e2f229f2ca..0e37118cbb43 100644
 -                    String::fromUTF8(v),
 -                    String::fromUTF8(v),
 -                    String::fromUTF8((err == TTS::TTS_OK) ? config.language.c_str() : "en-US"),
--                    true,
++                    String::fromUTF8(voice.name.c_str()),
++                    String::fromUTF8(voice.name.c_str()),
++                    String::fromUTF8(voice.lang.c_str()),
+                     true,
 -                    true));
-+                String::fromUTF8(voice.name.c_str()),
-+                String::fromUTF8(voice.name.c_str()),
-+                String::fromUTF8(voice.lang.c_str()),
-+                true,
-+                voice._default));
++                    voice._default));
              }
 -
 -            m_TTSVolume = config.volume;
@@ -66,30 +65,32 @@ index e4e2f229f2ca..0e37118cbb43 100644
          static uint32_t s_speechId = 0;
          uint32_t speechId = ++s_speechId;
          m_currentUtteranceSpeechId = 0;
-@@ -160,13 +139,17 @@ public:
+@@ -160,6 +139,13 @@ public:
          TTS::SpeechData sdata;
          sdata.text = utterance->text().utf8().data();
          sdata.id = speechId;
-+        printf("kykumar webkit speak data text %s id %d vol %f rate %f lang %s pitch %f voice %s\n",
-+               sdata.text.c_str(), sdata.id, sdata.volume, sdata.rate, sdata.lang.c_str(), sdata.pitch, sdata.voice.c_str());
++        sdata.volume = utterance->volume();
++        sdata.rate = utterance->rate();
++        sdata.pitch = utterance->pitch();
++        if (utterance->voice()) {
++            sdata.voice = utterance->voice()->name().utf8().data();
++            sdata.lang = utterance->voice()->lang().utf8().data();
++        }
          TTS::TTS_Error err = m_ttsClient->speak(m_ttsSessionId, sdata);
          if (err != TTS::TTS_OK) {
-+            printf("kykumar webkitspeak failed with error %d\n", err);
              if (err == TTS::TTS_RESOURCE_BUSY || err == TTS::TTS_SESSION_NOT_ACTIVE)
-                 notifyClient(utterance, SpeechSynthesisErrorCode::AudioBusy);
-             else
-                 notifyClient(utterance, SpeechSynthesisErrorCode::SynthesisFailed);
-         } else {
-+            printf("kykumar webkit speak passed %d\n", speechId);
-             m_currentUtteranceSpeechId = speechId;
-             m_utterancesInProgress.set(m_currentUtteranceSpeechId, utterance);
-             m_currentUtterance = utterance;
-@@ -257,7 +240,7 @@ public:
-             speakingFinished(m_currentUtteranceSpeechId, SpeechSynthesisErrorCode::Interrupted);
-     }
+@@ -373,14 +359,8 @@ private:
+     uint32_t m_ttsSessionId;
+     bool m_ttsConnected;
+     uint32_t m_currentUtteranceSpeechId;
+-
+-    static double m_TTSVolume;
+-    static double m_TTSRate;
+ };
  
--    void onTTSStateChanged(bool) {}
-+    void onTTSStateChanged(bool) {printf("kykumar ontts changed\n");}
+-double TTSClientPlatformSpeechSynthesizerWrapper::m_TTSVolume = 0.0;
+-double TTSClientPlatformSpeechSynthesizerWrapper::m_TTSRate = 0.0;
+-
+ // PlatformSpeechSynthesizer (Thin Wrapper Delegating to m_platformSpeechWrapper)
  
-     void onVoiceChanged(std::string)
-     {
+ WEBCORE_EXPORT Ref<PlatformSpeechSynthesizer> PlatformSpeechSynthesizer::create(PlatformSpeechSynthesizerClient& client)
