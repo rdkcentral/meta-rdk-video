@@ -8,12 +8,13 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=85bcfede74b96d9a58c6ea5d4b607e58"
 DEPENDS = "zlib wpeframework-tools-native rfc"
 DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
+DEPENDS += "opentelemetry-cpp"
 
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r57"
-PV = "4.4.7"
+PR = "r58"
+PV = "4.4.8"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder \
@@ -21,7 +22,7 @@ SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RD
            file://wpeframework.service.in \
            "
 
-SRCREV_thunder = "7c33637bdfd36109ffb556da4e9b58d1443ebd69"
+SRCREV_thunder = "6d32f5081e761d3396d0aa933b25c15929277f06"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
@@ -74,6 +75,8 @@ PACKAGECONFIG[websocket]       = "-DWEBSOCKET=ON,,"
 
 PACKAGECONFIG[com] = "-DCOM=ON,,,"
 
+
+PACKAGECONFIG[slim_warning_reporting] = "-DSLIM_WARNING_REPORTING=ON,-DSLIM_WARNING_REPORTING=OFF,"
 PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES', \
     'debug-variant', ' configoverride', '', d)}"
 
@@ -114,11 +117,28 @@ EXTRA_OECMAKE += " \
     -DEXIT_REASONS=${WPEFRAMEWORK_EXIT_REASONS} \
     -DMESSAGING=ON \
     -DFLUSH_LOGS=ON \
+    -DW3C_TRACE_CONTEXT_ENABLED=ON \
+    -DWPEFRAMEWORK_OPENTELEMETRY=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
     -DAUTHORIZEDEXTENSIONS='MessagingControl;PluginInitializerService;Systemd' \
     -DDISABLEPLUGINAUTOACTIVATION=true \
 "
+
+EXTRA_OECMAKE += " \
+    -DWARNING_REPORTING_INVOKE_RPC_REPORT_BOUND=250 \
+    -DWARNING_REPORTING_INVOKE_RPC_WARNING_BOUND=750 \
+    -DWARNING_REPORTING_INVOKE_MESSAGE_REPORT_BOUND=500 \
+    -DWARNING_REPORTING_INVOKE_MESSAGE_WARNING_BOUND=500 \
+    -DWARNING_REPORTING_WORKERPOOL_FINISH_REPORT_BOUND=5000 \
+    -DWARNING_REPORTING_WORKERPOOL_FINISH_WARNING_BOUND=7500 \
+    -DWARNING_REPORTING_WORKERPOOL_QUEUE_REPORT_BOUND=200 \
+    -DWARNING_REPORTING_WORKERPOOL_QUEUE_WARNING_BOUND=400 \
+    -DWARNING_REPORTING_WORKERPOOL_ACTIVE_REPORT_BOUND=15000 \
+    -DWARNING_REPORTING_WORKERPOOL_ACTIVE_WARNING_BOUND=20000 \
+    -DWARNING_REPORTING_PLUGIN_STATE_REPORT_BOUND=5000 \
+    -DWARNING_REPORTING_PLUGIN_STATE_WARNING_BOUND=5000 \
+    "
 
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
 
