@@ -44,8 +44,8 @@ EXTRA_OECMAKE += " -DCMAKE_SYSROOT=${STAGING_DIR_TARGET} "
 CFLAGS += " -fpermissive "
 CXXFLAGS += " -fpermissive "
 
-OECMAKE_C_FLAGS += " -I${STAGING_INCDIR}/gstreamer-1.0 -I${STAGING_INCDIR} -I${STAGING_INCDIR}/drm_platform -I${STAGING_INCDIR}/glib-2.0 -I${STAGING_DIR_TARGET}${libdir}/glib-2.0/include"
-CXXFLAGS += " -I${STAGING_INCDIR}/gstreamer-1.0 -I${STAGING_INCDIR} -I${STAGING_INCDIR}/glib-2.0 -I${STAGING_DIR_TARGET}${libdir}/glib-2.0/include -I${STAGING_INCDIR}/drm_platform"
+OECMAKE_C_FLAGS += " -I${STAGING_INCDIR}/gstreamer-1.0 -I${STAGING_INCDIR} -I${STAGING_INCDIR}/glib-2.0 -I${STAGING_DIR_TARGET}${libdir}/glib-2.0/include"
+CXXFLAGS += " -I${STAGING_INCDIR}/gstreamer-1.0 -I${STAGING_INCDIR} -I${STAGING_INCDIR}/glib-2.0 -I${STAGING_DIR_TARGET}${libdir}/glib-2.0/include"
 INHIBIT_PACKAGE_DEBUG_SPLIT = '1'
 
 FILES:${PN} += " \
