@@ -6,7 +6,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
-WPE_RECIPE_REVISION = "9"
+WPE_RECIPE_REVISION = "10"
 
 PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
@@ -72,6 +72,7 @@ SRC_URI += "file://2.46.2/0001-additional-redering-debug.patch"
 SRC_URI += "file://2.46.2/0001-debug-renderbuffers.patch"
 SRC_URI += "file://2.46.2/0001-renderbuffer.patch"
 SRC_URI += "file://2.46.2/0001-renderbuffer-latest.patch"
+SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"
