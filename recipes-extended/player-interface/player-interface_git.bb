@@ -48,8 +48,9 @@ EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'wpe_security_util_dis
 
 EXTRA_OECMAKE += " -DCMAKE_WPEFRAMEWORK_REQUIRED=1"
 
-EXTRA_OECMAKE += " -DCMAKE_TELEMETRY_2_0_REQUIRED=1"
-DEPENDS += " telemetry"
+# T2 markers are opt-in: in containerised players (e.g. VIPA) the T2 bus is unreachable and t2_event_s() blocks
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'player_interface_telemetry', ' -DCMAKE_TELEMETRY_2_0_REQUIRED=1', '', d)}"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'player_interface_telemetry', ' telemetry', '', d)}"
 
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'sec_manager', ' -DCMAKE_USE_SECMANAGER=1 ', '', d)}"
 
