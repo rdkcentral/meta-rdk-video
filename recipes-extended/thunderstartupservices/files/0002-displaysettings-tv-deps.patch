@@ -14,7 +14,8 @@ diff -uprN a/wpeframework-displaysettings.service b/wpeframework-displaysettings
  Description=WPEFramework DisplaySettings Initialiser
 -Requires=dsmgr.service wpeframework-powermanager.service
 -After=dsmgr.service wpeframework-powermanager.service
-+Requires=dsmgr.service pqserver.service wpeframework-hdmicecsink.service wpeframework-powermanager.service
++Requires=dsmgr.service wpeframework-hdmicecsink.service wpeframework-powermanager.service
++Wants=pqserver.service
 +After=dsmgr.service pqserver.service wpeframework-hdmicecsink.service wpeframework-powermanager.service
  [Service]
  Type=oneshot
