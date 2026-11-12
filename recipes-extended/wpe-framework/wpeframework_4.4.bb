@@ -23,7 +23,7 @@ SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=develop
            file://wpeframework.service.in \
            "
 
-SRCREV_thunder = "165eca56a396917a93ccc192c47dc1e50539c42c"
+SRCREV_thunder = "c01fb4ed4fa70f7e5bc043a7297539ab6c703dcc"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
