@@ -10,7 +10,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "7c15385f164b1cc3c220bacc5ac84390e176668c"
+SRCREV = "4c884c8dda88b20b1eca16b45b4d28b22d9c415a"
 SRC_URI = "${CMF_GITHUB_ROOT}/thunder-startup-services;${CMF_GITHUB_SRC_URI_SUFFIX};name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -73,7 +73,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     "
 
 # Install these services, but allow activation failure without failing the target.
-# RuntimeManager also orders and requests Eyil through After/Wants.
+# Eyil starts with Thunder independently of the selected application manager.
 THUNDER_OPTIONAL_STARTUP_SERVICES ?= "wpeframework-eyilgateway.service"
 
 CONTROL_FILES = "\
