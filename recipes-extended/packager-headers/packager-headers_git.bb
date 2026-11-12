@@ -3,11 +3,11 @@ SUMMARY = "Package Headers"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-PV = "1.7.0"
+PV = "1.8.0-rc.1"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV = "f1931a97674888b0f333657b18a596fd879b9a72"
+SRCREV = "23cdf4b159d6c07213c3cac9dd743b6afd18b74b"
 SRC_URI = "${CMF_GITHUB_ROOT}/eshelpers;${CMF_GITHUB_SRC_URI_SUFFIX};name=eshelpers"
 
 S = "${WORKDIR}/git"
