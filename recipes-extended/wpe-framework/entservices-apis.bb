@@ -4,7 +4,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
 PV = "4.3.5"
 PR = "r0"
 #Note reverted opencdm wrong commit
-SRCREV_entservices-apis = "d767bee1e9482b066814aa280310ccd5ccee6253"
+SRCREV_entservices-apis = "deb8c6ec44d1f9ee55e7df509f1c2aef34ce4955"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
