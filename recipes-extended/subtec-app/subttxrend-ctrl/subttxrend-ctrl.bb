@@ -15,7 +15,7 @@ DEPENDS += " subttxrend-ttml subttxrend-scte subttxrend-cc subttxrend-webvtt"
 
 DEPENDS:append = " virtual/egl "
 
-SRCREV = "e451737d2abc70401f037b492fc192230896fd87"
+SRCREV = "b9c695e0312e3b0ed2c7af79e23d573924db3c0b"
 SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-ctrl"
 
