@@ -3,12 +3,13 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
 PV = "1.0.3"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-backupmanager;${CMF_GITHUB_SRC_URI_SUFFIX}"
+SRC_URI += "file://0001-RDKEMW-27601-Remove-FindWPEFrameworkHelpers.cmake-4.patch"
           
 # Release version - 1.0.3
 SRCREV = "ec4e633cf9a84a67c4c5c2fba0918654f32bd74b"

@@ -1,0 +1,96 @@
+From 3002e59c64fdf4c0da81ec0fb8ddb9ab93534314 Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Fri, 23 Oct 2026 15:02:12 +0300
+Subject: [PATCH] RDKEMW-27601 : Remove FindWPEFrameworkHelpers.cmake
+
+Reason for change: entservices-helpers package installs cmake config
+that other packages should use.
+For some reason, every entservices repo also contains a redundant hand-written
+cmake/FindWPEFrameworkHelpers.cmake that introduces custom logic. This makes
+impossible to use WPEFrameworkHelpers as INTERFACE library (no .so).
+Delete cmake/FindWPEFrameworkHelpers.cmake from entservices repos
+and use CONFIG mode instead.
+Test Procedure: None
+Risks: Low
+version: Patch
+---
+ cmake/FindWPEFrameworkHelpers.cmake | 53 -----------------------------
+ plugin/CMakeLists.txt               |  2 +-
+ 2 files changed, 1 insertion(+), 54 deletions(-)
+ delete mode 100644 cmake/FindWPEFrameworkHelpers.cmake
+
+diff --git a/cmake/FindWPEFrameworkHelpers.cmake b/cmake/FindWPEFrameworkHelpers.cmake
+deleted file mode 100644
+index 4fea046..0000000
+--- a/cmake/FindWPEFrameworkHelpers.cmake
++++ /dev/null
+@@ -1,53 +0,0 @@
+-# If not stated otherwise in this file or this component's license file the
+-# following copyright and licenses apply:
+-#
+-# Copyright 2024 RDK Management
+-#
+-# Licensed under the Apache License, Version 2.0 (the "License");
+-# you may not use this file except in compliance with the License.
+-# You may obtain a copy of the License at
+-#
+-# http://www.apache.org/licenses/LICENSE-2.0
+-#
+-# Unless required by applicable law or agreed to in writing, software
+-# distributed under the License is distributed on an "AS IS" BASIS,
+-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-# See the License for the specific language governing permissions and
+-# limitations under the License.
+-
+-# - Try to find WPEFrameworkHelpers
+-# Once done this will define
+-#  WPEFrameworkHelpers_FOUND        - System has WPEFrameworkHelpers
+-#  WPEFrameworkHelpers_INCLUDE_DIRS - The WPEFrameworkHelpers include directories
+-#  WPEFrameworkHelpers_LIBRARIES    - The libraries needed to use WPEFrameworkHelpers
+-#
+-# Also creates an imported target:
+-#  WPEFramework::WPEFrameworkHelpers
+-
+-find_library(WPEFrameworkHelpers_LIBRARIES
+-    NAMES WPEFrameworkHelpers
+-    PATH_SUFFIXES wpeframework/plugins)
+-
+-find_path(WPEFrameworkHelpers_INCLUDE_DIRS
+-    NAMES UtilsLogging.h
+-    PATH_SUFFIXES wpeframework/helpers)
+-
+-set(WPEFrameworkHelpers_LIBRARIES    ${WPEFrameworkHelpers_LIBRARIES}    CACHE PATH "Path to WPEFrameworkHelpers library")
+-set(WPEFrameworkHelpers_INCLUDE_DIRS ${WPEFrameworkHelpers_INCLUDE_DIRS} CACHE PATH "Path to WPEFrameworkHelpers includes")
+-
+-include(FindPackageHandleStandardArgs)
+-FIND_PACKAGE_HANDLE_STANDARD_ARGS(WPEFrameworkHelpers DEFAULT_MSG
+-    WPEFrameworkHelpers_INCLUDE_DIRS
+-    WPEFrameworkHelpers_LIBRARIES)
+-
+-if(WPEFrameworkHelpers_FOUND AND NOT TARGET WPEFramework::WPEFrameworkHelpers)
+-    add_library(WPEFramework::WPEFrameworkHelpers SHARED IMPORTED)
+-    set_target_properties(WPEFramework::WPEFrameworkHelpers PROPERTIES
+-        IMPORTED_LOCATION             "${WPEFrameworkHelpers_LIBRARIES}"
+-        INTERFACE_INCLUDE_DIRECTORIES "${WPEFrameworkHelpers_INCLUDE_DIRS}")
+-endif()
+-
+-mark_as_advanced(
+-    WPEFrameworkHelpers_FOUND
+-    WPEFrameworkHelpers_INCLUDE_DIRS
+-    WPEFrameworkHelpers_LIBRARIES)
+diff --git a/plugin/CMakeLists.txt b/plugin/CMakeLists.txt
+index ee7682a..8376194 100644
+--- a/plugin/CMakeLists.txt
++++ b/plugin/CMakeLists.txt
+@@ -27,7 +27,7 @@ set(PLUGIN_DEVICEINFO_STARTUPORDER "" CACHE STRING "Start-up order for DeviceInf
+ find_package(${NAMESPACE}Plugins REQUIRED)
+ find_package(${NAMESPACE}Definitions REQUIRED)
+ find_package(CompileSettingsDebug CONFIG REQUIRED)
+-find_package(${NAMESPACE}Helpers REQUIRED)
++find_package(${NAMESPACE}Helpers CONFIG REQUIRED)
+ find_package(RFC)
+ find_package(DS)
+ find_package(IARMBus)
+-- 
+2.32.0 (Apple Git-132)
+

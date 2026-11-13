@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 PV = "1.3.1"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -11,6 +11,7 @@ inherit cmake pkgconfig
 SRCREV = "64b6e99ef12722852e6652f7384147b7383a0934"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usbdevice;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
+           file://0001-RDKEMW-27601-Remove-FindWPEFrameworkHelpers.cmake-23.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

@@ -3,7 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2b42edef8fa55315f34f2370b4715ca9"
 
 PV = "1.2.5"
-PR = "r0"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -11,6 +11,7 @@ inherit cmake pkgconfig
 SRCREV = "${PV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usersettings;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
+           file://0001-RDKEMW-27601-Remove-FindWPEFrameworkHelpers.cmake-10.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
