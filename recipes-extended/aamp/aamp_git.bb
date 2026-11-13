@@ -7,7 +7,7 @@ PV = "3.9.0.3_VIPA"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "4b8436c08a63a7e7501c859da95a651aad77e43e"
+SRCREV_aamp ?= "5d15d26c3cc0af8fd74157a43d9193a232dfd6f7"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "support/3.9.0_vipa"
