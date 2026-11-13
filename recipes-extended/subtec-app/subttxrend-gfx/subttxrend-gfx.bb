@@ -4,25 +4,22 @@
 ## Licensed under the MIT License
 ##
 LICENSE = "Apache-2.0 & MIT & BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://../LICENSE;md5=626bbc2ac7625da5b97fcb8a24bd88b3"
-PV = "1.12.0"
+
+require recipes-extended/subtec-app/subtec-repo.inc
 PR = "r0"
-DEPENDS = "glib-2.0 subttxrend-common wayland wayland-protocols wayland-native freetype fontconfig libxkbcommon harfbuzz libpng"
-DEPENDS:append = " virtual/egl "
-
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-
-SRCREV = "9f12692ccca00f024109c46cbd1cc525df040c16"
-SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/subttxrend-gfx"
+
+DEPENDS = "glib-2.0 subttxrend-common wayland wayland-protocols wayland-native freetype fontconfig libxkbcommon harfbuzz libpng"
+DEPENDS += "virtual/egl westeros-simpleshell"
+
+RDEPENDS:${PN} += "wayland cpc-fonts"
+
 #
 # pkgconfig         - pkgconfig used in cmake (adds dependency)
 # cmake             - cmake build system used
 #
 
 inherit pkgconfig cmake coverity
-
-RDEPENDS:subttxrend-gfx += "wayland cpc-fonts "
 
 EXTRA_OECMAKE += "-DWITH_OPENGL=1"
 EXTRA_OECMAKE += "-DWITH_WESTEROS=1"
@@ -31,6 +28,4 @@ EXTRA_OECMAKE:append = " -DBUILD_RDK_REFERENCE=1"
 CXXFLAGS:append:kirkstone = " -fpermissive"
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'upstream_wayland_egl', ' -DUSE_UPSTREAM_WAYLAND', '', d)}"
 
-DEPENDS += " westeros-simpleshell"
-
-INSANE_SKIP:subttxrend-gfx := "file-rdeps"
+# INSANE_SKIP:subttxrend-gfx := "file-rdeps"
