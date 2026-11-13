@@ -16,7 +16,8 @@ DEPENDS += " ${platform-playready-depends}"
 EXTRA_OECMAKE += " ${platform-playready-flags}"
 RDEPENDS:${PN} += " ${platform-playready-rdepends}"
 
-RDEPENDS:${PN} += " gst-svp-ext drm-ext"
+RDEPENDS:${PN} += " gst-svp-ext"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'use_ocdm_drm_ext', 'drm-ext', '', d)}"
 
 inherit cmake pkgconfig
 
@@ -26,7 +27,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/playready-rdk.git;${CMF_GITHUB_SRC_URI_SUFFIX};name=pr-source"
 # TAG version 1.1.1
-# drm-ext d05a0fdf7dd7629b7e4efc9fcec13826aa2c06e3
+# d05a0fdf7dd7629b7e4efc9fcec13826aa2c06e3
 SRCREV = "d05a0fdf7dd7629b7e4efc9fcec13826aa2c06e3"
 SRCREV_FORMAT = "pr-source pr-header"
 S = "${WORKDIR}/git"

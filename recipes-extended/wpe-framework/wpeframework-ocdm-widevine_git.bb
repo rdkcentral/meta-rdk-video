@@ -9,7 +9,7 @@ PV = "1.2.0"
 
 SRC_URI = "git://github.com/rdkcentral/widevine-rdk.git;${CMF_GITHUB_SRC_URI_SUFFIX}"
 # TAG version 1.2.0
-# drm-ext 6c975a38fc13252e797e45336b3e989f010b83bc
+# 6c975a38fc13252e797e45336b3e989f010b83bc
 SRCREV = "6c975a38fc13252e797e45336b3e989f010b83bc"
 
 # Platform configurations
@@ -20,7 +20,8 @@ RDEPENDS:${PN} += " ${platform-widevine-rdepends}"
 DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native entservices-apis"
 DEPENDS += "  gst-svp-ext drm-ext gstreamer1.0"
 
-RDEPENDS:${PN} += " gst-svp-ext drm-ext"
+RDEPENDS:${PN} += " gst-svp-ext"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'use_ocdm_drm_ext', 'drm-ext', '', d)}"
 
 EXTRA_OECMAKE += " ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', ' -DCMAKE_SYSTEMD_JOURNAL=1', '', d)}"
 EXTRA_OECMAKE += " -DCMAKE_SYSROOT=${STAGING_DIR_TARGET}"

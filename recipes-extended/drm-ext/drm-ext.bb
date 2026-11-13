@@ -5,6 +5,9 @@ LICENSE = "Apache-2.0"
 
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
+inherit features_check
+REQUIRED_DISTRO_FEATURES = "use_ocdm_drm_ext"
+
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRCREV_FORMAT = "drm-ext"
