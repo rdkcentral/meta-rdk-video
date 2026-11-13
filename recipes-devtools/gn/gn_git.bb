@@ -3,7 +3,7 @@ HOMEPAGE = "https://gn.googlesource.com/gn"
 LICENSE = "BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=0fca02217a5d49a14dfe2d11837bb34d"
 
-inherit python3native native
+inherit python3native
 
 DEPENDS = "ninja-native"
 
@@ -27,3 +27,5 @@ do_install() {
 }
 
 INSANE_SKIP:${PN} += "already-stripped"
+
+BBCLASSEXTEND = "native nativesdk"

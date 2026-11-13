@@ -21,6 +21,7 @@ DEPENDS += "wpeframework entservices-apis ralf-utils telemetry"
 CXXFLAGS += " -I${STAGING_DIR_TARGET}${includedir}/wdmp-c/ "
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "
 EXTRA_OECMAKE += " -DSCENESET_TELEMETRY_METRICS_SUPPORT=ON"
+EXTRA_OECMAKE += " -DENABLE_FIRMWARE_CHANGE_DETECTION=ON"
 
 RDEPENDS:${PN} += " ralf-utils"
 
@@ -34,7 +35,8 @@ SYSLOG-NG_DESTINATION_sceneset = "sceneset.log"
 SYSLOG-NG_LOGRATE_sceneset = "high"
 
 SRCREV = "69f43e6614933c1c7dd02467a31bde064f54ba1e"
-SRC_URI = "${CMF_GITHUB_ROOT}/sceneset;${CMF_GITHUB_SRC_URI_SUFFIX};name=sceneset"
+SRC_URI = "${CMF_GITHUB_ROOT}/sceneset;${CMF_GITHUB_SRC_URI_SUFFIX};name=sceneset \
+           file://10-appgateway-dependency.conf"
 SRCREV_FORMAT = "sceneset"
 
 S = "${WORKDIR}/git"
@@ -42,9 +44,16 @@ S = "${WORKDIR}/git"
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${S}/systemd/sceneset.service ${D}${systemd_unitdir}/system/sceneset.service
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'appgateway_sceneset', 'true', 'false', d)}; then
+        install -d ${D}${systemd_unitdir}/system/sceneset.service.d
+        install -m 0644 ${WORKDIR}/10-appgateway-dependency.conf \
+            ${D}${systemd_unitdir}/system/sceneset.service.d/10-appgateway-dependency.conf
+    fi
 }
 
 FILES:${PN} += "${bindir}/*"
 FILES:${PN} += "${systemd_unitdir}/system/*"
+FILES:${PN} += "${systemd_unitdir}/system/sceneset.service.d/*"
 
 SYSTEMD_SERVICE:${PN} = "sceneset.service"
+
