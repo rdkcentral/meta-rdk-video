@@ -17,12 +17,12 @@ PR = "r58"
 PV = "4.4.8"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=Release/448;name=thunder \
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=development/Thunder448_5;name=thunder \
            file://wpeframework-init \
            file://wpeframework.service.in \
            "
 
-SRCREV_thunder = "df7658415b2e29b3d0995fe77482454e12650620"
+SRCREV_thunder = "6170d6f30a4750da2ca2164d320ba5d44b6066df"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
@@ -78,6 +78,7 @@ PACKAGECONFIG[com] = "-DCOM=ON,,,"
 PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES', \
     'debug-variant', ' configoverride', '', d)}"
 
+PACKAGECONFIG[slim_warning_reporting] = "-DSLIM_WARNING_REPORTING=ON,-DSLIM_WARNING_REPORTING=OFF,"
 PACKAGECONFIG[configoverride] = \
     "-DENABLE_CONFIG_OVERRIDE=ON,-DENABLE_CONFIG_OVERRIDE=OFF"
 
