@@ -1,5 +1,5 @@
 [Unit]
-Description=wpeframework-Thunder RPC version-R4.4.3
+Description=@THUNDER_SERVICE_NAME@ RPC
 Wants= local-fs.target
 After= local-fs.target securemount.service
 RequiresMountsFor=/opt/secure
@@ -21,8 +21,8 @@ Environment="CDLFILE=$(cat /opt/cdl_flashed_file_name)"
 Environment="PREV_CDLFILE=$(cat /opt/previous_flashed_file_name)"
 ExecStartPre=/bin/sh -c 'if [[ ${CDLFILE} != *"${PREV_CDLFILE}"* ]]; then echo "Removing override.json/override_V2.json on bootup after CDL"; rm -rf /opt/persistent/rdkservices/PluginHost/override*.json; fi'
 ExecStartPre=-/usr/bin/rdkLogMileStone WPE_FRAMEWORK_START
-SyslogIdentifier=WPEFramework
-ExecStart=/usr/bin/WPEFramework -b
+SyslogIdentifier=@THUNDER_SYSLOG_ID@
+ExecStart=@THUNDER_SERVICE_EXEC@
 # Manually adding PID file support. This is used by Thunder clients to know if
 # Thunder aka WPEFramework process is restarted. Please note if PIDFile name is changed
 # it will need corresponding code change in ThunderClientLibraries (power_controller) too.

@@ -33,6 +33,8 @@ PACKAGECONFIG[websocket]                    = "-DWEBSOCKET=ON,,"
 PACKAGECONFIG[warningreporting]             = "-DWARNING_REPORTING=ON,-DWARNING_REPORTING=OFF,"
 PACKAGECONFIG[profiler]                     = "-DPROFILER=ON,-DPROFILER=OFF,"
 PACKAGECONFIG[securesocket]                 = "-DSECURE_SOCKET=ON,-DSECURE_SOCKET=OFF,openssl"
+PACKAGECONFIG[initv-script]                 = "-DINITV_SCRIPT=ON,-DINITV_SCRIPT=OFF,"
+PACKAGECONFIG[systemd-service]              = "-DSYSTEMD_SERVICE=ON,-DSYSTEMD_SERVICE=OFF,"
 
 # Build class specific variables
 THUNDER_PERSISTENT_PATH ?= "/tmp/rdkservices"
@@ -62,10 +64,13 @@ EXTRA_OECMAKE += " \
     -DMESSAGING=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
     -DPOSTMORTEM_PATH=/opt/secure/minidumps \
-    -DSYSTEMD_SERVICE=ON \
 "
 
-SYSTEMD_SERVICE:${PN} = "thunder.service"
+PACKAGECONFIG:remove = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'systemd-service', '', d)}"
+
+RDEPENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'thunder-systemd-unit', '', d)}"
+
+SYSTEMD_SERVICE:${PN} = "${@bb.utils.contains('PACKAGECONFIG', 'systemd-service', 'thunder.service', '', d)}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -84,7 +89,7 @@ FILES:${PN} += " \
 # ${systemd_unitdir}, because that's where upstream's CMake installs it.
 # systemd.bbclass's automatic FILES handling targets ${systemd_unitdir},
 # so this needs an explicit FILES entry or the unit ends up unpackaged.
-FILES:${PN} += "${sysconfdir}/systemd/system/thunder.service"
+FILES:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'systemd-service', '${sysconfdir}/systemd/system/thunder.service', '', d)}"
 
 # ----------------------------------------------------------------------------
 
@@ -95,13 +100,18 @@ INSANE_SKIP:${PN}-dbg += "dev-so"
 
 inherit breakpad-logmapper syslog-ng-config-gen logrotate_config
 
+# Keep the legacy log name: sysint (logfiles.sh), the syslog-ng AppArmor
+# profile, RRD and gen-rmgr still use wpeframework.log. Rename together later.
+# The daemon runs as wpeframework.service (shipped by thunder-systemd-unit);
+# thunder.service is only installed with the systemd-service PACKAGECONFIG.
+
 SYSLOG-NG_FILTER = "thunder"
-SYSLOG-NG_SERVICE_thunder = "thunder.service"
-SYSLOG-NG_DESTINATION_thunder = "thunder.log"
+SYSLOG-NG_SERVICE_thunder = "${@bb.utils.contains('PACKAGECONFIG', 'systemd-service', 'thunder.service', 'wpeframework.service', d)}"
+SYSLOG-NG_DESTINATION_thunder = "wpeframework.log"
 SYSLOG-NG_LOGRATE_thunder = "high"
 
 LOGROTATE_NAME="thunder"
-LOGROTATE_LOGNAME_thunder="thunder.log"
+LOGROTATE_LOGNAME_thunder="wpeframework.log"
 LOGROTATE_SIZE_thunder="1572864"
 LOGROTATE_ROTATION_thunder="5"
 LOGROTATE_SIZE_MEM_thunder="1572864"
@@ -109,4 +119,4 @@ LOGROTATE_ROTATION_MEM_thunder="5"
 
 # Breakpad processname and logfile mapping
 BREAKPAD_LOGMAPPER_PROCLIST = "Thunder,WorkerPool::Thr,Monitor::IResou,ThunderPlugin"
-BREAKPAD_LOGMAPPER_LOGLIST = "thunder.log"
+BREAKPAD_LOGMAPPER_LOGLIST = "wpeframework.log"
