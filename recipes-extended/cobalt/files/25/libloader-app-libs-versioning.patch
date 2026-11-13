@@ -1,0 +1,13 @@
+diff --git a/starboard/rdk/launcher.py b/starboard/rdk/launcher.py
+index 789953500f7..3e1c8cb4b06 100644
+--- a/starboard/rdk/launcher.py
++++ b/starboard/rdk/launcher.py
+@@ -205,7 +205,7 @@ class Launcher(abstract_launcher.AbstractLauncher):
+                     'RDKSHELL_KEYMAP_FILE=/etc/rdkshell_keymapping.json '
+                     'ESSOS_NO_EVENT_LOOP_THROTTLE=1 '
+                     'AVPK_SKIP_HDMI_VALIDATION=1 '
+-                    'LD_PRELOAD=/usr/lib/libwesteros_gl.so.0.0.0 '
++                    'LD_PRELOAD=/usr/lib/libwesteros_gl.so '
+                     'XDG_RUNTIME_DIR=/run ')
+     self.test_command = (f'({test_environ} {test_base_command}) {test_success_output} '
+                          f'{test_failure_output}')
