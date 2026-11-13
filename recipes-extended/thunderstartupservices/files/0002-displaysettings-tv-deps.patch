@@ -1,10 +1,11 @@
 From 34c42740270e0d6cb519a28724a3e6e8b89101ad Mon Sep 17 00:00:00 2001
 From: Sergey Borushevsky <Sergey_Borushevsky2@cable.comcast.com>
 Date: Sat, 19 Jun 2021 17:45:04 +0000
-Subject: RDKTV-31430 - Added TV related deps for DisplaySettings.
+Subject: RDKTV-31430, RDKEMW-6755 - Added TV related deps for DisplaySettings and AudioOutput.
 Source: COMCAST
 Upstream-Status: N/A
 Signed-off-by: Sergey Borushevsky <Sergey_Borushevsky2@cable.comcast.com>
+Signed-off-by: yuvaramachandran_gurusamy <yuvaramachandran_gurusamy@comcast.com>
 
 diff -uprN a/wpeframework-displaysettings.service b/wpeframework-displaysettings.service
 --- a/wpeframework-displaysettings.service	2024-07-09 23:22:54.827863978 +0300
@@ -12,10 +13,24 @@ diff -uprN a/wpeframework-displaysettings.service b/wpeframework-displaysettings
 @@ -1,7 +1,7 @@
  [Unit]
  Description=WPEFramework DisplaySettings Initialiser
--Requires=dsmgr.service wpeframework-powermanager.service
--After=dsmgr.service wpeframework-powermanager.service
-+Requires=dsmgr.service pqserver.service wpeframework-hdmicecsink.service wpeframework-powermanager.service
-+After=dsmgr.service pqserver.service wpeframework-hdmicecsink.service wpeframework-powermanager.service
+-Requires=wpeframework-powermanager.service wpeframework-devicesettings.service
+-After=wpeframework-powermanager.service wpeframework-devicesettings.service
++Requires=pqserver.service wpeframework-hdmicecsink.service wpeframework-powermanager.service wpeframework-devicesettings.service
++After=pqserver.service wpeframework-hdmicecsink.service wpeframework-powermanager.service wpeframework-devicesettings.service
  [Service]
  Type=oneshot
  RemainAfterExit=yes
+diff --git a/wpeframework-audiooutput.service b/wpeframework-audiooutput.service
+index 182a4b1..635ea6c 100644
+--- a/wpeframework-audiooutput.service
++++ b/wpeframework-audiooutput.service
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=WPEFramework AudioOutput Initialiser
+-Requires=wpeframework.service wpeframework-displaysettings.service wpeframework-devicesettings.service
+-After=wpeframework.service wpeframework-displaysettings.service wpeframework-devicesettings.service
++Requires=wpeframework.service wpeframework-displaysettings.service wpeframework-devicesettings.service wpeframework-hdmicecsink.service
++After=wpeframework.service wpeframework-displaysettings.service wpeframework-devicesettings.service wpeframework-hdmicecsink.service
+ ConditionPathExists=/tmp/wpeframeworkstarted
+ [Service]
+ Type=oneshot
