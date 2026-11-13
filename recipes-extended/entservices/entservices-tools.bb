@@ -2,7 +2,7 @@ SUMMARY = "ENTServices tools plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
-PV = "1.0.0"
+PV = "1.0.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -11,7 +11,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-tools;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 # Initial release baseline
-SRCREV = "97e869b9e994081cd49bf7a0fed11069ef9fa382"
+SRCREV = "759bde6bde08675137a321b9a3ca1cf3fbbb3a19"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
