@@ -8,10 +8,10 @@ PACKAGECONFIG ??= "js-binding"
 # The WPE sysroot has no javascriptcoregtk pkg-config file; JavaScriptCore comes from wpe-webkit-1.1.pc.
 # PACKAGECONFIG[js-binding] = "-DREFERENCE_PLAYER_BUILD_JS_BINDING=ON -DREFERENCE_PLAYER_JSC_PKG=wpe-webkit-1.1,-DREFERENCE_PLAYER_BUILD_JS_BINDING=OFF,wpe-webkit,pkgconfig-native,"
 PACKAGECONFIG[js-binding] = "-DREFERENCE_PLAYER_BUILD_JS_BINDING=ON -DREFERENCE_PLAYER_JSC_PKG=wpe-webkit-1.1,-DREFERENCE_PLAYER_BUILD_JS_BINDING=OFF,wpe-webkit pkgconfig-native"
-# SRC_URI = "git://github.com/rdkcentral/rialto.git;protocol=https;branch=feature/RDKEMW-28666;subpath=tests/refplayer;destsuffix=refplayer"
-# SRCREV = "${AUTOREV}"
-# S = "${WORKDIR}/refplayer"
-SRC_URI = " \
+SRC_URI = "git://github.com/rdkcentral/rialto.git;protocol=https;branch=feature/RDKEMW-28666;subpath=tests/refplayer;destsuffix=refplayer"
+SRCREV = "${AUTOREV}"
+S = "${WORKDIR}/refplayer"
+#SRC_URI = " \
     file://CMakeLists.txt \
     file://README.md \
     file://include/rialto_refplayer/IRefPlayer.h \
@@ -65,7 +65,7 @@ SRC_URI = " \
     file://test/mocks/rialto/IWebAudioPlayer.h \
     file://test/unit/RefPlayerTest.cpp \
 "
-S = "${WORKDIR}"
+#S = "${WORKDIR}"
 # Pulls in the Rialto client headers (${includedir}/rialto) and libRialtoClient.
 DEPENDS = "rialto"
 inherit cmake features_check
