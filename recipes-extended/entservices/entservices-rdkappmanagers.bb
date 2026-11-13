@@ -2,13 +2,13 @@ SUMMARY = "ENTServices appmanagers plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e78363a23fa72036998d7f40b889d209"
 
-PV = "1.2.0.0"
+PV = "1.3.0.0-rc.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "01ebfacde2983325320815b39ac3aad5e29927a4"
+SRCREV = "97139c1115d27cc17385d5629d43225ba7a0d5a3"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -44,12 +44,15 @@ CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
+DEVOPTIONS = "${@d.getVar('APPMGR_DEV_PKGCONFIG',True) if d.getVar('APPMGR_DEV_PKGCONFIG',True) else ''}"
+PKG_SPECIFIER_SUPPORT = "${@d.getVar('ENABLE_PKG_SPECIFIER',True) if d.getVar('ENABLE_PKG_SPECIFIER',True) else ''}"
 
 PACKAGECONFIG ?= " telemetrysupport \
     ocicontainer \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_bolt_apps', '', 'rdknativescript', d)} \
     runtimemanager \
     victimselector \
+    resourcemonitor \
     packagemanager \
     lifecyclemanager \
     appstoragemanager \
@@ -62,6 +65,8 @@ PACKAGECONFIG ?= " telemetrysupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'rialtosupport', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_ralf', ' ralfsupport', '', d)} \
+    ${DEVOPTIONS} \
+    ${PKG_SPECIFIER_SUPPORT} \
 "
 
 inherit features_check
@@ -83,6 +88,7 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[telemetry]            = "-DPLUGIN_TELEMETRY=ON,,iarmbus iarmmgrs entservices-apis rfc rbus,iarmbus entservices-apis rfc rbus"
 PACKAGECONFIG[runtimemanager]       = "-DPLUGIN_RUNTIME_MANAGER=ON ${RUNTIMEMANAGER_PLUGIN_ARGS},-DPLUGIN_RUNTIME_MANAGER=OFF,entservices-apis iptables,entservices-apis iptables"
 PACKAGECONFIG[victimselector]       = "-DPLUGIN_VICTIM_SELECTOR=ON,-DPLUGIN_VICTIM_SELECTOR=OFF,entservices-apis,entservices-apis"
+PACKAGECONFIG[resourcemonitor]      = "-DPLUGIN_RESOURCEMONITOR=ON,-DPLUGIN_RESOURCEMONITOR=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[packagemanager]       = "-DPLUGIN_PACKAGE_MANAGER=ON ${PACKAGEMANAGER_PLUGIN_ARGS} -DLIB_PACKAGE=ON -DSYSROOT_PATH=${STAGING_DIR_TARGET},-DPLUGIN_PACKAGE_MANAGER=OFF -DLIB_PACKAGE=OFF,curl virtual/libpackage,curl virtual/libpackage"
 PACKAGECONFIG[lifecyclemanager]     = "-DPLUGIN_LIFECYCLE_MANAGER=ON,-DPLUGIN_LIFECYCLE_MANAGER=OFF,websocketpp entservices-apis,entservices-apis"
 PACKAGECONFIG[appstoragemanager]    = "-DPLUGIN_APP_STORAGE_MANAGER=ON ${APPSTORAGEMANAGER_PLUGIN_ARGS},-DPLUGIN_APP_STORAGE_MANAGER=OFF,entservices-apis,entservices-apis"
@@ -93,6 +99,8 @@ PACKAGECONFIG[rdkwindowmanager]     = "-DPLUGIN_RDK_WINDOW_MANAGER=ON,-DPLUGIN_R
 PACKAGECONFIG[telemetrymetrics]     = "-DPLUGIN_TELEMETRYMETRICS=ON,-DPLUGIN_TELEMETRYMETRICS=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[ralfsupport] = "-DRALF_PACKAGE_SUPPORT=ON, -DRALF_PACKAGE_SUPPORT=OFF,ralf-utils jsoncpp, ralf-utils jsoncpp"
 
+PACKAGECONFIG[devoptions] = "-DDEV_MOUNT_SUPPORT=ON, -DDEV_MOUNT_SUPPORT=OFF"
+PACKAGECONFIG[packagespecifier] ="-DPKG_SPECIFIER_SUPPORT=ON , -DPKG_SPECIFIER_SUPPORT=OFF"
 # ----------------------------------------------------------------------------
 
 PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
