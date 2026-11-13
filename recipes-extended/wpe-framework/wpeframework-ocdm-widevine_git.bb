@@ -18,7 +18,8 @@ EXTRA_OECMAKE += " ${platform-widevine-flags} -DCMAKE_WIDEVINE_VERSION=${WIDEVIN
 RDEPENDS:${PN} += " ${platform-widevine-rdepends}"
 
 DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native entservices-apis"
-DEPENDS += "  gst-svp-ext drm-ext gstreamer1.0"
+DEPENDS += "  gst-svp-ext streamer1.0"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'use_ocdm_drm_ext', 'drm-ext', '', d)}"
 
 RDEPENDS:${PN} += " gst-svp-ext"
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'use_ocdm_drm_ext', 'drm-ext', '', d)}"

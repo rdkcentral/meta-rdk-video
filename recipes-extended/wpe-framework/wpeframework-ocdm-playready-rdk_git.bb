@@ -9,7 +9,8 @@ PR = "r0"
 PV = "1.1.1"
 
 DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native entservices-apis"
-DEPENDS += "  gst-svp-ext drm-ext gstreamer1.0"
+DEPENDS += "  gst-svp-ext gstreamer1.0"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'use_ocdm_drm_ext', 'drm-ext', '', d)}"
 
 # Platform configurations
 DEPENDS += " ${platform-playready-depends}"
