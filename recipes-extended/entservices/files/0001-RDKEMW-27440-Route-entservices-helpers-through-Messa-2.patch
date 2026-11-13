@@ -1,0 +1,28 @@
+From 5c6395c17121e471c082b264055077bf3aad943e Mon Sep 17 00:00:00 2001
+From: Nikita Poltorapavlo <Nikita_Poltorapavlo2@cable.comcast.com>
+Date: Mon, 9 Nov 2026 12:52:33 +0200
+Subject: [PATCH] RDKEMW-27440 : Route entservices-helpers through Messaging
+
+Reason for change: include Module.h
+Test Procedure: None
+Risks: Low
+version: Patch
+---
+ plugin/DobbyInterface.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/plugin/DobbyInterface.h b/plugin/DobbyInterface.h
+index a17a39e..4a7622f 100644
+--- a/plugin/DobbyInterface.h
++++ b/plugin/DobbyInterface.h
+@@ -19,6 +19,7 @@
+ 
+ #pragma once
+ 
++#include "Module.h"
+ #include <Dobby/DobbyProtocol.h>
+ #include <Dobby/Public/Dobby/IDobbyProxy.h>
+ #include <interfaces/IOCIContainer.h>
+-- 
+2.32.0 (Apple Git-132)
+
