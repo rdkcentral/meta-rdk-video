@@ -95,6 +95,9 @@ export CCACHE_COMPILERCHECK = "%compiler% -v"
 export VPYTHON_VIRTUALENV_ROOT="${WORKDIR}/.vpython-root"
 export OECORE_TARGET_SYSROOT="${RECIPE_SYSROOT}"
 
+# limit parallel fetches as chromium.googlesource.com rate-limits anonymous clients (HTTP 429)
+export GCLIENT_JOBS ?= "${@min(16, oe.utils.cpu_count())}"
+
 python() {
     """
     Cobalt uses its own wrapper for ccache. Disable bitbake setup.
@@ -138,7 +141,7 @@ do_unpack_extra() {
     cd ${WORKDIR}
     gclient config -v --name=src --custom-var='checkout_configuration="small"' $(git -C ${S} remote get-url origin)
     cd ${S}
-    gclient sync -v --no-history -r ${SRCREV_cobalt} --nohooks
+    gclient sync -j ${GCLIENT_JOBS} -v --no-history -r ${SRCREV_cobalt} --nohooks
     gclient runhooks -v
 
     bbnote "link larboard"
