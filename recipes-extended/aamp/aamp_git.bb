@@ -3,14 +3,14 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=97dd37dbf35103376811825b038fc32b"
 
-PV = "3.6.9e"
+PV = "3.9.0.4_VIPA"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "51e4631e71a04dd083d83faa0c7dbb5577ffe79a"
+SRCREV_aamp ?= "781a7eb78afaf6655afceba6e2f0714ec4781abf"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
-AAMP_BRANCH ?= "support/3.6.0_8.6"
+AAMP_BRANCH ?= "support/3.9.0_vipa"
 CMF_GITHUB_BRANCH = "branch=${AAMP_BRANCH}"
 
 DEPENDS += "curl libdash libxml2 cjson readline ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
@@ -47,7 +47,7 @@ FILES:${PN}-dbg +="${libdir}/gstreamer-1.0/.debug/*"
 
 INSANE_SKIP:${PN} = "dev-so"
 
-#required for specific products but for now distro is available only for UK 
+#required for specific products but for now distro is available only for UK
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', ' -DENABLE_USE_SINGLE_PIPELINE=1', '', d)}"
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_IT', ' -DENABLE_USE_SINGLE_PIPELINE=1', '', d)}"
 CXXFLAGS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_DE', ' -DENABLE_USE_SINGLE_PIPELINE=1', '', d)}"
@@ -67,8 +67,8 @@ do_install:append() {
     echo "Installing aamp-cli..."
     install -m755 ${B}/aamp-cli ${D}${libdir}
 
-    # remove the static library if it is installed, 
-    # CMakelist in aamp code installing static lib below line should avoid build error 
+    # remove the static library if it is installed,
+    # CMakelist in aamp code installing static lib below line should avoid build error
     rm -f ${D}${libdir}/libtsb.a
 }
 
