@@ -16,10 +16,10 @@ S = "${WORKDIR}/git"
 PV = "2.0.8"
 PR = "r0"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;${CMF_GITHUB_SRC_URI_SUFFIX};"
+SRC_URI = "${CMF_GITHUB_ROOT}/rdkNativeScript;protocol=${CMF_GITHUB_PROTOCOL};branch=fix/freewheel-xhr-location-compliance"
 
 #Release 2.0.8
-SRCREV = "13753ca4ece16d2225d44be52c64109d7ce2d307"
+SRCREV = "63db7f59be2d511654a59bcd620f1777a1ebeb9d"
 
 OECMAKE_GENERATOR = "Ninja"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
