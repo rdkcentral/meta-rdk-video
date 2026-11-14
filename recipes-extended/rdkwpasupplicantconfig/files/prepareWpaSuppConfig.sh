@@ -24,11 +24,9 @@ WPA_SUPP_PID_FILE="/var/run/wpa_supplicant/wlan0.pid"
 WPA_SUPP_CONF_DIR="/opt/secure/wifi"
 WPA_SUPP_CONF_FILE=$WPA_SUPP_CONF_DIR/wpa_supplicant.conf
 WPA_SUPP_ARGS=""
-WPA_P2P_SUPP_CONF_DIR="/opt/secure/wifi/p2p"
-WPA_P2P_SUPP_CONF_FILE=$WPA_P2P_SUPP_CONF_DIR/wpa_supplicant.conf
-WPA_P2P_SUPP_ARGS=""
 # Protected Management Frames - 0-Disabled, 1-Optional, 2-Required
 PMF_CONFIG=1
+WOWLAN_TRIGGERS="any"
 THIS_SCRIPT=`basename "$0"`
 # Alpha-2 country code, substituted at build time from the regional config
 COUNTRY_CODE="@WIFI_COUNTRY_CODE@"
@@ -38,73 +36,31 @@ log ()
     echo "`/bin/timestamp` [$THIS_SCRIPT]: $*" >> /opt/logs/wpa_supplicant.log
 }
 
-do_configure_p2p_wpa_args ()
+# Set KEY=VALUE in the conf file, replacing an existing entry or appending a new one
+set_conf_param ()
 {
-	if [ ! -f /etc/wifi_p2p/wpa_supplicant.conf ];then
-		log "ERROR: default p2p conf file /etc/wifi_p2p/wpa_supplicant.conf not present"
-	else
-        	mkdir -p ${WPA_P2P_SUPP_CONF_DIR}
-
-		if [ ! -f ${WPA_P2P_SUPP_CONF_FILE} ];then
-			cp /etc/wifi_p2p/wpa_supplicant.conf $WPA_P2P_SUPP_CONF_FILE
-		fi
-                WPA_P2P_SUPP_ARGS=" -Dnl80211 -c $WPA_P2P_SUPP_CONF_FILE -i $WIFI_P2P_CTRL_INTERFACE -N"
-                sync
-	fi
+    if grep -q "^$1=" "$WPA_SUPP_CONF_FILE"; then
+        sed -i "s/^$1=.*/$1=$2/" "$WPA_SUPP_CONF_FILE"
+    else
+        echo "$1=$2" >> "$WPA_SUPP_CONF_FILE"
+    fi
+    log "Set $1=$2 in $WPA_SUPP_CONF_FILE"
 }
 
-if [ ! -d $WPA_SUPP_CONF_DIR ]; then
-    log "WIFI DIRECTORY NOT THERE!"
-fi
-
-while ! mkdir -p "$WPA_SUPP_CONF_DIR" &> /dev/null;do
+while ! mkdir -p "$WPA_SUPP_CONF_DIR" > /dev/null 2>&1; do
     log "Unable to create dir $WPA_SUPP_CONF_DIR"
     sleep 3
 done
 
-# Generate wpa_supplicant.conf
-# 1. If the file is not present, create one and fill it with the ctrl_interface/country values
-# 2. If the file is present and ctrl_interface is missing, recreate the file with proper values
-# 3. If the file is present and ctrl_interface is present, remove update_config; ensure country is set
-if [ -f $WPA_SUPP_CONF_FILE ]; then
+if [ -f "$WPA_SUPP_CONF_FILE" ]; then
     if ! systemctl is-active securemount.service; then
         log "TELEMETRY_WIFI_SECUREMOUNT_SERVICE_NOT_ACTIVE"
-    elif [ ! -d /opt/secure ]; then
-        log "TELEMETRY_WIFI_NO_SECURE_DIRECTORY /opt/secure"
-    elif [ ! -f /opt/secure/wifi/wpa_supplicant.conf ]; then
-        log "TELEMETRY_WIFI_WPA_SUPPLICANT_NO_SUCH_FILE /opt/secure/wifi/wpa_supplicant.conf"
-    elif ! cmp "$WPA_SUPP_CONF_FILE" /opt/secure/wifi/wpa_supplicant.conf; then
-        log "TELEMETRY_WIFI_WPA_SUPPLICANT_CONF_FILES_DIFFER $WPA_SUPP_CONF_FILE /opt/secure/wifi/wpa_supplicant.conf"
     fi
-    if [[ `grep "ctrl_interface=/var/run/wpa_supplicant" $WPA_SUPP_CONF_FILE` ]]; then
-        log "$WPA_SUPP_CONF_FILE file exists and configurations are present"
-		sed -i "/bssid=/d" $WPA_SUPP_CONF_FILE
-        sed -i "s/key_mgmt=OPEN/key_mgmt=NONE/g" $WPA_SUPP_CONF_FILE
-		sed -i "/update_config/d" $WPA_SUPP_CONF_FILE
-        if grep -q "^country=$COUNTRY_CODE$" $WPA_SUPP_CONF_FILE; then
-            log "Country code $COUNTRY_CODE is present, No need to change"
-        elif grep -q "^country=" $WPA_SUPP_CONF_FILE; then
-            log "Updating country code to $COUNTRY_CODE"
-            sed -i "s/^country=.*/country=$COUNTRY_CODE/" $WPA_SUPP_CONF_FILE
-        else
-            sed -i "1icountry=$COUNTRY_CODE" $WPA_SUPP_CONF_FILE
-        fi
-    else
-        log "$WPA_SUPP_CONF_FILE file exists, Updating missing configurations..."
-        echo "ctrl_interface=/var/run/wpa_supplicant" > $WPA_SUPP_CONF_FILE
-        echo "country=$COUNTRY_CODE" >> $WPA_SUPP_CONF_FILE
-		if grep -q "update_config" "$WPA_SUPP_CONF_FILE"; then
-            sed -i "/update_config/d" "$WPA_SUPP_CONF_FILE"
-        fi
-    fi
-    # Enable 802.11w on wpa_supplicant
-    if [[ `grep "pmf=" $WPA_SUPP_CONF_FILE` ]]; then
-        echo "PMF is already set in config file"
-    else
-        echo "pmf=$PMF_CONFIG" >> $WPA_SUPP_CONF_FILE
-        echo "PMF is enabled and set to mode "optional"."
-    fi
-    #Delete roaming_enable and kvr_enable in wpa_supplicant.conf as RDKE doesn't support
+
+    log "$WPA_SUPP_CONF_FILE file exists and configurations are present"
+    sed -i "/bssid=/d" $WPA_SUPP_CONF_FILE
+    sed -i "s/key_mgmt=OPEN/key_mgmt=NONE/g" $WPA_SUPP_CONF_FILE
+    sed -i "/update_config/d" $WPA_SUPP_CONF_FILE
     sed -i '/roaming_enable/d' $WPA_SUPP_CONF_FILE
     sed -i '/kvr_enable/d' $WPA_SUPP_CONF_FILE
     #Update key_mgmt in wpa_supplicant.conf
@@ -117,44 +73,38 @@ if [ -f $WPA_SUPP_CONF_FILE ]; then
     #Delete sae_password and ieee80211w
     sed -i "/ieee80211w/d" $WPA_SUPP_CONF_FILE
     sed -i "/sae_password/d" $WPA_SUPP_CONF_FILE
-	# WOWLAN triggers logic - add only if missing
-    if ! grep -q "wowlan_triggers=" "$WPA_SUPP_CONF_FILE"; then
-        echo "wowlan_triggers=any" >> "$WPA_SUPP_CONF_FILE"
-        log "Added wowlan_triggers=any to existing $WPA_SUPP_CONF_FILE"
+
+    if grep -q "^country=$COUNTRY_CODE$" $WPA_SUPP_CONF_FILE; then
+        log "Country code $COUNTRY_CODE is present, No need to change"
+    elif grep -q "^country=" $WPA_SUPP_CONF_FILE; then
+        log "Updating country code to $COUNTRY_CODE"
+        sed -i "s/^country=.*/country=$COUNTRY_CODE/" $WPA_SUPP_CONF_FILE
+    elif [ ! -s "$WPA_SUPP_CONF_FILE" ]; then
+        echo "country=$COUNTRY_CODE" > "$WPA_SUPP_CONF_FILE"
     else
-        log "wowlan_triggers already present in $WPA_SUPP_CONF_FILE, leaving as is"
+        sed -i "1icountry=$COUNTRY_CODE" $WPA_SUPP_CONF_FILE
     fi
 else
     log "$WPA_SUPP_CONF_FILE file is missing. Creating file and updating configurations..."
-    echo "ctrl_interface=/var/run/wpa_supplicant" > $WPA_SUPP_CONF_FILE
-    echo "country=$COUNTRY_CODE" >> $WPA_SUPP_CONF_FILE
-    echo "pmf=$PMF_CONFIG" >> $WPA_SUPP_CONF_FILE
-	echo "wowlan_triggers=any" >> $WPA_SUPP_CONF_FILE
+    echo "country=$COUNTRY_CODE" > $WPA_SUPP_CONF_FILE
 fi
-# Configuring wpa_supplicant log levels
-# Get wpa_supplicant.logging file with opt-override support
-if [ -f /opt/wpa_supplicant.logging ]  && [ "$BUILD_TYPE" != "prod" ]; then
-   DEBUGINIFILE=/opt/wpa_supplicant.logging
-else
-   DEBUGINIFILE=/etc/wpa_supplicant.logging
-fi
-#Read debug.ini file and map to wpa-supplicant logging level
-log_line=`grep "LOG.RDK.WIFIWPA" $DEBUGINIFILE`
-if [[ "$log_line" =~ "TRACE9" ]]; then
-    LOG_LEVEL_STR="-ddd"
-elif [[ "$log_line" =~ "TRACE" ]]; then
-    LOG_LEVEL_STR="-dd"
-elif [[ "$log_line" =~ "DEBUG" ]]; then
-    LOG_LEVEL_STR="-d"
-elif [[ "$log_line" =~ "INFO" ]]; then
-    LOG_LEVEL_STR=""
-elif [[ "$log_line" =~ "WARNING" ]]; then
-    LOG_LEVEL_STR="-q"
-elif [[ "$log_line" =~ "ERROR" ]]; then
-    LOG_LEVEL_STR="-qq"
-fi
-# Configuring wpa_supplicant args for P2P control interface
-### do_configure_p2p_wpa_args
-/bin/systemctl set-environment WPA_SUPP_CONF_FILE=$WPA_SUPP_CONF_FILE
-/bin/systemctl set-environment WPA_SUPP_ARGS="${WPA_P2P_SUPP_ARGS} -Dnl80211 -c $WPA_SUPP_CONF_FILE -i $WIFI_INTERFACE -P $WPA_SUPP_PID_FILE -t -u $LOG_LEVEL_STR"
+set_conf_param "pmf" "$PMF_CONFIG"
+set_conf_param "wowlan_triggers" "$WOWLAN_TRIGGERS"
 
+# Get wpa_supplicant.logging file with opt-override support
+if [ -f /opt/wpa_supplicant.logging ] && [ "$BUILD_TYPE" != "prod" ]; then
+    DEBUGINIFILE=/opt/wpa_supplicant.logging
+else
+    DEBUGINIFILE=/etc/wpa_supplicant.logging
+fi
+# Only -d (default) and -dd are supported
+log_line=`grep "LOG.RDK.WIFIWPA" $DEBUGINIFILE`
+case "$log_line" in
+    *TRACE*) LOG_LEVEL_STR="-dd" ;;
+    *)       LOG_LEVEL_STR="-d" ;;
+esac
+log "wpa_supplicant log level set to $LOG_LEVEL_STR"
+
+# -u enables the D-Bus control interface (fi.w1.wpa_supplicant1) required by Type=dbus
+/bin/systemctl set-environment WPA_SUPP_CONF_FILE=$WPA_SUPP_CONF_FILE
+/bin/systemctl set-environment WPA_SUPP_ARGS="-Dnl80211 -c $WPA_SUPP_CONF_FILE -i $WIFI_INTERFACE -P $WPA_SUPP_PID_FILE -t -u $LOG_LEVEL_STR"

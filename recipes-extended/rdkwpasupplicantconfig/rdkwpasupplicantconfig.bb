@@ -8,7 +8,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SECTION = "base"
 DEPENDS = "systemd"
-RDEPENDS:${PN} = "wpa-supplicant systemd iw"
+RDEPENDS:${PN} = "wpa-supplicant systemd iw dbus"
 
 inherit systemd
 
