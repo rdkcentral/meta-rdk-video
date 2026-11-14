@@ -20,7 +20,7 @@ SRCREV = "${RIALTO_SRCREV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/rialto;protocol=${CMF_GIT_PROTOCOL};branch=${RIALTO_BRANCH}"
 SRC_URI += "file://0001-link-rdkgstreamerutilsplatform.patch"
 
-DEPENDS = "openssl jsoncpp protobuf protobuf-native"
+DEPENDS = "openssl jsoncpp protobuf protobuf-native yaml-cpp"
 DEPENDS:append = " virtual/vendor-rdk-gstreamer-utils-platform"
 # entservices-opencdmi provides opencdm/open_cdm.h and ocdm.pc; wpeframework-clientlibraries is still used for other Thunder components (see PACKAGECONFIG[server]).
 DEPENDS:append = " entservices-opencdmi"
