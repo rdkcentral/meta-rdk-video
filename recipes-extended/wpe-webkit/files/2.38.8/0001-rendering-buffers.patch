@@ -1,0 +1,258 @@
+From 21242ecd166a5c0281e44d0b0ff703d836ee952a Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Thu, 29 Oct 2026 06:20:09 +0000
+Subject: [PATCH] rendering buffers
+
+---
+ .../WebCore/platform/graphics/GPUDebugNexus.h | 102 ++++++++++++++++++
+ .../graphics/opengl/ExtensionsGLOpenGLES.cpp  |  13 ++-
+ .../opengl/GraphicsContextGLOpenGL.cpp        |  15 +++
+ .../opengl/GraphicsContextGLOpenGLES.cpp      |  15 ++-
+ 4 files changed, 140 insertions(+), 5 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/GPUDebugNexus.h b/Source/WebCore/platform/graphics/GPUDebugNexus.h
+index 48cf9f41c957..8b70ab36b3ff 100644
+--- a/Source/WebCore/platform/graphics/GPUDebugNexus.h
++++ b/Source/WebCore/platform/graphics/GPUDebugNexus.h
+@@ -399,3 +399,105 @@ static inline void dumpAll(const char* reason)
+ }
+ 
+ } // namespace GPUDebugProc
++
++namespace GPUDebugRenderbuffer238 {
++
++struct State {
++    std::mutex lock;
++    std::map<const void*, std::map<unsigned, unsigned long long>> objects;
++    unsigned long long liveBytes = 0;
++    unsigned long long peakBytes = 0;
++};
++
++inline State& state()
++{
++    static State instance;
++    return instance;
++}
++
++inline unsigned bytesPerPixel(unsigned format)
++{
++    switch (format) {
++    case 0x8229: case 0x8D48: return 1;
++    case 0x822B: case 0x822D: case 0x8056: case 0x8057: case 0x8D62:
++    case 0x81A5: return 2;
++    case 0x8051: case 0x81A6: return 3;
++    case 0x8058: case 0x8059: case 0x8C43: case 0x822E: case 0x822F:
++    case 0x8C3A: case 0x8C3D: case 0x88F0: case 0x81A7: case 0x8CAC: return 4;
++    case 0x881B: return 6;
++    case 0x881A: case 0x8230: case 0x8CAD: return 8;
++    case 0x8815: return 12;
++    case 0x8814: return 16;
++    default: return 0;
++    }
++}
++
++inline void record(const void* context, unsigned renderbuffer, unsigned long long bytes,
++    const char* operation, bool remove)
++{
++    auto& data = state();
++    std::lock_guard<std::mutex> guard(data.lock);
++    auto& objects = data.objects[context];
++    auto found = objects.find(renderbuffer);
++    const unsigned long long oldBytes = found == objects.end() ? 0 : found->second;
++    data.liveBytes = data.liveBytes - oldBytes + bytes;
++    if (remove)
++        objects.erase(renderbuffer);
++    else
++        objects[renderbuffer] = bytes;
++    if (data.liveBytes > data.peakBytes)
++        data.peakBytes = data.liveBytes;
++    size_t count = 0;
++    for (const auto& entry : data.objects)
++        count += entry.second.size();
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_STATS pid=%d ctx=%p rb=%u operation=%s oldEstBytes=%llu newEstBytes=%llu liveCount=%zu liveEstBytes=%llu peakEstBytes=%llu backend=NATIVE_GLES\n",
++        getpid(), context, renderbuffer, operation, oldBytes, bytes, count, data.liveBytes, data.peakBytes);
++    if (objects.empty())
++        data.objects.erase(context);
++}
++
++inline void forgetContext(const void* context)
++{
++    auto& data = state();
++    std::lock_guard<std::mutex> guard(data.lock);
++    auto found = data.objects.find(context);
++    if (found == data.objects.end())
++        return;
++    unsigned long long bytes = 0;
++    for (const auto& entry : found->second)
++        bytes += entry.second;
++    data.liveBytes -= bytes;
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_CONTEXT_DESTROY pid=%d ctx=%p liveCount=%zu removedEstBytes=%llu remainingLiveEstBytes=%llu backend=NATIVE_GLES\n",
++        getpid(), context, found->second.size(), bytes, data.liveBytes);
++    data.objects.erase(found);
++}
++
++class Storage {
++public:
++    Storage(const void* context, unsigned renderbuffer, unsigned format, int width, int height, int samples)
++        : m_context(context), m_renderbuffer(renderbuffer)
++    {
++        const unsigned pixelBytes = bytesPerPixel(format);
++        m_bytes = static_cast<unsigned long long>(width > 0 ? width : 0) *
++            (height > 0 ? height : 0) * pixelBytes * (samples > 0 ? samples : 1);
++        fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_ALLOC_BEGIN pid=%d ctx=%p rb=%u nativeFormat=0x%x width=%d height=%d requestedSamples=%d pixelBytes=%u estimateKnown=%d estBytes=%llu backend=NATIVE_GLES\n",
++            getpid(), context, renderbuffer, format, width, height, samples, pixelBytes, !!pixelBytes, m_bytes);
++        GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_ALLOC_BEFORE");
++    }
++
++    void finish(unsigned error)
++    {
++        if (!error)
++            record(m_context, m_renderbuffer, m_bytes, "storage", false);
++        fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_ALLOC_END pid=%d ctx=%p rb=%u success=%d glError=0x%x estBytes=%llu backend=NATIVE_GLES\n",
++            getpid(), m_context, m_renderbuffer, !error, error, m_bytes);
++        GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_ALLOC_AFTER");
++    }
++
++private:
++    const void* m_context;
++    unsigned m_renderbuffer;
++    unsigned long long m_bytes;
++};
++
++}
+diff --git a/Source/WebCore/platform/graphics/opengl/ExtensionsGLOpenGLES.cpp b/Source/WebCore/platform/graphics/opengl/ExtensionsGLOpenGLES.cpp
+index 813a6f9be33a..a1de6f618ba9 100644
+--- a/Source/WebCore/platform/graphics/opengl/ExtensionsGLOpenGLES.cpp
++++ b/Source/WebCore/platform/graphics/opengl/ExtensionsGLOpenGLES.cpp
+@@ -33,6 +33,7 @@
+ #if ENABLE(WEBGL)
+ #include "GraphicsContextGLOpenGL.h"
+ #include "NotImplemented.h"
++#include "GPUDebugNexus.h"
+ 
+ #if USE(LIBEPOXY)
+ #include "EpoxyEGL.h"
+@@ -96,9 +97,17 @@ void ExtensionsGLOpenGLES::renderbufferStorageMultisampleIMG(unsigned long targe
+ {
+     if (!m_context->makeContextCurrent())
+         return;
+-    if (m_glRenderbufferStorageMultisampleIMG)
++    if (m_glRenderbufferStorageMultisampleIMG) {
++        m_context->moveErrorsToSyntheticErrorList();
++        GLint gpuDbgBound = 0;
++        ::glGetIntegerv(GL_RENDERBUFFER_BINDING, &gpuDbgBound);
++        GPUDebugRenderbuffer238::Storage gpuDbgStorage(m_context, gpuDbgBound, internalformat, width, height, samples);
+         m_glRenderbufferStorageMultisampleIMG(target, samples, internalformat, width, height);
+-    else
++        const GCGLenum gpuDbgError = ::glGetError();
++        if (gpuDbgError != GL_NO_ERROR)
++            m_context->synthesizeGLError(gpuDbgError);
++        gpuDbgStorage.finish(gpuDbgError);
++    } else
+         m_context->synthesizeGLError(GL_INVALID_OPERATION);
+ }
+ 
+diff --git a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
+index 7cfb03cdff55..462ed09837e2 100644
+--- a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
++++ b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
+@@ -253,6 +253,7 @@ GraphicsContextGLOpenGL::~GraphicsContextGLOpenGL()
+     fprintf(stderr, "[GPUDEBUG] WEBGL_CONTEXT_DESTROY ctx=%p hostWindow=%d\n", this,
+         contextAttributes().renderTarget == GraphicsContextGLRenderTarget::HostWindow);
+     GPUDebug238::dumpStats("WEBGL_CONTEXT_DESTROY");
++    GPUDebugRenderbuffer238::forgetContext(this);
+     if (!makeContextCurrent())
+         return;
+ 
+@@ -2448,6 +2449,9 @@ PlatformGLObject GraphicsContextGLOpenGL::createRenderbuffer()
+ 
+     GLuint o = 0;
+     glGenRenderbuffersEXT(1, &o);
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_CREATE ctx=%p rb=%u backend=NATIVE_GLES\n", this, o);
++    if (o)
++        GPUDebugRenderbuffer238::record(this, o, 0, "create", false);
+     return o;
+ }
+ 
+@@ -2507,7 +2511,10 @@ void GraphicsContextGLOpenGL::deleteRenderbuffer(PlatformGLObject renderbuffer)
+     if (!makeContextCurrent())
+         return;
+ 
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_DELETE_BEFORE");
+     glDeleteRenderbuffersEXT(1, &renderbuffer);
++    GPUDebugRenderbuffer238::record(this, renderbuffer, 0, "delete", true);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_DELETE_AFTER");
+ }
+ 
+ void GraphicsContextGLOpenGL::deleteShader(PlatformGLObject shader)
+@@ -2730,7 +2737,15 @@ void GraphicsContextGLOpenGL::renderbufferStorageMultisample(GCGLenum target, GC
+     if (!makeContextCurrent())
+         return;
+ 
++    moveErrorsToSyntheticErrorList();
++    GLint gpuDbgBound = 0;
++    ::glGetIntegerv(GL_RENDERBUFFER_BINDING, &gpuDbgBound);
++    GPUDebugRenderbuffer238::Storage gpuDbgStorage(this, gpuDbgBound, internalformat, width, height, samples);
+     ::glRenderbufferStorageMultisample(target, samples, internalformat, width, height);
++    const GCGLenum gpuDbgError = ::glGetError();
++    if (gpuDbgError != GL_NO_ERROR)
++        synthesizeGLError(gpuDbgError);
++    gpuDbgStorage.finish(gpuDbgError);
+ }
+ 
+ void GraphicsContextGLOpenGL::texStorage2D(GCGLenum target, GCGLsizei levels, GCGLenum internalformat, GCGLsizei width, GCGLsizei height)
+diff --git a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGLES.cpp b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGLES.cpp
+index 13b153fc4ba7..ef46c7fc65a1 100644
+--- a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGLES.cpp
++++ b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGLES.cpp
+@@ -36,6 +36,7 @@
+ #include "IntRect.h"
+ #include "IntSize.h"
+ #include "NotImplemented.h"
++#include "GPUDebugNexus.h"
+ 
+ #include <ANGLE/ShaderLang.h>
+ 
+@@ -167,7 +168,7 @@ bool GraphicsContextGLOpenGL::reshapeFBOs(const IntSize& size)
+             // Use a 24 bit depth buffer where we know we have it.
+             if (supportPackedDepthStencilBuffer) {
+                 ::glBindRenderbuffer(GL_RENDERBUFFER, m_depthStencilBuffer);
+-                ::glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8_OES, width, height);
++                renderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8_OES, width, height);
+                 if (attributes.stencil)
+                     ::glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depthStencilBuffer);
+                 if (attributes.depth)
+@@ -175,12 +176,12 @@ bool GraphicsContextGLOpenGL::reshapeFBOs(const IntSize& size)
+             } else {
+                 if (attributes.stencil) {
+                     ::glBindRenderbuffer(GL_RENDERBUFFER, m_stencilBuffer);
+-                    ::glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, width, height);
++                    renderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, width, height);
+                     ::glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_stencilBuffer);
+                 }
+                 if (attributes.depth) {
+                     ::glBindRenderbuffer(GL_RENDERBUFFER, m_depthBuffer);
+-                    ::glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
++                    renderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
+                     ::glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthBuffer);
+                 }
+             }
+@@ -206,7 +207,15 @@ void GraphicsContextGLOpenGL::renderbufferStorage(GCGLenum target, GCGLenum inte
+     if (!makeContextCurrent())
+         return;
+ 
++    moveErrorsToSyntheticErrorList();
++    GLint gpuDbgBound = 0;
++    ::glGetIntegerv(GL_RENDERBUFFER_BINDING, &gpuDbgBound);
++    GPUDebugRenderbuffer238::Storage gpuDbgStorage(this, gpuDbgBound, internalformat, width, height, 0);
+     ::glRenderbufferStorage(target, internalformat, width, height);
++    const GCGLenum gpuDbgError = ::glGetError();
++    if (gpuDbgError != GL_NO_ERROR)
++        synthesizeGLError(gpuDbgError);
++    gpuDbgStorage.finish(gpuDbgError);
+ }
+ 
+ void GraphicsContextGLOpenGL::getIntegerv(GCGLenum pname, GCGLSpan<GCGLint> value)
+-- 
+2.44.4
+

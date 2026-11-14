@@ -1,0 +1,28 @@
+From 1950181bddda77cf2e4b73dc0684504a669567c0 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Thu, 15 Oct 2026 06:14:57 +0000
+Subject: [PATCH] debug CMAKE
+
+---
+ Source/cmake/OptionsWPE.cmake | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+index ca69c411b044..2284c120d61c 100644
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -259,6 +259,11 @@ else ()
+     SET_AND_EXPOSE_TO_BUILD(USE_CAIRO TRUE)
+ endif ()
+ 
++message(STATUS "========== WPE GRAPHICS BACKEND ==========")
++message(STATUS "USE_CAIRO = ${USE_CAIRO}")
++message(STATUS "USE_SKIA  = ${USE_SKIA}")
++message(STATUS "==========================================")
++
+ if (USE_JPEGXL)
+     find_package(JPEGXL 0.7.0)
+     if (NOT JPEGXL_FOUND)
+-- 
+2.44.4
+
