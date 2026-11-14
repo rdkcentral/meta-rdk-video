@@ -1,4 +1,4 @@
-RIPPLE_VERSION = "1.19.0"
+RIPPLE_VERSION = "1.23.0"
 CARGO_SRC_DIR = ""
 
 # services inherited
