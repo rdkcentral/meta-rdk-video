@@ -14,8 +14,9 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
           "
-          
-SRCREV = "${PV}"
+
+# Release version - unreleased
+SRCREV = "ac65aadf421b18f928973e99dd09e9bd3f6a8296"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
