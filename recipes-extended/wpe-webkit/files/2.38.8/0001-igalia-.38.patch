@@ -1,0 +1,39 @@
+From 9b3829fd356012e008a31a184a57a4b7ed9fb3f9 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Tue, 17 Nov 2026 12:47:21 +0000
+Subject: [PATCH] igalia-.38
+
+---
+ Source/WebCore/platform/graphics/egl/GLContextEGL.cpp           | 2 --
+ .../platform/graphics/nicosia/texmap/NicosiaGCGLLayer.cpp       | 2 +-
+ 2 files changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/egl/GLContextEGL.cpp b/Source/WebCore/platform/graphics/egl/GLContextEGL.cpp
+index 6ef9788c6fbe..c496a0099df4 100644
+--- a/Source/WebCore/platform/graphics/egl/GLContextEGL.cpp
++++ b/Source/WebCore/platform/graphics/egl/GLContextEGL.cpp
+@@ -280,8 +280,6 @@ std::unique_ptr<GLContextEGL> GLContextEGL::createContext(GLNativeWindowType win
+ 
+     EGLContext eglSharingContext = platformDisplay.sharingGLContext() ? static_cast<GLContextEGL*>(platformDisplay.sharingGLContext())->m_context : EGL_NO_CONTEXT;
+     auto context = window ? createWindowContext(window, platformDisplay, eglSharingContext) : nullptr;
+-    if (!context)
+-        context = createSurfacelessContext(platformDisplay, eglSharingContext);
+     if (!context) {
+         switch (platformDisplay.type()) {
+ #if PLATFORM(X11)
+diff --git a/Source/WebCore/platform/graphics/nicosia/texmap/NicosiaGCGLLayer.cpp b/Source/WebCore/platform/graphics/nicosia/texmap/NicosiaGCGLLayer.cpp
+index 86aa9461e909..83838a54d347 100644
+--- a/Source/WebCore/platform/graphics/nicosia/texmap/NicosiaGCGLLayer.cpp
++++ b/Source/WebCore/platform/graphics/nicosia/texmap/NicosiaGCGLLayer.cpp
+@@ -60,7 +60,7 @@ std::unique_ptr<GCGLLayer> GCGLLayer::create(WebCore::GraphicsContextGLOpenGL& c
+         if (!s_windowContext) {
+             GPUDebugNexus::Snapshot gpuDbgBefore;
+             bool gpuDbgMeasure = GPUDebugNexus::takeSnapshot(gpuDbgBefore);
+-            s_windowContext = GLContext::createContextForWindow(reinterpret_cast<GLNativeWindowType>(attributes.nativeWindowID), &PlatformDisplay::sharedDisplayForCompositing());
++	    s_windowContext = GLContext::createOffscreenContext(&PlatformDisplay::sharedDisplayForCompositing());
+             fprintf(stderr, "[GPUDEBUG] WEBGL_WINDOW_SURFACE_CREATE mode=HOSTWINDOW ok=%d nativeWindow=0x%llx\n", !!s_windowContext,
+                 static_cast<unsigned long long>(attributes.nativeWindowID));
+             GPUDebugNexus::Snapshot gpuDbgAfter;
+-- 
+2.44.4
+

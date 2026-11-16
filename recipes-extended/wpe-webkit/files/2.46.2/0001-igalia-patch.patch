@@ -1,0 +1,96 @@
+From 8bc20f9d0dbf8f3fa82e736a80b8415a242dd027 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Tue, 17 Nov 2026 10:02:48 +0000
+Subject: [PATCH] igalia patch
+
+---
+ .../GraphicsContextGLTextureMapperANGLE.cpp   | 45 ++++---------------
+ 1 file changed, 9 insertions(+), 36 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+index 1c77f4b9a08a..7d4f41e1ed28 100644
+--- a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
++++ b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+@@ -60,9 +60,6 @@
+ 
+ namespace WebCore {
+ 
+-static GCEGLSurface s_windowSurfaceObj { nullptr };
+-static int s_windowSurfaceUsers { 0 };
+-
+ GraphicsContextGLANGLE::~GraphicsContextGLANGLE()
+ {
+     if (m_rendersToHostWindow) {
+@@ -70,11 +67,7 @@ GraphicsContextGLANGLE::~GraphicsContextGLANGLE()
+         if (m_contextObj) {
+             EGL_MakeCurrent(m_displayObj, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+             EGL_DestroyContext(m_displayObj, m_contextObj);
+-            s_windowSurfaceUsers--;
+-            if (!s_windowSurfaceUsers) {
+-                EGL_DestroySurface(m_displayObj, s_windowSurfaceObj);
+-                s_windowSurfaceObj = nullptr;
+-            }
++	    EGL_DestroySurface(m_displayObj, m_surfaceObj);
+         }
+         return;
+     }
+@@ -223,14 +216,7 @@ bool GraphicsContextGLTextureMapperANGLE::platformInitializeContext()
+     const char* displayExtensions = EGL_QueryString(m_displayObj, EGL_EXTENSIONS);
+     LOG(WebGL, "Extensions: %s", displayExtensions);
+ 
+-    bool isSurfacelessContextSupported = GLContext::isExtensionSupported(displayExtensions, "EGL_KHR_surfaceless_context");
+-
+-    EGLint surfaceType;
+-    if (m_rendersToHostWindow)
+-        surfaceType = EGL_WINDOW_BIT;
+-    else
+-        surfaceType = !isSurfacelessContextSupported || sharedDisplay.type() == PlatformDisplay::Type::Surfaceless ? EGL_PBUFFER_BIT : EGL_WINDOW_BIT;
+-
++    EGLint surfaceType = EGL_PBUFFER_BIT;
+     EGLint configAttributes[] = {
+         EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+ #if USE(NICOSIA)
+@@ -240,8 +226,8 @@ bool GraphicsContextGLTextureMapperANGLE::platformInitializeContext()
+         EGL_GREEN_SIZE, 8,
+         EGL_BLUE_SIZE, 8,
+         EGL_ALPHA_SIZE, 8,
+-        EGL_DEPTH_SIZE, m_rendersToHostWindow ? 16 : 0,
+-        EGL_STENCIL_SIZE, m_rendersToHostWindow ? 8 : 0,
++        EGL_DEPTH_SIZE, 0,
++        EGL_STENCIL_SIZE, 0,
+         EGL_NONE
+     };
+     EGLint numberConfigsReturned = 0;
+@@ -251,24 +237,11 @@ bool GraphicsContextGLTextureMapperANGLE::platformInitializeContext()
+         return false;
+     }
+     LOG(WebGL, "Got EGLConfig");
+-
+-    if (m_rendersToHostWindow) {
+-        if (!s_windowSurfaceObj) {
+-            s_windowSurfaceObj = EGL_CreateWindowSurface(m_displayObj, m_configObj, reinterpret_cast<EGLNativeWindowType>(contextAttributes().nativeWindowID), nullptr);
+-            if (s_windowSurfaceObj == EGL_NO_SURFACE) {
+-                LOG(WebGL, "Failed to create a window surface");
+-                return false;
+-            }
+-        }
+-        m_surfaceObj = s_windowSurfaceObj;
+-        s_windowSurfaceUsers++;
+-    } else if (!isSurfacelessContextSupported) {
+-        static const int pbufferAttributes[] = { EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE };
+-        m_surfaceObj = EGL_CreatePbufferSurface(m_displayObj, m_configObj, pbufferAttributes);
+-        if (m_surfaceObj == EGL_NO_SURFACE) {
+-            LOG(WebGL, "Surfaceless context is not supported and we failed to create a pbuffer surface");
+-            return false;
+-        }
++    static const int pbufferAttributes[] = { EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE };
++    m_surfaceObj = EGL_CreatePbufferSurface(m_displayObj, m_configObj, pbufferAttributes);
++    if (m_surfaceObj == EGL_NO_SURFACE) {
++        LOG(WebGL, "Surfaceless context is not supported and we failed to create a pbuffer surface");
++        return false;
+     }
+ 
+     EGL_BindAPI(EGL_OPENGL_ES_API);
+-- 
+2.44.4
+
