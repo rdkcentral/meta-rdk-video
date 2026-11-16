@@ -23,6 +23,11 @@ SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RD
            "
 
 SRCREV_thunder = "6e27483bf893b264b8c44cbd46481eff57294ca9"
+SRC_URI += "git://github.com/rdkcentral/ThunderExtensions.git;protocol=https;branch=R4_4;name=extensions;destsuffix=thunder-extensions"
+SRCREV_extensions = "2df8fb014c4af12c3288d1daeb86e675ad105bea"
+SRCREV_FORMAT = "thunder_extensions"
+
+EXTRA_OECMAKE:append = " -DMESSAGING_EXTERNAL_OUTPUT_SOURCE_DIR=${WORKDIR}/thunder-extensions/MessagingControl/RDKLogger"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
