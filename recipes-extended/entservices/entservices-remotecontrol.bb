@@ -10,7 +10,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-remotecontrol;${CMF_GITHUB_SRC_URI_SUF
            file://rdkservices.ini \
           "
 
-PV = "1.0.6"
+PV = "1.0.7"
 PR = "r0"
 SRCREV = "${PV}"
 
@@ -37,7 +37,9 @@ include include/remotecontrol.inc
 
 PACKAGECONFIG ?= ""
 
+# CMAKE_PROJECT_VERSION sets the plugin's API version and startup log version
 EXTRA_OECMAKE += " \
+    -DCMAKE_PROJECT_VERSION=${PV} \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
