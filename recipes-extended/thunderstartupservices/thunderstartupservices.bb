@@ -4,7 +4,7 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-PV = "1.5.8"
+PV = "2.0.1"
 PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -70,6 +70,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-victimselector.service \
     wpeframework-devicediagnostics.service \
     wpeframework-tools.service \
+    wpeframework-devicesettings.service \
     "
 
 CONTROL_FILES = "\
