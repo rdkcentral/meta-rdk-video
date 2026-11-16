@@ -4,16 +4,15 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
 # Release version - 1.7.10
 PV = "1.7.10"
-PR = "r1"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX} \
-          file://0001-RDKEMW-27601-Remove-FindWPEFrameworkHelpers.cmake-22.patch \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-connectivity;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27601 \
           "
 
-SRCREV = "${PV}"
+SRCREV = "c4a88d5e8638ecc5d466c3bb5583e0e7906e5e8d"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"

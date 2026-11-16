@@ -4,18 +4,17 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
 PV = "1.4.11"
 PV:vdevice_x86-64-mw = "1.4.7.1"
-PR = "r1"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-powermanager;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27601 \
            file://rdkservices.ini \
-           file://0001-RDKEMW-27601-Remove-FindWPEFrameworkHelpers.cmake-12.patch \
           "
 
 # Release version - 1.4.11
-SRCREV = "a0905ee7d14273b8feb2e481d13aa18519272083"
+SRCREV = "4988ea4ab9dee6dd3122d587aa3c1045a20af0a1"
 SRCREV:vdevice_x86-64-mw = "c7519329de6b1af6ac9e8a64694ffc64bf8830c3"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

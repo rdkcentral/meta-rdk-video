@@ -9,7 +9,6 @@ S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-userpreferences;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27601 \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://rdkservices.ini \
           "
 
@@ -24,7 +23,7 @@ EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
 
-DEPENDS += "wpeframework wpeframework-tools-native iarmmgrs devicesettings"
+DEPENDS += "wpeframework wpeframework-tools-native iarmmgrs devicesettings entservices-helpers"
 RDEPENDS:${PN} += "wpeframework"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -ltelemetry_msgsender -Wl,--as-needed "

@@ -3,17 +3,16 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 PV = "1.2.7"
-PR = "r1"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKEMW-27601-Remove-FindWPEFrameworkHelpers.cmake-32.patch \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27601 \
            "
 
 # Release version - 1.2.7
-SRCREV = "0d783a04c328bb8b69ee2e6cb175dc07881e7c8d"
+SRCREV = "c691fce95e4db1a47b9e062e934671394796e5eb"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
