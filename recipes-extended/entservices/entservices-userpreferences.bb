@@ -2,8 +2,9 @@ SUMMARY = "ENTServices Userpreferences plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV = "1.1.1"
+PV = "1.2.4"
 PR = "r0"
+SRCREV = "${PV}"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,10 +13,6 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-userpreferences;${CMF_GITHUB_SRC_URI_S
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
            file://rdkservices.ini \
           "
-
-# Release version - 1.1.1
-SRCREV = "31b8421268a2f8cdc3393c80cee106ceed68ee69"
-
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 TOOLCHAIN = "gcc"
