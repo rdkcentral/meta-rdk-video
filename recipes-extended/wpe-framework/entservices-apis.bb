@@ -4,7 +4,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
 PV = "4.3.8"
 PR = "r0"
 # topic/crypto adds ICrypto and its interface ID on top of the 4.3.5 API set.
-SRCREV_entservices-apis = "31d508d8e2844bb68ec2b3452e62002d4abc7bb8"
+SRCREV_entservices-apis = "2a9f2a02d41dcbcfb85ff4eba09ba5a1ffe916cb"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
