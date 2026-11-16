@@ -2,16 +2,15 @@ SUMMARY = "ENTServices telemetry plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.1.4"
+PV = "1.1.5"
 PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "ae7076588a78ce311e926f97f1708a4a6c89f6e9"
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-telemetry;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRCREV = "d51209d9647cf127b46ba5d10d5487553b37f177"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-telemetry;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27601 \
            file://rdkservices.ini \
-           file://0001-RDKEMW-27601-Remove-FindWPEFrameworkHelpers.cmake-9.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
