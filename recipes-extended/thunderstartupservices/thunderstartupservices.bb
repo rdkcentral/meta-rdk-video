@@ -4,13 +4,13 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/LICENSE;md5=86d3f3a95c324c9479bd898696
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-PV = "1.5.8"
-PR = "r1"
+PV = "2.0.1"
+PR = "r0"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 DEPENDS = "systemd"
 
-SRCREV = "4c884c8dda88b20b1eca16b45b4d28b22d9c415a"
+SRCREV = "01f9502b95aa68d42d9bf2f96ad1b600887616ef"
 SRC_URI = "${CMF_GITHUB_ROOT}/thunder-startup-services;${CMF_GITHUB_SRC_URI_SUFFIX};name=thunderstartupservices \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV', 'file://0002-displaysettings-tv-deps.patch', '', d)} \
 "
@@ -70,6 +70,7 @@ THUNDER_STARTUP_SERVICES:append = "\
     wpeframework-victimselector.service \
     wpeframework-devicediagnostics.service \
     wpeframework-tools.service \
+    wpeframework-devicesettings.service \
     "
 
 # Install these services, but allow activation failure without failing the target.
