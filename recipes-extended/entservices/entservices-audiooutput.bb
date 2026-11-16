@@ -2,18 +2,17 @@ SUMMARY = "ENTServices audiooutput plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=99ba59ffd1c3a94266cf01095316d8e0"
 
-PV = "1.0.2"
+PV = "2.0.1"
 PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-audiooutput;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-audiooutput;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27601 \
            file://rdkservices.ini \
-           file://0001-RDKEMW-27601-Remove-FindWPEFrameworkHelpers.cmake-11.patch \
           "
-# Release version - 1.0.2
-SRCREV = "${PV}"
+# Release version - 2.0.1
+SRCREV = "ea4dc64c66cc0503d19687d95ccf0e1d454bdc79"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 

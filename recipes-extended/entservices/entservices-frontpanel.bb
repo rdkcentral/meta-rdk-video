@@ -2,19 +2,18 @@ SUMMARY = "ENTServices frontpanel plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=58ca1fa917c9de60f75f300dcabdc1b1"
 
-PV = "1.1.4"
+PV = "2.0.0"
 PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-frontpanel;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-frontpanel;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27601 \
            file://rdkservices.ini \
-           file://0001-RDKEMW-27601-Remove-FindWPEFrameworkHelpers.cmake-7.patch \
           "
 
-# Release version - 1.1.4
-SRCREV = "092ab05cc0b92f74892d5d4054a0f2a71e8d36f1"
+# Release version - 2.0.0
+SRCREV = "3449e7539bbbdb7e941cdccbcaf4877ca1405c45"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
