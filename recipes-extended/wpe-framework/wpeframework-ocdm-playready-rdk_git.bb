@@ -1,5 +1,4 @@
 SUMMARY = "WPE Framework OpenCDMi module for Playready"
-
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=19a2b3c39737289f92c7991b16599360"
 
@@ -10,7 +9,7 @@ PV = "1.1.1"
 
 DEPENDS += "  wpeframework wpeframework-clientlibraries wpeframework-tools-native entservices-apis"
 DEPENDS += "  gst-svp-ext gstreamer1.0"
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'use_ocdm_drm_ext', 'drm-ext', '', d)}"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'use_ocdm_drm_ext', ' drm-ext', '', d)}"
 
 # Platform configurations
 DEPENDS += " ${platform-playready-depends}"
@@ -18,7 +17,7 @@ EXTRA_OECMAKE += " ${platform-playready-flags}"
 RDEPENDS:${PN} += " ${platform-playready-rdepends}"
 
 RDEPENDS:${PN} += " gst-svp-ext"
-RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'use_ocdm_drm_ext', 'drm-ext', '', d)}"
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'use_ocdm_drm_ext', ' drm-ext', '', d)}"
 
 inherit cmake pkgconfig
 
@@ -28,8 +27,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/playready-rdk.git;${CMF_GITHUB_SRC_URI_SUFFIX};name=pr-source"
 # TAG version 1.1.1
-# d05a0fdf7dd7629b7e4efc9fcec13826aa2c06e3
-SRCREV = "d05a0fdf7dd7629b7e4efc9fcec13826aa2c06e3"
+SRCREV = "af8647dad5326eb614367c7b70639074a3890a91"
 SRCREV_FORMAT = "pr-source pr-header"
 S = "${WORKDIR}/git"
 
