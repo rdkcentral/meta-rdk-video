@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=85bcfede74b96d9a58c6ea5d4b607e58"
 DEPENDS = "zlib wpeframework-tools-native rfc"
 DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
-DEPENDS += "opentelemetry-cpp rdk-logger"
+DEPENDS += "rdk-logger"
 
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
@@ -47,6 +47,15 @@ WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
 BREAKPAD_LDFLAGS:pn-wpeframework = "${BACKTRACE_LDFLAGS}"
 EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
 LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
+
+def thunder_has_otel_recipe(d):
+    import glob, os
+    pattern = 'recipes-*/opentelemetry/opentelemetry-cpp_*.bb'
+    for layer in (d.getVar('BBLAYERS') or '').split():
+        if glob.glob(os.path.join(layer, pattern)) or \
+           glob.glob(os.path.join(layer, 'dynamic-layers/*', pattern)):
+            return True
+    return False
 
 PACKAGECONFIG ?= " \
     release \
@@ -123,7 +132,6 @@ EXTRA_OECMAKE += " \
     -DMESSAGING_EXTERNAL_OUTPUT=OFF \
     -DFLUSH_LOGS=ON \
     -DW3C_TRACE_CONTEXT_ENABLED=ON \
-    -DWPEFRAMEWORK_OPENTELEMETRY=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
     -DAUTHORIZEDEXTENSIONS='MessagingControl;PluginInitializerService;Systemd' \
