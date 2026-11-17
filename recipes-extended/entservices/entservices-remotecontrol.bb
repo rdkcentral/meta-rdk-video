@@ -6,14 +6,13 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig features_check
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-remotecontrol;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-remotecontrol;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27441 \
            file://rdkservices.ini \
-           file://0001-RDKEMW-27441-Migrate-Local-Logging-Wrappers-3.patch \
           "
 
-PV = "1.0.6"
-PR = "r2"
-SRCREV = "${PV}"
+PV = "1.0.7"
+PR = "r1"
+SRCREV = "8ff2fe3caa820503007df7084d6ea7d083acca95"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
@@ -38,7 +37,9 @@ include include/remotecontrol.inc
 
 PACKAGECONFIG ?= ""
 
+# CMAKE_PROJECT_VERSION sets the plugin's API version and startup log version
 EXTRA_OECMAKE += " \
+    -DCMAKE_PROJECT_VERSION=${PV} \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \

@@ -2,22 +2,21 @@ SUMMARY = "ENTServices Playerinfo plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=b8674f44703ede95bec14083251335db"
 
-PV = "1.1.4"
+PV = "2.0.0"
 PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-playerinfo;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-playerinfo;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27441 \
            file://index.html \
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
-           file://0001-RDKEMW-27441-Migrate-Local-Logging-Wrappers-8.patch \
           "
           
-# Release version - 1.0.3
-SRCREV = "a000d1e3dd5b264e32180d694e9f376a47b5e9bb"
+# Release version - 2.0.0
+SRCREV = "d2d5283f2b1b728ac16aa5862ca82451f13d4f6f"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
