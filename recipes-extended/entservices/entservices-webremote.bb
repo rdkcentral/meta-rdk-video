@@ -11,7 +11,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-webremote;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 # Release version - 1.0.0
-SRCREV = "6be9bf6531b503251f8e12130ebaf9328c0be13b"
+SRCREV = "b56ab9a91b1ed45c6274f19ed20740937ed62d10"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
