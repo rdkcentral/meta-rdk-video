@@ -29,7 +29,7 @@ CXXFLAGS += " -I${STAGING_INCDIR}/WPEFramework/interfaces_cpc"
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # Device id used to build the X<device_id> Linchpin topic (plugin config "deviceid")
-PLUGIN_WEBREMOTE_DEVICEID ?= "device_id"
+PLUGIN_WEBREMOTE_DEVICEID ?= "1649466973826466410"
 
 # ----------------------------------------------------------------------------
 
