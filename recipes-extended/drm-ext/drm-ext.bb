@@ -13,7 +13,7 @@ PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 SRCREV_FORMAT = "drm-ext"
 SRC_URI = "git://github.com/rdkcentral/drm-ext.git;${CMF_GITHUB_SRC_URI_SUFFIX};name=drm-ext"
 
-SRCREV = "10e478034c775b369136a1aff7427605e21ba76b"
+SRCREV = "1ffa19ca695478c21efd9215455c7a6efe98c648"
 
 S = "${WORKDIR}/git"
 
