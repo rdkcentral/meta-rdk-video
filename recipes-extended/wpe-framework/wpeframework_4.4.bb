@@ -20,6 +20,7 @@ SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RD
            file://wpeframework-init \
            file://wpeframework.service.in \
            "
+SRC_URI += "${@bb.utils.contains('DISTRO_FEATURES', 'splashscreen_common', 'file://10-splashscreen.conf', '', d)}"
 
 SRCREV_thunder = "7c33637bdfd36109ffb556da4e9b58d1443ebd69"
 
@@ -142,6 +143,11 @@ do_install:append() {
             fi
         fi
     fi
+    
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'splashscreen_common', 'true', 'false', d)}; then
+        install -d ${D}${systemd_unitdir}/system/wpeframework.service.d
+        install -m 0644 ${WORKDIR}/10-splashscreen.conf ${D}${systemd_unitdir}/system/wpeframework.service.d/10-splashscreen.conf
+    fi
 }
 
 SYSTEMD_SERVICE:${PN} = "wpeframework.service"
@@ -156,6 +162,7 @@ FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/*.so ${datadir}/WPEFramework/* ${PKG_CONFIG_DIR}/*.pc"
 FILES:${PN} += "${includedir}/cdmi.h"
 FILES:${PN} += "${systemd_unitdir}/system/wpeframework.service.d/network_manager_migration.conf"
+FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'splashscreen_common', '${systemd_unitdir}/system/wpeframework.service.d/10-splashscreen.conf', '', d)}"
 FILES:${PN}-dev += "${libdir}/cmake/*"
 FILES:${PN}-dbg += "${libdir}/wpeframework/proxystubs/.debug/"
 
