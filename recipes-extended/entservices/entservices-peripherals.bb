@@ -2,18 +2,17 @@ SUMMARY = "ENTServices peripherals plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 
-PV = "1.6.0"
-PR = "r0"
+PV = "1.6.1"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-peripherals;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-peripherals;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27441 \
           "
 
-# Release version - 1.6.0
-SRCREV = "9dad04564526cd725f85b230f3171238eb08d400"
+# Release version - 1.6.1
+SRCREV = "2f96ab53a2537b2d4c1df2f6b28d3bdb48587366"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
