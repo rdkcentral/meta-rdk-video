@@ -1,13 +1,13 @@
 # Copyright 2026 RDK Management
 # SPDX-License-Identifier: Apache-2.0
 
-SUMMARY = "Eyil secure Gateway and independent C client library"
+SUMMARY = "EyilGateway Thunder plugin and host protocol runtime"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 PV = "1.0.0"
-PR = "r0"
-SRCREV = "180b6ca638967c1138c39ae0ae151700465ca936"
+PR = "r1"
+SRCREV = "9026f0abfc50fb538c491ee46039c10728f1fcf7"
 SRC_URI = "${CMF_GITHUB_ROOT}/eyil-secure-gateway;protocol=${CMF_GITHUB_PROTOCOL};branch=topic/RDKEMW-27976"
 
 S = "${WORKDIR}/git"
@@ -27,7 +27,7 @@ PACKAGECONFIG[dev-tools] = "-DBUILD_EYIL_DEV_TOOLS=ON,-DBUILD_EYIL_DEV_TOOLS=OFF
 
 EXTRA_OECMAKE += " \
     -DPLUGIN_EYILGATEWAY=ON \
-    -DBUILD_EYILCLIENT=ON \
+    -DBUILD_EYILCLIENT=${@bb.utils.contains('PACKAGECONFIG', 'dev-tools', 'ON', 'OFF', d)} \
     -DBUILD_TESTING=OFF \
     -DENABLE_COVERAGE=OFF \
     -DPLUGIN_EYILGATEWAY_AUTOSTART=false \
@@ -66,13 +66,15 @@ FILES:${PN}-protocol = "${libdir}/libeyilprotocol.so.*"
 FILES:${PN}-tools = "${bindir}/CryptoTestClient \
                     ${prefix}/lib/wpeframework/plugins/libWPEFrameworkCryptoTestBackend.so \
                     ${sysconfdir}/WPEFramework/plugins/CryptoTestBackend.json"
-# Consumer build metadata belongs to the SDK/development package, not runtime.
-FILES:${PN}-dev += "${includedir}/eyilclient/EyilClient.h \
-                    ${includedir}/eyilprotocol ${datadir}/eyil/proto \
-                    ${libdir}/cmake/EyilClient ${libdir}/cmake/EyilProtocol \
-                    ${libdir}/pkgconfig/eyilclient.pc"
-RDEPENDS:${PN}-dev += "${PN}-client ${PN}-protocol protobuf-dev"
-RDEPENDS:${PN} += "wpeframework entservices-apis ${PN}-client"
+# Host SDK metadata is separate from the runtime plugin and libraries.
+FILES:${PN}-dev += "${includedir}/eyilprotocol ${datadir}/eyil/proto \
+                    ${libdir}/cmake/EyilProtocol"
+FILES:${PN}-dev:append = "${@bb.utils.contains('PACKAGECONFIG', 'dev-tools', ' ${includedir}/eyilclient/EyilClient.h ${libdir}/cmake/EyilClient ${libdir}/pkgconfig/eyilclient.pc', '', d)}"
+RDEPENDS:${PN}-dev += "${PN}-protocol (= ${EXTENDPKGV}) protobuf-dev"
+RDEPENDS:${PN}-dev:append = "${@bb.utils.contains('PACKAGECONFIG', 'dev-tools', ' ${PN}-client', '', d)}"
+# The production plugin uses the host protocol, not the application client.
+# Client libraries for Bolt containers are provided by meta-bolt-distro.
+RDEPENDS:${PN} += "wpeframework entservices-apis ${PN}-protocol (= ${EXTENDPKGV})"
 RDEPENDS:${PN}:append = "${@bb.utils.contains('PACKAGECONFIG', 'dev-tools', ' ${PN}-tools', '', d)}"
 RDEPENDS:${PN}-tools += "${PN}-client ${PN}-protocol"
 INSANE_SKIP:${PN} += "dev-so"
