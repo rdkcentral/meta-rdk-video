@@ -2,18 +2,17 @@ SUMMARY = "ENTServices runtime plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV = "1.2.3"
+PV = "1.2.8"
 PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-runtime;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKEMW-27441-Migrate-Local-Logging-Wrappers.patch \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-runtime;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27441 \
           "
 
-# Release version - 1.2.3
-SRCREV = "851bb16d4f4c6890c5a6a879b8586b62c265f09e"
+# Release version - 1.2.8
+SRCREV = "4f80b65ac724f875ea56756cb0b8a1f3fd0a4cd0"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"

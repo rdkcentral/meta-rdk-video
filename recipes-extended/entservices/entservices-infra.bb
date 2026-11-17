@@ -3,16 +3,15 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
 PV = "3.24.5"
-PR = "r4"
+PR = "r5"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "${PV}"
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRCREV = "d5b0eaa1fdbd1c50e7ca0729b91cbd293f18857c"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-infra;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27441 \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
-           file://0001-RDKEMW-27441-Migrate-Local-Logging-Wrappers-10.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

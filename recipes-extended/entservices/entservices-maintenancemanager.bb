@@ -5,14 +5,13 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=8156ec4df1d16b2ecb4e72131ff8026c"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-maintenancemanager;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKEMW-27441-Migrate-Local-Logging-Wrappers-12.patch \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-maintenancemanager;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27441 \
           "
 
 # Release version - 1.16.2
 PV = "1.16.2"
-PR = "r1"
-SRCREV = "709a5ca16a2c67f0cd3f60333fd89110c59fddab"
+PR = "r2"
+SRCREV = "feb395d260c0180678b4cfbeb3bc9233d76d1e11"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

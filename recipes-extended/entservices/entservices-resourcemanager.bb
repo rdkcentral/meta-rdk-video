@@ -2,16 +2,15 @@ SUMMARY = "ENTServices ResourceManager plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9adde9d5cb6e9c095d3e3abf0e9500f1"
 
-PV = "1.0.2"
-PR = "r1"
+PV = "1.0.3"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "${PV}"
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-resourcemanager;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRCREV = "4b71e1ea09a73c79a9720b5b53f328c9d8f468f2"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-resourcemanager;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27441 \
            file://rdkservices.ini \
-           file://0001-RDKEMW-27441-Migrate-Local-Logging-Wrappers-9.patch \
           "
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

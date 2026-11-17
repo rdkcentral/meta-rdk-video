@@ -2,22 +2,21 @@ SUMMARY = "ENTServices Cryptography plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e0be4633b6bc8df42eadad87f3e18a3a"
 
-PV = "1.0.5"
+PV = "1.0.7"
 PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-cryptography;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-cryptography;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27441 \
            file://index.html \
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
-           file://0001-RDKEMW-27441-Migrate-Local-Logging-Wrappers-7.patch \
           "
           
-# Release version - 1.0.5
-SRCREV = "d95807fac4b50ae036aeb1486b0be0dc3142ea93"
+# Release version - 1.0.7
+SRCREV = "36821ea73119faa4c1fd935aad3816c124d42e89"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"

@@ -2,22 +2,21 @@ SUMMARY = "ENTServices opencdmi plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7a65e8e9836ac44d082594220a9a3883"
 
-PV = "2.1.0"
+PV = "2.2.1"
 PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27441 \
            file://index.html \
            file://thunder_acl.json \
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
-           file://0001-RDKEMW-27441-Migrate-Local-Logging-Wrappers-6.patch \
           "
           
-# Release version - 2.1.0
-SRCREV = "d4c76022d3e448d90ee63b8c2fbd942361461bd2"
+# Release version - 2.2.1
+SRCREV = "c261dd65acd030dd2ff5da0df5372118c3f13708"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
