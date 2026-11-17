@@ -57,6 +57,11 @@ def thunder_has_otel_recipe(d):
             return True
     return False
 
+# auto = enable if the recipe exists in any layer; "0"/"1" force it off/on per platform.
+THUNDER_OPENTELEMETRY ?= "auto"
+PACKAGECONFIG:append = "${@' opentelemetry' if d.getVar('THUNDER_OPENTELEMETRY') == '1' or (d.getVar('THUNDER_OPENTELEMETRY') == 'auto' and thunder_has_otel_recipe(d)) else ''}"
+PACKAGECONFIG[opentelemetry] = "-DWPEFRAMEWORK_OPENTELEMETRY=ON,-DWPEFRAMEWORK_OPENTELEMETRY=OFF,opentelemetry-cpp"
+
 PACKAGECONFIG ?= " \
     release \
     virtualinput \
