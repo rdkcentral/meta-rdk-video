@@ -3,8 +3,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
 PV = "4.3.8"
 PR = "r0"
-#Note reverted opencdm wrong commit
-SRCREV_entservices-apis = "deb8c6ec44d1f9ee55e7df509f1c2aef34ce4955"
+SRCREV_entservices-apis = "c929d1d1e3a243c6cbcc3093e02cebeae1fe83c6"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
