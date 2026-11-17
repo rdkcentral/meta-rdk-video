@@ -13,7 +13,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-systemservices;${CMF_GITHUB_SRC_URI_SU
           "
 
 # Release version - 2.0.0
-SRCREV = "480f3f33fc5b1d9d8f1d0d707e9206e767f443e5"
+SRCREV = "c03d0d4d01045a01de312199a24eb72ec0f668ab"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
