@@ -37,12 +37,11 @@ SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 PACKAGECONFIG ?= " breakpadsupport \
     telemetrysupport \
-    devicesettings \
 "
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[devicesettings]       = "-DPLUGIN_DEVICESETTINGS=ON,-DPLUGIN_DEVICESETTINGS=OFF,iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal entservices-helpers,iarmbus devicesettings entservices-helpers"
+PACKAGECONFIG[devicesettings]       = "-DPLUGIN_DEVICESETTINGS=ON,-DPLUGIN_DEVICESETTINGS=OFF,iarmbus iarmmgrs virtual/vendor-devicesettings-hal entservices-helpers,iarmbus entservices-helpers"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \

@@ -16,8 +16,7 @@ S = "${WORKDIR}/git"
 
 inherit autotools pkgconfig systemd coverity
 
-DEPENDS += "devicesettings iarmbus iarmmgrs"
-RDEPENDS:${PN} += " devicesettings"
+DEPENDS += "iarmbus iarmmgrs"
 
 DEPENDS += " devicesettings-hal-headers "
 CXXFLAGS:append = " -I${STAGING_INCDIR}/rdk/halif/ds-hal/ "

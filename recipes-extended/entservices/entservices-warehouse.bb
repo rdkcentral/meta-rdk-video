@@ -43,7 +43,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc entservices-apis entservices-helpers devicesettings"
+PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc entservices-apis entservices-helpers,iarmbus rfc entservices-apis entservices-helpers"
 
 # ----------------------------------------------------------------------------
 

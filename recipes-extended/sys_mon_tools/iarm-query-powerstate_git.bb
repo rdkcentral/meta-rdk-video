@@ -16,7 +16,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/sys_mon_tools;${CMF_GITHUB_SRC_URI_SUFFIX};name=ia
 S = "${WORKDIR}/git"
 
 CFLAGS:append = " -DYOCTO_BUILD"
-DEPENDS = "iarmbus iarmmgrs dbus glib-2.0 wpeframework-clientlibraries entservices-powercontroller devicesettings"
+DEPENDS = "iarmbus iarmmgrs dbus glib-2.0 wpeframework-clientlibraries entservices-powercontroller"
 RDEPENDS:${PN} += "iarmmgrs wpeframework-clientlibraries entservices-powercontroller"
 
 inherit autotools pkgconfig coverity
