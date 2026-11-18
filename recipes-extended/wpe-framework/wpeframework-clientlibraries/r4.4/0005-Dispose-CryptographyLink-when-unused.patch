@@ -1,0 +1,66 @@
+From db397ec5e9300ace13aef95c54156a6a820893d9 Mon Sep 17 00:00:00 2001
+From: Eugene Mutavchi <Ievgen_Mutavchi@comcast.com>
+Date: Wed, 18 Nov 2026 16:46:48 +0000
+Subject: [PATCH] Dispose CryptographyLink when unused
+
+---
+ Source/cryptography/Cryptography.cpp | 31 +++++++++++++++++++++++++---
+ 1 file changed, 28 insertions(+), 3 deletions(-)
+
+diff --git a/Source/cryptography/Cryptography.cpp b/Source/cryptography/Cryptography.cpp
+index 919511a..9a41b46 100644
+--- a/Source/cryptography/Cryptography.cpp
++++ b/Source/cryptography/Cryptography.cpp
+@@ -52,14 +52,18 @@ namespace Implementation {
+         }
+         ~CryptographyLink() override
+         {
++            _singleton=nullptr;
+             _interfaces.Clear();
+             BaseClass::Close(Core::infinite);
+         }
+         static CryptographyLink& Instance(const std::string& callsign = Callsign)
+         {
+-            static CryptographyLink *instance = new CryptographyLink(TimeOut, PluginConnector, callsign);
+-            ASSERT(instance!=nullptr);
+-            return *instance;
++            if (!_singleton)
++            {
++                CryptographyLink *instance = new CryptographyLink(TimeOut, PluginConnector, callsign);
++                ASSERT(instance==_singleton);
++            }
++            return *_singleton;
+         }
+         static void Dispose()
+         {
+@@ -70,6 +74,19 @@ namespace Implementation {
+                 delete _singleton;
+             }
+         }
++        static void DisposeAsync()
++        {
++            if(_singleton != nullptr)
++            {
++                Core::SafeSyncType<Core::CriticalSection> lock(_singleton->_adminLock);
++                uint32_t count = _singleton->_interfaces.Count();
++                TRACE_L1("Live objects count = %u", count);
++                auto *link = _singleton;
++                _singleton = nullptr;
++                std::thread dispose_job([link=link] { delete link; });
++                dispose_job.detach();
++            }
++        }
+         Exchange::ICryptography* Acquire(const Core::NodeId& nodeId)
+         {
+             return BaseClass::Acquire<Exchange::ICryptography>(3000, nodeId, _T(""), ~0);
+@@ -498,6 +522,7 @@ namespace Implementation {
+                 _accessor->Release();
+                 _accessor = nullptr;
+             }
++            CryptographyLink::DisposeAsync();
+         }
+ 
+     private:
+--
+2.34.1
+
