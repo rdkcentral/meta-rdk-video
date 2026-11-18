@@ -3,13 +3,13 @@ SUMMARY = "ENTServices usbmassstorage plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
-PV = "1.1.5"
+PV = "1.1.7"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "0d937b74a735da454f724fbe652a45eb791f0914"
+SRCREV = "${PV}"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-usbmassstorage;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
