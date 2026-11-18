@@ -4,17 +4,15 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0 & ISC"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=83a31d934b0cc2ab2d44a329445b4366"
 
-
-PV = "1.1.22"
+PV = "1.2.1"
 PR = "r0"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
-SRCREV = "673aaa1ccd0b0d2d5ac69d26184a79e42d101794"
+SRCREV = "328b58b8d0c56b2326521555987d9a221647b6b0"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
-#SRC_URI:append = " file://irmgr.diff"
 S = "${WORKDIR}/git"
 
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec', " ", d)}"
@@ -26,7 +24,7 @@ DEPENDS:append = " telemetry"
 PARALLEL_MAKE = ""
 DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal \
          ermgr iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
-         deepsleep-manager-headers power-manager-headers wpeframework-clientlibraries"
+         deepsleep-manager-headers power-manager-headers entservices-powercontroller wpeframework-clientlibraries"
 DEPENDS:append:client = " virtual/mfrlib"
 DEPENDS:append = " virtual/mfrlib"
 DEPENDS:append = " virtual/vendor-devicesettings-hal "
@@ -141,6 +139,9 @@ CXXLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', '-DENABLE_
 CFLAGS += " -DDSMGR_LOGGER_ENABLED"
 CXXLAGS += " -DDSMGR_LOGGER_ENABLED"
 LDFLAGS += " -lrdkloggers"
+
+CFLAGS += " -DDEVICESETTINGS_PLUGIN_ENABLED"
+CXXLAGS += " -DDEVICESETTINGS_PLUGIN_ENABLED"
 
 EXTRA_OEMAKE += "-e MAKEFLAGS="
 
