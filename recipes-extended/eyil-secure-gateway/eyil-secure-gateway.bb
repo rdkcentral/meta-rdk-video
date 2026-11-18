@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 PV = "1.0.0"
 PR = "r1"
-SRCREV = "9026f0abfc50fb538c491ee46039c10728f1fcf7"
+SRCREV = "e0e989762171e68d3b56725e3346b2f21d4af22c"
 SRC_URI = "${CMF_GITHUB_ROOT}/eyil-secure-gateway;protocol=${CMF_GITHUB_PROTOCOL};branch=topic/RDKEMW-27976"
 
 S = "${WORKDIR}/git"
