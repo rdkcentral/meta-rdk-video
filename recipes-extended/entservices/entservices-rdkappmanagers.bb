@@ -8,7 +8,7 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "97139c1115d27cc17385d5629d43225ba7a0d5a3"
+SRCREV = "e20a02544dcbaa49bcd70446476453bfe01e8897"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -64,7 +64,7 @@ PACKAGECONFIG ?= " telemetrysupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'DAC-sec',              'ocicontainersec', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'rialtosupport', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'enable_ralf', ' ralfsupport', '', d)} \
+    ralfsupport \
     ${DEVOPTIONS} \
     ${PKG_SPECIFIER_SUPPORT} \
 "
@@ -135,6 +135,7 @@ EXTRA_OECMAKE += " \
     -DBUILD_SHARED_LIBS=ON \
     -DSECAPI_LIB=sec_api \
     -DAIMANAGERS_TELEMETRY_METRICS_SUPPORT=ON \
+    -DRALF_PACKAGE_SUPPORT=ON \
 "
 EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES', 'USE_LIBPACKAGE_RALF', '-DUSE_LIBPACKAGE_RALF=ON', '', d)}"
 
@@ -175,7 +176,7 @@ do_install:append() {
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}/wpeframework/plugins/*.so ${libdir}/*.so ${datadir}/WPEFramework/*"
-FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'enable_ralf', '${datadir}/*', '', d)}"
+FILES:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'ralfsupport', '${datadir}/*', '', d)}"
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
 INSANE_SKIP:${PN}-dbg += "libdir"
