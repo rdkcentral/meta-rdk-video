@@ -3,16 +3,16 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 PV = "1.4.2"
-PR = "r0"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicediagnostics;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-devicediagnostics;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27601 \
           "
 
 # Release version - 1.4.2
-SRCREV = "408dc5725023b64d708ba40097b16b8873bd746f"
+SRCREV = "607e9b174e842a360ea3f23a9f652ca5b46d7efe"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
