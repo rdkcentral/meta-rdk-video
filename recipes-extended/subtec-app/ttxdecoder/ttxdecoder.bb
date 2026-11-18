@@ -1,15 +1,17 @@
+##
+# TODO: Is this copyright notice the correct one?
+## Copyright (C) 2018 Liberty Global Service B.V.
+## Modifications: Copyright 2025 Comcast Cable Communications Management, LLC
+## Licensed under the MIT License
+##
 SUMMARY = "Teletext Decoder Library"
 LICENSE = "Apache-2.0 & MIT & BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://../LICENSE;md5=626bbc2ac7625da5b97fcb8a24bd88b3"
-PV = "1.8.2"
+
+require recipes-extended/subtec-app/subtec-repo.inc
 PR = "r0"
-DEPENDS = "subttxrend-common"
-
-PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
-
-SRCREV = "e451737d2abc70401f037b492fc192230896fd87"
-SRC_URI="${CMF_GITHUB_ROOT}/subtec-app;${CMF_GITHUB_SRC_URI_SUFFIX}"
 S = "${WORKDIR}/git/ttxdecoder"
+
+DEPENDS = "subttxrend-common"
 
 #
 # pkgconfig         - pkgconfig used in cmake (adds dependency)
