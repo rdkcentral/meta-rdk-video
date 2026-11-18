@@ -15,8 +15,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://rdkservices.ini \
           "
           
-# Release version - 2.1.1
-SRCREV = "02992097bf31b760d3d03e8cfa314f67e99a372f"
+# Release version - 2.1.2
+SRCREV = "57598c349a5a7f12357806ce9119a52a249cb946"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
