@@ -41,7 +41,7 @@ PACKAGECONFIG ?= " breakpadsupport \
     hdmicecsink \
 "
 HDMICECSINK_DEPS = "iarmbus iarmmgrs devicesettings virtual/vendor-devicesettings-hal hdmicec hdmicecheader entservices-helpers"
-HDMICECSINK_DEPS:vdevice_x86-64-mw = "iarmbus hdmicec hdmicecheader vdevice-noop entservices-helpers"
+HDMICECSINK_DEPS:vdevice_x86-64-mw = "iarmbus hdmicec hdmicecheader vdevice-noop entservices-helpers boost"
 
 HDMICECSINK_RDEPS = "iarmbus devicesettings hdmicec entservices-helpers"
 HDMICECSINK_RDEPS:vdevice_x86-64-mw = "iarmbus hdmicec entservices-helpers"
