@@ -7,9 +7,9 @@ PV = "2.0.1"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "2cd68eb84864b1d1b47b6da0dc02fae392f9394f"
+SRCREV_player-interface ?= "7e570a380173ba287fe51f8f4cf14d89cded861d"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "topic/RDKEMW-1240C"
+PLAYERINTERFACE_BRANCH ?= "develop"
 
 # Pass version/tag/rev info into CMake so they get baked into the library at build time
 EXTRA_OECMAKE += " -DPI_GIT_TAG=${PV}"
