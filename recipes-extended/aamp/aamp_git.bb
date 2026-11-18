@@ -7,7 +7,7 @@ PV = "3.12.0"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "f9a856eb2f2046ec3ecdcad62de94274dbbe2bc8"
+SRCREV_aamp ?= "c0375e4179e5b752f3ea542a09b5e01ea88acd2a"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "feature/RDK-62652_federated_2612"
