@@ -8,12 +8,13 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=85bcfede74b96d9a58c6ea5d4b607e58"
 DEPENDS = "zlib wpeframework-tools-native rfc"
 DEPENDS:append:libc-musl = " libexecinfo"
 DEPENDS += "breakpad-wrapper"
+DEPENDS += "rdk-logger"
 
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
 PR = "r58"
-PV = "4.4.7"
+PV = "4.4.8"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder \
@@ -21,7 +22,12 @@ SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RD
            file://wpeframework.service.in \
            "
 
-SRCREV_thunder = "7c33637bdfd36109ffb556da4e9b58d1443ebd69"
+SRCREV_thunder = "ce5f8fb9ac7e994f86ad4e6f81520e5eda99974c"
+SRC_URI += "git://github.com/rdkcentral/ThunderExtensions.git;protocol=https;branch=R4_4;name=extensions;destsuffix=thunder-extensions"
+SRCREV_extensions = "2df8fb014c4af12c3288d1daeb86e675ad105bea"
+SRCREV_FORMAT = "thunder_extensions"
+
+EXTRA_OECMAKE:append = " -DMESSAGING_EXTERNAL_OUTPUT_SOURCE_DIR=${WORKDIR}/thunder-extensions/MessagingControl/RDKLogger"
 
 S = "${WORKDIR}/git"
 TOOLCHAIN = "gcc"
@@ -41,6 +47,20 @@ WPEFRAMEWORK_EXIT_REASONS ?= "WatchdogExpired"
 BREAKPAD_LDFLAGS:pn-wpeframework = "${BACKTRACE_LDFLAGS}"
 EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
 LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
+
+def thunder_has_otel_recipe(d):
+    import glob, os
+    pattern = 'recipes-*/opentelemetry/opentelemetry-cpp_*.bb'
+    for layer in (d.getVar('BBLAYERS') or '').split():
+        if glob.glob(os.path.join(layer, pattern)) or \
+           glob.glob(os.path.join(layer, 'dynamic-layers/*', pattern)):
+            return True
+    return False
+
+# auto = enable if the recipe exists in any layer; "0"/"1" force it off/on per platform.
+THUNDER_OPENTELEMETRY ?= "auto"
+PACKAGECONFIG:append = "${@' opentelemetry' if d.getVar('THUNDER_OPENTELEMETRY') == '1' or (d.getVar('THUNDER_OPENTELEMETRY') == 'auto' and thunder_has_otel_recipe(d)) else ''}"
+PACKAGECONFIG[opentelemetry] = "-DWPEFRAMEWORK_OPENTELEMETRY=ON,-DWPEFRAMEWORK_OPENTELEMETRY=OFF,opentelemetry-cpp"
 
 PACKAGECONFIG ?= " \
     release \
@@ -77,6 +97,7 @@ PACKAGECONFIG[com] = "-DCOM=ON,,,"
 PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES', \
     'debug-variant', ' configoverride', '', d)}"
 
+PACKAGECONFIG[slim_warning_reporting] = "-DSLIM_WARNING_REPORTING=ON,-DSLIM_WARNING_REPORTING=OFF,"
 PACKAGECONFIG[configoverride] = \
     "-DENABLE_CONFIG_OVERRIDE=ON,-DENABLE_CONFIG_OVERRIDE=OFF"
 
@@ -113,7 +134,9 @@ EXTRA_OECMAKE += " \
     -DHIDE_NON_EXTERNAL_SYMBOLS=OFF \
     -DEXIT_REASONS=${WPEFRAMEWORK_EXIT_REASONS} \
     -DMESSAGING=ON \
+    -DMESSAGING_EXTERNAL_OUTPUT=OFF \
     -DFLUSH_LOGS=ON \
+    -DW3C_TRACE_CONTEXT_ENABLED=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
     -DAUTHORIZEDEXTENSIONS='MessagingControl;PluginInitializerService;Systemd' \
