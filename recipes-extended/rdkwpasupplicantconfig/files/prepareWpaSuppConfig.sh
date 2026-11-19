@@ -18,7 +18,6 @@
 # limitations under the License.
 
 . /etc/device.properties
-DEBUGINIFILE=""
 LOG_LEVEL_STR=""
 WPA_SUPP_PID_FILE="/var/run/wpa_supplicant/wlan0.pid"
 WPA_SUPP_CONF_DIR="/opt/secure/wifi"
@@ -34,7 +33,7 @@ COUNTRY_CODE="@WIFI_COUNTRY_CODE@"
 
 log ()
 {
-    echo "`/bin/timestamp` [$THIS_SCRIPT]: $*" >> /opt/logs/wpa_supplicant.log
+    echo "[$THIS_SCRIPT]: $*"
 }
 
 # Set KEY=VALUE in the conf file, replacing an existing entry or appending a new one
@@ -58,10 +57,6 @@ while ! mkdir -p "$WPA_SUPP_CONF_DIR" > /dev/null 2>&1; do
 done
 
 if [ -f "$WPA_SUPP_CONF_FILE" ]; then
-    if ! systemctl is-active securemount.service; then
-        log "TELEMETRY_WIFI_SECUREMOUNT_SERVICE_NOT_ACTIVE"
-    fi
-
     log "$WPA_SUPP_CONF_FILE file exists, removing network blocks and unsupported entries"
     sed -i -e '/^[[:space:]]*network={/,/^[[:space:]]*}[[:space:]]*$/d' \
            -e '/^[[:space:]]*update_config=/d' \
@@ -76,17 +71,12 @@ set_conf_param "country" "$COUNTRY_CODE"
 set_conf_param "pmf" "$PMF_CONFIG"
 set_conf_param "wowlan_triggers" "$WOWLAN_TRIGGERS"
 
-# Log level is -d by default; on non-prod builds /opt/wpa_supplicant.logging with TRACE raises it to -dd
+# Log level is -d by default; on non-prod builds the presence of /opt/wpa_supplicant.logging raises it to -dd
 LOG_LEVEL_STR="-d"
 if [ -f /opt/wpa_supplicant.logging ] && [ "$BUILD_TYPE" != "prod" ]; then
-    DEBUGINIFILE=/opt/wpa_supplicant.logging
-    log_line=`grep "LOG.RDK.WIFIWPA" "$DEBUGINIFILE"`
-    case "$log_line" in
-        *TRACE*) LOG_LEVEL_STR="-dd" ;;
-    esac
+    LOG_LEVEL_STR="-dd"
 fi
 log "wpa_supplicant log level set to $LOG_LEVEL_STR"
 
-# -u enables the D-Bus control interface (fi.w1.wpa_supplicant1) required by Type=dbus
 /bin/systemctl set-environment WPA_SUPP_CONF_FILE=$WPA_SUPP_CONF_FILE
-/bin/systemctl set-environment WPA_SUPP_ARGS="-Dnl80211 -c $WPA_SUPP_CONF_FILE -i $WIFI_INTERFACE -P $WPA_SUPP_PID_FILE -t -u $LOG_LEVEL_STR"
+/bin/systemctl set-environment WPA_SUPP_ARGS="-Dnl80211 -c $WPA_SUPP_CONF_FILE -i $WIFI_INTERFACE -P $WPA_SUPP_PID_FILE -O $WPA_SUPP_CTRL_INTERFACE -t -u $LOG_LEVEL_STR"
