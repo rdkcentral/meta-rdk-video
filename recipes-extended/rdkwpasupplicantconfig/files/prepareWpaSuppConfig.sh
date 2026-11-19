@@ -23,6 +23,7 @@ LOG_LEVEL_STR=""
 WPA_SUPP_PID_FILE="/var/run/wpa_supplicant/wlan0.pid"
 WPA_SUPP_CONF_DIR="/opt/secure/wifi"
 WPA_SUPP_CONF_FILE=$WPA_SUPP_CONF_DIR/wpa_supplicant.conf
+WPA_SUPP_CTRL_INTERFACE="/var/run/wpa_supplicant"
 WPA_SUPP_ARGS=""
 # Protected Management Frames - 0-Disabled, 1-Optional, 2-Required
 PMF_CONFIG=1
