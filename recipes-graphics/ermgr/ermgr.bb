@@ -31,9 +31,8 @@ do_install() {
    # appsservice expects ERM UDS in /tmp folder
    sed -i "/^Environment=\"XDG_RUNTIME_DIR/ s/run\"$/tmp\"/" ${D}${systemd_unitdir}/system/ermgr.service
 
-   # DS_COMRPC migration: remove dsmgr.service ordering from ermgr.service.
-   # ermgr must start before dsmgr, but dsmgr is removed — this line is now dead.
-   sed -i '/^Before=.*dsmgr\.service/d' ${D}${systemd_unitdir}/system/ermgr.service
+  # DS_COMRPC migration: remove only dsmgr.service from ERM startup ordering.
+  sed -i -E '/^Before=/ { s/(^Before=|[[:space:]])dsmgr\.service([[:space:]]|$)/\1\2/g; /^Before=[[:space:]]*$/d; }' ${D}${systemd_unitdir}/system/ermgr.service
 }
 
 SYSTEMD_SERVICE:${PN} += "ermgr.service"
