@@ -2,13 +2,13 @@ SUMMARY = "ENTServices appmanagers plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e78363a23fa72036998d7f40b889d209"
 
-PV = "1.2.0.0"
+PV = "1.3.0.0"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "746f77f2b7d9a2becb70b8c3c93bebec27a285d4"
+SRCREV = "518b6064275fd049e9fd9cd147e6c46beb568021"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-appmanagers;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
@@ -44,6 +44,8 @@ CXXFLAGS:remove_morty = " -Wall -Werror "
 SELECTED_OPTIMIZATION:append = " -Wno-deprecated-declarations"
 
 # ----------------------------------------------------------------------------
+DEVOPTIONS = "${@d.getVar('APPMGR_DEV_PKGCONFIG',True) if d.getVar('APPMGR_DEV_PKGCONFIG',True) else ''}"
+PKG_SPECIFIER_SUPPORT = "${@d.getVar('ENABLE_PKG_SPECIFIER',True) if d.getVar('ENABLE_PKG_SPECIFIER',True) else ''}"
 
 PACKAGECONFIG ?= " telemetrysupport \
     ocicontainer \
@@ -63,6 +65,8 @@ PACKAGECONFIG ?= " telemetrysupport \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencdm', 'opencdmi', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'rialtosupport', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'enable_ralf', ' ralfsupport', '', d)} \
+    ${DEVOPTIONS} \
+    ${PKG_SPECIFIER_SUPPORT} \
 "
 
 inherit features_check
@@ -95,6 +99,8 @@ PACKAGECONFIG[rdkwindowmanager]     = "-DPLUGIN_RDK_WINDOW_MANAGER=ON,-DPLUGIN_R
 PACKAGECONFIG[telemetrymetrics]     = "-DPLUGIN_TELEMETRYMETRICS=ON,-DPLUGIN_TELEMETRYMETRICS=OFF,entservices-apis,entservices-apis"
 PACKAGECONFIG[ralfsupport] = "-DRALF_PACKAGE_SUPPORT=ON, -DRALF_PACKAGE_SUPPORT=OFF,ralf-utils jsoncpp, ralf-utils jsoncpp"
 
+PACKAGECONFIG[devoptions] = "-DDEV_MOUNT_SUPPORT=ON, -DDEV_MOUNT_SUPPORT=OFF"
+PACKAGECONFIG[packagespecifier] ="-DPKG_SPECIFIER_SUPPORT=ON , -DPKG_SPECIFIER_SUPPORT=OFF"
 # ----------------------------------------------------------------------------
 
 PACKAGEMANAGER_PLUGIN_ARGS         ?= " \
