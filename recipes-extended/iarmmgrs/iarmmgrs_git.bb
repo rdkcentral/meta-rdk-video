@@ -4,13 +4,13 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0 & ISC"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=83a31d934b0cc2ab2d44a329445b4366"
 
-PV = "1.2.1"
-PR = "r0"
+PV = "1.2.1_Test"
+PR = "r1"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
-SRCREV = "328b58b8d0c56b2326521555987d9a221647b6b0"
+SRCREV = "6be1c718b7313597c1219a813130ff2e52664826"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
 S = "${WORKDIR}/git"
