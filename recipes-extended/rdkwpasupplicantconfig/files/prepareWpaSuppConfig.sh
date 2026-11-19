@@ -43,6 +43,10 @@ set_conf_param ()
     if grep -q "^$1=" "$WPA_SUPP_CONF_FILE"; then
         sed -i "s/^$1=.*/$1=$2/" "$WPA_SUPP_CONF_FILE"
     else
+        # Terminate a last line that has no trailing newline so the new entry is not joined to it
+        if [ -s "$WPA_SUPP_CONF_FILE" ] && [ -n "`tail -c 1 "$WPA_SUPP_CONF_FILE"`" ]; then
+            echo >> "$WPA_SUPP_CONF_FILE"
+        fi
         echo "$1=$2" >> "$WPA_SUPP_CONF_FILE"
     fi
     log "Set $1=$2 in $WPA_SUPP_CONF_FILE"
@@ -58,52 +62,29 @@ if [ -f "$WPA_SUPP_CONF_FILE" ]; then
         log "TELEMETRY_WIFI_SECUREMOUNT_SERVICE_NOT_ACTIVE"
     fi
 
-    log "$WPA_SUPP_CONF_FILE file exists and configurations are present"
-    sed -i "/bssid=/d" $WPA_SUPP_CONF_FILE
-    sed -i "s/key_mgmt=OPEN/key_mgmt=NONE/g" $WPA_SUPP_CONF_FILE
-    sed -i "/update_config/d" $WPA_SUPP_CONF_FILE
-    sed -i '/roaming_enable/d' $WPA_SUPP_CONF_FILE
-    sed -i '/kvr_enable/d' $WPA_SUPP_CONF_FILE
-    #Update key_mgmt in wpa_supplicant.conf
-    if grep -q 'psk="' $WPA_SUPP_CONF_FILE; then      # conf has passphrase
-        sed -i 's/key_mgmt=[ \t]*\(WPA-PSK\|SAE\|WPA-PSK[ \t]*SAE\)[ \t]*$/key_mgmt=WPA-PSK WPA-PSK-SHA256 SAE/g' $WPA_SUPP_CONF_FILE
-    elif grep -q 'psk=[^"]' $WPA_SUPP_CONF_FILE; then # conf has psk
-        sed -i 's/key_mgmt=[ \t]*WPA-PSK[ \t]*$/key_mgmt=WPA-PSK WPA-PSK-SHA256/g' $WPA_SUPP_CONF_FILE
-    fi
-    grep -q "key_mgmt=NONE" $WPA_SUPP_CONF_FILE || sed -i "/auth_alg/d" $WPA_SUPP_CONF_FILE
-    #Delete sae_password and ieee80211w
-    sed -i "/ieee80211w/d" $WPA_SUPP_CONF_FILE
-    sed -i "/sae_password/d" $WPA_SUPP_CONF_FILE
-
-    if grep -q "^country=$COUNTRY_CODE$" $WPA_SUPP_CONF_FILE; then
-        log "Country code $COUNTRY_CODE is present, No need to change"
-    elif grep -q "^country=" $WPA_SUPP_CONF_FILE; then
-        log "Updating country code to $COUNTRY_CODE"
-        sed -i "s/^country=.*/country=$COUNTRY_CODE/" $WPA_SUPP_CONF_FILE
-    elif [ ! -s "$WPA_SUPP_CONF_FILE" ]; then
-        echo "country=$COUNTRY_CODE" > "$WPA_SUPP_CONF_FILE"
-    else
-        sed -i "1icountry=$COUNTRY_CODE" $WPA_SUPP_CONF_FILE
-    fi
+    log "$WPA_SUPP_CONF_FILE file exists, removing network blocks and unsupported entries"
+    sed -i -e '/^[[:space:]]*network={/,/^[[:space:]]*}[[:space:]]*$/d' \
+           -e '/^[[:space:]]*update_config=/d' \
+           -e '/^[[:space:]]*roaming_enable=/d' \
+           -e '/^[[:space:]]*kvr_enable=/d' \
+           -e '/^[[:space:]]*$/d' "$WPA_SUPP_CONF_FILE"
 else
     log "$WPA_SUPP_CONF_FILE file is missing. Creating file and updating configurations..."
-    echo "country=$COUNTRY_CODE" > $WPA_SUPP_CONF_FILE
+    : > "$WPA_SUPP_CONF_FILE"
 fi
+set_conf_param "country" "$COUNTRY_CODE"
 set_conf_param "pmf" "$PMF_CONFIG"
 set_conf_param "wowlan_triggers" "$WOWLAN_TRIGGERS"
 
-# Get wpa_supplicant.logging file with opt-override support
+# Log level is -d by default; on non-prod builds /opt/wpa_supplicant.logging with TRACE raises it to -dd
+LOG_LEVEL_STR="-d"
 if [ -f /opt/wpa_supplicant.logging ] && [ "$BUILD_TYPE" != "prod" ]; then
     DEBUGINIFILE=/opt/wpa_supplicant.logging
-else
-    DEBUGINIFILE=/etc/wpa_supplicant.logging
+    log_line=`grep "LOG.RDK.WIFIWPA" "$DEBUGINIFILE"`
+    case "$log_line" in
+        *TRACE*) LOG_LEVEL_STR="-dd" ;;
+    esac
 fi
-# Only -d (default) and -dd are supported
-log_line=`grep "LOG.RDK.WIFIWPA" $DEBUGINIFILE`
-case "$log_line" in
-    *TRACE*) LOG_LEVEL_STR="-dd" ;;
-    *)       LOG_LEVEL_STR="-d" ;;
-esac
 log "wpa_supplicant log level set to $LOG_LEVEL_STR"
 
 # -u enables the D-Bus control interface (fi.w1.wpa_supplicant1) required by Type=dbus
