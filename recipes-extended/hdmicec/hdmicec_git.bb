@@ -14,8 +14,8 @@ SRCREV_hdmicec:vdevice_x86-64-mw = "57df60fdf8866460613735af1d2e39caa3939242"
 SRC_URI = "${CMF_GITHUB_ROOT}/hdmicec;${CMF_GITHUB_SRC_URI_SUFFIX};name=hdmicec"
 SRCREV_FORMAT = "hdmicec"
 
-DEPENDS = "glib-2.0 dbus iarmbus devicesettings-hal-headers hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
-DEPENDS:remove:vdevice_x86-64-mw = "devicesettings-hal-headers iarmmgrs-hal-headers"
+DEPENDS = "glib-2.0 dbus iarmbus hdmicecheader virtual/vendor-hdmicec-hal iarmmgrs-hal-headers telemetry"
+DEPENDS:remove:vdevice_x86-64-mw = "iarmmgrs-hal-headers"
 
 RDEPENDS:${PN} = "telemetry"
 RDEPENDS:${PN}:append:vdevice_x86-64-mw = " rdk-halif-aidl-mw-hdmicec rdk-halif-aidl-mw-common libbinderrdk"
