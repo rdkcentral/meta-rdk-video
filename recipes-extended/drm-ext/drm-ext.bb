@@ -1,8 +1,6 @@
 SUMMARY = "Common DRM platform abstraction framework"
 DESCRIPTION = "Common C++ API for DRM platform hooks and SoC callbacks"
-
 LICENSE = "Apache-2.0"
-
 LIC_FILES_CHKSUM = "file://LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 inherit features_check
@@ -10,10 +8,13 @@ REQUIRED_DISTRO_FEATURES = "use_ocdm_drm_ext"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRCREV_FORMAT = "drm-ext"
-SRC_URI = "git://github.com/rdkcentral/drm-ext.git;${CMF_GITHUB_SRC_URI_SUFFIX};name=drm-ext"
+PR = "r0"
+PV = "1.0.0"
 
-SRCREV = "1ffa19ca695478c21efd9215455c7a6efe98c648"
+SRC_URI = "git://github.com/rdkcentral/drm-ext.git;${CMF_GITHUB_SRC_URI_SUFFIX};name=drm-ext"
+# TAG version 1.0.0
+SRCREV = "efd258d8fe09222fcac91e006490bab3ce9eeba3"
+SRCREV_FORMAT = "drm-ext"
 
 S = "${WORKDIR}/git"
 
