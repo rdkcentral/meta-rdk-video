@@ -68,19 +68,14 @@ ASNEEDED = ""
 INCLUDE_DIRS = " \
     -I${S}/mfr/include \
     -I${S}/sysmgr/include \
-    -I${S}/dsmgr \
     -I=${includedir}/wdmp-c \
     -I=${includedir}/rdk/safeclib \
     -I=${includedir}/rdk/iarmbus \
     -I=${includedir}/rdk/halif/power-manager \
     -I=${includedir}/rdk/halif/deepsleep-manager \
-    -I=${includedir}/rdk/halif/ds-hal \
     -I=${includedir}/ccec/drivers/include \
     -I=${includedir}/ccec/drivers/ \
     -I=${includedir} \
-    -I=${includedir}/rdk/ds \
-    -I=${includedir}/rdk/ds-hal \
-    -I=${includedir}/rdk/ds-rpc \
     -I=${includedir}/rdk/iarmmgrs-hal \
     -I=${includedir}/directfb \
     -I=${includedir}/glib-2.0 \
@@ -135,13 +130,6 @@ CXXLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', '-DENABLE_
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', '-DENABLE_FLEX2_RESOLUTION', \
              '', d), d), d), d), d)}"
 
-CFLAGS += " -DDSMGR_LOGGER_ENABLED"
-CXXLAGS += " -DDSMGR_LOGGER_ENABLED"
-LDFLAGS += " -lrdkloggers"
-
-CFLAGS += " -DDEVICESETTINGS_PLUGIN_ENABLED"
-CXXLAGS += " -DDEVICESETTINGS_PLUGIN_ENABLED"
-
 EXTRA_OEMAKE += "-e MAKEFLAGS="
 
 do_compile() {
@@ -149,7 +137,6 @@ do_compile() {
     oe_runmake -B -C ${S}/utils/
     #LDFLAGS="-lsystemd ${LDFLAGS}" CFLAGS="-DENABLE_SD_NOTIFY ${CFLAGS}" oe_runmake -B -C ${S}/sysmgr/
     LDFLAGS="${LDFLAGS}" CFLAGS="-DENABLE_SD_NOTIFY ${CFLAGS}" oe_runmake -B -C ${S}/sysmgr/
-    CFLAGS=" ${CFLAGS}" LDFLAGS="-lds -lds-hal -ldshalsrv -ldl -L${S}/utils -liarmUtils ${LDFLAGS}" oe_runmake -B -C ${S}/dsmgr/
 
     if [ "${@bb.utils.contains('PACKAGECONFIG', 'mfr', 'mfr', '', d)}" != "" ]; then
 
@@ -179,7 +166,7 @@ do_install() {
     done
 
     install -d ${D}${bindir}
-    for i in dsmgr/*Main sysmgr/*Main; do
+    for i in sysmgr/*Main; do
         install -m 0755 ${S}/$i ${D}${bindir}
     done
 
@@ -216,7 +203,7 @@ FILES_SOLIBSDEV = ""
 SOLIBS = ".so"
 INSANE_SKIP:${PN} += "dev-so"
 # Breakpad processname and logfile mapping
-BREAKPAD_LOGMAPPER_PROCLIST = "dsMgrMain,IARMDaemonMain,mfrMgrMain,sysMgrMain"
+BREAKPAD_LOGMAPPER_PROCLIST = "IARMDaemonMain,mfrMgrMain,sysMgrMain"
 BREAKPAD_LOGMAPPER_LOGLIST = "uimgr_log.txt"
 
 DEPENDS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' sqlite3  ', '',d)}"
@@ -252,10 +239,10 @@ LDFLAGS += "-lRDKMfrLib "
 
 LDFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' -lsqlite3 ', '',d)}"
 
-LDFLAGS += " -ldshalcli -lds -liarmmgrs-deepsleep-hal"
+LDFLAGS += " -liarmmgrs-deepsleep-hal"
 
 do_compile:append() {
-    LDFLAGS="-ldshalcli -lds -liarmmgrs-deepsleep-hal -lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" oe_runmake -B -C ${S}/mfr/test_mfr/
+    LDFLAGS="-liarmmgrs-deepsleep-hal -lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" oe_runmake -B -C ${S}/mfr/test_mfr/
 }
 
 do_install:append(){
