@@ -24,7 +24,7 @@ SRC_URI = "git://github.com/rdkcentral/ThunderClientLibraries.git;protocol=https
            "
 
 # Sept 15, 2026
-SRCREV_wpeframework-clientlibraries = "53df09d0ab00cf92569a93a84dded715d0e381ce"
+SRCREV_wpeframework-clientlibraries = "b85d31ad9e519c368631bc7a3d29e74d65e10f4e"
 
 # ----------------------------------------------------------------------------
 
