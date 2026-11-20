@@ -18,14 +18,15 @@ PV = "v3.6.5"
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=support/3.6.0"
+SRC_URI_append = " file://NetworkDebug.service"
 
 SRCREV = "e690975ebb8d302ffe9b454ff8a05eb4cfe67166"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 DEPENDS = " openssl rdk-logger zlib boost curl glib-2.0 wpeframework entservices-apis wpeframework-tools-native libsoup-2.4 gupnp gssdp telemetry iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
-RDEPENDS:${PN} += " wpeframework rdk-logger curl iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
+RDEPENDS:${PN} += " tcpdump wpeframework rdk-logger curl iarmbus iarmmgrs ${@bb.utils.contains('DISTRO_FEATURES', 'ENABLE_NETWORKMANAGER', ' networkmanager ', '', d)} "
 
-inherit cmake pkgconfig python3native
+inherit cmake pkgconfig python3native systemd
 
 # Specify any options you want to pass to cmake using EXTRA_OECMAKE:
 EXTRA_OECMAKE += " \
@@ -50,7 +51,9 @@ CFLAGS += "-I${STAGING_INCDIR}/rdk/iarmbus -I${STAGING_INCDIR}/rdk/iarmmgrs-hal"
 do_install:append(){
     install -d ${D}${sysconfdir}/NetworkManager
     install -d ${D}${sysconfdir}/NetworkManager/conf.d
+    install -d ${D}${systemd_unitdir}/system
     install -m 0755 ${S}/conf/99-default-link-local ${D}${sysconfdir}/NetworkManager/conf.d/99-default-link-local.conf
+    install -m 0644 ${S}/NetworkDebug.service ${D}${systemd_unitdir}/system
 }
 
 # Configure Logging for the Router Discovery Tool
@@ -79,3 +82,5 @@ FILES:${PN} += "${sysconfdir}/* "
 FILES:${PN} += "${systemd_unitdir}/system/* "
 FILES:${PN} += "${base_libdir}/rdk/*"
 FILES:${PN}-dev += "${includedir}/*"
+
+SYSTEMD_SERVICE:${PN} +=  "NetworkDebug.service"
