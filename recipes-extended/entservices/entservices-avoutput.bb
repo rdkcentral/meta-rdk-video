@@ -10,7 +10,7 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-avoutput;${CMF_GITHUB_SRC_URI_SUFFIX}"
 
 # Release version - 2.2.1-hotfix-dsmgr-comrpc.1
-SRCREV = "58aea68bc004e54e01ad72f85a4bd52c27f146c4"
+SRCREV = "951b020e097a581823a331ee8c4b7e41bfb93135"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
