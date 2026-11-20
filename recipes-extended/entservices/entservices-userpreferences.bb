@@ -2,8 +2,8 @@ SUMMARY = "ENTServices Userpreferences plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV = "1.1.1"
-PR = "r0"
+PV = "1.2.4_Test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -13,8 +13,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-userpreferences;${CMF_GITHUB_SRC_URI_S
            file://rdkservices.ini \
           "
 
-# Release version - 1.1.1
-SRCREV = "31b8421268a2f8cdc3393c80cee106ceed68ee69"
+# Release version - 1.2.4
+SRCREV = "8443c5b9cc298788219e9a2e1602218aa9c8f41c"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
