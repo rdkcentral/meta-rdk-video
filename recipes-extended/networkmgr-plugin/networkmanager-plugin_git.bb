@@ -18,7 +18,7 @@ PV = "v3.6.5"
 S = "${WORKDIR}/git"
 
 SRC_URI = "git://github.com/rdkcentral/networkmanager.git;protocol=https;branch=support/3.6.0"
-SRC_URI_append = " file://NetworkDebug.service"
+SRC_URI:append = " file://NetworkDebug.service"
 
 SRCREV = "e690975ebb8d302ffe9b454ff8a05eb4cfe67166"
 
