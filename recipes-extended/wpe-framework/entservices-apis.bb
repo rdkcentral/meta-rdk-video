@@ -3,7 +3,6 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
 PV = "5.0.0"
 PR = "r0"
-#reverted playready interface
 SRCREV_entservices-apis = "${PV}"
 
 
