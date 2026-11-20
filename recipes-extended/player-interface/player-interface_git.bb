@@ -7,9 +7,9 @@ PV = "2.0.1"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-SRCREV_player-interface ?= "801aa11fb90d636c58ed430aee07e397a0689b12"
+SRCREV_player-interface ?= "b69d5d4e243794e39c8200b22b4b48addd6b7ce1"
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "main"
+PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-19461-v1-dev"
 
 # Pass version/tag/rev info into CMake so they get baked into the library at build time
 EXTRA_OECMAKE += " -DPI_GIT_TAG=${PV}"
@@ -24,7 +24,7 @@ DEPENDS += "wpeframework ${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', '
 
 EXTRA_OECMAKE += " -DCMAKE_USE_FIREBOLT=1 "
 EXTRA_OECMAKE += " -DCMAKE_IARM_MGR=0 "
-
+DEPENDS += "firebolt-cpp-transport firebolt-entos-cpp-client"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec_cc', 'subttxrend-app', '', d)}"
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
