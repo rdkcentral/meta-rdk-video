@@ -24,7 +24,7 @@ DEPENDS += "wpeframework ${@bb.utils.contains('DISTRO_FEATURES', 'gstreamer1', '
 
 EXTRA_OECMAKE += " -DCMAKE_USE_FIREBOLT=1 "
 EXTRA_OECMAKE += " -DCMAKE_IARM_MGR=0 "
-DEPENDS += "firebolt-cpp-transport firebolt-entos-cpp-client"
+DEPENDS += "firebolt-cpp-transport"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec_cc', 'subttxrend-app', '', d)}"
 RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'packagegroup-subttxrend-app', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby', '', d)}"
