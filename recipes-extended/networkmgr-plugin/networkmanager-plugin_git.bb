@@ -53,7 +53,7 @@ do_install:append(){
     install -d ${D}${sysconfdir}/NetworkManager/conf.d
     install -d ${D}${systemd_unitdir}/system
     install -m 0755 ${S}/conf/99-default-link-local ${D}${sysconfdir}/NetworkManager/conf.d/99-default-link-local.conf
-    install -m 0644 ${S}/NetworkDebug.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${WORKDIR}/NetworkDebug.service ${D}${systemd_unitdir}/system
 }
 
 # Configure Logging for the Router Discovery Tool
