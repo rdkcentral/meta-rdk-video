@@ -10,8 +10,6 @@ ExecStartPre=/bin/bash -c 'if [ ! -f /opt/ipaddresses.txt ] || [ ! -s /opt/ipadd
 ExecStart=/bin/bash -c 'filter=$(cat /opt/ipaddresses.txt | sed "s/^/host /; s/$/ or /" | tr -d "\n" | sed "s/ or $//"); tcpdump -i any -w /opt/504.pcap "$filter"'
 StandardOutput=journal
 StandardError=journal
-Restart=on-failure
-RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
