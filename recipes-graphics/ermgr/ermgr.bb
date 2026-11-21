@@ -27,8 +27,12 @@ do_install() {
        sed -i "/^Before=/ s/ audioserver.service tvserver.service$//" ${D}${systemd_unitdir}/system/ermgr.service
        sed -i "/^WantedBy=/ s/ui-init.target$/wpeframework.service/" ${D}${systemd_unitdir}/system/ermgr.service
    fi
+
    # appsservice expects ERM UDS in /tmp folder
    sed -i "/^Environment=\"XDG_RUNTIME_DIR/ s/run\"$/tmp\"/" ${D}${systemd_unitdir}/system/ermgr.service
+
+  # DS_COMRPC migration: remove only dsmgr.service from ERM startup ordering.
+  sed -i -E '/^Before=/ { s/(^Before=|[[:space:]])dsmgr\.service([[:space:]]|$)/\1\2/g; /^Before=[[:space:]]*$/d; }' ${D}${systemd_unitdir}/system/ermgr.service
 }
 
 SYSTEMD_SERVICE:${PN} += "ermgr.service"
