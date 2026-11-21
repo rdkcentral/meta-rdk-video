@@ -2,7 +2,7 @@ SUMMARY = "ENTServices AVOutput plugin"
 LICENSE = "CLOSED"
 
 PV = "2.2.1-hotfix-dsmgr-comrpc.1"
-PR = "r0"
+PR = "r99"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
