@@ -1,0 +1,438 @@
+From 51c20a7278816231aff7a5eb00ee29119026f999 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Tue, 20 Oct 2026 12:11:30 +0000
+Subject: [PATCH] add more debug rendering
+
+---
+ .../src/libANGLE/renderer/gl/TextureGL.cpp    | 33 +++++++++++++++++
+ Source/WebCore/page/MemoryRelease.cpp         | 10 ++++++
+ .../graphics/angle/GraphicsContextGLANGLE.cpp | 17 +++++++++
+ .../ImageBufferSkiaAcceleratedBackend.cpp     | 22 ++++++++++++
+ .../graphics/skia/PlatformDisplaySkia.cpp     | 22 ++++++++++--
+ .../graphics/texmap/BitmapTexture.cpp         |  6 ++++
+ .../GraphicsContextGLTextureMapperANGLE.cpp   | 35 +++++++++++++++++++
+ .../CompositingCoordinator.cpp                |  5 +++
+ .../WebKit/WebProcess/glib/WebProcessGLib.cpp | 12 +++++++
+ 9 files changed, 160 insertions(+), 2 deletions(-)
+
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+index 397b2410a72f..1e7f01e232c7 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+@@ -37,6 +37,8 @@
+ #include <mutex>
+ #include <unistd.h>
+ 
++#include "../../../../../../WebCore/platform/graphics/GPUDebugNexus.h"
++
+ using angle::CheckedNumeric;
+ 
+ namespace rx
+@@ -144,6 +146,7 @@ void GpuDbgDumpStats(const char *reason)
+     static const char *const selfKeys[] = {"VmRSS", "VmSize"};
+     gpudbg::DumpProcFile("/proc/meminfo", memKeys, 4);
+     gpudbg::DumpProcFile("/proc/self/status", selfKeys, 2);
++    GPUDebugNexus::dump(reason);
+ }
+ 
+ namespace
+@@ -290,7 +293,19 @@ void TextureGL::onDestroy(const gl::Context *context)
+         GpuDbgDumpStats("periodic");
+     GetImplAs<ContextGL>(context)->flushIfNecessaryBeforeDeleteTextures();
+     StateManagerGL *stateManager = GetStateManagerGL(context);
++    GPUDebugNexus::Snapshot gpuDbgBefore;
++    const bool gpuDbgMeasure = freed > 4 && GPUDebugNexus::takeSnapshot(gpuDbgBefore);
+     stateManager->deleteTexture(mTextureID);
++    if (gpuDbgMeasure)
++    {
++        GPUDebugNexus::Snapshot gpuDbgAfter;
++        if (GPUDebugNexus::takeSnapshot(gpuDbgAfter))
++        {
++            char tag[96];
++            snprintf(tag, sizeof(tag), "ANGLE_TEXDELETE texture=%u", mTextureID);
++            GPUDebugNexus::dumpDelta(tag, gpuDbgBefore, gpuDbgAfter, freed);
++        }
++    }
+     mTextureID = 0;
+ }
+ 
+@@ -385,6 +400,13 @@ angle::Result TextureGL::setImageHelper(const gl::Context *context,
+         (void)setBaseLevel(context, 0);
+     }
+ 
++    const unsigned long long gpuDbgEstBytes = static_cast<unsigned long long>(size.width) * size.height * size.depth *
++        std::max<GLuint>(originalInternalFormatInfo.pixelBytes, 1);
++    const bool gpuDbgMeasure = gpuDbgEstBytes > 4;
++    GPUDebugNexus::Snapshot gpuDbgBefore;
++    if (gpuDbgMeasure)
++        GPUDebugNexus::takeSnapshot(gpuDbgBefore);
++
+     if (nativegl::UseTexImage2D(getType()))
+     {
+         ASSERT(size.depth == 1);
+@@ -413,6 +435,17 @@ angle::Result TextureGL::setImageHelper(const gl::Context *context,
+     }
+ 
+     // Reached only when the driver accepted the allocation.
++    if (gpuDbgMeasure)
++    {
++        GPUDebugNexus::Snapshot gpuDbgAfter;
++        if (GPUDebugNexus::takeSnapshot(gpuDbgAfter))
++        {
++            char tag[128];
++            snprintf(tag, sizeof(tag), "ANGLE_TEXIMAGE texture=%u %dx%d level=%zu", mTextureID,
++                     size.width, size.height, level);
++            GPUDebugNexus::dumpDelta(tag, gpuDbgBefore, gpuDbgAfter, gpuDbgEstBytes);
++        }
++    }
+     gpudbg::SetLevel(this, static_cast<uint32_t>(target) * 64 + static_cast<uint32_t>(level),
+                      static_cast<uint64_t>(size.width) * size.height * size.depth *
+                          std::max<GLuint>(originalInternalFormatInfo.pixelBytes, 1));
+diff --git a/Source/WebCore/page/MemoryRelease.cpp b/Source/WebCore/page/MemoryRelease.cpp
+index 43220fab3cf5..fd663f61d2f2 100644
+--- a/Source/WebCore/page/MemoryRelease.cpp
++++ b/Source/WebCore/page/MemoryRelease.cpp
+@@ -27,6 +27,8 @@
+ #include "MemoryRelease.h"
+ 
+ #include <stdio.h>
++#include <time.h>
++#include "GPUDebugNexus.h"
+ #include "BackForwardCache.h"
+ #include "CSSFontSelector.h"
+ #include "CSSValuePool.h"
+@@ -162,6 +164,14 @@ void releaseMemory(Critical critical, Synchronous synchronous, MaintainBackForwa
+ {
+     TraceScope scope(MemoryPressureHandlerStart, MemoryPressureHandlerEnd, static_cast<uint64_t>(critical), static_cast<uint64_t>(synchronous));
+     fprintf(stderr, "[GPUDEBUG] RELEASE_MEMORY critical=%d synchronous=%d\n", critical == Critical::Yes, synchronous == Synchronous::Yes);
++    {
++        static time_t s_gpuDbgLastNexusDump = 0;
++        time_t now = time(nullptr);
++        if (critical == Critical::Yes && now - s_gpuDbgLastNexusDump >= 10) {
++            s_gpuDbgLastNexusDump = now;
++            GPUDebugNexus::dump("RELEASE_MEMORY_CRITICAL");
++        }
++    }
+ 
+ #if PLATFORM(IOS_FAMILY)
+     if (critical == Critical::No)
+diff --git a/Source/WebCore/platform/graphics/angle/GraphicsContextGLANGLE.cpp b/Source/WebCore/platform/graphics/angle/GraphicsContextGLANGLE.cpp
+index 94c5193deffe..6dfc060e1df9 100644
+--- a/Source/WebCore/platform/graphics/angle/GraphicsContextGLANGLE.cpp
++++ b/Source/WebCore/platform/graphics/angle/GraphicsContextGLANGLE.cpp
+@@ -45,6 +45,7 @@
+ #include <wtf/text/StringBuilder.h>
+ #include <atomic>
+ #include <stdio.h>
++#include "GPUDebugNexus.h"
+ 
+ #if ENABLE(VIDEO) && USE(AVFOUNDATION)
+ #include "GraphicsContextGLCVCocoa.h"
+@@ -290,6 +291,11 @@ bool GraphicsContextGLANGLE::reshapeFBOs(const IntSize& size)
+     const int width = size.width();
+     const int height = size.height();
+     GLuint colorFormat = attrs.alpha ? GL_RGBA : GL_RGB;
++    GPUDebugNexus::Snapshot gpuDbgBefore;
++    bool gpuDbgMeasure = GPUDebugNexus::takeSnapshot(gpuDbgBefore);
++    fprintf(stderr, "[GPUDEBUG] WEBGL_RESHAPE_FBOS ctx=%p %dx%d antialias=%d depth=%d stencil=%d alpha=%d preserveDrawingBuffer=%d premultipliedAlpha=%d webgl2=%d hostWindow=%d depthStencilFormat=0x%x\n",
++        this, width, height, attrs.antialias, attrs.depth, attrs.stencil, attrs.alpha, attrs.preserveDrawingBuffer, attrs.premultipliedAlpha, attrs.isWebGL2,
++        attrs.renderTarget == GraphicsContextGLRenderTarget::HostWindow, static_cast<unsigned>(m_internalDepthStencilFormat));
+ 
+     // Resize multisample FBO.
+     if (attrs.antialias) {
+@@ -298,6 +304,9 @@ bool GraphicsContextGLANGLE::reshapeFBOs(const IntSize& size)
+         // Using more than 4 samples is slow on some hardware and is unlikely to
+         // produce a significantly better result.
+         GLint sampleCount = std::min(4, maxSampleCount);
++        fprintf(stderr, "[GPUDEBUG] WEBGL_MSAA_ALLOC ctx=%p %dx%d samples=%d maxSamples=%d estColorBytes=%lld estDepthStencilBytes=%lld\n",
++            this, width, height, sampleCount, maxSampleCount, static_cast<long long>(width) * height * 4 * sampleCount,
++            (attrs.stencil || attrs.depth) ? static_cast<long long>(width) * height * 4 * sampleCount : 0LL);
+         GL_BindFramebuffer(GL_FRAMEBUFFER, m_multisampleFBO);
+         GL_BindRenderbuffer(GL_RENDERBUFFER, m_multisampleColorBuffer);
+         GL_RenderbufferStorageMultisampleANGLE(GL_RENDERBUFFER, sampleCount, m_internalColorFormat, width, height);
+@@ -362,6 +371,14 @@ bool GraphicsContextGLANGLE::reshapeFBOs(const IntSize& size)
+             mustRestoreFBO = false;
+     }
+ 
++    GL_Finish();
++    GPUDebugNexus::Snapshot gpuDbgAfter;
++    if (gpuDbgMeasure && GPUDebugNexus::takeSnapshot(gpuDbgAfter)) {
++        char tag[96];
++        snprintf(tag, sizeof(tag), "WEBGL_DRAWING_BUFFERS ctx=%p %dx%d", this, width, height);
++        GPUDebugNexus::dumpDelta(tag, gpuDbgBefore, gpuDbgAfter, static_cast<unsigned long long>(width) * height * 4);
++    }
++
+     return mustRestoreFBO;
+ }
+ 
+diff --git a/Source/WebCore/platform/graphics/skia/ImageBufferSkiaAcceleratedBackend.cpp b/Source/WebCore/platform/graphics/skia/ImageBufferSkiaAcceleratedBackend.cpp
+index 9dbbfffed591..5b2125499dda 100644
+--- a/Source/WebCore/platform/graphics/skia/ImageBufferSkiaAcceleratedBackend.cpp
++++ b/Source/WebCore/platform/graphics/skia/ImageBufferSkiaAcceleratedBackend.cpp
+@@ -39,6 +39,12 @@
+ #include <skia/gpu/ganesh/SkSurfaceGanesh.h>
+ #include <skia/gpu/gl/GrGLTypes.h>
+ #include <wtf/TZoneMallocInlines.h>
++#include "GPUDebugNexus.h"
++#include <atomic>
++#include <stdio.h>
++
++static std::atomic<int> s_gpuDbgSkiaAccelCount { 0 };
++static std::atomic<long long> s_gpuDbgSkiaAccelBytes { 0 };
+ 
+ #if USE(NICOSIA)
+ #include "BitmapTexture.h"
+@@ -74,7 +80,17 @@ std::unique_ptr<ImageBufferSkiaAcceleratedBackend> ImageBufferSkiaAcceleratedBac
+     RELEASE_ASSERT(grContext);
+     auto imageInfo = SkImageInfo::Make(backendSize.width(), backendSize.height(), kRGBA_8888_SkColorType, kPremul_SkAlphaType, parameters.colorSpace.platformColorSpace());
+     SkSurfaceProps properties = { 0, FontRenderOptions::singleton().subpixelOrder() };
++    GPUDebugNexus::Snapshot gpuDbgBefore;
++    bool gpuDbgMeasure = GPUDebugNexus::takeSnapshot(gpuDbgBefore);
+     auto surface = SkSurfaces::RenderTarget(grContext, skgpu::Budgeted::kNo, imageInfo, PlatformDisplay::sharedDisplay().msaaSampleCount(), kTopLeft_GrSurfaceOrigin, &properties);
++    unsigned gpuDbgSamples = PlatformDisplay::sharedDisplay().msaaSampleCount();
++    long long gpuDbgBytes = static_cast<long long>(backendSize.width()) * backendSize.height() * 4 * (gpuDbgSamples > 1 ? gpuDbgSamples + 1 : 1);
++    fprintf(stderr, "[GPUDEBUG] SKIA_ACCEL_BUFFER_CREATE size=%dx%d purpose=%d msaaSamples=%u ok=%d estBytes=%lld liveCount=%d liveBytes=%lld\n",
++        backendSize.width(), backendSize.height(), static_cast<int>(parameters.purpose), gpuDbgSamples, !!surface, gpuDbgBytes,
++        surface ? ++s_gpuDbgSkiaAccelCount : s_gpuDbgSkiaAccelCount.load(), surface ? (s_gpuDbgSkiaAccelBytes += gpuDbgBytes) : s_gpuDbgSkiaAccelBytes.load());
++    GPUDebugNexus::Snapshot gpuDbgAfter;
++    if (gpuDbgMeasure && GPUDebugNexus::takeSnapshot(gpuDbgAfter))
++        GPUDebugNexus::dumpDelta("SKIA_ACCEL_BUFFER_CREATE", gpuDbgBefore, gpuDbgAfter, static_cast<unsigned long long>(gpuDbgBytes));
+     if (!surface || !surface->getCanvas())
+         return nullptr;
+ 
+@@ -95,6 +111,12 @@ ImageBufferSkiaAcceleratedBackend::ImageBufferSkiaAcceleratedBackend(const Param
+ 
+ ImageBufferSkiaAcceleratedBackend::~ImageBufferSkiaAcceleratedBackend()
+ {
++    {
++        unsigned gpuDbgSamples = PlatformDisplay::sharedDisplay().msaaSampleCount();
++        long long gpuDbgBytes = static_cast<long long>(size().width()) * size().height() * 4 * (gpuDbgSamples > 1 ? gpuDbgSamples + 1 : 1);
++        fprintf(stderr, "[GPUDEBUG] SKIA_ACCEL_BUFFER_DESTROY size=%dx%d liveCount=%d liveBytes=%lld\n",
++            size().width(), size().height(), --s_gpuDbgSkiaAccelCount, s_gpuDbgSkiaAccelBytes -= gpuDbgBytes);
++    }
+ #if USE(NICOSIA)
+     if (m_texture.back || m_texture.front) {
+         GLContext::ScopedGLContextCurrent scopedContext(*PlatformDisplay::sharedDisplay().sharingGLContext());
+diff --git a/Source/WebCore/platform/graphics/skia/PlatformDisplaySkia.cpp b/Source/WebCore/platform/graphics/skia/PlatformDisplaySkia.cpp
+index 1a381d7336cb..ae314256d932 100644
+--- a/Source/WebCore/platform/graphics/skia/PlatformDisplaySkia.cpp
++++ b/Source/WebCore/platform/graphics/skia/PlatformDisplaySkia.cpp
+@@ -31,6 +31,7 @@
+ #include "GLContext.h"
+ #include <skia/core/SkColorSpace.h>
+ #include <skia/gpu/GrBackendSurface.h>
++#include <skia/gpu/GrDirectContext.h>
+ #include <skia/gpu/ganesh/gl/GrGLBackendSurface.h>
+ #include <skia/gpu/ganesh/gl/GrGLDirectContext.h>
+ #include <skia/gpu/gl/GrGLInterface.h>
+@@ -40,6 +41,9 @@
+ #include <wtf/ThreadSafeWeakPtr.h>
+ #include <wtf/text/StringToIntegerConversion.h>
+ #include <wtf/threads/BinarySemaphore.h>
++#include <stdio.h>
++#include <time.h>
++#include <unistd.h>
+ 
+ IGNORE_CLANG_WARNINGS_BEGIN("cast-align")
+ #include <skia/gpu/ganesh/SkSurfaceGanesh.h>
+@@ -170,7 +174,10 @@ private:
+             m_skiaGLContext = WTFMove(glContext);
+             m_skiaGrContext = WTFMove(grContext);
+             m_sampleCount = initializeMSAASampleCount(m_skiaGrContext.get());
+-        }
++            fprintf(stderr, "[GPUDEBUG] SKIA_GPU_CONTEXT_CREATED pid=%d tid=%d grContext=%p msaaSamples=%u cacheLimitBytes=%zu\n",
++                getpid(), static_cast<int>(gettid()), m_skiaGrContext.get(), m_sampleCount, m_skiaGrContext->getResourceCacheLimit());
++        } else
++            fprintf(stderr, "[GPUDEBUG] SKIA_GPU_CONTEXT_FAILED pid=%d\n", getpid());
+     }
+ 
+     void invalidateOnCurrentThread()
+@@ -206,7 +213,18 @@ GLContext* PlatformDisplay::skiaGLContext()
+ GrDirectContext* PlatformDisplay::skiaGrContext()
+ {
+     RELEASE_ASSERT(s_skiaGLContext);
+-    return s_skiaGLContext->skiaGrContext();
++    auto* grContext = s_skiaGLContext->skiaGrContext();
++    static thread_local time_t s_lastCacheLog = 0;
++    time_t now = time(nullptr);
++    if (grContext && now - s_lastCacheLog >= 5) {
++        s_lastCacheLog = now;
++        int resourceCount = 0;
++        size_t resourceBytes = 0;
++        grContext->getResourceCacheUsage(&resourceCount, &resourceBytes);
++        fprintf(stderr, "[GPUDEBUG] SKIA_GPU_CACHE pid=%d tid=%d grContext=%p resources=%d bytes=%zu purgeableBytes=%zu limitBytes=%zu\n",
++            getpid(), static_cast<int>(gettid()), grContext, resourceCount, resourceBytes, grContext->getResourceCachePurgeableBytes(), grContext->getResourceCacheLimit());
++    }
++    return grContext;
+ }
+ 
+ unsigned PlatformDisplay::msaaSampleCount() const
+diff --git a/Source/WebCore/platform/graphics/texmap/BitmapTexture.cpp b/Source/WebCore/platform/graphics/texmap/BitmapTexture.cpp
+index de10aa471338..18a11925e050 100644
+--- a/Source/WebCore/platform/graphics/texmap/BitmapTexture.cpp
++++ b/Source/WebCore/platform/graphics/texmap/BitmapTexture.cpp
+@@ -38,6 +38,7 @@
+ #include <wtf/RefPtr.h>
+ #include <atomic>
+ #include <stdio.h>
++#include "GPUDebugNexus.h"
+ 
+ static std::atomic<long long> s_gpuDbgBitmapLiveBytes { 0 };
+ static std::atomic<int> s_gpuDbgBitmapLiveCount { 0 };
+@@ -91,6 +92,8 @@ BitmapTexture::BitmapTexture(const IntSize& size, OptionSet<Flags> flags, GLint
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
++    GPUDebugNexus::Snapshot gpuDbgBefore;
++    bool gpuDbgMeasure = GPUDebugNexus::takeSnapshot(gpuDbgBefore);
+     glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_size.width(), m_size.height(), 0, m_format, s_pixelDataType, nullptr);
+     GLenum gpuDbgErr = glGetError();
+ 
+@@ -99,6 +102,9 @@ BitmapTexture::BitmapTexture(const IntSize& size, OptionSet<Flags> flags, GLint
+     fprintf(stderr, "[GPUDEBUG] BITMAP_TEXTURE_CREATE this=%p id=%u size=%dx%d bytes=%lld flags=0x%x glError=0x%x liveCount=%d liveBytes=%lld\n",
+         this, m_id, m_size.width(), m_size.height(), gpuDbgBytes, static_cast<unsigned>(flags.toRaw()), gpuDbgErr,
+         ++s_gpuDbgBitmapLiveCount, s_gpuDbgBitmapLiveBytes += gpuDbgBytes);
++    GPUDebugNexus::Snapshot gpuDbgAfter;
++    if (gpuDbgMeasure && GPUDebugNexus::takeSnapshot(gpuDbgAfter))
++        GPUDebugNexus::dumpDelta("BITMAP_TEXTURE_CREATE", gpuDbgBefore, gpuDbgAfter, static_cast<unsigned long long>(gpuDbgBytes));
+ }
+ 
+ void BitmapTexture::reset(const IntSize& size, OptionSet<Flags> flags)
+diff --git a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+index 56b4a54b8f8c..1b513be37c47 100644
+--- a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
++++ b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+@@ -32,10 +32,12 @@
+ #include "ANGLEHeaders.h"
+ #include "ANGLEUtilities.h"
+ #include "GLContext.h"
++#include "GPUDebugNexus.h"
+ #include "Logging.h"
+ #include "PixelBuffer.h"
+ #include "PlatformDisplay.h"
+ #include "PlatformLayerDisplayDelegate.h"
++#include <stdio.h>
+ 
+ #if ENABLE(MEDIA_STREAM) || ENABLE(WEB_CODECS)
+ #include "VideoFrame.h"
+@@ -78,6 +80,7 @@ GraphicsContextGLANGLE::~GraphicsContextGLANGLE()
+                 s_windowSurfaceObj = nullptr;
+             }
+         }
++        GPUDebugNexus::dump("WEBGL_CONTEXT_DESTROYED_HOSTWINDOW");
+         return;
+     }
+ 
+@@ -128,6 +131,7 @@ GraphicsContextGLANGLE::~GraphicsContextGLANGLE()
+ 
+     if (m_surfaceObj)
+         EGL_DestroySurface(m_displayObj, m_surfaceObj);
++    GPUDebugNexus::dump("WEBGL_CONTEXT_DESTROYED_OFFSCREEN");
+ }
+ 
+ bool GraphicsContextGLANGLE::makeContextCurrent()
+@@ -259,10 +263,40 @@ bool GraphicsContextGLTextureMapperANGLE::platformInitializeContext()
+         return false;
+     }
+     LOG(WebGL, "Got EGLConfig");
++    {
++        EGLint samples = -1, sampleBuffers = -1, depth = -1, stencil = -1, bufferSize = -1, surfaceBits = -1, configId = -1;
++        EGL_GetConfigAttrib(m_displayObj, m_configObj, EGL_SAMPLES, &samples);
++        EGL_GetConfigAttrib(m_displayObj, m_configObj, EGL_SAMPLE_BUFFERS, &sampleBuffers);
++        EGL_GetConfigAttrib(m_displayObj, m_configObj, EGL_DEPTH_SIZE, &depth);
++        EGL_GetConfigAttrib(m_displayObj, m_configObj, EGL_STENCIL_SIZE, &stencil);
++        EGL_GetConfigAttrib(m_displayObj, m_configObj, EGL_BUFFER_SIZE, &bufferSize);
++        EGL_GetConfigAttrib(m_displayObj, m_configObj, EGL_SURFACE_TYPE, &surfaceBits);
++        EGL_GetConfigAttrib(m_displayObj, m_configObj, EGL_CONFIG_ID, &configId);
++        auto attrs = contextAttributes();
++#if USE(SKIA)
++        const char* gpuDbgRenderer = "SKIA";
++#elif USE(CAIRO)
++        const char* gpuDbgRenderer = "CAIRO";
++#else
++        const char* gpuDbgRenderer = "OTHER";
++#endif
++        fprintf(stderr, "[GPUDEBUG] WEBGL_CONTEXT_CONFIG ctx=%p backend=ANGLE renderer=%s hostWindow=%d webgl2=%d antialias=%d depth=%d stencil=%d alpha=%d preserveDrawingBuffer=%d "
++            "eglConfigId=%d eglSamples=%d eglSampleBuffers=%d eglDepth=%d eglStencil=%d eglBufferSize=%d eglSurfaceType=0x%x surfaceless=%d displayType=%d\n",
++            this, gpuDbgRenderer,
++            m_rendersToHostWindow, m_isForWebGL2, attrs.antialias, attrs.depth, attrs.stencil, attrs.alpha, attrs.preserveDrawingBuffer,
++            configId, samples, sampleBuffers, depth, stencil, bufferSize, surfaceBits, isSurfacelessContextSupported, static_cast<int>(sharedDisplay.type()));
++    }
+ 
+     if (m_rendersToHostWindow) {
+         if (!s_windowSurfaceObj) {
++            GPUDebugNexus::Snapshot gpuDbgBefore;
++            bool gpuDbgMeasure = GPUDebugNexus::takeSnapshot(gpuDbgBefore);
+             s_windowSurfaceObj = EGL_CreateWindowSurface(m_displayObj, m_configObj, reinterpret_cast<EGLNativeWindowType>(contextAttributes().nativeWindowID), nullptr);
++            fprintf(stderr, "[GPUDEBUG] WEBGL_WINDOW_SURFACE_CREATE ctx=%p surface=%p nativeWindow=0x%llx\n", this, s_windowSurfaceObj,
++                static_cast<unsigned long long>(contextAttributes().nativeWindowID));
++            GPUDebugNexus::Snapshot gpuDbgAfter;
++            if (gpuDbgMeasure && GPUDebugNexus::takeSnapshot(gpuDbgAfter))
++                GPUDebugNexus::dumpDelta("WEBGL_WINDOW_SURFACE_CREATE", gpuDbgBefore, gpuDbgAfter, 0);
+             if (s_windowSurfaceObj == EGL_NO_SURFACE) {
+                 LOG(WebGL, "Failed to create a window surface");
+                 return false;
+@@ -350,6 +384,7 @@ fprintf(stderr,
+         LOG(WebGL, "ANGLE makeContextCurrent failed.");
+         return false;
+     }
++    GPUDebugNexus::dump("WEBGL_CONTEXT_CREATED");
+     LOG(WebGL, "Got EGLContext");
+     return true;
+ }
+diff --git a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp
+index cc057d182d21..ab09e6f89232 100644
+--- a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp
++++ b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp
+@@ -49,6 +49,7 @@
+ #include <wtf/SetForScope.h>
+ #include <wtf/SystemTracing.h>
+ #include <wtf/text/StringToIntegerConversion.h>
++#include <stdio.h>
+ 
+ #if USE(CAIRO)
+ #include <WebCore/NicosiaPaintingEngine.h>
+@@ -97,6 +98,10 @@ CompositingCoordinator::CompositingCoordinator(WebPage& page, CompositingCoordin
+         m_skiaAcceleratedBufferPool = makeUnique<SkiaAcceleratedBufferPool>();
+     else if (auto numberOfThreads = skiaNumberOfCpuPaintingThreads(); numberOfThreads > 0)
+         m_skiaUnacceleratedThreadedRenderingPool = WorkerPool::create("SkiaPaintingThread"_s, numberOfThreads);
++    fprintf(stderr, "[GPUDEBUG] PAINTING_ENGINE renderer=SKIA mode=%s cpuThreads=%u nonCompositedWebGL=%d\n",
++        m_skiaAcceleratedBufferPool ? "GPU" : "CPU", m_skiaAcceleratedBufferPool ? 0u : skiaNumberOfCpuPaintingThreads(), m_nonCompositedWebGLEnabled);
++#elif USE(CAIRO)
++    fprintf(stderr, "[GPUDEBUG] PAINTING_ENGINE renderer=CAIRO mode=CPU nonCompositedWebGL=%d\n", m_nonCompositedWebGLEnabled);
+ #endif
+ 
+     m_nicosia.scene = Nicosia::Scene::create();
+diff --git a/Source/WebKit/WebProcess/glib/WebProcessGLib.cpp b/Source/WebKit/WebProcess/glib/WebProcessGLib.cpp
+index 060b52553481..4ab81cd6ff81 100644
+--- a/Source/WebKit/WebProcess/glib/WebProcessGLib.cpp
++++ b/Source/WebKit/WebProcess/glib/WebProcessGLib.cpp
+@@ -100,6 +100,9 @@
+ #include <wtf/ASCIICType.h>
+ #endif
+ 
++#include <stdio.h>
++#include <unistd.h>
++
+ #if USE(ATSPI)
+ #include <rdkat-atspi2.h>
+ #endif
+@@ -189,6 +192,15 @@ void WebProcess::platformInitializeWebProcess(WebProcessCreationParameters& para
+         useAcceleratedBuffers = (enableCPURendering == "0"_s);
+ 
+     ProcessCapabilities::setCanUseAcceleratedBuffers(useAcceleratedBuffers);
++    fprintf(stderr, "[GPUDEBUG] RENDER_BACKEND process=WebProcess pid=%d renderer=SKIA skiaAcceleratedBuffers=%d WEBKIT_SKIA_ENABLE_CPU_RENDERING=%s WEBKIT_SKIA_MSAA_SAMPLE_COUNT=%s\n",
++        getpid(), useAcceleratedBuffers, g_getenv("WEBKIT_SKIA_ENABLE_CPU_RENDERING") ? g_getenv("WEBKIT_SKIA_ENABLE_CPU_RENDERING") : "(unset)",
++        g_getenv("WEBKIT_SKIA_MSAA_SAMPLE_COUNT") ? g_getenv("WEBKIT_SKIA_MSAA_SAMPLE_COUNT") : "(unset)");
++#else
++#if USE(CAIRO)
++    fprintf(stderr, "[GPUDEBUG] RENDER_BACKEND process=WebProcess pid=%d renderer=CAIRO\n", getpid());
++#else
++    fprintf(stderr, "[GPUDEBUG] RENDER_BACKEND process=WebProcess pid=%d renderer=OTHER\n", getpid());
++#endif
+ #endif
+ 
+ #if ENABLE(MEDIA_STREAM)
+-- 
+2.44.4
+
