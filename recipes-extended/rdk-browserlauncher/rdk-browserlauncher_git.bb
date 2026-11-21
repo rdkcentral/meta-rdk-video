@@ -14,6 +14,7 @@ inherit pkgconfig cmake
 
 PACKAGECONFIG[tests] = "-DENABLE_TESTS=ON,-DENABLE_TESTS=OFF,googletest,"
 PACKAGECONFIG[testrunner] = "-DENABLE_TESTRUNNER=ON,-DENABLE_TESTRUNNER=OFF,westeros westeros-simpleshell,"
+PACKAGECONFIG[breakpad] = "-DENABLE_BREAKPAD=ON,-DENABLE_BREAKPAD=OFF,breakpad-wrapper,"
 
 DEPENDS += "glib-2.0 glib-2.0-native wpe-webkit nlohmann-json firebolt-cpp-client"
 
