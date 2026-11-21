@@ -6,13 +6,13 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=7e2eceb64cc374eafafd7e1a4e763f63"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig features_check
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-voicecontrol;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27441 \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-voicecontrol;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://rdkservices.ini \
           "
 
-PV = "1.0.6"
-PR = "r1"
-SRCREV = "0f5943d675d3e4c71a31c356f17cc089adcfc712"
+PV = "1.0.7"
+PR = "r0"
+SRCREV = "${PV}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
