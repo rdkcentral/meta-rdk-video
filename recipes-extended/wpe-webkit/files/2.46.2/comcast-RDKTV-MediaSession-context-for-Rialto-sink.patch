@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+Subject: [PATCH] [GStreamer][Rialto] Pass media session ID through GstContext
+
+Read the media session ID from the video element and pass it to the
+GStreamer pipeline in a MediaSession context.
+---
+ Source/WebCore/platform/gstreamer/GStreamerHolePunchQuirkRialto.cpp | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/Source/WebCore/platform/gstreamer/GStreamerHolePunchQuirkRialto.cpp b/Source/WebCore/platform/gstreamer/GStreamerHolePunchQuirkRialto.cpp
+--- a/Source/WebCore/platform/gstreamer/GStreamerHolePunchQuirkRialto.cpp
++++ b/Source/WebCore/platform/gstreamer/GStreamerHolePunchQuirkRialto.cpp
+@@ -43,5 +43,22 @@ GstElement* GStreamerHolePunchQuirkRialto::createHolePunchVideoSink(bool isLegac
+     GstElement* videoSink = makeGStreamerElement("rialtomsevideosink", nullptr);
+     if (isPIPRequested)
+         g_object_set(G_OBJECT(videoSink), "maxVideoWidth", 640, "maxVideoHeight", 480, "has-drm", FALSE, nullptr);
++
++    AtomString mediaSessionId;
++    if (player
++        && player->doesHaveAttribute("data-media-session-id"_s, &mediaSessionId)
++        && !mediaSessionId.isEmpty()) {
++        auto* playerPrivate = reinterpret_cast<const MediaPlayerPrivateGStreamer*>(player->playerPrivate());
++        auto context = adoptGRef(gst_context_new("MediaSession", FALSE));
++        auto* contextStructure = gst_context_writable_structure(context.get());
++        auto mediaSessionIdUTF8 = mediaSessionId.string().utf8();
++        GST_INFO("Media session ID: %s", mediaSessionIdUTF8.data());
++
++        gst_structure_set(contextStructure,
++            "media-session-id", G_TYPE_STRING, mediaSessionIdUTF8.data(),
++            nullptr);
++        gst_element_set_context(playerPrivate->pipeline(), context.get());
++    }
++
+     return videoSink;
+ }
+-- 
+2.39.2
