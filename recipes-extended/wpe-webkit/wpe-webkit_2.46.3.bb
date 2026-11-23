@@ -112,6 +112,12 @@ PACKAGECONFIG[manette-gamepad]       = "-DUSE_MANETTE_GAMEPAD_PROVIDER=ON,-DUSE_
 
 PACKAGECONFIG:append = " webdriver remoteinspector releaselog accessibility speechsynthesis native_video webaudio woff2 externalholepunch"
 PACKAGECONFIG:append = " ${@'manette-gamepad' if (d.getVar('PREFERRED_VERSION_libmanette') or '').startswith('1.0') or (d.getVar('MANETTE_GAMEPAD_PROVIDER') or '') == '1' else ''}"
+
+# VALIDATION ONLY, drop this before merge. Forces the manette gamepad provider
+# on so a Jenkins build of this branch exercises it with no local.conf change.
+# Needs libmanette 0.2.8 (meta-rdk-oss-reference) in the same image, otherwise
+# PR 1741 compiles out and only the face button fix is exercised.
+PACKAGECONFIG:append = " manette-gamepad"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'malloc_heap_breakdown', 'malloc_heap_breakdown', '', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-developer-mode', 'developermode tools', '', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('BROWSER_MEMORYPROFILE', 'fhd', 'fhd', '', d)}"
