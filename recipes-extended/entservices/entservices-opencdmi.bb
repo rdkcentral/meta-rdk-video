@@ -2,7 +2,7 @@ SUMMARY = "ENTServices opencdmi plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7a65e8e9836ac44d082594220a9a3883"
 
-PV = "2.1.1"
+PV = "2.2.2"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -14,9 +14,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://rdkshell_post_startup.conf \
            file://rdkservices.ini \
           "
-          
-# Release version - 2.1.2
-SRCREV = "ab96b2661abefa9d869179ed50cd617def5cef6a"
+# Release version - 2.2.2
+SRCREV = "9bb4d156faf7cc5a3e042d22b4f8f6d4a226fb38"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
