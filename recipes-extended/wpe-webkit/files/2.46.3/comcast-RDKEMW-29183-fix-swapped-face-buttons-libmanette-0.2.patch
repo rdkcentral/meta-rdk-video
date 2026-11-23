@@ -1,0 +1,41 @@
+From f7bef08c2bf582002c024cc589476162503c3d62 Mon Sep 17 00:00:00 2001
+From: Petar Tijanic <petartijanic01@gmail.com>
+Date: Mon, 23 Nov 2026 15:22:43 +0100
+Subject: [PATCH] Fix swapped face buttons on the libmanette 0.2 gamepad path
+
+toStandardGamepadButton() read the evdev code libmanette reports as an Xbox
+label, but the kernel aliases BTN_X to BTN_NORTH (0x133, the top face button)
+and BTN_Y to BTN_WEST (0x134, the left one), so the letters follow the Nintendo
+layout. StandardGamepadButton::X is buttons[2], the left face button in the W3C
+standard mapping, and ::Y is buttons[3], the top one. The top button was
+therefore reported in the left slot and the left button in the top slot.
+
+Switch the two cases to the positional BTN_NORTH and BTN_WEST names so the
+mapping no longer depends on reading the letter aliases correctly.
+
+The libmanette 1.0 branch of this function is not affected: it already uses the
+positional ManetteButton enum.
+
+diff --git a/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp b/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp
+index 704eb9b..3c88fbb 100644
+--- a/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp
++++ b/Source/WebCore/platform/gamepad/manette/ManetteGamepad.cpp
+@@ -149,9 +149,16 @@ static ManetteGamepad::StandardGamepadButton toStandardGamepadButton(uint16_t ma
+         return ManetteGamepad::StandardGamepadButton::A;
+     case BTN_B:
+         return ManetteGamepad::StandardGamepadButton::B;
+-    case BTN_X:
++    // Use the positional names, not BTN_X/BTN_Y. The kernel aliases BTN_X to
++    // BTN_NORTH (0x133, the top face button) and BTN_Y to BTN_WEST (0x134, the
++    // left one), so the letters follow the Nintendo layout rather than the Xbox
++    // one. StandardGamepadButton::X is buttons[2], which the W3C standard mapping
++    // defines as the left face button, and ::Y is buttons[3], the top one.
++    // Returning ::X for BTN_X therefore reported the top button in the left slot
++    // and the left button in the top slot.
++    case BTN_WEST:
+         return ManetteGamepad::StandardGamepadButton::X;
+-    case BTN_Y:
++    case BTN_NORTH:
+         return ManetteGamepad::StandardGamepadButton::Y;
+     case BTN_TL:
+         return ManetteGamepad::StandardGamepadButton::LeftShoulder;
