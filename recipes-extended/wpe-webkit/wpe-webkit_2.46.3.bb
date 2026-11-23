@@ -55,6 +55,7 @@ SRC_URI += "file://2.46/comcast-RDK-57915-Track-encrypted-playback.patch"
 SRC_URI += "file://2.46/comcast-WebRTC-keep-render-time-interpolation.patch"
 SRC_URI += "file://2.46/comcast-DELIA-59087-Disable-pausing-playback-for-buf.patch"
 SRC_URI += "file://2.46.3/comcast-RDKTV-28214-Quick-_exit.patch"
+SRC_URI += "file://2.46.3/1741.patch"
 #SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
