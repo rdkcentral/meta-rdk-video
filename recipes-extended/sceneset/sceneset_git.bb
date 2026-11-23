@@ -35,7 +35,7 @@ SYSLOG-NG_SERVICE_sceneset = "sceneset.service"
 SYSLOG-NG_DESTINATION_sceneset = "sceneset.log"
 SYSLOG-NG_LOGRATE_sceneset = "high"
 
-SRCREV = "cc073f97ce0a017eef07940cc4666a2cd7e476df"
+SRCREV = "dc7135cd48642add2213c6195086c810db1e0943"
 SRC_URI = "${CMF_GITHUB_ROOT}/sceneset;${CMF_GITHUB_SRC_URI_SUFFIX};name=sceneset \
            file://10-appgateway-dependency.conf"
 SRCREV_FORMAT = "sceneset"
