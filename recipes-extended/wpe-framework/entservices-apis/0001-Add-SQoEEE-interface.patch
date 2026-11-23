@@ -7,12 +7,12 @@ diff --git a/apis/Ids.h b/apis/Ids.h
 index 0b02fdaa..3ef3ac02 100755
 --- a/apis/Ids.h
 +++ b/apis/Ids.h
-@@ -407,6 +407,8 @@ namespace Exchange {
- 
-         ID_RESOURCE_MONITOR                         = ID_ENTOS_OFFSET + 0x610,
+@@ -411,6 +411,8 @@ namespace Exchange {
          ID_RESOURCE_MONITOR_NOTIFICATION            = ID_RESOURCE_MONITOR + 1,
+ 
+         ID_DAB_ADAPTER                              = ID_ENTOS_OFFSET + 0x620,
 +
-+        ID_SQOEEE                                   = ID_ENTOS_OFFSET + 0x620,
++        ID_SQOEEE                                   = ID_ENTOS_OFFSET + 0x630,
      }; // enum IDS
  
  } // namespace Exchange
