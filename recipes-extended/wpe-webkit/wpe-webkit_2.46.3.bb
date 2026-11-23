@@ -6,7 +6,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
-WPE_RECIPE_REVISION = "0"
+WPE_RECIPE_REVISION = "1"
 
 PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
@@ -103,7 +103,13 @@ PACKAGECONFIG[indexeddb]    = ""
 PACKAGECONFIG[subtlecrypto] = ""
 PACKAGECONFIG[westeros]     = ""
 
+# ManetteGamepadProvider talks to libmanette directly instead of going through
+# libwpe. Upstream defaults USE_MANETTE_GAMEPAD_PROVIDER to OFF, so this stays
+# opt-in: set MANETTE_GAMEPAD_PROVIDER = "1" to build it.
+PACKAGECONFIG[manette-gamepad]       = "-DUSE_MANETTE_GAMEPAD_PROVIDER=ON,-DUSE_MANETTE_GAMEPAD_PROVIDER=OFF,libmanette,"
+
 PACKAGECONFIG:append = " webdriver remoteinspector releaselog accessibility speechsynthesis native_video webaudio woff2 externalholepunch"
+PACKAGECONFIG:append = " ${@'manette-gamepad' if (d.getVar('PREFERRED_VERSION_libmanette') or '').startswith('1.0') or (d.getVar('MANETTE_GAMEPAD_PROVIDER') or '') == '1' else ''}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'malloc_heap_breakdown', 'malloc_heap_breakdown', '', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'wpe-webkit-developer-mode', 'developermode tools', '', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('BROWSER_MEMORYPROFILE', 'fhd', 'fhd', '', d)}"
