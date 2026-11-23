@@ -48,18 +48,7 @@ BREAKPAD_LDFLAGS:pn-wpeframework = "${BACKTRACE_LDFLAGS}"
 EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
 LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
 
-def thunder_has_otel_recipe(d):
-    import glob, os
-    pattern = 'recipes-*/opentelemetry/opentelemetry-cpp_*.bb'
-    for layer in (d.getVar('BBLAYERS') or '').split():
-        if glob.glob(os.path.join(layer, pattern)) or \
-           glob.glob(os.path.join(layer, 'dynamic-layers/*', pattern)):
-            return True
-    return False
-
-# auto = enable if the recipe exists in any layer; "0"/"1" force it off/on per platform.
-THUNDER_OPENTELEMETRY ?= "auto"
-PACKAGECONFIG:append = "${@' opentelemetry' if d.getVar('THUNDER_OPENTELEMETRY') == '1' or (d.getVar('THUNDER_OPENTELEMETRY') == 'auto' and thunder_has_otel_recipe(d)) else ''}"
+PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES', 'thunder_opentelemetry', ' opentelemetry', '', d)}"
 PACKAGECONFIG[opentelemetry] = "-DWPEFRAMEWORK_OPENTELEMETRY=ON,-DWPEFRAMEWORK_OPENTELEMETRY=OFF,opentelemetry-cpp"
 
 PACKAGECONFIG ?= " \
