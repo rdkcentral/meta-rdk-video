@@ -23,6 +23,7 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 
 EXTRA_OECMAKE += " -DENABLE_RFC_MANAGER=ON"
+EXTRA_OECMAKE += "-DENABLE_OCDM_RDKPERF=ON"
 
 DEPENDS += "wpeframework wpeframework-tools-native entservices-apis gstreamer1.0"
 RDEPENDS:${PN} += "wpeframework"
@@ -85,7 +86,6 @@ PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,tele
 PACKAGECONFIG[opencdmi]             = "-DPLUGIN_OPENCDMI=ON -DPLUGIN_OPENCDMI_AUTOSTART=true -DPLUGIN_OPENCDMI_MODE=Local,,,"
 PACKAGECONFIG[opencdm_gst]          = '-DCDMI_ADAPTER_IMPLEMENTATION="gstreamer",,gstreamer1.0'
 PACKAGECONFIG[opencdmi_rdk_svp]     = '-DCDMI_ADAPTER_IMPLEMENTATION="rdk",,gst-svp-ext'
-PACKAGECONFIG[rdkperf]              = "-DENABLE_OCDM_RDKPERF=ON,-DENABLE_OCDM_RDKPERF=OFF,rdkperf"
 
 # ----------------------------------------------------------------------------
 
