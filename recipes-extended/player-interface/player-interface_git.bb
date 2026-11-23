@@ -7,9 +7,13 @@ PV = "2.0.2"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
+<<<<<<< HEAD
 SRCREV_player-interface ?= "41d831a08bfa302325b7c97d9d35d507ffa3cef0"
+=======
+SRCREV_player-interface ?= "b58518fb93862e4e2459daaa49572f3bd880fff7"
+>>>>>>> 13b154466 (Reason for change:InterfacePlayerRDK::SendHelper: narrow sourceLock scope — drop lock before WaitForSourceSetup and gst_app_src_push_buffer (deadlock window vs TearDownStream))
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
-PLAYERINTERFACE_BRANCH ?= "main"
+PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-27323_TearDown"
 
 # Pass version/tag/rev info into CMake so they get baked into the library at build time
 EXTRA_OECMAKE += " -DPI_GIT_TAG=${PV}"
