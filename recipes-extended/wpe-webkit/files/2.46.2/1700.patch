@@ -1,0 +1,270 @@
+From e135cd5d589c4e9333fd72d75c48f84c0ad4e221 Mon Sep 17 00:00:00 2001
+From: Przemyslaw Gorszkowski <pgorszkowski@igalia.com>
+Date: Thu, 9 Jul 2026 13:17:50 -0700
+Subject: [PATCH] [WPE] don't put page with multimedia to bfCache on low-end
+ devices https://bugs.webkit.org/show_bug.cgi?id=318851
+
+Reviewed by Alicia Boya Garcia.
+
+Add a new WPE-only feature `BackForwardCacheWithMediaEnabled` that allows
+applications to control whether pages containing audio or video elements
+can be placed in the back/forward cache.
+
+When disabled, pages with media elements are excluded from the back/forward
+cache. This is particularly useful on low-end embedded devices with a limited
+number of hardware decoders, where keeping a suspended media pipeline alive in
+the cache may prevent other pages from acquiring the decoder.
+
+The feature is enabled by default (preserving existing behavior).
+
+Two new WPE layout tests verify the behavior:
+- page-cache-video-media-disabled.html: verifies pages with media are not
+  cached when the feature is disabled.
+- page-cache-video-media-enabled.html: verifies pages with media can enter
+  and be restored from the back/forward cache when the feature is enabled.
+
+Tests: platform/wpe/fast/history/page-cache-video-media-disabled.html
+       platform/wpe/fast/history/page-cache-video-media-enabled.html
+* LayoutTests/platform/wpe/fast/history/page-cache-video-media-disabled-expected.txt: Added.
+* LayoutTests/platform/wpe/fast/history/page-cache-video-media-disabled.html: Added.
+* LayoutTests/platform/wpe/fast/history/page-cache-video-media-enabled-expected.txt: Added.
+* LayoutTests/platform/wpe/fast/history/page-cache-video-media-enabled.html: Added.
+* LayoutTests/platform/wpe/fast/history/resources/page-cache-helper.html: Added.
+* Source/WTF/Scripts/Preferences/UnifiedWebPreferences.yaml:
+* Source/WebCore/history/BackForwardCache.cpp:
+(WebCore::canCachePage):
+
+Canonical link: https://commits.webkit.org/316840@main
+---
+ ...ge-cache-video-media-disabled-expected.txt | 11 +++++
+ .../page-cache-video-media-disabled.html      | 46 +++++++++++++++++++
+ ...age-cache-video-media-enabled-expected.txt | 13 ++++++
+ .../page-cache-video-media-enabled.html       | 44 ++++++++++++++++++
+ .../history/resources/page-cache-helper.html  | 18 ++++++++
+ .../Preferences/UnifiedWebPreferences.yaml    | 15 ++++++
+ Source/WebCore/history/BackForwardCache.cpp   | 12 +++++
+ 7 files changed, 159 insertions(+)
+ create mode 100644 LayoutTests/platform/wpe/fast/history/page-cache-video-media-disabled-expected.txt
+ create mode 100644 LayoutTests/platform/wpe/fast/history/page-cache-video-media-disabled.html
+ create mode 100644 LayoutTests/platform/wpe/fast/history/page-cache-video-media-enabled-expected.txt
+ create mode 100644 LayoutTests/platform/wpe/fast/history/page-cache-video-media-enabled.html
+ create mode 100644 LayoutTests/platform/wpe/fast/history/resources/page-cache-helper.html
+
+diff --git a/LayoutTests/platform/wpe/fast/history/page-cache-video-media-disabled-expected.txt b/LayoutTests/platform/wpe/fast/history/page-cache-video-media-disabled-expected.txt
+new file mode 100644
+index 0000000000000..0944f83611d72
+--- /dev/null
++++ b/LayoutTests/platform/wpe/fast/history/page-cache-video-media-disabled-expected.txt
+@@ -0,0 +1,11 @@
++Tests that a page with a video element does not go into the back/forward cache when back-forward-cache-with-media is disabled.
++
++On success, you will see a series of "PASS" messages, followed by "TEST COMPLETE".
++
++
++pageshow - not from cache
++PASS Page was not restored from the back/forward cache
++PASS successfullyParsed is true
++
++TEST COMPLETE
++
+diff --git a/LayoutTests/platform/wpe/fast/history/page-cache-video-media-disabled.html b/LayoutTests/platform/wpe/fast/history/page-cache-video-media-disabled.html
+new file mode 100644
+index 0000000000000..ddaf1768e1a3e
+--- /dev/null
++++ b/LayoutTests/platform/wpe/fast/history/page-cache-video-media-disabled.html
+@@ -0,0 +1,46 @@
++<!-- webkit-test-runner [ UsesBackForwardCache=true BackForwardCacheWithMediaEnabled=false ] -->
++<!DOCTYPE html>
++<html>
++<body>
++<script src="../../../../resources/js-test-pre.js"></script>
++<script>
++description('Tests that a page with a video element does not go into the back/forward cache when back-forward-cache-with-media is disabled.');
++window.jsTestIsAsync = true;
++
++window.addEventListener("pageshow", function(event) {
++    debug("pageshow - " + (event.persisted ? "" : "not ") + "from cache");
++    if (!window.sessionStorage.pageWithVideoMediaDisabledTestStarted)
++        return;
++
++    delete window.sessionStorage.pageWithVideoMediaDisabledTestStarted;
++
++    if (event.persisted)
++        testFailed("Page did enter and was restored from the back/forward cache");
++    else
++        testPassed("Page was not restored from the back/forward cache");
++
++    finishJSTest();
++}, false);
++
++window.addEventListener("pagehide", function(event) {
++    debug("pagehide - " + (event.persisted ? "" : "not ") + "entering cache");
++    if (event.persisted)
++        testFailed("Page entered the back/forward cache.");
++}, false);
++
++window.addEventListener('load', function() {
++    if (window.sessionStorage.pageWithVideoMediaDisabledTestStarted)
++        return;
++
++    var video = document.createElement("video");
++    document.body.appendChild(video);
++
++    setTimeout(function() {
++        window.sessionStorage.pageWithVideoMediaDisabledTestStarted = true;
++        window.location.href = "resources/page-cache-helper.html";
++    }, 0);
++}, false);
++</script>
++<script src="../../../../resources/js-test-post.js"></script>
++</body>
++</html>
+diff --git a/LayoutTests/platform/wpe/fast/history/page-cache-video-media-enabled-expected.txt b/LayoutTests/platform/wpe/fast/history/page-cache-video-media-enabled-expected.txt
+new file mode 100644
+index 0000000000000..991ac7ef2bbae
+--- /dev/null
++++ b/LayoutTests/platform/wpe/fast/history/page-cache-video-media-enabled-expected.txt
+@@ -0,0 +1,13 @@
++Tests that a page with a video element goes into the back/forward cache when back-forward-cache-with-media is enabled.
++
++On success, you will see a series of "PASS" messages, followed by "TEST COMPLETE".
++
++
++pageshow - not from cache
++pagehide - entering cache
++pageshow - from cache
++PASS Page did enter and was restored from the back/forward cache
++PASS successfullyParsed is true
++
++TEST COMPLETE
++
+diff --git a/LayoutTests/platform/wpe/fast/history/page-cache-video-media-enabled.html b/LayoutTests/platform/wpe/fast/history/page-cache-video-media-enabled.html
+new file mode 100644
+index 0000000000000..32bb2495ad2da
+--- /dev/null
++++ b/LayoutTests/platform/wpe/fast/history/page-cache-video-media-enabled.html
+@@ -0,0 +1,44 @@
++<!-- webkit-test-runner [ UsesBackForwardCache=true BackForwardCacheWithMediaEnabled=true ] -->
++<!DOCTYPE html>
++<html>
++<body>
++<script src="../../../../resources/js-test-pre.js"></script>
++<script>
++description('Tests that a page with a video element goes into the back/forward cache when back-forward-cache-with-media is enabled.');
++window.jsTestIsAsync = true;
++
++window.addEventListener("pageshow", function(event) {
++    debug("pageshow - " + (event.persisted ? "" : "not ") + "from cache");
++    if (!window.sessionStorage.pageWithVideoMediaEnabledTestStarted)
++        return;
++
++    delete window.sessionStorage.pageWithVideoMediaEnabledTestStarted;
++
++    if (event.persisted)
++        testPassed("Page did enter and was restored from the back/forward cache");
++    else
++        testFailed("Page was not restored from the back/forward cache");
++
++    finishJSTest();
++}, false);
++
++window.addEventListener("pagehide", function(event) {
++    debug("pagehide - " + (event.persisted ? "" : "not ") + "entering cache");
++}, false);
++
++window.addEventListener('load', function() {
++    if (window.sessionStorage.pageWithVideoMediaEnabledTestStarted)
++        return;
++
++    var video = document.createElement("video");
++    document.body.appendChild(video);
++
++    setTimeout(function() {
++        window.sessionStorage.pageWithVideoMediaEnabledTestStarted = true;
++        window.location.href = "resources/page-cache-helper.html";
++    }, 0);
++}, false);
++</script>
++<script src="../../../../resources/js-test-post.js"></script>
++</body>
++</html>
+diff --git a/LayoutTests/platform/wpe/fast/history/resources/page-cache-helper.html b/LayoutTests/platform/wpe/fast/history/resources/page-cache-helper.html
+new file mode 100644
+index 0000000000000..241100a9ee9f8
+--- /dev/null
++++ b/LayoutTests/platform/wpe/fast/history/resources/page-cache-helper.html
+@@ -0,0 +1,18 @@
++This page should go back. If a test outputs the contents of this
++page, then the test page failed to enter the page cache.
++<script>
++  function triggerBackNavigation() {
++      setTimeout(function() {
++          history.back();
++      }, 0);
++  }
++
++  window.addEventListener("pageshow", (event) => {
++      if (event.persisted)
++          triggerBackNavigation();
++  });
++
++  window.addEventListener("load", function() {
++      triggerBackNavigation();
++  });
++</script>
+diff --git a/Source/WTF/Scripts/Preferences/UnifiedWebPreferences.yaml b/Source/WTF/Scripts/Preferences/UnifiedWebPreferences.yaml
+index 165778326c5a5..be5036d916281 100644
+--- a/Source/WTF/Scripts/Preferences/UnifiedWebPreferences.yaml
++++ b/Source/WTF/Scripts/Preferences/UnifiedWebPreferences.yaml
+@@ -822,6 +822,21 @@ AzimuthAngleEnabled:
+       "PLATFORM(COCOA)": true
+       default: false
+ 
++BackForwardCacheWithMediaEnabled:
++  type: bool
++  status: stable
++  category: media
++  humanReadableName: "Back/Forward Cache with Media"
++  humanReadableDescription: "Enable back/forward cache for pages with media"
++  condition: PLATFORM(WPE)
++  defaultValue:
++    WebKitLegacy:
++      default: true
++    WebKit:
++      default: true
++    WebCore:
++      default: true
++
+ BackgroundFetchAPIEnabled:
+   type: bool
+   status: testable
+diff --git a/Source/WebCore/history/BackForwardCache.cpp b/Source/WebCore/history/BackForwardCache.cpp
+index 9dc23543e8889..436258fff51e2 100644
+--- a/Source/WebCore/history/BackForwardCache.cpp
++++ b/Source/WebCore/history/BackForwardCache.cpp
+@@ -40,6 +40,7 @@
+ #include "FocusController.h"
+ #include "FrameDestructionObserverInlines.h"
+ #include "FrameLoader.h"
++#include "HTMLMediaElement.h"
+ #include "HTTPParsers.h"
+ #include "HistoryController.h"
+ #include "LocalDOMWindow.h"
+@@ -217,6 +218,17 @@ static bool canCachePage(Page& page)
+         logBackForwardCacheFailureDiagnosticMessage(diagnosticLoggingClient, DiagnosticLoggingKeys::isDisabledKey());
+         isCacheable = false;
+     }
++#if PLATFORM(WPE)
++    if (!page.settings().backForwardCacheWithMediaEnabled()) {
++        bool hasMedia = false;
++        page.forEachMediaElement([&](HTMLMediaElement&) { hasMedia = true; });
++        if (hasMedia) {
++            PCLOG("   -Page contains media elements and back/forward cache with media is disabled"_s);
++            logBackForwardCacheFailureDiagnosticMessage(diagnosticLoggingClient, DiagnosticLoggingKeys::pageContainsMediaEngineKey());
++            isCacheable = false;
++        }
++    }
++#endif
+ #if ENABLE(DEVICE_ORIENTATION) && !PLATFORM(IOS_FAMILY)
+     if (DeviceMotionController::isActiveAt(&page)) {
+         PCLOG("   -Page is using DeviceMotion"_s);

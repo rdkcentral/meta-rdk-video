@@ -29,6 +29,6 @@ inherit pkgconfig cmake coverity features_check
 REQUIRED_DISTRO_FEATURES = "enable_rialto"
 
 #Needed for Kirkstone packagegroup error
-DEBIAN_NOAUTONAME_${PN} = "1"
-DEBIAN_NOAUTONAME_${PN}-dev = "1"
-DEBIAN_NOAUTONAME_${PN}-dbg = "1"
+#DEBIAN_NOAUTONAME_${PN} = "1"
+#DEBIAN_NOAUTONAME_${PN}-dev = "1"
+#DEBIAN_NOAUTONAME_${PN}-dbg = "1"
