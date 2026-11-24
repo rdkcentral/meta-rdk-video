@@ -19,6 +19,7 @@ inherit cmake pkgconfig systemd python3native add-version
 
 PACKAGECONFIG ?= " \
     release \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opentelemetry', 'opentelemetry', '', d)} \
     "
 
 # Buildtype & other packages
@@ -27,14 +28,27 @@ PACKAGECONFIG[release]                      = "-DCMAKE_BUILD_TYPE=Release,-DCMAK
 PACKAGECONFIG[cyclicinspector]              = "-DTEST_CYCLICINSPECTOR=ON,-DTEST_CYCLICINSPECTOR=OFF,"
 PACKAGECONFIG[provisionproxy]               = "-DPROVISIONPROXY=ON,-DPROVISIONPROXY=OFF,libprovision"
 PACKAGECONFIG[bluetooth]                    = "-DBLUETOOTH_SUPPORT=ON,-DBLUETOOTH_SUPPORT=OFF,"
-PACKAGECONFIG[processcontainers]            = "-DPROCESSCONTAINERS=ON,-DPROCESSCONTAINERS=OFF,"
-PACKAGECONFIG[processcontainers_dobby]      = "-DPROCESSCONTAINERS_DOBBY=ON,,dobby"
 PACKAGECONFIG[websocket]                    = "-DWEBSOCKET=ON,,"
-PACKAGECONFIG[warningreporting]             = "-DWARNING_REPORTING=ON,-DWARNING_REPORTING=OFF,"
 PACKAGECONFIG[profiler]                     = "-DPROFILER=ON,-DPROFILER=OFF,"
 PACKAGECONFIG[securesocket]                 = "-DSECURE_SOCKET=ON,-DSECURE_SOCKET=OFF,openssl"
+PACKAGECONFIG[customerrorcodes]             = "-DCUSTOM_ERROR_CODES_ENABLED=ON,-DCUSTOM_ERROR_CODES_ENABLED=OFF"
+
+# Addons
+PACKAGECONFIG[hibernate]                    = "-DHIBERNATESUPPORT=ON,-DHIBERNATESUPPORT=OFF"
+PACKAGECONFIG[localtracer]                  = "-DLOCALTRACER=ON,-DLOCALTRACER=OFF"
+PACKAGECONFIG[privilegedrequest]            = "-DPRIVILEGEDREQUEST=ON,-DPRIVILEGEDREQUEST=OFF"
+PACKAGECONFIG[processcontainers]            = "-DPROCESSCONTAINERS=ON,-DPROCESSCONTAINERS=OFF,"
+PACKAGECONFIG[processcontainers_dobby]      = "-DPROCESSCONTAINERS_DOBBY=ON,,dobby"
+PACKAGECONFIG[warningreporting]             = "-DWARNING_REPORTING=ON,-DWARNING_REPORTING=OFF"
+PACKAGECONFIG[opentelemetry]                = "-DTHUNDER_OPENTELEMETRY=ON -DW3C_TRACE_CONTEXT_ENABLED=ON,-DTHUNDER_OPENTELEMETRY=OFF,opentelemetry-cpp"
+
+# System init scripts
 PACKAGECONFIG[initv-script]                 = "-DINITV_SCRIPT=ON,-DINITV_SCRIPT=OFF,"
 PACKAGECONFIG[systemd-service]              = "-DSYSTEMD_SERVICE=ON,-DSYSTEMD_SERVICE=OFF,"
+
+# Verbose cmake build
+PACKAGECONFIG[build-verbose]                = "-DCMAKE_VERBOSE_MAKEFILE=ON,,,"
+PACKAGECONFIG[cmake-verbose]                = "-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE,,,"
 
 # Build class specific variables
 THUNDER_PERSISTENT_PATH ?= "/tmp/rdkservices"
@@ -64,6 +78,7 @@ EXTRA_OECMAKE += " \
     -DMESSAGING=ON \
     -DCMAKE_SYSROOT=${STAGING_DIR_HOST} \
     -DPOSTMORTEM_PATH=/opt/secure/minidumps \
+    -DSKIP_PERSISTENT_PATH_INSTALL=ON \
 "
 
 PACKAGECONFIG:remove = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'systemd-service', '', d)}"
