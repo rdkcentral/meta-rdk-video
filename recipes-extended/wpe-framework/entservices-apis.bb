@@ -1,7 +1,7 @@
 SUMMARY = "entservices-apis"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d8927f3331d2b3e321b7dd1925166d25"
-PV = "4.3.5"
+PV = "5.0.1"
 PR = "r0"
 #Note reverted opencdm wrong commit
 SRCREV_entservices-apis = "deb8c6ec44d1f9ee55e7df509f1c2aef34ce4955"
@@ -14,7 +14,7 @@ inherit python3native cmake pkgconfig
 
 DEPENDS = "wpeframework wpeframework-tools-native"
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis"
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-apis;${CMF_GITHUB_SRC_URI_SUFFIX};name=entservices-apis;branch=main"
 
 SRC_URI += "file://RDKEMW-1007.patch"
 
