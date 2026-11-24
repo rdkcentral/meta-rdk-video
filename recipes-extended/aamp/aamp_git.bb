@@ -7,7 +7,7 @@ PV = "3.9.1"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "6460a90209b53529b75cec2161afed34b5b6696d"
+SRCREV_aamp ?= "ec8ff121b99a511032354731e21d1d3199a56079"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
 AAMP_BRANCH ?= "session_sting_aamp_1"
