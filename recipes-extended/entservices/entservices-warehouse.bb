@@ -2,8 +2,8 @@ SUMMARY = "ENTServices warehouse plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
-PV = "1.2.2"
-PR = "r0"
+PV = "1.2.2_Test"
+PR = "r1"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -12,7 +12,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-warehouse;${CMF_GITHUB_SRC_URI_SUFFIX}
     file://rdkservices.ini \
     "
 # Release version - 1.2.2
-SRCREV = "7da4e0c978ab46ff4bb3756c004331892a3146ad"
+SRCREV = "6a9e285568234f7ef5e4721ca1fbe44030d09144"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -43,7 +43,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc entservices-apis entservices-helpers devicesettings virtual/vendor-devicesettings-hal,iarmbus rfc entservices-apis entservices-helpers devicesettings"
+PACKAGECONFIG[warehouse]            = "-DPLUGIN_WAREHOUSE=ON,-DPLUGIN_WAREHOUSE=OFF,iarmbus iarmmgrs rfc entservices-apis entservices-helpers,iarmbus rfc entservices-apis entservices-helpers"
 
 # ----------------------------------------------------------------------------
 

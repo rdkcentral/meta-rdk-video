@@ -4,13 +4,13 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0 & ISC"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=83a31d934b0cc2ab2d44a329445b4366"
 
-PV = "1.2.1"
-PR = "r0"
+PV = "1.2.1_Test"
+PR = "r1"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SAVEDDIR := "${THISDIR}"
 
-SRCREV = "328b58b8d0c56b2326521555987d9a221647b6b0"
+SRCREV = "6be1c718b7313597c1219a813130ff2e52664826"
 SRC_URI = "${CMF_GITHUB_ROOT}/iarmmgrs;${CMF_GITHUB_SRC_URI_SUFFIX};name=iarmmgrs"
 SRCREV_FORMAT = "iarmmgrs"
 S = "${WORKDIR}/git"
@@ -22,16 +22,15 @@ DEPENDS:append = " safec-common-wrapper"
 DEPENDS:append = " telemetry"
 
 PARALLEL_MAKE = ""
-DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec devicesettings virtual/vendor-devicesettings-hal \
+DEPENDS="curl yajl dbus iarmbus rdk-logger hdmicec \
          ermgr iarmmgrs-hal-headers openssl systemd libsyswrapper rfc libunpriv boost c-ares \
          deepsleep-manager-headers power-manager-headers entservices-powercontroller wpeframework-clientlibraries"
 DEPENDS:append:client = " virtual/mfrlib"
 DEPENDS:append = " virtual/mfrlib"
-DEPENDS:append = " virtual/vendor-devicesettings-hal "
 DEPENDS:append = " virtual/vendor-deepsleepmgr-hal virtual/vendor-pwrmgr-hal "
-RDEPENDS:${PN}:append = " devicesettings rfc"
+RDEPENDS:${PN}:append = " rfc"
 RDEPENDS:${PN}_client_morty += " virtual/mfrlib"
-RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_mfrlib} devicesettings"
+RDEPENDS:${PN} += "${VIRTUAL-RUNTIME_mfrlib}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)}"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -69,19 +68,14 @@ ASNEEDED = ""
 INCLUDE_DIRS = " \
     -I${S}/mfr/include \
     -I${S}/sysmgr/include \
-    -I${S}/dsmgr \
     -I=${includedir}/wdmp-c \
     -I=${includedir}/rdk/safeclib \
     -I=${includedir}/rdk/iarmbus \
     -I=${includedir}/rdk/halif/power-manager \
     -I=${includedir}/rdk/halif/deepsleep-manager \
-    -I=${includedir}/rdk/halif/ds-hal \
     -I=${includedir}/ccec/drivers/include \
     -I=${includedir}/ccec/drivers/ \
     -I=${includedir} \
-    -I=${includedir}/rdk/ds \
-    -I=${includedir}/rdk/ds-hal \
-    -I=${includedir}/rdk/ds-rpc \
     -I=${includedir}/rdk/iarmmgrs-hal \
     -I=${includedir}/directfb \
     -I=${includedir}/glib-2.0 \
@@ -136,13 +130,6 @@ CXXLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_REGION_UK', '-DENABLE_
              bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_STB', '-DENABLE_FLEX2_RESOLUTION', \
              '', d), d), d), d), d)}"
 
-CFLAGS += " -DDSMGR_LOGGER_ENABLED"
-CXXLAGS += " -DDSMGR_LOGGER_ENABLED"
-LDFLAGS += " -lrdkloggers"
-
-CFLAGS += " -DDEVICESETTINGS_PLUGIN_ENABLED"
-CXXLAGS += " -DDEVICESETTINGS_PLUGIN_ENABLED"
-
 EXTRA_OEMAKE += "-e MAKEFLAGS="
 
 do_compile() {
@@ -150,7 +137,6 @@ do_compile() {
     oe_runmake -B -C ${S}/utils/
     #LDFLAGS="-lsystemd ${LDFLAGS}" CFLAGS="-DENABLE_SD_NOTIFY ${CFLAGS}" oe_runmake -B -C ${S}/sysmgr/
     LDFLAGS="${LDFLAGS}" CFLAGS="-DENABLE_SD_NOTIFY ${CFLAGS}" oe_runmake -B -C ${S}/sysmgr/
-    CFLAGS=" ${CFLAGS}" LDFLAGS="-lds -lds-hal -ldshalsrv -ldl -L${S}/utils -liarmUtils ${LDFLAGS}" oe_runmake -B -C ${S}/dsmgr/
 
     if [ "${@bb.utils.contains('PACKAGECONFIG', 'mfr', 'mfr', '', d)}" != "" ]; then
 
@@ -180,7 +166,7 @@ do_install() {
     done
 
     install -d ${D}${bindir}
-    for i in dsmgr/*Main sysmgr/*Main; do
+    for i in sysmgr/*Main; do
         install -m 0755 ${S}/$i ${D}${bindir}
     done
 
@@ -217,7 +203,7 @@ FILES_SOLIBSDEV = ""
 SOLIBS = ".so"
 INSANE_SKIP:${PN} += "dev-so"
 # Breakpad processname and logfile mapping
-BREAKPAD_LOGMAPPER_PROCLIST = "dsMgrMain,IARMDaemonMain,mfrMgrMain,sysMgrMain"
+BREAKPAD_LOGMAPPER_PROCLIST = "IARMDaemonMain,mfrMgrMain,sysMgrMain"
 BREAKPAD_LOGMAPPER_LOGLIST = "uimgr_log.txt"
 
 DEPENDS:append:client = " ${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' sqlite3  ', '',d)}"
@@ -253,10 +239,10 @@ LDFLAGS += "-lRDKMfrLib "
 
 LDFLAGS += "${@bb.utils.contains('DISTRO_FEATURES', 'RDKE_PLATFORM_TV',' -lsqlite3 ', '',d)}"
 
-LDFLAGS += " -ldshalcli -lds -liarmmgrs-deepsleep-hal"
+LDFLAGS += " -liarmmgrs-deepsleep-hal"
 
 do_compile:append() {
-    LDFLAGS="-ldshalcli -lds -liarmmgrs-deepsleep-hal -lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" oe_runmake -B -C ${S}/mfr/test_mfr/
+    LDFLAGS="-liarmmgrs-deepsleep-hal -lrfcapi ${LDFLAGS}"  CFLAGS=" ${CFLAGS}" oe_runmake -B -C ${S}/mfr/test_mfr/
 }
 
 do_install:append(){
