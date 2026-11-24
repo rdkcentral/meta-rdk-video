@@ -2,8 +2,9 @@ SUMMARY = "ENTServices Userpreferences plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV = "1.2.3"
-PR = "r2"
+PV = "1.2.4"
+PR = "r1"
+SRCREV = "1c90f5859eede32568068b4347f8912e5aa8f4d2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -11,9 +12,6 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-userpreferences;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27601 \
            file://rdkservices.ini \
           "
-
-# Release version - 1.2.3
-SRCREV = "7a4946776767d62eadecea2bebefe388f0cd4257"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -46,7 +44,7 @@ PACKAGECONFIG ?= " breakpadsupport \
 "
 PACKAGECONFIG[breakpadsupport]      = ",,breakpad-wrapper,breakpad-wrapper"
 PACKAGECONFIG[telemetrysupport]     = "-DBUILD_ENABLE_TELEMETRY_LOGGING=ON,,telemetry,telemetry"
-PACKAGECONFIG[userpreferences]      = "-DPLUGIN_USERPREFERENCES=ON,-DPLUGIN_USERPREFERENCES=OFF,glib-2.0,glib-2.0"
+PACKAGECONFIG[userpreferences]      = "-DPLUGIN_USERPREFERENCES=ON,-DPLUGIN_USERPREFERENCES=OFF,glib-2.0 entservices-helpers,glib-2.0 entservices-helpers"
 
 # ----------------------------------------------------------------------------
 

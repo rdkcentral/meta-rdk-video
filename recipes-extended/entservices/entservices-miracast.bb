@@ -2,8 +2,8 @@ SUMMARY = "ENTServices MiraCast plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be469927b9722d71bc41ecd5e71fe35f"
 
-PV = "2.1.4"
-PR = "r2"
+PV = "2.1.5"
+PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
@@ -11,8 +11,8 @@ inherit cmake pkgconfig
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-miracast;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27601 \
           "
 
-# Release version - 2.1.4
-SRCREV = "fa4eb35cc4c3ea828bf462502f5cfc527af43a40"
+# Release version - 2.1.5
+SRCREV = "5731f289e30a2e9423ffa8c6555e1fad6d5f2353"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
