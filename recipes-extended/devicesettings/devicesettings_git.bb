@@ -4,10 +4,10 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-PV = "1.0.43"
+PV = "1.1.0"
 PR = "r0"
 
-SRCREV_devicesettings = "1bcf1447c0c072665ff12fd4c6ad75358c1c127e"
+SRCREV_devicesettings = "72de52475865207ee0b170bb09ca0518ce37f3d1"
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
 
 # devicesettings is not a 'generic' component, as some of its source
@@ -64,6 +64,7 @@ CFLAGS += "-DRDK_DSHAL_NAME="\""libds-hal.so.0\""""
 CFLAGS += " -DYOCTO_BUILD"
 CFLAGS += " -DDS_AUDIO_SETTINGS_PERSISTENCE"
 CFLAGS += " -DDSMGR_LOGGER_ENABLED"
+CFLAGS += " -DDEVICESETTINGS_PLUGIN_ENABLED"
 
 # added support for rfc
 CFLAGS += "-I${STAGING_INCDIR}/wdmp-c"
