@@ -13,7 +13,7 @@ DEPENDS += "rdk-logger"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r58"
+PR = "r59"
 PV = "4.4.8"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -203,9 +203,9 @@ SYSLOG-NG_LOGRATE_wpeframework = "high"
 LOGROTATE_NAME="wpeframework"
 LOGROTATE_LOGNAME_wpeframework="wpeframework.log"
 LOGROTATE_SIZE_wpeframework="1572864"
-LOGROTATE_ROTATION_wpeframework="3"
+LOGROTATE_ROTATION_wpeframework="6"
 LOGROTATE_SIZE_MEM_wpeframework="1572864"
-LOGROTATE_ROTATION_MEM_wpeframework="3"
+LOGROTATE_ROTATION_MEM_wpeframework="6"
 
 # Breakpad processname and logfile mapping
 BREAKPAD_LOGMAPPER_PROCLIST = "WPEFramework,WorkerPool::Thr,WPEProcess,WPEWebProcess,startWPE,WPENetworkProcess,WideVine.drm,PlayReady.drm,NetworkManager,Monitor::IResou"
