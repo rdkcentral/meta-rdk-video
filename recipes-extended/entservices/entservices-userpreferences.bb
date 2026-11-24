@@ -2,7 +2,7 @@ SUMMARY = "ENTServices Userpreferences plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV = "1.1.1"
+PV = "1.2.4"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -12,8 +12,8 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-userpreferences;${CMF_GITHUB_SRC_URI_S
            file://rdkservices.ini \
           "
 
-# Release version - 1.1.1
-SRCREV = "31b8421268a2f8cdc3393c80cee106ceed68ee69"
+# Release version - 1.2.4
+SRCREV = "b0377645cd4f4e0d4bd2233871d9764600332bcb"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
