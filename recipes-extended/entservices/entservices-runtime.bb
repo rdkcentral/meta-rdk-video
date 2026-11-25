@@ -2,18 +2,17 @@ SUMMARY = "ENTServices runtime plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=dc6e390ad71aef79d0c2caf3cde03a19"
 
-PV = "1.2.3"
+PV = "1.2.8"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-runtime;${CMF_GITHUB_SRC_URI_SUFFIX} \
-           file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
           "
 
-# Release version - 1.2.3
-SRCREV = "851bb16d4f4c6890c5a6a879b8586b62c265f09e"
+# Release version - 1.2.8
+SRCREV = "a80f8c58be289c5736ff5f53454886eab3b3457d"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
