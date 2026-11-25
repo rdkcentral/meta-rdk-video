@@ -17,7 +17,7 @@ PR = "r59"
 PV = "4.4.8"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
-SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder \
+SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=fix/Debug_patch;name=thunder \
            file://wpeframework-init \
            file://wpeframework.service.in \
            "
@@ -63,7 +63,7 @@ PACKAGECONFIG:append = "${@' opentelemetry' if d.getVar('THUNDER_OPENTELEMETRY')
 PACKAGECONFIG[opentelemetry] = "-DWPEFRAMEWORK_OPENTELEMETRY=ON,-DWPEFRAMEWORK_OPENTELEMETRY=OFF,opentelemetry-cpp"
 
 PACKAGECONFIG ?= " \
-    release \
+    debug \
     virtualinput \
     websocket \
     "
