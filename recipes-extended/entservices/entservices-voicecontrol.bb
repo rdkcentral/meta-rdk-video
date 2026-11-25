@@ -10,7 +10,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-voicecontrol;${CMF_GITHUB_SRC_URI_SUFF
            file://rdkservices.ini \
           "
 
-PV = "1.0.6"
+PV = "1.0.7"
 PR = "r0"
 SRCREV = "${PV}"
 
@@ -20,7 +20,7 @@ DISTRO_FEATURES_CHECK = "wpe_r4_4 wpe_r4"
 EXTRA_OECMAKE += "${@bb.utils.contains_any('DISTRO_FEATURES', '${DISTRO_FEATURES_CHECK}', ' -DUSE_THUNDER_R4=ON', '', d)}"
 REQUIRED_DISTRO_FEATURES = "ctrlm"
 
-DEPENDS += "wpeframework wpeframework-tools-native entservices-apis iarmbus iarmmgrs ctrlm-headers"
+DEPENDS += "wpeframework wpeframework-tools-native entservices-apis iarmbus iarmmgrs ctrlm-headers entservices-helpers"
 RDEPENDS:${PN} += "wpeframework iarmbus ctrlm"
 
 TARGET_LDFLAGS += " -Wl,--no-as-needed -Wl,--as-needed "
