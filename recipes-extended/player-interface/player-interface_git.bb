@@ -7,11 +7,7 @@ PV = "2.0.2"
 PR = "r0"
 
 SRCREV_FORMAT = "player-interface"
-<<<<<<< HEAD
 SRCREV_player-interface ?= "b01f7111f933392b03c54d1b760990658abeb9d5"
-=======
-SRCREV_player-interface ?= "ca1c3b1edad49f646bc7c3924f051714540604bc"
->>>>>>> de23c0db8 (RDKEMW-27322)
 # Support to build from a different branch by overriding both PLAYERINTERFACE_BRANCH and SRCREV to specific branch and revision.
 PLAYERINTERFACE_BRANCH ?= "feature/RDKEMW-27323_sourceLock_v1"
 
