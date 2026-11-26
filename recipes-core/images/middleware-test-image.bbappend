@@ -1,8 +1,9 @@
-ROOTFS_POSTPROCESS_COMMAND += "nmqe_check_rootfs; "
+IMAGE_INSTALL:append = " nmqe-toolchain-probe"
+ROOTFS_POSTPROCESS_COMMAND += "nmqe_check_toolchain_probe_rootfs; "
 
-nmqe_check_rootfs() {
-    if [ ! -x "${IMAGE_ROOTFS}${bindir}/nmqe-player" ]; then
-        bbfatal "MoQ POC image is missing executable ${bindir}/nmqe-player"
+nmqe_check_toolchain_probe_rootfs() {
+    if [ ! -x "${IMAGE_ROOTFS}${bindir}/nmqe-toolchain-probe" ]; then
+        bbfatal "MoQ toolchain POC image is missing executable ${bindir}/nmqe-toolchain-probe"
     fi
-    bbnote "MoQ POC rootfs contains ${bindir}/nmqe-player"
+    bbnote "MoQ toolchain POC rootfs contains ${bindir}/nmqe-toolchain-probe"
 }

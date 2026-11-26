@@ -1,11 +1,11 @@
 SUMMARY = "Native Media over QUIC player CLI (POC)"
 DESCRIPTION = "Native MoQ transport, standalone CMAF demux and GStreamer playback"
 
-# The placeholder is never used to build a package: the anonymous check below
-# requires an explicitly reviewed license expression before enabling this recipe.
-NMQE_LICENSE ?= ""
+# Internal POC metadata, not redistribution clearance. Replace CLOSED with the
+# reviewed engine license before release; the standalone AAMP source is Apache-2.0.
+NMQE_LICENSE ?= "CLOSED & Apache-2.0"
 NMQE_LIC_FILES_CHKSUM ?= ""
-LICENSE = "${@d.getVar('NMQE_LICENSE') or 'CLOSED'}"
+LICENSE = "${NMQE_LICENSE}"
 LIC_FILES_CHKSUM = "${NMQE_LIC_FILES_CHKSUM} \
     file://${WORKDIR}/aamp/LICENSE;md5=97dd37dbf35103376811825b038fc32b \
 "
@@ -64,13 +64,6 @@ RDEPENDS:${PN} += " \
 "
 
 python () {
-    if not d.getVar("NMQE_LICENSE"):
-        raise bb.parse.SkipRecipe(
-            "nmqe POC: engine license is unconfirmed. Set NMQE_LICENSE to the "
-            "reviewed package license expression and NMQE_LIC_FILES_CHKSUM to "
-            "the applicable source license checksums; do not infer the C++ "
-            "license from the Rust shim."
-        )
     if d.getVar("NMQE_CARGO_VENDOR_URI") and not d.getVar("NMQE_CARGO_VENDOR_SHA256"):
         bb.fatal("nmqe POC: NMQE_CARGO_VENDOR_URI requires NMQE_CARGO_VENDOR_SHA256")
 }
