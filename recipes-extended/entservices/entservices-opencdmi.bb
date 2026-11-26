@@ -15,7 +15,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-opencdmi;${CMF_GITHUB_SRC_URI_SUFFIX} 
            file://rdkservices.ini \
           "
           
-SRCREV = "${PV}"
+SRCREV = "adeb595cfbd36e58e7128e319711a3b671f9cbf7"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
