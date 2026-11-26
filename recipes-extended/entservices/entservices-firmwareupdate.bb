@@ -2,17 +2,17 @@ SUMMARY = "ENTServices firmware update plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-PV = "1.2.7"
+PV = "1.2.8"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwareupdate;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27601 \
            "
 
-# Release version - 1.2.7
-SRCREV = "0d783a04c328bb8b69ee2e6cb175dc07881e7c8d"
+# Release version - 1.2.8
+SRCREV = "7f4c830bc3981a583197a366848347c868803d5d"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

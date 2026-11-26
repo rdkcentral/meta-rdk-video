@@ -3,17 +3,17 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2a944942e1496af1886903d274dedb13"
 
 PV = "1.0.3"
-PR = "r0"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig syslog-ng-config-gen logrotate_config
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwaredownload;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-firmwaredownload;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27601 \
            file://rdkservices.ini \
           "
 
 # Release version - 1.0.3
-SRCREV = "bdd067bcda9ad4833fa922d97fb27d610d9c9d0b"
+SRCREV = "7b99d36e577b5c51f5636ef5add9aa8844ba6d6e"
 
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"

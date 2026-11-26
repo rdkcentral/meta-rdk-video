@@ -3,17 +3,17 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
 PV = "1.2.5"
-PR = "r0"
+PR = "r2"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-systemmode;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-systemmode;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27442 \
            file://rdkservices.ini \
           "
 
 # Release version - 1.2.5
-SRCREV = "b04f47b7f5eee2247f7d5ddfd871238e60396b27"
+SRCREV = "64bf0596fd9e5528c2aec5d52af20b90954dfae4"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 

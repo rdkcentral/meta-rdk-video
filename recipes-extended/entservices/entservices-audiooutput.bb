@@ -8,11 +8,11 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-audiooutput;${CMF_GITHUB_SRC_URI_SUFFIX} \
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-audiooutput;${CMF_GITHUB_SRC_URI_SUFFIX};branch=topic/RDKEMW-27601 \
            file://rdkservices.ini \
           "
 # Release version - 2.0.2
-SRCREV = "0c685aef164613b403e8a54b9f9b7927f003ade5"
+SRCREV = "49c8e18147dcb468859da7cea38e6b0f78a4eb57"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 

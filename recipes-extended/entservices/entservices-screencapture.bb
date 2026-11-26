@@ -2,7 +2,7 @@ SUMMARY = "ENTServices screencapture plugins"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7df5a8706277b586ca000838046993d1"
 
-PV = "1.1.6"
+PV = "1.1.7"
 PR = "r0"
 
 S = "${WORKDIR}/git"
@@ -15,8 +15,7 @@ SRC_URI = "${CMF_GITHUB_ROOT}/entservices-screencapture;${CMF_GITHUB_SRC_URI_SUF
            file://rdkservices.ini \
           "
           
-# Release version - 1.1.6
-SRCREV = "b3ef6d11b1401af60770dea1d5e79483ffd7eb01"
+SRCREV = "${PV}"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}" 
 TOOLCHAIN = "gcc"
