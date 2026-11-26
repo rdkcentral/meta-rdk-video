@@ -4,7 +4,7 @@ SECTION = "console/utils"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=76ae13a6bce633447ea2284294f073c2"
 
-SRCREV = "6dc3de37ad671e2877f58ea78e71691ea8275c36"
+SRCREV = "071cea86aafc5d8bc44c7bed9fc3e80e2e9964af"
 
 SRC_URI = "${CMF_GITHUB_ROOT}/tr69hostif;${CMF_GITHUB_SRC_URI_SUFFIX};name=tr69hostif"
 PV = "1.6.7"
@@ -44,25 +44,17 @@ CXXFLAGS:append     = "${@bb.utils.contains('DISTRO_FEATURES', 'rrd', ' -I=${inc
 
 inherit pkgconfig breakpad-logmapper syslog-ng-config-gen useradd logrotate_config
 
-SYSLOG-NG_FILTER = "parodus tr69hostif"
+SYSLOG-NG_FILTER = "tr69hostif"
 SYSLOG-NG_SERVICE_tr69hostif = "tr69hostif.service"
 SYSLOG-NG_DESTINATION_tr69hostif = "tr69hostif.log"
 SYSLOG-NG_LOGRATE_tr69hostif = "high"
-SYSLOG-NG_SERVICE_parodus = "parodus.service"
-SYSLOG-NG_DESTINATION_parodus = "parodus.log"
-SYSLOG-NG_LOGRATE_parodus = "high"
 
-LOGROTATE_NAME="parodus tr69hostif"
-LOGROTATE_LOGNAME_parodus="parodus.log"
+LOGROTATE_NAME="tr69hostif"
 LOGROTATE_LOGNAME_tr69hostif="tr69hostif.log"
 #HDD_ENABLE
-LOGROTATE_SIZE_parodus="128000"
-LOGROTATE_ROTATION_parodus="3"
 LOGROTATE_SIZE_tr69hostif="1572864"
 LOGROTATE_ROTATION_tr69hostif="3"
 #HDD_DISABLE
-LOGROTATE_SIZE_MEM_parodus="128000"
-LOGROTATE_ROTATION_MEM_parodus="3"
 LOGROTATE_SIZE_MEM_tr69hostif="1572864"
 LOGROTATE_ROTATION_MEM_tr69hostif="3"
 
@@ -161,8 +153,6 @@ do_install:append() {
 	install -m 0644 ${S}/src/hostif/include/*.h ${D}${includedir}/rdk/tr69hostif
 	install -m 0644 ${S}/conf/mgrlist.conf ${D}${sysconfdir}
         install -d ${D}${base_libdir}/rdk
-        install -m 0644 ${S}/src/hostif/parodusClient/parodus.service ${D}${systemd_unitdir}/system
-        install -m 0644 ${S}/src/hostif/parodusClient/parodus_bsp.path ${D}${systemd_unitdir}/system
         install -m 0644 ${S}/src/hostif/parodusClient/conf/notify_webpa_cfg.json ${D}${sysconfdir}
         install -m 0644 ${S}/src/hostif/parodusClient/conf/webpa_cfg.json ${D}${sysconfdir}
         install -d ${D}${sysconfdir} ${D}${sysconfdir}/rfcdefaults
@@ -197,10 +187,6 @@ FILES:${PN} += "${systemd_unitdir}/system/tr69hostif.service"
 
 SYSTEMD_SERVICE:${PN} += "ip-iface-monitor.service"
 FILES:${PN} += "${systemd_unitdir}/system/ip-iface-monitor.service"
-SYSTEMD_SERVICE:${PN} += "parodus.service" 
-SYSTEMD_SERVICE:${PN} += "parodus_bsp.path"
-FILES:${PN} += "${systemd_unitdir}/system/parodus.service" 
-FILES:${PN} += "${systemd_unitdir}/system/parodus_bsp.path"
 FILES:${PN} += "${base_libdir}/*"
 FILES:${PN} += "${sysconfdir}/*"
 FILES:${PN} += "${NONROOT_USER_DIR}"
