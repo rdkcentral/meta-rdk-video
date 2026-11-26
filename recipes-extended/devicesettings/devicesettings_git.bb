@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 PV = "1.1.0_Test"
 PR = "r1"
 
-SRCREV_devicesettings = "119b52fa19a506bf1a0a2132dcf5a9123744c78d"
+SRCREV_devicesettings = "e84fd2fe8125b60df6f3f6b53eadb123a9850223"
 SRC_URI = "${CMF_GITHUB_ROOT}/devicesettings;${CMF_GITHUB_SRC_URI_SUFFIX};name=devicesettings"
 
 # devicesettings is not a 'generic' component, as some of its source
@@ -145,5 +145,7 @@ do_install:append() {
         install -m 0755 ${S}/sample/hdmiIn ${D}${bindir}
     fi
 
+	# Widevine DSMGR API validation utility
+    install -d ${D}${bindir}
+    install -m 0755 ${S}/sample/testWidevineDS ${D}${bindir}
 }
-
