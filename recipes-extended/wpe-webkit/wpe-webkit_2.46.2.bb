@@ -66,6 +66,7 @@ SRC_URI += "file://2.46/comcast-RDKTV-28214-Quick-_exit.patch"
 SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
 SRC_URI += "file://2.46.2/0001-igalia-2.46-new.patch"
 SRC_URI += "file://2.46.2/0001-angle-events.patch"
+SRC_URI += "file://2.46.2/0001-remove-angle-virtualization.patch"
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"

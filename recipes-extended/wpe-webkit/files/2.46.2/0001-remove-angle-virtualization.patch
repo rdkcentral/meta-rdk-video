@@ -1,0 +1,29 @@
+From e627cc8b692bd5fb5fa50d2eca49bf78f1d86ab6 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Fri, 27 Nov 2026 17:20:40 +0000
+Subject: [PATCH] remove angle virtualization
+
+---
+ .../graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+index 1c77f4b9a08a..8d60d8c5cbfe 100644
+--- a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
++++ b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+@@ -300,8 +300,10 @@ bool GraphicsContextGLTextureMapperANGLE::platformInitializeContext()
+     eglContextAttributes.append(EGL_CONTEXT_BIND_GENERATES_RESOURCE_CHROMIUM);
+     eglContextAttributes.append(EGL_FALSE);
+ #if USE(NICOSIA)
+-    eglContextAttributes.append(EGL_CONTEXT_VIRTUALIZATION_GROUP_ANGLE);
+-    eglContextAttributes.append(0);
++    if (!m_rendersToHostWindow) {
++        eglContextAttributes.append(EGL_CONTEXT_VIRTUALIZATION_GROUP_ANGLE);
++        eglContextAttributes.append(0);
++    }
+ #endif
+ 
+     if (strstr(displayExtensions, "EGL_ANGLE_power_preference")) {
+-- 
+2.44.4
+

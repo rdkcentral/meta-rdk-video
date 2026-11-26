@@ -1,0 +1,1203 @@
+From 0a055ba66244e2a1150cda3ca9dbb11f9b2400ef Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Thu, 26 Nov 2026 13:56:54 +0000
+Subject: [PATCH] adding ftrace .38
+
+---
+ Source/ThirdParty/ANGLE/CMakeLists.txt        |   4 +
+ .../ThirdParty/ANGLE/include/CMakeLists.txt   |   7 +
+ .../ANGLE/src/libANGLE/LoggingAnnotator.cpp   |   2 +-
+ Source/ThirdParty/ANGLE/src/libANGLE/trace.h  |   2 +
+ Source/WTF/wtf/PlatformWPE.cmake              |   3 +-
+ Source/WTF/wtf/SystemTracing.h                |  59 +++
+ Source/WTF/wtf/linux/SystemTracingFTrace.h    | 483 ++++++++++++++++++
+ .../html/canvas/WebGLResourceTracker.cpp      |  16 +
+ .../html/canvas/WebGLResourceTracker.h        |   2 +
+ .../graphics/angle/ANGLEUtilities.cpp         |  33 ++
+ .../platform/graphics/angle/ANGLEUtilities.h  |   4 +
+ .../gbm/GraphicsContextGLFallback.cpp         |   5 +
+ .../graphics/gbm/GraphicsContextGLGBM.cpp     |   5 +
+ .../opengl/GraphicsContextGLOpenGL.cpp        |  24 +
+ .../opengl/GraphicsContextGLOpenGLES.cpp      |   3 +
+ .../GraphicsContextGLTextureMapperANGLE.cpp   |   4 +
+ .../coordinated/CoordinatedGraphicsLayer.cpp  |   2 +
+ .../threadedcompositor/ThreadedCompositor.cpp |  12 +-
+ .../UIProcess/Launcher/ProcessLauncher.cpp    |   4 +-
+ .../CompositingCoordinator.cpp                |   7 +
+ .../CoordinatedGraphics/LayerTreeHost.cpp     |   6 +
+ Source/WebKit/WebProcess/WebPage/WebPage.cpp  |   1 +
+ Source/cmake/OptionsWPE.cmake                 |   1 +
+ 23 files changed, 684 insertions(+), 5 deletions(-)
+ create mode 100644 Source/WTF/wtf/linux/SystemTracingFTrace.h
+
+diff --git a/Source/ThirdParty/ANGLE/CMakeLists.txt b/Source/ThirdParty/ANGLE/CMakeLists.txt
+index 6ac53a533509..7a24c0c1a8fa 100644
+--- a/Source/ThirdParty/ANGLE/CMakeLists.txt
++++ b/Source/ThirdParty/ANGLE/CMakeLists.txt
+@@ -70,6 +70,10 @@ set(ANGLE_DEFINITIONS
+     ANGLE_ENABLE_GLSL
+ )
+ 
++if (USE_LINUX_FTRACE)
++    list(APPEND ANGLE_DEFINITIONS ANGLE_ENABLE_DEBUG_ANNOTATIONS=1)
++endif ()
++
+ set(ANGLE_SOURCES
+     ${libangle_common_sources}
+     ${angle_preprocessor_sources}
+diff --git a/Source/ThirdParty/ANGLE/include/CMakeLists.txt b/Source/ThirdParty/ANGLE/include/CMakeLists.txt
+index 3846b8bae227..c2ecedc17ac7 100644
+--- a/Source/ThirdParty/ANGLE/include/CMakeLists.txt
++++ b/Source/ThirdParty/ANGLE/include/CMakeLists.txt
+@@ -47,6 +47,13 @@ if (USE_ANGLE_WEBGL)
+     )
+ endif ()
+ 
++if (USE_LINUX_FTRACE AND USE_ANGLE_WEBGL)
++    WEBKIT_COPY_FILES(ANGLEPlatformHeaders
++        DESTINATION ${ANGLE_FRAMEWORK_HEADERS_DIR}/ANGLE
++        FILES platform/PlatformMethods.h
++    )
++endif ()
++
+ # Cocoa expects headers in an ANGLE directory
+ WEBKIT_COPY_FILES(GLSLANGHeaders
+     DESTINATION ${ANGLE_FRAMEWORK_HEADERS_DIR}/ANGLE
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/LoggingAnnotator.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/LoggingAnnotator.cpp
+index 290b6c0d5ed3..159b13341cbd 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/LoggingAnnotator.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/LoggingAnnotator.cpp
+@@ -23,7 +23,7 @@ void LoggingAnnotator::beginEvent(gl::Context *context,
+                                   const char *eventName,
+                                   const char *eventMessage)
+ {
+-    ANGLE_TRACE_EVENT_BEGIN0("gpu.angle", eventName);
++    ANGLE_TRACE_EVENT_BEGIN1("gpu.angle", eventName, "m", eventMessage);
+ }
+ 
+ void LoggingAnnotator::endEvent(gl::Context *context, const char *eventName, EntryPoint entryPoint)
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/trace.h b/Source/ThirdParty/ANGLE/src/libANGLE/trace.h
+index 9a9f53529520..ed5763cb120f 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/trace.h
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/trace.h
+@@ -15,6 +15,8 @@
+ // TODO: Pass platform directly to these methods. http://anglebug.com/1892
+ #define ANGLE_TRACE_EVENT_BEGIN0(CATEGORY, EVENT) \
+     TRACE_EVENT_BEGIN0(ANGLEPlatformCurrent(), CATEGORY, EVENT)
++#define ANGLE_TRACE_EVENT_BEGIN1(CATEGORY, EVENT, NAME, PARAM) \
++    TRACE_EVENT_BEGIN1(ANGLEPlatformCurrent(), CATEGORY, EVENT, NAME, PARAM)
+ #define ANGLE_TRACE_EVENT_END0(CATEGORY, EVENT) \
+     TRACE_EVENT_END0(ANGLEPlatformCurrent(), CATEGORY, EVENT)
+ #define ANGLE_TRACE_EVENT_INSTANT0(CATEGORY, EVENT) \
+diff --git a/Source/WTF/wtf/PlatformWPE.cmake b/Source/WTF/wtf/PlatformWPE.cmake
+index 1f4707a1dcae..1f5849fce36b 100644
+--- a/Source/WTF/wtf/PlatformWPE.cmake
++++ b/Source/WTF/wtf/PlatformWPE.cmake
+@@ -13,6 +13,7 @@ list(APPEND WTF_PUBLIC_HEADERS
+     linux/ProcessMemoryFootprint.h
+     linux/CurrentProcessMemoryStatus.h
+     linux/RealTimeThreads.h
++    linux/SystemTracingFTrace.h
+ 
+     unix/UnixFileDescriptor.h
+ )
+@@ -67,4 +68,4 @@ if (USE_LIBBACKTRACE)
+     list(APPEND WTF_LIBRARIES
+         LIBBACKTRACE::LIBBACKTRACE
+     )
+-endif ()
+\ No newline at end of file
++endif ()
+diff --git a/Source/WTF/wtf/SystemTracing.h b/Source/WTF/wtf/SystemTracing.h
+index 4a1ccdcaa96e..edb10fd5b532 100644
+--- a/Source/WTF/wtf/SystemTracing.h
++++ b/Source/WTF/wtf/SystemTracing.h
+@@ -146,12 +146,18 @@ enum TracePointCode {
+ 
+ #ifdef __cplusplus
+ 
++#if USE(LINUX_FTRACE)
++#include <wtf/linux/SystemTracingFTrace.h>
++#endif
++
+ namespace WTF {
+ 
+ inline void tracePoint(TracePointCode code, uint64_t data1 = 0, uint64_t data2 = 0, uint64_t data3 = 0, uint64_t data4 = 0)
+ {
+ #if HAVE(KDEBUG_H)
+     kdebug_trace(ARIADNEDBG_CODE(WEBKIT_COMPONENT, code), data1, data2, data3, data4);
++#elif USE(LINUX_FTRACE)
++    SystemTracingFTrace::instance().tracePoint(code, data1, data2, data3, data4);
+ #else
+     UNUSED_PARAM(code);
+     UNUSED_PARAM(data1);
+@@ -185,6 +191,41 @@ private:
+ using WTF::TraceScope;
+ using WTF::tracePoint;
+ 
++#if USE(LINUX_FTRACE)
++namespace WTF {
++
++class FTraceScope {
++public:
++    explicit FTraceScope(const char* name)
++        : m_name(name)
++        , m_enabled(SystemTracingFTrace::isEnabled())
++    {
++        if (m_enabled)
++            SystemTracingFTrace::instance().addMark('B', m_name);
++    }
++
++    ~FTraceScope()
++    {
++        if (m_enabled)
++            SystemTracingFTrace::instance().addMark('E', m_name);
++    }
++
++    FTraceScope(const FTraceScope&) = delete;
++    FTraceScope& operator=(const FTraceScope&) = delete;
++
++private:
++    const char* m_name;
++    bool m_enabled;
++};
++
++}
++#define WTF_FTRACE_SCOPE_VARIABLE(line) WTF_FTRACE_SCOPE_VARIABLE_IMPL(line)
++#define WTF_FTRACE_SCOPE_VARIABLE_IMPL(line) ftraceScope##line
++#define WTF_FTRACE_SCOPE(name) WTF::FTraceScope WTF_FTRACE_SCOPE_VARIABLE(__LINE__)(name)
++#else
++#define WTF_FTRACE_SCOPE(name) do { } while (0)
++#endif
++
+ #endif // __cplusplus
+ 
+ #if HAVE(OS_SIGNPOST)
+@@ -230,6 +271,24 @@ do { \
+ #define WTFEndSignpostIntervalAlways(name, format, ...) \
+     do { os_signpost_interval_end(WTFSignpostLogHandle(), OS_SIGNPOST_ID_EXCLUSIVE, name, format, ##__VA_ARGS__); } while (0)
+ 
++#elif USE(LINUX_FTRACE) && defined(__cplusplus)
++
++#define WTFEmitSignpostWithPhase(phase, pointer, name, ...) \
++    do { \
++        if (SystemTracingFTrace::isEnabled()) { \
++            SystemTracingFTrace::instance().addSignpost(phase, #name, static_cast<const void*>(pointer), ##__VA_ARGS__); \
++        } \
++    } while (0)
++
++#define WTFEmitSignpost(pointer, name, ...) WTFEmitSignpostWithPhase('I', pointer, name, ##__VA_ARGS__)
++#define WTFBeginSignpost(pointer, name, ...) WTFEmitSignpostWithPhase('B', pointer, name, ##__VA_ARGS__)
++#define WTFEndSignpost(pointer, name, ...) WTFEmitSignpostWithPhase('E', pointer, name, ##__VA_ARGS__)
++
++#define WTFEmitSignpostAlways(name, format, ...) do { } while (0)
++#define WTFBeginSignpostIntervalAlways(name, format, ...) do { } while (0)
++#define WTFBeginAnimationSignpostIntervalAlways(name, format, ...) do { } while (0)
++#define WTFEndSignpostIntervalAlways(name, format, ...) do { } while (0)
++
+ #else
+ 
+ #define WTFEmitSignpost(pointer, name, ...) do { } while (0)
+diff --git a/Source/WTF/wtf/linux/SystemTracingFTrace.h b/Source/WTF/wtf/linux/SystemTracingFTrace.h
+new file mode 100644
+index 000000000000..bfd90abac6a4
+--- /dev/null
++++ b/Source/WTF/wtf/linux/SystemTracingFTrace.h
+@@ -0,0 +1,483 @@
++/*
++ * Copyright (C) 2024 Igalia, S.L.
++ *
++ *  This library is free software; you can redistribute it and/or
++ *  modify it under the terms of the GNU Library General Public
++ *  License as published by the Free Software Foundation; either
++ *  version 2 of the License, or (at your option) any later version.
++ *
++ *  This library is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ *  Library General Public License for more details.
++ *
++ *  You should have received a copy of the GNU Library General Public License
++ *  along with this library; see the file COPYING.LIB.  If not, write to
++ *  the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
++ *  Boston, MA 02110-1301, USA.
++ */
++
++#pragma once
++
++#if USE(LINUX_FTRACE)
++
++#include <wtf/Assertions.h>
++#include <wtf/SystemTracing.h>
++#include <wtf/text/ASCIILiteral.h>
++
++#include <cstdio>
++#include <cinttypes>
++#include <cstdarg>
++#include <cerrno>
++#include <cstdlib>
++#include <cstring>
++#include <mutex>
++#include <string>
++#include <fcntl.h>
++#include <unistd.h>
++
++namespace WTF {
++
++class SystemTracingFTrace {
++public:
++    static SystemTracingFTrace& instance() {
++        static SystemTracingFTrace instance;
++        return instance;
++    }
++
++    static bool isEnabled() { return instance().m_traceMarkerFd >= 0; }
++
++    inline void tracePoint(TracePointCode code, uint64_t data1 = 0, uint64_t data2 = 0, uint64_t data3 = 0, uint64_t data4 = 0) {
++        // ftrace disabled in runtime
++        if (m_traceMarkerFd < 0) return;
++
++        switch (code) {
++        case VMEntryScopeStart:
++        case WebAssemblyCompileStart:
++        case WebAssemblyExecuteStart:
++        case DumpJITMemoryStart:
++        case FromJSStart:
++        case FetchCookiesStart:
++        case StyleRecalcStart:
++        case LayoutStart:
++        case RenderTreeBuildStart:
++        case PaintLayerStart:
++        case AsyncImageDecodeStart:
++        case RAFCallbackStart:
++        case MemoryPressureHandlerStart:
++        case UpdateTouchRegionsStart:
++        case DisplayListRecordStart:
++        case ComputeEventRegionsStart:
++        case RenderingUpdateStart:
++        case CompositingUpdateStart:
++        case DispatchTouchEventsStart:
++        case ParseHTMLStart:
++        case DisplayListReplayStart:
++        case ScrollingThreadRenderUpdateSyncStart:
++        case ScrollingThreadDisplayDidRefreshStart:
++        case WebHTMLViewPaintStart:
++        case BackingStoreFlushStart:
++        case BuildTransactionStart:
++        case SyncMessageStart:
++        case SyncTouchEventStart:
++        case InitializeWebProcessStart:
++        case RenderingUpdateRunLoopObserverStart:
++        case LayerTreeFreezeStart:
++        case FlushRemoteImageBufferStart:
++        case CreateInjectedBundleStart:
++        case PaintSnapshotStart:
++        case RenderServerSnapshotStart:
++        case TakeSnapshotStart:
++        case SyntheticMomentumStart:
++        case CommitLayerTreeStart:
++        case InitializeSandboxStart:
++        case WakeUpAndApplyDisplayListStart:
++            addMark('B', tracePointCodeName(code).characters(), "%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64, data1, data2, data3, data4);
++            return;
++
++        case VMEntryScopeEnd:
++        case WebAssemblyCompileEnd:
++        case WebAssemblyExecuteEnd:
++        case DumpJITMemoryStop:
++        case FromJSStop:
++        case FetchCookiesEnd:
++        case StyleRecalcEnd:
++        case LayoutEnd:
++        case RenderTreeBuildEnd:
++        case PaintLayerEnd:
++        case AsyncImageDecodeEnd:
++        case RAFCallbackEnd:
++        case MemoryPressureHandlerEnd:
++        case UpdateTouchRegionsEnd:
++        case DisplayListRecordEnd:
++        case ComputeEventRegionsEnd:
++        case RenderingUpdateEnd:
++        case CompositingUpdateEnd:
++        case DispatchTouchEventsEnd:
++        case ParseHTMLEnd:
++        case DisplayListReplayEnd:
++        case ScrollingThreadRenderUpdateSyncEnd:
++        case ScrollingThreadDisplayDidRefreshEnd:
++        case WebHTMLViewPaintEnd:
++        case BackingStoreFlushEnd:
++        case BuildTransactionEnd:
++        case SyncMessageEnd:
++        case SyncTouchEventEnd:
++        case InitializeWebProcessEnd:
++        case RenderingUpdateRunLoopObserverEnd:
++        case LayerTreeFreezeEnd:
++        case FlushRemoteImageBufferEnd:
++        case CreateInjectedBundleEnd:
++        case PaintSnapshotEnd:
++        case RenderServerSnapshotEnd:
++        case TakeSnapshotEnd:
++        case SyntheticMomentumEnd:
++        case CommitLayerTreeEnd:
++        case InitializeSandboxEnd:
++        case WakeUpAndApplyDisplayListEnd:
++            addMark('E', tracePointCodeName(code).characters(), "%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64, data1, data2, data3, data4);
++            return;
++
++        case MainResourceLoadDidStartProvisional:
++        case SubresourceLoadWillStart:
++        case ProcessLaunchStart:
++            addMark('S', tracePointCodeName(code).characters(), "%" PRIu64 "|%" PRIu64 ",%" PRIu64 ",%" PRIu64, data1, data2, data3, data4);
++            return;
++
++        case MainResourceLoadDidEnd:
++        case SubresourceLoadDidEnd:
++        case ProcessLaunchEnd:
++            addMark('F', tracePointCodeName(code).characters(), "%" PRIu64 "|%" PRIu64 ",%" PRIu64 ",%" PRIu64, data1, data2, data3, data4);
++            return;
++
++        case DisplayRefreshDispatchingToMainThread:
++        case ScheduleRenderingUpdate:
++        case TriggerRenderingUpdate:
++        case ScrollingTreeDisplayDidRefresh:
++        case SyntheticMomentumEvent:
++            addMark('I', tracePointCodeName(code).characters(), "%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64, data1, data2, data3, data4);
++            return;
++
++        case WTFRange:
++        case JavaScriptRange:
++        case WebCoreRange:
++        case WebKitRange:
++        case WebKit2Range:
++        case UIProcessRange:
++        case GPUProcessRange:
++            break;
++        }
++
++        WTFLogAlways("Invalid trace point code %d", code);
++    }
++
++    ~SystemTracingFTrace() {
++        if (m_traceMarkerFd >= 0) {
++            close(m_traceMarkerFd);
++        }
++    }
++
++    void addMark(char phase, const char* name)
++    {
++        addMark(phase, name, nullptr);
++    }
++
++    void addMark(char phase, const char* name, const char* format, ...) WTF_ATTRIBUTE_PRINTF(4, 5)
++    {
++        if (!isEnabled())
++            return;
++        std::string message = std::string(1, phase) + "|" + std::to_string(m_pid) + "|" + name;
++        if (format && *format) {
++            char arguments[1024];
++            va_list args;
++            va_start(args, format);
++            int length = vsnprintf(arguments, sizeof(arguments), format, args);
++            va_end(args);
++            if (length < 0) {
++                WTFLogAlways("Failed to format ftrace marker %s", name);
++                return;
++            }
++            if (static_cast<size_t>(length) >= sizeof(arguments))
++                WTFLogAlways("Truncated ftrace marker arguments for %s", name);
++            message += phase == 'I' ? ',' : '|';
++            message += arguments;
++        }
++        writeFTraceMarker(message.c_str());
++    }
++
++    void addSignpost(char phase, const char* name, const void* pointer)
++    {
++        addMark(phase, name, "p=%p", pointer);
++    }
++
++    void addSignpost(char phase, const char* name, const void* pointer, const char* format, ...) WTF_ATTRIBUTE_PRINTF(5, 6)
++    {
++        if (!isEnabled())
++            return;
++        char arguments[1024];
++        va_list args;
++        va_start(args, format);
++        int length = vsnprintf(arguments, sizeof(arguments), format, args);
++        va_end(args);
++        if (length < 0) {
++            WTFLogAlways("Failed to format ftrace signpost %s", name);
++            return;
++        }
++        if (static_cast<size_t>(length) >= sizeof(arguments))
++            WTFLogAlways("Truncated ftrace signpost arguments for %s", name);
++        addMark(phase, name, "p=%p,%s", pointer, arguments);
++    }
++
++    void addTraceEvent(char phase, const unsigned char* category, const char* name, int numArgs,
++        const char** argNames, const unsigned char* argTypes, const unsigned long long* argValues)
++    {
++        if (!isEnabled())
++            return;
++        std::string message = std::string(1, phase) + "|" + std::to_string(m_pid) + "|"
++            + reinterpret_cast<const char*>(category) + ":" + name;
++        for (int i = 0; i < numArgs; ++i) {
++            message += i ? ',' : '|';
++            message += std::string(argNames[i]) + "=";
++            switch (argTypes[i]) {
++            case 1: message += argValues[i] ? "true" : "false"; break;
++            case 2: message += std::to_string(argValues[i]); break;
++            case 3: message += std::to_string(static_cast<long long>(argValues[i])); break;
++            case 4: {
++                double value;
++                memcpy(&value, &argValues[i], sizeof(value));
++                message += std::to_string(value);
++                break;
++            }
++            case 5: {
++                char pointer[32];
++                snprintf(pointer, sizeof(pointer), "0x%" PRIx64, static_cast<uint64_t>(argValues[i]));
++                message += pointer;
++                break;
++            }
++            case 6:
++            case 7: {
++                auto* value = reinterpret_cast<const char*>(static_cast<uintptr_t>(argValues[i]));
++                message += value ? value : "(null)";
++                break;
++            }
++            default:
++                WTFLogAlways("Unsupported ANGLE trace argument type %u", argTypes[i]);
++                message += "(unsupported)";
++                break;
++            }
++        }
++        writeFTraceMarker(message.c_str());
++    }
++
++private:
++
++    inline void writeFTraceMarker(const char* message) {
++        RELEASE_ASSERT(m_traceMarkerFd >= 0);
++
++        // make sure no other thread is writing at the same time
++        std::lock_guard<std::mutex> lock(m_mutex);
++        size_t length = strlen(message);
++        ssize_t result;
++        do {
++            result = write(m_traceMarkerFd, message, length);
++        } while (result < 0 && errno == EINTR);
++        if (result < 0)
++            WTFLogAlways("Failed to write ftrace marker: %s", strerror(errno));
++        else if (static_cast<size_t>(result) != length)
++            WTFLogAlways("Short ftrace marker write: %zd of %zu bytes", result, length);
++    }
++
++    SystemTracingFTrace() {
++        // Need to enable in runtime with WEBKIT_USE_FTRACE
++        const char* env = getenv("WEBKIT_USE_FTRACE");
++        if (!env || strcmp(env, "1") != 0) {
++            return;
++        }
++
++        static constexpr const char* trace_marker = "/sys/kernel/debug/tracing/trace_marker";
++        m_traceMarkerFd = open(trace_marker, O_WRONLY | O_CLOEXEC);
++        if (m_traceMarkerFd < 0)
++            m_traceMarkerFd = open("/sys/kernel/tracing/trace_marker", O_WRONLY | O_CLOEXEC);
++        if (m_traceMarkerFd < 0) {
++            WTFLogAlways("Failed to open %s", trace_marker);
++            return;
++        }
++
++        m_pid = getpid();
++    }
++
++    inline ASCIILiteral tracePointCodeName(TracePointCode code) {
++        switch (code) {
++        case VMEntryScopeStart:
++        case VMEntryScopeEnd:
++            return "VMEntryScope"_s;
++        case WebAssemblyCompileStart:
++        case WebAssemblyCompileEnd:
++            return "WebAssemblyCompile"_s;
++        case WebAssemblyExecuteStart:
++        case WebAssemblyExecuteEnd:
++            return "WebAssemblyExecute"_s;
++        case DumpJITMemoryStart:
++        case DumpJITMemoryStop:
++            return "DumpJITMemory"_s;
++        case FromJSStart:
++        case FromJSStop:
++            return "FromJS"_s;
++
++        case MainResourceLoadDidStartProvisional:
++        case MainResourceLoadDidEnd:
++            return "MainResourceLoad"_s;
++        case SubresourceLoadWillStart:
++        case SubresourceLoadDidEnd:
++            return "SubresourceLoad"_s;
++        case FetchCookiesStart:
++        case FetchCookiesEnd:
++            return "FetchCookies"_s;
++        case StyleRecalcStart:
++        case StyleRecalcEnd:
++            return "StyleRecalc"_s;
++        case LayoutStart:
++        case LayoutEnd:
++            return "PerformLayout"_s;
++        case RenderTreeBuildStart:
++        case RenderTreeBuildEnd:
++            return "RenderTreeBuild"_s;
++        case PaintLayerStart:
++        case PaintLayerEnd:
++            return "PaintLayer"_s;
++        case AsyncImageDecodeStart:
++        case AsyncImageDecodeEnd:
++            return "AsyncImageDecode"_s;
++        case RAFCallbackStart:
++        case RAFCallbackEnd:
++            return "RAFCallback"_s;
++        case MemoryPressureHandlerStart:
++        case MemoryPressureHandlerEnd:
++            return "MemoryPressureHandler"_s;
++        case UpdateTouchRegionsStart:
++        case UpdateTouchRegionsEnd:
++            return "UpdateTouchRegions"_s;
++        case DisplayListRecordStart:
++        case DisplayListRecordEnd:
++            return "DisplayListRecord"_s;
++        case DisplayRefreshDispatchingToMainThread:
++            return "DisplayRefreshDispatchingToMainThread"_s;
++        case ComputeEventRegionsStart:
++        case ComputeEventRegionsEnd:
++            return "ComputeEventRegions"_s;
++        case ScheduleRenderingUpdate:
++            return "ScheduleRenderingUpdate"_s;
++        case TriggerRenderingUpdate:
++            return "TriggerRenderingUpdate"_s;
++        case RenderingUpdateStart:
++        case RenderingUpdateEnd:
++            return "RenderingUpdate"_s;
++        case CompositingUpdateStart:
++        case CompositingUpdateEnd:
++            return "CompositingUpdate"_s;
++        case DispatchTouchEventsStart:
++        case DispatchTouchEventsEnd:
++            return "DispatchTouchEvents"_s;
++        case ParseHTMLStart:
++        case ParseHTMLEnd:
++            return "ParseHTML"_s;
++        case DisplayListReplayStart:
++        case DisplayListReplayEnd:
++            return "DisplayListReplay"_s;
++        case ScrollingThreadRenderUpdateSyncStart:
++        case ScrollingThreadRenderUpdateSyncEnd:
++            return "ScrollingThreadRenderUpdateSync"_s;
++        case ScrollingThreadDisplayDidRefreshStart:
++        case ScrollingThreadDisplayDidRefreshEnd:
++            return "ScrollingThreadDisplayDidRefresh"_s;
++        case ScrollingTreeDisplayDidRefresh:
++            return "ScrollingTreeDisplayDidRefresh"_s;
++
++        case WebHTMLViewPaintStart:
++        case WebHTMLViewPaintEnd:
++            return "WebHTMLViewPaint"_s;
++
++        case BackingStoreFlushStart:
++        case BackingStoreFlushEnd:
++            return "BackingStoreFlush"_s;
++        case BuildTransactionStart:
++        case BuildTransactionEnd:
++            return "BuildTransaction"_s;
++        case SyncMessageStart:
++        case SyncMessageEnd:
++            return "SyncMessage"_s;
++        case SyncTouchEventStart:
++        case SyncTouchEventEnd:
++            return "SyncTouchEvent"_s;
++        case InitializeWebProcessStart:
++        case InitializeWebProcessEnd:
++            return "InitializeWebProcess"_s;
++        case RenderingUpdateRunLoopObserverStart:
++        case RenderingUpdateRunLoopObserverEnd:
++            return "RenderingUpdateRunLoopObserver"_s;
++        case LayerTreeFreezeStart:
++        case LayerTreeFreezeEnd:
++            return "LayerTreeFreeze"_s;
++        case FlushRemoteImageBufferStart:
++        case FlushRemoteImageBufferEnd:
++            return "FlushRemoteImageBuffer"_s;
++        case CreateInjectedBundleStart:
++        case CreateInjectedBundleEnd:
++            return "CreateInjectedBundle"_s;
++        case PaintSnapshotStart:
++        case PaintSnapshotEnd:
++            return "PaintSnapshot"_s;
++        case RenderServerSnapshotStart:
++        case RenderServerSnapshotEnd:
++            return "RenderServerSnapshot"_s;
++        case TakeSnapshotStart:
++        case TakeSnapshotEnd:
++            return "TakeSnapshot"_s;
++        case SyntheticMomentumStart:
++        case SyntheticMomentumEnd:
++            return "SyntheticMomentum"_s;
++        case SyntheticMomentumEvent:
++            return "SyntheticMomentumEvent"_s;
++
++        case CommitLayerTreeStart:
++        case CommitLayerTreeEnd:
++            return "CommitLayerTree"_s;
++        case ProcessLaunchStart:
++        case ProcessLaunchEnd:
++            return "ProcessLaunch"_s;
++        case InitializeSandboxStart:
++        case InitializeSandboxEnd:
++            return "InitializeSandbox"_s;
++
++        case WakeUpAndApplyDisplayListStart:
++        case WakeUpAndApplyDisplayListEnd:
++            return "WakeUpAndApplyDisplayList"_s;
++
++        // Markers, not intended to be used in tracePoint calls.
++        case WTFRange:
++        case JavaScriptRange:
++        case WebCoreRange:
++        case WebKitRange:
++        case WebKit2Range:
++        case UIProcessRange:
++        case GPUProcessRange:
++            break;
++        }
++        WTFLogAlways("Invalid trace point code %d", code);
++        return ""_s;
++    }
++
++    SystemTracingFTrace(const SystemTracingFTrace&) = delete;
++    SystemTracingFTrace& operator=(const SystemTracingFTrace&) = delete;
++
++private:
++    int m_traceMarkerFd = -1;
++    std::mutex m_mutex;
++    unsigned m_pid = -1;
++};
++
++} // namespace WTF
++
++using WTF::SystemTracingFTrace;
++
++#endif // USE(LINUX_FTRACE)
+diff --git a/Source/WebCore/html/canvas/WebGLResourceTracker.cpp b/Source/WebCore/html/canvas/WebGLResourceTracker.cpp
+index 9044af0c6a35..15d2c2cfb94f 100644
+--- a/Source/WebCore/html/canvas/WebGLResourceTracker.cpp
++++ b/Source/WebCore/html/canvas/WebGLResourceTracker.cpp
+@@ -34,6 +34,7 @@
+ #include <cmath>
+ #include <optional>
+ #include <wtf/MonotonicTime.h>
++#include <wtf/SystemTracing.h>
+ #include <wtf/Vector.h>
+ 
+ namespace WebCore {
+@@ -372,6 +373,21 @@ void WebGLResourceTracker::logTotals(const char* operation, Type type, GCGLuint
+     const auto& buffers = m_totals[static_cast<size_t>(Type::Buffer)];
+     uint64_t total = textures.bytes + renderbuffers.bytes + buffers.bytes;
+ 
++#if USE(LINUX_FTRACE)
++    auto& tracer = SystemTracingFTrace::instance();
++    if (tracer.isEnabled()) {
++        tracer.addMark('I', "WebGLResourceChange", "op=%s type=%s object=%u delta=%" PRId64,
++            operation, webGLResourceTypeName(static_cast<unsigned>(type)), name, deltaBytes);
++        tracer.addMark('C', "WebGLTextureBytes", "%" PRIu64, textures.bytes);
++        tracer.addMark('C', "WebGLRenderbufferBytes", "%" PRIu64, renderbuffers.bytes);
++        tracer.addMark('C', "WebGLBufferBytes", "%" PRIu64, buffers.bytes);
++        tracer.addMark('C', "WebGLTotalBytes", "%" PRIu64, total);
++        tracer.addMark('C', "WebGLTextureCount", "%" PRIu64, textures.count);
++        tracer.addMark('C', "WebGLRenderbufferCount", "%" PRIu64, renderbuffers.count);
++        tracer.addMark('C', "WebGLBufferCount", "%" PRIu64, buffers.count);
++    }
++#endif
++
+     WTFLogAlways("[WebGL] [%.6f] %s %s %u (%+" PRId64 " bytes) => "
+         "textures: %" PRIu64 " (%" PRIu64 " bytes, %.2f MiB) | "
+         "renderbuffers: %" PRIu64 " (%" PRIu64 " bytes, %.2f MiB) | "
+diff --git a/Source/WebCore/html/canvas/WebGLResourceTracker.h b/Source/WebCore/html/canvas/WebGLResourceTracker.h
+index a5a14a9d797a..83c47f70d210 100644
+--- a/Source/WebCore/html/canvas/WebGLResourceTracker.h
++++ b/Source/WebCore/html/canvas/WebGLResourceTracker.h
+@@ -44,6 +44,8 @@ namespace WebCore {
+ //
+ // Every time a resource is created or deleted, or its storage size changes, the current totals
+ // are logged with the "[WebGL]" prefix.
++// With USE_LINUX_FTRACE and WEBKIT_USE_FTRACE=1, changes also emit ftrace events
++// and process-wide WebGL byte/count counters.
+ //
+ // Memory figures are estimations: width * height * depth * bytes per pixel * samples for each
+ // image, the compressed size for compressed images, and the size for buffers.
+diff --git a/Source/WebCore/platform/graphics/angle/ANGLEUtilities.cpp b/Source/WebCore/platform/graphics/angle/ANGLEUtilities.cpp
+index 65954dd06e4d..166787de898a 100644
+--- a/Source/WebCore/platform/graphics/angle/ANGLEUtilities.cpp
++++ b/Source/WebCore/platform/graphics/angle/ANGLEUtilities.cpp
+@@ -29,8 +29,41 @@
+ #if ENABLE(WEBGL) && USE(ANGLE)
+ #include "ANGLEHeaders.h"
+ 
++#if USE(LINUX_FTRACE)
++#include <ANGLE/platform/PlatformMethods.h>
++#include <wtf/MonotonicTime.h>
++#include <wtf/SystemTracing.h>
++#endif
++
+ namespace WebCore {
+ 
++#if USE(LINUX_FTRACE)
++void initializeANGLEFTrace(void* display)
++{
++    if (!SystemTracingFTrace::isEnabled())
++        return;
++
++    auto getPlatform = reinterpret_cast<angle::GetDisplayPlatformFunc>(EGL_GetProcAddress("ANGLEGetDisplayPlatform"));
++    angle::PlatformMethods* methods = nullptr;
++    if (!getPlatform || !getPlatform(display, angle::g_PlatformMethodNames, angle::g_NumPlatformMethods, nullptr, &methods) || !methods) {
++        WTFLogAlways("Failed to initialize ANGLE ftrace platform callbacks");
++        return;
++    }
++    methods->getTraceCategoryEnabledFlag = [](angle::PlatformMethods*, const char* category) {
++        return reinterpret_cast<const unsigned char*>(category);
++    };
++    methods->monotonicallyIncreasingTime = [](angle::PlatformMethods*) {
++        return MonotonicTime::now().secondsSinceEpoch().value();
++    };
++    methods->addTraceEvent = [](angle::PlatformMethods*, char phase, const unsigned char* category, const char* name,
++        unsigned long long, double, int numArgs, const char** argNames, const unsigned char* argTypes,
++        const unsigned long long* argValues, unsigned char) -> angle::TraceEventHandle {
++        SystemTracingFTrace::instance().addTraceEvent(phase, category, name, numArgs, argNames, argTypes, argValues);
++        return 0;
++    };
++}
++#endif
++
+ #if !PLATFORM(COCOA)
+ bool platformIsANGLEAvailable()
+ {
+diff --git a/Source/WebCore/platform/graphics/angle/ANGLEUtilities.h b/Source/WebCore/platform/graphics/angle/ANGLEUtilities.h
+index 702cc1eea814..513434bc9607 100644
+--- a/Source/WebCore/platform/graphics/angle/ANGLEUtilities.h
++++ b/Source/WebCore/platform/graphics/angle/ANGLEUtilities.h
+@@ -34,6 +34,10 @@
+ 
+ namespace WebCore {
+ 
++#if USE(LINUX_FTRACE)
++void initializeANGLEFTrace(void* display);
++#endif
++
+ class ScopedRestoreTextureBinding {
+     WTF_MAKE_NONCOPYABLE(ScopedRestoreTextureBinding);
+ 
+diff --git a/Source/WebCore/platform/graphics/gbm/GraphicsContextGLFallback.cpp b/Source/WebCore/platform/graphics/gbm/GraphicsContextGLFallback.cpp
+index 9daf7702fbbe..60c5c8167887 100644
+--- a/Source/WebCore/platform/graphics/gbm/GraphicsContextGLFallback.cpp
++++ b/Source/WebCore/platform/graphics/gbm/GraphicsContextGLFallback.cpp
+@@ -32,6 +32,7 @@
+ #if ENABLE(WEBGL) && USE(TEXTURE_MAPPER) && USE(ANGLE)
+ 
+ #include "ANGLEHeaders.h"
++#include "ANGLEUtilities.h"
+ #include "Logging.h"
+ #include "PixelBuffer.h"
+ #include "PlatformLayerDisplayDelegate.h"
+@@ -100,6 +101,10 @@ bool GraphicsContextGLFallback::platformInitializeContext()
+     if (m_displayObj == EGL_NO_DISPLAY)
+         return false;
+ 
++#if USE(LINUX_FTRACE)
++    initializeANGLEFTrace(m_displayObj);
++#endif
++
+     EGLint majorVersion, minorVersion;
+     if (EGL_Initialize(m_displayObj, &majorVersion, &minorVersion) == EGL_FALSE) {
+         LOG(WebGL, "EGLDisplay Initialization failed.");
+diff --git a/Source/WebCore/platform/graphics/gbm/GraphicsContextGLGBM.cpp b/Source/WebCore/platform/graphics/gbm/GraphicsContextGLGBM.cpp
+index 799a77f52720..f9100209cd7d 100644
+--- a/Source/WebCore/platform/graphics/gbm/GraphicsContextGLGBM.cpp
++++ b/Source/WebCore/platform/graphics/gbm/GraphicsContextGLGBM.cpp
+@@ -30,6 +30,7 @@
+ #if ENABLE(WEBGL) && USE(LIBGBM) && USE(ANGLE)
+ 
+ #include "ANGLEHeaders.h"
++#include "ANGLEUtilities.h"
+ #include "DMABufEGLUtilities.h"
+ #include "Logging.h"
+ #include "PixelBuffer.h"
+@@ -112,6 +113,10 @@ bool GraphicsContextGLGBM::platformInitializeContext()
+     if (m_displayObj == EGL_NO_DISPLAY)
+         return false;
+ 
++#if USE(LINUX_FTRACE)
++    initializeANGLEFTrace(m_displayObj);
++#endif
++
+     EGLint majorVersion, minorVersion;
+     if (EGL_Initialize(m_displayObj, &majorVersion, &minorVersion) == EGL_FALSE) {
+         LOG(WebGL, "EGLDisplay Initialization failed.");
+diff --git a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
+index 035016b6fdbb..cede9d54da8e 100644
+--- a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
++++ b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
+@@ -43,8 +43,10 @@
+ #include "WebGLRenderingContextBase.h"
+ #include <JavaScriptCore/RegularExpression.h>
+ #include <cstring>
++#include <cinttypes>
+ #include <wtf/HexNumber.h>
+ #include <wtf/MainThread.h>
++#include <wtf/SystemTracing.h>
+ #include <wtf/ThreadSpecific.h>
+ #include <wtf/UniqueArray.h>
+ #include <wtf/Vector.h>
+@@ -746,7 +748,9 @@ void GraphicsContextGLOpenGL::bufferData(GCGLenum target, GCGLsizeiptr size, GCG
+     if (!makeContextCurrent())
+         return;
+ 
++    WTFBeginSignpost(this, WebGLBufferData, "target=0x%x bytes=%" PRIdPTR " usage=0x%x", target, static_cast<intptr_t>(size), usage);
+     ::glBufferData(target, size, 0, usage);
++    WTFEndSignpost(this, WebGLBufferData);
+ }
+ 
+ void GraphicsContextGLOpenGL::bufferData(GCGLenum target, GCGLSpan<const void> data, GCGLenum usage)
+@@ -754,7 +758,9 @@ void GraphicsContextGLOpenGL::bufferData(GCGLenum target, GCGLSpan<const void> d
+     if (!makeContextCurrent())
+         return;
+ 
++    WTFBeginSignpost(this, WebGLBufferData, "target=0x%x bytes=%zu usage=0x%x", target, static_cast<size_t>(data.bufSize), usage);
+     ::glBufferData(target, data.bufSize, data.data, usage);
++    WTFEndSignpost(this, WebGLBufferData);
+ }
+ 
+ void GraphicsContextGLOpenGL::bufferSubData(GCGLenum target, GCGLintptr offset, GCGLSpan<const GCGLvoid> data)
+@@ -995,7 +1001,9 @@ void GraphicsContextGLOpenGL::drawArrays(GCGLenum mode, GCGLint first, GCGLsizei
+     if (!makeContextCurrent())
+         return;
+ 
++    WTFBeginSignpost(this, WebGLDrawArrays, "mode=0x%x first=%d count=%d", mode, first, count);
+     ::glDrawArrays(mode, first, count);
++    WTFEndSignpost(this, WebGLDrawArrays);
+     checkGPUStatus();
+ }
+ 
+@@ -1004,7 +1012,9 @@ void GraphicsContextGLOpenGL::drawElements(GCGLenum mode, GCGLsizei count, GCGLe
+     if (!makeContextCurrent())
+         return;
+ 
++    WTFBeginSignpost(this, WebGLDrawElements, "mode=0x%x count=%d type=0x%x offset=%" PRIdPTR, mode, count, type, static_cast<intptr_t>(offset));
+     ::glDrawElements(mode, count, type, reinterpret_cast<GLvoid*>(static_cast<intptr_t>(offset)));
++    WTFEndSignpost(this, WebGLDrawElements);
+     checkGPUStatus();
+ }
+ 
+@@ -1069,7 +1079,9 @@ void GraphicsContextGLOpenGL::generateMipmap(GCGLenum target)
+     if (!makeContextCurrent())
+         return;
+ 
++    WTFBeginSignpost(this, WebGLGenerateMipmap, "target=0x%x texture=%u", target, m_state.boundTexture(m_state.activeTextureUnit));
+     ::glGenerateMipmap(target);
++    WTFEndSignpost(this, WebGLGenerateMipmap);
+ }
+ 
+ bool GraphicsContextGLOpenGL::getActiveAttribImpl(PlatformGLObject program, GCGLuint index, ActiveInfo& info)
+@@ -2244,7 +2256,10 @@ void GraphicsContextGLOpenGL::texSubImage2D(GCGLenum target, GCGLint level, GCGL
+     }
+ 
+     // FIXME: we will need to deal with PixelStore params when dealing with image buffers that differ from the subimage size.
++    WTFBeginSignpost(this, WebGLTexSubImage2D, "texture=%u target=0x%x level=%d offset=%dx%d dims=%dx%d format=0x%x type=0x%x",
++        m_state.boundTexture(m_state.activeTextureUnit), target, level, xoff, yoff, width, height, format, type);
+     ::glTexSubImage2D(target, level, xoff, yoff, width, height, format, type, pixels.data);
++    WTFEndSignpost(this, WebGLTexSubImage2D);
+ }
+ 
+ void GraphicsContextGLOpenGL::compressedTexImage2D(GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLsizei width, GCGLsizei height, GCGLint border, GCGLsizei imageSize, GCGLSpan<const GCGLvoid> data)
+@@ -2252,7 +2267,10 @@ void GraphicsContextGLOpenGL::compressedTexImage2D(GCGLenum target, GCGLint leve
+     if (!makeContextCurrent())
+         return;
+ 
++    WTFBeginSignpost(this, WebGLCompressedTexImage2D, "texture=%u target=0x%x level=%d dims=%dx%d format=0x%x bytes=%d",
++        m_state.boundTexture(m_state.activeTextureUnit), target, level, width, height, internalformat, imageSize);
+     ::glCompressedTexImage2D(target, level, internalformat, width, height, border, imageSize, data.data);
++    WTFEndSignpost(this, WebGLCompressedTexImage2D);
+ }
+ 
+ void GraphicsContextGLOpenGL::compressedTexSubImage2D(GCGLenum target, GCGLint level, GCGLint xoffset, GCGLint yoffset, GCGLsizei width, GCGLsizei height, GCGLenum format, GCGLsizei imageSize, GCGLSpan<const GCGLvoid> data)
+@@ -2260,7 +2278,10 @@ void GraphicsContextGLOpenGL::compressedTexSubImage2D(GCGLenum target, GCGLint l
+     if (!makeContextCurrent())
+         return;
+ 
++    WTFBeginSignpost(this, WebGLCompressedTexSubImage2D, "texture=%u target=0x%x level=%d dims=%dx%d format=0x%x bytes=%d",
++        m_state.boundTexture(m_state.activeTextureUnit), target, level, width, height, format, imageSize);
+     ::glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, imageSize, data.data);
++    WTFEndSignpost(this, WebGLCompressedTexSubImage2D);
+ }
+ 
+ PlatformGLObject GraphicsContextGLOpenGL::createBuffer()
+@@ -2391,7 +2412,10 @@ void GraphicsContextGLOpenGL::texImage2DDirect(GCGLenum target, GCGLint level, G
+     if (!makeContextCurrent())
+         return;
+ 
++    WTFBeginSignpost(this, WebGLTexImage2D, "texture=%u target=0x%x level=%d dims=%dx%d format=0x%x type=0x%x hasPixels=%d",
++        m_state.boundTexture(m_state.activeTextureUnit), target, level, width, height, internalformat, type, !!pixels);
+     ::glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
++    WTFEndSignpost(this, WebGLTexImage2D);
+ }
+ 
+ void GraphicsContextGLOpenGL::drawArraysInstanced(GCGLenum mode, GCGLint first, GCGLsizei count, GCGLsizei primcount)
+diff --git a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGLES.cpp b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGLES.cpp
+index 13b153fc4ba7..78c56defdfb0 100644
+--- a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGLES.cpp
++++ b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGLES.cpp
+@@ -36,6 +36,7 @@
+ #include "IntRect.h"
+ #include "IntSize.h"
+ #include "NotImplemented.h"
++#include <wtf/SystemTracing.h>
+ 
+ #include <ANGLE/ShaderLang.h>
+ 
+@@ -206,7 +207,9 @@ void GraphicsContextGLOpenGL::renderbufferStorage(GCGLenum target, GCGLenum inte
+     if (!makeContextCurrent())
+         return;
+ 
++    WTFBeginSignpost(this, WebGLRenderbufferStorage, "target=0x%x format=0x%x dims=%dx%d", target, internalformat, width, height);
+     ::glRenderbufferStorage(target, internalformat, width, height);
++    WTFEndSignpost(this, WebGLRenderbufferStorage);
+ }
+ 
+ void GraphicsContextGLOpenGL::getIntegerv(GCGLenum pname, GCGLSpan<GCGLint> value)
+diff --git a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+index ddb29f567a53..ac23295eb1a4 100644
+--- a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
++++ b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+@@ -175,6 +175,10 @@ bool GraphicsContextGLTextureMapperANGLE::platformInitializeContext()
+     if (m_displayObj == EGL_NO_DISPLAY)
+         return false;
+ 
++#if USE(LINUX_FTRACE)
++    initializeANGLEFTrace(m_displayObj);
++#endif
++
+     EGLint majorVersion, minorVersion;
+     if (EGL_Initialize(m_displayObj, &majorVersion, &minorVersion) == EGL_FALSE) {
+         LOG(WebGL, "EGLDisplay Initialization failed.");
+diff --git a/Source/WebCore/platform/graphics/texmap/coordinated/CoordinatedGraphicsLayer.cpp b/Source/WebCore/platform/graphics/texmap/coordinated/CoordinatedGraphicsLayer.cpp
+index 2771fceb3428..4404c14305df 100644
+--- a/Source/WebCore/platform/graphics/texmap/coordinated/CoordinatedGraphicsLayer.cpp
++++ b/Source/WebCore/platform/graphics/texmap/coordinated/CoordinatedGraphicsLayer.cpp
+@@ -45,6 +45,7 @@
+ #ifndef NDEBUG
+ #include <wtf/SetForScope.h>
+ #endif
++#include <wtf/SystemTracing.h>
+ #include <wtf/text/CString.h>
+ 
+ #if USE(GLIB_EVENT_LOOP)
+@@ -1150,6 +1151,7 @@ void CoordinatedGraphicsLayer::updateContentBuffers()
+     if (!m_nicosia.backingStore)
+         return;
+ 
++    WTF_FTRACE_SCOPE("UpdateLayerContentBuffers");
+     // Prepare for painting on the impl-contained backing store. isFlushing is used there
+     // for internal sanity checks.
+     auto& impl = downcast<Nicosia::BackingStoreTextureMapperImpl>(m_nicosia.backingStore->impl());
+diff --git a/Source/WebKit/Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.cpp b/Source/WebKit/Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.cpp
+index 263daed146cd..50bbb320bf4b 100644
+--- a/Source/WebKit/Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.cpp
++++ b/Source/WebKit/Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.cpp
+@@ -35,6 +35,7 @@
+ #include <WebCore/PlatformDisplay.h>
+ #include <WebCore/TransformationMatrix.h>
+ #include <wtf/SetForScope.h>
++#include <wtf/SystemTracing.h>
+ 
+ #if USE(LIBEPOXY)
+ #include <epoxy/gl.h>
+@@ -236,6 +237,7 @@ void ThreadedCompositor::renderNonCompositedWebGL()
+ 
+ void ThreadedCompositor::renderLayerTree()
+ {
++    WTF_FTRACE_SCOPE("RenderLayerTree");
+     if (m_nonCompositedWebGLEnabled) {
+         renderNonCompositedWebGL();
+         return;
+@@ -293,13 +295,20 @@ void ThreadedCompositor::renderLayerTree()
+     glClearColor(0, 0, 0, 0);
+     glClear(GL_COLOR_BUFFER_BIT);
+ 
++    WTFBeginSignpost(this, ApplyStateChanges);
+     m_scene->applyStateChanges(states);
++    WTFEndSignpost(this, ApplyStateChanges);
++    WTFBeginSignpost(this, PaintToGLContext);
+     if (m_suspendToTransparentState != SuspendToTransparentState::Requested)
+         m_scene->paintToCurrentGLContext(viewportTransform, FloatRect { FloatPoint { }, viewportSize }, m_paintFlags);
+     else
+         m_suspendToTransparentState = SuspendToTransparentState::WaitingForFrameComplete;
+ 
+-    m_context->swapBuffers();
++    WTFEndSignpost(this, PaintToGLContext);
++    {
++        WTF_FTRACE_SCOPE("SwapBuffers");
++        m_context->swapBuffers();
++    }
+ 
+     if (m_scene->isActive())
+         m_client.didRenderFrame();
+@@ -372,6 +381,7 @@ WebCore::DisplayRefreshMonitor& ThreadedCompositor::displayRefreshMonitor() cons
+ 
+ void ThreadedCompositor::frameComplete()
+ {
++    WTFEmitSignpost(this, FrameComplete);
+     ASSERT(!RunLoop::isMain());
+     sceneUpdateFinished();
+ }
+diff --git a/Source/WebKit/UIProcess/Launcher/ProcessLauncher.cpp b/Source/WebKit/UIProcess/Launcher/ProcessLauncher.cpp
+index bf4e87a68aaa..39256676d4ca 100644
+--- a/Source/WebKit/UIProcess/Launcher/ProcessLauncher.cpp
++++ b/Source/WebKit/UIProcess/Launcher/ProcessLauncher.cpp
+@@ -36,13 +36,13 @@ ProcessLauncher::ProcessLauncher(Client* client, LaunchOptions&& launchOptions)
+     : m_client(client)
+     , m_launchOptions(WTFMove(launchOptions))
+ {
+-    tracePoint(ProcessLaunchStart);
++    tracePoint(ProcessLaunchStart, m_launchOptions.processIdentifier.toUInt64());
+     launchProcess();
+ }
+ 
+ void ProcessLauncher::didFinishLaunchingProcess(ProcessID processIdentifier, IPC::Connection::Identifier identifier)
+ {
+-    tracePoint(ProcessLaunchEnd);
++    tracePoint(ProcessLaunchEnd, m_launchOptions.processIdentifier.toUInt64(), static_cast<uint64_t>(m_launchOptions.processType), processIdentifier);
+     m_processIdentifier = processIdentifier;
+     m_isLaunching = false;
+     
+diff --git a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp
+index c38ccf885a3a..17eae164111e 100644
+--- a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp
++++ b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp
+@@ -44,6 +44,7 @@
+ #include <WebCore/Settings.h>
+ #include <wtf/MemoryPressureHandler.h>
+ #include <wtf/SetForScope.h>
++#include <wtf/SystemTracing.h>
+ 
+ #if USE(GLIB_EVENT_LOOP)
+ #include <wtf/glib/RunLoopSourcePriority.h>
+@@ -120,6 +121,7 @@ void CompositingCoordinator::sizeDidChange(const IntSize& newSize)
+ 
+ bool CompositingCoordinator::flushPendingLayerChanges(OptionSet<FinalizeRenderingUpdateFlags> flags)
+ {
++    WTF_FTRACE_SCOPE("FlushPendingLayerChanges");
+     SetForScope protector(m_isFlushingLayerChanges, true);
+ 
+     initializeRootCompositingLayerIfNeeded();
+@@ -127,19 +129,24 @@ bool CompositingCoordinator::flushPendingLayerChanges(OptionSet<FinalizeRenderin
+     m_page.updateRendering();
+     m_page.flushPendingEditorStateUpdate();
+ 
++    WTFBeginSignpost(this, FlushRootCompositingLayer);
+     m_rootLayer->flushCompositingStateForThisLayerOnly();
+     m_client.didFlushRootLayer(m_visibleContentsRect);
++    WTFEndSignpost(this, FlushRootCompositingLayer);
+ 
+     if (m_overlayCompositingLayer)
+         m_overlayCompositingLayer->flushCompositingState(FloatRect(FloatPoint(), m_rootLayer->size()));
+ 
+     m_page.finalizeRenderingUpdate(flags);
+ 
++    WTFBeginSignpost(this, FinalizeCompositingStateFlush);
+     auto& coordinatedLayer = downcast<CoordinatedGraphicsLayer>(*m_rootLayer);
+     coordinatedLayer.updateContentBuffersIncludingSubLayers();
+     coordinatedLayer.syncPendingStateChangesIncludingSubLayers();
++    WTFEndSignpost(this, FinalizeCompositingStateFlush);
+ 
+     if (m_shouldSyncFrame) {
++        WTF_FTRACE_SCOPE("SyncFrame");
+         m_state.nicosia.scene->accessState(
+             [this](Nicosia::Scene::State& state)
+             {
+diff --git a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.cpp b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.cpp
+index 8bd4ac0a7f20..9f26372fc40b 100644
+--- a/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.cpp
++++ b/Source/WebKit/WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.cpp
+@@ -41,6 +41,7 @@
+ #include <WebCore/RenderLayerBacking.h>
+ #include <WebCore/RenderView.h>
+ #include <WebCore/Settings.h>
++#include <wtf/SystemTracing.h>
+ 
+ #if USE(GLIB_EVENT_LOOP)
+ #include <wtf/glib/RunLoopSourcePriority.h>
+@@ -119,6 +120,7 @@ void LayerTreeHost::setShouldNotifyAfterNextScheduledLayerFlush(bool notifyAfter
+ 
+ void LayerTreeHost::scheduleLayerFlush()
+ {
++    WTFEmitSignpost(this, ScheduleLayerFlush, "isWaitingForRenderer %i", m_isWaitingForRenderer);
+     if (!m_layerFlushSchedulingEnabled)
+         return;
+ 
+@@ -138,6 +140,7 @@ void LayerTreeHost::cancelPendingLayerFlush()
+ 
+ void LayerTreeHost::layerFlushTimerFired()
+ {
++    WTF_FTRACE_SCOPE("LayerFlushTimerFired");
+     if (m_isSuspended || m_isWaitingForRenderer)
+         return;
+ 
+@@ -383,6 +386,7 @@ void LayerTreeHost::didFlushRootLayer(const FloatRect& visibleContentRect)
+ 
+ void LayerTreeHost::commitSceneState(const CoordinatedGraphicsState& state)
+ {
++    WTFEmitSignpost(this, CommitSceneState);
+     m_isWaitingForRenderer = true;
+     m_compositor->updateSceneState(state);
+ }
+@@ -415,6 +419,7 @@ void LayerTreeHost::willRenderFrame()
+ 
+ void LayerTreeHost::didRenderFrame()
+ {
++    WTFEmitSignpost(this, DidRenderFrame);
+     m_surface->didRenderFrame();
+ }
+ 
+@@ -436,6 +441,7 @@ void LayerTreeHost::handleDisplayRefreshMonitorUpdate(bool hasBeenRescheduled)
+ 
+ void LayerTreeHost::renderNextFrame(bool forceRepaint)
+ {
++    WTF_FTRACE_SCOPE("RenderNextFrame");
+     m_isWaitingForRenderer = false;
+     bool scheduledWhileWaitingForRenderer = std::exchange(m_scheduledWhileWaitingForRenderer, false);
+     m_coordinator.renderNextFrame();
+diff --git a/Source/WebKit/WebProcess/WebPage/WebPage.cpp b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+index 7513daefe4a6..473ce482e112 100644
+--- a/Source/WebKit/WebProcess/WebPage/WebPage.cpp
++++ b/Source/WebKit/WebProcess/WebPage/WebPage.cpp
+@@ -4496,6 +4496,7 @@ bool WebPage::shouldTriggerRenderingUpdate(unsigned rescheduledRenderingUpdateCo
+ 
+ void WebPage::finalizeRenderingUpdate(OptionSet<FinalizeRenderingUpdateFlags> flags)
+ {
++    WTF_FTRACE_SCOPE("FinalizeRenderingUpdate");
+     m_page->finalizeRenderingUpdate(flags);
+ #if ENABLE(GPU_PROCESS)
+     if (m_remoteRenderingBackendProxy)
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+index 34705e6698bf..21aa32da0384 100644
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -109,6 +109,7 @@ WEBKIT_OPTION_DEFINE(USE_EXTERNAL_HOLEPUNCH "Whether to enable external holepunc
+ WEBKIT_OPTION_DEFINE(ENABLE_ACCELERATED_2D_CANVAS "Whether to enable accelerated 2D canvas" PRIVATE OFF)
+ WEBKIT_OPTION_DEFINE(ENABLE_OIPF_VK "Whether to enable OIPF keys for DAE applications" PRIVATE OFF)
+ WEBKIT_OPTION_DEFINE(ENABLE_INSTANT_RATE_CHANGE "Whether to enable instant rate change" PRIVATE OFF)
++WEBKIT_OPTION_DEFINE(USE_LINUX_FTRACE "Whether to use ftrace based webkit tracing" PRIVATE OFF)
+ 
+ # Debug memory heap breakdown with malloc-zone allocator
+ WEBKIT_OPTION_DEFINE(ENABLE_MALLOC_HEAP_BREAKDOWN "Whether to enable malloc heap breakdown" PRIVATE OFF)
+-- 
+2.44.4
+
