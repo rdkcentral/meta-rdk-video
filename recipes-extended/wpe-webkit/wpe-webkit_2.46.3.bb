@@ -6,7 +6,7 @@ PATCHTOOL = "git"
 require wpe-webkit.inc
 
 # Advance with every change in the recipe. Must be a plain integer (no dots, letters, etc.)
-WPE_RECIPE_REVISION = "0"
+WPE_RECIPE_REVISION = "2"
 
 PR = "r${WPE_RECIPE_REVISION}"
 # Micro version suffix - four digits XXYY (XX - PV.micro, YY - WPE_RECIPE_REVISION)
@@ -22,6 +22,7 @@ SRC_URI = "${BASE_URI}"
 
 # Drop after PR is accepted
 SRC_URI += "file://2.46/1629.patch"
+SRC_URI += "file://2.46.3/RDKEMW-29081_Rialto-media-session-id.patch"
 
 # Drop after westeros change is approved and released
 SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
@@ -55,7 +56,7 @@ SRC_URI += "file://2.46/comcast-RDK-57915-Track-encrypted-playback.patch"
 SRC_URI += "file://2.46/comcast-WebRTC-keep-render-time-interpolation.patch"
 SRC_URI += "file://2.46/comcast-DELIA-59087-Disable-pausing-playback-for-buf.patch"
 SRC_URI += "file://2.46.3/comcast-RDKTV-28214-Quick-_exit.patch"
-#SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
+SRC_URI += "file://2.46/comcast-RDK-37379-Mute-release-logging.patch"
 
 PACKAGECONFIG[atk]                   = "-DUSE_ATK=ON,-DUSE_ATK=OFF,at-spi2-atk,"
 PACKAGECONFIG[accessibility]         = "-DUSE_ATSPI=ON,-DUSE_ATSPI=OFF,rdkat-atspi2,rdkat-atspi2"

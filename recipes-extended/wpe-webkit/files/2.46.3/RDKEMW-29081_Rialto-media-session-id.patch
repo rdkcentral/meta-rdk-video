@@ -1,0 +1,113 @@
+From be38de95e66dbcb4d332948dc8dd79b03919f145 Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Mon, 23 Nov 2026 16:57:51 +0100
+Subject: [PATCH] [GStreamer][Rialto] Pass media session id to GST pipeline
+
+Set media session id on the playbin as a GstContext so the Rialto sinks can pick it up
+---
+ .../gstreamer/MediaPlayerPrivateGStreamer.cpp    |  1 +
+ .../platform/gstreamer/GStreamerQuirkRialto.cpp  | 16 ++++++++++++++++
+ .../platform/gstreamer/GStreamerQuirkRialto.h    |  1 +
+ .../platform/gstreamer/GStreamerQuirks.cpp       |  7 +++++++
+ .../WebCore/platform/gstreamer/GStreamerQuirks.h |  2 ++
+ 5 files changed, 27 insertions(+)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index 5bc444f82b8c..61cbd6b22352 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -3434,6 +3434,7 @@ void MediaPlayerPrivateGStreamer::createGSTPlayBin(const URL& url)
+         loadingFailed(MediaPlayer::NetworkState::FormatError, MediaPlayer::ReadyState::HaveNothing, true);
+         return;
+     }
++    GStreamerQuirksManager::singleton().configurePipeline(m_pipeline.get(), player.get());
+ 
+ #if !RELEASE_LOG_DISABLED
+     auto logIdentifier = makeString(hex(reinterpret_cast<uintptr_t>(mediaPlayerLogIdentifier())));
+diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirkRialto.cpp b/Source/WebCore/platform/gstreamer/GStreamerQuirkRialto.cpp
+index 65f16b15c608..177667ef9df7 100644
+--- a/Source/WebCore/platform/gstreamer/GStreamerQuirkRialto.cpp
++++ b/Source/WebCore/platform/gstreamer/GStreamerQuirkRialto.cpp
+@@ -29,6 +29,7 @@
+ #if USE(GSTREAMER)
+ 
+ #include "GStreamerCommon.h"
++#include "MediaPlayer.h"
+ #include "WebKitAudioSinkGStreamer.h"
+ #include <wtf/OptionSet.h>
+ 
+@@ -95,6 +96,21 @@ void GStreamerQuirkRialto::configureElement(GstElement* element, const OptionSet
+     }
+ }
+ 
++void GStreamerQuirkRialto::configurePipeline(GstElement* pipeline, const MediaPlayer* player)
++{
++    AtomString mediaSessionId;
++    if (!pipeline || !player || !player->doesHaveAttribute("data-media-session-id"_s, &mediaSessionId) || mediaSessionId.isEmpty())
++        return;
++
++    auto context = adoptGRef(gst_context_new("MediaSession", FALSE));
++    auto* contextStructure = gst_context_writable_structure(context.get());
++    auto mediaSessionIdUTF8 = mediaSessionId.string().utf8();
++    GST_INFO_OBJECT(pipeline, "media-session-id: %s", mediaSessionIdUTF8.data());
++
++    gst_structure_set(contextStructure, "media-session-id", G_TYPE_STRING, mediaSessionIdUTF8.data(), nullptr);
++    gst_element_set_context(pipeline, context.get());
++}
++
+ GstElement* GStreamerQuirkRialto::createAudioSink()
+ {
+     auto sink = makeGStreamerElement("rialtomseaudiosink", nullptr);
+diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirkRialto.h b/Source/WebCore/platform/gstreamer/GStreamerQuirkRialto.h
+index 5a7fbd60ae5b..393eecd3a549 100644
+--- a/Source/WebCore/platform/gstreamer/GStreamerQuirkRialto.h
++++ b/Source/WebCore/platform/gstreamer/GStreamerQuirkRialto.h
+@@ -38,6 +38,7 @@ public:
+     bool isPlatformSupported() const final;
+ 
+     void configureElement(GstElement*, const OptionSet<ElementRuntimeCharacteristics>&) final;
++    void configurePipeline(GstElement*, const MediaPlayer*) final;
+     GstElement* createAudioSink() final;
+     GstElement* createWebAudioSink() final;
+     std::optional<bool> isHardwareAccelerated(GstElementFactory*) final;
+diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirks.cpp b/Source/WebCore/platform/gstreamer/GStreamerQuirks.cpp
+index e3a31d1d5b0a..b96a71503c0d 100644
+--- a/Source/WebCore/platform/gstreamer/GStreamerQuirks.cpp
++++ b/Source/WebCore/platform/gstreamer/GStreamerQuirks.cpp
+@@ -208,6 +208,13 @@ void GStreamerQuirksManager::configureElement(GstElement* element, OptionSet<Ele
+         quirk->configureElement(element, characteristics);
+ }
+ 
++void GStreamerQuirksManager::configurePipeline(GstElement* pipeline, const MediaPlayer* player)
++{
++    GST_DEBUG("Configuring pipeline %" GST_PTR_FORMAT, pipeline);
++    for (const auto& quirk : m_quirks)
++        quirk->configurePipeline(pipeline, player);
++}
++
+ std::optional<bool> GStreamerQuirksManager::isHardwareAccelerated(GstElementFactory* factory) const
+ {
+     for (const auto& quirk : m_quirks) {
+diff --git a/Source/WebCore/platform/gstreamer/GStreamerQuirks.h b/Source/WebCore/platform/gstreamer/GStreamerQuirks.h
+index cdb656faa8ae..4a95ad6174c9 100644
+--- a/Source/WebCore/platform/gstreamer/GStreamerQuirks.h
++++ b/Source/WebCore/platform/gstreamer/GStreamerQuirks.h
+@@ -75,6 +75,7 @@ public:
+     virtual GstElement* createAudioSink() { return nullptr; }
+     virtual GstElement* createWebAudioSink() { return nullptr; }
+     virtual void configureElement(GstElement*, const OptionSet<ElementRuntimeCharacteristics>&) { }
++    virtual void configurePipeline(GstElement*, const MediaPlayer*) { }
+     virtual std::optional<bool> isHardwareAccelerated(GstElementFactory*) { return std::nullopt; }
+     virtual std::optional<GstElementFactoryListType> audioVideoDecoderFactoryListType() const { return std::nullopt; }
+     virtual Vector<String> disallowedWebAudioDecoders() const { return { }; }
+@@ -135,6 +136,7 @@ public:
+     GstElement* createAudioSink();
+     GstElement* createWebAudioSink();
+     void configureElement(GstElement*, OptionSet<ElementRuntimeCharacteristics>&&);
++    void configurePipeline(GstElement*, const MediaPlayer*);
+     std::optional<bool> isHardwareAccelerated(GstElementFactory*) const;
+     GstElementFactoryListType audioVideoDecoderFactoryListType() const;
+     Vector<String> disallowedWebAudioDecoders() const;
+-- 
+2.53.0
+
