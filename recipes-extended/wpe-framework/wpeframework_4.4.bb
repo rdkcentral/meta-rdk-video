@@ -13,8 +13,8 @@ DEPENDS += "rdk-logger"
 # Need gst-svp-ext which is an abstracting lib for metadata
 DEPENDS +=  "${@bb.utils.contains('DISTRO_FEATURES', 'rdk_svp', 'gst-svp-ext', '', d)}"
 
-PR = "r59"
-PV = "4.4.8"
+PR = "r60"
+PV = "4.4.9"
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
 SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RDK;name=thunder \
@@ -22,7 +22,7 @@ SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RD
            file://wpeframework.service.in \
            "
 
-SRCREV_thunder = "ce5f8fb9ac7e994f86ad4e6f81520e5eda99974c"
+SRCREV_thunder = "39cd5b3f8173d163f07fc20ec30832aff20ab2ff"
 SRC_URI += "git://github.com/rdkcentral/ThunderExtensions.git;protocol=https;branch=R4_4;name=extensions;destsuffix=thunder-extensions"
 SRCREV_extensions = "2df8fb014c4af12c3288d1daeb86e675ad105bea"
 SRCREV_FORMAT = "thunder_extensions"
@@ -48,26 +48,13 @@ BREAKPAD_LDFLAGS:pn-wpeframework = "${BACKTRACE_LDFLAGS}"
 EXTRA_OECMAKE:append = ' -DBREAKPAD_LDFLAGS="${BREAKPAD_LDFLAGS}"'
 LDFLAGS:remove:pn-wpeframework = "${@LOG_BACKTRACE == 'y' and BACKTRACE_LDFLAGS or ''}"
 
-def thunder_has_otel_recipe(d):
-    import glob, os
-    pattern = 'recipes-*/opentelemetry/opentelemetry-cpp_*.bb'
-    for layer in (d.getVar('BBLAYERS') or '').split():
-        if glob.glob(os.path.join(layer, pattern)) or \
-           glob.glob(os.path.join(layer, 'dynamic-layers/*', pattern)):
-            return True
-    return False
-
-# auto = enable if the recipe exists in any layer; "0"/"1" force it off/on per platform.
-THUNDER_OPENTELEMETRY ?= "auto"
-PACKAGECONFIG:append = "${@' opentelemetry' if d.getVar('THUNDER_OPENTELEMETRY') == '1' or (d.getVar('THUNDER_OPENTELEMETRY') == 'auto' and thunder_has_otel_recipe(d)) else ''}"
-PACKAGECONFIG[opentelemetry] = "-DWPEFRAMEWORK_OPENTELEMETRY=ON,-DWPEFRAMEWORK_OPENTELEMETRY=OFF,opentelemetry-cpp"
-
 PACKAGECONFIG ?= " \
     release \
     virtualinput \
     websocket \
     "
 
+PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES', 'thunder_opentelemetry', ' opentelemetry', '', d)}"
 PACKAGECONFIG:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'thunder_startup_services', 'com', '', d)}"
 
 # Buildtype
@@ -100,6 +87,7 @@ PACKAGECONFIG:append = "${@bb.utils.contains('DISTRO_FEATURES', \
 PACKAGECONFIG[slim_warning_reporting] = "-DSLIM_WARNING_REPORTING=ON,-DSLIM_WARNING_REPORTING=OFF,"
 PACKAGECONFIG[configoverride] = \
     "-DENABLE_CONFIG_OVERRIDE=ON,-DENABLE_CONFIG_OVERRIDE=OFF"
+PACKAGECONFIG[opentelemetry] = "-DWPEFRAMEWORK_OPENTELEMETRY=ON,-DWPEFRAMEWORK_OPENTELEMETRY=OFF,opentelemetry-cpp"
 
 # FIXME, determine this a little smarter
 # Provision event is required for libprovision and provision plugin
@@ -141,6 +129,9 @@ EXTRA_OECMAKE += " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'RDKTV_APP_HIBERNATE', ' -DHIBERNATESUPPORT=ON -DHIBERNATE_CHECKPOINTSERVER=ON','',d)} \
     -DAUTHORIZEDEXTENSIONS='MessagingControl;PluginInitializerService;Systemd' \
     -DDISABLEPLUGINAUTOACTIVATION=true \
+    -DTHUNDER_CORE_WORKERPOOL_WATCHDOG=ON \
+    -DWORKERPOOL_WATCHDOG_TIMEOUT=20000 \
+    -DWORKERPOOL_WATCHDOG_ABORT=ON \
 "
 
 EXTRA_OECMAKE += " -DLEGACY_CONFIG_GENERATOR=OFF"
