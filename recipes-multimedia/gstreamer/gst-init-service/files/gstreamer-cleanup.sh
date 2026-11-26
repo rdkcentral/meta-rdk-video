@@ -32,9 +32,13 @@ if [[ -f /version.txt ]]; then
 fi
 
 # Check all cleanup conditions in a single if statement using bash syntax
+# Regenerate GStreamer registry whenever cdl_flashed_file_name exists.
+# The previous logic compared CDLFILE and PREV_CDLFILE and skipped
+# regeneration when the same image was flashed again, which could leave
+# a stale registry.bin and result in outdated codec information.
 if [[ ! -f /opt/previous_flashed_file_name || \
       ( ! -f /opt/cdl_flashed_file_name && "${PREV_CDLFILE}" != *"${CUR_IMAGE}"* ) || \
-      ( -f /opt/cdl_flashed_file_name && "${CDLFILE}" != *"${PREV_CDLFILE}"* ) ]]; then
+      ( -f /opt/cdl_flashed_file_name ) ]]; then
 
     echo "Recreating gstreamer registry on bootup after CDL/FSR"
     rm -rf /opt/.gstreamer
