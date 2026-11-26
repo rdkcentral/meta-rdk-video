@@ -8,6 +8,7 @@ inherit systemd
 
 SRC_URI += "file://bootversion-loader.sh"
 SRC_URI += "file://bootversion-loader.service"
+SRC_URI += "file://packagemanager-monitor.sh"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
@@ -16,8 +17,10 @@ do_install:append () {
     install -m 0644 ${WORKDIR}/bootversion-loader.service ${D}${systemd_unitdir}/system/bootversion-loader.service
     install -d ${D}${base_libdir}/rdk
     install -m 0755 ${WORKDIR}/bootversion-loader.sh ${D}${base_libdir}/rdk/bootversion-loader.sh
+    install -m 0755 ${WORKDIR}/packagemanager-monitor.sh ${D}${base_libdir}/rdk/packagemanager-monitor.sh
 }
 
 SYSTEMD_SERVICE:${PN} = "bootversion-loader.service"
 FILES:${PN} += "${systemd_unitdir}/system/bootversion-loader.service"
 FILES:${PN} += "${base_libdir}/rdk/bootversion-loader.sh"
+FILES:${PN} += "${base_libdir}/rdk/packagemanager-monitor.sh"
