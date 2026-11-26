@@ -2,13 +2,13 @@ SUMMARY = "ENTServices Monitor plugin"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be650d9617f9f9d24bcaccf78a97b28b"
 
-PV = "1.1.0"
+PV = "1.1.1"
 PR = "r0"
 
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRCREV = "fdaaa727c8d8c272fc76d610b10a36410fdf7cd8"
+SRCREV = "dbbe364d87bee697bf9e0ab3e1cad733583f239f"
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-monitor;protocol=${CMF_GITHUB_PROTOCOL};branch=main"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
