@@ -1,3 +1,3 @@
-CTRLM_PV     = "1.1.18.6"
+CTRLM_PV     = "1.1.18.7"
 CTRLM_PR     = "r0"
 CTRLM_SRCREV = "${CTRLM_PV}"
