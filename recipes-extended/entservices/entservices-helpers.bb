@@ -28,6 +28,7 @@ CXXFLAGS += "-DUSE_THUNDER_COMMUNICATION"
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
     -DBUILD_SHARED_LIBS=ON \
+    -DENABLE_OPENTELEMETRY=ON \
 "
 
 # ----------------------------------------------------------------------------
@@ -50,6 +51,7 @@ FILES:${PN} += " \
     ${libdir}/*.so \
     ${includedir}/wpeframework/helpers/* \
     ${libdir}/cmake/WPEFrameworkHelpers/* \
+    ${sysconfdir}/WPEFramework/opentelemetry.json \
 "
 
 INSANE_SKIP:${PN} += "libdir staticdev dev-so"
