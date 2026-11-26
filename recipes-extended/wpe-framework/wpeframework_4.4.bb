@@ -22,7 +22,7 @@ SRC_URI = "git://github.com/rdkcentral/Thunder.git;protocol=https;branch=R4_4-RD
            file://wpeframework.service.in \
            "
 
-SRCREV_thunder = "77de35b9fb98c3191caaed253d93adbefa8076cc"
+SRCREV_thunder = "39cd5b3f8173d163f07fc20ec30832aff20ab2ff"
 SRC_URI += "git://github.com/rdkcentral/ThunderExtensions.git;protocol=https;branch=R4_4;name=extensions;destsuffix=thunder-extensions"
 SRCREV_extensions = "2df8fb014c4af12c3288d1daeb86e675ad105bea"
 SRCREV_FORMAT = "thunder_extensions"
