@@ -23,7 +23,7 @@ DEPENDS="json-c iarmbus rdk-logger virtual/vendor-devicesettings-hal devicesetti
 DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'safec', ' safec ', " ", d)}"
 
 # Telemetry Support
-DEPENDS:append = " telemetry"
+DEPENDS:append = " telemetry entservices-apis wpeframework wpeframework-tools-native"
 
 S = "${WORKDIR}/git"
 
