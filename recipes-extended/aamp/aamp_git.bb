@@ -7,10 +7,10 @@ PV = "3.9.1"
 PR = "r0"
 
 SRCREV_FORMAT = "aamp"
-SRCREV_aamp ?= "ec8ff121b99a511032354731e21d1d3199a56079"
+SRCREV_aamp ?= "fc1f320a1c8b1be64184aa1ef13e32c3a9bfffdc"
 
 # Support to build from a different branch by overriding both AAMP_BRANCH and SRCREV_aamp to specific branch and revision.
-AAMP_BRANCH ?= "session_sting_aamp_1"
+AAMP_BRANCH ?= "feature/RDKEMW-16544-sessionid-uuid-dev"
 CMF_GITHUB_BRANCH = "branch=${AAMP_BRANCH}"
 
 DEPENDS += "curl libdash libxml2 cjson readline ${@bb.utils.contains('DISTRO_FEATURES', 'build_external_player_interface', 'player-interface', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'webkitbrowser-plugin', '${WPEWEBKIT}', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'subtec', 'closedcaption-hal-headers virtual/vendor-dvb virtual/vendor-closedcaption-hal', '', d)} ${@bb.utils.contains('DISTRO_FEATURES', 'enable_rialto', 'dobby rialto', '', d)}"
