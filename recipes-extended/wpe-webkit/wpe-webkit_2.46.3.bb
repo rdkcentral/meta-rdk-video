@@ -111,6 +111,10 @@ PACKAGECONFIG:append = " ${@bb.utils.contains('BROWSER_MEMORYPROFILE', 'fhd', 'f
 PACKAGECONFIG:append:aarch64 = " webassembly"
 PACKAGECONFIG:append:toolchain-clang = " uselld"
 
+PACKAGECONFIG:append = " uselld"
+WEBKIT_PARALLEL_MAKE ?= "-j 8"
+PARALLEL_MAKE = "${WEBKIT_PARALLEL_MAKE}"
+
 EXTRA_OECMAKE += "${@bb.utils.contains_any('PACKAGECONFIG', 'wpeframework_opencdm rialto_opencdm', '', '-DENABLE_THUNDER=OFF', d)}"
 
 EXTRA_OECMAKE += " \
