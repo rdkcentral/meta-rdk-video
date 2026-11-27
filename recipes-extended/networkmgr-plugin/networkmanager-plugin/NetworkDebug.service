@@ -1,0 +1,15 @@
+[Unit]
+Description=Network Debug - tcpdump filtering service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+ExecStartPre=/bin/bash -c 'if [ ! -f /opt/ipaddresses.txt ] || [ ! -s /opt/ipaddresses.txt ]; then exit 1; fi'
+ExecStart=/bin/bash -c 'filter=$(cat /opt/ipaddresses.txt | sed "s/^/host /; s/$/ or /" | tr -d "\n" | sed "s/ or $//"); tcpdump -i any -w /opt/504.pcap "$filter"'
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
