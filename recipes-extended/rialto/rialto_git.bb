@@ -30,6 +30,8 @@ EXTRA_OECMAKE += " ${@bb.utils.contains("IMAGE_FEATURES", "prod", "-DRIALTO_BUIL
 
 PACKAGES =+ "${PN}-client ${PN}-server ${PN}-servermanager-lib ${PN}-servermanager ${PN}-client-dev ${PN}-server-dev ${PN}-servermanager-lib-dev ${PN}-servermanager-dev "
 
+PACKAGES =+ "${PN}-client-dbg ${PN}-server-dbg ${PN}-servermanager-lib-dbg ${PN}-servermanager-dbg "
+
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 PACKAGECONFIG[server] = "-DENABLE_SERVER=ON,-DENABLE_SERVER=OFF,wpeframework-clientlibraries gstreamer1.0 gstreamer1.0-plugins-base glib-2.0 virtual/vendor-rdk-gstreamer-utils-platform rdk-gstreamer-utils"
 PACKAGECONFIG[servermanager] = "-DENABLE_SERVER_MANAGER=ON,-DENABLE_SERVER_MANAGER=OFF,mongoose,"
@@ -50,6 +52,11 @@ FILES:${PN}-servermanager += "${bindir}/RialtoServerManagerSim"
 FILES:${PN}-servermanager-lib += "${libdir}/libRialtoServerManager.so.*"
 FILES:${PN}-client-dev += " ${libdir}/libRialtoClient.so"
 FILES:${PN}-servermanager-lib-dev += " ${includedir}/rialto ${libdir}/libRialtoServerManager.so"
+
+FILES:${PN}-client-dbg += "${libdir}/.debug/libRialtoClient.so*"
+FILES:${PN}-server-dbg += "${bindir}/.debug/RialtoServer"
+FILES:${PN}-servermanager-dbg += "${bindir}/.debug/RialtoServerManagerSim"
+FILES:${PN}-servermanager-lib-dbg += "${libdir}/.debug/libRialtoServerManager.so*"
 
 REQUIRED_DISTRO_FEATURES = "enable_rialto"
 
