@@ -1,0 +1,27 @@
+diff --git a/Source/WebCore/platform/graphics/egl/GLContextEGL.cpp b/Source/WebCore/platform/graphics/egl/GLContextEGL.cpp
+index 26957db53032..ad117c1d7926 100644
+--- a/Source/WebCore/platform/graphics/egl/GLContextEGL.cpp
++++ b/Source/WebCore/platform/graphics/egl/GLContextEGL.cpp
+@@ -281,8 +281,6 @@ std::unique_ptr<GLContextEGL> GLContextEGL::createContext(GLNativeWindowType win
+ 
+     EGLContext eglSharingContext = platformDisplay.sharingGLContext() ? static_cast<GLContextEGL*>(platformDisplay.sharingGLContext())->m_context : EGL_NO_CONTEXT;
+     auto context = window ? createWindowContext(window, platformDisplay, eglSharingContext) : nullptr;
+-    if (!context)
+-        context = createSurfacelessContext(platformDisplay, eglSharingContext);
+     if (!context) {
+         switch (platformDisplay.type()) {
+ #if PLATFORM(X11)
+diff --git a/Source/WebCore/platform/graphics/nicosia/texmap/NicosiaGCGLLayer.cpp b/Source/WebCore/platform/graphics/nicosia/texmap/NicosiaGCGLLayer.cpp
+index 2ff26bcc4524..741271e99582 100644
+--- a/Source/WebCore/platform/graphics/nicosia/texmap/NicosiaGCGLLayer.cpp
++++ b/Source/WebCore/platform/graphics/nicosia/texmap/NicosiaGCGLLayer.cpp
+@@ -55,7 +55,7 @@ std::unique_ptr<GCGLLayer> GCGLLayer::create(WebCore::GraphicsContextGLOpenGL& c
+             return makeUnique<GCGLLayer>(context, WTFMove(glContext));
+     } else {
+         if (!s_windowContext) {
+-            s_windowContext = GLContext::createContextForWindow(reinterpret_cast<GLNativeWindowType>(attributes.nativeWindowID), &PlatformDisplay::sharedDisplayForCompositing());
++            s_windowContext = GLContext::createOffscreenContext(&PlatformDisplay::sharedDisplayForCompositing());
+         }
+         if (s_windowContext)
+             return makeUnique<GCGLLayer>(context);
+

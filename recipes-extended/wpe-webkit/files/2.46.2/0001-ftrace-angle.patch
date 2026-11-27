@@ -1,0 +1,482 @@
+From 152a0376f82ac8230736fe4464d0716c30903d3d Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Mon, 16 Nov 2026 14:15:21 +0000
+Subject: [PATCH] ftrace angle
+
+---
+ .../ANGLE/src/libANGLE/renderer/gl/BlitGL.cpp | 76 ++++++++++++++++---
+ .../src/libANGLE/renderer/gl/TextureGL.cpp    | 76 ++++++++++++++++++-
+ .../src/libANGLE/renderer/gl/TraceMarkerGL.h  | 58 ++++++++++++++
+ 3 files changed, 195 insertions(+), 15 deletions(-)
+ create mode 100644 Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TraceMarkerGL.h
+
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/BlitGL.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/BlitGL.cpp
+index eb5cfa873164..c7770f231114 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/BlitGL.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/BlitGL.cpp
+@@ -24,6 +24,7 @@
+ #include "libANGLE/renderer/gl/TextureGL.h"
+ #include "libANGLE/renderer/gl/formatutilsgl.h"
+ #include "libANGLE/renderer/gl/renderergl_utils.h"
++#include "libANGLE/renderer/gl/TraceMarkerGL.h"
+ #include "libANGLE/renderer/renderer_utils.h"
+ #include "platform/autogen/FeaturesGL_autogen.h"
+ 
+@@ -291,8 +292,12 @@ BlitGL::~BlitGL()
+     {
+         if (mScratchTextures[i] != 0)
+         {
++            char details[96];
++            snprintf(details, sizeof(details), "owner=%p texture=%u", this, mScratchTextures[i]);
++            ScopedTraceMarker trace("blit_scratch_delete", details);
+             mStateManager->deleteTexture(mScratchTextures[i]);
+             mScratchTextures[i] = 0;
++            trace.markSucceeded();
+         }
+     }
+ 
+@@ -377,10 +382,17 @@ angle::Result BlitGL::copySubImageToLUMAWorkaroundTexture(const gl::Context *con
+         nativegl::GetCopyTexImageImageFormat(mFunctions, mFeatures, readFormat, readType);
+ 
+     mStateManager->bindTexture(gl::TextureType::_2D, mScratchTextures[0]);
+-    ANGLE_GL_TRY_ALWAYS_CHECK(
+-        context, mFunctions->copyTexImage2D(GL_TEXTURE_2D, 0, copyTexImageFormat.internalFormat,
+-                                            sourceArea.x, sourceArea.y, sourceArea.width,
+-                                            sourceArea.height, 0));
++    {
++        char traceDetails[144];
++        snprintf(traceDetails, sizeof(traceDetails), "owner=%p texture=%u dims=%dx%d format=0x%x source=luma_copy",
++                 this, mScratchTextures[0], sourceArea.width, sourceArea.height, copyTexImageFormat.internalFormat);
++        ScopedTraceMarker trace("blit_scratch_storage", traceDetails);
++        ANGLE_GL_TRY_ALWAYS_CHECK(
++            context, mFunctions->copyTexImage2D(GL_TEXTURE_2D, 0, copyTexImageFormat.internalFormat,
++                                                sourceArea.x, sourceArea.y, sourceArea.width,
++                                                sourceArea.height, 0));
++        trace.markSucceeded();
++    }
+ 
+     // Set the swizzle of the scratch texture so that the channels sample into the correct emulated
+     // LUMA channels.
+@@ -396,11 +408,18 @@ angle::Result BlitGL::copySubImageToLUMAWorkaroundTexture(const gl::Context *con
+     // Make a temporary framebuffer using the second scratch texture to render the swizzled result
+     // to.
+     mStateManager->bindTexture(gl::TextureType::_2D, mScratchTextures[1]);
+-    ANGLE_GL_TRY_ALWAYS_CHECK(
+-        context, mFunctions->texImage2D(GL_TEXTURE_2D, 0, copyTexImageFormat.internalFormat,
+-                                        sourceArea.width, sourceArea.height, 0,
+-                                        gl::GetUnsizedFormat(copyTexImageFormat.internalFormat),
+-                                        readType, nullptr));
++    {
++        char traceDetails[144];
++        snprintf(traceDetails, sizeof(traceDetails), "owner=%p texture=%u dims=%dx%d format=0x%x source=luma_swizzle",
++                 this, mScratchTextures[1], sourceArea.width, sourceArea.height, copyTexImageFormat.internalFormat);
++        ScopedTraceMarker trace("blit_scratch_storage", traceDetails);
++        ANGLE_GL_TRY_ALWAYS_CHECK(
++            context, mFunctions->texImage2D(GL_TEXTURE_2D, 0, copyTexImageFormat.internalFormat,
++                                            sourceArea.width, sourceArea.height, 0,
++                                            gl::GetUnsizedFormat(copyTexImageFormat.internalFormat),
++                                            readType, nullptr));
++        trace.markSucceeded();
++    }
+ 
+     mStateManager->bindFramebuffer(GL_FRAMEBUFFER, mScratchFBO);
+     ANGLE_GL_TRY(context, mFunctions->framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+@@ -548,10 +567,17 @@ angle::Result BlitGL::blitColorBufferWithShader(const gl::Context *context,
+         mStateManager->bindFramebuffer(GL_READ_FRAMEBUFFER, sourceGL->getFramebufferID());
+         mStateManager->bindTexture(gl::TextureType::_2D, textureId);
+ 
++        char traceDetails[144];
++        snprintf(traceDetails, sizeof(traceDetails),
++                 "owner=%p texture=%u dims=%dx%d format=0x%x source=framebuffer_blit",
++                 this, textureId, inBoundsSource.width, inBoundsSource.height,
++                 copyTexImageFormat.internalFormat);
++        ScopedTraceMarker trace("blit_scratch_storage", traceDetails);
+         ANGLE_GL_TRY_ALWAYS_CHECK(
+             context, mFunctions->copyTexImage2D(GL_TEXTURE_2D, 0, copyTexImageFormat.internalFormat,
+                                                 inBoundsSource.x, inBoundsSource.y,
+                                                 inBoundsSource.width, inBoundsSource.height, 0));
++        trace.markSucceeded();
+ 
+         // Translate sourceArea to be relative to the copied image.
+         sourceArea.x -= inBoundsSource.x;
+@@ -788,11 +814,18 @@ angle::Result BlitGL::copySubTextureCPUReadback(const gl::Context *context,
+ 
+         gl::TextureType scratchTextureType = gl::TextureType::_2D;
+         mStateManager->bindTexture(scratchTextureType, mScratchTextures[0]);
++        char traceDetails[144];
++        snprintf(traceDetails, sizeof(traceDetails),
++                 "owner=%p texture=%u dims=%dx%d format=0x%x source=readback_fallback",
++                 this, mScratchTextures[0], sourceArea.width, sourceArea.height,
++                 texImageFormat.internalFormat);
++        ScopedTraceMarker trace("blit_scratch_storage", traceDetails);
+         ANGLE_GL_TRY_ALWAYS_CHECK(
+             context,
+             mFunctions->texImage2D(ToGLenum(scratchTextureType), 0, texImageFormat.internalFormat,
+                                    sourceArea.width, sourceArea.height, 0, texImageFormat.format,
+                                    texImageFormat.type, nullptr));
++        trace.markSucceeded();
+ 
+         bool copySucceeded = false;
+         ANGLE_TRY(copySubTexture(
+@@ -1271,9 +1304,16 @@ angle::Result BlitGL::generateMipmap(const gl::Context *context,
+ 
+         // Downsample from the source texture into the intermediate texture
+         mStateManager->bindTexture(sourceType, intermediateTexture);
++        char traceDetails[144];
++        snprintf(traceDetails, sizeof(traceDetails),
++             "owner=%p texture=%u dims=%dx%d format=0x%x mipLevel=%u",
++             this, intermediateTexture, levelSize.width, levelSize.height,
++             format.internalFormat, levelIdx);
++        ScopedTraceMarker trace("blit_mipmap_scratch_storage", traceDetails);
+         ANGLE_GL_TRY(context, mFunctions->texImage2D(
+-                                  ToGLenum(sourceTarget), 0, format.internalFormat, levelSize.width,
+-                                  levelSize.height, 0, format.format, format.type, nullptr));
++                      ToGLenum(sourceTarget), 0, format.internalFormat, levelSize.width,
++                      levelSize.height, 0, format.format, format.type, nullptr));
++        trace.markSucceeded();
+ 
+         ANGLE_GL_TRY(context, mFunctions->framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                                                ToGLenum(sourceTarget),
+@@ -1320,9 +1360,18 @@ angle::Result BlitGL::initializeResources(const gl::Context *context)
+         return angle::Result::Continue;
+     }
+ 
++    char initDetails[80];
++    snprintf(initDetails, sizeof(initDetails), "owner=%p scratchTextureCount=%zu", this,
++             ArraySize(mScratchTextures));
++    ScopedTraceMarker initTrace("blit_scratch_initialize", initDetails);
+     for (size_t i = 0; i < ArraySize(mScratchTextures); i++)
+     {
+         ANGLE_GL_TRY(context, mFunctions->genTextures(1, &mScratchTextures[i]));
++        char details[96];
++        snprintf(details, sizeof(details), "owner=%p texture=%u index=%zu", this,
++                 mScratchTextures[i], i);
++        ScopedTraceMarker textureTrace("blit_scratch_create", details);
++        textureTrace.markSucceeded();
+     }
+ 
+     ANGLE_GL_TRY(context, mFunctions->genFramebuffers(1, &mScratchFBO));
+@@ -1378,6 +1427,7 @@ angle::Result BlitGL::initializeResources(const gl::Context *context)
+     ASSERT(mSRGBMipmapGenerationFormat.internalFormat != GL_NONE);
+ 
+     mResourcesInitialized = true;
++    initTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+@@ -1413,8 +1463,12 @@ angle::Result BlitGL::orphanScratchTextures(const gl::Context *context)
+                                                         GL_NEAREST_MIPMAP_LINEAR));
+         ANGLE_GL_TRY(context,
+                      mFunctions->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
++        char details[96];
++        snprintf(details, sizeof(details), "texture=%u dims=0x0 source=scratch_orphan", texture);
++        ScopedTraceMarker trace("blit_scratch_orphan", details);
+         ANGLE_GL_TRY(context, mFunctions->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, 0, GL_RGBA,
+                                                      GL_UNSIGNED_BYTE, nullptr));
++        trace.markSucceeded();
+     }
+ 
+     return angle::Result::Continue;
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+index 9372f7c6204e..8e4ae2ee0f86 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+@@ -29,6 +29,7 @@
+ #include "libANGLE/renderer/gl/SurfaceGL.h"
+ #include "libANGLE/renderer/gl/formatutilsgl.h"
+ #include "libANGLE/renderer/gl/renderergl_utils.h"
++#include "libANGLE/renderer/gl/TraceMarkerGL.h"
+ #include "platform/autogen/FeaturesGL_autogen.h"
+ 
+ using angle::CheckedNumeric;
+@@ -160,6 +161,11 @@ TextureGL::TextureGL(const gl::TextureState &state, GLuint id)
+       mTextureID(id)
+ {
+     mLevelInfo.resize(GetMaxLevelInfoCountForTextureType(getType()));
++    char traceDetails[96];
++    snprintf(traceDetails, sizeof(traceDetails), "object=%p texture=%u type=%d", this,
++             mTextureID, static_cast<int>(getType()));
++    ScopedTraceMarker trace("texture_create", traceDetails);
++    trace.markSucceeded();
+ }
+ 
+ TextureGL::~TextureGL()
+@@ -169,10 +175,14 @@ TextureGL::~TextureGL()
+ 
+ void TextureGL::onDestroy(const gl::Context *context)
+ {
++    char traceDetails[96];
++    snprintf(traceDetails, sizeof(traceDetails), "object=%p texture=%u", this, mTextureID);
++    ScopedTraceMarker trace("texture_delete", traceDetails);
+     GetImplAs<ContextGL>(context)->flushIfNecessaryBeforeDeleteTextures();
+     StateManagerGL *stateManager = GetStateManagerGL(context);
+     stateManager->deleteTexture(mTextureID);
+     mTextureID = 0;
++    trace.markSucceeded();
+ }
+ 
+ angle::Result TextureGL::setImage(const gl::Context *context,
+@@ -190,6 +200,13 @@ angle::Result TextureGL::setImage(const gl::Context *context,
+     gl::TextureTarget target = index.getTarget();
+     size_t level             = static_cast<size_t>(index.getLevelIndex());
+ 
++    char traceDetails[192];
++    snprintf(traceDetails, sizeof(traceDetails),
++             "texture=%u target=0x%x level=%zu dims=%dx%dx%d format=0x%x type=0x%x unpackBuffer=%d rowLength=%d",
++             mTextureID, ToGLenum(target), level, size.width, size.height, size.depth,
++             internalFormat, type, !!unpackBuffer, unpack.rowLength);
++    ScopedTraceMarker uploadTrace("texture_setImage", traceDetails);
++
+     if (features.unpackOverlappingRowsSeparatelyUnpackBuffer.enabled && unpackBuffer &&
+         unpack.rowLength != 0 && unpack.rowLength < size.width)
+     {
+@@ -200,12 +217,16 @@ angle::Result TextureGL::setImage(const gl::Context *context,
+ 
+         if (size.width == 0 || size.height == 0 || size.depth == 0)
+         {
++            uploadTrace.markSucceeded();
+             return angle::Result::Continue;
+         }
+ 
+         gl::Box area(0, 0, 0, size.width, size.height, size.depth);
+-        return setSubImageRowByRowWorkaround(context, target, level, area, format, type, unpack,
+-                                             unpackBuffer, 0, pixels);
++        angle::Result result = setSubImageRowByRowWorkaround(
++            context, target, level, area, format, type, unpack, unpackBuffer, 0, pixels);
++        if (result == angle::Result::Continue)
++            uploadTrace.markSucceeded();
++        return result;
+     }
+ 
+     if (features.unpackLastRowSeparatelyForPaddingInclusion.enabled)
+@@ -224,17 +245,22 @@ angle::Result TextureGL::setImage(const gl::Context *context,
+ 
+             if (size.width == 0 || size.height == 0 || size.depth == 0)
+             {
++                uploadTrace.markSucceeded();
+                 return angle::Result::Continue;
+             }
+ 
+             gl::Box area(0, 0, 0, size.width, size.height, size.depth);
+-            return setSubImagePaddingWorkaround(context, target, level, area, format, type, unpack,
+-                                                unpackBuffer, pixels);
++            angle::Result result = setSubImagePaddingWorkaround(
++                context, target, level, area, format, type, unpack, unpackBuffer, pixels);
++            if (result == angle::Result::Continue)
++                uploadTrace.markSucceeded();
++            return result;
+         }
+     }
+ 
+     ANGLE_TRY(setImageHelper(context, target, level, internalFormat, size, format, type, pixels));
+ 
++    uploadTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+@@ -258,6 +284,15 @@ angle::Result TextureGL::setImageHelper(const gl::Context *context,
+     nativegl::TexImageFormat texImageFormat =
+         nativegl::GetTexImageFormat(functions, features, internalFormat, format, type);
+ 
++    char traceDetails[192];
++    snprintf(traceDetails, sizeof(traceDetails),
++             "texture=%u target=0x%x level=%zu dims=%dx%dx%d format=0x%x nativeFormat=0x%x type=0x%x hasPixels=%d",
++             mTextureID, nativegl::UseTexImage2D(getType()) ? nativegl::GetTextureBindingTarget(target)
++                                                            : ToGLenum(target),
++             level, size.width, size.height, size.depth, internalFormat,
++             texImageFormat.internalFormat, type, !!pixels);
++    ScopedTraceMarker storageTrace("texture_native_storage", traceDetails);
++
+     stateManager->bindTexture(getType(), mTextureID);
+ 
+     if (features.resetTexImage2DBaseLevel.enabled)
+@@ -310,6 +345,7 @@ angle::Result TextureGL::setImageHelper(const gl::Context *context,
+         }
+     }
+ 
++    storageTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+@@ -350,6 +386,13 @@ angle::Result TextureGL::setSubImage(const gl::Context *context,
+     gl::TextureTarget target = index.getTarget();
+     size_t level             = static_cast<size_t>(index.getLevelIndex());
+ 
++    char traceDetails[176];
++    snprintf(traceDetails, sizeof(traceDetails),
++             "texture=%u target=0x%x level=%zu area=%dx%dx%d format=0x%x type=0x%x unpackBuffer=%d rowLength=%d",
++             mTextureID, ToGLenum(target), level, area.width, area.height, area.depth,
++             format, type, !!unpackBuffer, unpack.rowLength);
++    ScopedTraceMarker subImageTrace("texture_subImage", traceDetails);
++
+     ASSERT(getLevelInfo(target, level).lumaWorkaround.enabled ==
+            GetLevelInfo(features, originalInternalFormatInfo, texSubImageFormat.format)
+                .lumaWorkaround.enabled);
+@@ -361,6 +404,7 @@ angle::Result TextureGL::setSubImage(const gl::Context *context,
+         ANGLE_TRY(setSubImageRowByRowWorkaround(context, target, level, area, format, type, unpack,
+                                                 unpackBuffer, 0, pixels));
+         contextGL->markWorkSubmitted();
++        subImageTrace.markSucceeded();
+         return angle::Result::Continue;
+     }
+ 
+@@ -380,6 +424,7 @@ angle::Result TextureGL::setSubImage(const gl::Context *context,
+             ANGLE_TRY(setSubImagePaddingWorkaround(context, target, level, area, format, type,
+                                                    unpack, unpackBuffer, pixels));
+             contextGL->markWorkSubmitted();
++            subImageTrace.markSucceeded();
+             return angle::Result::Continue;
+         }
+     }
+@@ -390,6 +435,7 @@ angle::Result TextureGL::setSubImage(const gl::Context *context,
+                                                 unpackBuffer, kUploadTextureDataInChunksUploadSize,
+                                                 pixels));
+         contextGL->markWorkSubmitted();
++        subImageTrace.markSucceeded();
+         return angle::Result::Continue;
+     }
+ 
+@@ -412,6 +458,7 @@ angle::Result TextureGL::setSubImage(const gl::Context *context,
+     }
+ 
+     contextGL->markWorkSubmitted();
++    subImageTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+@@ -1095,6 +1142,11 @@ angle::Result TextureGL::setStorage(const gl::Context *context,
+                                     GLenum internalFormat,
+                                     const gl::Extents &size)
+ {
++    char traceDetails[160];
++    snprintf(traceDetails, sizeof(traceDetails), "texture=%u type=%d levels=%zu dims=%dx%dx%d format=0x%x",
++             mTextureID, static_cast<int>(type), levels, size.width, size.height, size.depth,
++             internalFormat);
++    ScopedTraceMarker storageTrace("texture_immutable_storage", traceDetails);
+     ContextGL *contextGL              = GetImplAs<ContextGL>(context);
+     const FunctionsGL *functions      = GetFunctionsGL(context);
+     StateManagerGL *stateManager      = GetStateManagerGL(context);
+@@ -1269,6 +1321,7 @@ angle::Result TextureGL::setStorage(const gl::Context *context,
+         context, type, 0, levels,
+         GetLevelInfo(features, originalInternalFormatInfo, texStorageFormat.internalFormat));
+ 
++    storageTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+@@ -1413,6 +1466,11 @@ angle::Result TextureGL::setImageExternal(const gl::Context *context,
+ 
+ angle::Result TextureGL::generateMipmap(const gl::Context *context)
+ {
++    char traceDetails[128];
++    snprintf(traceDetails, sizeof(traceDetails), "texture=%u type=%d base=%u max=%u",
++             mTextureID, static_cast<int>(getType()), mState.getEffectiveBaseLevel(),
++             mState.getMipmapMaxLevel());
++    ScopedTraceMarker mipmapTrace("texture_generateMipmap", traceDetails);
+     ContextGL *contextGL              = GetImplAs<ContextGL>(context);
+     const FunctionsGL *functions      = GetFunctionsGL(context);
+     StateManagerGL *stateManager      = GetStateManagerGL(context);
+@@ -1483,6 +1541,7 @@ angle::Result TextureGL::generateMipmap(const gl::Context *context)
+                  getBaseLevelInfo());
+ 
+     contextGL->markWorkSubmitted();
++    mipmapTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+@@ -2018,11 +2077,19 @@ angle::Result TextureGL::recreateTexture(const gl::Context *context)
+ {
+     const FunctionsGL *functions = GetFunctionsGL(context);
+     StateManagerGL *stateManager = GetStateManagerGL(context);
++    const GLuint oldTexture = mTextureID;
++    char traceDetails[96];
++    snprintf(traceDetails, sizeof(traceDetails), "object=%p oldTexture=%u", this, oldTexture);
++    ScopedTraceMarker recreateTrace("texture_recreate", traceDetails);
+ 
+     stateManager->bindTexture(getType(), mTextureID);
+     stateManager->deleteTexture(mTextureID);
+ 
+     functions->genTextures(1, &mTextureID);
++    char recreateDetails[112];
++    snprintf(recreateDetails, sizeof(recreateDetails), "WPE_GPU|ANGLE_TEXTURE_RECREATE|object=%p oldTexture=%u newTexture=%u",
++             this, oldTexture, mTextureID);
++    __trace_mark__(recreateDetails);
+     stateManager->bindTexture(getType(), mTextureID);
+ 
+     mLevelInfo.clear();
+@@ -2038,6 +2105,7 @@ angle::Result TextureGL::recreateTexture(const gl::Context *context)
+ 
+     onStateChange(angle::SubjectMessage::SubjectChanged);
+ 
++    recreateTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TraceMarkerGL.h b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TraceMarkerGL.h
+new file mode 100644
+index 000000000000..9c1e5d1b8538
+--- /dev/null
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TraceMarkerGL.h
+@@ -0,0 +1,58 @@
++#pragma once
++
++#include <fcntl.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++
++#define TRACE_MARKER_PATH "/sys/kernel/debug/tracing/trace_marker"
++
++namespace rx {
++
++inline void __trace_mark__(const char* message)
++{
++    int fd = open(TRACE_MARKER_PATH, O_WRONLY);
++    if (fd < 0) {
++        perror("Failed to open trace_marker");
++        return;
++    }
++    size_t messageLength = strlen(message);
++    ssize_t bytesWritten = write(fd, message, messageLength);
++    if (bytesWritten < 0)
++        perror("Failed to write to trace_marker");
++    else if (static_cast<size_t>(bytesWritten) < messageLength)
++        fprintf(stderr, "Partial write to trace_marker: expected %zu bytes, wrote %zd bytes\n", messageLength, bytesWritten);
++    if (close(fd) < 0)
++        perror("Failed to close trace_marker");
++}
++
++class ScopedTraceMarker
++{
++  public:
++    ScopedTraceMarker(const char* operation, const char* details)
++        : m_operation(operation)
++        , m_details(details)
++    {
++        char message[384];
++        snprintf(message, sizeof(message), "WPE_GPU|ANGLE_TEXTURE|BEGIN|op=%s %s", m_operation, m_details);
++        __trace_mark__(message);
++    }
++
++    ~ScopedTraceMarker()
++    {
++        char message[384];
++        snprintf(message, sizeof(message), "WPE_GPU|ANGLE_TEXTURE|END|op=%s result=%s %s",
++                 m_operation, m_succeeded ? "success" : "error_or_early_return", m_details);
++        __trace_mark__(message);
++    }
++
++    void markSucceeded() { m_succeeded = true; }
++
++  private:
++    const char* m_operation;
++    const char* m_details;
++    bool m_succeeded { false };
++};
++
++} // namespace rx
+\ No newline at end of file
+-- 
+2.44.4
+
