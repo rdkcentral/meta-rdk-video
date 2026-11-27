@@ -8,11 +8,10 @@ PR = "r0"
 S = "${WORKDIR}/git"
 inherit cmake pkgconfig
 
-SRC_URI = "${CMF_GITHUB_ROOT}/entservices-xcast;${CMF_GITHUB_SRC_URI_SUFFIX}\
-          "
+SRC_URI = "${CMF_GITHUB_ROOT}/entservices-xcast;protocol=https;branch=feature/RDKEMW-29162"
 
 # Release version - 2.2.1
-SRCREV = "befdf1f23236489591fc64677f29690e4c696e89"
+SRCREV = "c15bed681ac59658930a36a0af67568912fc86a7"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 TOOLCHAIN = "gcc"
