@@ -1,0 +1,1333 @@
+From c5babd3e8a12078ac135b62fae528b2b11ef672e Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Mon, 23 Nov 2026 15:32:26 +0000
+Subject: [PATCH] igalia 2.38
+
+---
+ Source/WebCore/Sources.txt                    |   1 +
+ .../html/canvas/WebGL2RenderingContext.cpp    |  10 +
+ Source/WebCore/html/canvas/WebGLBuffer.cpp    |   3 +
+ .../WebCore/html/canvas/WebGLRenderbuffer.cpp |   3 +
+ .../html/canvas/WebGLRenderingContextBase.cpp | 179 +++++-
+ .../html/canvas/WebGLRenderingContextBase.h   |  17 +
+ .../html/canvas/WebGLResourceTracker.cpp      | 585 ++++++++++++++++++
+ .../html/canvas/WebGLResourceTracker.h        | 146 +++++
+ Source/WebCore/html/canvas/WebGLTexture.cpp   |   3 +
+ 9 files changed, 944 insertions(+), 3 deletions(-)
+ create mode 100644 Source/WebCore/html/canvas/WebGLResourceTracker.cpp
+ create mode 100644 Source/WebCore/html/canvas/WebGLResourceTracker.h
+
+diff --git a/Source/WebCore/Sources.txt b/Source/WebCore/Sources.txt
+index 12a820faf4d0..ba64112755c4 100644
+--- a/Source/WebCore/Sources.txt
++++ b/Source/WebCore/Sources.txt
+@@ -1422,6 +1422,7 @@ html/canvas/WebGLQuery.cpp
+ html/canvas/WebGLRenderbuffer.cpp
+ html/canvas/WebGLRenderingContext.cpp
+ html/canvas/WebGLRenderingContextBase.cpp
++html/canvas/WebGLResourceTracker.cpp
+ html/canvas/WebGLSampler.cpp
+ html/canvas/WebGLShader.cpp
+ html/canvas/WebGLShaderPrecisionFormat.cpp
+diff --git a/Source/WebCore/html/canvas/WebGL2RenderingContext.cpp b/Source/WebCore/html/canvas/WebGL2RenderingContext.cpp
+index 13b0ff53ff1b..6fe0c8ade821 100644
+--- a/Source/WebCore/html/canvas/WebGL2RenderingContext.cpp
++++ b/Source/WebCore/html/canvas/WebGL2RenderingContext.cpp
+@@ -67,6 +67,7 @@
+ #include "WebGLProgram.h"
+ #include "WebGLQuery.h"
+ #include "WebGLRenderbuffer.h"
++#include "WebGLResourceTracker.h"
+ #include "WebGLSampler.h"
+ #include "WebGLSync.h"
+ #include "WebGLTexture.h"
+@@ -878,6 +879,7 @@ void WebGL2RenderingContext::texStorage2D(GCGLenum target, GCGLsizei levels, GCG
+         return;
+ 
+     m_context->texStorage2D(target, levels, internalFormat, width, height);
++    WebGLResourceTracker::singleton().textureStorageDefined(resourceTrackerKey(), texture->object(), target, levels, internalFormat, width, height, 1, "texStorage2D");
+ }
+ 
+ void WebGL2RenderingContext::texStorage3D(GCGLenum target, GCGLsizei levels, GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth)
+@@ -890,6 +892,7 @@ void WebGL2RenderingContext::texStorage3D(GCGLenum target, GCGLsizei levels, GCG
+         return;
+ 
+     m_context->texStorage3D(target, levels, internalFormat, width, height, depth);
++    WebGLResourceTracker::singleton().textureStorageDefined(resourceTrackerKey(), texture->object(), target, levels, internalFormat, width, height, depth, "texStorage3D");
+ }
+ 
+ void WebGL2RenderingContext::texImage2D(GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLsizei width, GCGLsizei height, GCGLint border, GCGLenum format, GCGLenum type, RefPtr<ArrayBufferView>&& data)
+@@ -932,6 +935,7 @@ void WebGL2RenderingContext::texImage2D(GCGLenum target, GCGLint level, GCGLint
+         return;
+ 
+     m_context->texImage2D(target, level, internalformat, width, height, border, format, type, offset);
++    trackTextureImage("texImage2D (PBO)", target, level, internalformat, format, type, width, height, 1);
+ }
+ 
+ ExceptionOr<void> WebGL2RenderingContext::texImage2D(GCGLenum target, GCGLint level, GCGLint internalformat, GCGLsizei width, GCGLsizei height, GCGLint border, GCGLenum format, GCGLenum type, TexImageSource&& source)
+@@ -976,6 +980,7 @@ void WebGL2RenderingContext::texImage3D(GCGLenum target, GCGLint level, GCGLint
+         return;
+ 
+     m_context->texImage3D(target, level, internalformat, width, height, depth, border, format, type,  offset);
++    trackTextureImage("texImage3D (PBO)", target, level, internalformat, format, type, width, height, depth);
+ }
+ 
+ ExceptionOr<void> WebGL2RenderingContext::texImage3D(GCGLenum target, GCGLint level, GCGLint internalformat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLint border, GCGLenum format, GCGLenum type, TexImageSource&& source)
+@@ -1174,6 +1179,7 @@ void WebGL2RenderingContext::compressedTexImage2D(GCGLenum target, GCGLint level
+     if (!validateCompressedTexFormat("compressedTexImage2D", internalformat))
+         return;
+     m_context->compressedTexImage2D(target, level, internalformat, width, height, border, imageSize, offset);
++    trackCompressedTextureImage("compressedTexImage2D (PBO)", target, level, width, height, 1, imageSize);
+ }
+ 
+ void WebGL2RenderingContext::compressedTexImage2D(GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLsizei width, GCGLsizei height, GCGLint border, ArrayBufferView& srcData, GCGLuint srcOffset, GCGLuint srcLengthOverride)
+@@ -1192,6 +1198,7 @@ void WebGL2RenderingContext::compressedTexImage2D(GCGLenum target, GCGLint level
+     if (!slice)
+         return;
+     m_context->compressedTexImage2D(target, level, internalformat, width, height, border, slice->byteLength(), makeGCGLSpan(slice->baseAddress(), slice->byteLength()));
++    trackCompressedTextureImage("compressedTexImage2D", target, level, width, height, 1, slice->byteLength());
+ }
+ 
+ void WebGL2RenderingContext::compressedTexImage3D(GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLint border, GCGLsizei imageSize, GCGLint64 offset)
+@@ -1207,6 +1214,7 @@ void WebGL2RenderingContext::compressedTexImage3D(GCGLenum target, GCGLint level
+     if (!validateTexture3DBinding("compressedTexImage3D", target))
+         return;
+     m_context->compressedTexImage3D(target, level, internalformat, width, height, depth, border, imageSize, offset);
++    trackCompressedTextureImage("compressedTexImage3D (PBO)", target, level, width, height, depth, imageSize);
+ }
+ 
+ void WebGL2RenderingContext::compressedTexImage3D(GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLint border, ArrayBufferView& srcData, GCGLuint srcOffset, GCGLuint srcLengthOverride)
+@@ -1228,6 +1236,7 @@ void WebGL2RenderingContext::compressedTexImage3D(GCGLenum target, GCGLint level
+         target, level, internalformat, width, height,
+         depth, border, slice->byteLength(),
+         makeGCGLSpan(slice->baseAddress(), slice->byteLength()));
++    trackCompressedTextureImage("compressedTexImage3D", target, level, width, height, depth, slice->byteLength());
+ }
+ 
+ void WebGL2RenderingContext::compressedTexSubImage2D(GCGLenum target, GCGLint level, GCGLint xoffset, GCGLint yoffset, GCGLsizei width, GCGLsizei height, GCGLenum format, ArrayBufferView& srcData)
+@@ -2942,6 +2951,7 @@ void WebGL2RenderingContext::renderbufferStorageHelper(GCGLenum target, GCGLsize
+         m_context->renderbufferStorageMultisample(target, samples, internalformat, width, height);
+     else
+         m_context->renderbufferStorage(target, internalformat, width, height);
++    trackRenderbufferStorage(samples ? "renderbufferStorageMultisample" : "renderbufferStorage", internalformat, samples, width, height);
+ }
+ 
+ GCGLuint WebGL2RenderingContext::maxTransformFeedbackSeparateAttribs() const
+diff --git a/Source/WebCore/html/canvas/WebGLBuffer.cpp b/Source/WebCore/html/canvas/WebGLBuffer.cpp
+index 44e40eec3424..d07922885033 100644
+--- a/Source/WebCore/html/canvas/WebGLBuffer.cpp
++++ b/Source/WebCore/html/canvas/WebGLBuffer.cpp
+@@ -30,6 +30,7 @@
+ 
+ #include "WebGLContextGroup.h"
+ #include "WebGLRenderingContextBase.h"
++#include "WebGLResourceTracker.h"
+ #include <JavaScriptCore/ArrayBuffer.h>
+ #include <wtf/Lock.h>
+ #include <wtf/Locker.h>
+@@ -45,6 +46,7 @@ WebGLBuffer::WebGLBuffer(WebGLRenderingContextBase& ctx)
+     : WebGLSharedObject(ctx)
+ {
+     setObject(ctx.graphicsContextGL()->createBuffer());
++    WebGLResourceTracker::singleton().bufferCreated(ctx.graphicsContextGL(), object());
+ }
+ 
+ WebGLBuffer::~WebGLBuffer()
+@@ -58,6 +60,7 @@ WebGLBuffer::~WebGLBuffer()
+ void WebGLBuffer::deleteObjectImpl(const AbstractLocker&, GraphicsContextGL* context3d, PlatformGLObject object)
+ {
+     context3d->deleteBuffer(object);
++    WebGLResourceTracker::singleton().bufferDeleted(context3d, object);
+ }
+ 
+ #if !USE(ANGLE)
+diff --git a/Source/WebCore/html/canvas/WebGLRenderbuffer.cpp b/Source/WebCore/html/canvas/WebGLRenderbuffer.cpp
+index fde9998e0fa1..b8c718d9ed92 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderbuffer.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderbuffer.cpp
+@@ -31,6 +31,7 @@
+ 
+ #include "WebGLContextGroup.h"
+ #include "WebGLRenderingContextBase.h"
++#include "WebGLResourceTracker.h"
+ #include <wtf/Lock.h>
+ #include <wtf/Locker.h>
+ 
+@@ -59,11 +60,13 @@ WebGLRenderbuffer::WebGLRenderbuffer(WebGLRenderingContextBase& ctx)
+     , m_hasEverBeenBound(false)
+ {
+     setObject(ctx.graphicsContextGL()->createRenderbuffer());
++    WebGLResourceTracker::singleton().renderbufferCreated(ctx.graphicsContextGL(), object());
+ }
+ 
+ void WebGLRenderbuffer::deleteObjectImpl(const AbstractLocker&, GraphicsContextGL* context3d, PlatformGLObject object)
+ {
+     context3d->deleteRenderbuffer(object);
++    WebGLResourceTracker::singleton().renderbufferDeleted(context3d, object);
+ }
+ 
+ }
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+index dc3aeb046022..e6a28bfbd118 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+@@ -108,6 +108,7 @@
+ #include "WebGLProgram.h"
+ #include "WebGLRenderbuffer.h"
+ #include "WebGLRenderingContext.h"
++#include "WebGLResourceTracker.h"
+ #include "WebGLSampler.h"
+ #include "WebGLShader.h"
+ #include "WebGLShaderPrecisionFormat.h"
+@@ -125,6 +126,8 @@
+ #include <JavaScriptCore/SlotVisitorInlines.h>
+ #include <JavaScriptCore/TypedArrayInlines.h>
+ #include <JavaScriptCore/Uint32Array.h>
++#include <cinttypes>
++#include <cmath>
+ #include <wtf/CheckedArithmetic.h>
+ #include <wtf/HashMap.h>
+ #include <wtf/HexNumber.h>
+@@ -1287,6 +1290,7 @@ void WebGLRenderingContextBase::setGraphicsContextGL(Ref<GraphicsContextGL>&& co
+ {
+     bool wasActive = m_context;
+     if (m_context) {
++        WebGLResourceTracker::singleton().contextObjectsDetached(resourceTrackerKey());
+         m_context->setClient(nullptr);
+         m_context = nullptr;
+     }
+@@ -1307,6 +1311,7 @@ void WebGLRenderingContextBase::destroyGraphicsContextGL()
+     if (m_context) {
+         // first release the big textures allocated for the FBOs
+         m_context->reshape(0,0);
++        WebGLResourceTracker::singleton().contextObjectsDetached(resourceTrackerKey());
+         m_context->setClient(nullptr);
+         m_context = nullptr;
+         removeActiveContext(*this);
+@@ -1877,8 +1882,10 @@ void WebGLRenderingContextBase::bufferData(GCGLenum target, long long size, GCGL
+     if (m_context->moveErrorsToSyntheticErrorList()) {
+         // The bufferData function failed. Tell the buffer it doesn't have the data it thinks it does.
+         buffer->disassociateBufferData();
++        return;
+     }
+ #endif
++    WebGLResourceTracker::singleton().bufferDataDefined(resourceTrackerKey(), buffer->object(), static_cast<uint64_t>(size), "bufferData");
+ }
+ 
+ void WebGLRenderingContextBase::bufferData(GCGLenum target, std::optional<BufferDataSource>&& data, GCGLenum usage)
+@@ -1907,8 +1914,10 @@ void WebGLRenderingContextBase::bufferData(GCGLenum target, std::optional<Buffer
+         if (m_context->moveErrorsToSyntheticErrorList()) {
+             // The bufferData function failed. Tell the buffer it doesn't have the data it thinks it does.
+             buffer->disassociateBufferData();
++            return;
+         }
+ #endif
++        WebGLResourceTracker::singleton().bufferDataDefined(resourceTrackerKey(), buffer->object(), data->byteLength(), "bufferData");
+     }, data.value());
+ }
+ 
+@@ -2084,9 +2093,12 @@ void WebGLRenderingContextBase::compressedTexImage2D(GCGLenum target, GCGLint le
+     if (!validateNPOTTextureLevel(width, height, level, "compressedTexImage2D"))
+         return;
+     m_context->moveErrorsToSyntheticErrorList();
++    bool outOfMemoryWasPending = hasPendingOutOfMemoryError();
+     static_cast<GraphicsContextGLOpenGL*>(m_context.get())->compressedTexImage2D(target, level, internalformat, width, height,
+         border, data.byteLength(), makeGCGLSpan(data.baseAddress(), data.byteLength()));
+-    if (m_context->moveErrorsToSyntheticErrorList()) {
++    bool failed = m_context->moveErrorsToSyntheticErrorList();
++    checkTextureOutOfMemory(outOfMemoryWasPending, "compressedTexImage2D", target, level, 1, internalformat, width, height, 1, 0, data.byteLength());
++    if (failed) {
+         // The compressedTexImage2D function failed. Tell the WebGLTexture it doesn't have the data for this level.
+         tex->markInvalid(target, level);
+         return;
+@@ -2095,6 +2107,7 @@ void WebGLRenderingContextBase::compressedTexImage2D(GCGLenum target, GCGLint le
+     tex->setLevelInfo(target, level, internalformat, width, height, GraphicsContextGL::UNSIGNED_BYTE);
+     tex->setCompressed();
+ #endif
++    trackCompressedTextureImage("compressedTexImage2D", target, level, width, height, 1, data.byteLength());
+ }
+ 
+ void WebGLRenderingContextBase::compressedTexSubImage2D(GCGLenum target, GCGLint level, GCGLint xoffset, GCGLint yoffset, GCGLsizei width, GCGLsizei height, GCGLenum format, ArrayBufferView& data)
+@@ -3080,6 +3093,7 @@ void WebGLRenderingContextBase::generateMipmap(GCGLenum target)
+     if (!validateTextureBinding("generateMipmap", target))
+         return;
+     m_context->generateMipmap(target);
++    trackMipmapsGenerated(target);
+ #else
+     auto tex = validateTextureBinding("generateMipmap", target);
+     if (!tex)
+@@ -3105,12 +3119,30 @@ void WebGLRenderingContextBase::generateMipmap(GCGLenum target)
+         needToResetMinFilter = true;
+     }
+ #endif
++    bool outOfMemoryWasPending = hasPendingOutOfMemoryError();
+     m_context->generateMipmap(target);
+ #if OS(DARWIN)
+     if (needToResetMinFilter)
+         m_context->texParameteri(target, GraphicsContextGL::TEXTURE_MIN_FILTER, tex->getMinFilter());
+ #endif
+     tex->generateMipmapLevelInfo();
++
++    // Estimate the memory of the levels generated from the base one, including all the cube faces.
++    GCGLenum baseTarget = target == GraphicsContextGL::TEXTURE_CUBE_MAP ? GraphicsContextGL::TEXTURE_CUBE_MAP_POSITIVE_X : target;
++    GCGLsizei baseWidth = tex->getWidth(baseTarget, 0);
++    GCGLsizei baseHeight = tex->getHeight(baseTarget, 0);
++    GCGLenum baseInternalFormat = tex->getInternalFormat(baseTarget, 0);
++    unsigned pixelBytes = WebGLResourceTracker::bytesPerPixel(baseInternalFormat, baseInternalFormat, tex->getType(baseTarget, 0));
++    GCGLsizei maxDimension = std::max(baseWidth, baseHeight);
++    GCGLint lastLevel = maxDimension > 0 ? static_cast<GCGLint>(std::log2(maxDimension)) : 0;
++    uint64_t requestedBytes = 0;
++    for (GCGLint mipLevel = 1; mipLevel <= lastLevel; ++mipLevel)
++        requestedBytes += static_cast<uint64_t>(pixelBytes) * std::max(baseWidth >> mipLevel, 1) * std::max(baseHeight >> mipLevel, 1);
++    if (target == GraphicsContextGL::TEXTURE_CUBE_MAP)
++        requestedBytes *= 6;
++    if (checkTextureOutOfMemory(outOfMemoryWasPending, "generateMipmap", target, 0, lastLevel + 1, baseInternalFormat, baseWidth, baseHeight, 1, 0, requestedBytes))
++        return;
++    trackMipmapsGenerated(target);
+ #endif
+ }
+ 
+@@ -4786,13 +4818,16 @@ void WebGLRenderingContextBase::renderbufferStorageImpl(GCGLenum target, GCGLsiz
+             return;
+         }
+         m_context->renderbufferStorage(target, internalformat, width, height);
++        trackRenderbufferStorage("renderbufferStorage", internalformat, 0, width, height);
+         m_renderbufferBinding->setInternalFormat(internalformat);
+         m_renderbufferBinding->setIsValid(true);
+         m_renderbufferBinding->setSize(width, height);
+         break;
+     case GraphicsContextGL::DEPTH_STENCIL:
+-        if (isDepthStencilSupported())
++        if (isDepthStencilSupported()) {
+             m_context->renderbufferStorage(target, GraphicsContextGL::DEPTH24_STENCIL8, width, height);
++            trackRenderbufferStorage("renderbufferStorage", GraphicsContextGL::DEPTH24_STENCIL8, 0, width, height);
++        }
+         m_renderbufferBinding->setSize(width, height);
+         m_renderbufferBinding->setIsValid(isDepthStencilSupported());
+         m_renderbufferBinding->setInternalFormat(internalformat);
+@@ -5222,6 +5257,7 @@ ExceptionOr<void> WebGLRenderingContextBase::texImageSourceHelper(TexImageFuncti
+ #if !USE(ANGLE)
+                     texture->setLevelInfo(target, level, internalformat, video->videoWidth(), video->videoHeight(), type);
+ #endif // !USE(ANGLE)
++                    trackTextureImage("texImage2D (video copy)", target, level, internalformat, format, type, static_cast<GCGLsizei>(video->videoWidth()), static_cast<GCGLsizei>(video->videoHeight()), 1);
+                     return { };
+                 }
+             }
+@@ -5436,14 +5472,23 @@ void WebGLRenderingContextBase::texImage2DBase(GCGLenum target, GCGLint level, G
+     ASSERT(validateTexFuncParameters("texImage2D", TexImageFunctionType::TexImage, SourceArrayBufferView, target, level, internalFormat, width, height, 1, border, format, type));
+     ASSERT(tex);
+     ASSERT(validateNPOTTextureLevel(width, height, level, "texImage2D"));
++    uint64_t requestedBytes = static_cast<uint64_t>(WebGLResourceTracker::bytesPerPixel(internalFormat, format, type)) * std::max(width, 0) * std::max(height, 0);
++    bool outOfMemoryWasPending = hasPendingOutOfMemoryError();
+     if (!pixels) {
+         if (!static_cast<GraphicsContextGLOpenGL*>(m_context.get())->texImage2DResourceSafe(target, level, internalFormat, width, height, border, format, type, m_unpackAlignment))
+             return;
++        if (checkTextureOutOfMemory(outOfMemoryWasPending, "texImage2D", target, level, 1, internalFormat, width, height, 1, 0, requestedBytes)) {
++            // Keep the existing WebGLTexture bookkeeping, but don't account memory that wasn't allocated.
++            tex->setLevelInfo(target, level, internalFormat, width, height, type);
++            return;
++        }
+     } else {
+         ASSERT(validateSettableTexInternalFormat("texImage2D", internalFormat));
+         m_context->moveErrorsToSyntheticErrorList();
+         m_context->texImage2D(target, level, internalFormat, width, height, border, format, type, makeGCGLSpan(pixels, byteLength));
+-        if (m_context->moveErrorsToSyntheticErrorList()) {
++        bool failed = m_context->moveErrorsToSyntheticErrorList();
++        checkTextureOutOfMemory(outOfMemoryWasPending, "texImage2D", target, level, 1, internalFormat, width, height, 1, 0, requestedBytes);
++        if (failed) {
+             // The texImage2D function failed. Tell the WebGLTexture it doesn't have the data for this level.
+             tex->markInvalid(target, level);
+             return;
+@@ -5451,6 +5496,7 @@ void WebGLRenderingContextBase::texImage2DBase(GCGLenum target, GCGLint level, G
+     }
+     tex->setLevelInfo(target, level, internalFormat, width, height, type);
+ #endif // USE(ANGLE)
++    trackTextureImage("texImage2D", target, level, internalFormat, format, type, width, height, 1);
+ }
+ 
+ void WebGLRenderingContextBase::texImage3DBase(GCGLenum target, GCGLint level, GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLint border, GCGLenum format, GCGLenum type, GCGLsizei byteLength, const void* pixels)
+@@ -5466,6 +5512,7 @@ void WebGLRenderingContextBase::texImage3DBase(GCGLenum target, GCGLint level, G
+     }
+     byteLength = std::min(byteLength, (GCGLsizei) bytesRequired);
+     m_context->texImage3D(target, level, internalFormat, width, height, depth, border, format, type, makeGCGLSpan(pixels, byteLength));
++    trackTextureImage("texImage3D", target, level, internalFormat, format, type, width, height, depth);
+ #else
+     UNUSED_PARAM(target);
+     UNUSED_PARAM(level);
+@@ -5483,6 +5530,119 @@ void WebGLRenderingContextBase::texImage3DBase(GCGLenum target, GCGLint level, G
+ #endif // USE(ANGLE)
+ }
+ 
++WebGLTexture* WebGLRenderingContextBase::textureBoundTo(GCGLenum target) const
++{
++    if (m_activeTextureUnit >= m_textureUnits.size())
++        return nullptr;
++    auto& unit = m_textureUnits[m_activeTextureUnit];
++    switch (target) {
++    case GraphicsContextGL::TEXTURE_2D:
++        return unit.texture2DBinding.get();
++    case GraphicsContextGL::TEXTURE_CUBE_MAP:
++    case GraphicsContextGL::TEXTURE_CUBE_MAP_POSITIVE_X:
++    case GraphicsContextGL::TEXTURE_CUBE_MAP_NEGATIVE_X:
++    case GraphicsContextGL::TEXTURE_CUBE_MAP_POSITIVE_Y:
++    case GraphicsContextGL::TEXTURE_CUBE_MAP_NEGATIVE_Y:
++    case GraphicsContextGL::TEXTURE_CUBE_MAP_POSITIVE_Z:
++    case GraphicsContextGL::TEXTURE_CUBE_MAP_NEGATIVE_Z:
++        return unit.textureCubeMapBinding.get();
++    case GraphicsContextGL::TEXTURE_3D:
++        return unit.texture3DBinding.get();
++    case GraphicsContextGL::TEXTURE_2D_ARRAY:
++        return unit.texture2DArrayBinding.get();
++    default:
++        return nullptr;
++    }
++}
++
++void WebGLRenderingContextBase::trackTextureImage(const char* operation, GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLenum format, GCGLenum type, GCGLsizei width, GCGLsizei height, GCGLsizei depth)
++{
++    RefPtr<WebGLTexture> texture = textureBoundTo(target);
++    if (!texture || !texture->object())
++        return;
++    WebGLResourceTracker::singleton().textureImageDefined(resourceTrackerKey(), texture->object(), target, level, width, height, depth,
++        WebGLResourceTracker::bytesPerPixel(internalformat, format, type), 0, operation);
++}
++
++void WebGLRenderingContextBase::trackCompressedTextureImage(const char* operation, GCGLenum target, GCGLint level, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLsizei imageSize)
++{
++    RefPtr<WebGLTexture> texture = textureBoundTo(target);
++    if (!texture || !texture->object())
++        return;
++    WebGLResourceTracker::singleton().textureImageDefined(resourceTrackerKey(), texture->object(), target, level, width, height, depth, 0, std::max<GCGLsizei>(imageSize, 0), operation);
++}
++
++void WebGLRenderingContextBase::trackRenderbufferStorage(const char* operation, GCGLenum internalformat, GCGLsizei samples, GCGLsizei width, GCGLsizei height)
++{
++    if (!m_renderbufferBinding || !m_renderbufferBinding->object())
++        return;
++    WebGLResourceTracker::singleton().renderbufferStorageDefined(resourceTrackerKey(), m_renderbufferBinding->object(), internalformat, samples, width, height, operation);
++}
++
++void WebGLRenderingContextBase::trackMipmapsGenerated(GCGLenum target)
++{
++    RefPtr<WebGLTexture> texture = textureBoundTo(target);
++    if (!texture || !texture->object())
++        return;
++
++    GCGLint baseLevel = 0;
++    GCGLint maxLevel = 1000;
++    if (isWebGL2()) {
++        baseLevel = m_context->getTexParameteri(target, GraphicsContextGL::TEXTURE_BASE_LEVEL);
++        maxLevel = m_context->getTexParameteri(target, GraphicsContextGL::TEXTURE_MAX_LEVEL);
++    }
++    WebGLResourceTracker::singleton().textureMipmapsGenerated(resourceTrackerKey(), texture->object(), target, baseLevel, maxLevel);
++}
++
++#if !USE(ANGLE)
++bool WebGLRenderingContextBase::hasPendingOutOfMemoryError()
++{
++    // There's no way to inspect the GL errors without consuming them, so take all the pending
++    // ones and synthesize them again, in the same order, for the application to get them.
++    Vector<GCGLenum, 4> errors;
++    // Set an arbitrary limit here to avoid a hang if a driver never clears the error.
++    for (unsigned i = 0; i < 100; ++i) {
++        GCGLenum error = m_context->getError();
++        if (error == GraphicsContextGL::NO_ERROR)
++            break;
++        errors.append(error);
++    }
++    for (auto error : errors)
++        m_context->synthesizeGLError(error);
++    return errors.contains(GraphicsContextGL::OUT_OF_MEMORY);
++}
++
++static double bytesToMiB(uint64_t bytes)
++{
++    return static_cast<double>(bytes) / (1024.0 * 1024.0);
++}
++
++bool WebGLRenderingContextBase::checkTextureOutOfMemory(bool outOfMemoryWasPending, const char* operation, GCGLenum target, GCGLint level, GCGLsizei levels, GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLsizei samples, uint64_t requestedBytes)
++{
++    // GL keeps a single instance of each error, so an OUT_OF_MEMORY that was already pending
++    // before the call hides a new one.
++    if (outOfMemoryWasPending || !hasPendingOutOfMemoryError())
++        return false;
++
++    RefPtr<WebGLTexture> texture = textureBoundTo(target);
++    auto totals = WebGLResourceTracker::singleton().totals();
++    uint64_t total = totals.textureBytes + totals.renderbufferBytes + totals.bufferBytes;
++    WTFLogAlways("[WebGL] [%.6f] OUT OF MEMORY: %s failed for texture %u (target 0x%04X, level %d, "
++        "levels %d, size %dx%dx%d, samples %d, internal format 0x%04X, requested ~%" PRIu64 " bytes, %.2f MiB) => allocated so far: "
++        "textures: %" PRIu64 " (%" PRIu64 " bytes, %.2f MiB) | "
++        "renderbuffers: %" PRIu64 " (%" PRIu64 " bytes, %.2f MiB) | "
++        "buffers: %" PRIu64 " (%" PRIu64 " bytes, %.2f MiB) | "
++        "total: %" PRIu64 " bytes (%.2f MiB)",
++        WebGLResourceTracker::elapsedSeconds(), operation, texture ? texture->object() : 0, target, level,
++        levels, width, height, depth, samples, internalFormat, requestedBytes, bytesToMiB(requestedBytes),
++        totals.textureCount, totals.textureBytes, bytesToMiB(totals.textureBytes),
++        totals.renderbufferCount, totals.renderbufferBytes, bytesToMiB(totals.renderbufferBytes),
++        totals.bufferCount, totals.bufferBytes, bytesToMiB(totals.bufferBytes),
++        total, bytesToMiB(total));
++    return true;
++}
++#endif
++
+ void WebGLRenderingContextBase::texSubImage2DBase(GCGLenum target, GCGLint level, GCGLint xoffset, GCGLint yoffset, GCGLsizei width, GCGLsizei height, GCGLenum internalFormat, GCGLenum format, GCGLenum type, GCGLsizei byteLength, const void* pixels)
+ {
+     ASSERT(!isContextLost());
+@@ -6103,6 +6263,8 @@ void WebGLRenderingContextBase::copyTexImage2D(GCGLenum target, GCGLint level, G
+ #if USE(ANGLE)
+     clearIfComposited(CallerTypeOther);
+     m_context->copyTexImage2D(target, level, internalFormat, x, y, width, height, border);
++    // For unsized internal formats the real type depends on the read framebuffer; assume UNSIGNED_BYTE.
++    trackTextureImage("copyTexImage2D", target, level, internalFormat, internalFormat, GraphicsContextGL::UNSIGNED_BYTE, width, height, 1);
+ #else
+     if (!isTexInternalFormatColorBufferCombinationValid(internalFormat, getBoundReadFramebufferColorFormat())) {
+         synthesizeGLError(GraphicsContextGL::INVALID_OPERATION, "copyTexImage2D", "framebuffer is incompatible format");
+@@ -6119,6 +6281,9 @@ void WebGLRenderingContextBase::copyTexImage2D(GCGLenum target, GCGLint level, G
+     }
+     clearIfComposited(CallerTypeOther);
+ 
++    uint64_t requestedBytes = static_cast<uint64_t>(WebGLResourceTracker::bytesPerPixel(internalFormat, internalFormat, GraphicsContextGL::UNSIGNED_BYTE)) * std::max(width, 0) * std::max(height, 0);
++    bool outOfMemoryWasPending = hasPendingOutOfMemoryError();
++
+     GCGLint clippedX, clippedY;
+     GCGLsizei clippedWidth, clippedHeight;
+     if (clip2D(x, y, width, height, getBoundReadFramebufferWidth(), getBoundReadFramebufferHeight(), &clippedX, &clippedY, &clippedWidth, &clippedHeight)) {
+@@ -6133,6 +6298,10 @@ void WebGLRenderingContextBase::copyTexImage2D(GCGLenum target, GCGLint level, G
+ 
+     // FIXME: if the framebuffer is not complete, none of the below should be executed.
+     tex->setLevelInfo(target, level, internalFormat, width, height, GraphicsContextGL::UNSIGNED_BYTE);
++    if (checkTextureOutOfMemory(outOfMemoryWasPending, "copyTexImage2D", target, level, 1, internalFormat, width, height, 1, 0, requestedBytes))
++        return;
++    // For unsized internal formats the real type depends on the read framebuffer; assume UNSIGNED_BYTE.
++    trackTextureImage("copyTexImage2D", target, level, internalFormat, internalFormat, GraphicsContextGL::UNSIGNED_BYTE, width, height, 1);
+ #endif
+ }
+ 
+@@ -6943,6 +7112,7 @@ void WebGLRenderingContextBase::createFallbackBlackTextures1x1()
+     m_context->bindTexture(GraphicsContextGL::TEXTURE_2D, m_blackTexture2D->object());
+     m_context->texImage2D(GraphicsContextGL::TEXTURE_2D, 0, GraphicsContextGL::RGBA, 1, 1,
+         0, GraphicsContextGL::RGBA, GraphicsContextGL::UNSIGNED_BYTE, black);
++    WebGLResourceTracker::singleton().textureImageDefined(resourceTrackerKey(), m_blackTexture2D->object(), GraphicsContextGL::TEXTURE_2D, 0, 1, 1, 1, 4, 0, "texImage2D (fallback black texture)");
+     m_context->bindTexture(GraphicsContextGL::TEXTURE_2D, 0);
+     m_blackTextureCubeMap = createTexture();
+     m_context->bindTexture(GraphicsContextGL::TEXTURE_CUBE_MAP, m_blackTextureCubeMap->object());
+@@ -6958,6 +7128,8 @@ void WebGLRenderingContextBase::createFallbackBlackTextures1x1()
+         0, GraphicsContextGL::RGBA, GraphicsContextGL::UNSIGNED_BYTE, black);
+     m_context->texImage2D(GraphicsContextGL::TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GraphicsContextGL::RGBA, 1, 1,
+         0, GraphicsContextGL::RGBA, GraphicsContextGL::UNSIGNED_BYTE, black);
++    for (GCGLenum face = GraphicsContextGL::TEXTURE_CUBE_MAP_POSITIVE_X; face <= GraphicsContextGL::TEXTURE_CUBE_MAP_NEGATIVE_Z; ++face)
++        WebGLResourceTracker::singleton().textureImageDefined(resourceTrackerKey(), m_blackTextureCubeMap->object(), face, 0, 1, 1, 1, 4, 0, "texImage2D (fallback black texture)");
+     m_context->bindTexture(GraphicsContextGL::TEXTURE_CUBE_MAP, 0);
+ }
+ 
+@@ -7908,6 +8080,7 @@ std::optional<bool> WebGLRenderingContextBase::simulateVertexAttrib0(GCGLuint nu
+         }
+         m_vertexAttrib0BufferSize = bufferDataSize;
+         m_forceAttrib0BufferRefill = true;
++        WebGLResourceTracker::singleton().bufferDataDefined(resourceTrackerKey(), m_vertexAttrib0Buffer->object(), static_cast<uint64_t>(bufferDataSize), "bufferData (vertexAttrib0 emulation)");
+     }
+ 
+     auto& attribValue = m_vertexAttribValue[0];
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.h b/Source/WebCore/html/canvas/WebGLRenderingContextBase.h
+index 973116f0888a..f546d26ac17a 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.h
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.h
+@@ -940,6 +940,23 @@ protected:
+     void texImageImpl(TexImageFunctionID, GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLint xoffset, GCGLint yoffset, GCGLint zoffset, GCGLenum format, GCGLenum type, Image*, GraphicsContextGL::DOMSource, bool flipY, bool premultiplyAlpha, bool ignoreNativeImageAlphaPremultiplication, const IntRect&, GCGLsizei depth, GCGLint unpackImageHeight);
+     void texImage2DBase(GCGLenum target, GCGLint level, GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLint border, GCGLenum format, GCGLenum type, GCGLsizei byteLength, const void* pixels);
+     void texImage3DBase(GCGLenum target, GCGLint level, GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLint border, GCGLenum format, GCGLenum type, GCGLsizei byteLength, const void* pixels);
++
++    // WebGL resource memory tracking (see WebGLResourceTracker.h). These must be called after
++    // the call to the GraphicsContextGL that defines the storage of the bound object.
++    const void* resourceTrackerKey() const { return m_context.get(); }
++    WebGLTexture* textureBoundTo(GCGLenum target) const;
++    void trackTextureImage(const char* operation, GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLenum format, GCGLenum type, GCGLsizei width, GCGLsizei height, GCGLsizei depth);
++    void trackCompressedTextureImage(const char* operation, GCGLenum target, GCGLint level, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLsizei imageSize);
++    void trackRenderbufferStorage(const char* operation, GCGLenum internalformat, GCGLsizei samples, GCGLsizei width, GCGLsizei height);
++    void trackMipmapsGenerated(GCGLenum target);
++#if !USE(ANGLE)
++    // Out of memory detection for the calls that allocate texture storage. Call
++    // hasPendingOutOfMemoryError() before the call to the GraphicsContextGL, and pass its result to
++    // checkTextureOutOfMemory() after it. If the call raised a new OUT_OF_MEMORY error, an error
++    // message is logged. The GL errors are kept, so the application still gets them from getError().
++    bool hasPendingOutOfMemoryError();
++    bool checkTextureOutOfMemory(bool outOfMemoryWasPending, const char* operation, GCGLenum target, GCGLint level, GCGLsizei levels, GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLsizei samples, uint64_t requestedBytes);
++#endif
+     void texSubImage2DBase(GCGLenum target, GCGLint level, GCGLint xoffset, GCGLint yoffset, GCGLsizei width, GCGLsizei height, GCGLenum internalFormat, GCGLenum format, GCGLenum type, GCGLsizei byteLength, const void* pixels);
+     void texSubImage3DBase(GCGLenum target, GCGLint level, GCGLint xoffset, GCGLint yoffset, GCGLint zoffset, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLenum internalFormat, GCGLenum format, GCGLenum type, GCGLsizei byteLength, const void* pixels);
+     static const char* getTexImageFunctionName(TexImageFunctionID);
+diff --git a/Source/WebCore/html/canvas/WebGLResourceTracker.cpp b/Source/WebCore/html/canvas/WebGLResourceTracker.cpp
+new file mode 100644
+index 000000000000..ba81a77d347e
+--- /dev/null
++++ b/Source/WebCore/html/canvas/WebGLResourceTracker.cpp
+@@ -0,0 +1,585 @@
++/*
++ * Copyright (C) 2026 Igalia S.L.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS''
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
++ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
++ * THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include "config.h"
++#include "WebGLResourceTracker.h"
++
++#if ENABLE(WEBGL)
++
++#include "GraphicsContextGL.h"
++#include <algorithm>
++#include <cinttypes>
++#include <cmath>
++#include <optional>
++#include <wtf/MonotonicTime.h>
++#include <wtf/Vector.h>
++
++namespace WebCore {
++
++using GL = GraphicsContextGL;
++
++// Not defined in this version of GraphicsContextGL.
++static constexpr GCGLenum BGRA8_EXT = 0x93A1;
++static constexpr GCGLenum DEPTH_COMPONENT32_OES = 0x81A7;
++
++static const char* webGLResourceTypeName(unsigned type)
++{
++    switch (type) {
++    case 0:
++        return "texture";
++    case 1:
++        return "renderbuffer";
++    case 2:
++        return "buffer";
++    }
++    return "unknown";
++}
++
++static double webGLResourceBytesToMiB(uint64_t bytes)
++{
++    return static_cast<double>(bytes) / (1024.0 * 1024.0);
++}
++
++WebGLResourceTracker& WebGLResourceTracker::singleton()
++{
++    static NeverDestroyed<WebGLResourceTracker> tracker;
++    return tracker;
++}
++
++unsigned WebGLResourceTracker::bytesPerPixel(GCGLenum internalFormat, GCGLenum format, GCGLenum type)
++{
++    // Sized internal formats.
++    switch (internalFormat) {
++    case GL::R8:
++    case GL::R8_SNORM:
++    case GL::R8UI:
++    case GL::R8I:
++    case GL::STENCIL_INDEX8:
++        return 1;
++    case GL::R16F:
++    case GL::R16UI:
++    case GL::R16I:
++    case GL::R16_EXT:
++    case GL::R16_SNORM_EXT:
++    case GL::RG8:
++    case GL::RG8_SNORM:
++    case GL::RG8UI:
++    case GL::RG8I:
++    case GL::RGB565:
++    case GL::RGBA4:
++    case GL::RGB5_A1:
++    case GL::DEPTH_COMPONENT16:
++        return 2;
++    case GL::RGB8:
++    case GL::SRGB8:
++    case GL::RGB8_SNORM:
++    case GL::RGB8UI:
++    case GL::RGB8I:
++        return 3;
++    case GL::R32F:
++    case GL::R32UI:
++    case GL::R32I:
++    case GL::RG16F:
++    case GL::RG16UI:
++    case GL::RG16I:
++    case GL::RG16_EXT:
++    case GL::RG16_SNORM_EXT:
++    case GL::RGBA8:
++    case GL::SRGB8_ALPHA8:
++    case GL::RGBA8_SNORM:
++    case GL::RGBA8UI:
++    case GL::RGBA8I:
++    case BGRA8_EXT:
++    case GL::RGB10_A2:
++    case GL::RGB10_A2UI:
++    case GL::R11F_G11F_B10F:
++    case GL::RGB9_E5:
++    case GL::DEPTH_COMPONENT24:
++    case DEPTH_COMPONENT32_OES:
++    case GL::DEPTH_COMPONENT32F:
++    case GL::DEPTH24_STENCIL8:
++        return 4;
++    case GL::RGB16F:
++    case GL::RGB16UI:
++    case GL::RGB16I:
++    case GL::RGB16_EXT:
++    case GL::RGB16_SNORM_EXT:
++        return 6;
++    case GL::RG32F:
++    case GL::RG32UI:
++    case GL::RG32I:
++    case GL::RGBA16F:
++    case GL::RGBA16UI:
++    case GL::RGBA16I:
++    case GL::RGBA16_EXT:
++    case GL::RGBA16_SNORM_EXT:
++    case GL::DEPTH32F_STENCIL8:
++        return 8;
++    case GL::RGB32F:
++    case GL::RGB32UI:
++    case GL::RGB32I:
++        return 12;
++    case GL::RGBA32F:
++    case GL::RGBA32UI:
++    case GL::RGBA32I:
++        return 16;
++    default:
++        break;
++    }
++
++    // Unsized internal formats: the size depends on format and type.
++    switch (type) {
++    case GL::UNSIGNED_SHORT_5_6_5:
++    case GL::UNSIGNED_SHORT_4_4_4_4:
++    case GL::UNSIGNED_SHORT_5_5_5_1:
++        return 2;
++    case GL::UNSIGNED_INT_2_10_10_10_REV:
++    case GL::UNSIGNED_INT_10F_11F_11F_REV:
++    case GL::UNSIGNED_INT_5_9_9_9_REV:
++    case GL::UNSIGNED_INT_24_8:
++        return 4;
++    case GL::FLOAT_32_UNSIGNED_INT_24_8_REV:
++        return 8;
++    default:
++        break;
++    }
++
++    unsigned typeSize = 0;
++    switch (type) {
++    case GL::BYTE:
++    case GL::UNSIGNED_BYTE:
++        typeSize = 1;
++        break;
++    case GL::SHORT:
++    case GL::UNSIGNED_SHORT:
++    case GL::HALF_FLOAT:
++    case GL::HALF_FLOAT_OES:
++        typeSize = 2;
++        break;
++    case GL::INT:
++    case GL::UNSIGNED_INT:
++    case GL::FLOAT:
++        typeSize = 4;
++        break;
++    default:
++        return 0;
++    }
++
++    switch (format) {
++    case GL::RED:
++    case GL::RED_INTEGER:
++    case GL::ALPHA:
++    case GL::LUMINANCE:
++        return typeSize;
++    case GL::DEPTH_COMPONENT:
++        return typeSize;
++    case GL::RG:
++    case GL::RG_INTEGER:
++    case GL::LUMINANCE_ALPHA:
++        return 2 * typeSize;
++    case GL::RGB:
++    case GL::RGB_INTEGER:
++    case GL::SRGB_EXT:
++        return 3 * typeSize;
++    case GL::RGBA:
++    case GL::RGBA_INTEGER:
++    case GL::BGRA_EXT:
++    case GL::SRGB_ALPHA_EXT:
++        return 4 * typeSize;
++    default:
++        return 0;
++    }
++}
++
++uint64_t WebGLResourceTracker::compressedImageSize(GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth)
++{
++    unsigned blockWidth = 4;
++    unsigned blockHeight = 4;
++    unsigned blockBytes = 0;
++
++    switch (internalFormat) {
++    case GL::COMPRESSED_RGB_S3TC_DXT1_EXT:
++    case GL::COMPRESSED_RGBA_S3TC_DXT1_EXT:
++    case GL::COMPRESSED_SRGB_S3TC_DXT1_EXT:
++    case GL::COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
++    case GL::ETC1_RGB8_OES:
++    case GL::COMPRESSED_R11_EAC:
++    case GL::COMPRESSED_SIGNED_R11_EAC:
++    case GL::COMPRESSED_RGB8_ETC2:
++    case GL::COMPRESSED_SRGB8_ETC2:
++    case GL::COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
++    case GL::COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2:
++    case GL::COMPRESSED_RED_RGTC1_EXT:
++    case GL::COMPRESSED_SIGNED_RED_RGTC1_EXT:
++    case GL::COMPRESSED_ATC_RGB_AMD:
++        blockBytes = 8;
++        break;
++    case GL::COMPRESSED_RGBA_S3TC_DXT3_EXT:
++    case GL::COMPRESSED_RGBA_S3TC_DXT5_EXT:
++    case GL::COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
++    case GL::COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
++    case GL::COMPRESSED_RG11_EAC:
++    case GL::COMPRESSED_SIGNED_RG11_EAC:
++    case GL::COMPRESSED_RGBA8_ETC2_EAC:
++    case GL::COMPRESSED_SRGB8_ALPHA8_ETC2_EAC:
++    case GL::COMPRESSED_RED_GREEN_RGTC2_EXT:
++    case GL::COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT:
++    case GL::COMPRESSED_RGBA_BPTC_UNORM_EXT:
++    case GL::COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT:
++    case GL::COMPRESSED_RGB_BPTC_SIGNED_FLOAT_EXT:
++    case GL::COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_EXT:
++    case GL::COMPRESSED_ATC_RGBA_EXPLICIT_ALPHA_AMD:
++    case GL::COMPRESSED_ATC_RGBA_INTERPOLATED_ALPHA_AMD:
++        blockBytes = 16;
++        break;
++    case GL::COMPRESSED_RGB_PVRTC_4BPPV1_IMG:
++    case GL::COMPRESSED_RGBA_PVRTC_4BPPV1_IMG:
++        if (width <= 0 || height <= 0 || depth <= 0)
++            return 0;
++        return (static_cast<uint64_t>(std::max(width, 8)) * std::max(height, 8) * 4 + 7) / 8 * depth;
++    case GL::COMPRESSED_RGB_PVRTC_2BPPV1_IMG:
++    case GL::COMPRESSED_RGBA_PVRTC_2BPPV1_IMG:
++        if (width <= 0 || height <= 0 || depth <= 0)
++            return 0;
++        return (static_cast<uint64_t>(std::max(width, 16)) * std::max(height, 8) * 2 + 7) / 8 * depth;
++    default: {
++        // ASTC: all the block sizes use 16 bytes per block.
++        static constexpr std::pair<unsigned, unsigned> astcBlocks[] = {
++            { 4, 4 }, { 5, 4 }, { 5, 5 }, { 6, 5 }, { 6, 6 }, { 8, 5 }, { 8, 6 },
++            { 8, 8 }, { 10, 5 }, { 10, 6 }, { 10, 8 }, { 10, 10 }, { 12, 10 }, { 12, 12 }
++        };
++        std::optional<unsigned> astcIndex;
++        if (internalFormat >= GL::COMPRESSED_RGBA_ASTC_4x4_KHR && internalFormat <= GL::COMPRESSED_RGBA_ASTC_12x12_KHR)
++            astcIndex = internalFormat - GL::COMPRESSED_RGBA_ASTC_4x4_KHR;
++        else if (internalFormat >= GL::COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR && internalFormat <= GL::COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR)
++            astcIndex = internalFormat - GL::COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR;
++        if (!astcIndex || *astcIndex >= std::size(astcBlocks))
++            return 0;
++        blockWidth = astcBlocks[*astcIndex].first;
++        blockHeight = astcBlocks[*astcIndex].second;
++        blockBytes = 16;
++        break;
++    }
++    }
++
++    if (width <= 0 || height <= 0 || depth <= 0)
++        return 0;
++    uint64_t blocksWide = (static_cast<uint64_t>(width) + blockWidth - 1) / blockWidth;
++    uint64_t blocksHigh = (static_cast<uint64_t>(height) + blockHeight - 1) / blockHeight;
++    return blocksWide * blocksHigh * blockBytes * depth;
++}
++
++WebGLResourceTracker::Resource& WebGLResourceTracker::ensureResource(const void* context, GCGLuint name, Type type)
++{
++    auto it = m_resources.find({ context, name });
++    if (it != m_resources.end() && it->second.type == type)
++        return it->second;
++
++    // Resource not created through the tracked paths: start tracking it now.
++    WTFLogAlways("[WebGL] [%.6f] WARNING: %s %u (context %p) was not tracked, tracking it from now on", elapsedSeconds(), webGLResourceTypeName(static_cast<unsigned>(type)), name, context);
++    addResource(context, name, type, "implicitly created");
++    return m_resources.find({ context, name })->second;
++}
++
++double WebGLResourceTracker::elapsedSeconds()
++{
++    // Initialized (thread-safely) on the first call.
++    static const MonotonicTime startTime = MonotonicTime::now();
++    return (MonotonicTime::now() - startTime).seconds();
++}
++
++void WebGLResourceTracker::addResource(const void* context, GCGLuint name, Type type, const char* operation)
++{
++    if (!name)
++        return;
++
++    auto result = m_resources.emplace(ObjectKey { context, name }, Resource(type));
++    if (!result.second) {
++        // Name reused without a delete (shouldn't happen): drop the old entry first.
++        removeResource(context, name, result.first->second.type, "replaced");
++        result = m_resources.emplace(ObjectKey { context, name }, Resource(type));
++    }
++
++    m_totals[static_cast<size_t>(type)].count++;
++    logTotals(operation, type, name, 0);
++}
++
++void WebGLResourceTracker::removeResource(const void* context, GCGLuint name, Type type, const char* operation)
++{
++    if (!name)
++        return;
++
++    auto it = m_resources.find({ context, name });
++    if (it == m_resources.end() || it->second.type != type)
++        return;
++
++    auto& totals = m_totals[static_cast<size_t>(type)];
++    uint64_t bytes = it->second.bytes;
++    totals.count--;
++    totals.bytes -= bytes;
++    m_resources.erase(it);
++    logTotals(operation, type, name, -static_cast<int64_t>(bytes));
++}
++
++void WebGLResourceTracker::setResourceBytes(Resource& resource, uint64_t bytes)
++{
++    auto& totals = m_totals[static_cast<size_t>(resource.type)];
++    totals.bytes = totals.bytes - resource.bytes + bytes;
++    resource.bytes = bytes;
++}
++
++void WebGLResourceTracker::setTextureImage(Resource& resource, GCGLenum target, GCGLint level, const ImageInfo& image)
++{
++    auto& slot = resource.images[{ target, level }];
++    uint64_t newBytes = resource.bytes - slot.bytes + image.bytes;
++    slot = image;
++    setResourceBytes(resource, newBytes);
++}
++
++void WebGLResourceTracker::logChange(const char* operation, Type type, GCGLuint name, uint64_t previousBytes, uint64_t newBytes)
++{
++    // Only log when the totals change.
++    if (previousBytes != newBytes)
++        logTotals(operation, type, name, static_cast<int64_t>(newBytes) - static_cast<int64_t>(previousBytes));
++}
++
++void WebGLResourceTracker::logTotals(const char* operation, Type type, GCGLuint name, int64_t deltaBytes)
++{
++    const auto& textures = m_totals[static_cast<size_t>(Type::Texture)];
++    const auto& renderbuffers = m_totals[static_cast<size_t>(Type::Renderbuffer)];
++    const auto& buffers = m_totals[static_cast<size_t>(Type::Buffer)];
++    uint64_t total = textures.bytes + renderbuffers.bytes + buffers.bytes;
++
++    WTFLogAlways("[WebGL] [%.6f] %s %s %u (%+" PRId64 " bytes) => "
++        "textures: %" PRIu64 " (%" PRIu64 " bytes, %.2f MiB) | "
++        "renderbuffers: %" PRIu64 " (%" PRIu64 " bytes, %.2f MiB) | "
++        "buffers: %" PRIu64 " (%" PRIu64 " bytes, %.2f MiB) | "
++        "total: %" PRIu64 " bytes (%.2f MiB)",
++        elapsedSeconds(), operation, webGLResourceTypeName(static_cast<unsigned>(type)), name, deltaBytes,
++        textures.count, textures.bytes, webGLResourceBytesToMiB(textures.bytes),
++        renderbuffers.count, renderbuffers.bytes, webGLResourceBytesToMiB(renderbuffers.bytes),
++        buffers.count, buffers.bytes, webGLResourceBytesToMiB(buffers.bytes),
++        total, webGLResourceBytesToMiB(total));
++}
++
++WebGLResourceTracker::TotalsSnapshot WebGLResourceTracker::totals()
++{
++    Locker locker { m_lock };
++    const auto& textures = m_totals[static_cast<size_t>(Type::Texture)];
++    const auto& renderbuffers = m_totals[static_cast<size_t>(Type::Renderbuffer)];
++    const auto& buffers = m_totals[static_cast<size_t>(Type::Buffer)];
++    return { textures.count, textures.bytes, renderbuffers.count, renderbuffers.bytes, buffers.count, buffers.bytes };
++}
++
++void WebGLResourceTracker::textureCreated(const void* context, GCGLuint texture)
++{
++    Locker locker { m_lock };
++    addResource(context, texture, Type::Texture, "created");
++}
++
++void WebGLResourceTracker::textureDeleted(const void* context, GCGLuint texture)
++{
++    Locker locker { m_lock };
++    removeResource(context, texture, Type::Texture, "deleted");
++}
++
++void WebGLResourceTracker::textureImageDefined(const void* context, GCGLuint texture, GCGLenum target, GCGLint level, GCGLsizei width, GCGLsizei height, GCGLsizei depth, unsigned bytesPerPixel, uint64_t compressedSize, const char* operation)
++{
++    if (!texture)
++        return;
++
++    Locker locker { m_lock };
++    auto& resource = ensureResource(context, texture, Type::Texture);
++
++    ImageInfo image { width, height, depth, bytesPerPixel, 0 };
++    if (width > 0 && height > 0 && depth > 0)
++        image.bytes = bytesPerPixel ? static_cast<uint64_t>(bytesPerPixel) * width * height * depth : compressedSize;
++
++    uint64_t previousBytes = resource.bytes;
++    setTextureImage(resource, target, level, image);
++    logChange(operation, Type::Texture, texture, previousBytes, resource.bytes);
++}
++
++void WebGLResourceTracker::textureStorageDefined(const void* context, GCGLuint texture, GCGLenum target, GCGLsizei levels, GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, const char* operation)
++{
++    if (!texture)
++        return;
++
++    Locker locker { m_lock };
++    auto& resource = ensureResource(context, texture, Type::Texture);
++    resource.immutable = true;
++
++    uint64_t previousBytes = resource.bytes;
++    resource.images.clear();
++    setResourceBytes(resource, 0);
++
++    unsigned pixelBytes = bytesPerPixel(internalFormat, GL::NONE, GL::NONE);
++    bool isArray = target == GL::TEXTURE_2D_ARRAY;
++    for (GCGLsizei level = 0; level < levels; ++level) {
++        ImageInfo image {
++            std::max(width >> level, 1),
++            std::max(height >> level, 1),
++            isArray ? depth : std::max(depth >> level, 1),
++            pixelBytes,
++            0
++        };
++        image.bytes = pixelBytes ? static_cast<uint64_t>(pixelBytes) * image.width * image.height * image.depth : compressedImageSize(internalFormat, image.width, image.height, image.depth);
++        if (target == GL::TEXTURE_CUBE_MAP) {
++            for (GCGLenum face = GL::TEXTURE_CUBE_MAP_POSITIVE_X; face <= GL::TEXTURE_CUBE_MAP_NEGATIVE_Z; ++face)
++                setTextureImage(resource, face, level, image);
++        } else
++            setTextureImage(resource, target, level, image);
++    }
++
++    logChange(operation, Type::Texture, texture, previousBytes, resource.bytes);
++}
++
++void WebGLResourceTracker::textureMipmapsGenerated(const void* context, GCGLuint texture, GCGLenum target, GCGLint baseLevel, GCGLint maxLevel)
++{
++    if (!texture)
++        return;
++
++    Locker locker { m_lock };
++    auto& resource = ensureResource(context, texture, Type::Texture);
++    // Immutable textures already have all their levels allocated.
++    if (resource.immutable)
++        return;
++
++    GCGLenum baseTarget = target == GL::TEXTURE_CUBE_MAP ? GL::TEXTURE_CUBE_MAP_POSITIVE_X : target;
++    auto baseIt = resource.images.find({ baseTarget, baseLevel });
++    if (baseIt == resource.images.end())
++        return;
++    ImageInfo base = baseIt->second;
++    if (!base.bytes || !base.bytesPerPixel)
++        return;
++
++    // Last level of the mip chain: floor(log2(max dimension)) levels above the base one.
++    int maxDimension = std::max(base.width, base.height);
++    if (target == GL::TEXTURE_3D)
++        maxDimension = std::max(maxDimension, base.depth);
++    GCGLint lastLevel = std::min<GCGLint>(baseLevel + static_cast<GCGLint>(std::log2(maxDimension)), maxLevel);
++    if (lastLevel <= baseLevel)
++        return;
++
++    uint64_t previousBytes = resource.bytes;
++    bool isArray = target == GL::TEXTURE_2D_ARRAY;
++    for (GCGLint level = baseLevel + 1; level <= lastLevel; ++level) {
++        int relativeLevel = level - baseLevel;
++        ImageInfo image {
++            std::max(base.width >> relativeLevel, 1),
++            std::max(base.height >> relativeLevel, 1),
++            isArray ? base.depth : std::max(base.depth >> relativeLevel, 1),
++            base.bytesPerPixel,
++            0
++        };
++        image.bytes = static_cast<uint64_t>(image.bytesPerPixel) * image.width * image.height * image.depth;
++        if (target == GL::TEXTURE_CUBE_MAP) {
++            for (GCGLenum face = GL::TEXTURE_CUBE_MAP_POSITIVE_X; face <= GL::TEXTURE_CUBE_MAP_NEGATIVE_Z; ++face)
++                setTextureImage(resource, face, level, image);
++        } else
++            setTextureImage(resource, target, level, image);
++    }
++
++    logChange("generateMipmap", Type::Texture, texture, previousBytes, resource.bytes);
++}
++
++void WebGLResourceTracker::renderbufferCreated(const void* context, GCGLuint renderbuffer)
++{
++    Locker locker { m_lock };
++    addResource(context, renderbuffer, Type::Renderbuffer, "created");
++}
++
++void WebGLResourceTracker::renderbufferDeleted(const void* context, GCGLuint renderbuffer)
++{
++    Locker locker { m_lock };
++    removeResource(context, renderbuffer, Type::Renderbuffer, "deleted");
++}
++
++void WebGLResourceTracker::renderbufferStorageDefined(const void* context, GCGLuint renderbuffer, GCGLenum internalFormat, GCGLsizei samples, GCGLsizei width, GCGLsizei height, const char* operation)
++{
++    if (!renderbuffer)
++        return;
++
++    Locker locker { m_lock };
++    auto& resource = ensureResource(context, renderbuffer, Type::Renderbuffer);
++    uint64_t bytes = 0;
++    if (width > 0 && height > 0)
++        bytes = static_cast<uint64_t>(bytesPerPixel(internalFormat, GL::NONE, GL::NONE)) * width * height * std::max<GCGLsizei>(samples, 1);
++
++    uint64_t previousBytes = resource.bytes;
++    setResourceBytes(resource, bytes);
++    logChange(operation, Type::Renderbuffer, renderbuffer, previousBytes, resource.bytes);
++}
++
++void WebGLResourceTracker::bufferCreated(const void* context, GCGLuint buffer)
++{
++    Locker locker { m_lock };
++    addResource(context, buffer, Type::Buffer, "created");
++}
++
++void WebGLResourceTracker::bufferDeleted(const void* context, GCGLuint buffer)
++{
++    Locker locker { m_lock };
++    removeResource(context, buffer, Type::Buffer, "deleted");
++}
++
++void WebGLResourceTracker::bufferDataDefined(const void* context, GCGLuint buffer, uint64_t size, const char* operation)
++{
++    if (!buffer)
++        return;
++
++    Locker locker { m_lock };
++    auto& resource = ensureResource(context, buffer, Type::Buffer);
++    uint64_t previousBytes = resource.bytes;
++    setResourceBytes(resource, size);
++    logChange(operation, Type::Buffer, buffer, previousBytes, resource.bytes);
++}
++
++void WebGLResourceTracker::contextObjectsDetached(const void* context)
++{
++    Locker locker { m_lock };
++
++    Vector<std::pair<GCGLuint, Type>> remaining;
++    uint64_t remainingBytes = 0;
++    for (auto& [key, resource] : m_resources) {
++        if (key.first != context)
++            continue;
++        remaining.append({ key.second, resource.type });
++        remainingBytes += resource.bytes;
++    }
++
++    if (remaining.isEmpty())
++        return;
++
++    // The GraphicsContextGL is going away (or being replaced) while some of the tracked objects
++    // haven't been deleted through the WebGL API. They are released together with the GL context.
++    WTFLogAlways("[WebGL] [%.6f] context %p detached %zu resources (%" PRIu64 " bytes) without deleting them, dropping them", elapsedSeconds(), context, remaining.size(), remainingBytes);
++    for (auto& [name, type] : remaining)
++        removeResource(context, name, type, "detached without delete");
++}
++
++} // namespace WebCore
++
++#endif // ENABLE(WEBGL)
+diff --git a/Source/WebCore/html/canvas/WebGLResourceTracker.h b/Source/WebCore/html/canvas/WebGLResourceTracker.h
+new file mode 100644
+index 000000000000..9d4a87c74739
+--- /dev/null
++++ b/Source/WebCore/html/canvas/WebGLResourceTracker.h
+@@ -0,0 +1,146 @@
++/*
++ * Copyright (C) 2026 Igalia S.L.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS''
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
++ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
++ * THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#pragma once
++
++#if ENABLE(WEBGL)
++
++#include "GraphicsTypesGL.h"
++#include <map>
++#include <wtf/Lock.h>
++#include <wtf/NeverDestroyed.h>
++#include <wtf/Noncopyable.h>
++
++namespace WebCore {
++
++// Process-wide bookkeeping of the WebGL resources that can consume a significant amount of
++// (video) memory: textures, renderbuffers and buffers. The resources are tracked at the
++// WebGLRenderingContext level, so only the resources created through the WebGL API are
++// accounted. The resources that GraphicsContextGL creates internally to implement the drawing
++// buffer (color textures, multisample/depth/stencil renderbuffers) are not included.
++//
++// Every time a resource is created or deleted, or its storage size changes, the current totals
++// are logged with the "[WebGL]" prefix.
++//
++// Memory figures are estimations: width * height * depth * bytes per pixel * samples for each
++// image, the compressed size for compressed images, and the size for buffers.
++class WebGLResourceTracker {
++    WTF_MAKE_NONCOPYABLE(WebGLResourceTracker);
++public:
++    static WebGLResourceTracker& singleton();
++
++    // context identifies the GraphicsContextGL that owns the objects, and the objects are
++    // identified by their GL name.
++    void textureCreated(const void* context, GCGLuint texture);
++    void textureDeleted(const void* context, GCGLuint texture);
++    // Defines (or redefines) one image (a level of a face) of the texture. Pass
++    // bytesPerPixel = 0 for compressed images, as their size is given by compressedSize.
++    void textureImageDefined(const void* context, GCGLuint texture, GCGLenum target, GCGLint level, GCGLsizei width, GCGLsizei height, GCGLsizei depth, unsigned bytesPerPixel, uint64_t compressedSize, const char* operation);
++    // texStorage2D/3D: replaces all the images of the texture with a full mip chain.
++    void textureStorageDefined(const void* context, GCGLuint texture, GCGLenum target, GCGLsizei levels, GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, const char* operation);
++    void textureMipmapsGenerated(const void* context, GCGLuint texture, GCGLenum target, GCGLint baseLevel, GCGLint maxLevel);
++
++    void renderbufferCreated(const void* context, GCGLuint renderbuffer);
++    void renderbufferDeleted(const void* context, GCGLuint renderbuffer);
++    void renderbufferStorageDefined(const void* context, GCGLuint renderbuffer, GCGLenum internalFormat, GCGLsizei samples, GCGLsizei width, GCGLsizei height, const char* operation);
++
++    void bufferCreated(const void* context, GCGLuint buffer);
++    void bufferDeleted(const void* context, GCGLuint buffer);
++    void bufferDataDefined(const void* context, GCGLuint buffer, uint64_t size, const char* operation);
++
++    // The GraphicsContextGL is being destroyed or replaced: drop the objects that are still tracked
++    // for it, as the GL resources go away with it.
++    void contextObjectsDetached(const void* context);
++
++    // Current totals for each type of resource.
++    struct TotalsSnapshot {
++        uint64_t textureCount { 0 };
++        uint64_t textureBytes { 0 };
++        uint64_t renderbufferCount { 0 };
++        uint64_t renderbufferBytes { 0 };
++        uint64_t bufferCount { 0 };
++        uint64_t bufferBytes { 0 };
++    };
++    TotalsSnapshot totals();
++
++    // Log timestamp: seconds since the first event received by this tracker.
++    static double elapsedSeconds();
++
++    // Bytes per pixel of an uncompressed image, 0 for compressed or unknown formats.
++    static unsigned bytesPerPixel(GCGLenum internalFormat, GCGLenum format, GCGLenum type);
++    // Size of a compressed image, 0 if the format is not a known compressed one.
++    static uint64_t compressedImageSize(GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth);
++
++private:
++    friend class NeverDestroyed<WebGLResourceTracker>;
++    WebGLResourceTracker() = default;
++
++    enum class Type : uint8_t { Texture, Renderbuffer, Buffer };
++    static constexpr size_t typeCount = 3;
++
++    using ObjectKey = std::pair<const void*, GCGLuint>;
++
++    struct ImageInfo {
++        GCGLsizei width { 0 };
++        GCGLsizei height { 0 };
++        GCGLsizei depth { 0 };
++        unsigned bytesPerPixel { 0 };
++        uint64_t bytes { 0 };
++    };
++
++    struct Resource {
++        explicit Resource(Type type)
++            : type(type)
++        {
++        }
++
++        Type type;
++        uint64_t bytes { 0 };
++        // Textures only.
++        bool immutable { false };
++        std::map<std::pair<GCGLenum, GCGLint>, ImageInfo> images;
++    };
++
++    struct Totals {
++        uint64_t count { 0 };
++        uint64_t bytes { 0 };
++    };
++
++    Resource& ensureResource(const void* context, GCGLuint, Type) WTF_REQUIRES_LOCK(m_lock);
++    void addResource(const void* context, GCGLuint, Type, const char* operation) WTF_REQUIRES_LOCK(m_lock);
++    void removeResource(const void* context, GCGLuint, Type, const char* operation) WTF_REQUIRES_LOCK(m_lock);
++    void setResourceBytes(Resource&, uint64_t bytes) WTF_REQUIRES_LOCK(m_lock);
++    void setTextureImage(Resource&, GCGLenum target, GCGLint level, const ImageInfo&) WTF_REQUIRES_LOCK(m_lock);
++    void logChange(const char* operation, Type, GCGLuint, uint64_t previousBytes, uint64_t newBytes) WTF_REQUIRES_LOCK(m_lock);
++    void logTotals(const char* operation, Type, GCGLuint, int64_t deltaBytes) WTF_REQUIRES_LOCK(m_lock);
++
++    Lock m_lock;
++    std::map<ObjectKey, Resource> m_resources WTF_GUARDED_BY_LOCK(m_lock);
++    Totals m_totals[typeCount] WTF_GUARDED_BY_LOCK(m_lock);
++};
++
++} // namespace WebCore
++
++#endif // ENABLE(WEBGL)
+diff --git a/Source/WebCore/html/canvas/WebGLTexture.cpp b/Source/WebCore/html/canvas/WebGLTexture.cpp
+index 0a7a01d295b1..547d2aff21db 100644
+--- a/Source/WebCore/html/canvas/WebGLTexture.cpp
++++ b/Source/WebCore/html/canvas/WebGLTexture.cpp
+@@ -32,6 +32,7 @@
+ #include "WebGLContextGroup.h"
+ #include "WebGLFramebuffer.h"
+ #include "WebGLRenderingContextBase.h"
++#include "WebGLResourceTracker.h"
+ 
+ namespace WebCore {
+ 
+@@ -58,6 +59,7 @@ WebGLTexture::WebGLTexture(WebGLRenderingContextBase& ctx)
+ #endif
+ {
+     setObject(ctx.graphicsContextGL()->createTexture());
++    WebGLResourceTracker::singleton().textureCreated(ctx.graphicsContextGL(), object());
+ }
+ 
+ WebGLTexture::~WebGLTexture()
+@@ -98,6 +100,7 @@ void WebGLTexture::setTarget(GCGLenum target, GCGLint maxLevel)
+ void WebGLTexture::deleteObjectImpl(const AbstractLocker&, GraphicsContextGL* context3d, PlatformGLObject object)
+ {
+     context3d->deleteTexture(object);
++    WebGLResourceTracker::singleton().textureDeleted(context3d, object);
+ }
+ 
+ GCGLint WebGLTexture::computeLevelCount(GCGLsizei width, GCGLsizei height)
+-- 
+2.44.4
+

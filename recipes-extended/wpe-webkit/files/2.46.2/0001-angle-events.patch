@@ -1,0 +1,26 @@
+From 467a0f90fa2bc4178a89f0d62e251487ad457784 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Thu, 26 Nov 2026 06:36:29 +0000
+Subject: [PATCH] angle events
+
+---
+ Source/ThirdParty/ANGLE/src/libANGLE/LoggingAnnotator.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/LoggingAnnotator.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/LoggingAnnotator.cpp
+index 4cf999c4a0ce..7f25a3f28348 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/LoggingAnnotator.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/LoggingAnnotator.cpp
+@@ -23,7 +23,8 @@ void LoggingAnnotator::beginEvent(gl::Context *context,
+                                   const char *eventName,
+                                   const char *eventMessage)
+ {
+-    ANGLE_TRACE_EVENT_BEGIN0("gpu.angle", eventName);
++    // ANGLE_TRACE_EVENT_BEGIN0("gpu.angle", eventName);
++    ANGLE_TRACE_EVENT_BEGIN("gpu.angle", eventName, "m", eventMessage);
+ }
+ 
+ void LoggingAnnotator::endEvent(gl::Context *context, const char *eventName, EntryPoint entryPoint)
+-- 
+2.44.4
+

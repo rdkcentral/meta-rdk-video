@@ -1,0 +1,2450 @@
+From f956e4f68aaed2b0ad4c6662c60e9ae6d1aeae0d Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Sun, 22 Nov 2026 16:29:44 +0000
+Subject: [PATCH] igalia patch 2.46
+
+---
+ Source/ThirdParty/ANGLE/GLESv2.cmake          |   2 +
+ .../ThirdParty/ANGLE/src/libANGLE/Buffer.cpp  |  20 +-
+ .../ThirdParty/ANGLE/src/libANGLE/Context.cpp |   8 +-
+ .../ThirdParty/ANGLE/src/libANGLE/Context.h   |   9 +
+ .../ANGLE/src/libANGLE/Renderbuffer.cpp       |  19 +-
+ .../ANGLE/src/libANGLE/Renderbuffer.h         |   4 +
+ .../src/libANGLE/ResourceMemoryTracker.cpp    | 207 +++++++
+ .../src/libANGLE/ResourceMemoryTracker.h      |  78 +++
+ .../ThirdParty/ANGLE/src/libANGLE/Texture.cpp | 164 ++++-
+ .../ThirdParty/ANGLE/src/libANGLE/Texture.h   |   8 +
+ .../ANGLE/src/libANGLE/renderer/gl/BlitGL.cpp |  76 ++-
+ .../src/libANGLE/renderer/gl/TextureGL.cpp    |  76 ++-
+ .../src/libANGLE/renderer/gl/TraceMarkerGL.h  |  58 ++
+ Source/ThirdParty/ANGLE/src/libGLESv2.gni     |   2 +
+ Source/WebCore/Sources.txt                    |   1 +
+ .../html/canvas/WebGL2RenderingContext.cpp    |  10 +
+ Source/WebCore/html/canvas/WebGLBuffer.cpp    |   3 +
+ .../WebCore/html/canvas/WebGLRenderbuffer.cpp |   3 +
+ .../html/canvas/WebGLRenderingContextBase.cpp |  85 ++-
+ .../html/canvas/WebGLRenderingContextBase.h   |   8 +
+ .../html/canvas/WebGLResourceTracker.cpp      | 563 ++++++++++++++++++
+ .../html/canvas/WebGLResourceTracker.h        | 134 +++++
+ Source/WebCore/html/canvas/WebGLTexture.cpp   |   3 +
+ 23 files changed, 1507 insertions(+), 34 deletions(-)
+ create mode 100644 Source/ThirdParty/ANGLE/src/libANGLE/ResourceMemoryTracker.cpp
+ create mode 100644 Source/ThirdParty/ANGLE/src/libANGLE/ResourceMemoryTracker.h
+ create mode 100644 Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TraceMarkerGL.h
+ create mode 100644 Source/WebCore/html/canvas/WebGLResourceTracker.cpp
+ create mode 100644 Source/WebCore/html/canvas/WebGLResourceTracker.h
+
+diff --git a/Source/ThirdParty/ANGLE/GLESv2.cmake b/Source/ThirdParty/ANGLE/GLESv2.cmake
+index 2d0811fcc0b0..ea9b7bad1355 100644
+--- a/Source/ThirdParty/ANGLE/GLESv2.cmake
++++ b/Source/ThirdParty/ANGLE/GLESv2.cmake
+@@ -304,6 +304,7 @@ set(libangle_headers
+     "src/libANGLE/Query.h"
+     "src/libANGLE/RefCountObject.h"
+     "src/libANGLE/Renderbuffer.h"
++    "src/libANGLE/ResourceMemoryTracker.h"
+     "src/libANGLE/ResourceManager.h"
+     "src/libANGLE/ResourceMap.h"
+     "src/libANGLE/Sampler.h"
+@@ -443,6 +444,7 @@ set(libangle_sources
+     "src/libANGLE/ProgramPipeline.cpp"
+     "src/libANGLE/Query.cpp"
+     "src/libANGLE/Renderbuffer.cpp"
++    "src/libANGLE/ResourceMemoryTracker.cpp"
+     "src/libANGLE/ResourceManager.cpp"
+     "src/libANGLE/Sampler.cpp"
+     "src/libANGLE/Semaphore.cpp"
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/Buffer.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/Buffer.cpp
+index 43452e79cbaa..6ea20413095d 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/Buffer.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/Buffer.cpp
+@@ -11,6 +11,7 @@
+ #include "libANGLE/Buffer.h"
+ 
+ #include "libANGLE/Context.h"
++#include "libANGLE/ResourceMemoryTracker.h"
+ #include "libANGLE/renderer/BufferImpl.h"
+ #include "libANGLE/renderer/GLImplFactory.h"
+ 
+@@ -49,10 +50,13 @@ Buffer::Buffer(rx::GLImplFactory *factory, BufferID id)
+       mImplObserver(this, kImplementationSubjectIndex)
+ {
+     mImplObserver.bind(mImpl);
++
++    ResourceMemoryTracker::OnCreated(TrackedResourceType::Buffer, id.value);
+ }
+ 
+ Buffer::~Buffer()
+ {
++    ResourceMemoryTracker::OnDestroyed(TrackedResourceType::Buffer, id().value, mState.mSize);
+     SafeDelete(mImpl);
+ }
+ 
+@@ -168,7 +172,10 @@ angle::Result Buffer::bufferDataImpl(Context *context,
+     {
+         // If setData fails, the buffer contents are undefined. Set a zero size to indicate that.
+         mIndexRangeCache.clear();
+-        mState.mSize = 0;
++        const GLint64 previousSize = mState.mSize;
++        mState.mSize               = 0;
++        ResourceMemoryTracker::OnMemoryChanged(TrackedResourceType::Buffer, id().value,
++                                               mState.mSize - previousSize);
+ 
+         // Notify when storage changes.
+         onStateChange(angle::SubjectMessage::SubjectChanged);
+@@ -180,7 +187,10 @@ angle::Result Buffer::bufferDataImpl(Context *context,
+ 
+     mIndexRangeCache.clear();
+     mState.mUsage                = usage;
++    const GLint64 previousSize   = mState.mSize;
+     mState.mSize                 = size;
++    ResourceMemoryTracker::OnMemoryChanged(TrackedResourceType::Buffer, id().value,
++                                           mState.mSize - previousSize);
+     mState.mImmutable            = (usage == BufferUsage::InvalidEnum);
+     mState.mStorageExtUsageFlags = flags;
+ 
+@@ -221,7 +231,10 @@ angle::Result Buffer::bufferExternalDataImpl(Context *context,
+     {
+         // If setData fails, the buffer contents are undefined. Set a zero size to indicate that.
+         mIndexRangeCache.clear();
+-        mState.mSize = 0;
++        const GLint64 previousSize = mState.mSize;
++        mState.mSize               = 0;
++        ResourceMemoryTracker::OnMemoryChanged(TrackedResourceType::Buffer, id().value,
++                                               mState.mSize - previousSize);
+ 
+         // Notify when storage changes.
+         onStateChange(angle::SubjectMessage::SubjectChanged);
+@@ -231,7 +244,10 @@ angle::Result Buffer::bufferExternalDataImpl(Context *context,
+ 
+     mIndexRangeCache.clear();
+     mState.mUsage                = BufferUsage::InvalidEnum;
++    const GLint64 previousSize   = mState.mSize;
+     mState.mSize                 = size;
++    ResourceMemoryTracker::OnMemoryChanged(TrackedResourceType::Buffer, id().value,
++                                           mState.mSize - previousSize);
+     mState.mImmutable            = GL_TRUE;
+     mState.mStorageExtUsageFlags = flags;
+     mState.mExternal             = GL_TRUE;
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/Context.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/Context.cpp
+index 5c9e73344200..c0d328971dc9 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/Context.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/Context.cpp
+@@ -10087,7 +10087,8 @@ ErrorSet::ErrorSet(Debug *debug,
+       mResetStatus(GraphicsResetStatus::NoError),
+       mSkipValidation(GetNoError(attribs)),
+       mContextLost(0),
+-      mHasAnyErrors(0)
++      mHasAnyErrors(0),
++      mOutOfMemoryErrorCount(0)
+ {}
+ 
+ ErrorSet::~ErrorSet() = default;
+@@ -10098,6 +10099,11 @@ void ErrorSet::handleError(GLenum errorCode,
+                            const char *function,
+                            unsigned int line)
+ {
++    if (errorCode == GL_OUT_OF_MEMORY)
++    {
++        mOutOfMemoryErrorCount.fetch_add(1, std::memory_order_relaxed);
++    }
++
+     if (errorCode == GL_OUT_OF_MEMORY && mResetStrategy == GL_LOSE_CONTEXT_ON_RESET_EXT &&
+         mLoseContextOnOutOfMemory)
+     {
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/Context.h b/Source/ThirdParty/ANGLE/src/libANGLE/Context.h
+index 56683c72c966..ac949eb4bc5d 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/Context.h
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/Context.h
+@@ -99,6 +99,14 @@ class ErrorSet : angle::NonCopyable
+     bool empty() const { return mHasAnyErrors.load(std::memory_order_relaxed) == 0; }
+     GLenum popError();
+ 
++    // Number of GL_OUT_OF_MEMORY errors reported through handleError() so far. Comparing it
++    // before and after an operation tells whether the operation ran out of memory, without
++    // consuming the error the application will query.
++    uint32_t getOutOfMemoryErrorCount() const
++    {
++        return mOutOfMemoryErrorCount.load(std::memory_order_relaxed);
++    }
++
+     void handleError(GLenum errorCode,
+                      const char *message,
+                      const char *file,
+@@ -152,6 +160,7 @@ class ErrorSet : angle::NonCopyable
+     std::atomic_int mSkipValidation;
+     std::atomic_int mContextLost;
+     std::atomic_int mHasAnyErrors;
++    std::atomic_uint32_t mOutOfMemoryErrorCount;
+ };
+ 
+ enum class VertexAttribTypeCase
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/Renderbuffer.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/Renderbuffer.cpp
+index 0e5bef296ae0..6f21e5331227 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/Renderbuffer.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/Renderbuffer.cpp
+@@ -15,6 +15,7 @@
+ #include "libANGLE/FramebufferAttachment.h"
+ #include "libANGLE/Image.h"
+ #include "libANGLE/Renderbuffer.h"
++#include "libANGLE/ResourceMemoryTracker.h"
+ #include "libANGLE/Texture.h"
+ #include "libANGLE/formatutils.h"
+ #include "libANGLE/renderer/GLImplFactory.h"
+@@ -40,7 +41,9 @@ RenderbufferState::RenderbufferState()
+       mSamples(0),
+       mMultisamplingMode(MultisamplingMode::Regular),
+       mHasProtectedContent(false),
+-      mInitState(InitState::Initialized)
++      mInitState(InitState::Initialized),
++      mTrackingId(0),
++      mTrackedMemory(0)
+ {}
+ 
+ RenderbufferState::~RenderbufferState() {}
+@@ -89,6 +92,11 @@ void RenderbufferState::update(GLsizei width,
+     mMultisamplingMode   = multisamplingMode;
+     mInitState           = initState;
+     mHasProtectedContent = false;
++
++    const int64_t previousTrackedMemory = mTrackedMemory;
++    mTrackedMemory = ResourceMemoryTracker::EstimateRenderbufferMemory(width, height, format, samples);
++    ResourceMemoryTracker::OnMemoryChanged(TrackedResourceType::Renderbuffer, mTrackingId,
++                                           mTrackedMemory - previousTrackedMemory);
+ }
+ 
+ void RenderbufferState::setProtectedContent(bool hasProtectedContent)
+@@ -105,6 +113,9 @@ Renderbuffer::Renderbuffer(rx::GLImplFactory *implFactory, RenderbufferID id)
+       mImplObserverBinding(this, kRenderbufferImplSubjectIndex)
+ {
+     mImplObserverBinding.bind(mImplementation.get());
++
++    mState.mTrackingId = id.value;
++    ResourceMemoryTracker::OnCreated(TrackedResourceType::Renderbuffer, id.value);
+ }
+ 
+ void Renderbuffer::onDestroy(const Context *context)
+@@ -118,7 +129,11 @@ void Renderbuffer::onDestroy(const Context *context)
+     }
+ }
+ 
+-Renderbuffer::~Renderbuffer() {}
++Renderbuffer::~Renderbuffer()
++{
++    ResourceMemoryTracker::OnDestroyed(TrackedResourceType::Renderbuffer, mState.mTrackingId,
++                                       mState.mTrackedMemory);
++}
+ 
+ angle::Result Renderbuffer::setLabel(const Context *context, const std::string &label)
+ {
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/Renderbuffer.h b/Source/ThirdParty/ANGLE/src/libANGLE/Renderbuffer.h
+index a921ef6605af..877f6969edb9 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/Renderbuffer.h
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/Renderbuffer.h
+@@ -65,6 +65,10 @@ class RenderbufferState final : angle::NonCopyable
+ 
+     // For robust resource init.
+     InitState mInitState;
++
++    // Id of the owning renderbuffer and its estimated memory, for memory tracking.
++    GLuint mTrackingId;
++    int64_t mTrackedMemory;
+ };
+ 
+ class Renderbuffer final : public RefCountObject<RenderbufferID>,
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/ResourceMemoryTracker.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/ResourceMemoryTracker.cpp
+new file mode 100644
+index 000000000000..bd5026ea7471
+--- /dev/null
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/ResourceMemoryTracker.cpp
+@@ -0,0 +1,207 @@
++//
++// Copyright 2026 Igalia S.L. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++//
++
++// ResourceMemoryTracker.cpp: Implements gl::ResourceMemoryTracker.
++
++#include "libANGLE/ResourceMemoryTracker.h"
++
++#include "libANGLE/Texture.h"
++#include "libANGLE/formatutils.h"
++
++#include <algorithm>
++#include <array>
++#include <chrono>
++#include <cinttypes>
++#include <cstdio>
++#include <limits>
++#include <mutex>
++
++namespace gl
++{
++namespace
++{
++struct ResourceTotals
++{
++    int64_t count = 0;
++    int64_t bytes = 0;
++};
++
++constexpr size_t kTypeCount = static_cast<size_t>(TrackedResourceType::EnumCount);
++
++std::mutex &TrackerMutex()
++{
++    static std::mutex mutex;
++    return mutex;
++}
++
++std::array<ResourceTotals, kTypeCount> &Totals()
++{
++    static std::array<ResourceTotals, kTypeCount> totals;
++    return totals;
++}
++
++const char *TypeName(TrackedResourceType type)
++{
++    switch (type)
++    {
++        case TrackedResourceType::Texture:
++            return "texture";
++        case TrackedResourceType::Renderbuffer:
++            return "renderbuffer";
++        case TrackedResourceType::Buffer:
++            return "buffer";
++        case TrackedResourceType::InternalTexture:
++            return "internal texture";
++        default:
++            return "unknown";
++    }
++}
++
++double ToMiB(int64_t bytes)
++{
++    return static_cast<double>(bytes) / (1024.0 * 1024.0);
++}
++
++// Must be called with the tracker mutex held.
++void LogTotals(const char *event, TrackedResourceType type, GLuint id, int64_t deltaBytes)
++{
++    const auto &totals         = Totals();
++    const ResourceTotals &tex  = totals[static_cast<size_t>(TrackedResourceType::Texture)];
++    const ResourceTotals &rb   = totals[static_cast<size_t>(TrackedResourceType::Renderbuffer)];
++    const ResourceTotals &buf  = totals[static_cast<size_t>(TrackedResourceType::Buffer)];
++    const ResourceTotals &itex = totals[static_cast<size_t>(TrackedResourceType::InternalTexture)];
++    const int64_t total        = tex.bytes + rb.bytes + buf.bytes;
++
++    fprintf(stderr,
++            "[ANGLE] [%.6f] %s %s %u (%+" PRId64 " bytes) => "
++            "textures: %" PRId64 " (%" PRId64 " bytes, %.2f MiB) | "
++            "renderbuffers: %" PRId64 " (%" PRId64 " bytes, %.2f MiB) | "
++            "buffers: %" PRId64 " (%" PRId64 " bytes, %.2f MiB) | "
++            "total: %" PRId64 " bytes (%.2f MiB) | "
++            "ANGLE internal textures: %" PRId64 " (%" PRId64 " bytes)\n",
++            angle_resource_tracker_timestamp_seconds(), event, TypeName(type), id, deltaBytes, tex.count, tex.bytes, ToMiB(tex.bytes),
++            rb.count, rb.bytes, ToMiB(rb.bytes), buf.count, buf.bytes, ToMiB(buf.bytes), total,
++            ToMiB(total), itex.count, itex.bytes);
++    fflush(stderr);
++}
++}  // anonymous namespace
++
++// static
++void ResourceMemoryTracker::OnCreated(TrackedResourceType type, GLuint id)
++{
++    std::lock_guard<std::mutex> lock(TrackerMutex());
++    Totals()[static_cast<size_t>(type)].count++;
++    LogTotals("created", type, id, 0);
++}
++
++// static
++void ResourceMemoryTracker::OnDestroyed(TrackedResourceType type,
++                                        GLuint id,
++                                        int64_t remainingBytes)
++{
++    std::lock_guard<std::mutex> lock(TrackerMutex());
++    ResourceTotals &totals = Totals()[static_cast<size_t>(type)];
++    totals.count--;
++    totals.bytes -= remainingBytes;
++    LogTotals("destroyed", type, id, -remainingBytes);
++}
++
++// static
++void ResourceMemoryTracker::OnMemoryChanged(TrackedResourceType type,
++                                            GLuint id,
++                                            int64_t deltaBytes)
++{
++    if (!deltaBytes)
++        return;
++
++    std::lock_guard<std::mutex> lock(TrackerMutex());
++    Totals()[static_cast<size_t>(type)].bytes += deltaBytes;
++    LogTotals(deltaBytes > 0 ? "allocated" : "released", type, id, deltaBytes);
++}
++
++// static
++void ResourceMemoryTracker::OnTextureOutOfMemory(GLuint id,
++                                                 const char *operation,
++                                                 GLenum target,
++                                                 GLint level,
++                                                 GLsizei levels,
++                                                 GLenum internalFormat,
++                                                 GLsizei width,
++                                                 GLsizei height,
++                                                 GLsizei depth,
++                                                 GLsizei samples,
++                                                 int64_t requestedBytes)
++{
++    std::lock_guard<std::mutex> lock(TrackerMutex());
++    const auto &totals         = Totals();
++    const ResourceTotals &tex  = totals[static_cast<size_t>(TrackedResourceType::Texture)];
++    const ResourceTotals &rb   = totals[static_cast<size_t>(TrackedResourceType::Renderbuffer)];
++    const ResourceTotals &buf  = totals[static_cast<size_t>(TrackedResourceType::Buffer)];
++    const int64_t total        = tex.bytes + rb.bytes + buf.bytes;
++
++    fprintf(stderr,
++            "[ANGLE] [%.6f] OUT OF MEMORY: %s failed for texture %u (target 0x%04X, level %d, "
++            "levels %d, size %dx%dx%d, samples %d, internal format 0x%04X, requested ~%" PRId64
++            " bytes, %.2f MiB) => allocated so far: textures: %" PRId64 " (%" PRId64
++            " bytes, %.2f MiB) | renderbuffers: %" PRId64 " (%" PRId64
++            " bytes, %.2f MiB) | buffers: %" PRId64 " (%" PRId64
++            " bytes, %.2f MiB) | total: %" PRId64 " bytes (%.2f MiB)\n",
++            angle_resource_tracker_timestamp_seconds(), operation, id, target, level, levels, width,
++            height, depth, samples, internalFormat, requestedBytes, ToMiB(requestedBytes),
++            tex.count, tex.bytes, ToMiB(tex.bytes), rb.count, rb.bytes, ToMiB(rb.bytes), buf.count,
++            buf.bytes, ToMiB(buf.bytes), total, ToMiB(total));
++    fflush(stderr);
++}
++
++// static
++TrackedResourceType ResourceMemoryTracker::TextureTypeForId(GLuint id)
++{
++    // Zero textures use id 0, incomplete textures use the max GLuint value.
++    if (id == 0 || id == std::numeric_limits<GLuint>::max())
++        return TrackedResourceType::InternalTexture;
++    return TrackedResourceType::Texture;
++}
++
++// static
++int64_t ResourceMemoryTracker::EstimateImageMemory(const ImageDesc &desc)
++{
++    if (desc.size.empty() || !desc.format.info)
++        return 0;
++
++    const InternalFormat &info = *desc.format.info;
++    if (info.compressed)
++    {
++        GLuint compressedSize = 0;
++        if (!info.computeCompressedImageSize(desc.size, &compressedSize))
++            return 0;
++        return static_cast<int64_t>(compressedSize);
++    }
++
++    return static_cast<int64_t>(info.pixelBytes) * desc.size.width * desc.size.height *
++           desc.size.depth * std::max<GLsizei>(desc.samples, 1);
++}
++
++// static
++int64_t ResourceMemoryTracker::EstimateRenderbufferMemory(GLsizei width,
++                                                          GLsizei height,
++                                                          const Format &format,
++                                                          GLsizei samples)
++{
++    if (width <= 0 || height <= 0 || !format.info)
++        return 0;
++
++    return static_cast<int64_t>(format.info->pixelBytes) * width * height *
++           std::max<GLsizei>(samples, 1);
++}
++
++}  // namespace gl
++
++extern "C" double angle_resource_tracker_timestamp_seconds()
++{
++    // Initialized (thread-safely) on the first call.
++    static const std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
++    return std::chrono::duration<double>(std::chrono::steady_clock::now() - startTime).count();
++}
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/ResourceMemoryTracker.h b/Source/ThirdParty/ANGLE/src/libANGLE/ResourceMemoryTracker.h
+new file mode 100644
+index 000000000000..7ceab36c89ea
+--- /dev/null
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/ResourceMemoryTracker.h
+@@ -0,0 +1,78 @@
++//
++// Copyright 2026 Igalia S.L. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++//
++
++// ResourceMemoryTracker.h: Process-wide bookkeeping of the frontend GL objects that can consume
++// a significant amount of (video) memory: textures, renderbuffers and buffers. Every time one of
++// those objects is created, destroyed or its storage changes, the current totals are written to
++// stderr, so they can be compared with the ones tracked by the WebGL implementation on top of
++// ANGLE (WebCore::WebGLResourceTracker).
++//
++// The memory figures are estimations based on the frontend state (image descs, renderbuffer
++// size and format, buffer size); backends may allocate more (padding, emulated formats, etc).
++
++#ifndef LIBANGLE_RESOURCEMEMORYTRACKER_H_
++#define LIBANGLE_RESOURCEMEMORYTRACKER_H_
++
++#include "angle_gl.h"
++
++#include <cstdint>
++
++namespace gl
++{
++struct ImageDesc;
++struct Format;
++
++enum class TrackedResourceType
++{
++    // Textures created by the application (the ones WebGL knows about).
++    Texture,
++    Renderbuffer,
++    Buffer,
++    // Textures that ANGLE creates for itself: the per-context default (zero) textures and the
++    // incomplete textures used when sampling from incomplete textures.
++    InternalTexture,
++
++    EnumCount,
++};
++
++class ResourceMemoryTracker final
++{
++  public:
++    static void OnCreated(TrackedResourceType type, GLuint id);
++    static void OnDestroyed(TrackedResourceType type, GLuint id, int64_t remainingBytes);
++    static void OnMemoryChanged(TrackedResourceType type, GLuint id, int64_t deltaBytes);
++
++    // Logs that allocating the storage of a texture failed with GL_OUT_OF_MEMORY, either in the
++    // driver or in ANGLE itself. |requestedBytes| is the estimated size of what was requested.
++    static void OnTextureOutOfMemory(GLuint id,
++                                     const char *operation,
++                                     GLenum target,
++                                     GLint level,
++                                     GLsizei levels,
++                                     GLenum internalFormat,
++                                     GLsizei width,
++                                     GLsizei height,
++                                     GLsizei depth,
++                                     GLsizei samples,
++                                     int64_t requestedBytes);
++
++    static TrackedResourceType TextureTypeForId(GLuint id);
++
++    static int64_t EstimateImageMemory(const ImageDesc &desc);
++    static int64_t EstimateRenderbufferMemory(GLsizei width,
++                                              GLsizei height,
++                                              const Format &format,
++                                              GLsizei samples);
++};
++
++}  // namespace gl
++
++// Seconds elapsed since the first call to this function, which therefore returns 0 the first
++// time. It is the clock used for the log timestamps of both this tracker and WebKit's
++// WebGLResourceTracker, so the first event received by either of them sets time 0. Thread safe.
++extern "C" double angle_resource_tracker_timestamp_seconds();
++
++#endif  // LIBANGLE_RESOURCEMEMORYTRACKER_H_
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/Texture.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/Texture.cpp
+index fbde363307bb..9866c06bb727 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/Texture.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/Texture.cpp
+@@ -13,6 +13,7 @@
+ #include "libANGLE/Config.h"
+ #include "libANGLE/Context.h"
+ #include "libANGLE/Image.h"
++#include "libANGLE/ResourceMemoryTracker.h"
+ #include "libANGLE/State.h"
+ #include "libANGLE/Surface.h"
+ #include "libANGLE/formatutils.h"
+@@ -52,6 +53,81 @@ InitState DetermineInitState(const Context *context, Buffer *unpackBuffer, const
+ 
+     return (!pixels && !unpackBuffer) ? InitState::MayNeedInit : InitState::Initialized;
+ }
++
++// Logs an out of memory error if the context reports a new GL_OUT_OF_MEMORY while this object is
++// alive. It wraps the backend calls that allocate texture storage, so both driver allocation
++// failures and ANGLE's own (CPU) allocation failures are reported.
++class ScopedTextureOutOfMemoryCheck final : angle::NonCopyable
++{
++  public:
++    ScopedTextureOutOfMemoryCheck(const Context *context,
++                                  GLuint textureId,
++                                  const char *operation,
++                                  GLenum target,
++                                  GLint level,
++                                  GLsizei levels,
++                                  GLenum internalFormat,
++                                  const Extents &size,
++                                  GLsizei samples,
++                                  int64_t requestedBytes)
++        : mErrors(context->getMutableErrorSetForValidation()),
++          mOutOfMemoryErrorCount(mErrors->getOutOfMemoryErrorCount()),
++          mTextureId(textureId),
++          mOperation(operation),
++          mTarget(target),
++          mLevel(level),
++          mLevels(levels),
++          mInternalFormat(internalFormat),
++          mSize(size),
++          mSamples(samples),
++          mRequestedBytes(requestedBytes)
++    {}
++
++    ~ScopedTextureOutOfMemoryCheck()
++    {
++        if (mErrors->getOutOfMemoryErrorCount() == mOutOfMemoryErrorCount)
++            return;
++        ResourceMemoryTracker::OnTextureOutOfMemory(mTextureId, mOperation, mTarget, mLevel,
++                                                    mLevels, mInternalFormat, mSize.width,
++                                                    mSize.height, mSize.depth, mSamples,
++                                                    mRequestedBytes);
++    }
++
++  private:
++    const ErrorSet *mErrors;
++    uint32_t mOutOfMemoryErrorCount;
++    GLuint mTextureId;
++    const char *mOperation;
++    GLenum mTarget;
++    GLint mLevel;
++    GLsizei mLevels;
++    GLenum mInternalFormat;
++    Extents mSize;
++    GLsizei mSamples;
++    int64_t mRequestedBytes;
++};
++
++// Estimated memory of the levels [firstLevel, lastLevel] (relative to the base level) of a mip
++//P0+r4B31\P0+r4B33\P0+r4B34\P0+r4B35\P0+r6B42\ chain, including all the cube faces.
++int64_t EstimateMipChainMemory(TextureType type,
++                               const Extents &baseSize,
++                               const Format &format,
++                               GLuint firstLevel,
++                               GLuint lastLevel)
++{
++    const int64_t faces = type == TextureType::CubeMap ? 6 : 1;
++    int64_t total       = 0;
++    for (GLuint level = firstLevel; level <= lastLevel; level++)
++    {
++        Extents levelSize(std::max<int>(baseSize.width >> level, 1),
++                          std::max<int>(baseSize.height >> level, 1),
++                          IsArrayTextureType(type) ? baseSize.depth
++                                                   : std::max<int>(baseSize.depth >> level, 1));
++        total += faces * ResourceMemoryTracker::EstimateImageMemory(
++                             ImageDesc(levelSize, format, InitState::Initialized));
++    }
++    return total;
++}
+ }  // namespace
+ 
+ GLenum ConvertToNearestFilterMode(GLenum filterMode)
+@@ -122,6 +198,8 @@ bool SwizzleState::operator!=(const SwizzleState &other) const
+ 
+ TextureState::TextureState(TextureType type)
+     : mType(type),
++      mTrackingId(0),
++      mTrackedMemory(0),
+       mSamplerState(SamplerState::CreateDefaultForTarget(type)),
+       mSrgbOverride(SrgbOverride::Default),
+       mBaseLevel(0),
+@@ -671,10 +749,27 @@ const ImageDesc &TextureState::getImageDesc(TextureTarget target, size_t level)
+     return mImageDescs[descIndex];
+ }
+ 
++void TextureState::reportTrackedMemoryChange(int64_t previousTrackedMemory) const
++{
++    ResourceMemoryTracker::OnMemoryChanged(ResourceMemoryTracker::TextureTypeForId(mTrackingId),
++                                           mTrackingId, mTrackedMemory - previousTrackedMemory);
++}
++
+ void TextureState::setImageDesc(TextureTarget target, size_t level, const ImageDesc &desc)
++{
++    const int64_t previousTrackedMemory = mTrackedMemory;
++    setImageDescWithoutTracking(target, level, desc);
++    reportTrackedMemoryChange(previousTrackedMemory);
++}
++
++void TextureState::setImageDescWithoutTracking(TextureTarget target,
++                                               size_t level,
++                                               const ImageDesc &desc)
+ {
+     size_t descIndex = GetImageDescIndex(target, level);
+     ASSERT(descIndex < mImageDescs.size());
++    mTrackedMemory += ResourceMemoryTracker::EstimateImageMemory(desc) -
++                      ResourceMemoryTracker::EstimateImageMemory(mImageDescs[descIndex]);
+     mImageDescs[descIndex] = desc;
+     if (desc.initState == InitState::MayNeedInit)
+     {
+@@ -724,6 +819,8 @@ void TextureState::setImageDescChain(GLuint baseLevel,
+                                      const Format &format,
+                                      InitState initState)
+ {
++    // Report the whole chain as a single memory change.
++    const int64_t previousTrackedMemory = mTrackedMemory;
+     for (GLuint level = baseLevel; level <= maxLevel; level++)
+     {
+         int relativeLevel = (level - baseLevel);
+@@ -738,14 +835,15 @@ void TextureState::setImageDescChain(GLuint baseLevel,
+         {
+             for (TextureTarget face : AllCubeFaceTextureTargets())
+             {
+-                setImageDesc(face, level, levelInfo);
++                setImageDescWithoutTracking(face, level, levelInfo);
+             }
+         }
+         else
+         {
+-            setImageDesc(NonCubeTextureTypeToTarget(mType), level, levelInfo);
++            setImageDescWithoutTracking(NonCubeTextureTypeToTarget(mType), level, levelInfo);
+         }
+     }
++    reportTrackedMemoryChange(previousTrackedMemory);
+ }
+ 
+ void TextureState::setImageDescChainMultisample(Extents baseSize,
+@@ -770,6 +868,9 @@ void TextureState::clearImageDescs()
+     {
+         mImageDescs[descIndex] = ImageDesc();
+     }
++    const int64_t previousTrackedMemory = mTrackedMemory;
++    mTrackedMemory                      = 0;
++    reportTrackedMemoryChange(previousTrackedMemory);
+ }
+ 
+ TextureBufferContentsObservers::TextureBufferContentsObservers(Texture *texture) : mTexture(texture)
+@@ -803,6 +904,9 @@ Texture::Texture(rx::GLImplFactory *factory, TextureID id, TextureType type)
+ 
+     // Initially assume the implementation is dirty.
+     mDirtyBits.set(DIRTY_BIT_IMPLEMENTATION);
++
++    mState.mTrackingId = id.value;
++    ResourceMemoryTracker::OnCreated(ResourceMemoryTracker::TextureTypeForId(id.value), id.value);
+ }
+ 
+ void Texture::onDestroy(const Context *context)
+@@ -833,6 +937,8 @@ void Texture::onDestroy(const Context *context)
+ 
+ Texture::~Texture()
+ {
++    ResourceMemoryTracker::OnDestroyed(ResourceMemoryTracker::TextureTypeForId(mState.mTrackingId),
++                                       mState.mTrackingId, mState.mTrackedMemory);
+     SafeDelete(mTexture);
+ }
+ 
+@@ -1352,8 +1458,14 @@ angle::Result Texture::setImage(Context *context,
+ 
+     ImageIndex index = ImageIndex::MakeFromTarget(target, level, size.depth);
+ 
+-    ANGLE_TRY(mTexture->setImage(context, index, internalFormat, size, format, type, unpackState,
+-                                 unpackBuffer, pixels));
++    {
++        ScopedTextureOutOfMemoryCheck outOfMemoryCheck(
++            context, id().value, "texImage", ToGLenum(target), level, 1, internalFormat, size, 0,
++            ResourceMemoryTracker::EstimateImageMemory(
++                ImageDesc(size, Format(internalFormat, type), InitState::Initialized)));
++        ANGLE_TRY(mTexture->setImage(context, index, internalFormat, size, format, type,
++                                     unpackState, unpackBuffer, pixels));
++    }
+ 
+     InitState initState = DetermineInitState(context, unpackBuffer, pixels);
+     mState.setImageDesc(target, level, ImageDesc(size, Format(internalFormat, type), initState));
+@@ -1409,8 +1521,13 @@ angle::Result Texture::setCompressedImage(Context *context,
+ 
+     ImageIndex index = ImageIndex::MakeFromTarget(target, level, size.depth);
+ 
+-    ANGLE_TRY(mTexture->setCompressedImage(context, index, internalFormat, size, unpackState,
+-                                           imageSize, pixels));
++    {
++        ScopedTextureOutOfMemoryCheck outOfMemoryCheck(
++            context, id().value, "compressedTexImage", ToGLenum(target), level, 1, internalFormat,
++            size, 0, static_cast<int64_t>(imageSize));
++        ANGLE_TRY(mTexture->setCompressedImage(context, index, internalFormat, size, unpackState,
++                                               imageSize, pixels));
++    }
+ 
+     Buffer *unpackBuffer = context->getState().getTargetBuffer(BufferBinding::PixelUnpack);
+ 
+@@ -1496,6 +1613,10 @@ angle::Result Texture::copyImage(Context *context,
+     // an initializeContents call, and then a copySubImage call. This ensures the destination
+     // texture exists before we try to clear it.
+     Extents size(sourceArea.width, sourceArea.height, 1);
++    ScopedTextureOutOfMemoryCheck outOfMemoryCheck(
++        context, id().value, "copyTexImage", ToGLenum(target), level, 1, internalFormat, size, 0,
++        ResourceMemoryTracker::EstimateImageMemory(
++            ImageDesc(size, Format(internalFormatInfo), InitState::Initialized)));
+     if (forceCopySubImage || doesSubImageNeedInit(context, index, destBox))
+     {
+         ANGLE_TRY(mTexture->setImage(context, index, internalFormat, size,
+@@ -1716,7 +1837,13 @@ angle::Result Texture::setStorage(Context *context,
+     mState.setImageDescChain(0, static_cast<GLuint>(levels - 1), size, Format(internalFormat),
+                              initState);
+ 
+-    ANGLE_TRY(mTexture->setStorage(context, type, levels, internalFormat, size));
++    {
++        ScopedTextureOutOfMemoryCheck outOfMemoryCheck(
++            context, id().value, "texStorage", ToGLenum(type), 0, levels, internalFormat, size, 0,
++            EstimateMipChainMemory(type, size, Format(internalFormat), 0,
++                                   static_cast<GLuint>(levels - 1)));
++        ANGLE_TRY(mTexture->setStorage(context, type, levels, internalFormat, size));
++    }
+ 
+     // Changing the texture to immutable can trigger a change in the base and max levels:
+     // GLES 3.0.4 section 3.8.10 pg 158:
+@@ -1786,8 +1913,16 @@ angle::Result Texture::setStorageMultisample(Context *context,
+     mState.setImageDescChainMultisample(size, Format(internalFormat), samples, fixedSampleLocations,
+                                         initState);
+ 
+-    ANGLE_TRY(mTexture->setStorageMultisample(context, type, samples, internalFormat, size,
+-                                              fixedSampleLocations));
++    {
++        ScopedTextureOutOfMemoryCheck outOfMemoryCheck(
++            context, id().value, "texStorageMultisample", ToGLenum(type), 0, 1,
++            static_cast<GLenum>(internalFormat), size, samples,
++            ResourceMemoryTracker::EstimateImageMemory(
++                ImageDesc(size, Format(internalFormat), samples, fixedSampleLocations,
++                          InitState::Initialized)));
++        ANGLE_TRY(mTexture->setStorageMultisample(context, type, samples, internalFormat, size,
++                                                  fixedSampleLocations));
++    }
+     signalDirtyStorage(initState);
+ 
+     return angle::Result::Continue;
+@@ -1884,7 +2019,16 @@ angle::Result Texture::generateMipmap(Context *context)
+     }
+ 
+     ANGLE_TRY(syncState(context, Command::GenerateMipmap));
+-    ANGLE_TRY(mTexture->generateMipmap(context));
++    {
++        // Levels baseLevel + 1 .. maxLevel are the ones allocated.
++        ScopedTextureOutOfMemoryCheck outOfMemoryCheck(
++            context, id().value, "generateMipmap", ToGLenum(mState.mType),
++            static_cast<GLint>(baseLevel), static_cast<GLsizei>(maxLevel - baseLevel + 1),
++            baseImageInfo.format.info->sizedInternalFormat, baseImageInfo.size, 0,
++            EstimateMipChainMemory(mState.mType, baseImageInfo.size, baseImageInfo.format, 1,
++                                   maxLevel - baseLevel));
++        ANGLE_TRY(mTexture->generateMipmap(context));
++    }
+ 
+     // Propagate the format and size of the base mip to the smaller ones. Cube maps are guaranteed
+     // to have faces of the same size and format so any faces can be picked.
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/Texture.h b/Source/ThirdParty/ANGLE/src/libANGLE/Texture.h
+index 43399b747e6a..4c4c7155a7a1 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/Texture.h
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/Texture.h
+@@ -224,8 +224,16 @@ class TextureState final : private angle::NonCopyable
+     void clearImageDesc(TextureTarget target, size_t level);
+     void clearImageDescs();
+ 
++    // Resource memory tracking (see ResourceMemoryTracker.h).
++    void setImageDescWithoutTracking(TextureTarget target, size_t level, const ImageDesc &desc);
++    void reportTrackedMemoryChange(int64_t previousTrackedMemory) const;
++
+     const TextureType mType;
+ 
++    // Id of the owning texture and estimated memory used by its images, for memory tracking.
++    GLuint mTrackingId;
++    int64_t mTrackedMemory;
++
+     SwizzleState mSwizzleState;
+ 
+     SamplerState mSamplerState;
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/BlitGL.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/BlitGL.cpp
+index eb5cfa873164..c7770f231114 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/BlitGL.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/BlitGL.cpp
+@@ -24,6 +24,7 @@
+ #include "libANGLE/renderer/gl/TextureGL.h"
+ #include "libANGLE/renderer/gl/formatutilsgl.h"
+ #include "libANGLE/renderer/gl/renderergl_utils.h"
++#include "libANGLE/renderer/gl/TraceMarkerGL.h"
+ #include "libANGLE/renderer/renderer_utils.h"
+ #include "platform/autogen/FeaturesGL_autogen.h"
+ 
+@@ -291,8 +292,12 @@ BlitGL::~BlitGL()
+     {
+         if (mScratchTextures[i] != 0)
+         {
++            char details[96];
++            snprintf(details, sizeof(details), "owner=%p texture=%u", this, mScratchTextures[i]);
++            ScopedTraceMarker trace("blit_scratch_delete", details);
+             mStateManager->deleteTexture(mScratchTextures[i]);
+             mScratchTextures[i] = 0;
++            trace.markSucceeded();
+         }
+     }
+ 
+@@ -377,10 +382,17 @@ angle::Result BlitGL::copySubImageToLUMAWorkaroundTexture(const gl::Context *con
+         nativegl::GetCopyTexImageImageFormat(mFunctions, mFeatures, readFormat, readType);
+ 
+     mStateManager->bindTexture(gl::TextureType::_2D, mScratchTextures[0]);
+-    ANGLE_GL_TRY_ALWAYS_CHECK(
+-        context, mFunctions->copyTexImage2D(GL_TEXTURE_2D, 0, copyTexImageFormat.internalFormat,
+-                                            sourceArea.x, sourceArea.y, sourceArea.width,
+-                                            sourceArea.height, 0));
++    {
++        char traceDetails[144];
++        snprintf(traceDetails, sizeof(traceDetails), "owner=%p texture=%u dims=%dx%d format=0x%x source=luma_copy",
++                 this, mScratchTextures[0], sourceArea.width, sourceArea.height, copyTexImageFormat.internalFormat);
++        ScopedTraceMarker trace("blit_scratch_storage", traceDetails);
++        ANGLE_GL_TRY_ALWAYS_CHECK(
++            context, mFunctions->copyTexImage2D(GL_TEXTURE_2D, 0, copyTexImageFormat.internalFormat,
++                                                sourceArea.x, sourceArea.y, sourceArea.width,
++                                                sourceArea.height, 0));
++        trace.markSucceeded();
++    }
+ 
+     // Set the swizzle of the scratch texture so that the channels sample into the correct emulated
+     // LUMA channels.
+@@ -396,11 +408,18 @@ angle::Result BlitGL::copySubImageToLUMAWorkaroundTexture(const gl::Context *con
+     // Make a temporary framebuffer using the second scratch texture to render the swizzled result
+     // to.
+     mStateManager->bindTexture(gl::TextureType::_2D, mScratchTextures[1]);
+-    ANGLE_GL_TRY_ALWAYS_CHECK(
+-        context, mFunctions->texImage2D(GL_TEXTURE_2D, 0, copyTexImageFormat.internalFormat,
+-                                        sourceArea.width, sourceArea.height, 0,
+-                                        gl::GetUnsizedFormat(copyTexImageFormat.internalFormat),
+-                                        readType, nullptr));
++    {
++        char traceDetails[144];
++        snprintf(traceDetails, sizeof(traceDetails), "owner=%p texture=%u dims=%dx%d format=0x%x source=luma_swizzle",
++                 this, mScratchTextures[1], sourceArea.width, sourceArea.height, copyTexImageFormat.internalFormat);
++        ScopedTraceMarker trace("blit_scratch_storage", traceDetails);
++        ANGLE_GL_TRY_ALWAYS_CHECK(
++            context, mFunctions->texImage2D(GL_TEXTURE_2D, 0, copyTexImageFormat.internalFormat,
++                                            sourceArea.width, sourceArea.height, 0,
++                                            gl::GetUnsizedFormat(copyTexImageFormat.internalFormat),
++                                            readType, nullptr));
++        trace.markSucceeded();
++    }
+ 
+     mStateManager->bindFramebuffer(GL_FRAMEBUFFER, mScratchFBO);
+     ANGLE_GL_TRY(context, mFunctions->framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+@@ -548,10 +567,17 @@ angle::Result BlitGL::blitColorBufferWithShader(const gl::Context *context,
+         mStateManager->bindFramebuffer(GL_READ_FRAMEBUFFER, sourceGL->getFramebufferID());
+         mStateManager->bindTexture(gl::TextureType::_2D, textureId);
+ 
++        char traceDetails[144];
++        snprintf(traceDetails, sizeof(traceDetails),
++                 "owner=%p texture=%u dims=%dx%d format=0x%x source=framebuffer_blit",
++                 this, textureId, inBoundsSource.width, inBoundsSource.height,
++                 copyTexImageFormat.internalFormat);
++        ScopedTraceMarker trace("blit_scratch_storage", traceDetails);
+         ANGLE_GL_TRY_ALWAYS_CHECK(
+             context, mFunctions->copyTexImage2D(GL_TEXTURE_2D, 0, copyTexImageFormat.internalFormat,
+                                                 inBoundsSource.x, inBoundsSource.y,
+                                                 inBoundsSource.width, inBoundsSource.height, 0));
++        trace.markSucceeded();
+ 
+         // Translate sourceArea to be relative to the copied image.
+         sourceArea.x -= inBoundsSource.x;
+@@ -788,11 +814,18 @@ angle::Result BlitGL::copySubTextureCPUReadback(const gl::Context *context,
+ 
+         gl::TextureType scratchTextureType = gl::TextureType::_2D;
+         mStateManager->bindTexture(scratchTextureType, mScratchTextures[0]);
++        char traceDetails[144];
++        snprintf(traceDetails, sizeof(traceDetails),
++                 "owner=%p texture=%u dims=%dx%d format=0x%x source=readback_fallback",
++                 this, mScratchTextures[0], sourceArea.width, sourceArea.height,
++                 texImageFormat.internalFormat);
++        ScopedTraceMarker trace("blit_scratch_storage", traceDetails);
+         ANGLE_GL_TRY_ALWAYS_CHECK(
+             context,
+             mFunctions->texImage2D(ToGLenum(scratchTextureType), 0, texImageFormat.internalFormat,
+                                    sourceArea.width, sourceArea.height, 0, texImageFormat.format,
+                                    texImageFormat.type, nullptr));
++        trace.markSucceeded();
+ 
+         bool copySucceeded = false;
+         ANGLE_TRY(copySubTexture(
+@@ -1271,9 +1304,16 @@ angle::Result BlitGL::generateMipmap(const gl::Context *context,
+ 
+         // Downsample from the source texture into the intermediate texture
+         mStateManager->bindTexture(sourceType, intermediateTexture);
++        char traceDetails[144];
++        snprintf(traceDetails, sizeof(traceDetails),
++             "owner=%p texture=%u dims=%dx%d format=0x%x mipLevel=%u",
++             this, intermediateTexture, levelSize.width, levelSize.height,
++             format.internalFormat, levelIdx);
++        ScopedTraceMarker trace("blit_mipmap_scratch_storage", traceDetails);
+         ANGLE_GL_TRY(context, mFunctions->texImage2D(
+-                                  ToGLenum(sourceTarget), 0, format.internalFormat, levelSize.width,
+-                                  levelSize.height, 0, format.format, format.type, nullptr));
++                      ToGLenum(sourceTarget), 0, format.internalFormat, levelSize.width,
++                      levelSize.height, 0, format.format, format.type, nullptr));
++        trace.markSucceeded();
+ 
+         ANGLE_GL_TRY(context, mFunctions->framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                                                ToGLenum(sourceTarget),
+@@ -1320,9 +1360,18 @@ angle::Result BlitGL::initializeResources(const gl::Context *context)
+         return angle::Result::Continue;
+     }
+ 
++    char initDetails[80];
++    snprintf(initDetails, sizeof(initDetails), "owner=%p scratchTextureCount=%zu", this,
++             ArraySize(mScratchTextures));
++    ScopedTraceMarker initTrace("blit_scratch_initialize", initDetails);
+     for (size_t i = 0; i < ArraySize(mScratchTextures); i++)
+     {
+         ANGLE_GL_TRY(context, mFunctions->genTextures(1, &mScratchTextures[i]));
++        char details[96];
++        snprintf(details, sizeof(details), "owner=%p texture=%u index=%zu", this,
++                 mScratchTextures[i], i);
++        ScopedTraceMarker textureTrace("blit_scratch_create", details);
++        textureTrace.markSucceeded();
+     }
+ 
+     ANGLE_GL_TRY(context, mFunctions->genFramebuffers(1, &mScratchFBO));
+@@ -1378,6 +1427,7 @@ angle::Result BlitGL::initializeResources(const gl::Context *context)
+     ASSERT(mSRGBMipmapGenerationFormat.internalFormat != GL_NONE);
+ 
+     mResourcesInitialized = true;
++    initTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+@@ -1413,8 +1463,12 @@ angle::Result BlitGL::orphanScratchTextures(const gl::Context *context)
+                                                         GL_NEAREST_MIPMAP_LINEAR));
+         ANGLE_GL_TRY(context,
+                      mFunctions->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
++        char details[96];
++        snprintf(details, sizeof(details), "texture=%u dims=0x0 source=scratch_orphan", texture);
++        ScopedTraceMarker trace("blit_scratch_orphan", details);
+         ANGLE_GL_TRY(context, mFunctions->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, 0, GL_RGBA,
+                                                      GL_UNSIGNED_BYTE, nullptr));
++        trace.markSucceeded();
+     }
+ 
+     return angle::Result::Continue;
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+index 9372f7c6204e..8e4ae2ee0f86 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+@@ -29,6 +29,7 @@
+ #include "libANGLE/renderer/gl/SurfaceGL.h"
+ #include "libANGLE/renderer/gl/formatutilsgl.h"
+ #include "libANGLE/renderer/gl/renderergl_utils.h"
++#include "libANGLE/renderer/gl/TraceMarkerGL.h"
+ #include "platform/autogen/FeaturesGL_autogen.h"
+ 
+ using angle::CheckedNumeric;
+@@ -160,6 +161,11 @@ TextureGL::TextureGL(const gl::TextureState &state, GLuint id)
+       mTextureID(id)
+ {
+     mLevelInfo.resize(GetMaxLevelInfoCountForTextureType(getType()));
++    char traceDetails[96];
++    snprintf(traceDetails, sizeof(traceDetails), "object=%p texture=%u type=%d", this,
++             mTextureID, static_cast<int>(getType()));
++    ScopedTraceMarker trace("texture_create", traceDetails);
++    trace.markSucceeded();
+ }
+ 
+ TextureGL::~TextureGL()
+@@ -169,10 +175,14 @@ TextureGL::~TextureGL()
+ 
+ void TextureGL::onDestroy(const gl::Context *context)
+ {
++    char traceDetails[96];
++    snprintf(traceDetails, sizeof(traceDetails), "object=%p texture=%u", this, mTextureID);
++    ScopedTraceMarker trace("texture_delete", traceDetails);
+     GetImplAs<ContextGL>(context)->flushIfNecessaryBeforeDeleteTextures();
+     StateManagerGL *stateManager = GetStateManagerGL(context);
+     stateManager->deleteTexture(mTextureID);
+     mTextureID = 0;
++    trace.markSucceeded();
+ }
+ 
+ angle::Result TextureGL::setImage(const gl::Context *context,
+@@ -190,6 +200,13 @@ angle::Result TextureGL::setImage(const gl::Context *context,
+     gl::TextureTarget target = index.getTarget();
+     size_t level             = static_cast<size_t>(index.getLevelIndex());
+ 
++    char traceDetails[192];
++    snprintf(traceDetails, sizeof(traceDetails),
++             "texture=%u target=0x%x level=%zu dims=%dx%dx%d format=0x%x type=0x%x unpackBuffer=%d rowLength=%d",
++             mTextureID, ToGLenum(target), level, size.width, size.height, size.depth,
++             internalFormat, type, !!unpackBuffer, unpack.rowLength);
++    ScopedTraceMarker uploadTrace("texture_setImage", traceDetails);
++
+     if (features.unpackOverlappingRowsSeparatelyUnpackBuffer.enabled && unpackBuffer &&
+         unpack.rowLength != 0 && unpack.rowLength < size.width)
+     {
+@@ -200,12 +217,16 @@ angle::Result TextureGL::setImage(const gl::Context *context,
+ 
+         if (size.width == 0 || size.height == 0 || size.depth == 0)
+         {
++            uploadTrace.markSucceeded();
+             return angle::Result::Continue;
+         }
+ 
+         gl::Box area(0, 0, 0, size.width, size.height, size.depth);
+-        return setSubImageRowByRowWorkaround(context, target, level, area, format, type, unpack,
+-                                             unpackBuffer, 0, pixels);
++        angle::Result result = setSubImageRowByRowWorkaround(
++            context, target, level, area, format, type, unpack, unpackBuffer, 0, pixels);
++        if (result == angle::Result::Continue)
++            uploadTrace.markSucceeded();
++        return result;
+     }
+ 
+     if (features.unpackLastRowSeparatelyForPaddingInclusion.enabled)
+@@ -224,17 +245,22 @@ angle::Result TextureGL::setImage(const gl::Context *context,
+ 
+             if (size.width == 0 || size.height == 0 || size.depth == 0)
+             {
++                uploadTrace.markSucceeded();
+                 return angle::Result::Continue;
+             }
+ 
+             gl::Box area(0, 0, 0, size.width, size.height, size.depth);
+-            return setSubImagePaddingWorkaround(context, target, level, area, format, type, unpack,
+-                                                unpackBuffer, pixels);
++            angle::Result result = setSubImagePaddingWorkaround(
++                context, target, level, area, format, type, unpack, unpackBuffer, pixels);
++            if (result == angle::Result::Continue)
++                uploadTrace.markSucceeded();
++            return result;
+         }
+     }
+ 
+     ANGLE_TRY(setImageHelper(context, target, level, internalFormat, size, format, type, pixels));
+ 
++    uploadTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+@@ -258,6 +284,15 @@ angle::Result TextureGL::setImageHelper(const gl::Context *context,
+     nativegl::TexImageFormat texImageFormat =
+         nativegl::GetTexImageFormat(functions, features, internalFormat, format, type);
+ 
++    char traceDetails[192];
++    snprintf(traceDetails, sizeof(traceDetails),
++             "texture=%u target=0x%x level=%zu dims=%dx%dx%d format=0x%x nativeFormat=0x%x type=0x%x hasPixels=%d",
++             mTextureID, nativegl::UseTexImage2D(getType()) ? nativegl::GetTextureBindingTarget(target)
++                                                            : ToGLenum(target),
++             level, size.width, size.height, size.depth, internalFormat,
++             texImageFormat.internalFormat, type, !!pixels);
++    ScopedTraceMarker storageTrace("texture_native_storage", traceDetails);
++
+     stateManager->bindTexture(getType(), mTextureID);
+ 
+     if (features.resetTexImage2DBaseLevel.enabled)
+@@ -310,6 +345,7 @@ angle::Result TextureGL::setImageHelper(const gl::Context *context,
+         }
+     }
+ 
++    storageTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+@@ -350,6 +386,13 @@ angle::Result TextureGL::setSubImage(const gl::Context *context,
+     gl::TextureTarget target = index.getTarget();
+     size_t level             = static_cast<size_t>(index.getLevelIndex());
+ 
++    char traceDetails[176];
++    snprintf(traceDetails, sizeof(traceDetails),
++             "texture=%u target=0x%x level=%zu area=%dx%dx%d format=0x%x type=0x%x unpackBuffer=%d rowLength=%d",
++             mTextureID, ToGLenum(target), level, area.width, area.height, area.depth,
++             format, type, !!unpackBuffer, unpack.rowLength);
++    ScopedTraceMarker subImageTrace("texture_subImage", traceDetails);
++
+     ASSERT(getLevelInfo(target, level).lumaWorkaround.enabled ==
+            GetLevelInfo(features, originalInternalFormatInfo, texSubImageFormat.format)
+                .lumaWorkaround.enabled);
+@@ -361,6 +404,7 @@ angle::Result TextureGL::setSubImage(const gl::Context *context,
+         ANGLE_TRY(setSubImageRowByRowWorkaround(context, target, level, area, format, type, unpack,
+                                                 unpackBuffer, 0, pixels));
+         contextGL->markWorkSubmitted();
++        subImageTrace.markSucceeded();
+         return angle::Result::Continue;
+     }
+ 
+@@ -380,6 +424,7 @@ angle::Result TextureGL::setSubImage(const gl::Context *context,
+             ANGLE_TRY(setSubImagePaddingWorkaround(context, target, level, area, format, type,
+                                                    unpack, unpackBuffer, pixels));
+             contextGL->markWorkSubmitted();
++            subImageTrace.markSucceeded();
+             return angle::Result::Continue;
+         }
+     }
+@@ -390,6 +435,7 @@ angle::Result TextureGL::setSubImage(const gl::Context *context,
+                                                 unpackBuffer, kUploadTextureDataInChunksUploadSize,
+                                                 pixels));
+         contextGL->markWorkSubmitted();
++        subImageTrace.markSucceeded();
+         return angle::Result::Continue;
+     }
+ 
+@@ -412,6 +458,7 @@ angle::Result TextureGL::setSubImage(const gl::Context *context,
+     }
+ 
+     contextGL->markWorkSubmitted();
++    subImageTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+@@ -1095,6 +1142,11 @@ angle::Result TextureGL::setStorage(const gl::Context *context,
+                                     GLenum internalFormat,
+                                     const gl::Extents &size)
+ {
++    char traceDetails[160];
++    snprintf(traceDetails, sizeof(traceDetails), "texture=%u type=%d levels=%zu dims=%dx%dx%d format=0x%x",
++             mTextureID, static_cast<int>(type), levels, size.width, size.height, size.depth,
++             internalFormat);
++    ScopedTraceMarker storageTrace("texture_immutable_storage", traceDetails);
+     ContextGL *contextGL              = GetImplAs<ContextGL>(context);
+     const FunctionsGL *functions      = GetFunctionsGL(context);
+     StateManagerGL *stateManager      = GetStateManagerGL(context);
+@@ -1269,6 +1321,7 @@ angle::Result TextureGL::setStorage(const gl::Context *context,
+         context, type, 0, levels,
+         GetLevelInfo(features, originalInternalFormatInfo, texStorageFormat.internalFormat));
+ 
++    storageTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+@@ -1413,6 +1466,11 @@ angle::Result TextureGL::setImageExternal(const gl::Context *context,
+ 
+ angle::Result TextureGL::generateMipmap(const gl::Context *context)
+ {
++    char traceDetails[128];
++    snprintf(traceDetails, sizeof(traceDetails), "texture=%u type=%d base=%u max=%u",
++             mTextureID, static_cast<int>(getType()), mState.getEffectiveBaseLevel(),
++             mState.getMipmapMaxLevel());
++    ScopedTraceMarker mipmapTrace("texture_generateMipmap", traceDetails);
+     ContextGL *contextGL              = GetImplAs<ContextGL>(context);
+     const FunctionsGL *functions      = GetFunctionsGL(context);
+     StateManagerGL *stateManager      = GetStateManagerGL(context);
+@@ -1483,6 +1541,7 @@ angle::Result TextureGL::generateMipmap(const gl::Context *context)
+                  getBaseLevelInfo());
+ 
+     contextGL->markWorkSubmitted();
++    mipmapTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+@@ -2018,11 +2077,19 @@ angle::Result TextureGL::recreateTexture(const gl::Context *context)
+ {
+     const FunctionsGL *functions = GetFunctionsGL(context);
+     StateManagerGL *stateManager = GetStateManagerGL(context);
++    const GLuint oldTexture = mTextureID;
++    char traceDetails[96];
++    snprintf(traceDetails, sizeof(traceDetails), "object=%p oldTexture=%u", this, oldTexture);
++    ScopedTraceMarker recreateTrace("texture_recreate", traceDetails);
+ 
+     stateManager->bindTexture(getType(), mTextureID);
+     stateManager->deleteTexture(mTextureID);
+ 
+     functions->genTextures(1, &mTextureID);
++    char recreateDetails[112];
++    snprintf(recreateDetails, sizeof(recreateDetails), "WPE_GPU|ANGLE_TEXTURE_RECREATE|object=%p oldTexture=%u newTexture=%u",
++             this, oldTexture, mTextureID);
++    __trace_mark__(recreateDetails);
+     stateManager->bindTexture(getType(), mTextureID);
+ 
+     mLevelInfo.clear();
+@@ -2038,6 +2105,7 @@ angle::Result TextureGL::recreateTexture(const gl::Context *context)
+ 
+     onStateChange(angle::SubjectMessage::SubjectChanged);
+ 
++    recreateTrace.markSucceeded();
+     return angle::Result::Continue;
+ }
+ 
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TraceMarkerGL.h b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TraceMarkerGL.h
+new file mode 100644
+index 000000000000..9c1e5d1b8538
+--- /dev/null
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TraceMarkerGL.h
+@@ -0,0 +1,58 @@
++#pragma once
++
++#include <fcntl.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++
++#define TRACE_MARKER_PATH "/sys/kernel/debug/tracing/trace_marker"
++
++namespace rx {
++
++inline void __trace_mark__(const char* message)
++{
++    int fd = open(TRACE_MARKER_PATH, O_WRONLY);
++    if (fd < 0) {
++        perror("Failed to open trace_marker");
++        return;
++    }
++    size_t messageLength = strlen(message);
++    ssize_t bytesWritten = write(fd, message, messageLength);
++    if (bytesWritten < 0)
++        perror("Failed to write to trace_marker");
++    else if (static_cast<size_t>(bytesWritten) < messageLength)
++        fprintf(stderr, "Partial write to trace_marker: expected %zu bytes, wrote %zd bytes\n", messageLength, bytesWritten);
++    if (close(fd) < 0)
++        perror("Failed to close trace_marker");
++}
++
++class ScopedTraceMarker
++{
++  public:
++    ScopedTraceMarker(const char* operation, const char* details)
++        : m_operation(operation)
++        , m_details(details)
++    {
++        char message[384];
++        snprintf(message, sizeof(message), "WPE_GPU|ANGLE_TEXTURE|BEGIN|op=%s %s", m_operation, m_details);
++        __trace_mark__(message);
++    }
++
++    ~ScopedTraceMarker()
++    {
++        char message[384];
++        snprintf(message, sizeof(message), "WPE_GPU|ANGLE_TEXTURE|END|op=%s result=%s %s",
++                 m_operation, m_succeeded ? "success" : "error_or_early_return", m_details);
++        __trace_mark__(message);
++    }
++
++    void markSucceeded() { m_succeeded = true; }
++
++  private:
++    const char* m_operation;
++    const char* m_details;
++    bool m_succeeded { false };
++};
++
++} // namespace rx
+\ No newline at end of file
+diff --git a/Source/ThirdParty/ANGLE/src/libGLESv2.gni b/Source/ThirdParty/ANGLE/src/libGLESv2.gni
+index 41bd81aa18dc..80598073d556 100644
+--- a/Source/ThirdParty/ANGLE/src/libGLESv2.gni
++++ b/Source/ThirdParty/ANGLE/src/libGLESv2.gni
+@@ -299,6 +299,7 @@ libangle_headers = [
+   "src/libANGLE/Query.h",
+   "src/libANGLE/RefCountObject.h",
+   "src/libANGLE/Renderbuffer.h",
++  "src/libANGLE/ResourceMemoryTracker.h",
+   "src/libANGLE/ResourceManager.h",
+   "src/libANGLE/ResourceMap.h",
+   "src/libANGLE/Sampler.h",
+@@ -438,6 +439,7 @@ libangle_sources = [
+   "src/libANGLE/ProgramPipeline.cpp",
+   "src/libANGLE/Query.cpp",
+   "src/libANGLE/Renderbuffer.cpp",
++  "src/libANGLE/ResourceMemoryTracker.cpp",
+   "src/libANGLE/ResourceManager.cpp",
+   "src/libANGLE/Sampler.cpp",
+   "src/libANGLE/Semaphore.cpp",
+diff --git a/Source/WebCore/Sources.txt b/Source/WebCore/Sources.txt
+index 0d479b374057..6d7b260f0822 100644
+--- a/Source/WebCore/Sources.txt
++++ b/Source/WebCore/Sources.txt
+@@ -1651,6 +1651,7 @@ html/canvas/WebGLRenderSharedExponent.cpp
+ html/canvas/WebGLRenderbuffer.cpp
+ html/canvas/WebGLRenderingContext.cpp
+ html/canvas/WebGLRenderingContextBase.cpp
++html/canvas/WebGLResourceTracker.cpp
+ html/canvas/WebGLSampler.cpp
+ html/canvas/WebGLShader.cpp
+ html/canvas/WebGLShaderPrecisionFormat.cpp
+diff --git a/Source/WebCore/html/canvas/WebGL2RenderingContext.cpp b/Source/WebCore/html/canvas/WebGL2RenderingContext.cpp
+index 8ae92076b2e1..3ba6f5c4d2c5 100644
+--- a/Source/WebCore/html/canvas/WebGL2RenderingContext.cpp
++++ b/Source/WebCore/html/canvas/WebGL2RenderingContext.cpp
+@@ -85,6 +85,7 @@
+ #include "WebGLQuery.h"
+ #include "WebGLRenderSharedExponent.h"
+ #include "WebGLRenderbuffer.h"
++#include "WebGLResourceTracker.h"
+ #include "WebGLSampler.h"
+ #include "WebGLStencilTexturing.h"
+ #include "WebGLSync.h"
+@@ -850,6 +851,7 @@ void WebGL2RenderingContext::texStorage2D(GCGLenum target, GCGLsizei levels, GCG
+         return;
+ 
+     m_context->texStorage2D(target, levels, internalFormat, width, height);
++    WebGLResourceTracker::singleton().textureStorageDefined(resourceTrackerKey(), texture->object(), target, levels, internalFormat, width, height, 1, "texStorage2D");
+ }
+ 
+ void WebGL2RenderingContext::texStorage3D(GCGLenum target, GCGLsizei levels, GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth)
+@@ -865,6 +867,7 @@ void WebGL2RenderingContext::texStorage3D(GCGLenum target, GCGLsizei levels, GCG
+         return;
+ 
+     m_context->texStorage3D(target, levels, internalFormat, width, height, depth);
++    WebGLResourceTracker::singleton().textureStorageDefined(resourceTrackerKey(), texture->object(), target, levels, internalFormat, width, height, depth, "texStorage3D");
+ }
+ 
+ void WebGL2RenderingContext::texImage2D(GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLsizei width, GCGLsizei height, GCGLint border, GCGLenum format, GCGLenum type, RefPtr<ArrayBufferView>&& data)
+@@ -907,6 +910,7 @@ void WebGL2RenderingContext::texImage2D(GCGLenum target, GCGLint level, GCGLint
+         return;
+ 
+     m_context->texImage2D(target, level, internalformat, width, height, border, format, type, offset);
++    trackTextureImage("texImage2D (PBO)", target, level, internalformat, format, type, width, height, 1);
+ }
+ 
+ ExceptionOr<void> WebGL2RenderingContext::texImage2D(GCGLenum target, GCGLint level, GCGLint internalformat, GCGLsizei width, GCGLsizei height, GCGLint border, GCGLenum format, GCGLenum type, TexImageSource&& source)
+@@ -951,6 +955,7 @@ void WebGL2RenderingContext::texImage3D(GCGLenum target, GCGLint level, GCGLint
+         return;
+ 
+     m_context->texImage3D(target, level, internalformat, width, height, depth, border, format, type,  offset);
++    trackTextureImage("texImage3D (PBO)", target, level, internalformat, format, type, width, height, depth);
+ }
+ 
+ ExceptionOr<void> WebGL2RenderingContext::texImage3D(GCGLenum target, GCGLint level, GCGLint internalformat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLint border, GCGLenum format, GCGLenum type, TexImageSource&& source)
+@@ -1147,6 +1152,7 @@ void WebGL2RenderingContext::compressedTexImage2D(GCGLenum target, GCGLint level
+     if (!validateTexture2DBinding("compressedTexImage2D"_s, target))
+         return;
+     m_context->compressedTexImage2D(target, level, internalformat, width, height, border, imageSize, offset);
++    trackCompressedTextureImage("compressedTexImage2D (PBO)", target, level, width, height, 1, imageSize);
+ }
+ 
+ void WebGL2RenderingContext::compressedTexImage2D(GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLsizei width, GCGLsizei height, GCGLint border, ArrayBufferView& srcData, GCGLuint srcOffset, GCGLuint srcLengthOverride)
+@@ -1165,6 +1171,7 @@ void WebGL2RenderingContext::compressedTexImage2D(GCGLenum target, GCGLint level
+     if (!slice)
+         return;
+     m_context->compressedTexImage2D(target, level, internalformat, width, height, border, slice->byteLength(), std::span(static_cast<const uint8_t*>(slice->baseAddress()), slice->byteLength()));
++    trackCompressedTextureImage("compressedTexImage2D", target, level, width, height, 1, slice->byteLength());
+ }
+ 
+ void WebGL2RenderingContext::compressedTexImage3D(GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLint border, GCGLsizei imageSize, GCGLint64 offset)
+@@ -1180,6 +1187,7 @@ void WebGL2RenderingContext::compressedTexImage3D(GCGLenum target, GCGLint level
+     if (!validateTexture3DBinding("compressedTexImage3D"_s, target))
+         return;
+     m_context->compressedTexImage3D(target, level, internalformat, width, height, depth, border, imageSize, offset);
++    trackCompressedTextureImage("compressedTexImage3D (PBO)", target, level, width, height, depth, imageSize);
+ }
+ 
+ void WebGL2RenderingContext::compressedTexImage3D(GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLint border, ArrayBufferView& srcData, GCGLuint srcOffset, GCGLuint srcLengthOverride)
+@@ -1198,6 +1206,7 @@ void WebGL2RenderingContext::compressedTexImage3D(GCGLenum target, GCGLint level
+     if (!slice)
+         return;
+     m_context->compressedTexImage3D(target, level, internalformat, width, height, depth, border, slice->byteLength(), std::span(static_cast<const uint8_t*>(slice->baseAddress()), slice->byteLength()));
++    trackCompressedTextureImage("compressedTexImage3D", target, level, width, height, depth, slice->byteLength());
+ }
+ 
+ void WebGL2RenderingContext::compressedTexSubImage2D(GCGLenum target, GCGLint level, GCGLint xoffset, GCGLint yoffset, GCGLsizei width, GCGLsizei height, GCGLenum format, ArrayBufferView& srcData)
+@@ -2997,6 +3006,7 @@ void WebGL2RenderingContext::renderbufferStorageHelper(GCGLenum target, GCGLsize
+         m_context->renderbufferStorageMultisample(target, samples, internalformat, width, height);
+     else
+         m_context->renderbufferStorage(target, internalformat, width, height);
++    trackRenderbufferStorage(samples ? "renderbufferStorageMultisample" : "renderbufferStorage", internalformat, samples, width, height);
+ }
+ 
+ GCGLuint WebGL2RenderingContext::maxTransformFeedbackSeparateAttribs() const
+diff --git a/Source/WebCore/html/canvas/WebGLBuffer.cpp b/Source/WebCore/html/canvas/WebGLBuffer.cpp
+index 86defc1ac7e1..c1ffd364b93b 100644
+--- a/Source/WebCore/html/canvas/WebGLBuffer.cpp
++++ b/Source/WebCore/html/canvas/WebGLBuffer.cpp
+@@ -29,6 +29,7 @@
+ #if ENABLE(WEBGL)
+ 
+ #include "WebGLRenderingContextBase.h"
++#include "WebGLResourceTracker.h"
+ #include <JavaScriptCore/ArrayBuffer.h>
+ #include <wtf/Lock.h>
+ #include <wtf/Locker.h>
+@@ -40,6 +41,7 @@ RefPtr<WebGLBuffer> WebGLBuffer::create(WebGLRenderingContextBase& context)
+     auto object = context.protectedGraphicsContextGL()->createBuffer();
+     if (!object)
+         return nullptr;
++    WebGLResourceTracker::singleton().bufferCreated(&context, object);
+     return adoptRef(*new WebGLBuffer { context, object });
+ }
+ 
+@@ -59,6 +61,7 @@ WebGLBuffer::~WebGLBuffer()
+ void WebGLBuffer::deleteObjectImpl(const AbstractLocker&, GraphicsContextGL* context3d, PlatformGLObject object)
+ {
+     context3d->deleteBuffer(object);
++    WebGLResourceTracker::singleton().bufferDeleted(context(), object);
+ }
+ 
+ }
+diff --git a/Source/WebCore/html/canvas/WebGLRenderbuffer.cpp b/Source/WebCore/html/canvas/WebGLRenderbuffer.cpp
+index 09931ae00450..3480ad579c6f 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderbuffer.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderbuffer.cpp
+@@ -30,6 +30,7 @@
+ #include "WebGLRenderbuffer.h"
+ 
+ #include "WebGLRenderingContextBase.h"
++#include "WebGLResourceTracker.h"
+ #include <wtf/Lock.h>
+ #include <wtf/Locker.h>
+ 
+@@ -40,6 +41,7 @@ RefPtr<WebGLRenderbuffer> WebGLRenderbuffer::create(WebGLRenderingContextBase& c
+     auto object = context.protectedGraphicsContextGL()->createRenderbuffer();
+     if (!object)
+         return nullptr;
++    WebGLResourceTracker::singleton().renderbufferCreated(&context, object);
+     return adoptRef(*new WebGLRenderbuffer { context, object });
+ }
+ 
+@@ -59,6 +61,7 @@ WebGLRenderbuffer::WebGLRenderbuffer(WebGLRenderingContextBase& context, Platfor
+ void WebGLRenderbuffer::deleteObjectImpl(const AbstractLocker&, GraphicsContextGL* context3d, PlatformGLObject object)
+ {
+     context3d->deleteRenderbuffer(object);
++    WebGLResourceTracker::singleton().renderbufferDeleted(context(), object);
+ }
+ 
+ }
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+index a1be2992f421..d861278ea0e4 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+@@ -126,6 +126,7 @@
+ #include "WebGLProvokingVertex.h"
+ #include "WebGLRenderSharedExponent.h"
+ #include "WebGLRenderbuffer.h"
++#include "WebGLResourceTracker.h"
+ #include "WebGLRenderingContext.h"
+ #include "WebGLSampler.h"
+ #include "WebGLShader.h"
+@@ -1193,6 +1194,7 @@ void WebGLRenderingContextBase::bufferData(GCGLenum target, long long size, GCGL
+         return;
+     }
+     m_context->bufferData(target, static_cast<GCGLsizeiptr>(size), usage);
++    WebGLResourceTracker::singleton().bufferDataDefined(resourceTrackerKey(), buffer->object(), static_cast<uint64_t>(size), "bufferData");
+ }
+ 
+ void WebGLRenderingContextBase::bufferData(GCGLenum target, std::optional<BufferDataSource>&& data, GCGLenum usage)
+@@ -1209,6 +1211,7 @@ void WebGLRenderingContextBase::bufferData(GCGLenum target, std::optional<Buffer
+ 
+     std::visit([&](auto& data) {
+         m_context->bufferData(target, data->span(), usage);
++        WebGLResourceTracker::singleton().bufferDataDefined(resourceTrackerKey(), buffer->object(), data->span().size(), "bufferData");
+     }, data.value());
+ }
+ 
+@@ -1311,6 +1314,7 @@ void WebGLRenderingContextBase::compressedTexImage2D(GCGLenum target, GCGLint le
+     if (!validateTexture2DBinding("compressedTexImage2D"_s, target))
+         return;
+     m_context->compressedTexImage2D(target, level, internalformat, width, height, border, data.byteLength(), data.span());
++    trackCompressedTextureImage("compressedTexImage2D", target, level, width, height, 1, data.byteLength());
+ }
+ 
+ void WebGLRenderingContextBase::compressedTexSubImage2D(GCGLenum target, GCGLint level, GCGLint xoffset, GCGLint yoffset, GCGLsizei width, GCGLsizei height, GCGLenum format, ArrayBufferView& data)
+@@ -1755,9 +1759,18 @@ void WebGLRenderingContextBase::generateMipmap(GCGLenum target)
+ {
+     if (isContextLost())
+         return;
+-    if (!validateTextureBinding("generateMipmap"_s, target))
++    RefPtr texture = validateTextureBinding("generateMipmap"_s, target);
++    if (!texture)
+         return;
+     m_context->generateMipmap(target);
++
++    GCGLint baseLevel = 0;
++    GCGLint maxLevel = 1000;
++    if (isWebGL2()) {
++        baseLevel = m_context->getTexParameteri(target, GraphicsContextGL::TEXTURE_BASE_LEVEL);
++        maxLevel = m_context->getTexParameteri(target, GraphicsContextGL::TEXTURE_MAX_LEVEL);
++    }
++    WebGLResourceTracker::singleton().textureMipmapsGenerated(resourceTrackerKey(), texture->object(), target, baseLevel, maxLevel);
+ }
+ 
+ RefPtr<WebGLActiveInfo> WebGLRenderingContextBase::getActiveAttrib(WebGLProgram& program, GCGLuint index)
+@@ -3071,13 +3084,16 @@ void WebGLRenderingContextBase::renderbufferStorageImpl(GCGLenum target, GCGLsiz
+             return;
+         }
+         m_context->renderbufferStorage(target, internalformat, width, height);
++        trackRenderbufferStorage("renderbufferStorage", internalformat, 0, width, height);
+         m_renderbufferBinding->setInternalFormat(internalformat);
+         m_renderbufferBinding->setIsValid(true);
+         m_renderbufferBinding->setSize(width, height);
+         break;
+     case GraphicsContextGL::DEPTH_STENCIL:
+-        if (isDepthStencilSupported())
++        if (isDepthStencilSupported()) {
+             m_context->renderbufferStorage(target, GraphicsContextGL::DEPTH24_STENCIL8, width, height);
++            trackRenderbufferStorage("renderbufferStorage", GraphicsContextGL::DEPTH24_STENCIL8, 0, width, height);
++        }
+         m_renderbufferBinding->setSize(width, height);
+         m_renderbufferBinding->setIsValid(isDepthStencilSupported());
+         m_renderbufferBinding->setInternalFormat(internalformat);
+@@ -3289,6 +3305,7 @@ ExceptionOr<void> WebGLRenderingContextBase::texImageSource(TexImageFunctionID f
+             m_context->texImage3D(target, level, internalformat,
+                 adjustedSourceImageRect.width(), adjustedSourceImageRect.height(), depth, 0,
+                 format, type, imageData);
++            trackTextureImage("texImage3D", target, level, internalformat, format, type, adjustedSourceImageRect.width(), adjustedSourceImageRect.height(), depth);
+         } else {
+             ASSERT(functionID == TexImageFunctionID::TexSubImage3D);
+             m_context->texSubImage3D(target, level, xoffset, yoffset, zoffset,
+@@ -3392,8 +3409,10 @@ ExceptionOr<void> WebGLRenderingContextBase::texImageSource(TexImageFunctionID f
+         && type == GraphicsContextGL::UNSIGNED_BYTE
+         && !level) {
+         if (RefPtr player = source.player()) {
+-            if (m_context->copyTextureFromMedia(*player, texture->object(), target, level, internalformat, format, type, m_unpackPremultiplyAlpha, m_unpackFlipY))
++            if (m_context->copyTextureFromMedia(*player, texture->object(), target, level, internalformat, format, type, m_unpackPremultiplyAlpha, m_unpackFlipY)) {
++                trackTextureImage("texImage2D (video copy)", target, level, internalformat, format, type, static_cast<GCGLsizei>(source.videoWidth()), static_cast<GCGLsizei>(source.videoHeight()), 1);
+                 return { };
++            }
+         }
+     }
+ 
+@@ -3456,8 +3475,10 @@ ExceptionOr<void> WebGLRenderingContextBase::texImageSource(TexImageFunctionID f
+     // type should be UNSIGNED_BYTE and level should be 0. It may be lifted in the future.
+     bool sourceImageRectIsDefault = inputSourceImageRect == sentinelEmptyRect() || inputSourceImageRect == IntRect(0, 0, static_cast<int>(internalFrame->presentationSize().width()), static_cast<int>(internalFrame->presentationSize().height()));
+     if (isVideoFrameFormatEligibleToCopy(source) && functionID == TexImageFunctionID::TexImage2D && texture && (format == GraphicsContextGL::RGB || format == GraphicsContextGL::RGBA) && sourceImageRectIsDefault && type == GraphicsContextGL::UNSIGNED_BYTE && !level) {
+-        if (m_context->copyTextureFromVideoFrame(*internalFrame, texture->object(), target, level, internalformat, format, type, m_unpackPremultiplyAlpha, m_unpackFlipY))
++        if (m_context->copyTextureFromVideoFrame(*internalFrame, texture->object(), target, level, internalformat, format, type, m_unpackPremultiplyAlpha, m_unpackFlipY)) {
++            trackTextureImage("texImage2D (video frame copy)", target, level, internalformat, format, type, static_cast<GCGLsizei>(internalFrame->presentationSize().width()), static_cast<GCGLsizei>(internalFrame->presentationSize().height()), 1);
+             return { };
++        }
+     }
+ 
+     // Fallback pure SW path.
+@@ -3510,6 +3531,7 @@ void WebGLRenderingContextBase::texImageArrayBufferViewHelper(TexImageFunctionID
+     }
+     if (functionID == TexImageFunctionID::TexImage3D) {
+         m_context->texImage3D(target, level, internalformat, width, height, depth, border, format, type, data.value());
++        trackTextureImage("texImage3D", target, level, internalformat, format, type, width, height, depth);
+         return;
+     }
+     if (functionID == TexImageFunctionID::TexSubImage3D) {
+@@ -3592,6 +3614,7 @@ void WebGLRenderingContextBase::texImageImpl(TexImageFunctionID functionID, GCGL
+             m_context->texImage3D(target, level, internalformat,
+                 adjustedSourceImageRect.width(), adjustedSourceImageRect.height(), depth, 0,
+                 format, type, pixels);
++            trackTextureImage("texImage3D", target, level, internalformat, format, type, adjustedSourceImageRect.width(), adjustedSourceImageRect.height(), depth);
+         } else {
+             ASSERT(functionID == TexImageFunctionID::TexSubImage3D);
+             m_context->texSubImage3D(target, level, xoffset, yoffset, zoffset,
+@@ -3604,6 +3627,56 @@ void WebGLRenderingContextBase::texImageImpl(TexImageFunctionID functionID, GCGL
+ void WebGLRenderingContextBase::texImage2DBase(GCGLenum target, GCGLint level, GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLint border, GCGLenum format, GCGLenum type, std::span<const uint8_t> pixels)
+ {
+     m_context->texImage2D(target, level, internalFormat, width, height, border, format, type, pixels);
++    trackTextureImage("texImage2D", target, level, internalFormat, format, type, width, height, 1);
++}
++
++WebGLTexture* WebGLRenderingContextBase::textureBoundTo(GCGLenum target) const
++{
++    if (m_activeTextureUnit >= m_textureUnits.size())
++        return nullptr;
++    auto& unit = m_textureUnits[m_activeTextureUnit];
++    switch (target) {
++    case GraphicsContextGL::TEXTURE_2D:
++        return unit.texture2DBinding.get();
++    case GraphicsContextGL::TEXTURE_CUBE_MAP:
++    case GraphicsContextGL::TEXTURE_CUBE_MAP_POSITIVE_X:
++    case GraphicsContextGL::TEXTURE_CUBE_MAP_NEGATIVE_X:
++    case GraphicsContextGL::TEXTURE_CUBE_MAP_POSITIVE_Y:
++    case GraphicsContextGL::TEXTURE_CUBE_MAP_NEGATIVE_Y:
++    case GraphicsContextGL::TEXTURE_CUBE_MAP_POSITIVE_Z:
++    case GraphicsContextGL::TEXTURE_CUBE_MAP_NEGATIVE_Z:
++        return unit.textureCubeMapBinding.get();
++    case GraphicsContextGL::TEXTURE_3D:
++        return unit.texture3DBinding.get();
++    case GraphicsContextGL::TEXTURE_2D_ARRAY:
++        return unit.texture2DArrayBinding.get();
++    default:
++        return nullptr;
++    }
++}
++
++void WebGLRenderingContextBase::trackTextureImage(const char* operation, GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLenum format, GCGLenum type, GCGLsizei width, GCGLsizei height, GCGLsizei depth)
++{
++    RefPtr texture = textureBoundTo(target);
++    if (!texture || !texture->object())
++        return;
++    WebGLResourceTracker::singleton().textureImageDefined(resourceTrackerKey(), texture->object(), target, level, width, height, depth,
++        WebGLResourceTracker::bytesPerPixel(internalformat, format, type), 0, operation);
++}
++
++void WebGLRenderingContextBase::trackCompressedTextureImage(const char* operation, GCGLenum target, GCGLint level, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLsizei imageSize)
++{
++    RefPtr texture = textureBoundTo(target);
++    if (!texture || !texture->object())
++        return;
++    WebGLResourceTracker::singleton().textureImageDefined(resourceTrackerKey(), texture->object(), target, level, width, height, depth, 0, std::max<GCGLsizei>(imageSize, 0), operation);
++}
++
++void WebGLRenderingContextBase::trackRenderbufferStorage(const char* operation, GCGLenum internalformat, GCGLsizei samples, GCGLsizei width, GCGLsizei height)
++{
++    if (!m_renderbufferBinding || !m_renderbufferBinding->object())
++        return;
++    WebGLResourceTracker::singleton().renderbufferStorageDefined(resourceTrackerKey(), m_renderbufferBinding->object(), internalformat, samples, width, height, operation);
+ }
+ 
+ void WebGLRenderingContextBase::texSubImage2DBase(GCGLenum target, GCGLint level, GCGLint xoffset, GCGLint yoffset, GCGLsizei width, GCGLsizei height, GCGLenum internalFormat, GCGLenum format, GCGLenum type, std::span<const uint8_t> pixels)
+@@ -4130,6 +4203,8 @@ void WebGLRenderingContextBase::copyTexImage2D(GCGLenum target, GCGLint level, G
+         return;
+     clearIfComposited(CallerTypeOther);
+     m_context->copyTexImage2D(target, level, internalFormat, x, y, width, height, border);
++    // For unsized internal formats ANGLE uses the read framebuffer type; assume UNSIGNED_BYTE.
++    trackTextureImage("copyTexImage2D", target, level, internalFormat, internalFormat, GraphicsContextGL::UNSIGNED_BYTE, width, height, 1);
+ }
+ 
+ ExceptionOr<void> WebGLRenderingContextBase::texImage2D(GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLenum format, GCGLenum type, std::optional<TexImageSource> source)
+@@ -4701,6 +4776,8 @@ void WebGLRenderingContextBase::detachAndRemoveAllObjects()
+ {
+     Locker locker { objectGraphLock() };
+     m_contextObjectWeakPtrFactory.revokeAll();
++    // The detached objects can't delete their GL resources anymore.
++    WebGLResourceTracker::singleton().contextObjectsDetached(resourceTrackerKey());
+ }
+ 
+ void WebGLRenderingContextBase::stop()
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.h b/Source/WebCore/html/canvas/WebGLRenderingContextBase.h
+index a7303af0b836..2d7a7b81eebf 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.h
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.h
+@@ -860,6 +860,14 @@ protected:
+     void texImageImpl(TexImageFunctionID, GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLint xoffset, GCGLint yoffset, GCGLint zoffset, GCGLenum format, GCGLenum type, Image&, GraphicsContextGL::DOMSource, bool flipY, bool premultiplyAlpha, bool ignoreNativeImageAlphaPremultiplication, const IntRect&, GCGLsizei depth, GCGLint unpackImageHeight);
+     void texImage2DBase(GCGLenum target, GCGLint level, GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLint border, GCGLenum format, GCGLenum type, std::span<const uint8_t> pixels);
+     void texSubImage2DBase(GCGLenum target, GCGLint level, GCGLint xoffset, GCGLint yoffset, GCGLsizei width, GCGLsizei height, GCGLenum internalFormat, GCGLenum format, GCGLenum type, std::span<const uint8_t> pixels);
++
++    // WebGL resource memory tracking (see WebGLResourceTracker.h). These must be called after
++    // the call to the GraphicsContextGL that defines the storage of the bound object.
++    const void* resourceTrackerKey() const { return this; }
++    WebGLTexture* textureBoundTo(GCGLenum target) const;
++    void trackTextureImage(const char* operation, GCGLenum target, GCGLint level, GCGLenum internalformat, GCGLenum format, GCGLenum type, GCGLsizei width, GCGLsizei height, GCGLsizei depth);
++    void trackCompressedTextureImage(const char* operation, GCGLenum target, GCGLint level, GCGLsizei width, GCGLsizei height, GCGLsizei depth, GCGLsizei imageSize);
++    void trackRenderbufferStorage(const char* operation, GCGLenum internalformat, GCGLsizei samples, GCGLsizei width, GCGLsizei height);
+     static ASCIILiteral texImageFunctionName(TexImageFunctionID);
+     static TexImageFunctionType texImageFunctionType(TexImageFunctionID);
+ 
+diff --git a/Source/WebCore/html/canvas/WebGLResourceTracker.cpp b/Source/WebCore/html/canvas/WebGLResourceTracker.cpp
+new file mode 100644
+index 000000000000..d2241cc55d3e
+--- /dev/null
++++ b/Source/WebCore/html/canvas/WebGLResourceTracker.cpp
+@@ -0,0 +1,563 @@
++/*
++ * Copyright (C) 2026 Igalia S.L.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS''
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
++ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
++ * THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include "config.h"
++#include "WebGLResourceTracker.h"
++
++#if ENABLE(WEBGL)
++
++#include "GraphicsContextGL.h"
++#include <algorithm>
++#include <cinttypes>
++#include <cmath>
++#include <optional>
++#include <wtf/Vector.h>
++
++// Defined in ANGLE's libANGLE/ResourceMemoryTracker.cpp. ANGLE is statically linked into the
++// same library as WebCore.
++extern "C" double angle_resource_tracker_timestamp_seconds();
++
++namespace WebCore {
++
++using GL = GraphicsContextGL;
++
++static const char* webGLResourceTypeName(unsigned type)
++{
++    switch (type) {
++    case 0:
++        return "texture";
++    case 1:
++        return "renderbuffer";
++    case 2:
++        return "buffer";
++    }
++    return "unknown";
++}
++
++static double webGLResourceBytesToMiB(uint64_t bytes)
++{
++    return static_cast<double>(bytes) / (1024.0 * 1024.0);
++}
++
++WebGLResourceTracker& WebGLResourceTracker::singleton()
++{
++    static NeverDestroyed<WebGLResourceTracker> tracker;
++    return tracker;
++}
++
++unsigned WebGLResourceTracker::bytesPerPixel(GCGLenum internalFormat, GCGLenum format, GCGLenum type)
++{
++    // Sized internal formats. The values match the pixelBytes of ANGLE's format table.
++    switch (internalFormat) {
++    case GL::R8:
++    case GL::R8_SNORM:
++    case GL::R8UI:
++    case GL::R8I:
++    case GL::STENCIL_INDEX8:
++        return 1;
++    case GL::R16F:
++    case GL::R16UI:
++    case GL::R16I:
++    case GL::R16_EXT:
++    case GL::R16_SNORM_EXT:
++    case GL::RG8:
++    case GL::RG8_SNORM:
++    case GL::RG8UI:
++    case GL::RG8I:
++    case GL::RGB565:
++    case GL::RGBA4:
++    case GL::RGB5_A1:
++    case GL::DEPTH_COMPONENT16:
++        return 2;
++    case GL::RGB8:
++    case GL::SRGB8:
++    case GL::RGB8_SNORM:
++    case GL::RGB8UI:
++    case GL::RGB8I:
++        return 3;
++    case GL::R32F:
++    case GL::R32UI:
++    case GL::R32I:
++    case GL::RG16F:
++    case GL::RG16UI:
++    case GL::RG16I:
++    case GL::RG16_EXT:
++    case GL::RG16_SNORM_EXT:
++    case GL::RGBA8:
++    case GL::SRGB8_ALPHA8:
++    case GL::RGBA8_SNORM:
++    case GL::RGBA8UI:
++    case GL::RGBA8I:
++    case GL::BGRA8_EXT:
++    case GL::RGB10_A2:
++    case GL::RGB10_A2UI:
++    case GL::R11F_G11F_B10F:
++    case GL::RGB9_E5:
++    case GL::DEPTH_COMPONENT24:
++    case GL::DEPTH_COMPONENT32_OES:
++    case GL::DEPTH_COMPONENT32F:
++    case GL::DEPTH24_STENCIL8:
++        return 4;
++    case GL::RGB16F:
++    case GL::RGB16UI:
++    case GL::RGB16I:
++    case GL::RGB16_EXT:
++    case GL::RGB16_SNORM_EXT:
++        return 6;
++    case GL::RG32F:
++    case GL::RG32UI:
++    case GL::RG32I:
++    case GL::RGBA16F:
++    case GL::RGBA16UI:
++    case GL::RGBA16I:
++    case GL::RGBA16_EXT:
++    case GL::RGBA16_SNORM_EXT:
++    case GL::DEPTH32F_STENCIL8:
++        return 8;
++    case GL::RGB32F:
++    case GL::RGB32UI:
++    case GL::RGB32I:
++        return 12;
++    case GL::RGBA32F:
++    case GL::RGBA32UI:
++    case GL::RGBA32I:
++        return 16;
++    default:
++        break;
++    }
++
++    // Unsized internal formats: the size depends on format and type.
++    switch (type) {
++    case GL::UNSIGNED_SHORT_5_6_5:
++    case GL::UNSIGNED_SHORT_4_4_4_4:
++    case GL::UNSIGNED_SHORT_5_5_5_1:
++        return 2;
++    case GL::UNSIGNED_INT_2_10_10_10_REV:
++    case GL::UNSIGNED_INT_10F_11F_11F_REV:
++    case GL::UNSIGNED_INT_5_9_9_9_REV:
++    case GL::UNSIGNED_INT_24_8:
++        return 4;
++    case GL::FLOAT_32_UNSIGNED_INT_24_8_REV:
++        return 8;
++    default:
++        break;
++    }
++
++    unsigned typeSize = 0;
++    switch (type) {
++    case GL::BYTE:
++    case GL::UNSIGNED_BYTE:
++        typeSize = 1;
++        break;
++    case GL::SHORT:
++    case GL::UNSIGNED_SHORT:
++    case GL::HALF_FLOAT:
++    case GL::HALF_FLOAT_OES:
++        typeSize = 2;
++        break;
++    case GL::INT:
++    case GL::UNSIGNED_INT:
++    case GL::FLOAT:
++        typeSize = 4;
++        break;
++    default:
++        return 0;
++    }
++
++    switch (format) {
++    case GL::RED:
++    case GL::RED_INTEGER:
++    case GL::ALPHA:
++    case GL::LUMINANCE:
++        return typeSize;
++    case GL::DEPTH_COMPONENT:
++        // ANGLE stores DEPTH_COMPONENT/UNSIGNED_INT as 24 bits of depth + 8 unused bits.
++        return typeSize;
++    case GL::RG:
++    case GL::RG_INTEGER:
++    case GL::LUMINANCE_ALPHA:
++        return 2 * typeSize;
++    case GL::RGB:
++    case GL::RGB_INTEGER:
++    case GL::SRGB_EXT:
++        return 3 * typeSize;
++    case GL::RGBA:
++    case GL::RGBA_INTEGER:
++    case GL::BGRA_EXT:
++    case GL::SRGB_ALPHA_EXT:
++        return 4 * typeSize;
++    default:
++        return 0;
++    }
++}
++
++uint64_t WebGLResourceTracker::compressedImageSize(GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth)
++{
++    unsigned blockWidth = 4;
++    unsigned blockHeight = 4;
++    unsigned blockBytes = 0;
++
++    switch (internalFormat) {
++    case GL::COMPRESSED_RGB_S3TC_DXT1_EXT:
++    case GL::COMPRESSED_RGBA_S3TC_DXT1_EXT:
++    case GL::COMPRESSED_SRGB_S3TC_DXT1_EXT:
++    case GL::COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
++    case GL::ETC1_RGB8_OES:
++    case GL::COMPRESSED_R11_EAC:
++    case GL::COMPRESSED_SIGNED_R11_EAC:
++    case GL::COMPRESSED_RGB8_ETC2:
++    case GL::COMPRESSED_SRGB8_ETC2:
++    case GL::COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
++    case GL::COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2:
++    case GL::COMPRESSED_RED_RGTC1_EXT:
++    case GL::COMPRESSED_SIGNED_RED_RGTC1_EXT:
++        blockBytes = 8;
++        break;
++    case GL::COMPRESSED_RGBA_S3TC_DXT3_EXT:
++    case GL::COMPRESSED_RGBA_S3TC_DXT5_EXT:
++    case GL::COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
++    case GL::COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
++    case GL::COMPRESSED_RG11_EAC:
++    case GL::COMPRESSED_SIGNED_RG11_EAC:
++    case GL::COMPRESSED_RGBA8_ETC2_EAC:
++    case GL::COMPRESSED_SRGB8_ALPHA8_ETC2_EAC:
++    case GL::COMPRESSED_RED_GREEN_RGTC2_EXT:
++    case GL::COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT:
++    case GL::COMPRESSED_RGBA_BPTC_UNORM_EXT:
++    case GL::COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT:
++    case GL::COMPRESSED_RGB_BPTC_SIGNED_FLOAT_EXT:
++    case GL::COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_EXT:
++        blockBytes = 16;
++        break;
++    default: {
++        // ASTC: all the block sizes use 16 bytes per block.
++        static constexpr std::pair<unsigned, unsigned> astcBlocks[] = {
++            { 4, 4 }, { 5, 4 }, { 5, 5 }, { 6, 5 }, { 6, 6 }, { 8, 5 }, { 8, 6 },
++            { 8, 8 }, { 10, 5 }, { 10, 6 }, { 10, 8 }, { 10, 10 }, { 12, 10 }, { 12, 12 }
++        };
++        std::optional<unsigned> astcIndex;
++        if (internalFormat >= GL::COMPRESSED_RGBA_ASTC_4x4_KHR && internalFormat <= GL::COMPRESSED_RGBA_ASTC_12x12_KHR)
++            astcIndex = internalFormat - GL::COMPRESSED_RGBA_ASTC_4x4_KHR;
++        else if (internalFormat >= GL::COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR && internalFormat <= GL::COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR)
++            astcIndex = internalFormat - GL::COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR;
++        if (!astcIndex || *astcIndex >= std::size(astcBlocks))
++            return 0;
++        blockWidth = astcBlocks[*astcIndex].first;
++        blockHeight = astcBlocks[*astcIndex].second;
++        blockBytes = 16;
++        break;
++    }
++    }
++
++    if (width <= 0 || height <= 0 || depth <= 0)
++        return 0;
++    uint64_t blocksWide = (static_cast<uint64_t>(width) + blockWidth - 1) / blockWidth;
++    uint64_t blocksHigh = (static_cast<uint64_t>(height) + blockHeight - 1) / blockHeight;
++    return blocksWide * blocksHigh * blockBytes * depth;
++}
++
++WebGLResourceTracker::Resource& WebGLResourceTracker::ensureResource(const void* context, GCGLuint name, Type type)
++{
++    auto it = m_resources.find({ context, name });
++    if (it != m_resources.end() && it->second.type == type)
++        return it->second;
++
++    // Resource not created through the tracked paths: start tracking it now.
++    WTFLogAlways("[WebGL] [%.6f] WARNING: %s %u (context %p) was not tracked, tracking it from now on", elapsedSeconds(), webGLResourceTypeName(static_cast<unsigned>(type)), name, context);
++    addResource(context, name, type, "implicitly created");
++    return m_resources.find({ context, name })->second;
++}
++
++double WebGLResourceTracker::elapsedSeconds()
++{
++    // The clock lives in ANGLE (gl::ResourceMemoryTracker), so both trackers share time 0.
++    return angle_resource_tracker_timestamp_seconds();
++}
++
++void WebGLResourceTracker::addResource(const void* context, GCGLuint name, Type type, const char* operation)
++{
++    if (!name)
++        return;
++
++    auto result = m_resources.emplace(ObjectKey { context, name }, Resource(type));
++    if (!result.second) {
++        // Name reused without a delete (shouldn't happen): drop the old entry first.
++        removeResource(context, name, result.first->second.type, "replaced");
++        result = m_resources.emplace(ObjectKey { context, name }, Resource(type));
++    }
++
++    m_totals[static_cast<size_t>(type)].count++;
++    logTotals(operation, type, name, 0);
++}
++
++void WebGLResourceTracker::removeResource(const void* context, GCGLuint name, Type type, const char* operation)
++{
++    if (!name)
++        return;
++
++    auto it = m_resources.find({ context, name });
++    if (it == m_resources.end() || it->second.type != type)
++        return;
++
++    auto& totals = m_totals[static_cast<size_t>(type)];
++    uint64_t bytes = it->second.bytes;
++    totals.count--;
++    totals.bytes -= bytes;
++    m_resources.erase(it);
++    logTotals(operation, type, name, -static_cast<int64_t>(bytes));
++}
++
++void WebGLResourceTracker::setResourceBytes(Resource& resource, uint64_t bytes)
++{
++    auto& totals = m_totals[static_cast<size_t>(resource.type)];
++    totals.bytes = totals.bytes - resource.bytes + bytes;
++    resource.bytes = bytes;
++}
++
++void WebGLResourceTracker::setTextureImage(Resource& resource, GCGLenum target, GCGLint level, const ImageInfo& image)
++{
++    auto& slot = resource.images[{ target, level }];
++    uint64_t newBytes = resource.bytes - slot.bytes + image.bytes;
++    slot = image;
++    setResourceBytes(resource, newBytes);
++}
++
++void WebGLResourceTracker::logChange(const char* operation, Type type, GCGLuint name, uint64_t previousBytes, uint64_t newBytes)
++{
++    // Only log when the totals change.
++    if (previousBytes != newBytes)
++        logTotals(operation, type, name, static_cast<int64_t>(newBytes) - static_cast<int64_t>(previousBytes));
++}
++
++void WebGLResourceTracker::logTotals(const char* operation, Type type, GCGLuint name, int64_t deltaBytes)
++{
++    const auto& textures = m_totals[static_cast<size_t>(Type::Texture)];
++    const auto& renderbuffers = m_totals[static_cast<size_t>(Type::Renderbuffer)];
++    const auto& buffers = m_totals[static_cast<size_t>(Type::Buffer)];
++    uint64_t total = textures.bytes + renderbuffers.bytes + buffers.bytes;
++
++    WTFLogAlways("[WebGL] [%.6f] %s %s %u (%+" PRId64 " bytes) => "
++        "textures: %" PRIu64 " (%" PRIu64 " bytes, %.2f MiB) | "
++        "renderbuffers: %" PRIu64 " (%" PRIu64 " bytes, %.2f MiB) | "
++        "buffers: %" PRIu64 " (%" PRIu64 " bytes, %.2f MiB) | "
++        "total: %" PRIu64 " bytes (%.2f MiB)",
++        elapsedSeconds(), operation, webGLResourceTypeName(static_cast<unsigned>(type)), name, deltaBytes,
++        textures.count, textures.bytes, webGLResourceBytesToMiB(textures.bytes),
++        renderbuffers.count, renderbuffers.bytes, webGLResourceBytesToMiB(renderbuffers.bytes),
++        buffers.count, buffers.bytes, webGLResourceBytesToMiB(buffers.bytes),
++        total, webGLResourceBytesToMiB(total));
++}
++
++void WebGLResourceTracker::textureCreated(const void* context, GCGLuint texture)
++{
++    Locker locker { m_lock };
++    addResource(context, texture, Type::Texture, "created");
++}
++
++void WebGLResourceTracker::textureDeleted(const void* context, GCGLuint texture)
++{
++    Locker locker { m_lock };
++    removeResource(context, texture, Type::Texture, "deleted");
++}
++
++void WebGLResourceTracker::textureImageDefined(const void* context, GCGLuint texture, GCGLenum target, GCGLint level, GCGLsizei width, GCGLsizei height, GCGLsizei depth, unsigned bytesPerPixel, uint64_t compressedSize, const char* operation)
++{
++    if (!texture)
++        return;
++
++    Locker locker { m_lock };
++    auto& resource = ensureResource(context, texture, Type::Texture);
++
++    ImageInfo image { width, height, depth, bytesPerPixel, 0 };
++    if (width > 0 && height > 0 && depth > 0)
++        image.bytes = bytesPerPixel ? static_cast<uint64_t>(bytesPerPixel) * width * height * depth : compressedSize;
++
++    uint64_t previousBytes = resource.bytes;
++    setTextureImage(resource, target, level, image);
++    logChange(operation, Type::Texture, texture, previousBytes, resource.bytes);
++}
++
++void WebGLResourceTracker::textureStorageDefined(const void* context, GCGLuint texture, GCGLenum target, GCGLsizei levels, GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, const char* operation)
++{
++    if (!texture)
++        return;
++
++    Locker locker { m_lock };
++    auto& resource = ensureResource(context, texture, Type::Texture);
++    resource.immutable = true;
++
++    uint64_t previousBytes = resource.bytes;
++    resource.images.clear();
++    setResourceBytes(resource, 0);
++
++    unsigned pixelBytes = bytesPerPixel(internalFormat, GL::NONE, GL::NONE);
++    bool isArray = target == GL::TEXTURE_2D_ARRAY;
++    for (GCGLsizei level = 0; level < levels; ++level) {
++        ImageInfo image {
++            std::max(width >> level, 1),
++            std::max(height >> level, 1),
++            isArray ? depth : std::max(depth >> level, 1),
++            pixelBytes,
++            0
++        };
++        image.bytes = pixelBytes ? static_cast<uint64_t>(pixelBytes) * image.width * image.height * image.depth : compressedImageSize(internalFormat, image.width, image.height, image.depth);
++        if (target == GL::TEXTURE_CUBE_MAP) {
++            for (GCGLenum face = GL::TEXTURE_CUBE_MAP_POSITIVE_X; face <= GL::TEXTURE_CUBE_MAP_NEGATIVE_Z; ++face)
++                setTextureImage(resource, face, level, image);
++        } else
++            setTextureImage(resource, target, level, image);
++    }
++
++    logChange(operation, Type::Texture, texture, previousBytes, resource.bytes);
++}
++
++void WebGLResourceTracker::textureMipmapsGenerated(const void* context, GCGLuint texture, GCGLenum target, GCGLint baseLevel, GCGLint maxLevel)
++{
++    if (!texture)
++        return;
++
++    Locker locker { m_lock };
++    auto& resource = ensureResource(context, texture, Type::Texture);
++    // Immutable textures already have all their levels allocated.
++    if (resource.immutable)
++        return;
++
++    GCGLenum baseTarget = target == GL::TEXTURE_CUBE_MAP ? GL::TEXTURE_CUBE_MAP_POSITIVE_X : target;
++    auto baseIt = resource.images.find({ baseTarget, baseLevel });
++    if (baseIt == resource.images.end())
++        return;
++    ImageInfo base = baseIt->second;
++    if (!base.bytes || !base.bytesPerPixel)
++        return;
++
++    // Same computation as ANGLE's TextureState::getMipmapMaxLevel().
++    int maxDimension = std::max(base.width, base.height);
++    if (target == GL::TEXTURE_3D)
++        maxDimension = std::max(maxDimension, base.depth);
++    GCGLint lastLevel = std::min<GCGLint>(baseLevel + static_cast<GCGLint>(std::log2(maxDimension)), maxLevel);
++    if (lastLevel <= baseLevel)
++        return;
++
++    uint64_t previousBytes = resource.bytes;
++    bool isArray = target == GL::TEXTURE_2D_ARRAY;
++    for (GCGLint level = baseLevel + 1; level <= lastLevel; ++level) {
++        int relativeLevel = level - baseLevel;
++        ImageInfo image {
++            std::max(base.width >> relativeLevel, 1),
++            std::max(base.height >> relativeLevel, 1),
++            isArray ? base.depth : std::max(base.depth >> relativeLevel, 1),
++            base.bytesPerPixel,
++            0
++        };
++        image.bytes = static_cast<uint64_t>(image.bytesPerPixel) * image.width * image.height * image.depth;
++        if (target == GL::TEXTURE_CUBE_MAP) {
++            for (GCGLenum face = GL::TEXTURE_CUBE_MAP_POSITIVE_X; face <= GL::TEXTURE_CUBE_MAP_NEGATIVE_Z; ++face)
++                setTextureImage(resource, face, level, image);
++        } else
++            setTextureImage(resource, target, level, image);
++    }
++
++    logChange("generateMipmap", Type::Texture, texture, previousBytes, resource.bytes);
++}
++
++void WebGLResourceTracker::renderbufferCreated(const void* context, GCGLuint renderbuffer)
++{
++    Locker locker { m_lock };
++    addResource(context, renderbuffer, Type::Renderbuffer, "created");
++}
++
++void WebGLResourceTracker::renderbufferDeleted(const void* context, GCGLuint renderbuffer)
++{
++    Locker locker { m_lock };
++    removeResource(context, renderbuffer, Type::Renderbuffer, "deleted");
++}
++
++void WebGLResourceTracker::renderbufferStorageDefined(const void* context, GCGLuint renderbuffer, GCGLenum internalFormat, GCGLsizei samples, GCGLsizei width, GCGLsizei height, const char* operation)
++{
++    if (!renderbuffer)
++        return;
++
++    Locker locker { m_lock };
++    auto& resource = ensureResource(context, renderbuffer, Type::Renderbuffer);
++    uint64_t bytes = 0;
++    if (width > 0 && height > 0)
++        bytes = static_cast<uint64_t>(bytesPerPixel(internalFormat, GL::NONE, GL::NONE)) * width * height * std::max<GCGLsizei>(samples, 1);
++
++    uint64_t previousBytes = resource.bytes;
++    setResourceBytes(resource, bytes);
++    logChange(operation, Type::Renderbuffer, renderbuffer, previousBytes, resource.bytes);
++}
++
++void WebGLResourceTracker::bufferCreated(const void* context, GCGLuint buffer)
++{
++    Locker locker { m_lock };
++    addResource(context, buffer, Type::Buffer, "created");
++}
++
++void WebGLResourceTracker::bufferDeleted(const void* context, GCGLuint buffer)
++{
++    Locker locker { m_lock };
++    removeResource(context, buffer, Type::Buffer, "deleted");
++}
++
++void WebGLResourceTracker::bufferDataDefined(const void* context, GCGLuint buffer, uint64_t size, const char* operation)
++{
++    if (!buffer)
++        return;
++
++    Locker locker { m_lock };
++    auto& resource = ensureResource(context, buffer, Type::Buffer);
++    uint64_t previousBytes = resource.bytes;
++    setResourceBytes(resource, size);
++    logChange(operation, Type::Buffer, buffer, previousBytes, resource.bytes);
++}
++
++void WebGLResourceTracker::contextObjectsDetached(const void* context)
++{
++    Locker locker { m_lock };
++
++    Vector<std::pair<GCGLuint, Type>> remaining;
++    uint64_t remainingBytes = 0;
++    for (auto& [key, resource] : m_resources) {
++        if (key.first != context)
++            continue;
++        remaining.append({ key.second, resource.type });
++        remainingBytes += resource.bytes;
++    }
++
++    if (remaining.isEmpty())
++        return;
++
++    // WebGLRenderingContextBase::detachAndRemoveAllObjects() revokes the objects' pointers to the
++    // context, so these objects will never call delete on the GL resource. Unless the GL context
++    // (or its share group) goes away, ANGLE keeps them alive.
++    WTFLogAlways("[WebGL] [%.6f] context %p detached %zu resources (%" PRIu64 " bytes) without deleting them, dropping them", elapsedSeconds(), context, remaining.size(), remainingBytes);
++    for (auto& [name, type] : remaining)
++        removeResource(context, name, type, "detached without delete");
++}
++
++} // namespace WebCore
++
++#endif // ENABLE(WEBGL)
+diff --git a/Source/WebCore/html/canvas/WebGLResourceTracker.h b/Source/WebCore/html/canvas/WebGLResourceTracker.h
+new file mode 100644
+index 000000000000..cf88a1904901
+--- /dev/null
++++ b/Source/WebCore/html/canvas/WebGLResourceTracker.h
+@@ -0,0 +1,134 @@
++/*
++ * Copyright (C) 2026 Igalia S.L.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS''
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
++ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
++ * THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#pragma once
++
++#if ENABLE(WEBGL)
++
++#include "GraphicsTypesGL.h"
++#include <map>
++#include <wtf/Lock.h>
++#include <wtf/NeverDestroyed.h>
++#include <wtf/Noncopyable.h>
++
++namespace WebCore {
++
++// Process-wide bookkeeping of the WebGL resources that can consume a significant amount of
++// (video) memory: textures, renderbuffers and buffers. The resources are tracked at the
++// WebGLRenderingContext level, so only the resources created through the WebGL API are
++// accounted. The resources that GraphicsContextGL creates internally to implement the drawing
++// buffer (color textures, multisample/depth/stencil renderbuffers) are not included.
++//
++// Every time a resource is created or deleted, or its storage size changes, the current totals
++// are logged. ANGLE keeps the same bookkeeping on its side (gl::ResourceMemoryTracker), and logs
++// it with the "[ANGLE resources]" prefix, so both can be compared.
++//
++// Memory figures are estimations: width * height * depth * bytes per pixel * samples for each
++// image, the compressed size for compressed images, and the size for buffers.
++class WebGLResourceTracker {
++    WTF_MAKE_NONCOPYABLE(WebGLResourceTracker);
++public:
++    static WebGLResourceTracker& singleton();
++
++    // context identifies the WebGLRenderingContextBase, and the objects are identified by their
++    // GL name.
++    void textureCreated(const void* context, GCGLuint texture);
++    void textureDeleted(const void* context, GCGLuint texture);
++    // Defines (or redefines) one image (a level of a face) of the texture. Pass
++    // bytesPerPixel = 0 for compressed images, as their size is given by compressedSize.
++    void textureImageDefined(const void* context, GCGLuint texture, GCGLenum target, GCGLint level, GCGLsizei width, GCGLsizei height, GCGLsizei depth, unsigned bytesPerPixel, uint64_t compressedSize, const char* operation);
++    // texStorage2D/3D: replaces all the images of the texture with a full mip chain.
++    void textureStorageDefined(const void* context, GCGLuint texture, GCGLenum target, GCGLsizei levels, GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth, const char* operation);
++    void textureMipmapsGenerated(const void* context, GCGLuint texture, GCGLenum target, GCGLint baseLevel, GCGLint maxLevel);
++
++    void renderbufferCreated(const void* context, GCGLuint renderbuffer);
++    void renderbufferDeleted(const void* context, GCGLuint renderbuffer);
++    void renderbufferStorageDefined(const void* context, GCGLuint renderbuffer, GCGLenum internalFormat, GCGLsizei samples, GCGLsizei width, GCGLsizei height, const char* operation);
++
++    void bufferCreated(const void* context, GCGLuint buffer);
++    void bufferDeleted(const void* context, GCGLuint buffer);
++    void bufferDataDefined(const void* context, GCGLuint buffer, uint64_t size, const char* operation);
++
++    // The context detached all its objects (context lost or destroyed) without deleting them.
++    void contextObjectsDetached(const void* context);
++
++    // Bytes per pixel of an uncompressed image, 0 for compressed or unknown formats.
++    static unsigned bytesPerPixel(GCGLenum internalFormat, GCGLenum format, GCGLenum type);
++    // Size of a compressed image, 0 if the format is not a known compressed one.
++    static uint64_t compressedImageSize(GCGLenum internalFormat, GCGLsizei width, GCGLsizei height, GCGLsizei depth);
++
++private:
++    friend class NeverDestroyed<WebGLResourceTracker>;
++    WebGLResourceTracker() = default;
++
++    enum class Type : uint8_t { Texture, Renderbuffer, Buffer };
++    static constexpr size_t typeCount = 3;
++
++    using ObjectKey = std::pair<const void*, GCGLuint>;
++
++    struct ImageInfo {
++        GCGLsizei width { 0 };
++        GCGLsizei height { 0 };
++        GCGLsizei depth { 0 };
++        unsigned bytesPerPixel { 0 };
++        uint64_t bytes { 0 };
++    };
++
++    struct Resource {
++        explicit Resource(Type type)
++            : type(type)
++        {
++        }
++
++        Type type;
++        uint64_t bytes { 0 };
++        // Textures only.
++        bool immutable { false };
++        std::map<std::pair<GCGLenum, GCGLint>, ImageInfo> images;
++    };
++
++    struct Totals {
++        uint64_t count { 0 };
++        uint64_t bytes { 0 };
++    };
++
++    Resource& ensureResource(const void* context, GCGLuint, Type) WTF_REQUIRES_LOCK(m_lock);
++    void addResource(const void* context, GCGLuint, Type, const char* operation) WTF_REQUIRES_LOCK(m_lock);
++    void removeResource(const void* context, GCGLuint, Type, const char* operation) WTF_REQUIRES_LOCK(m_lock);
++    void setResourceBytes(Resource&, uint64_t bytes) WTF_REQUIRES_LOCK(m_lock);
++    void setTextureImage(Resource&, GCGLenum target, GCGLint level, const ImageInfo&) WTF_REQUIRES_LOCK(m_lock);
++    void logChange(const char* operation, Type, GCGLuint, uint64_t previousBytes, uint64_t newBytes) WTF_REQUIRES_LOCK(m_lock);
++    void logTotals(const char* operation, Type, GCGLuint, int64_t deltaBytes) WTF_REQUIRES_LOCK(m_lock);
++    // Log timestamp: seconds since the first event received by this tracker or ANGLE's.
++    static double elapsedSeconds();
++
++    Lock m_lock;
++    std::map<ObjectKey, Resource> m_resources WTF_GUARDED_BY_LOCK(m_lock);
++    Totals m_totals[typeCount] WTF_GUARDED_BY_LOCK(m_lock);
++};
++
++} // namespace WebCore
++
++#endif // ENABLE(WEBGL)
+diff --git a/Source/WebCore/html/canvas/WebGLTexture.cpp b/Source/WebCore/html/canvas/WebGLTexture.cpp
+index 143fe5e8bdbb..524156e644e5 100644
+--- a/Source/WebCore/html/canvas/WebGLTexture.cpp
++++ b/Source/WebCore/html/canvas/WebGLTexture.cpp
+@@ -31,6 +31,7 @@
+ 
+ #include "WebGLFramebuffer.h"
+ #include "WebGLRenderingContextBase.h"
++#include "WebGLResourceTracker.h"
+ 
+ namespace WebCore {
+ 
+@@ -39,6 +40,7 @@ RefPtr<WebGLTexture> WebGLTexture::create(WebGLRenderingContextBase& context)
+     auto object = context.protectedGraphicsContextGL()->createTexture();
+     if (!object)
+         return nullptr;
++    WebGLResourceTracker::singleton().textureCreated(&context, object);
+     return adoptRef(*new WebGLTexture { context, object });
+ }
+ 
+@@ -68,6 +70,7 @@ void WebGLTexture::didBind(GCGLenum target)
+ void WebGLTexture::deleteObjectImpl(const AbstractLocker&, GraphicsContextGL* context3d, PlatformGLObject object)
+ {
+     context3d->deleteTexture(object);
++    WebGLResourceTracker::singleton().textureDeleted(context(), object);
+ }
+ 
+ GCGLint WebGLTexture::computeLevelCount(GCGLsizei width, GCGLsizei height)
+-- 
+2.44.4
+

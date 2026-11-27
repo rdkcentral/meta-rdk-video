@@ -1,0 +1,26 @@
+From ed3251e5c1abe8716f86471b9bed7dbf3cde54c7 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Wed, 25 Nov 2026 06:57:06 +0000
+Subject: [PATCH] webgl2
+
+---
+ Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+index d861278ea0e4..06ed2bba7939 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+@@ -471,6 +471,9 @@ std::unique_ptr<WebGLRenderingContextBase> WebGLRenderingContextBase::create(Can
+     }
+ 
+     const bool isWebGL2 = type == WebGLVersion::WebGL2;
++    if (isWebGL2)
++        return nullptr;
++
+     RefPtr<GraphicsContextGL> context;
+     if (graphicsClient)
+         context = graphicsClient->createGraphicsContextGL(resolveGraphicsContextGLAttributes(attributes, isWebGL2, *scriptExecutionContext));
+-- 
+2.44.4
+

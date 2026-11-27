@@ -1,0 +1,463 @@
+From eeef0334c8a1160cc1c530cc666cd33f8be9559e Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Thu, 26 Nov 2026 20:07:42 +0000
+Subject: [PATCH] additional trace markers
+
+---
+ .../opengl/GraphicsContextGLOpenGL.cpp        | 90 +++++++++++++++++++
+ 1 file changed, 90 insertions(+)
+
+diff --git a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
+index cede9d54da8e..43ad68657cc4 100644
+--- a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
++++ b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
+@@ -42,6 +42,7 @@
+ #include "TemporaryOpenGLSetting.h"
+ #include "WebGLRenderingContextBase.h"
+ #include <JavaScriptCore/RegularExpression.h>
++#include <cstdlib>
+ #include <cstring>
+ #include <cinttypes>
+ #include <wtf/HexNumber.h>
+@@ -73,6 +74,46 @@
+ 
+ namespace WebCore {
+ 
++#if USE(LINUX_FTRACE)
++// Per-call GL markers, comparable to the 2.46 ANGLE gpu.angle events. They are very
++// verbose, so they also require WEBKIT_USE_FTRACE=1 plus WEBKIT_FTRACE_GL_CALLS=1.
++static bool glCallTracingEnabled()
++{
++    static const bool enabled = [] {
++        const char* value = getenv("WEBKIT_FTRACE_GL_CALLS");
++        return SystemTracingFTrace::isEnabled() && value && *value && *value != '0';
++    }();
++    return enabled;
++}
++
++class GLCallTraceScope {
++    WTF_MAKE_NONCOPYABLE(GLCallTraceScope);
++public:
++    explicit GLCallTraceScope(const char* name)
++        : m_name(glCallTracingEnabled() ? name : nullptr)
++    {
++    }
++
++    ~GLCallTraceScope()
++    {
++        if (m_name)
++            SystemTracingFTrace::instance().addMark('E', m_name);
++    }
++
++    bool enabled() const { return m_name; }
++
++private:
++    const char* m_name;
++};
++
++#define WEBGL_GL_CALL_TRACE(name, format, ...) \
++    GLCallTraceScope glCallTraceScope("gpu.gl:" name); \
++    if (glCallTraceScope.enabled()) \
++        SystemTracingFTrace::instance().addMark('B', "gpu.gl:" name, "m=" name "(" format ")", ##__VA_ARGS__)
++#else
++#define WEBGL_GL_CALL_TRACE(...) do { } while (0)
++#endif
++
+ static ThreadSpecific<ShaderNameHash*>& getCurrentNameHashMapForShader()
+ {
+     static std::once_flag onceFlag;
+@@ -633,6 +674,7 @@ void GraphicsContextGLOpenGL::activeTexture(GCGLenum texture)
+         return;
+ 
+     m_state.activeTextureUnit = texture;
++    WEBGL_GL_CALL_TRACE("glActiveTexture", "texture=0x%x", texture);
+     ::glActiveTexture(texture);
+ }
+ 
+@@ -663,6 +705,7 @@ void GraphicsContextGLOpenGL::bindBuffer(GCGLenum target, PlatformGLObject buffe
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glBindBuffer", "target=0x%x buffer=%u", target, buffer);
+     ::glBindBuffer(target, buffer);
+ }
+ 
+@@ -699,6 +742,7 @@ void GraphicsContextGLOpenGL::bindTexture(GCGLenum target, PlatformGLObject text
+         return;
+ 
+     m_state.setBoundTexture(m_state.activeTextureUnit, texture, target);
++    WEBGL_GL_CALL_TRACE("glBindTexture", "target=0x%x texture=%u", target, texture);
+     ::glBindTexture(target, texture);
+ }
+ 
+@@ -707,6 +751,7 @@ void GraphicsContextGLOpenGL::blendColor(GCGLclampf red, GCGLclampf green, GCGLc
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glBlendColor", "red=%g green=%g blue=%g alpha=%g", red, green, blue, alpha);
+     ::glBlendColor(red, green, blue, alpha);
+ }
+ 
+@@ -715,6 +760,7 @@ void GraphicsContextGLOpenGL::blendEquation(GCGLenum mode)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glBlendEquation", "mode=0x%x", mode);
+     ::glBlendEquation(mode);
+ }
+ 
+@@ -723,6 +769,7 @@ void GraphicsContextGLOpenGL::blendEquationSeparate(GCGLenum modeRGB, GCGLenum m
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glBlendEquationSeparate", "modeRGB=0x%x modeAlpha=0x%x", modeRGB, modeAlpha);
+     ::glBlendEquationSeparate(modeRGB, modeAlpha);
+ }
+ 
+@@ -732,6 +779,7 @@ void GraphicsContextGLOpenGL::blendFunc(GCGLenum sfactor, GCGLenum dfactor)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glBlendFunc", "sfactor=0x%x dfactor=0x%x", sfactor, dfactor);
+     ::glBlendFunc(sfactor, dfactor);
+ }       
+ 
+@@ -740,6 +788,7 @@ void GraphicsContextGLOpenGL::blendFuncSeparate(GCGLenum srcRGB, GCGLenum dstRGB
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glBlendFuncSeparate", "srcRGB=0x%x dstRGB=0x%x srcAlpha=0x%x dstAlpha=0x%x", srcRGB, dstRGB, srcAlpha, dstAlpha);
+     ::glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
+ }
+ 
+@@ -784,6 +833,7 @@ void GraphicsContextGLOpenGL::clearColor(GCGLclampf r, GCGLclampf g, GCGLclampf
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glClearColor", "r=%g g=%g b=%g a=%g", r, g, b, a);
+     ::glClearColor(r, g, b, a);
+ }
+ 
+@@ -792,6 +842,7 @@ void GraphicsContextGLOpenGL::clear(GCGLbitfield mask)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glClear", "mask=0x%x", mask);
+     ::glClear(mask);
+     checkGPUStatus();
+ }
+@@ -809,6 +860,7 @@ void GraphicsContextGLOpenGL::colorMask(GCGLboolean red, GCGLboolean green, GCGL
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glColorMask", "red=%d green=%d blue=%d alpha=%d", red, green, blue, alpha);
+     ::glColorMask(red, green, blue, alpha);
+ }
+ 
+@@ -950,6 +1002,7 @@ void GraphicsContextGLOpenGL::cullFace(GCGLenum mode)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glCullFace", "mode=0x%x", mode);
+     ::glCullFace(mode);
+ }
+ 
+@@ -958,6 +1011,7 @@ void GraphicsContextGLOpenGL::depthFunc(GCGLenum func)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glDepthFunc", "func=0x%x", func);
+     ::glDepthFunc(func);
+ }
+ 
+@@ -966,6 +1020,7 @@ void GraphicsContextGLOpenGL::depthMask(GCGLboolean flag)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glDepthMask", "flag=%d", flag);
+     ::glDepthMask(flag);
+ }
+ 
+@@ -985,6 +1040,7 @@ void GraphicsContextGLOpenGL::disable(GCGLenum cap)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glDisable", "cap=0x%x", cap);
+     ::glDisable(cap);
+ }
+ 
+@@ -993,6 +1049,7 @@ void GraphicsContextGLOpenGL::disableVertexAttribArray(GCGLuint index)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glDisableVertexAttribArray", "index=%u", index);
+     ::glDisableVertexAttribArray(index);
+ }
+ 
+@@ -1023,6 +1080,7 @@ void GraphicsContextGLOpenGL::enable(GCGLenum cap)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glEnable", "cap=0x%x", cap);
+     ::glEnable(cap);
+ }
+ 
+@@ -1031,6 +1089,7 @@ void GraphicsContextGLOpenGL::enableVertexAttribArray(GCGLuint index)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glEnableVertexAttribArray", "index=%u", index);
+     ::glEnableVertexAttribArray(index);
+ }
+ 
+@@ -1039,6 +1098,7 @@ void GraphicsContextGLOpenGL::finish()
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glFinish", "");
+     ::glFinish();
+ }
+ 
+@@ -1071,6 +1131,7 @@ void GraphicsContextGLOpenGL::frontFace(GCGLenum mode)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glFrontFace", "mode=0x%x", mode);
+     ::glFrontFace(mode);
+ }
+ 
+@@ -1509,6 +1570,7 @@ void GraphicsContextGLOpenGL::pixelStorei(GCGLenum pname, GCGLint param)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glPixelStorei", "pname=0x%x param=%d", pname, param);
+     ::glPixelStorei(pname, param);
+ }
+ 
+@@ -1533,6 +1595,7 @@ void GraphicsContextGLOpenGL::scissor(GCGLint x, GCGLint y, GCGLsizei width, GCG
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glScissor", "x=%d y=%d width=%d height=%d", x, y, width, height);
+     ::glScissor(x, y, width, height);
+ }
+ 
+@@ -1556,6 +1619,7 @@ void GraphicsContextGLOpenGL::stencilFunc(GCGLenum func, GCGLint ref, GCGLuint m
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glStencilFunc", "func=0x%x ref=%d mask=0x%x", func, ref, mask);
+     ::glStencilFunc(func, ref, mask);
+ }
+ 
+@@ -1572,6 +1636,7 @@ void GraphicsContextGLOpenGL::stencilMask(GCGLuint mask)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glStencilMask", "mask=0x%x", mask);
+     ::glStencilMask(mask);
+ }
+ 
+@@ -1588,6 +1653,7 @@ void GraphicsContextGLOpenGL::stencilOp(GCGLenum fail, GCGLenum zfail, GCGLenum
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glStencilOp", "fail=0x%x zfail=0x%x zpass=0x%x", fail, zfail, zpass);
+     ::glStencilOp(fail, zfail, zpass);
+ }
+ 
+@@ -1604,6 +1670,7 @@ void GraphicsContextGLOpenGL::texParameterf(GCGLenum target, GCGLenum pname, GCG
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glTexParameterf", "target=0x%x pname=0x%x value=%g", target, pname, value);
+     ::glTexParameterf(target, pname, value);
+ }
+ 
+@@ -1612,6 +1679,7 @@ void GraphicsContextGLOpenGL::texParameteri(GCGLenum target, GCGLenum pname, GCG
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glTexParameteri", "target=0x%x pname=0x%x value=%d", target, pname, value);
+     ::glTexParameteri(target, pname, value);
+ }
+ 
+@@ -1620,6 +1688,7 @@ void GraphicsContextGLOpenGL::uniform1f(GCGLint location, GCGLfloat v0)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform1f", "location=%d v0=%g", location, v0);
+     ::glUniform1f(location, v0);
+ }
+ 
+@@ -1628,6 +1697,7 @@ void GraphicsContextGLOpenGL::uniform1fv(GCGLint location, GCGLSpan<const GCGLfl
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform1fv", "location=%d count=%zu", location, static_cast<size_t>(array.bufSize));
+     ::glUniform1fv(location, array.bufSize, array.data);
+ }
+ 
+@@ -1636,6 +1706,7 @@ void GraphicsContextGLOpenGL::uniform2f(GCGLint location, GCGLfloat v0, GCGLfloa
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform2f", "location=%d v0=%g v1=%g", location, v0, v1);
+     ::glUniform2f(location, v0, v1);
+ }
+ 
+@@ -1645,6 +1716,7 @@ void GraphicsContextGLOpenGL::uniform2fv(GCGLint location, GCGLSpan<const GCGLfl
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform2fv", "location=%d count=%zu", location, static_cast<size_t>(array.bufSize / 2));
+     ::glUniform2fv(location, array.bufSize / 2, array.data);
+ }
+ 
+@@ -1653,6 +1725,7 @@ void GraphicsContextGLOpenGL::uniform3f(GCGLint location, GCGLfloat v0, GCGLfloa
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform3f", "location=%d v0=%g v1=%g v2=%g", location, v0, v1, v2);
+     ::glUniform3f(location, v0, v1, v2);
+ }
+ 
+@@ -1662,6 +1735,7 @@ void GraphicsContextGLOpenGL::uniform3fv(GCGLint location, GCGLSpan<const GCGLfl
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform3fv", "location=%d count=%zu", location, static_cast<size_t>(array.bufSize / 3));
+     ::glUniform3fv(location, array.bufSize / 3, array.data);
+ }
+ 
+@@ -1670,6 +1744,7 @@ void GraphicsContextGLOpenGL::uniform4f(GCGLint location, GCGLfloat v0, GCGLfloa
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform4f", "location=%d v0=%g v1=%g v2=%g v3=%g", location, v0, v1, v2, v3);
+     ::glUniform4f(location, v0, v1, v2, v3);
+ }
+ 
+@@ -1679,6 +1754,7 @@ void GraphicsContextGLOpenGL::uniform4fv(GCGLint location, GCGLSpan<const GCGLfl
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform4fv", "location=%d count=%zu", location, static_cast<size_t>(array.bufSize / 4));
+     ::glUniform4fv(location, array.bufSize / 4, array.data);
+ }
+ 
+@@ -1687,6 +1763,7 @@ void GraphicsContextGLOpenGL::uniform1i(GCGLint location, GCGLint v0)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform1i", "location=%d v0=%d", location, v0);
+     ::glUniform1i(location, v0);
+ }
+ 
+@@ -1695,6 +1772,7 @@ void GraphicsContextGLOpenGL::uniform1iv(GCGLint location, GCGLSpan<const GCGLin
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform1iv", "location=%d count=%zu", location, static_cast<size_t>(array.bufSize));
+     ::glUniform1iv(location, array.bufSize, array.data);
+ }
+ 
+@@ -1703,6 +1781,7 @@ void GraphicsContextGLOpenGL::uniform2i(GCGLint location, GCGLint v0, GCGLint v1
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform2i", "location=%d v0=%d v1=%d", location, v0, v1);
+     ::glUniform2i(location, v0, v1);
+ }
+ 
+@@ -1712,6 +1791,7 @@ void GraphicsContextGLOpenGL::uniform2iv(GCGLint location, GCGLSpan<const GCGLin
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform2iv", "location=%d count=%zu", location, static_cast<size_t>(array.bufSize / 2));
+     ::glUniform2iv(location, array.bufSize / 2, array.data);
+ }
+ 
+@@ -1720,6 +1800,7 @@ void GraphicsContextGLOpenGL::uniform3i(GCGLint location, GCGLint v0, GCGLint v1
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform3i", "location=%d v0=%d v1=%d v2=%d", location, v0, v1, v2);
+     ::glUniform3i(location, v0, v1, v2);
+ }
+ 
+@@ -1729,6 +1810,7 @@ void GraphicsContextGLOpenGL::uniform3iv(GCGLint location, GCGLSpan<const GCGLin
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform3iv", "location=%d count=%zu", location, static_cast<size_t>(array.bufSize / 3));
+     ::glUniform3iv(location, array.bufSize / 3, array.data);
+ }
+ 
+@@ -1737,6 +1819,7 @@ void GraphicsContextGLOpenGL::uniform4i(GCGLint location, GCGLint v0, GCGLint v1
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform4i", "location=%d v0=%d v1=%d v2=%d v3=%d", location, v0, v1, v2, v3);
+     ::glUniform4i(location, v0, v1, v2, v3);
+ }
+ 
+@@ -1746,6 +1829,7 @@ void GraphicsContextGLOpenGL::uniform4iv(GCGLint location, GCGLSpan<const GCGLin
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniform4iv", "location=%d count=%zu", location, static_cast<size_t>(array.bufSize / 4));
+     ::glUniform4iv(location, array.bufSize / 4, array.data);
+ }
+ 
+@@ -1755,6 +1839,7 @@ void GraphicsContextGLOpenGL::uniformMatrix2fv(GCGLint location, GCGLboolean tra
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniformMatrix2fv", "location=%d count=%zu transpose=%d", location, static_cast<size_t>(array.bufSize / 4), transpose);
+     ::glUniformMatrix2fv(location, array.bufSize / 4, transpose, array.data);
+ }
+ 
+@@ -1764,6 +1849,7 @@ void GraphicsContextGLOpenGL::uniformMatrix3fv(GCGLint location, GCGLboolean tra
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniformMatrix3fv", "location=%d count=%zu transpose=%d", location, static_cast<size_t>(array.bufSize / 9), transpose);
+     ::glUniformMatrix3fv(location, array.bufSize / 9, transpose, array.data);
+ }
+ 
+@@ -1773,6 +1859,7 @@ void GraphicsContextGLOpenGL::uniformMatrix4fv(GCGLint location, GCGLboolean tra
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUniformMatrix4fv", "location=%d count=%zu transpose=%d", location, static_cast<size_t>(array.bufSize / 16), transpose);
+     ::glUniformMatrix4fv(location, array.bufSize / 16, transpose, array.data);
+ }
+ 
+@@ -1781,6 +1868,7 @@ void GraphicsContextGLOpenGL::useProgram(PlatformGLObject program)
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glUseProgram", "program=%u", program);
+     ::glUseProgram(program);
+ }
+ 
+@@ -1863,6 +1951,7 @@ void GraphicsContextGLOpenGL::vertexAttribPointer(GCGLuint index, GCGLint size,
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glVertexAttribPointer", "index=%u size=%d type=0x%x normalized=%d stride=%d offset=%" PRIdPTR, index, size, type, normalized, stride, static_cast<intptr_t>(offset));
+     ::glVertexAttribPointer(index, size, type, normalized, stride, reinterpret_cast<GLvoid*>(static_cast<intptr_t>(offset)));
+ }
+ 
+@@ -1871,6 +1960,7 @@ void GraphicsContextGLOpenGL::viewport(GCGLint x, GCGLint y, GCGLsizei width, GC
+     if (!makeContextCurrent())
+         return;
+ 
++    WEBGL_GL_CALL_TRACE("glViewport", "x=%d y=%d width=%d height=%d", x, y, width, height);
+     ::glViewport(x, y, width, height);
+ }
+ 
+-- 
+2.44.4
+
