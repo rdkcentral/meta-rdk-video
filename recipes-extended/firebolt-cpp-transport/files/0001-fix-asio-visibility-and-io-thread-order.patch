@@ -1,0 +1,69 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 230e8cc..ce53620 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -51,6 +51,14 @@ endif()
+ if(ENABLE_TESTS)
+     target_compile_options(${TARGET} PRIVATE --coverage -g -O0 -fno-inline)
+     target_link_options(${TARGET} PRIVATE --coverage)
++elseif(UNIX AND NOT APPLE)
++    # Boost.Asio is header-only and forces default visibility on its own headers, so
++    # -fvisibility=hidden alone still exports its templates/statics (e.g. any_executor
++    # dispatch tables). Restrict exports to the Firebolt API so another Boost copy in the
++    # same process (e.g. a JS runtime) can never be merged with ours by the dynamic loader.
++    set(EXPORT_MAP "${CMAKE_CURRENT_SOURCE_DIR}/FireboltTransport.map")
++    target_link_options(${TARGET} PRIVATE "-Wl,--version-script=${EXPORT_MAP}")
++    set_target_properties(${TARGET} PROPERTIES LINK_DEPENDS "${EXPORT_MAP}")
+ endif()
+ 
+ find_package(nlohmann_json CONFIG REQUIRED)
+diff --git a/src/transport.cpp b/src/transport.cpp
+index 34303ed..9630c1e 100644
+--- a/src/transport.cpp
++++ b/src/transport.cpp
+@@ -80,8 +80,8 @@ void Transport::start()
+     client_->init_asio();
+     client_->start_perpetual();
+ 
+-    connectionThread_.reset(new websocketpp::lib::thread(&client::run, client_.get()));
+-    FIREBOLT_LOG_DEBUG("Transport", "[start] connection thread started");
++    // The IO thread (client::run) is started in connect(), after client_->connect(),
++    // so that websocketpp/asio set up the connection timers before the IO thread runs.
+     startMessageWorker();
+     connectionStatus_ = TransportState::Disconnected;
+     FIREBOLT_LOG_DEBUG("Transport", "[start] transport state transitioned to %d",
+@@ -282,6 +282,14 @@ Firebolt::Error Transport::connect(std::string url, MessageCallback onMessage, C
+     client_->connect(con);
+     FIREBOLT_LOG_DEBUG("Transport", "[connect] connect() dispatched to websocket client");
+ 
++    // Start the IO thread only now (standard websocketpp order: connect, then run).
++    // start_perpetual() keeps run() alive; the thread is joined in disconnect().
++    if (!connectionThread_ || !connectionThread_->joinable())
++    {
++        connectionThread_.reset(new websocketpp::lib::thread(&client::run, client_.get()));
++        FIREBOLT_LOG_DEBUG("Transport", "[connect] connection thread started");
++    }
++
+     return Firebolt::Error::None;
+ }
+ 
+diff --git a/src/FireboltTransport.map b/src/FireboltTransport.map
+new file mode 100644
+index 0000000..cf272d4
+--- /dev/null
++++ b/src/FireboltTransport.map
+@@ -0,0 +1,14 @@
++# Export only the Firebolt API. Boost.Asio forces default visibility on its own headers,
++# so without this the library also exports its Boost/websocketpp templates and statics,
++# which the dynamic loader then shares with any other Boost copy loaded in the process.
++{
++  global:
++    extern "C++" {
++      Firebolt::*;
++      "vtable for Firebolt::*";
++      "typeinfo for Firebolt::*";
++      "typeinfo name for Firebolt::*";
++    };
++  local:
++    *;
++};
