@@ -66,3 +66,30 @@ DEBIAN_NOAUTONAME_${PN}-client = "1"
 DEBIAN_NOAUTONAME_${PN}-server = "1"
 DEBIAN_NOAUTONAME_${PN}-servermanager-lib = "1"
 DEBIAN_NOAUTONAME_${PN}-servermanager = "1"
+
+DEPENDS:append = " jsoncpp"
+
+RIALTO_EXTRA_ENV_VARIABLES ?= ""
+
+RIALTO_ENV_VARIABLES:append = '\
+\"XDG_RUNTIME_DIR=/tmp\", \
+\"GST_REGISTRY=/tmp/rialto-server-gstreamer-cache.bin\", \
+\"WESTEROS_SINK_USE_ESSRMGR=1\"\
+${@get_extra_env_variables(d)}'
+
+EXTRA_OECMAKE:append = ' \
+-DRIALTO_ENABLE_CONFIG_FILE=1 \
+-DRIALTO_CONFIG_FILE_DIR=/etc \
+-DSTARTUP_TIMEOUT_MS=4000 \
+-DNUM_OF_PRELOADED_SERVERS=1 \
+-DENVIRONMENT_VARIABLES="${RIALTO_ENV_VARIABLES}"'
+
+FILES:${PN}-servermanager-lib += "/etc/rialto-config.json"
+
+def get_extra_env_variables(d):
+    rialto_extra_env_variables = (d.getVar('RIALTO_EXTRA_ENV_VARIABLES') or '').strip()
+
+    if rialto_extra_env_variables:
+        rialto_extra_env_variables = ', ' + rialto_extra_env_variables
+
+    return rialto_extra_env_variables
