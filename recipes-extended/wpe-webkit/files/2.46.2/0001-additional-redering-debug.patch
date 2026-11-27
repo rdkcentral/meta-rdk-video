@@ -1,0 +1,369 @@
+From 37223e2af6a2fc0032a71e619a842dce1d278f10 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Fri, 23 Oct 2026 11:24:01 +0000
+Subject: [PATCH] additional redering debug
+
+---
+ .../src/libANGLE/renderer/gl/TextureGL.cpp    |   6 +
+ .../WebCore/platform/graphics/GPUDebugNexus.h | 237 ++++++++++++++++++
+ .../GraphicsContextGLTextureMapperANGLE.cpp   |   5 +-
+ .../UIProcess/linux/MemoryPressureMonitor.cpp |  29 +++
+ 4 files changed, 275 insertions(+), 2 deletions(-)
+
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+index 1e7f01e232c7..fa59d3542bd2 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+@@ -147,6 +147,12 @@ void GpuDbgDumpStats(const char *reason)
+     gpudbg::DumpProcFile("/proc/meminfo", memKeys, 4);
+     gpudbg::DumpProcFile("/proc/self/status", selfKeys, 2);
+     GPUDebugNexus::dump(reason);
++    {
++        static unsigned s_gpuDbgProcDumps = 0;
++        const bool isOom = !strcmp(reason, "GL_OUT_OF_MEMORY");
++        if (isOom ? (s_gpuDbgProcDumps++ < 3 || !(s_gpuDbgProcDumps % 20)) : !(++s_gpuDbgProcDumps % 10))
++            GPUDebugProc::dumpAll(reason);
++    }
+ }
+ 
+ namespace
+diff --git a/Source/WebCore/platform/graphics/GPUDebugNexus.h b/Source/WebCore/platform/graphics/GPUDebugNexus.h
+index d7868c6ee16b..48cf9f41c957 100644
+--- a/Source/WebCore/platform/graphics/GPUDebugNexus.h
++++ b/Source/WebCore/platform/graphics/GPUDebugNexus.h
+@@ -4,7 +4,11 @@
+ #pragma once
+ 
+ #include <dlfcn.h>
++#include <dirent.h>
++#include <limits.h>
++#include <map>
+ #include <mutex>
++#include <string>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -162,3 +166,236 @@ static inline void dumpDelta(const char* tag, const Snapshot& before, const Snap
+ }
+ 
+ } // namespace GPUDebugNexus
++
++// ---- Process / container GPU-memory breakdown (reads /proc only, no Broadcom API) ----
++namespace GPUDebugProc {
++
++// Logs the env that points WebKit's memory-pressure handler at a platform GPU-memory file, and that file's value.
++static inline void dumpGpuFileConfig(const char* reason)
++{
++    const char* file = getenv("WPE_POLL_MAX_MEMORY_GPU_FILE");
++    const char* limit = getenv("WPE_POLL_MAX_MEMORY_GPU");
++    const char* inRss = getenv("WPE_POLL_GPU_IN_FOOTPRINT");
++    char value[128] = "n/a";
++    if (file && *file) {
++        FILE* f = fopen(file, "r");
++        if (f) {
++            if (!fgets(value, sizeof(value), f))
++                strcpy(value, "(empty)");
++            fclose(f);
++            size_t n = strlen(value);
++            while (n && (value[n - 1] == '\n' || value[n - 1] == '\r'))
++                value[--n] = 0;
++        } else
++            strcpy(value, "(unreadable)");
++    }
++    fprintf(stderr, "[GPUDEBUG] GPUFILE reason=%s pid=%d WPE_POLL_MAX_MEMORY_GPU_FILE=%s value=%s WPE_POLL_MAX_MEMORY_GPU=%s WPE_POLL_GPU_IN_FOOTPRINT=%s\n",
++        reason, getpid(), file ? file : "(unset)", value, limit ? limit : "(unset)", inRss ? inRss : "(unset)");
++}
++
++// Sums Rss/Pss/Size per mapped path for the interesting classes of mappings in the given process.
++static inline void dumpMappings(const char* reason, const char* pidStr)
++{
++    char path[64];
++    snprintf(path, sizeof(path), "/proc/%s/smaps", pidStr);
++    FILE* f = fopen(path, "r");
++    if (!f) {
++        fprintf(stderr, "[GPUDEBUG] MAPS reason=%s pid=%s unreadable\n", reason, pidStr);
++        return;
++    }
++    struct Totals { unsigned long sizeKB = 0, rssKB = 0, pssKB = 0; unsigned count = 0; };
++    std::map<std::string, Totals> byClass;
++    char line[1024];
++    std::string current = "anon";
++    Totals* cur = nullptr;
++    while (fgets(line, sizeof(line), f)) {
++        unsigned long start, end;
++        char perms[8], name[800];
++        name[0] = 0;
++        if (sscanf(line, "%lx-%lx %7s %*s %*s %*s %799[^\n]", &start, &end, perms, name) >= 3) {
++            const char* p = name;
++            while (*p == ' ')
++                ++p;
++            std::string key;
++            if (!*p)
++                key = "[anon]";
++            else if (strstr(p, "nexus") || strstr(p, "nx_") || strstr(p, "nxmem"))
++                key = std::string("GFX:") + p;
++            else if (strstr(p, "/dev/dri") || strstr(p, "dmabuf") || strstr(p, "ion") || strstr(p, "/dev/mali") || strstr(p, "/dev/v3d") || strstr(p, "kgsl") || strstr(p, "drm"))
++                key = std::string("GFX:") + p;
++            else if (!strncmp(p, "/dev/", 5))
++                key = std::string("DEV:") + p;
++            else if (!strncmp(p, "[heap]", 6) || !strncmp(p, "[stack", 6))
++                key = p;
++            else if (strstr(p, ".so"))
++                key = "libs";
++            else
++                key = "files";
++            Totals& t = byClass[key];
++            t.count++;
++            t.sizeKB += (end - start) / 1024;
++            cur = &t;
++            continue;
++        }
++        unsigned long v;
++        if (cur && sscanf(line, "Rss: %lu kB", &v) == 1)
++            cur->rssKB += v;
++        else if (cur && sscanf(line, "Pss: %lu kB", &v) == 1)
++            cur->pssKB += v;
++    }
++    fclose(f);
++    for (auto& e : byClass) {
++        const bool gfxLike = !strncmp(e.first.c_str(), "GFX:", 4) || !strncmp(e.first.c_str(), "DEV:", 4);
++        if (!gfxLike && e.second.rssKB < 4096)
++            continue;
++        fprintf(stderr, "[GPUDEBUG] MAPS reason=%s pid=%s class=%s maps=%u sizeKB=%lu rssKB=%lu pssKB=%lu\n",
++            reason, pidStr, e.first.c_str(), e.second.count, e.second.sizeKB, e.second.rssKB, e.second.pssKB);
++    }
++}
++
++// Counts open file descriptors by target class (dmabuf, /dev/nexus, drm, sockets, ...).
++static inline void dumpFds(const char* reason, const char* pidStr)
++{
++    char dirPath[64];
++    snprintf(dirPath, sizeof(dirPath), "/proc/%s/fd", pidStr);
++    DIR* d = opendir(dirPath);
++    if (!d)
++        return;
++    std::map<std::string, unsigned> counts;
++    struct dirent* de;
++    while ((de = readdir(d))) {
++        if (de->d_name[0] == '.')
++            continue;
++        char lp[96], target[PATH_MAX];
++        snprintf(lp, sizeof(lp), "%s/%s", dirPath, de->d_name);
++        ssize_t n = readlink(lp, target, sizeof(target) - 1);
++        if (n <= 0)
++            continue;
++        target[n] = 0;
++        std::string t = target;
++        if (t.find("dmabuf") != std::string::npos)
++            counts["dmabuf"]++;
++        else if (t.find("nexus") != std::string::npos || t.find("/dev/dri") != std::string::npos || t.find("/dev/v3d") != std::string::npos || t.find("/dev/mali") != std::string::npos || t.find("/dev/ion") != std::string::npos)
++            counts[t]++;
++        else if (!strncmp(target, "socket:", 7))
++            counts["socket"]++;
++        else if (!strncmp(target, "anon_inode:", 11))
++            counts["anon_inode"]++;
++        else if (!strncmp(target, "/dev/", 5))
++            counts[t]++;
++        else
++            counts["other"]++;
++    }
++    closedir(d);
++    for (auto& e : counts)
++        fprintf(stderr, "[GPUDEBUG] FDS reason=%s pid=%s target=%s count=%u\n", reason, pidStr, e.first.c_str(), e.second);
++}
++
++// Lists every process in the same memory cgroup with its comm, RSS and Pss so the whole container is accounted for.
++static inline void dumpContainerProcesses(const char* reason)
++{
++    char cg[PATH_MAX] = "";
++    FILE* f = fopen("/proc/self/cgroup", "r");
++    if (f) {
++        char line[512];
++        while (fgets(line, sizeof(line), f)) {
++            if (strstr(line, "memory") || line[0] == '0') {
++                const char* p = strchr(line, ':');
++                if (p && (p = strchr(p + 1, ':'))) {
++                    snprintf(cg, sizeof(cg), "%s", p + 1);
++                    size_t n = strlen(cg);
++                    while (n && (cg[n - 1] == '\n' || cg[n - 1] == '\r'))
++                        cg[--n] = 0;
++                    break;
++                }
++            }
++        }
++        fclose(f);
++    }
++    fprintf(stderr, "[GPUDEBUG] CGROUP reason=%s pid=%d path=%s\n", reason, getpid(), cg[0] ? cg : "(unknown)");
++
++    const char* roots[] = { "/sys/fs/cgroup/memory", "/sys/fs/cgroup" };
++    for (const char* root : roots) {
++        static const char* const files[] = { "memory.usage_in_bytes", "memory.limit_in_bytes", "memory.max_usage_in_bytes", "memory.current", "memory.max", "memory.peak" };
++        for (const char* name : files) {
++            char p[PATH_MAX];
++            snprintf(p, sizeof(p), "%s%s/%s", root, cg, name);
++            FILE* c = fopen(p, "r");
++            if (!c)
++                continue;
++            char v[64] = "";
++            if (fgets(v, sizeof(v), c)) {
++                size_t n = strlen(v);
++                while (n && v[n - 1] == '\n')
++                    v[--n] = 0;
++                fprintf(stderr, "[GPUDEBUG] CGROUP reason=%s file=%s value=%s\n", reason, p, v);
++            }
++            fclose(c);
++        }
++        char sp[PATH_MAX];
++        snprintf(sp, sizeof(sp), "%s%s/memory.stat", root, cg);
++        FILE* s = fopen(sp, "r");
++        if (s) {
++            char l[160];
++            while (fgets(l, sizeof(l), s)) {
++                if (!strncmp(l, "cache ", 6) || !strncmp(l, "rss ", 4) || !strncmp(l, "mapped_file ", 12) || !strncmp(l, "shmem ", 6)
++                    || !strncmp(l, "file ", 5) || !strncmp(l, "anon ", 5) || !strncmp(l, "file_mapped ", 12) || !strncmp(l, "kernel_stack ", 13)
++                    || !strncmp(l, "slab ", 5) || !strncmp(l, "sock ", 5))
++                    fprintf(stderr, "[GPUDEBUG] CGROUP reason=%s stat %s", reason, l);
++            }
++            fclose(s);
++        }
++        char tp[PATH_MAX];
++        snprintf(tp, sizeof(tp), "%s%s/cgroup.procs", root, cg);
++        FILE* tf = fopen(tp, "r");
++        if (!tf) {
++            snprintf(tp, sizeof(tp), "%s%s/tasks", root, cg);
++            tf = fopen(tp, "r");
++        }
++        if (tf) {
++            char l[32];
++            int seen = 0;
++            while (fgets(l, sizeof(l), tf) && seen < 40) {
++                int pid = atoi(l);
++                if (pid <= 0)
++                    continue;
++                char sp2[64], comm[64] = "?";
++                snprintf(sp2, sizeof(sp2), "/proc/%d/comm", pid);
++                if (FILE* cf = fopen(sp2, "r")) {
++                    if (fgets(comm, sizeof(comm), cf)) {
++                        size_t n = strlen(comm);
++                        while (n && comm[n - 1] == '\n')
++                            comm[--n] = 0;
++                    }
++                    fclose(cf);
++                }
++                unsigned long rss = 0;
++                snprintf(sp2, sizeof(sp2), "/proc/%d/status", pid);
++                if (FILE* sf = fopen(sp2, "r")) {
++                    char sl[160];
++                    while (fgets(sl, sizeof(sl), sf))
++                        if (sscanf(sl, "VmRSS: %lu kB", &rss) == 1)
++                            break;
++                    fclose(sf);
++                }
++                fprintf(stderr, "[GPUDEBUG] CGROUP reason=%s proc pid=%d comm=%s rssKB=%lu\n", reason, pid, comm, rss);
++                ++seen;
++            }
++            fclose(tf);
++            break;
++        }
++    }
++}
++
++// One-call full breakdown; used at OOM, at policy changes and periodically.
++static inline void dumpAll(const char* reason)
++{
++    char self[32];
++    snprintf(self, sizeof(self), "%d", getpid());
++    dumpGpuFileConfig(reason);
++    dumpMappings(reason, self);
++    dumpFds(reason, self);
++    dumpContainerProcesses(reason);
++}
++
++} // namespace GPUDebugProc
+diff --git a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+index 1b513be37c47..cbf7ec322b3f 100644
+--- a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
++++ b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+@@ -366,7 +366,7 @@ fprintf(stderr,
+     "[GPUDEBUG] EGL CREATE_REQ this=%p display=%p shareContext=%p\n",
+     this,
+     m_displayObj,
+-    sharedDisplay.angleSharingGLContext());
++    m_angleSharingContextObj);
+ 
+     m_contextObj = EGL_CreateContext(m_displayObj, m_configObj, m_angleSharingContextObj, eglContextAttributes.data());
+     if (m_contextObj == EGL_NO_CONTEXT) {
+@@ -378,13 +378,14 @@ fprintf(stderr,
+     "[GPUDEBUG] EGL CREATED this=%p context=%p shareContext=%p\n",
+     this,
+     m_contextObj,
+-    sharedDisplay.angleSharingGLContext());
++    m_angleSharingContextObj);
+ 
+     if (!makeContextCurrent()) {
+         LOG(WebGL, "ANGLE makeContextCurrent failed.");
+         return false;
+     }
+     GPUDebugNexus::dump("WEBGL_CONTEXT_CREATED");
++    GPUDebugProc::dumpAll("WEBGL_CONTEXT_CREATED");
+     LOG(WebGL, "Got EGLContext");
+     return true;
+ }
+diff --git a/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.cpp b/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.cpp
+index f4731a4ef876..a9c4f48f0f8c 100644
+--- a/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.cpp
++++ b/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.cpp
+@@ -33,7 +33,9 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <time.h>
+ #include <unistd.h>
++#include "../../../WebCore/platform/graphics/GPUDebugNexus.h"
+ #include <wtf/PageBlock.h>
+ #include <wtf/Threading.h>
+ #include <wtf/UniStdExtras.h>
+@@ -306,6 +308,17 @@ static int containerMemoryUsedAsPercentage(CGroupMemoryController* memoryControl
+ 
+     int memoryUsagePercentageWithCgroup = 100 * ((float) memoryUsage / (float) memoryTotal);
+     LOG(MemoryPressure, "MemoryPressureMonitor: memory cgroup (memory total=%zu bytes) (memory usage=%zu bytes) (memory usage percentage=%d bytes)", memoryTotal, memoryUsage, memoryUsagePercentageWithCgroup);
++    {
++        static int s_gpuDbgLastPercent = -1;
++        static time_t s_gpuDbgLastLog = 0;
++        time_t now = time(nullptr);
++        if (memoryUsagePercentageWithCgroup != s_gpuDbgLastPercent && (now - s_gpuDbgLastLog >= 1 || memoryUsagePercentageWithCgroup >= 80)) {
++            fprintf(stderr, "[GPUDEBUG] MEMMON_CGROUP pid=%d totalKB=%zu usageKB=%zu percent=%d warn=%d critical=%d\n", getpid(), memoryTotal / 1024, memoryUsage / 1024,
++                memoryUsagePercentageWithCgroup, memoryUsagePercentageWithCgroup >= s_memoryPresurePercentageThreshold, memoryUsagePercentageWithCgroup >= s_memoryPresurePercentageThresholdCritical);
++            s_gpuDbgLastPercent = memoryUsagePercentageWithCgroup;
++            s_gpuDbgLastLog = now;
++        }
++    }
+ 
+     return memoryUsagePercentageWithCgroup;
+ }
+@@ -405,6 +418,22 @@ void MemoryPressureMonitor::start()
+             }
+ 
+             LOG(MemoryPressure, "MemoryPressureMonitor: memoryUsagePercentage (%d)", usedPercentage);
++            {
++                static int s_gpuDbgLastEffective = -1;
++                static int s_gpuDbgLastLevel = 0;
++                if (usedPercentage != s_gpuDbgLastEffective) {
++                    fprintf(stderr, "[GPUDEBUG] MEMMON_DECISION mode=%d effectivePercent=%d warnAt=%d criticalAt=%d\n", static_cast<int>(mode), usedPercentage,
++                        s_memoryPresurePercentageThreshold, s_memoryPresurePercentageThresholdCritical);
++                    s_gpuDbgLastEffective = usedPercentage;
++                }
++                const int level = usedPercentage >= s_memoryPresurePercentageThresholdCritical ? 2 : (usedPercentage >= s_memoryPresurePercentageThreshold ? 1 : 0);
++                if (level != s_gpuDbgLastLevel) {
++                    fprintf(stderr, "[GPUDEBUG] MEMMON_LEVEL_CHANGE from=%d to=%d percent=%d\n", s_gpuDbgLastLevel, level, usedPercentage);
++                    if (level > s_gpuDbgLastLevel)
++                        GPUDebugProc::dumpContainerProcesses(level == 2 ? "MEMMON_CRITICAL" : "MEMMON_WARN");
++                    s_gpuDbgLastLevel = level;
++                }
++            }
+             if (usedPercentage >= s_memoryPresurePercentageThreshold) {
+                 bool isCritical = (usedPercentage >= s_memoryPresurePercentageThresholdCritical);
+                 RunLoop::main().dispatch([isCritical] {
+-- 
+2.44.4
+

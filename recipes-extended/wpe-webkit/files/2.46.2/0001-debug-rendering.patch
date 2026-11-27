@@ -1,0 +1,647 @@
+From fd4945c946a30d037d2125b6eb5628f292b971f5 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Tue, 13 Oct 2026 06:24:55 +0000
+Subject: [PATCH] debug rendering
+
+---
+ .../libANGLE/renderer/gl/RenderbufferGL.cpp   |  10 +-
+ .../src/libANGLE/renderer/gl/TextureGL.cpp    | 179 +++++++++++++++---
+ .../libANGLE/renderer/gl/renderergl_utils.cpp |  12 ++
+ Source/WebCore/html/canvas/WebGLObject.cpp    |   4 +
+ .../html/canvas/WebGLRenderingContextBase.cpp |   7 +
+ Source/WebCore/html/canvas/WebGLTexture.cpp   |   2 +
+ Source/WebCore/page/MemoryRelease.cpp         |   2 +
+ .../graphics/angle/GraphicsContextGLANGLE.cpp |   9 +
+ .../graphics/texmap/BitmapTexture.cpp         |  26 ++-
+ .../graphics/texmap/BitmapTexturePool.cpp     |   9 +
+ .../GraphicsContextGLTextureMapperANGLE.cpp   |   7 +-
+ 11 files changed, 226 insertions(+), 41 deletions(-)
+
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/RenderbufferGL.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/RenderbufferGL.cpp
+index ed085b78fbce..4410f9b1a159 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/RenderbufferGL.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/RenderbufferGL.cpp
+@@ -25,7 +25,9 @@ namespace rx
+ {
+ RenderbufferGL::RenderbufferGL(const gl::RenderbufferState &state, GLuint id)
+     : RenderbufferImpl(state), mRenderbufferID(id)
+-{}
++{
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_CREATE this=%p rb=%u\n", this, mRenderbufferID);
++}
+ 
+ RenderbufferGL::~RenderbufferGL()
+ {
+@@ -34,6 +36,7 @@ RenderbufferGL::~RenderbufferGL()
+ 
+ void RenderbufferGL::onDestroy(const gl::Context *context)
+ {
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_DESTROY this=%p rb=%u\n", this, mRenderbufferID);
+     StateManagerGL *stateManager = GetStateManagerGL(context);
+     stateManager->deleteRenderbuffer(mRenderbufferID);
+     mRenderbufferID = 0;
+@@ -44,6 +47,8 @@ angle::Result RenderbufferGL::setStorage(const gl::Context *context,
+                                          GLsizei width,
+                                          GLsizei height)
+ {
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_STORAGE this=%p rb=%u %dx%d internalFormat=0x%x\n",
++            this, mRenderbufferID, width, height, internalformat);
+     const FunctionsGL *functions      = GetFunctionsGL(context);
+     StateManagerGL *stateManager      = GetStateManagerGL(context);
+     const angle::FeaturesGL &features = GetFeaturesGL(context);
+@@ -68,6 +73,9 @@ angle::Result RenderbufferGL::setStorageMultisample(const gl::Context *context,
+                                                     GLsizei height,
+                                                     gl::MultisamplingMode mode)
+ {
++    fprintf(stderr,
++            "[GPUDEBUG] RENDERBUFFER_STORAGE_MS this=%p rb=%u samples=%d %dx%d internalFormat=0x%x\n",
++            this, mRenderbufferID, samples, width, height, internalformat);
+     const FunctionsGL *functions      = GetFunctionsGL(context);
+     StateManagerGL *stateManager      = GetStateManagerGL(context);
+     const angle::FeaturesGL &features = GetFeaturesGL(context);
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+index 59163d0f12f9..397b2410a72f 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/TextureGL.cpp
+@@ -31,11 +31,121 @@
+ #include "libANGLE/renderer/gl/renderergl_utils.h"
+ #include "platform/autogen/FeaturesGL_autogen.h"
+ 
++#include <cstdio>
++#include <cstring>
++#include <map>
++#include <mutex>
++#include <unistd.h>
++
+ using angle::CheckedNumeric;
+ 
+ namespace rx
+ {
+ 
++// [GPUDEBUG] per-process accounting of native GL texture memory (estimated, excludes driver padding).
++namespace gpudbg
++{
++std::mutex gMutex;
++std::map<const void *, std::map<uint32_t, uint64_t>> gTexBytes;
++uint64_t gLiveBytes = 0, gPeakBytes = 0, gCreated = 0, gDestroyed = 0, gEvents = 0;
++
++void Register(const void *tex)
++{
++    std::lock_guard<std::mutex> l(gMutex);
++    gTexBytes[tex];
++    gCreated++;
++}
++
++void SetLevel(const void *tex, uint32_t key, uint64_t bytes)
++{
++    std::lock_guard<std::mutex> l(gMutex);
++    uint64_t &slot = gTexBytes[tex][key];
++    gLiveBytes     = gLiveBytes - slot + bytes;
++    slot           = bytes;
++    if (gLiveBytes > gPeakBytes)
++        gPeakBytes = gLiveBytes;
++}
++
++uint64_t Release(const void *tex)
++{
++    std::lock_guard<std::mutex> l(gMutex);
++    uint64_t freed = 0;
++    auto it        = gTexBytes.find(tex);
++    if (it != gTexBytes.end())
++    {
++        for (auto &lv : it->second)
++            freed += lv.second;
++        gTexBytes.erase(it);
++    }
++    gLiveBytes -= freed;
++    gDestroyed++;
++    return freed;
++}
++
++uint64_t LiveBytes()
++{
++    std::lock_guard<std::mutex> l(gMutex);
++    return gLiveBytes;
++}
++
++bool ShouldPeriodicDump()
++{
++    std::lock_guard<std::mutex> l(gMutex);
++    return (++gEvents % 25) == 0;
++}
++
++void DumpProcFile(const char *path, const char *const keys[], size_t n)
++{
++    FILE *f = fopen(path, "r");
++    if (!f)
++        return;
++    char line[256];
++    while (fgets(line, sizeof(line), f))
++    {
++        for (size_t i = 0; i < n; i++)
++        {
++            if (!strncmp(line, keys[i], strlen(keys[i])))
++                fprintf(stderr, "[GPUDEBUG]   %s: %s", path, line);
++        }
++    }
++    fclose(f);
++}
++}  // namespace gpudbg
++
++void GpuDbgDumpStats(const char *reason)
++{
++    {
++        std::lock_guard<std::mutex> l(gpudbg::gMutex);
++        size_t b64k = 0, b256k = 0, b1m = 0, bBig = 0;
++        for (auto &t : gpudbg::gTexBytes)
++        {
++            uint64_t s = 0;
++            for (auto &lv : t.second)
++                s += lv.second;
++            if (s < 65536)
++                b64k++;
++            else if (s < 262144)
++                b256k++;
++            else if (s < 1048576)
++                b1m++;
++            else
++                bBig++;
++        }
++        fprintf(stderr,
++                "[GPUDEBUG] STATS reason=%s pid=%d liveTex=%zu created=%llu destroyed=%llu "
++                "liveBytes=%llu peakBytes=%llu hist[<64K=%zu <256K=%zu <1M=%zu >=1M=%zu]\n",
++                reason, getpid(), gpudbg::gTexBytes.size(),
++                static_cast<unsigned long long>(gpudbg::gCreated),
++                static_cast<unsigned long long>(gpudbg::gDestroyed),
++                static_cast<unsigned long long>(gpudbg::gLiveBytes),
++                static_cast<unsigned long long>(gpudbg::gPeakBytes), b64k, b256k, b1m, bBig);
++    }
++    static const char *const memKeys[]  = {"MemFree", "MemAvailable", "CmaTotal", "CmaFree"};
++    static const char *const selfKeys[] = {"VmRSS", "VmSize"};
++    gpudbg::DumpProcFile("/proc/meminfo", memKeys, 4);
++    gpudbg::DumpProcFile("/proc/self/status", selfKeys, 2);
++}
++
+ namespace
+ {
+ // For use with the uploadTextureDataInChunks feature.  See http://crbug.com/1181068
+@@ -159,24 +269,25 @@ TextureGL::TextureGL(const gl::TextureState &state, GLuint id)
+       mAppliedDepthStencilTextureMode(state.getDepthStencilTextureMode()),
+       mTextureID(id)
+ {
+-   fprintf(stderr,
+-    "[GPUDEBUG] ANGLE_TEXTURE_CREATE this=%p texture=%u\n",
+-    this,
+-    mTextureID);
++    gpudbg::Register(this);
++    fprintf(stderr, "[GPUDEBUG] ANGLE_TEXTURE_CREATE this=%p texture=%u type=%d\n", this,
++            mTextureID, static_cast<int>(getType()));
+     mLevelInfo.resize(GetMaxLevelInfoCountForTextureType(getType()));
+ }
+ 
+ TextureGL::~TextureGL()
+ {
+-fprintf(stderr,
+-    "[GPUDEBUG] ANGLE_TEXTURE_DESTROY_BEGIN this=%p texture=%u\n",
+-    this,
+-    mTextureID);
+     ASSERT(mTextureID == 0);
+ }
+ 
+ void TextureGL::onDestroy(const gl::Context *context)
+ {
++    uint64_t freed = gpudbg::Release(this);
++    fprintf(stderr, "[GPUDEBUG] ANGLE_TEXTURE_ONDESTROY this=%p texture=%u freedBytes=%llu liveBytes=%llu\n",
++            this, mTextureID, static_cast<unsigned long long>(freed),
++            static_cast<unsigned long long>(gpudbg::LiveBytes()));
++    if (gpudbg::ShouldPeriodicDump())
++        GpuDbgDumpStats("periodic");
+     GetImplAs<ContextGL>(context)->flushIfNecessaryBeforeDeleteTextures();
+     StateManagerGL *stateManager = GetStateManagerGL(context);
+     stateManager->deleteTexture(mTextureID);
+@@ -277,29 +388,14 @@ angle::Result TextureGL::setImageHelper(const gl::Context *context,
+     if (nativegl::UseTexImage2D(getType()))
+     {
+         ASSERT(size.depth == 1);
+-
+-unsigned long long approxBytes =
+-static_cast<unsigned long long>(size.width) *
+-static_cast<unsigned long long>(size.height) * 4;
+-
+-	fprintf(stderr,
+-    "[GPUDEBUG] TEXIMAGE2D "
+-    "object=%p texture=%u "
+-    "target=0x%x level=%d "
+-    "width=%d height=%d "
+-    "approxBytes=%llu "
+-    "internalFormat=0x%x format=0x%x type=0x%x pixels=%p \n",
+-    this,
+-    mTextureID,
+-    target,
+-    level,
+-    size.width,
+-    size.height,
+-    approxBytes,
+-    texImageFormat.internalFormat,
+-    texImageFormat.format,
+-    texImageFormat.type,
+-    pixels);
++        fprintf(stderr,
++                "[GPUDEBUG] TEXIMAGE2D object=%p texture=%u target=%d level=%zu width=%d height=%d "
++                "approxBytes=%llu internalFormat=0x%x format=0x%x type=0x%x pixels=%p liveBytes=%llu\n",
++                this, mTextureID, static_cast<int>(target), level, size.width, size.height,
++                static_cast<unsigned long long>(size.width) * size.height *
++                    std::max<GLuint>(originalInternalFormatInfo.pixelBytes, 1),
++                texImageFormat.internalFormat, texImageFormat.format, texImageFormat.type, pixels,
++                static_cast<unsigned long long>(gpudbg::LiveBytes()));
+         ANGLE_GL_TRY_ALWAYS_CHECK(
+             context, functions->texImage2D(nativegl::GetTextureBindingTarget(target),
+                                            static_cast<GLint>(level), texImageFormat.internalFormat,
+@@ -316,6 +412,13 @@ static_cast<unsigned long long>(size.height) * 4;
+                                            texImageFormat.type, pixels));
+     }
+ 
++    // Reached only when the driver accepted the allocation.
++    gpudbg::SetLevel(this, static_cast<uint32_t>(target) * 64 + static_cast<uint32_t>(level),
++                     static_cast<uint64_t>(size.width) * size.height * size.depth *
++                         std::max<GLuint>(originalInternalFormatInfo.pixelBytes, 1));
++    if (gpudbg::ShouldPeriodicDump())
++        GpuDbgDumpStats("periodic");
++
+     LevelInfoGL levelInfo =
+         GetLevelInfo(features, originalInternalFormatInfo, texImageFormat.internalFormat);
+     setLevelInfo(context, target, level, 1, levelInfo);
+@@ -637,6 +740,10 @@ angle::Result TextureGL::setCompressedImage(const gl::Context *context,
+     gl::TextureTarget target = index.getTarget();
+     size_t level             = static_cast<size_t>(index.getLevelIndex());
+     ASSERT(TextureTargetToType(target) == getType());
++    fprintf(stderr,
++            "[GPUDEBUG] COMPRESSED_TEXIMAGE object=%p texture=%u level=%zu %dx%d imageSize=%zu "
++            "internalFormat=0x%x\n",
++            this, mTextureID, level, size.width, size.height, imageSize, internalFormat);
+ 
+     const gl::InternalFormat &originalInternalFormatInfo =
+         gl::GetSizedInternalFormatInfo(internalFormat);
+@@ -737,6 +844,9 @@ angle::Result TextureGL::copyImage(const gl::Context *context,
+     gl::TextureTarget target = index.getTarget();
+     size_t level             = static_cast<size_t>(index.getLevelIndex());
+     GLenum type              = source->getImplementationColorReadType(context);
++    fprintf(stderr,
++            "[GPUDEBUG] COPY_TEXIMAGE object=%p texture=%u level=%zu %dx%d internalFormat=0x%x\n",
++            this, mTextureID, level, sourceArea.width, sourceArea.height, internalFormat);
+     const gl::InternalFormat &originalInternalFormatInfo =
+         gl::GetInternalFormatInfo(internalFormat, type);
+     nativegl::CopyTexImageImageFormat copyTexImageFormat =
+@@ -1130,6 +1240,9 @@ angle::Result TextureGL::setStorage(const gl::Context *context,
+     const FunctionsGL *functions      = GetFunctionsGL(context);
+     StateManagerGL *stateManager      = GetStateManagerGL(context);
+     const angle::FeaturesGL &features = GetFeaturesGL(context);
++    fprintf(stderr,
++            "[GPUDEBUG] TEXSTORAGE object=%p texture=%u levels=%zu %dx%dx%d internalFormat=0x%x\n",
++            this, mTextureID, levels, size.width, size.height, size.depth, internalFormat);
+ 
+     const gl::InternalFormat &originalInternalFormatInfo =
+         gl::GetSizedInternalFormatInfo(internalFormat);
+@@ -1451,6 +1564,8 @@ angle::Result TextureGL::generateMipmap(const gl::Context *context)
+ 
+     const GLuint effectiveBaseLevel = mState.getEffectiveBaseLevel();
+     const GLuint maxLevel           = mState.getMipmapMaxLevel();
++    fprintf(stderr, "[GPUDEBUG] GENERATE_MIPMAP object=%p texture=%u baseLevel=%u maxLevel=%u\n",
++            this, mTextureID, effectiveBaseLevel, maxLevel);
+ 
+     const gl::ImageDesc &baseLevelDesc                = mState.getBaseLevelDesc();
+     const gl::InternalFormat &baseLevelInternalFormat = *baseLevelDesc.format.info;
+@@ -1589,6 +1704,8 @@ angle::Result TextureGL::setEGLImageTarget(const gl::Context *context,
+     const angle::FeaturesGL &features = GetFeaturesGL(context);
+ 
+     ImageGL *imageGL = GetImplAs<ImageGL>(image);
++    fprintf(stderr, "[GPUDEBUG] EGLIMAGE_TARGET object=%p texture=%u image=%p\n", this,
++            mTextureID, image);
+ 
+     GLenum imageNativeInternalFormat = GL_NONE;
+     ANGLE_TRY(imageGL->setTexture2D(context, type, this, &imageNativeInternalFormat));
+diff --git a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/renderergl_utils.cpp b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/renderergl_utils.cpp
+index 60a0112a8cd3..24b399cad229 100644
+--- a/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/renderergl_utils.cpp
++++ b/Source/ThirdParty/ANGLE/src/libANGLE/renderer/gl/renderergl_utils.cpp
+@@ -33,12 +33,15 @@
+ 
+ #include <EGL/eglext.h>
+ #include <algorithm>
++#include <cstdio>
+ #include <sstream>
+ 
+ using angle::CheckedNumeric;
+ 
+ namespace rx
+ {
++// [GPUDEBUG] defined in TextureGL.cpp
++void GpuDbgDumpStats(const char *reason);
+ 
+ namespace
+ {
+@@ -3075,6 +3078,15 @@ angle::Result HandleError(const gl::Context *context,
+         ERR() << "GL call " << call << " generated error " << gl::FmtHex(error) << " in " << file
+               << ", " << function << ":" << line << ". ";
+ 
++        if (error == GL_OUT_OF_MEMORY)
++        {
++            static unsigned oomCount = 0;
++            ++oomCount;
++            fprintf(stderr, "[GPUDEBUG] GL_OOM #%u func=%s line=%u\n", oomCount, function, line);
++            if (oomCount <= 5 || (oomCount % 20) == 0)
++                rx::GpuDbgDumpStats("GL_OUT_OF_MEMORY");
++        }
++
+         // Check that only one GL error was generated, ClearErrors should have been called first.
+         // Skip GL_CONTEXT_LOST errors, they will be generated continuously and result in an
+         // infinite loop.
+diff --git a/Source/WebCore/html/canvas/WebGLObject.cpp b/Source/WebCore/html/canvas/WebGLObject.cpp
+index a95bea570153..b0c02198a9ee 100644
+--- a/Source/WebCore/html/canvas/WebGLObject.cpp
++++ b/Source/WebCore/html/canvas/WebGLObject.cpp
+@@ -34,6 +34,7 @@
+ #include "WebGLDebugShaders.h"
+ #include "WebGLLoseContext.h"
+ #include "WebGLRenderingContextBase.h"
++#include <stdio.h>
+ 
+ namespace WebCore {
+ 
+@@ -85,6 +86,9 @@ void WebGLObject::deleteObject(const AbstractLocker& locker, GraphicsContextGL*
+     if (!m_context)
+         return;
+ 
++    if (m_attachmentCount)
++        fprintf(stderr, "[GPUDEBUG] WEBGL_DELETE_DEFERRED obj=%p name=%u attachments=%u\n", this, m_object, m_attachmentCount);
++
+     if (!m_attachmentCount) {
+         if (!context3d)
+             context3d = graphicsContextGL();
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+index d029b147bb73..b7a8222558ee 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+@@ -148,6 +148,7 @@
+ #include <JavaScriptCore/SlotVisitorInlines.h>
+ #include <JavaScriptCore/TypedArrayInlines.h>
+ #include <JavaScriptCore/Uint32Array.h>
++#include <stdio.h>
+ #include <algorithm>
+ #include <wtf/CheckedArithmetic.h>
+ #include <wtf/HashMap.h>
+@@ -1516,6 +1517,8 @@ void WebGLRenderingContextBase::deleteTexture(WebGLTexture* texture)
+ {
+     Locker locker { objectGraphLock() };
+ 
++    fprintf(stderr, "[GPUDEBUG] WEBGL_JS_DELETE_TEXTURE ctx=%p tex=%p name=%u alreadyDeleted=%d\n",
++        this, texture, texture ? texture->object() : 0, texture ? texture->isDeleted() : -1);
+     if (!deleteObject(locker, texture))
+         return;
+ 
+@@ -3195,6 +3198,9 @@ ExceptionOr<void> WebGLRenderingContextBase::texImageSourceHelper(TexImageFuncti
+     if (isContextLost())
+         return { };
+ 
++    // source index: 0=ImageBitmap 1=ImageData 2=HTMLImageElement 3=HTMLCanvasElement 4+=video/OffscreenCanvas/VideoFrame
++    fprintf(stderr, "[GPUDEBUG] WEBGL_TEXIMAGE_SOURCE ctx=%p fn=%d level=%d internalformat=0x%x srcIdx=%zu rect=%dx%d\n",
++        this, static_cast<int>(functionID), level, static_cast<unsigned>(internalformat), source.index(), inputSourceImageRect.width(), inputSourceImageRect.height());
+     return std::visit([this, functionID, target, level, internalformat, border, format, type, xoffset, yoffset, zoffset, inputSourceImageRect, depth, unpackImageHeight](auto&& source) {
+         return texImageSource(functionID, target, level, internalformat, border, format, type, xoffset, yoffset, zoffset, inputSourceImageRect, depth, unpackImageHeight, *source);
+     }, source);
+@@ -4647,6 +4653,7 @@ void WebGLRenderingContextBase::viewport(GCGLint x, GCGLint y, GCGLsizei width,
+ 
+ void WebGLRenderingContextBase::forceLostContext(WebGLRenderingContextBase::LostContextMode mode)
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_FORCE_LOST_CONTEXT ctx=%p mode=%d alreadyLost=%d\n", this, static_cast<int>(mode), isContextLost());
+     if (isContextLost()) {
+         synthesizeLostContextGLError(GraphicsContextGL::INVALID_OPERATION, "loseContext"_s, "context already lost"_s);
+         return;
+diff --git a/Source/WebCore/html/canvas/WebGLTexture.cpp b/Source/WebCore/html/canvas/WebGLTexture.cpp
+index 143fe5e8bdbb..324d6b698e67 100644
+--- a/Source/WebCore/html/canvas/WebGLTexture.cpp
++++ b/Source/WebCore/html/canvas/WebGLTexture.cpp
+@@ -31,6 +31,7 @@
+ 
+ #include "WebGLFramebuffer.h"
+ #include "WebGLRenderingContextBase.h"
++#include <stdio.h>
+ 
+ namespace WebCore {
+ 
+@@ -49,6 +50,7 @@ WebGLTexture::WebGLTexture(WebGLRenderingContextBase& context, PlatformGLObject
+ 
+ WebGLTexture::~WebGLTexture()
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGLTEXTURE_DTOR this=%p name=%u deleted=%d hasCtx=%d\n", this, object(), isDeleted(), !!m_context);
+     if (!m_context)
+         return;
+ 
+diff --git a/Source/WebCore/page/MemoryRelease.cpp b/Source/WebCore/page/MemoryRelease.cpp
+index 136888ab66a8..43220fab3cf5 100644
+--- a/Source/WebCore/page/MemoryRelease.cpp
++++ b/Source/WebCore/page/MemoryRelease.cpp
+@@ -26,6 +26,7 @@
+ #include "config.h"
+ #include "MemoryRelease.h"
+ 
++#include <stdio.h>
+ #include "BackForwardCache.h"
+ #include "CSSFontSelector.h"
+ #include "CSSValuePool.h"
+@@ -160,6 +161,7 @@ static void releaseCriticalMemory(Synchronous synchronous, MaintainBackForwardCa
+ void releaseMemory(Critical critical, Synchronous synchronous, MaintainBackForwardCache maintainBackForwardCache, MaintainMemoryCache maintainMemoryCache)
+ {
+     TraceScope scope(MemoryPressureHandlerStart, MemoryPressureHandlerEnd, static_cast<uint64_t>(critical), static_cast<uint64_t>(synchronous));
++    fprintf(stderr, "[GPUDEBUG] RELEASE_MEMORY critical=%d synchronous=%d\n", critical == Critical::Yes, synchronous == Synchronous::Yes);
+ 
+ #if PLATFORM(IOS_FAMILY)
+     if (critical == Critical::No)
+diff --git a/Source/WebCore/platform/graphics/angle/GraphicsContextGLANGLE.cpp b/Source/WebCore/platform/graphics/angle/GraphicsContextGLANGLE.cpp
+index 234c8deab824..94c5193deffe 100644
+--- a/Source/WebCore/platform/graphics/angle/GraphicsContextGLANGLE.cpp
++++ b/Source/WebCore/platform/graphics/angle/GraphicsContextGLANGLE.cpp
+@@ -43,6 +43,8 @@
+ #include <wtf/Seconds.h>
+ #include <wtf/text/CString.h>
+ #include <wtf/text/StringBuilder.h>
++#include <atomic>
++#include <stdio.h>
+ 
+ #if ENABLE(VIDEO) && USE(AVFOUNDATION)
+ #include "GraphicsContextGLCVCocoa.h"
+@@ -680,6 +682,7 @@ void GraphicsContextGLANGLE::reshape(int width, int height)
+     if (width == m_currentWidth && height == m_currentHeight)
+         return;
+ 
++    fprintf(stderr, "[GPUDEBUG] WEBGL_RESHAPE ctx=%p %dx%d -> %dx%d\n", this, m_currentWidth, m_currentHeight, width, height);
+     ASSERT(width >= 0 && height >= 0);
+     if (width < 0 || height < 0)
+         return;
+@@ -1374,6 +1377,8 @@ bool GraphicsContextGLANGLE::updateErrors()
+         GCGLenum error = GL_GetError();
+         if (error == NO_ERROR)
+             break;
++        if (error == OUT_OF_MEMORY)
++            fprintf(stderr, "[GPUDEBUG] WEBGL_SEES_OOM ctx=%p\n", this);
+         addError(enumToErrorCode(error));
+         movedAnError = true;
+     }
+@@ -2153,6 +2158,8 @@ PlatformGLObject GraphicsContextGLANGLE::createShader(GCGLenum type)
+     return GL_CreateShader((type == FRAGMENT_SHADER) ? GL_FRAGMENT_SHADER : GL_VERTEX_SHADER);
+ }
+ 
++static std::atomic<int> s_gpuDbgWebGLLiveTextures { 0 };
++
+ PlatformGLObject GraphicsContextGLANGLE::createTexture()
+ {
+     if (!makeContextCurrent())
+@@ -2161,6 +2168,7 @@ PlatformGLObject GraphicsContextGLANGLE::createTexture()
+     GLuint o = 0;
+     GL_GenTextures(1, &o);
+     invalidateKnownTextureContent(o);
++    fprintf(stderr, "[GPUDEBUG] WEBGL_GEN_TEXTURE ctx=%p name=%u webglLive=%d\n", this, o, ++s_gpuDbgWebGLLiveTextures);
+     return o;
+ }
+ 
+@@ -2218,6 +2226,7 @@ void GraphicsContextGLANGLE::deleteTexture(PlatformGLObject texture)
+     if (!makeContextCurrent())
+         return;
+ 
++    fprintf(stderr, "[GPUDEBUG] WEBGL_GL_DELETE_TEXTURE ctx=%p name=%u webglLive=%d\n", this, texture, --s_gpuDbgWebGLLiveTextures);
+     m_state.boundTextureMap.removeIf([texture] (auto& keyValue) {
+         return keyValue.value.first == texture;
+     });
+diff --git a/Source/WebCore/platform/graphics/texmap/BitmapTexture.cpp b/Source/WebCore/platform/graphics/texmap/BitmapTexture.cpp
+index 5eb90503536b..de10aa471338 100644
+--- a/Source/WebCore/platform/graphics/texmap/BitmapTexture.cpp
++++ b/Source/WebCore/platform/graphics/texmap/BitmapTexture.cpp
+@@ -36,6 +36,11 @@
+ #include <wtf/HashMap.h>
+ #include <wtf/RefCounted.h>
+ #include <wtf/RefPtr.h>
++#include <atomic>
++#include <stdio.h>
++
++static std::atomic<long long> s_gpuDbgBitmapLiveBytes { 0 };
++static std::atomic<int> s_gpuDbgBitmapLiveCount { 0 };
+ 
+ #if USE(CAIRO)
+ #include "CairoUtilities.h"
+@@ -87,11 +92,13 @@ BitmapTexture::BitmapTexture(const IntSize& size, OptionSet<Flags> flags, GLint
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+     glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_size.width(), m_size.height(), 0, m_format, s_pixelDataType, nullptr);
++    GLenum gpuDbgErr = glGetError();
+ 
+     glBindTexture(GL_TEXTURE_2D, boundTexture);
+-    fprintf(stderr,
+-    "[GPUDEBUG] BITMAP_TEXTURE_CREATE this=%p\n",
+-    this);
++    long long gpuDbgBytes = static_cast<long long>(m_size.width()) * m_size.height() * 4;
++    fprintf(stderr, "[GPUDEBUG] BITMAP_TEXTURE_CREATE this=%p id=%u size=%dx%d bytes=%lld flags=0x%x glError=0x%x liveCount=%d liveBytes=%lld\n",
++        this, m_id, m_size.width(), m_size.height(), gpuDbgBytes, static_cast<unsigned>(flags.toRaw()), gpuDbgErr,
++        ++s_gpuDbgBitmapLiveCount, s_gpuDbgBitmapLiveBytes += gpuDbgBytes);
+ }
+ 
+ void BitmapTexture::reset(const IntSize& size, OptionSet<Flags> flags)
+@@ -101,9 +108,15 @@ void BitmapTexture::reset(const IntSize& size, OptionSet<Flags> flags)
+     m_colorConvertFlags = { };
+     m_filterOperation = nullptr;
+     if (m_size != size) {
++        long long gpuDbgDelta = (static_cast<long long>(size.width()) * size.height() - static_cast<long long>(m_size.width()) * m_size.height()) * 4;
++        fprintf(stderr, "[GPUDEBUG] BITMAP_TEXTURE_RESET this=%p id=%u %dx%d -> %dx%d liveBytes=%lld\n",
++            this, m_id, m_size.width(), m_size.height(), size.width(), size.height(), s_gpuDbgBitmapLiveBytes += gpuDbgDelta);
+         m_size = size;
+         glBindTexture(GL_TEXTURE_2D, m_id);
+         glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_size.width(), m_size.height(), 0, m_format, s_pixelDataType, nullptr);
++        GLenum gpuDbgErr = glGetError();
++        if (gpuDbgErr != GL_NO_ERROR)
++            fprintf(stderr, "[GPUDEBUG] BITMAP_TEXTURE_RESET_GLERROR this=%p glError=0x%x\n", this, gpuDbgErr);
+     }
+ }
+ 
+@@ -291,9 +304,10 @@ void BitmapTexture::bindAsSurface()
+ 
+ BitmapTexture::~BitmapTexture()
+ {
+-    fprintf(stderr,
+-    "[GPUDEBUG] BITMAP_TEXTURE_DESTROY this=%p\n",
+-    this);
++    long long gpuDbgBytes = static_cast<long long>(m_size.width()) * m_size.height() * 4;
++    fprintf(stderr, "[GPUDEBUG] BITMAP_TEXTURE_DESTROY this=%p id=%u size=%dx%d hasGLContext=%d liveCount=%d liveBytes=%lld\n",
++        this, m_id, m_size.width(), m_size.height(), GLContext::current() ? 1 : 0,
++        --s_gpuDbgBitmapLiveCount, s_gpuDbgBitmapLiveBytes -= gpuDbgBytes);
+     GLContext* currentContext = GLContext::current();
+     if (!currentContext || !currentContext->platformContext()) {
+         // The context has been destroyed already, so we can't clean up.
+diff --git a/Source/WebCore/platform/graphics/texmap/BitmapTexturePool.cpp b/Source/WebCore/platform/graphics/texmap/BitmapTexturePool.cpp
+index 68d9e3e0fcef..735b1544e32c 100644
+--- a/Source/WebCore/platform/graphics/texmap/BitmapTexturePool.cpp
++++ b/Source/WebCore/platform/graphics/texmap/BitmapTexturePool.cpp
+@@ -27,6 +27,7 @@
+ #include "config.h"
+ #include "BitmapTexturePool.h"
+ #include <wtf/text/StringToIntegerConversion.h>
++#include <stdio.h>
+ 
+ #if USE(TEXTURE_MAPPER)
+ 
+@@ -76,6 +77,8 @@ RefPtr<BitmapTexture> BitmapTexturePool::acquireTexture(const IntSize& size, Opt
+     } else
+         selectedEntry->m_texture->reset(size, flags);
+ 
++    fprintf(stderr, "[GPUDEBUG] POOL_ACQUIRE pool=%p size=%dx%d count=%zu poolPixels=%zu limitPixels=%zu limitMode=%d\n",
++        this, size.width(), size.height(), static_cast<size_t>(m_textures.size()), static_cast<size_t>(m_poolSize), static_cast<size_t>(m_poolSizeLimit), m_onLimitExceededMode ? 1 : 0);
+     enterLimitExceededModeIfNeeded();
+ 
+     scheduleReleaseUnusedTextures();
+@@ -99,6 +102,8 @@ void BitmapTexturePool::releaseUnusedTexturesTimerFired()
+ 
+     // Delete entries, which have been unused in releaseUnusedSecondsTolerance.
+     MonotonicTime minUsedTime = MonotonicTime::now() - m_releaseUnusedSecondsTolerance;
++    size_t gpuDbgCountBefore = m_textures.size();
++    size_t gpuDbgPixelsBefore = static_cast<size_t>(m_poolSize);
+ 
+     m_textures.removeAllMatching([this, &minUsedTime](const Entry& entry) {
+         if (entry.canBeReleased(minUsedTime)) {
+@@ -112,6 +117,9 @@ void BitmapTexturePool::releaseUnusedTexturesTimerFired()
+         return false;
+     });
+ 
++    if (gpuDbgCountBefore != m_textures.size())
++        fprintf(stderr, "[GPUDEBUG] POOL_RELEASE pool=%p count=%zu->%zu poolPixels=%zu->%zu\n",
++            this, gpuDbgCountBefore, static_cast<size_t>(m_textures.size()), gpuDbgPixelsBefore, static_cast<size_t>(m_poolSize));
+     exitLimitExceededModeIfNeeded();
+ 
+     if (!m_textures.isEmpty())
+@@ -129,6 +137,7 @@ void BitmapTexturePool::enterLimitExceededModeIfNeeded()
+         // While on limit exceeded mode, we are more aggressive releasing textures, by polling more often and keeping
+         // the unused textures in the pool for smaller periods of time.
+         m_onLimitExceededMode = true;
++        fprintf(stderr, "[GPUDEBUG] POOL_LIMIT_EXCEEDED pool=%p poolPixels=%zu limitPixels=%zu\n", this, static_cast<size_t>(m_poolSize), static_cast<size_t>(m_poolSizeLimit));
+         m_releaseUnusedSecondsTolerance = releaseUnusedSecondsToleranceOnLimitExceeded;
+         m_releaseUnusedTexturesTimerInterval = releaseUnusedTexturesTimerIntervalOnLimitExceeded;
+         m_releaseUnusedTexturesTimer.startOneShot(0_s);
+diff --git a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+index 2a271e4e24c7..56b4a54b8f8c 100644
+--- a/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
++++ b/Source/WebCore/platform/graphics/texmap/GraphicsContextGLTextureMapperANGLE.cpp
+@@ -116,10 +116,11 @@ GraphicsContextGLANGLE::~GraphicsContextGLANGLE()
+     }
+ 
+     if (m_angleSharingContextObj) {
+-	fprintf(stderr,"[GPUDEBUG] EGL DESTROY BEGIN this=%p display=%p context=%p\n", this, m_displayObj, m_contextObj);
++    fprintf(stderr,"[GPUDEBUG] EGL DESTROY SHARING BEGIN this=%p display=%p context=%p\n", this, m_displayObj, m_angleSharingContextObj);
+         EGL_DestroyContext(m_displayObj, m_angleSharingContextObj);
+-	fprintf(stderr,"[GPUDEBUG] EGL DESTROY END this=%p context=%p\n", this, m_contextObj);
+- }
++    }
++
++    fprintf(stderr,"[GPUDEBUG] EGL DESTROY SHARING END this=%p context=%p\n", this, m_angleSharingContextObj);
+ 
+     // Ideally this should go before the m_contextObj destruction, but there are platforms where it breaks
+     // the destruction m_contextObj. Putting it here works for all the platforms that I've tested.
+-- 
+2.44.4
+

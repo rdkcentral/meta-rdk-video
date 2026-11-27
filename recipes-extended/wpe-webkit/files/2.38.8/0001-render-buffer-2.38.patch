@@ -1,0 +1,136 @@
+From 9a331ce4342bd65724b6f71dabc302bfd937ca50 Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Sat, 31 Oct 2026 10:17:13 +0000
+Subject: [PATCH] render buffer 2.38
+
+---
+ .../WebCore/platform/graphics/GPUDebugNexus.h | 16 ++++++++++++++
+ .../graphics/opengl/ExtensionsGLOpenGLES.cpp  |  2 ++
+ .../opengl/GraphicsContextGLOpenGL.cpp        | 21 ++++++++++++++++++-
+ 3 files changed, 38 insertions(+), 1 deletion(-)
+
+diff --git a/Source/WebCore/platform/graphics/GPUDebugNexus.h b/Source/WebCore/platform/graphics/GPUDebugNexus.h
+index 8b70ab36b3ff..1373149f8490 100644
+--- a/Source/WebCore/platform/graphics/GPUDebugNexus.h
++++ b/Source/WebCore/platform/graphics/GPUDebugNexus.h
+@@ -456,6 +456,22 @@ inline void record(const void* context, unsigned renderbuffer, unsigned long lon
+         data.objects.erase(context);
+ }
+ 
++inline void dumpStats(const char* reason)
++{
++    auto& data = state();
++    std::lock_guard<std::mutex> guard(data.lock);
++    size_t count = 0;
++    for (const auto& context : data.objects)
++        count += context.second.size();
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_SNAPSHOT reason=%s pid=%d backend=NATIVE_GLES liveCount=%zu liveEstBytes=%llu peakEstBytes=%llu\n",
++        reason, getpid(), count, data.liveBytes, data.peakBytes);
++    for (const auto& context : data.objects) {
++        for (const auto& renderbuffer : context.second)
++            fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_LIVE reason=%s pid=%d ctx=%p rb=%u estBytes=%llu\n",
++                reason, getpid(), context.first, renderbuffer.first, renderbuffer.second);
++    }
++}
++
+ inline void forgetContext(const void* context)
+ {
+     auto& data = state();
+diff --git a/Source/WebCore/platform/graphics/opengl/ExtensionsGLOpenGLES.cpp b/Source/WebCore/platform/graphics/opengl/ExtensionsGLOpenGLES.cpp
+index a1de6f618ba9..38d82c313cce 100644
+--- a/Source/WebCore/platform/graphics/opengl/ExtensionsGLOpenGLES.cpp
++++ b/Source/WebCore/platform/graphics/opengl/ExtensionsGLOpenGLES.cpp
+@@ -113,6 +113,8 @@ void ExtensionsGLOpenGLES::renderbufferStorageMultisampleIMG(unsigned long targe
+ 
+ void ExtensionsGLOpenGLES::renderbufferStorageMultisampleANGLE(GCGLenum target, GCGLsizei samples, GCGLenum internalformat, GCGLsizei width, GCGLsizei height)
+ {
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_API_STORAGE ctx=%p backend=NATIVE_GLES target=0x%x format=0x%x width=%d height=%d samples=%d path=angle_to_img available=%d\n",
++        m_context, target, internalformat, width, height, samples, !!m_glRenderbufferStorageMultisampleIMG);
+     if (!m_context->makeContextCurrent())
+         return;
+     if (m_glRenderbufferStorageMultisampleIMG)
+diff --git a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
+index 462ed09837e2..d660febe6daa 100644
+--- a/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
++++ b/Source/WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.cpp
+@@ -167,6 +167,7 @@ static void dumpStats(const char* reason)
+     static const char* const selfKeys[] = { "VmRSS", "VmSize" };
+     dumpProcFile("/proc/meminfo", memKeys, 4);
+     dumpProcFile("/proc/self/status", selfKeys, 2);
++    GPUDebugRenderbuffer238::dumpStats(reason);
+     GPUDebugNexus::dump(reason);
+     {
+         static unsigned s_gpuDbgProcDumps = 0;
+@@ -253,6 +254,10 @@ GraphicsContextGLOpenGL::~GraphicsContextGLOpenGL()
+     fprintf(stderr, "[GPUDEBUG] WEBGL_CONTEXT_DESTROY ctx=%p hostWindow=%d\n", this,
+         contextAttributes().renderTarget == GraphicsContextGLRenderTarget::HostWindow);
+     GPUDebug238::dumpStats("WEBGL_CONTEXT_DESTROY");
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_CONTEXT_TEARDOWN ctx=%p backend=NATIVE_GLES hostWindow=%d fbo=%u depthStencilRB=%u multisampleFBO=%u multisampleColorRB=%u multisampleDepthStencilRB=%u\n",
++        this, contextAttributes().renderTarget == GraphicsContextGLRenderTarget::HostWindow,
++        m_fbo, m_depthStencilBuffer, m_multisampleFBO, m_multisampleColorBuffer, m_multisampleDepthStencilBuffer);
++    GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_CONTEXT_TEARDOWN");
+     GPUDebugRenderbuffer238::forgetContext(this);
+     if (!makeContextCurrent())
+         return;
+@@ -326,6 +331,9 @@ bool GraphicsContextGLOpenGL::initialize()
+     }
+ 
+     if (attributes.renderTarget == GraphicsContextGLRenderTarget::HostWindow) {
++        fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_INIT ctx=%p backend=NATIVE_GLES hostWindow=1 internalOffscreenBuffers=skipped antialias=%d depth=%d stencil=%d\n",
++            this, attributes.antialias, attributes.depth, attributes.stencil);
++        GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_INIT_HOST_WINDOW");
+         m_compiler = ANGLEWebKitBridge(SH_ESSL_OUTPUT, SH_WEBGL_SPEC);
+ 
+         ShBuiltInResources ANGLEResources;
+@@ -402,6 +410,11 @@ bool GraphicsContextGLOpenGL::initialize()
+         if (attributes.stencil || attributes.depth)
+             glGenRenderbuffers(1, &m_depthStencilBuffer);
+     }
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_INIT ctx=%p backend=NATIVE_GLES hostWindow=0 fbo=%u depthStencilRB=%u multisampleFBO=%u multisampleColorRB=%u multisampleDepthStencilRB=%u\n",
++        this, m_fbo, m_depthStencilBuffer, m_multisampleFBO, m_multisampleColorBuffer, m_multisampleDepthStencilBuffer);
++#if USE(OPENGL_ES)
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_INTERNAL_IDS ctx=%p backend=NATIVE_GLES depthRB=%u stencilRB=%u\n", this, m_depthBuffer, m_stencilBuffer);
++#endif
+ 
+ #if !USE(OPENGL_ES)
+     ::glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+@@ -839,6 +852,7 @@ void GraphicsContextGLOpenGL::bindRenderbuffer(GCGLenum target, PlatformGLObject
+         return;
+ 
+     ::glBindRenderbufferEXT(target, renderbuffer);
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_API_BIND ctx=%p backend=NATIVE_GLES target=0x%x rb=%u\n", this, target, renderbuffer);
+ }
+ 
+ 
+@@ -1197,6 +1211,8 @@ void GraphicsContextGLOpenGL::framebufferRenderbuffer(GCGLenum target, GCGLenum
+         return;
+ 
+     ::glFramebufferRenderbufferEXT(target, attachment, renderbuffertarget, buffer);
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_API_ATTACH ctx=%p backend=NATIVE_GLES target=0x%x attachment=0x%x rbTarget=0x%x rb=%u drawFBO=%u readFBO=%u\n",
++        this, target, attachment, renderbuffertarget, buffer, m_state.boundDrawFBO, m_state.boundReadFBO);
+ }
+ 
+ void GraphicsContextGLOpenGL::framebufferTexture2D(GCGLenum target, GCGLenum attachment, GCGLenum textarget, PlatformGLObject texture, GCGLint level)
+@@ -2512,6 +2528,7 @@ void GraphicsContextGLOpenGL::deleteRenderbuffer(PlatformGLObject renderbuffer)
+         return;
+ 
+     GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_DELETE_BEFORE");
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_API_DELETE ctx=%p backend=NATIVE_GLES rb=%u\n", this, renderbuffer);
+     glDeleteRenderbuffersEXT(1, &renderbuffer);
+     GPUDebugRenderbuffer238::record(this, renderbuffer, 0, "delete", true);
+     GPUDebugProc::dumpGpuFileConfig("RENDERBUFFER_DELETE_AFTER");
+@@ -2768,8 +2785,10 @@ void GraphicsContextGLOpenGL::getInternalformativ(GCGLenum, GCGLenum, GCGLenum,
+ {
+ }
+ 
+-void GraphicsContextGLOpenGL::renderbufferStorageMultisample(GCGLenum, GCGLsizei, GCGLenum, GCGLsizei, GCGLsizei)
++void GraphicsContextGLOpenGL::renderbufferStorageMultisample(GCGLenum target, GCGLsizei samples, GCGLenum internalformat, GCGLsizei width, GCGLsizei height)
+ {
++    fprintf(stderr, "[GPUDEBUG] RENDERBUFFER_API_STORAGE ctx=%p backend=NATIVE_GLES target=0x%x format=0x%x width=%d height=%d samples=%d path=unsupported_core_ms\n",
++        this, target, internalformat, width, height, samples);
+ }
+ 
+ void GraphicsContextGLOpenGL::texStorage2D(GCGLenum, GCGLsizei, GCGLenum, GCGLsizei, GCGLsizei)
+-- 
+2.44.4
+

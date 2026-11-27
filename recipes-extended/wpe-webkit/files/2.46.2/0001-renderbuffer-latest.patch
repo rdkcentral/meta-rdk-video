@@ -1,0 +1,212 @@
+From 0ed15dd792ccd235d1d34c9863005d27fa5c901c Mon Sep 17 00:00:00 2001
+From: Krishna Priya Kanagaraj <krishnapriya_kanagaraj@comcast.com>
+Date: Tue, 3 Nov 2026 15:23:44 +0000
+Subject: [PATCH] renderbuffer
+
+---
+ .../html/canvas/WebGL2RenderingContext.cpp    |  6 +++
+ .../WebCore/html/canvas/WebGLRenderbuffer.cpp |  6 +++
+ .../html/canvas/WebGLRenderingContextBase.cpp | 38 +++++++++++++++++--
+ 3 files changed, 47 insertions(+), 3 deletions(-)
+
+diff --git a/Source/WebCore/html/canvas/WebGL2RenderingContext.cpp b/Source/WebCore/html/canvas/WebGL2RenderingContext.cpp
+index 8ae92076b2e1..9b703aecc52e 100644
+--- a/Source/WebCore/html/canvas/WebGL2RenderingContext.cpp
++++ b/Source/WebCore/html/canvas/WebGL2RenderingContext.cpp
+@@ -28,6 +28,8 @@
+ 
+ #if ENABLE(WEBGL)
+ 
++#include <stdio.h>
++
+ #include "CachedImage.h"
+ #include "EXTClipControl.h"
+ #include "EXTColorBufferFloat.h"
+@@ -794,6 +796,8 @@ void WebGL2RenderingContext::readBuffer(GCGLenum src)
+ 
+ void WebGL2RenderingContext::renderbufferStorageMultisample(GCGLenum target, GCGLsizei samples, GCGLenum internalformat, GCGLsizei width, GCGLsizei height)
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_STORAGE_REQUEST ctx=%p name=%u target=0x%x format=0x%x width=%d height=%d samples=%d contextLost=%d webgl2=1\n",
++        this, m_renderbufferBinding ? m_renderbufferBinding->object() : 0, target, internalformat, width, height, samples, isContextLost());
+     auto functionName = "renderbufferStorageMultisample"_s;
+     if (isContextLost())
+         return;
+@@ -2993,6 +2997,8 @@ void WebGL2RenderingContext::renderbufferStorageImpl(GCGLenum target, GCGLsizei
+ 
+ void WebGL2RenderingContext::renderbufferStorageHelper(GCGLenum target, GCGLsizei samples, GCGLenum internalformat, GCGLsizei width, GCGLsizei height)
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_STORAGE_DISPATCH ctx=%p name=%u target=0x%x format=0x%x width=%d height=%d samples=%d webgl2=1\n",
++        this, m_renderbufferBinding ? m_renderbufferBinding->object() : 0, target, internalformat, width, height, samples);
+     if (samples)
+         m_context->renderbufferStorageMultisample(target, samples, internalformat, width, height);
+     else
+diff --git a/Source/WebCore/html/canvas/WebGLRenderbuffer.cpp b/Source/WebCore/html/canvas/WebGLRenderbuffer.cpp
+index 09931ae00450..4b1e69a1a09b 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderbuffer.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderbuffer.cpp
+@@ -30,6 +30,7 @@
+ #include "WebGLRenderbuffer.h"
+ 
+ #include "WebGLRenderingContextBase.h"
++#include <stdio.h>
+ #include <wtf/Lock.h>
+ #include <wtf/Locker.h>
+ 
+@@ -45,6 +46,8 @@ RefPtr<WebGLRenderbuffer> WebGLRenderbuffer::create(WebGLRenderingContextBase& c
+ 
+ WebGLRenderbuffer::~WebGLRenderbuffer()
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_DTOR rbObject=%p name=%u contextAttached=%d alreadyDeleted=%d width=%d height=%d format=0x%x\n",
++        this, object(), !!m_context, isDeleted(), m_width, m_height, m_internalFormat);
+     if (!m_context)
+         return;
+ 
+@@ -54,10 +57,13 @@ WebGLRenderbuffer::~WebGLRenderbuffer()
+ WebGLRenderbuffer::WebGLRenderbuffer(WebGLRenderingContextBase& context, PlatformGLObject object)
+     : WebGLObject(context, object)
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_OBJECT_CREATE ctx=%p rbObject=%p name=%u\n", &context, this, object);
+ }
+ 
+ void WebGLRenderbuffer::deleteObjectImpl(const AbstractLocker&, GraphicsContextGL* context3d, PlatformGLObject object)
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_BACKEND_DELETE glCtx=%p rbObject=%p name=%u width=%d height=%d format=0x%x\n",
++        context3d, this, object, m_width, m_height, m_internalFormat);
+     context3d->deleteRenderbuffer(object);
+ }
+ 
+diff --git a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+index b7a8222558ee..848613f40f3b 100644
+--- a/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
++++ b/Source/WebCore/html/canvas/WebGLRenderingContextBase.cpp
+@@ -1094,6 +1094,8 @@ void WebGLRenderingContextBase::bindFramebuffer(GCGLenum target, WebGLFramebuffe
+ 
+ void WebGLRenderingContextBase::bindRenderbuffer(GCGLenum target, WebGLRenderbuffer* renderBuffer)
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_BIND ctx=%p rbObject=%p name=%u target=0x%x contextLost=%d\n",
++        this, renderBuffer, objectOrZero(renderBuffer), target, isContextLost());
+     if (isContextLost())
+         return;
+     Locker locker { objectGraphLock() };
+@@ -1367,7 +1369,10 @@ RefPtr<WebGLFramebuffer> WebGLRenderingContextBase::createFramebuffer()
+ {
+     if (isContextLost())
+         return nullptr;
+-    return WebGLFramebuffer::create(*this);
++    auto framebuffer = WebGLFramebuffer::create(*this);
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_FBO_CREATE ctx=%p fboObject=%p name=%u\n",
++        this, framebuffer.get(), objectOrZero(framebuffer.get()));
++    return framebuffer;
+ }
+ 
+ RefPtr<WebGLTexture> WebGLRenderingContextBase::createTexture()
+@@ -1390,9 +1395,13 @@ RefPtr<WebGLProgram> WebGLRenderingContextBase::createProgram()
+ 
+ RefPtr<WebGLRenderbuffer> WebGLRenderingContextBase::createRenderbuffer()
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_CREATE_REQUEST ctx=%p contextLost=%d\n", this, isContextLost());
+     if (isContextLost())
+         return nullptr;
+-    return WebGLRenderbuffer::create(*this);
++    auto renderbuffer = WebGLRenderbuffer::create(*this);
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_CREATE_RESULT ctx=%p rbObject=%p name=%u\n",
++        this, renderbuffer.get(), objectOrZero(renderbuffer.get()));
++    return renderbuffer;
+ }
+ 
+ RefPtr<WebGLShader> WebGLRenderingContextBase::createShader(GCGLenum type)
+@@ -1463,6 +1472,8 @@ void WebGLRenderingContextBase::deleteBuffer(WebGLBuffer* buffer)
+ void WebGLRenderingContextBase::deleteFramebuffer(WebGLFramebuffer* framebuffer)
+ {
+     Locker locker { objectGraphLock() };
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_FBO_DELETE_REQUEST ctx=%p fboObject=%p name=%u alreadyDeleted=%d\n",
++        this, framebuffer, objectOrZero(framebuffer), framebuffer ? framebuffer->isDeleted() : -1);
+ 
+ #if ENABLE(WEBXR)
+     if (framebuffer && framebuffer->isOpaque()) {
+@@ -1496,8 +1507,13 @@ void WebGLRenderingContextBase::deleteRenderbuffer(WebGLRenderbuffer* renderbuff
+ {
+     Locker locker { objectGraphLock() };
+ 
+-    if (!deleteObject(locker, renderbuffer))
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_DELETE_REQUEST ctx=%p rbObject=%p name=%u alreadyDeleted=%d bound=%d\n",
++        this, renderbuffer, objectOrZero(renderbuffer), renderbuffer ? renderbuffer->isDeleted() : -1,
++        renderbuffer == m_renderbufferBinding);
++    if (!deleteObject(locker, renderbuffer)) {
++        fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_DELETE_SKIPPED ctx=%p rbObject=%p\n", this, renderbuffer);
+         return;
++    }
+     if (renderbuffer == m_renderbufferBinding)
+         m_renderbufferBinding = nullptr;
+     if (m_framebufferBinding)
+@@ -1688,6 +1704,8 @@ void WebGLRenderingContextBase::flush()
+ 
+ void WebGLRenderingContextBase::framebufferRenderbuffer(GCGLenum target, GCGLenum attachment, GCGLenum renderbuffertarget, WebGLRenderbuffer* buffer)
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_ATTACH_REQUEST ctx=%p rbObject=%p name=%u target=0x%x attachment=0x%x rbTarget=0x%x contextLost=%d\n",
++        this, buffer, objectOrZero(buffer), target, attachment, renderbuffertarget, isContextLost());
+     if (isContextLost() || !validateFramebufferFuncParameters("framebufferRenderbuffer"_s, target, attachment))
+         return;
+     if (renderbuffertarget != GraphicsContextGL::RENDERBUFFER) {
+@@ -1718,10 +1736,14 @@ void WebGLRenderingContextBase::framebufferRenderbuffer(GCGLenum target, GCGLenu
+ #endif
+ 
+     framebufferBinding->setAttachmentForBoundFramebuffer(target, attachment, RefPtr { buffer });
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_ATTACH_DISPATCH ctx=%p fbo=%u rbObject=%p name=%u attachment=0x%x\n",
++        this, framebufferBinding->object(), buffer, objectOrZero(buffer), attachment);
+ }
+ 
+ void WebGLRenderingContextBase::framebufferTexture2D(GCGLenum target, GCGLenum attachment, GCGLenum texTarget, WebGLTexture* texture, GCGLint level)
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_FBO_TEXTURE_ATTACH_REQUEST ctx=%p textureObject=%p name=%u target=0x%x attachment=0x%x textureTarget=0x%x level=%d contextLost=%d\n",
++        this, texture, objectOrZero(texture), target, attachment, texTarget, level, isContextLost());
+     if (isContextLost() || !validateFramebufferFuncParameters("framebufferTexture2D"_s, target, attachment))
+         return;
+     if (level && isWebGL1() && !m_oesFBORenderMipmap) {
+@@ -1747,6 +1769,8 @@ void WebGLRenderingContextBase::framebufferTexture2D(GCGLenum target, GCGLenum a
+ #endif
+ 
+     framebufferBinding->setAttachmentForBoundFramebuffer(target, attachment, WebGLFramebuffer::TextureAttachment { texture, texTarget, level });
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_FBO_TEXTURE_ATTACH_DISPATCH ctx=%p fbo=%u textureObject=%p name=%u attachment=0x%x level=%d\n",
++        this, framebufferBinding->object(), texture, objectOrZero(texture), attachment, level);
+ }
+ 
+ void WebGLRenderingContextBase::frontFace(GCGLenum mode)
+@@ -3027,6 +3051,8 @@ void WebGLRenderingContextBase::readPixels(GCGLint x, GCGLint y, GCGLsizei width
+ 
+ void WebGLRenderingContextBase::renderbufferStorage(GCGLenum target, GCGLenum internalformat, GCGLsizei width, GCGLsizei height)
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_STORAGE_REQUEST ctx=%p name=%u target=0x%x format=0x%x width=%d height=%d samples=0 contextLost=%d\n",
++        this, objectOrZero(m_renderbufferBinding.get()), target, internalformat, width, height, isContextLost());
+     auto functionName = "renderbufferStorage"_s;
+     if (isContextLost())
+         return;
+@@ -3045,6 +3071,8 @@ void WebGLRenderingContextBase::renderbufferStorage(GCGLenum target, GCGLenum in
+ 
+ void WebGLRenderingContextBase::renderbufferStorageImpl(GCGLenum target, GCGLsizei samples, GCGLenum internalformat, GCGLsizei width, GCGLsizei height, ASCIILiteral functionName)
+ {
++    fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_STORAGE_VALIDATE ctx=%p name=%u format=0x%x width=%d height=%d samples=%d\n",
++        this, objectOrZero(m_renderbufferBinding.get()), internalformat, width, height, samples);
+ #if ASSERT_ENABLED
+     // |samples| > 0 is only valid in WebGL2's renderbufferStorageMultisample().
+     ASSERT(!samples);
+@@ -3075,12 +3103,16 @@ void WebGLRenderingContextBase::renderbufferStorageImpl(GCGLenum target, GCGLsiz
+             synthesizeGLError(GraphicsContextGL::INVALID_ENUM, functionName, "WEBGL_color_buffer_float not enabled"_s);
+             return;
+         }
++        fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_STORAGE_DISPATCH ctx=%p name=%u format=0x%x width=%d height=%d samples=0\n",
++            this, objectOrZero(m_renderbufferBinding.get()), internalformat, width, height);
+         m_context->renderbufferStorage(target, internalformat, width, height);
+         m_renderbufferBinding->setInternalFormat(internalformat);
+         m_renderbufferBinding->setIsValid(true);
+         m_renderbufferBinding->setSize(width, height);
+         break;
+     case GraphicsContextGL::DEPTH_STENCIL:
++        fprintf(stderr, "[GPUDEBUG] WEBGL_APP_RB_DEPTH_STENCIL ctx=%p name=%u supported=%d nativeFormat=0x%x width=%d height=%d\n",
++            this, objectOrZero(m_renderbufferBinding.get()), isDepthStencilSupported(), GraphicsContextGL::DEPTH24_STENCIL8, width, height);
+         if (isDepthStencilSupported())
+             m_context->renderbufferStorage(target, GraphicsContextGL::DEPTH24_STENCIL8, width, height);
+         m_renderbufferBinding->setSize(width, height);
+-- 
+2.44.4
+
