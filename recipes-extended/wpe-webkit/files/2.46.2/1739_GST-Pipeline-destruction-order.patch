@@ -1,0 +1,51 @@
+From 4bd55f32c5601bb5bb0302de0bb069997fef3a8a Mon Sep 17 00:00:00 2001
+From: Andrzej Surdej <Andrzej_Surdej@comcast.com>
+Date: Tue, 3 Nov 2026 10:58:36 +0100
+Subject: [PATCH] [MSE][GStreamer] Early MSE source destruction on tearDown
+
+Before destroying the pipeline, transition the source element to READY
+to stop streaming threads before setting the pipeline to NULL.
+This avoids decrypter hangs caused by HDCP issues
+(HDCP re-negotiation causes key status change to output restricted,
+while streaming threads are running still)
+---
+ .../graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp   | 9 +++++++++
+ .../gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp     | 2 --
+ 2 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+index edffb94cbf04..dd108d233332 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+@@ -299,6 +299,15 @@ void MediaPlayerPrivateGStreamer::tearDown(bool clearMediaPlayer)
+     // about handlers running in the GStreamer thread.
+     if (m_pipeline) {
+         unregisterPipeline(m_pipeline);
++#if ENABLE(MEDIA_SOURCE)
++        if (m_source && WEBKIT_IS_MEDIA_SRC(m_source.get())) {
++            // Stop the source element first to ensure streaming threads are stopped before
++            // transitioning the pipeline to NULL, avoiding decrypter hangs caused by
++            // HDCP related issues.
++            GST_DEBUG_OBJECT(m_pipeline.get(), "Reset source to READY before pipeline destruction");
++            gst_element_set_state(m_source.get(), GST_STATE_READY);
++        }
++#endif // ENABLE(MEDIA_SOURCE)
+         gst_element_set_state(m_pipeline.get(), GST_STATE_NULL);
+ 
+         auto bus = adoptGRef(gst_pipeline_get_bus(GST_PIPELINE(m_pipeline.get())));
+diff --git a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
+index 643c6d39afd4..b7574a2f2a2f 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/mse/MediaPlayerPrivateGStreamerMSE.cpp
+@@ -132,8 +132,6 @@ MediaPlayerPrivateGStreamerMSE::MediaPlayerPrivateGStreamerMSE(MediaPlayer* play
+ MediaPlayerPrivateGStreamerMSE::~MediaPlayerPrivateGStreamerMSE()
+ {
+     GST_TRACE("destroying the player (%p)", this);
+-
+-    m_source.clear();
+ }
+ 
+ void MediaPlayerPrivateGStreamerMSE::load(const String&)
+-- 
+2.53.0
+

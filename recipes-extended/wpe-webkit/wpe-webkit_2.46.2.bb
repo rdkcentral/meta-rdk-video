@@ -30,6 +30,7 @@ SRC_URI += "file://2.46.2/1715.patch"
 SRC_URI += "file://2.46.2/1700.patch"
 SRC_URI += "file://2.46.2/1726_KEY_TV_mapping.patch"
 SRC_URI += "file://2.46.2/1730_MSE_pause_task_on_eos.patch"
+SRC_URI += "file://2.46.2/1739_GST-Pipeline-destruction-order.patch"
 
 # Drop after westeros change is approved and released
 SRC_URI += "file://2.46/comcast-RDK-58780-set-segment-position-field.patch"
