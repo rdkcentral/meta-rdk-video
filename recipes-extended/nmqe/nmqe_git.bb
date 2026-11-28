@@ -72,6 +72,12 @@ do_configure:prepend() {
     cargo_common_do_configure
 }
 
+do_compile:prepend() {
+    bbnote "NMQE: compiling C++ engine components before the Rust shim"
+    cmake_runcmake_build --target nmqe_player nmqe_media nmqe_replay
+    bbnote "NMQE: C++ engine components compiled; continuing with the full player build"
+}
+
 do_install() {
     install -d "${D}${bindir}" "${D}${sysconfdir}/nmqe/platform"
     install -m 0755 "${B}/nmqe-player" "${D}${bindir}/nmqe-player"
